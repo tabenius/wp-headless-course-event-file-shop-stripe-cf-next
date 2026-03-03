@@ -1,0 +1,43 @@
+function hasCloudflareConfig() {
+  return Boolean(
+    process.env.CF_ACCOUNT_ID &&
+      process.env.CF_API_TOKEN &&
+      process.env.CF_KV_NAMESPACE_ID,
+  );
+}
+
+function getKvUrl(key) {
+  return `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CF_KV_NAMESPACE_ID}/values/${key}`;
+}
+
+export function isCloudflareKvConfigured() {
+  return hasCloudflareConfig();
+}
+
+export async function readCloudflareKvJson(key) {
+  if (!hasCloudflareConfig()) return null;
+  const response = await fetch(getKvUrl(key), {
+    headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
+    cache: "no-store",
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Cloudflare KV read failed (${response.status})`);
+  }
+  const text = await response.text();
+  if (!text.trim()) return null;
+  return JSON.parse(text);
+}
+
+export async function writeCloudflareKvJson(key, value) {
+  if (!hasCloudflareConfig()) return false;
+  const response = await fetch(getKvUrl(key), {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
+    body: JSON.stringify(value),
+  });
+  if (!response.ok) {
+    throw new Error(`Cloudflare KV write failed (${response.status})`);
+  }
+  return true;
+}
