@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import ShopProductDetail from "@/components/digital/ShopProductDetail";
+import ShopProductDetail from "@/components/shop/ShopProductDetail";
 import { grantDigitalAccess, hasDigitalAccess } from "@/lib/digitalAccessStore";
 import { grantCourseAccess } from "@/lib/courseAccess";
 import { getDigitalProductBySlug } from "@/lib/digitalProducts";

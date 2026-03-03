@@ -9,6 +9,7 @@
     "prebuild": "npm run theme:css",
     "prestart": "npm run theme:css",
     "precf:build": "npm run theme:css",
+    "config": "./configure.sh",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import ShopIndex from "@/components/digital/ShopIndex";
+import ShopIndex from "@/components/shop/ShopIndex";
 import { listAccessibleDigitalProductIds, grantDigitalAccess } from "@/lib/digitalAccessStore";
 import { grantCourseAccess } from "@/lib/courseAccess";
 import { listDigitalProducts } from "@/lib/digitalProducts";
