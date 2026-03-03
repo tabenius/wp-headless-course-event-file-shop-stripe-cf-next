@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const OAUTH_ORDER = ["google", "apple", "microsoft-entra-id", "facebook"];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
 
 function providerLabel(providerId) {
   switch (providerId) {
@@ -53,12 +55,22 @@ export default function SignInClient() {
 
   async function onCredentialsSignIn(event) {
     event.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setError("Ange en giltig e-postadress.");
+      return;
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Lösenord måste vara minst ${MIN_PASSWORD_LENGTH} tecken.`);
+      return;
+    }
+
     setError("");
     setLoading(true);
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: normalizedEmail, password }),
     });
     const result = await response.json();
     setLoading(false);
@@ -103,6 +115,7 @@ export default function SignInClient() {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="E-post"
           className="w-full border rounded px-3 py-2"
+          autoComplete="email"
           required
         />
         <input
@@ -111,7 +124,8 @@ export default function SignInClient() {
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Lösenord"
           className="w-full border rounded px-3 py-2"
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
+          autoComplete="current-password"
           required
         />
         <button

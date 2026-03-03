@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
 export default function RegisterClient() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -14,6 +17,22 @@ export default function RegisterClient() {
 
   async function onSubmit(event) {
     event.preventDefault();
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (normalizedName.length < 2) {
+      setError("Namn måste vara minst 2 tecken.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setError("Ange en giltig e-postadress.");
+      return;
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Lösenord måste vara minst ${MIN_PASSWORD_LENGTH} tecken.`);
+      return;
+    }
+
     setError("");
     setLoading(true);
 
@@ -21,7 +40,7 @@ export default function RegisterClient() {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name: normalizedName, email: normalizedEmail, password }),
       });
       const json = await response.json();
       if (!response.ok || !json?.ok) {
@@ -33,7 +52,7 @@ export default function RegisterClient() {
       const loginResponse = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: normalizedEmail, password }),
       });
       const loginJson = await loginResponse.json();
       if (!loginResponse.ok || !loginJson?.ok) {
@@ -62,6 +81,7 @@ export default function RegisterClient() {
           placeholder="Fullständigt namn"
           className="w-full border rounded px-3 py-2"
           minLength={2}
+          autoComplete="name"
           required
         />
         <input
@@ -70,6 +90,7 @@ export default function RegisterClient() {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="E-post"
           className="w-full border rounded px-3 py-2"
+          autoComplete="email"
           required
         />
         <input
@@ -78,7 +99,8 @@ export default function RegisterClient() {
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Lösenord (minst 8 tecken)"
           className="w-full border rounded px-3 py-2"
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
+          autoComplete="new-password"
           required
         />
 

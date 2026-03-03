@@ -19,9 +19,15 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const username = typeof body?.username === "string" ? body.username : "";
+    const emailRaw =
+      typeof body?.email === "string"
+        ? body.email
+        : typeof body?.username === "string"
+          ? body.username
+          : "";
+    const email = emailRaw.trim().toLowerCase();
     const password = typeof body?.password === "string" ? body.password : "";
-    if (!validateAdminCredentials(username, password)) {
+    if (!validateAdminCredentials(email, password)) {
       return NextResponse.json(
         { ok: false, error: "Inloggningsuppgifterna godkändes inte." },
         { status: 401 },

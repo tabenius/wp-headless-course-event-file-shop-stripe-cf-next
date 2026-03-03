@@ -1,4 +1,5 @@
 import { useState } from "react";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function CommentForm({
   onSubmit = () => {},
@@ -11,17 +12,38 @@ export default function CommentForm({
     authorEmail: "",
     content: "",
   });
+  const [localError, setLocalError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(comment);
+    const author = comment.author.trim();
+    const authorEmail = comment.authorEmail.trim().toLowerCase();
+    const content = comment.content.trim();
+
+    if (author.length < 2) {
+      setLocalError("Namn måste vara minst 2 tecken.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(authorEmail)) {
+      setLocalError("Ange en giltig e-postadress.");
+      return;
+    }
+    if (content.length < 3) {
+      setLocalError("Kommentaren är för kort.");
+      return;
+    }
+
+    setLocalError("");
+    onSubmit({ author, authorEmail, content });
   };
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
+    setLocalError("");
     setComment((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
+  };
 
   return (
     <fieldset className="max-w-2xl p-6 mx-auto space-y-12">
@@ -33,6 +55,8 @@ export default function CommentForm({
           placeholder="Ditt namn"
           value={comment.author}
           onChange={handleChange}
+          minLength={2}
+          autoComplete="name"
           required
           className="w-full p-3 bg-gray-50 shadow-sm rounded-md"
         />
@@ -42,6 +66,7 @@ export default function CommentForm({
           placeholder="Din e-post"
           value={comment.authorEmail}
           onChange={handleChange}
+          autoComplete="email"
           required
           className="w-full p-3 bg-gray-50 shadow-sm rounded-md"
         />
@@ -50,12 +75,15 @@ export default function CommentForm({
           placeholder="Din kommentar"
           value={comment.content}
           onChange={handleChange}
+          minLength={3}
           required
           rows="4"
           className="w-full p-3 bg-gray-50 shadow-sm rounded-md"
         ></textarea>
 
-        {errorMessage && <p className="text-red-600 text-sm">{errorMessage}</p>}
+        {(localError || errorMessage) && (
+          <p className="text-red-600 text-sm">{localError || errorMessage}</p>
+        )}
 
         {isSuccessful && (
           <div className="flex items-center p-4 mb-4 text-sm rounded-lg bg-green-50 border border-green-200">

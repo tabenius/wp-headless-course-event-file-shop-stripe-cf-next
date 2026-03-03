@@ -3,21 +3,33 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AdminLoginClient() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(event) {
     event.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setError("Ange en giltig e-postadress.");
+      return;
+    }
+    if (!password.trim()) {
+      setError("Lösenord måste anges.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     const response = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email: normalizedEmail, password }),
     });
     const json = await response.json();
     setLoading(false);
@@ -35,11 +47,12 @@ export default function AdminLoginClient() {
       <p className="text-gray-600 mb-8">Hantera kursåtkomst och prisinställningar.</p>
       <form onSubmit={onSubmit} className="space-y-4">
         <input
-          type="text"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           placeholder="Admin e-post"
           className="w-full border rounded px-3 py-2"
+          autoComplete="email"
           required
         />
         <input
@@ -48,6 +61,7 @@ export default function AdminLoginClient() {
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Admin-lösenord"
           className="w-full border rounded px-3 py-2"
+          autoComplete="current-password"
           required
         />
         <button
