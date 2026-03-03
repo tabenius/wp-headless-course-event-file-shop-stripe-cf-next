@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "theme:css": "node scripts/generate-theme-css.mjs",
+    "test:theme": "node --test scripts/generate-theme-css.test.mjs",
     "predev": "npm run theme:css",
     "prebuild": "npm run theme:css",
+    "prestart": "npm run theme:css",
     "precf:build": "npm run theme:css",
     "dev": "next dev",
     "build": "next build",

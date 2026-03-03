@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const rootDir = process.cwd();
 const themeJsonPath = path.join(rootDir, "theme.json");
@@ -13,7 +14,7 @@ function toSlug(value) {
     .replace(/^-+|-+$/g, "");
 }
 
-function getThemeItems(theme) {
+export function getThemeItems(theme) {
   const palette = theme?.settings?.color?.palette ?? [];
   const fontFamilies = theme?.settings?.typography?.fontFamilies ?? [];
 
@@ -33,7 +34,7 @@ function getThemeItems(theme) {
   };
 }
 
-function buildCss({ colors, fonts }) {
+export function buildCss({ colors, fonts }) {
   const lines = [];
 
   lines.push("/* Auto-generated from theme.json. Do not edit manually. */");
@@ -73,17 +74,76 @@ function buildCss({ colors, fonts }) {
   return `${lines.join("\n")}`;
 }
 
-async function main() {
+function hasDuplicateSlugs(items) {
+  const set = new Set();
+  for (const item of items) {
+    if (set.has(item.slug)) return true;
+    set.add(item.slug);
+  }
+  return false;
+}
+
+export function validateTheme(theme) {
+  if (!theme || typeof theme !== "object") {
+    throw new Error("theme.json must contain a JSON object.");
+  }
+
+  const palette = theme?.settings?.color?.palette;
+  const fontFamilies = theme?.settings?.typography?.fontFamilies;
+  if (!Array.isArray(palette) || palette.length === 0) {
+    throw new Error("theme.json requires settings.color.palette with at least one color.");
+  }
+  if (!Array.isArray(fontFamilies) || fontFamilies.length === 0) {
+    throw new Error("theme.json requires settings.typography.fontFamilies with at least one font.");
+  }
+
+  const { colors, fonts } = getThemeItems(theme);
+  if (colors.length === 0) {
+    throw new Error("No valid color entries found in settings.color.palette.");
+  }
+  if (fonts.length === 0) {
+    throw new Error("No valid font entries found in settings.typography.fontFamilies.");
+  }
+
+  if (hasDuplicateSlugs(colors)) {
+    throw new Error("Duplicate color slugs found in theme.json.");
+  }
+  if (hasDuplicateSlugs(fonts)) {
+    throw new Error("Duplicate font slugs found in theme.json.");
+  }
+
+  const colorSlugs = new Set(colors.map((item) => item.slug));
+  const fontSlugs = new Set(fonts.map((item) => item.slug));
+  for (const requiredColor of ["background", "foreground"]) {
+    if (!colorSlugs.has(requiredColor)) {
+      throw new Error(`Required color slug "${requiredColor}" is missing.`);
+    }
+  }
+  for (const requiredFont of ["body", "heading"]) {
+    if (!fontSlugs.has(requiredFont)) {
+      throw new Error(`Required font slug "${requiredFont}" is missing.`);
+    }
+  }
+
+  return { colors, fonts };
+}
+
+export async function generateThemeCss() {
   const themeText = await fs.readFile(themeJsonPath, "utf8");
   const theme = JSON.parse(themeText);
-  const css = buildCss(getThemeItems(theme));
+  const css = buildCss(validateTheme(theme));
 
   await fs.mkdir(path.dirname(outCssPath), { recursive: true });
   await fs.writeFile(outCssPath, css, "utf8");
   process.stdout.write(`Generated ${path.relative(rootDir, outCssPath)}\n`);
 }
 
-main().catch((error) => {
-  process.stderr.write(`Failed to generate theme CSS: ${error.message}\n`);
-  process.exit(1);
-});
+const isDirectRun =
+  process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (isDirectRun) {
+  generateThemeCss().catch((error) => {
+    process.stderr.write(`Failed to generate theme CSS: ${error.message}\n`);
+    process.exit(1);
+  });
+}

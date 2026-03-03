@@ -2,21 +2,20 @@
 @import "./theme.generated.css";
 
 :root {
-  --background: var(--color-background, #ffffff);
-  --foreground: var(--color-foreground, #171717);
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-nunito);
-  --font-heading: var(--font-montserrat);
+  --font-sans: var(--font-body);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-body, Arial, Helvetica, sans-serif);
+  font-family: var(--font-body);
 }
 
 h1,
@@ -25,8 +24,8 @@ h3,
 h4,
 h5,
 h6 {
-  color: #767676;
-  font-family: var(--font-heading), "Helvetica Neue", sans-serif;
+  color: var(--color-muted);
+  font-family: var(--font-heading);
   font-size: 1em;
   font-style: italic;
   font-weight: 600;
@@ -43,7 +42,7 @@ h1 {
 }
 
 h2 {
-  color: #767676;
+  color: var(--color-muted);
   font-size: 17.25pt;
   font-weight: 900;
   line-height: 1.25;
@@ -52,7 +51,7 @@ h2 {
 
 h3 {
   color: inherit;
-  font-family: var(--font-heading), "Helvetica Neue", sans-serif;
+  font-family: var(--font-heading);
   font-size: 1em;
   font-weight: 900;
   line-height: 1.2173913043;
@@ -81,8 +80,8 @@ h6 {
 
 p {
   background: inherit;
-  color: var(--color-muted, #767676);
-  font-family: var(--font-sans), WooCommerce, sans-serif;
+  color: var(--color-muted);
+  font-family: var(--font-body);
   font-size: inherit;
   font-weight: 700;
   letter-spacing: 0;
@@ -91,8 +90,8 @@ p {
 }
 
 a {
-  color: var(--color-primary, #007acc);
-  font-family: var(--font-sans), "Museo Sans Rounded", sans-serif;
+  color: var(--color-primary);
+  font-family: var(--font-body);
   font-size: 0.875em;
   font-style: normal;
   font-weight: 600;
@@ -101,7 +100,7 @@ a {
   text-transform: none;
 }
 
-// Add a small bit of styling to the content
+/* Add a small bit of styling to the content */
 .wp-content {
   font-size: 1rem;
 }
