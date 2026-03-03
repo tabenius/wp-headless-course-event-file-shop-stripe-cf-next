@@ -28,14 +28,17 @@ This project combines Next.js, WordPress/WPGraphQL, and Stripe to protect course
 
 Digital products are configured in `config/digital-products.json`:
 
-- `id`: stable product identifier.
-- `title`: product name shown in UI/Stripe.
+- `name`: product name shown in UI/Stripe.
+- `slug`: auto-generated/editable URL slug.
 - `description`: optional storefront text.
+- `imageUrl`: optional product image URL.
+- `type`: `digital_file` or `course`.
 - `priceCents` and `currency`: payment amount.
-- `fileUrl`: downloadable file URL (HTTP/HTTPS).
+- `fileUrl`: downloadable file URL (HTTP/HTTPS) for digital files.
+- `courseUri`: linked course path for course products.
 - `active`: controls storefront visibility.
 
-Storefront route: `/digital-files`.
+Storefront route: `/shop` and product route: `/shop/[slug]`.
 ## Where to start
 
 - Project setup: `README.md`

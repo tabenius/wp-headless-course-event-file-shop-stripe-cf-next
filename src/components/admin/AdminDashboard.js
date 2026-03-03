@@ -13,6 +13,31 @@ function toCents(units) {
   return Math.round(parsed * 100);
 }
 
+function slugify(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function emptyProduct() {
+  return {
+    name: "",
+    slug: "",
+    type: "digital_file",
+    description: "",
+    imageUrl: "",
+    priceCents: 0,
+    currency: "sek",
+    fileUrl: "",
+    courseUri: "",
+    active: true,
+    slugEdited: false,
+  };
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [courses, setCourses] = useState({});
@@ -27,6 +52,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [healthChecks, setHealthChecks] = useState(null);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsMessage, setProductsMessage] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/course-access")
@@ -40,6 +68,24 @@ export default function AdminDashboard() {
       })
       .catch((fetchError) => {
         setError(fetchError.message || "Det gick inte att hämta admin-data.");
+      });
+
+    fetch("/api/admin/products")
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok || !json?.ok)
+          throw new Error(json?.error || "Kunde inte hämta produkter.");
+        const rows = Array.isArray(json.products) ? json.products : [];
+        setProducts(
+          rows.map((product) => ({
+            ...emptyProduct(),
+            ...product,
+            slugEdited: true,
+          })),
+        );
+      })
+      .catch((fetchError) => {
+        setError(fetchError.message || "Det gick inte att hämta produktlistan.");
       });
   }, []);
 
@@ -66,6 +112,71 @@ export default function AdminDashboard() {
     setAllowedUsers((prev) =>
       prev.includes(email) ? prev.filter((value) => value !== email) : [...prev, email],
     );
+  }
+
+  function updateProduct(index, key, value) {
+    setProducts((prev) =>
+      prev.map((product, idx) => {
+        if (idx !== index) return product;
+        if (key === "name") {
+          const nextName = value;
+          const nextSlug = product.slugEdited ? product.slug : slugify(nextName);
+          return { ...product, name: nextName, slug: nextSlug };
+        }
+        if (key === "slug") {
+          return { ...product, slug: slugify(value), slugEdited: true };
+        }
+        return { ...product, [key]: value };
+      }),
+    );
+  }
+
+  function addProductRow() {
+    setProducts((prev) => [...prev, emptyProduct()]);
+  }
+
+  function removeProductRow(index) {
+    setProducts((prev) => prev.filter((_, idx) => idx !== index));
+  }
+
+  async function saveProducts() {
+    setProductsLoading(true);
+    setProductsMessage("");
+    setError("");
+
+    const payload = products.map((product) => ({
+      name: product.name,
+      slug: product.slug,
+      type: product.type === "course" ? "course" : "digital_file",
+      description: product.description,
+      imageUrl: product.imageUrl,
+      priceCents: Number.isFinite(product.priceCents)
+        ? product.priceCents
+        : Number.parseInt(String(product.priceCents || "0"), 10) || 0,
+      currency: product.currency || "sek",
+      fileUrl: product.fileUrl,
+      courseUri: product.courseUri,
+      active: product.active !== false,
+    }));
+
+    try {
+      const response = await fetch("/api/admin/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ products: payload }),
+      });
+      const json = await response.json();
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || "Det gick inte att spara produkter.");
+      }
+      const rows = Array.isArray(json.products) ? json.products : [];
+      setProducts(rows.map((product) => ({ ...emptyProduct(), ...product, slugEdited: true })));
+      setProductsMessage("Produktlistan sparades.");
+    } catch (saveError) {
+      setError(saveError.message || "Det gick inte att spara produkter.");
+    } finally {
+      setProductsLoading(false);
+    }
   }
 
   async function saveCourse() {
@@ -113,18 +224,18 @@ export default function AdminDashboard() {
       }
       setHealthChecks(json.checks || {});
     } catch (healthError) {
-      const message =
+      const msg =
         healthError instanceof Error ? healthError.message : "Hälsokontrollen misslyckades.";
-      setError(message);
+      setError(msg);
     } finally {
       setHealthLoading(false);
     }
   }
 
   return (
-    <section className="max-w-5xl mx-auto px-6 py-16 space-y-8">
+    <section className="max-w-6xl mx-auto px-6 py-16 space-y-10">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Admin för kursåtkomst</h1>
+        <h1 className="text-3xl font-bold">Admin</h1>
         <button
           type="button"
           onClick={logoutAdmin}
@@ -168,88 +279,214 @@ export default function AdminDashboard() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-600">
-            Kör kontrollen för att verifiera WordPress GraphQL, Stripe, autentisering och inloggningstjänster.
-          </p>
+          <p className="text-sm text-gray-600">Kör kontroll för att verifiera integrationer.</p>
         )}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="space-y-3">
-          <label className="text-sm text-gray-700">Kurs-URI</label>
-          <input
-            type="text"
-            value={selectedCourse}
-            onChange={(event) => setSelectedCourse(event.target.value)}
-            placeholder="/courses/my-course"
-            className="w-full border rounded px-3 py-2"
-          />
-          {knownCourses.length > 0 ? (
-            <select
-              className="w-full border rounded px-3 py-2"
-              value={selectedCourse}
-              onChange={(event) => setSelectedCourse(event.target.value)}
-            >
-              <option value="">Välj befintlig kurs</option>
-              {knownCourses.map((courseUri) => (
-                <option key={courseUri} value={courseUri}>
-                  {courseUri}
-                </option>
-              ))}
-            </select>
-          ) : null}
+      <div className="border rounded p-5 space-y-4">
+        <h2 className="text-2xl font-semibold">Shop-produkter</h2>
+        <p className="text-sm text-gray-600">Hantera filer och kursprodukter för /shop.</p>
 
-          <label className="text-sm text-gray-700">Kursavgift</label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              min="0"
-              step="0.01"
-              className="w-full border rounded px-3 py-2"
-            />
-            <input
-              type="text"
-              value={currency}
-              onChange={(event) => setCurrency(event.target.value.toLowerCase())}
-              className="w-24 border rounded px-3 py-2"
-              maxLength={5}
-            />
-          </div>
-        </div>
+        <div className="space-y-6">
+          {products.map((product, index) => (
+            <div key={`${product.slug || "row"}-${index}`} className="border rounded p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold">Produkt {index + 1}</h3>
+                <button
+                  type="button"
+                  onClick={() => removeProductRow(index)}
+                  className="text-red-700 text-sm hover:underline"
+                >
+                  Ta bort
+                </button>
+              </div>
 
-        <div className="space-y-3">
-          <label className="text-sm text-gray-700">Tillåtna användare</label>
-          <div className="border rounded p-3 max-h-72 overflow-auto space-y-2">
-            {users.length === 0 ? (
-              <p className="text-sm text-gray-500">Inga registrerade användare hittades.</p>
-            ) : (
-              users.map((user) => (
-                <label key={user.email} className="flex items-center gap-2 text-sm">
+              <div className="grid md:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder="Namn"
+                  value={product.name}
+                  onChange={(event) => updateProduct(index, "name", event.target.value)}
+                  className="border rounded px-3 py-2"
+                />
+                <input
+                  type="text"
+                  placeholder="Slug"
+                  value={product.slug}
+                  onChange={(event) => updateProduct(index, "slug", event.target.value)}
+                  className="border rounded px-3 py-2"
+                />
+                <select
+                  value={product.type}
+                  onChange={(event) => updateProduct(index, "type", event.target.value)}
+                  className="border rounded px-3 py-2"
+                >
+                  <option value="digital_file">Digital fil</option>
+                  <option value="course">Kursprodukt</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Valuta (t.ex. sek)"
+                  value={product.currency}
+                  onChange={(event) => updateProduct(index, "currency", event.target.value.toLowerCase())}
+                  className="border rounded px-3 py-2"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Pris i ören"
+                  value={product.priceCents}
+                  onChange={(event) =>
+                    updateProduct(index, "priceCents", Number.parseInt(event.target.value || "0", 10) || 0)
+                  }
+                  className="border rounded px-3 py-2"
+                />
+                <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={allowedUsers.includes(user.email)}
-                    onChange={() => toggleUser(user.email)}
+                    checked={product.active !== false}
+                    onChange={(event) => updateProduct(index, "active", event.target.checked)}
                   />
-                  <span>
-                    {user.name} ({user.email})
-                  </span>
+                  Aktiv produkt
                 </label>
-              ))
-            )}
-          </div>
+              </div>
+
+              <textarea
+                rows="3"
+                placeholder="Beskrivning"
+                value={product.description}
+                onChange={(event) => updateProduct(index, "description", event.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+
+              <input
+                type="text"
+                placeholder="Bild-URL (https://...)"
+                value={product.imageUrl}
+                onChange={(event) => updateProduct(index, "imageUrl", event.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+
+              {product.type === "digital_file" ? (
+                <input
+                  type="text"
+                  placeholder="Fil-URL (https://...)"
+                  value={product.fileUrl}
+                  onChange={(event) => updateProduct(index, "fileUrl", event.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                />
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Kurs-URI (/courses/min-kurs)"
+                  value={product.courseUri}
+                  onChange={(event) => updateProduct(index, "courseUri", event.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                />
+              )}
+            </div>
+          ))}
         </div>
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={addProductRow}
+            className="px-4 py-2 rounded border hover:bg-gray-50"
+          >
+            Lägg till produkt
+          </button>
+          <button
+            type="button"
+            onClick={saveProducts}
+            className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
+            disabled={productsLoading}
+          >
+            {productsLoading ? "Sparar..." : "Spara produkter"}
+          </button>
+        </div>
+        {productsMessage ? <p className="text-green-700 text-sm">{productsMessage}</p> : null}
       </div>
 
-      <button
-        type="button"
-        onClick={saveCourse}
-        className="px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
-        disabled={loading}
-      >
-        {loading ? "Sparar..." : "Spara åtkomstinställningar"}
-      </button>
+      <div className="border rounded p-5 space-y-4">
+        <h2 className="text-2xl font-semibold">Kursåtkomst</h2>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-3">
+            <label className="text-sm text-gray-700">Kurs-URI</label>
+            <input
+              type="text"
+              value={selectedCourse}
+              onChange={(event) => setSelectedCourse(event.target.value)}
+              placeholder="/courses/my-course"
+              className="w-full border rounded px-3 py-2"
+            />
+            {knownCourses.length > 0 ? (
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={selectedCourse}
+                onChange={(event) => setSelectedCourse(event.target.value)}
+              >
+                <option value="">Välj befintlig kurs</option>
+                {knownCourses.map((courseUri) => (
+                  <option key={courseUri} value={courseUri}>
+                    {courseUri}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+
+            <label className="text-sm text-gray-700">Kursavgift</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full border rounded px-3 py-2"
+              />
+              <input
+                type="text"
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value.toLowerCase())}
+                className="w-24 border rounded px-3 py-2"
+                maxLength={5}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm text-gray-700">Tillåtna användare</label>
+            <div className="border rounded p-3 max-h-72 overflow-auto space-y-2">
+              {users.length === 0 ? (
+                <p className="text-sm text-gray-500">Inga registrerade användare hittades.</p>
+              ) : (
+                users.map((user) => (
+                  <label key={user.email} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={allowedUsers.includes(user.email)}
+                      onChange={() => toggleUser(user.email)}
+                    />
+                    <span>
+                      {user.name} ({user.email})
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={saveCourse}
+          className="px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? "Sparar..." : "Spara åtkomstinställningar"}
+        </button>
+      </div>
 
       {message ? <p className="text-green-700">{message}</p> : null}
       {error ? <p className="text-red-600">{error}</p> : null}

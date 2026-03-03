@@ -28,14 +28,17 @@ Detta projekt kombinerar Next.js, WordPress/WPGraphQL och Stripe för att skydda
 
 Digitala produkter konfigureras i `config/digital-products.json`:
 
-- `id`: stabil produktidentifierare.
-- `title`: produktnamn i UI/Stripe.
+- `name`: produktnamn i UI/Stripe.
+- `slug`: auto-genererad/redigerbar URL-slug.
 - `description`: valfri text i butiken.
+- `imageUrl`: valfri bild-URL för produkten.
+- `type`: `digital_file` eller `course`.
 - `priceCents` och `currency`: betalningsbelopp.
-- `fileUrl`: nedladdnings-URL (HTTP/HTTPS).
+- `fileUrl`: nedladdnings-URL (HTTP/HTTPS) för digitala filer.
+- `courseUri`: kursens path för kursprodukter.
 - `active`: styr om produkten visas i butiken.
 
-Butikssida: `/digital-files`.
+Butikssida: `/shop` och produktsida: `/shop/[slug]`.
 
 ## Börja här
 

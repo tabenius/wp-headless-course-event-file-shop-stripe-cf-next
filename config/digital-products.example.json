@@ -11,6 +11,17 @@
     "active": true
   },
   {
+    "name": "Mallpaket ZIP",
+    "slug": "mallpaket-zip",
+    "type": "digital_file",
+    "description": "Nedladdningsbart paket med mallar och checklistor.",
+    "imageUrl": "https://images.example.test/shop/mallpaket-cover.jpg",
+    "priceCents": 4900,
+    "currency": "sek",
+    "fileUrl": "https://downloads.example.test/mallpaket.zip",
+    "active": true
+  },
+  {
     "name": "Kurs: AI i praktiken",
     "slug": "kurs-ai-i-praktiken",
     "type": "course",

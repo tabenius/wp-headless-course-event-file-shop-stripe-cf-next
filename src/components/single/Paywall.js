@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 
-export default function CoursePaywall({
+export default function Paywall({
   courseUri,
   courseTitle,
   userEmail,
   priceCents,
   currency,
   stripeEnabled,
+  contentKind = "course",
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +24,11 @@ export default function CoursePaywall({
     const response = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ courseUri, courseTitle }),
+      body: JSON.stringify({
+        contentUri: courseUri,
+        contentTitle: courseTitle,
+        contentKind,
+      }),
     });
     const json = await response.json();
     setLoading(false);
@@ -36,10 +41,10 @@ export default function CoursePaywall({
 
   return (
     <section className="max-w-2xl mx-auto px-6 py-24 space-y-6 text-center">
-      <h1 className="text-4xl font-bold">{courseTitle || "Kurs"}</h1>
+      <h1 className="text-4xl font-bold">{courseTitle || "Innehåll"}</h1>
       <p className="text-gray-700">
         Du är inloggad som <strong>{userEmail}</strong>, men du har ännu inte
-        tillgång till den här kursen.
+        tillgång till den här {contentKind === "event" ? "händelsen" : "kursen"}.
       </p>
       <p className="text-gray-700">
         Avgift:{" "}
@@ -53,7 +58,9 @@ export default function CoursePaywall({
         disabled={loading}
         className="px-8 py-3 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
       >
-        {loading ? "Skickar dig till Stripe..." : "Betala och lås upp kursen"}
+        {loading
+          ? "Skickar dig till Stripe..."
+          : `Betala och lås upp ${contentKind === "event" ? "händelsen" : "kursen"}`}
       </button>
       {error ? <p className="text-red-600">{error}</p> : null}
     </section>

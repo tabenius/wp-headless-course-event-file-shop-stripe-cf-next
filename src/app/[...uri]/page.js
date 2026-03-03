@@ -9,7 +9,7 @@ import Post from "@/components/single/Post";
 import Event from "@/components/single/Event";
 import Product from "@/components/single/Product";
 import Course from "@/components/single/Course";
-import CoursePaywall from "@/components/single/CoursePaywall";
+import Paywall from "@/components/single/Paywall";
 import { fetchGraphQL } from "@/lib/client";
 import { auth } from "@/auth";
 import {
@@ -82,13 +82,14 @@ export default async function ContentPage({ params, searchParams }) {
     typeof contentType === "string" && contentType.includes("Product");
   const isCourseType =
     typeof contentType === "string" && contentType.includes("Course");
+  const isEventType = contentType === "Event";
+  const isPaidAccessType = isCourseType || isEventType;
 
   // Add your own CPT templates here for single post types
   if (contentType === "Post") return <Post data={data.nodeByUri} />;
   if (contentType === "Page") return <Page data={data.nodeByUri} />;
-  if (contentType === "Event") return <Event data={data.nodeByUri} />;
   if (isProductType) return <Product data={data.nodeByUri} />;
-  if (isCourseType) {
+  if (isPaidAccessType) {
     const session = await auth();
     if (!session?.user) {
       redirect(`/auth/signin?callbackUrl=${encodeURIComponent(uri)}`);
@@ -131,17 +132,18 @@ export default async function ContentPage({ params, searchParams }) {
         10,
       );
       return (
-        <CoursePaywall
+        <Paywall
           courseUri={uri}
           courseTitle={data?.nodeByUri?.title}
           userEmail={userEmail}
           priceCents={accessConfig?.priceCents ?? (Number.isFinite(defaultPrice) ? defaultPrice : 0)}
           currency={accessConfig?.currency || process.env.DEFAULT_COURSE_FEE_CURRENCY || "usd"}
           stripeEnabled={isStripeEnabled()}
+          contentKind={isEventType ? "event" : "course"}
         />
       );
     }
-    return <Course data={data.nodeByUri} />;
+    return isEventType ? <Event data={data.nodeByUri} /> : <Course data={data.nodeByUri} />;
   }
   notFound();
 }

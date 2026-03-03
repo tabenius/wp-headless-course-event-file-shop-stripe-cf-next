@@ -53,10 +53,11 @@ Common production variables:
 - `DIGITAL_ACCESS_STORE`
 - `CF_DIGITAL_ACCESS_KV_KEY`
 
-Digital product catalog:
+Shop product catalog:
 
-- `config/digital-products.json` defines downloadable files, pricing, and IDs.
-- Storefront is available at `/digital-files`.
+- `config/digital-products.json` defines products, pricing, slugs, and delivery type.
+- `config/digital-products.example.json` is a seed/example catalog.
+- Products are listed at `/shop` with individual pages at `/shop/[slug]`.
 
 ## Scripts
 

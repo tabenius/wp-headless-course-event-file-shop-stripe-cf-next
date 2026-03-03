@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getDigitalProductById } from "@/lib/digitalProducts";
+import { getDigitalProductBySlug } from "@/lib/digitalProducts";
 import { createStripePaymentSession, isStripeEnabled } from "@/lib/stripe";
 
 export async function POST(request) {
@@ -20,15 +20,15 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const productId = typeof body?.productId === "string" ? body.productId.trim() : "";
-    if (!productId) {
+    const productSlug = typeof body?.productSlug === "string" ? body.productSlug.trim() : "";
+    if (!productSlug) {
       return NextResponse.json(
         { ok: false, error: "Produkten kunde inte förberedas för betalning." },
         { status: 400 },
       );
     }
 
-    const product = await getDigitalProductById(productId);
+    const product = await getDigitalProductBySlug(productSlug);
     if (!product || !product.active || product.priceCents <= 0) {
       return NextResponse.json(
         { ok: false, error: "Produkten är inte tillgänglig för betalning just nu." },
@@ -37,19 +37,20 @@ export async function POST(request) {
     }
 
     const baseUrl = new URL(request.url).origin;
-    const successUrl = `${baseUrl}/digital-files?checkout=success&product_id=${encodeURIComponent(product.id)}&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${baseUrl}/digital-files?checkout=cancel&product_id=${encodeURIComponent(product.id)}`;
+    const successUrl = `${baseUrl}/shop?checkout=success&product_id=${encodeURIComponent(product.id)}&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${baseUrl}/shop?checkout=cancel&product_id=${encodeURIComponent(product.id)}`;
 
     const checkout = await createStripePaymentSession({
-      itemName: product.title,
+      itemName: product.name,
       priceCents: product.priceCents,
       currency: product.currency,
       email: session.user.email,
       successUrl,
       cancelUrl,
       metadata: {
-        purchase_kind: "digital_file",
+        purchase_kind: product.type === "course" ? "course_product" : "digital_file",
         digital_product_id: product.id,
+        ...(product.courseUri ? { course_uri: product.courseUri } : {}),
       },
     });
 

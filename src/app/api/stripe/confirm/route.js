@@ -22,7 +22,12 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const sessionId = typeof body?.sessionId === "string" ? body.sessionId : "";
-    const courseUri = typeof body?.courseUri === "string" ? body.courseUri : "";
+    const courseUri =
+      typeof body?.contentUri === "string"
+        ? body.contentUri
+        : typeof body?.courseUri === "string"
+          ? body.courseUri
+          : "";
     if (!sessionId || !courseUri) {
       console.error("Stripe confirmation rejected: missing session ID or course URI");
       return NextResponse.json(

@@ -62,8 +62,11 @@ export async function POST(request) {
       ).toLowerCase();
 
       if (paymentStatus === "paid" && email) {
-        if (purchaseKind === "digital_file" && digitalProductId) {
+        if ((purchaseKind === "digital_file" || purchaseKind === "course_product") && digitalProductId) {
           await grantDigitalAccess(digitalProductId, email);
+          if (purchaseKind === "course_product" && courseUri) {
+            await grantCourseAccess(courseUri, email);
+          }
         } else if (courseUri) {
           await grantCourseAccess(courseUri, email);
         }

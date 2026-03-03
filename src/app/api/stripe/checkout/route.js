@@ -21,12 +21,23 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const courseUri = typeof body?.courseUri === "string" ? body.courseUri : "";
-    const courseTitle = typeof body?.courseTitle === "string" ? body.courseTitle : "";
+    const courseUri =
+      typeof body?.contentUri === "string"
+        ? body.contentUri
+        : typeof body?.courseUri === "string"
+          ? body.courseUri
+          : "";
+    const courseTitle =
+      typeof body?.contentTitle === "string"
+        ? body.contentTitle
+        : typeof body?.courseTitle === "string"
+          ? body.courseTitle
+          : "";
+    const contentKind = body?.contentKind === "event" ? "event" : "course";
     if (!courseUri) {
-      console.error("Stripe checkout request rejected: missing course URI");
+      console.error("Stripe checkout request rejected: missing content URI");
       return NextResponse.json(
-        { ok: false, error: "Kursen kunde inte förberedas för betalning." },
+        { ok: false, error: "Innehållet kunde inte förberedas för betalning." },
         { status: 400 },
       );
     }
@@ -38,7 +49,13 @@ export async function POST(request) {
         `Stripe checkout unavailable for ${courseUri}: missing or invalid course price`,
       );
       return NextResponse.json(
-        { ok: false, error: "Kursen är inte tillgänglig för betalning just nu." },
+        {
+          ok: false,
+          error:
+            contentKind === "event"
+              ? "Händelsen är inte tillgänglig för betalning just nu."
+              : "Kursen är inte tillgänglig för betalning just nu.",
+        },
         { status: 400 },
       );
     }

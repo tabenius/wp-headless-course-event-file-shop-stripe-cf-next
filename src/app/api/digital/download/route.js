@@ -33,6 +33,12 @@ export async function GET(request) {
   if (!product || !product.active) {
     return NextResponse.json({ ok: false, error: "Produkten hittades inte." }, { status: 404 });
   }
+  if (product.type !== "digital_file") {
+    return NextResponse.json(
+      { ok: false, error: "Den här produkten laddas inte ner som fil. Se produktsidan i butiken." },
+      { status: 400 },
+    );
+  }
 
   const canDownload = await hasDigitalAccess(product.id, session.user.email);
   if (!canDownload) {
