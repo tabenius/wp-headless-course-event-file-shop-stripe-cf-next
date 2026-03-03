@@ -6,6 +6,50 @@ import { useRouter } from "next/navigation";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
+const PASSWORD_WORDS = [
+  "omsluten",
+  "fitta",
+  "kuk",
+  "kramar",
+  "upptåg",
+  "ostmacka",
+  "kraft",
+  "styrka",
+  "modig",
+  "anknytning",
+  "vatten",
+  "eld",
+  "luft",
+  "jord",
+  "omtanke",
+  "överlämna",
+  "örngott",
+  "hem",
+  "äventyr",
+  "fantasi",
+  "dröm",
+  "verklighet",
+  "tillit",
+];
+
+function randomInt(max) {
+  if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+    const bytes = new Uint32Array(1);
+    window.crypto.getRandomValues(bytes);
+    return bytes[0] % max;
+  }
+  return Math.floor(Math.random() * max);
+}
+
+function generateMemorablePassword() {
+  const selected = [];
+  while (selected.length < 4) {
+    const word = PASSWORD_WORDS[randomInt(PASSWORD_WORDS.length)];
+    if (!selected.includes(word)) selected.push(word);
+  }
+  const suffix = String(1000 + randomInt(9000));
+  return `${selected.join("-")}-${suffix}`;
+}
 
 export default function RegisterClient() {
   const router = useRouter();
@@ -14,6 +58,7 @@ export default function RegisterClient() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [generated, setGenerated] = useState(false);
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -96,13 +141,28 @@ export default function RegisterClient() {
         <input
           type="password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => {
+            setGenerated(false);
+            setPassword(event.target.value);
+          }}
           placeholder="Lösenord (minst 8 tecken)"
           className="w-full border rounded px-3 py-2"
           minLength={MIN_PASSWORD_LENGTH}
           autoComplete="new-password"
           required
         />
+        <button
+          type="button"
+          onClick={() => {
+            setPassword(generateMemorablePassword());
+            setGenerated(true);
+            setError("");
+          }}
+          className="w-full border border-teal-700 text-teal-800 rounded px-4 py-2 hover:bg-teal-50"
+        >
+          Generera minnesvänligt lösenord
+        </button>
+        {generated ? <p className="text-sm text-teal-800">Nytt lösenord genererat.</p> : null}
 
         <button
           type="submit"
