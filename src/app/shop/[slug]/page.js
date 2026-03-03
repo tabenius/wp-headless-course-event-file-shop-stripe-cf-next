@@ -61,3 +61,44 @@ export default async function ShopProductPage({ params, searchParams }) {
     />
   );
 }
+
+export async function generateMetadata({ params }) {
+  const slug = typeof params?.slug === "string" ? params.slug : "";
+  const product = await getDigitalProductBySlug(slug);
+  if (!product) {
+    return { title: "Shop - RAGBAZ" };
+  }
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+    "https://example.com";
+  const canonical = `${baseUrl.replace(/\/+$/, "")}/shop/${encodeURIComponent(product.slug)}`;
+  const description =
+    product.description || (product.type === "course" ? "Köp kurs och få tillgång direkt." : "Köp digital fil och ladda ner direkt.");
+  const images = product.imageUrl
+    ? [
+        {
+          url: product.imageUrl,
+          alt: product.name,
+        },
+      ]
+    : [];
+
+  return {
+    title: `${product.name} | Shop`,
+    description,
+    openGraph: {
+      title: `${product.name} | Shop`,
+      description,
+      url: canonical,
+      type: "product",
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | Shop`,
+      description,
+      images: images.map((image) => image.url),
+    },
+  };
+}
