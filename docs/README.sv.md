@@ -2,7 +2,15 @@
 
 ## Översikt
 
-Detta projekt kombinerar Next.js, WordPress/WPGraphQL och Stripe för att skydda kursinnehåll bakom inloggning och betalning.
+Detta projekt kombinerar Next.js, WordPress/WPGraphQL och Stripe för att skydda kursinnehåll bakom inloggning och betalning, samtidigt som det låter dig sälja filer, hantera eventregistreringar, skicka presenter (inklusive gratisprodukter) och bygga mer flexibla shop-flöden.
+
+Frontend-appen använder WordPress som innehålls-CMS och GraphQL-endpoint, men kompletteras av en egen serverlogik (Next.js + Cloudflare Workers + KV) som håller reda på åtkomstregler, Stripe-betalningar och digitala leveranser. WordPress ansvarar för att publicera kurser, event och statiskt material, medan den här stacken tillför:
+
+- modern React-baserad UI med Hub-like shop/courses dashboards,
+- centraliserad accesskontroll och Stripe-webhooks för alla köpta resurser,
+- ett CLI-/admin-gränssnitt för att definiera produkter, prismodeller och tilldela flera produkter till samma kurs/event.
+
+Styrkorna är att du kan förlita dig på WordPress för välkända publiceringsflöden, samtidigt som åtkomstkontroll, digital nedladdning, eventregistrering och flexibel paketering hanteras av Next.js + Cloudflare-ramverket. Det gör det enkelt att lägga till fler digitala produkter, bundle-priser, gratis registreringar, och att växa till exempelvis premium-evenemang utan att ändra WordPress själva.
 
 ## Huvudflöden
 
