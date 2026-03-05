@@ -10,7 +10,13 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
     return {};
   }
 
+  const debugGraphQL = process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
+
   try {
+    if (debugGraphQL) {
+      console.debug("[GraphQL Debug] Query:", query);
+      console.debug("[GraphQL Debug] Variables:", variables);
+    }
     const fetchOptions = {
       method: "POST",
       headers: {
@@ -30,6 +36,9 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
     }
 
     const response = await fetch(`${wordpressUrl}/graphql`, fetchOptions);
+    if (debugGraphQL) {
+      console.debug("[GraphQL Debug] HTTP status:", response.status, response.statusText);
+    }
     const contentType = response.headers.get("content-type") || "";
 
     if (!response.ok || !contentType.includes("application/json")) {
@@ -40,6 +49,9 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
     }
 
     const result = await response.json();
+    if (debugGraphQL) {
+      console.debug("[GraphQL Debug] Response payload:", result);
+    }
     if (Array.isArray(result?.errors) && result.errors.length > 0) {
       console.error("GraphQL Error:", result.errors);
     }

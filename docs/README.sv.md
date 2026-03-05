@@ -61,3 +61,4 @@ npm install
 cp .env.example .env
 npm run dev
 ```
+Aktivera `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` i din `.env` för att logga varje WordPress GraphQL-anrop (payload, status och svar) i serverkonsolen om du vill felsöka varför sidor inte renderas.

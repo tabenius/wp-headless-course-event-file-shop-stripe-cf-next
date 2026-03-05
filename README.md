@@ -124,3 +124,6 @@ Den här komponten kombinerar Next.js, WordPress/WPGraphQL, Stripe och Cloudflar
 1. Lägg till riktiga filer/bilder i `config/digital-products.json` eller via admin och klicka på “List products + generated URLs” i konfigurationsverktyget.
 2. Kör `npm run lint` + `npm run test:theme` innan deploy, sedan `npm run cf:deploy` eller `npm run start` i produktion.
 3. Säkerställ att Stripe-webhooken är länkad till `/api/stripe/webhook` och att `purchase_kind` metadata matchar dina produkter.
+Diagnostics:
+
+- `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` logs every GraphQL request/response to the server console so you can inspect status codes, payloads, and errors when rendering any page that hits WordPress.
