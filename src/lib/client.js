@@ -9,6 +9,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
     console.error("NEXT_PUBLIC_WORDPRESS_URL is not set");
     return {};
   }
+  const graphqlEndpoint = `${wordpressUrl.replace(/\/+$/, "")}/graphql`;
 
   const debugGraphQL = process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
 
@@ -17,10 +18,17 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       console.debug("[GraphQL Debug] Query:", query);
       console.debug("[GraphQL Debug] Variables:", variables);
     }
+    const authToken = process.env.WORDPRESS_GRAPHQL_AUTH_TOKEN;
+    const headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
     const fetchOptions = {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...headers,
       },
       body: JSON.stringify({
         query,
@@ -35,8 +43,9 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       };
     }
 
-    const response = await fetch(`${wordpressUrl}/graphql`, fetchOptions);
+    const response = await fetch(graphqlEndpoint, fetchOptions);
     if (debugGraphQL) {
+      console.debug("[GraphQL Debug] Endpoint:", graphqlEndpoint);
       console.debug("[GraphQL Debug] HTTP status:", response.status, response.statusText);
     }
     const contentType = response.headers.get("content-type") || "";
