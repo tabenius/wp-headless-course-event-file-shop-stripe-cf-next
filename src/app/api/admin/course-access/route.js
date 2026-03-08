@@ -56,7 +56,7 @@ export async function PUT(request) {
       typeof body?.priceCents === "number"
         ? body.priceCents
         : Number.parseInt(String(body?.priceCents || "0"), 10);
-    const currency = typeof body?.currency === "string" ? body.currency : "usd";
+    const currency = typeof body?.currency === "string" ? body.currency.toUpperCase() : "SEK";
     const state = await setCourseAccess({
       courseUri,
       allowedUsers,

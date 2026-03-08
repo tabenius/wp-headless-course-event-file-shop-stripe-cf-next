@@ -43,7 +43,7 @@ export async function POST(request) {
     }
     const config = await getCourseAccessConfig(courseUri);
     const priceCents = config?.priceCents ?? 0;
-    const currency = config?.currency || "usd";
+    const currency = (config?.currency || "SEK").toUpperCase();
     if (priceCents <= 0) {
       console.error(
         `Stripe checkout unavailable for ${courseUri}: missing or invalid course price`,

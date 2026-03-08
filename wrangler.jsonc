@@ -15,8 +15,7 @@
 		"COURSE_ACCESS_STORE": "cloudflare",
 		"USER_STORE_BACKEND": "cloudflare",
 		"DIGITAL_ACCESS_STORE": "cloudflare",
-		"DEFAULT_COURSE_FEE_CENTS": "499900",
-		"DEFAULT_COURSE_FEE_CURRENCY": "sek",
+		"DEFAULT_COURSE_FEE_CURRENCY": "SEK",
 		"CF_KV_KEY": "course-access",
 		"CF_USERS_KV_KEY": "course-users"
 	},

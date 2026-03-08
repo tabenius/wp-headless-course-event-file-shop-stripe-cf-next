@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 function formatPrice(priceCents, currency) {
-  return `${(priceCents / 100).toFixed(2)} ${String(currency || "sek").toUpperCase()}`;
+  return `${(priceCents / 100).toFixed(2)} ${String(currency || "SEK").toUpperCase()}`;
 }
 
 export default function ShopProductDetail({ user, product, owned, stripeEnabled, checkoutStatus }) {

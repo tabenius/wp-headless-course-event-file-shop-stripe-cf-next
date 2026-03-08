@@ -22,8 +22,8 @@ function normalizeCourseUri(courseUri) {
 
 function normalizeCurrency(currency) {
   return typeof currency === "string" && currency.trim() !== ""
-    ? currency.trim().toLowerCase()
-    : "usd";
+    ? currency.trim().toUpperCase()
+    : "SEK";
 }
 
 function sanitizeState(state) {

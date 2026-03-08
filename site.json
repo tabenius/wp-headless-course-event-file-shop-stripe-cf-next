@@ -7,6 +7,7 @@
   "locale": "sv_SE",
   "lang": "sv",
   "copyright": "XTAS / Sofias Academy",
+  "defaultCurrency": "SEK",
   "logo": {
     "path": "/img/logo.png",
     "width": 400,

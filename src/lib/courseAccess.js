@@ -80,7 +80,7 @@ async function getWordPressAdminState() {
         typeof rule.priceCents === "number" && rule.priceCents >= 0
           ? rule.priceCents
           : 0,
-      currency: typeof rule.currency === "string" ? rule.currency : "usd",
+      currency: typeof rule.currency === "string" ? rule.currency.toUpperCase() : "SEK",
       updatedAt: typeof rule.updatedAt === "string" ? rule.updatedAt : "",
     };
   }

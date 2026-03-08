@@ -30,7 +30,7 @@ function emptyProduct() {
     description: "",
     imageUrl: "",
     priceCents: 0,
-    currency: "sek",
+    currency: "SEK",
     fileUrl: "",
     courseUri: "",
     active: true,
@@ -46,7 +46,7 @@ export default function AdminDashboard() {
   const [storage, setStorage] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [price, setPrice] = useState("0.00");
-  const [currency, setCurrency] = useState("usd");
+  const [currency, setCurrency] = useState("SEK");
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [manualEmail, setManualEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -96,13 +96,13 @@ export default function AdminDashboard() {
     if (!selectedCourse) return;
     const config = courses[selectedCourse];
     if (!config) {
-      setPrice("0.00");
-      setCurrency("usd");
+      setPrice("");
+      setCurrency("SEK");
       setAllowedUsers([]);
       return;
     }
-    setPrice(toCurrencyUnits(config.priceCents || 0));
-    setCurrency(config.currency || "usd");
+    setPrice(toCurrencyUnits(config.priceCents ?? 0));
+    setCurrency((config.currency || "SEK").toUpperCase());
     setAllowedUsers(Array.isArray(config.allowedUsers) ? config.allowedUsers : []);
   }, [selectedCourse, courses]);
 
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
       priceCents: Number.isFinite(product.priceCents)
         ? product.priceCents
         : Number.parseInt(String(product.priceCents || "0"), 10) || 0,
-      currency: product.currency || "sek",
+      currency: (product.currency || "SEK").toUpperCase(),
       fileUrl: product.fileUrl,
       courseUri: product.courseUri,
       active: product.active !== false,
@@ -194,6 +194,10 @@ export default function AdminDashboard() {
   async function saveCourse() {
     if (!selectedCourse) {
       setError("Ange en kurs-URI.");
+      return;
+    }
+    if (price === "" || price === null || price === undefined) {
+      setError("Ange ett pris (kan vara 0).");
       return;
     }
     setError("");
@@ -340,13 +344,14 @@ export default function AdminDashboard() {
                   type="text"
                   placeholder="Valuta (t.ex. sek)"
                   value={product.currency}
-                  onChange={(event) => updateProduct(index, "currency", event.target.value.toLowerCase())}
+                  onChange={(event) => updateProduct(index, "currency", event.target.value.toUpperCase())}
                   className="border rounded px-3 py-2"
                 />
                 <input
                   type="number"
                   min="0"
-                  placeholder="Pris i ören"
+                  required
+                  placeholder="Pris i ören (obligatoriskt)"
                   value={product.priceCents}
                   onChange={(event) =>
                     updateProduct(index, "priceCents", Number.parseInt(event.target.value || "0", 10) || 0)
@@ -473,7 +478,7 @@ export default function AdminDashboard() {
               </>
             )}
 
-            <label className="text-sm text-gray-700">Kursavgift</label>
+            <label className="text-sm text-gray-700">Kursavgift (obligatoriskt, kan vara 0)</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -481,12 +486,14 @@ export default function AdminDashboard() {
                 onChange={(event) => setPrice(event.target.value)}
                 min="0"
                 step="0.01"
+                required
+                placeholder="0.00"
                 className="w-full border rounded px-3 py-2"
               />
               <input
                 type="text"
                 value={currency}
-                onChange={(event) => setCurrency(event.target.value.toLowerCase())}
+                onChange={(event) => setCurrency(event.target.value.toUpperCase())}
                 className="w-24 border rounded px-3 py-2"
                 maxLength={5}
               />

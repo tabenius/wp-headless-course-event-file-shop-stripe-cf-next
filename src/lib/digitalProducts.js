@@ -5,8 +5,8 @@ export const PRODUCT_EXAMPLE_FILE = "config/digital-products.example.json";
 
 function normalizeCurrency(currency) {
   return typeof currency === "string" && currency.trim()
-    ? currency.trim().toLowerCase()
-    : "usd";
+    ? currency.trim().toUpperCase()
+    : "SEK";
 }
 
 function normalizeType(type) {

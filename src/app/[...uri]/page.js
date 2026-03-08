@@ -276,17 +276,16 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
 
     if (!canAccess) {
       const accessConfig = await getCourseAccessConfig(uri);
-      const defaultPrice = Number.parseInt(
-        process.env.DEFAULT_COURSE_FEE_CENTS || "0",
-        10,
-      );
+      const defaultPrice = process.env.DEFAULT_COURSE_FEE_CENTS
+        ? Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS, 10)
+        : undefined;
       return (
         <Paywall
           courseUri={uri}
           courseTitle={node?.title}
           userEmail={userEmail}
-          priceCents={accessConfig?.priceCents ?? (Number.isFinite(defaultPrice) ? defaultPrice : 0)}
-          currency={accessConfig?.currency || process.env.DEFAULT_COURSE_FEE_CURRENCY || "usd"}
+          priceCents={accessConfig?.priceCents ?? (Number.isFinite(defaultPrice) ? defaultPrice : undefined)}
+          currency={accessConfig?.currency || process.env.DEFAULT_COURSE_FEE_CURRENCY || site.defaultCurrency || "SEK"}
           stripeEnabled={isStripeEnabled()}
           contentKind={isEventType ? "event" : "course"}
         />
