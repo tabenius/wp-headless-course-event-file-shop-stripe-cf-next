@@ -30,17 +30,29 @@ export default async function Header() {
         </h1>
 
         <nav className="space-x-6 w-full md:w-auto text-center md:text-left">
-          <Link href="/blog" className={menuItemClass}>
-            Blogg
+          <Link href="/kurser-events" className={menuItemClass}>
+            Kurser &amp; Events
           </Link>
-          <Link href="/events" className={menuItemClass}>
+          <Link href="/behandlingar" className={menuItemClass}>
+            Tantrisk massage
+          </Link>
+          <Link href="/om-sofia-cerne" className={menuItemClass}>
+            Om Sofia
+          </Link>
+          <Link href="/blog-section" className={menuItemClass}>
+            Blog
+          </Link>
+          <Link href="/relationsterapi-for-par" className={menuItemClass}>
+            Utveckling för par
+          </Link>
+          <Link href="/events/event" className={menuItemClass}>
             Evenemang
           </Link>
-          <Link href="/about-us" className={menuItemClass}>
-            Om
+          <Link href="/butik" className={menuItemClass}>
+            Butik
           </Link>
-          <Link href="/shop" className={menuItemClass}>
-            Shop
+          <Link href="/courses" className={menuItemClass}>
+            Onlinekurser
           </Link>
           <Link href="/admin" className={menuItemClass}>
             Admin
