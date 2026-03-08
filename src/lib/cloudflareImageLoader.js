@@ -9,6 +9,11 @@ export default function cloudflareImageLoader({ src, width, quality }) {
     return src;
   }
 
+  // In local dev, Cloudflare Image Resizing is not available.
+  if (process.env.NODE_ENV === "development") {
+    return src;
+  }
+
   // Cloudflare Image Resizing endpoint.
   return `/cdn-cgi/image/width=${width},quality=${requestedQuality},format=auto/${src}`;
 }
