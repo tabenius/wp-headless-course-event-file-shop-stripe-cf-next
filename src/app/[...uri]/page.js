@@ -20,18 +20,25 @@ import {
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
+// SingleEventFragment is only included when the Event CPT is registered
+const eventFragmentDef = SingleEventFragment ? SingleEventFragment : "";
+const eventFragmentSpread = SingleEventFragment ? "...SingleEventFragment" : "";
 const GET_CONTENT_QUERY = `
-  ${SingleEventFragment}
+  ${eventFragmentDef}
   ${SinglePageFragment}
   ${SinglePostFragment}
   query GetNodeByUri($uri: String!) {
     nodeByUri(uri: $uri) {
       __typename
+      ... on NodeWithTitle {
+        title
+      }
+      ... on NodeWithContentEditor {
+        content
+      }
       ... on ContentNode {
         id
         uri
-        title
-        content
       }
       ... on NodeWithFeaturedImage {
         featuredImage {
@@ -47,7 +54,7 @@ const GET_CONTENT_QUERY = `
       }
       ...SinglePageFragment
       ...SinglePostFragment
-      ...SingleEventFragment
+      ${eventFragmentSpread}
     }
   }
 `;

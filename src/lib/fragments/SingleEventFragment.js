@@ -1,6 +1,15 @@
 import { editorBlocksFragment } from "./editorBlocks";
 
-export const SingleEventFragment = `
+/**
+ * Event fragment — only available when the Event CPT is registered in WPGraphQL.
+ * Set NEXT_PUBLIC_WORDPRESS_EVENT_CPT=1 to enable.
+ */
+const enabled =
+  typeof process !== "undefined" &&
+  process.env.NEXT_PUBLIC_WORDPRESS_EVENT_CPT === "1";
+
+export const SingleEventFragment = enabled
+  ? `
 fragment SingleEventFragment on Event {
     __typename
     id
@@ -31,4 +40,5 @@ fragment SingleEventFragment on Event {
       }
     }
   }
-`;
+`
+  : "";
