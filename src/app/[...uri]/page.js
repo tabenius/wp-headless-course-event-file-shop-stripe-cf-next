@@ -21,6 +21,9 @@ import {
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import site from "@/lib/site";
 
+// Force dynamic rendering — this route uses searchParams and external data
+export const dynamic = "force-dynamic";
+
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 
 /** Build the content query dynamically based on which CPTs exist in the schema. */
