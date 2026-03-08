@@ -13,9 +13,16 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: var(--bg-image);
+  background-position: left top;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.75;
 }
 
 h1,
@@ -24,86 +31,81 @@ h3,
 h4,
 h5,
 h6 {
-  color: var(--color-muted);
+  color: var(--foreground);
   font-family: var(--font-heading);
-  font-size: 1em;
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: 0.131578947em;
-  line-height: 1.1052631579;
-  text-decoration: none;
-  text-transform: uppercase;
+  font-weight: 700;
+  line-height: 1.3125;
+  margin: 0.75em 0;
 }
 
 h1 {
-  font-size: 21pt;
+  font-size: 1.75rem;
   font-weight: 900;
-  line-height: 1.2727272727;
+  line-height: 1.25;
 }
 
 h2 {
-  color: var(--color-muted);
-  font-size: 17.25pt;
-  font-weight: 900;
-  line-height: 1.25;
-  text-decoration: none;
-}
-
-h3 {
-  color: inherit;
-  font-family: var(--font-heading);
-  font-size: 1em;
+  font-size: 1.4375rem;
   font-weight: 900;
   line-height: 1.2173913043;
 }
 
-h4 {
-  font-size: 1em;
-  font-weight: 600;
-  letter-spacing: 0.131578947em;
+h3 {
+  font-size: 1.1875rem;
+  font-weight: 900;
   line-height: 1.1052631579;
-  text-transform: uppercase;
+}
+
+h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.140625em;
+  line-height: 1.3125;
 }
 
 h5 {
-  font-size: 12pt;
-  font-weight: 900;
-  line-height: 1.1052631579;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3125;
 }
 
 h6 {
-  font-size: 12pt;
-  font-style: italic;
-  font-weight: 900;
-  line-height: 1.1052631579;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3125;
 }
 
 p {
-  background: inherit;
-  color: var(--color-muted);
+  color: var(--foreground);
   font-family: var(--font-body);
-  font-size: inherit;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: inherit;
-  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.75;
+  margin: 0 0 1.75em;
 }
 
 a {
   color: var(--color-primary);
-  font-family: var(--font-body);
-  font-size: 0.875em;
-  font-style: normal;
-  font-weight: 600;
-  line-height: 1em;
   text-decoration: none;
-  text-transform: none;
 }
 
-/* Add a small bit of styling to the content */
+a:hover,
+a:focus {
+  text-decoration: underline;
+}
+
+/* WordPress content blocks */
 .wp-content {
   font-size: 1rem;
 }
 .wp-content p {
-  margin: 1.5rem 0;
+  margin: 0 0 1.75em;
+}
+.wp-content h1,
+.wp-content h2,
+.wp-content h3,
+.wp-content h4,
+.wp-content h5,
+.wp-content h6 {
+  font-weight: 900;
 }

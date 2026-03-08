@@ -1,0 +1,81 @@
+{
+  "name": "Xtas – tantrisk transformation",
+  "shortName": "Xtas",
+  "tagline": "Närvaro, kontakt och äkta tantriska möten utan prestation och krav.",
+  "description": "Närvaro, kontakt och äkta tantriska möten utan prestation och krav. Kurser, events och sessioner med Sofia Cerne.",
+  "url": "https://www.xtas.nu",
+  "locale": "sv_SE",
+  "lang": "sv",
+  "copyright": "XTAS / Sofias Academy",
+  "logo": {
+    "path": "/wp-content/uploads/2019/04/cropped-xtas_2x.png",
+    "width": 400,
+    "height": 120,
+    "alt": "Xtas logotyp"
+  },
+  "icons": {
+    "favicon": "/wp-content/uploads/2019/04/cropped-xtas_2x-32x32.png",
+    "apple": "/wp-content/uploads/2019/04/cropped-xtas_2x-180x180.png"
+  },
+  "backgroundImage": "/wp-content/uploads/2026/02/Sofia19-–-Redigerad-scaled.webp",
+  "contact": {
+    "email": "info@xtas.nu",
+    "phone": "+46705274940",
+    "phoneDisplay": "070-527 49 40"
+  },
+  "social": {
+    "instagram": "https://www.instagram.com/sofias_academy/",
+    "facebook": "https://www.facebook.com/sofiasacademyse/",
+    "linkedin": "https://www.linkedin.com/in/sofia-cerne-9318307/",
+    "youtube": "https://www.youtube.com/channel/UCO4mK4N45rYnK4eUcS8hUDw"
+  },
+  "pages": {
+    "blog": {
+      "title": "Blogg",
+      "description": "Artiklar och tankar om tantra, relationer, närvaro och personlig utveckling av Sofia Cerne."
+    },
+    "courses": {
+      "title": "Onlinekurser",
+      "description": "Onlinekurser i tantra, beröring och relationer. Lär dig i din egen takt med Sofia Cerne."
+    },
+    "shop": {
+      "title": "Butik",
+      "description": "Digitala produkter, kursmaterial och mer från Xtas och Sofia Cerne."
+    }
+  },
+  "navigation": [
+    { "href": "/kurser-events", "label": "Kurser & Events" },
+    { "href": "/behandlingar", "label": "Tantrisk massage" },
+    { "href": "/om-sofia-cerne", "label": "Om Sofia" },
+    { "href": "/blog", "label": "Blog" },
+    { "href": "/relationsterapi-for-par", "label": "Utveckling för par" },
+    { "href": "https://www.xtas.nu/events/event/", "label": "Evenemang", "external": true },
+    { "href": "/shop", "label": "Butik" },
+    { "href": "/courses", "label": "Onlinekurser" }
+  ],
+  "footerColumns": [
+    {
+      "title": "Kurser & sessioner",
+      "links": [
+        { "href": "/kurser-events", "label": "Kurser & Events" },
+        { "href": "/heartconnection-vip-24h-sanctuary", "label": "Kärleksverkstad – relationsspa" },
+        { "href": "/kursen-rora-och-berora", "label": "Röra och beröra" },
+        { "href": "/behandlingar", "label": "Tantrisk massage" },
+        { "href": "/bdsm-sessioner", "label": "Tantrickink" },
+        { "href": "/coachning-och-samtal-om-relationer-och-tantra", "label": "Tantric Talk & Teachings" }
+      ]
+    },
+    {
+      "title": "Mer",
+      "links": [
+        { "href": "/om-sofia-cerne", "label": "Om Sofia" },
+        { "href": "/handbok-tantriskmassage", "label": "Boken Röra & Beröra" },
+        { "href": "/blog", "label": "Blog" },
+        { "href": "/relationsterapi-for-par", "label": "Utveckling för par" },
+        { "href": "https://www.xtas.nu/events/event/", "label": "Evenemang", "external": true },
+        { "href": "/shop", "label": "Butik" },
+        { "href": "/courses", "label": "Onlinekurser" }
+      ]
+    }
+  ]
+}

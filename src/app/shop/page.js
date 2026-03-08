@@ -4,9 +4,12 @@ import { listAccessibleDigitalProductIds, grantDigitalAccess } from "@/lib/digit
 import { grantCourseAccess } from "@/lib/courseAccess";
 import { listDigitalProducts } from "@/lib/digitalProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
+import site from "@/lib/site";
 
 export const metadata = {
-  title: "Shop",
+  title: site.pages.shop.title,
+  description: site.pages.shop.description,
+  alternates: { canonical: "/shop" },
 };
 
 export default async function ShopPage({ searchParams }) {

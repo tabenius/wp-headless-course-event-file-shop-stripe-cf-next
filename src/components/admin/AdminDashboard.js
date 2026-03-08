@@ -42,11 +42,13 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [courses, setCourses] = useState({});
   const [users, setUsers] = useState([]);
+  const [wpCourses, setWpCourses] = useState([]);
   const [storage, setStorage] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [price, setPrice] = useState("0.00");
   const [currency, setCurrency] = useState("usd");
   const [allowedUsers, setAllowedUsers] = useState([]);
+  const [manualEmail, setManualEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,6 +66,7 @@ export default function AdminDashboard() {
           throw new Error(json?.error || "Du behöver logga in som administratör.");
         setCourses(json.courses || {});
         setUsers(Array.isArray(json.users) ? json.users : []);
+        setWpCourses(Array.isArray(json.wpCourses) ? json.wpCourses : []);
         setStorage(json.storage || null);
       })
       .catch((fetchError) => {
@@ -112,6 +115,15 @@ export default function AdminDashboard() {
     setAllowedUsers((prev) =>
       prev.includes(email) ? prev.filter((value) => value !== email) : [...prev, email],
     );
+  }
+
+  function addManualEmail() {
+    const email = manualEmail.trim().toLowerCase();
+    if (!email || !email.includes("@")) return;
+    if (!allowedUsers.includes(email)) {
+      setAllowedUsers((prev) => [...prev, email]);
+    }
+    setManualEmail("");
   }
 
   function updateProduct(index, key, value) {
@@ -412,28 +424,54 @@ export default function AdminDashboard() {
         <h2 className="text-2xl font-semibold">Kursåtkomst</h2>
         <div className="grid md:grid-cols-2 gap-8">
           <div className="space-y-3">
-            <label className="text-sm text-gray-700">Kurs-URI</label>
-            <input
-              type="text"
-              value={selectedCourse}
-              onChange={(event) => setSelectedCourse(event.target.value)}
-              placeholder="/courses/my-course"
-              className="w-full border rounded px-3 py-2"
-            />
-            {knownCourses.length > 0 ? (
+            <label className="text-sm text-gray-700">Välj kurs</label>
+            {wpCourses.length > 0 ? (
               <select
                 className="w-full border rounded px-3 py-2"
                 value={selectedCourse}
                 onChange={(event) => setSelectedCourse(event.target.value)}
               >
-                <option value="">Välj befintlig kurs</option>
-                {knownCourses.map((courseUri) => (
-                  <option key={courseUri} value={courseUri}>
-                    {courseUri}
+                <option value="">-- Välj en kurs --</option>
+                {wpCourses.map((course) => (
+                  <option key={course.uri} value={course.uri}>
+                    {course.title}
+                    {course.priceRendered ? ` (${course.priceRendered})` : ""}
+                    {course.duration ? ` — ${course.duration}` : ""}
                   </option>
                 ))}
+                {knownCourses
+                  .filter((uri) => !wpCourses.some((c) => c.uri === uri))
+                  .map((courseUri) => (
+                    <option key={courseUri} value={courseUri}>
+                      {courseUri}
+                    </option>
+                  ))}
               </select>
-            ) : null}
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={selectedCourse}
+                  onChange={(event) => setSelectedCourse(event.target.value)}
+                  placeholder="/courses/my-course"
+                  className="w-full border rounded px-3 py-2"
+                />
+                {knownCourses.length > 0 ? (
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={selectedCourse}
+                    onChange={(event) => setSelectedCourse(event.target.value)}
+                  >
+                    <option value="">Välj befintlig kurs</option>
+                    {knownCourses.map((courseUri) => (
+                      <option key={courseUri} value={courseUri}>
+                        {courseUri}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </>
+            )}
 
             <label className="text-sm text-gray-700">Kursavgift</label>
             <div className="flex gap-2">
@@ -458,22 +496,53 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             <label className="text-sm text-gray-700">Tillåtna användare</label>
             <div className="border rounded p-3 max-h-72 overflow-auto space-y-2">
-              {users.length === 0 ? (
+              {users.length === 0 && allowedUsers.length === 0 ? (
                 <p className="text-sm text-gray-500">Inga registrerade användare hittades.</p>
               ) : (
-                users.map((user) => (
-                  <label key={user.email} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={allowedUsers.includes(user.email)}
-                      onChange={() => toggleUser(user.email)}
-                    />
-                    <span>
-                      {user.name} ({user.email})
-                    </span>
-                  </label>
-                ))
+                <>
+                  {users.map((user) => (
+                    <label key={user.email} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={allowedUsers.includes(user.email)}
+                        onChange={() => toggleUser(user.email)}
+                      />
+                      <span>
+                        {user.name} ({user.email})
+                      </span>
+                    </label>
+                  ))}
+                  {allowedUsers
+                    .filter((email) => !users.some((u) => u.email === email))
+                    .map((email) => (
+                      <label key={email} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={true}
+                          onChange={() => toggleUser(email)}
+                        />
+                        <span>{email}</span>
+                      </label>
+                    ))}
+                </>
               )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={manualEmail}
+                onChange={(event) => setManualEmail(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), addManualEmail())}
+                placeholder="Lägg till e-post manuellt"
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={addManualEmail}
+                className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+              >
+                Lägg till
+              </button>
             </div>
           </div>
         </div>

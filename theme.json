@@ -4,10 +4,12 @@
   "settings": {
     "color": {
       "palette": [
-        { "slug": "background", "name": "Background", "color": "#f5f5f4" },
-        { "slug": "foreground", "name": "Foreground", "color": "#1f2937" },
-        { "slug": "primary", "name": "Primary", "color": "#0f766e" },
-        { "slug": "muted", "name": "Muted", "color": "#6b7280" }
+        { "slug": "background", "name": "Background", "color": "#fff1f1" },
+        { "slug": "foreground", "name": "Foreground", "color": "#1a1a1a" },
+        { "slug": "primary", "name": "Primary", "color": "#6d003e" },
+        { "slug": "secondary", "name": "Secondary", "color": "#ffb606" },
+        { "slug": "tertiary", "name": "Tertiary", "color": "#442e66" },
+        { "slug": "muted", "name": "Muted", "color": "#686868" }
       ]
     },
     "typography": {
@@ -15,7 +17,7 @@
         {
           "slug": "body",
           "name": "Body",
-          "fontFamily": "var(--font-nunito), \"Segoe UI\", sans-serif"
+          "fontFamily": "var(--font-merriweather), Georgia, serif"
         },
         {
           "slug": "heading",

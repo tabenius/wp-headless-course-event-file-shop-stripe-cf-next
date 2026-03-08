@@ -1,5 +1,12 @@
 import { PostListFragment } from "@/lib/fragments/PostListFragment";
 import { BlogListingTemplate } from "@/components/blog/BlogListingTemplate";
+import site from "@/lib/site";
+
+export const metadata = {
+  title: site.pages.blog.title,
+  description: site.pages.blog.description,
+  alternates: { canonical: "/blog" },
+};
 
 const LIST_POSTS_QUERY = `
   ${PostListFragment}

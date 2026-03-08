@@ -19,6 +19,7 @@ import {
   hasCourseAccess,
 } from "@/lib/courseAccess";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
+import site from "@/lib/site";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 // SingleEventFragment is only included when the Event CPT is registered
@@ -74,6 +75,104 @@ async function fetchContent(uri) {
   );
 }
 
+function stripHtml(html) {
+  return (html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function makeExcerpt(content, maxLen = 160) {
+  const text = stripHtml(content);
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen).replace(/\s\S*$/, "") + "…";
+}
+
+export async function generateMetadata({ params }) {
+  const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
+  const uri =
+    uriSegments.length > 0
+      ? `/${uriSegments.filter(Boolean).join("/")}`
+      : "/";
+  const data = await fetchContent(uri);
+  const node = data?.nodeByUri;
+  if (!node) return {};
+
+  const title = node.title || undefined;
+  const description = node.excerpt
+    ? makeExcerpt(node.excerpt)
+    : node.content
+      ? makeExcerpt(node.content)
+      : undefined;
+  const image = node.featuredImage?.node?.sourceUrl;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${site.url}${uri}`,
+      type: node.__typename === "Post" ? "article" : "website",
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+    },
+    alternates: {
+      canonical: `${site.url}${uri}`,
+    },
+  };
+}
+
+function buildJsonLd(node, uri) {
+  const type = node.__typename;
+  const title = node.title || "";
+  const description = node.content ? makeExcerpt(node.content) : "";
+  const image = node.featuredImage?.node?.sourceUrl;
+  const url = `${site.url}${uri}`;
+
+  if (type === "Post") {
+    return {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: title,
+      description,
+      url,
+      ...(image ? { image } : {}),
+      publisher: {
+        "@type": "Organization",
+        name: site.name,
+        url: siteUrl,
+      },
+    };
+  }
+
+  if (type === "LpCourse") {
+    return {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      name: title,
+      description,
+      url,
+      ...(image ? { image } : {}),
+      provider: {
+        "@type": "Organization",
+        name: site.name,
+        url: siteUrl,
+      },
+    };
+  }
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: title,
+    description,
+    url,
+    ...(image ? { image } : {}),
+  };
+}
+
 export default async function ContentPage({ params, searchParams }) {
   const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
   const normalizedSegments = uriSegments
@@ -89,7 +188,8 @@ export default async function ContentPage({ params, searchParams }) {
     notFound();
   }
 
-  const contentType = data?.nodeByUri?.__typename;
+  const node = data.nodeByUri;
+  const contentType = node?.__typename;
   const isProductType =
     typeof contentType === "string" && contentType.includes("Product");
   const isCourseType =
@@ -97,10 +197,18 @@ export default async function ContentPage({ params, searchParams }) {
   const isEventType = contentType === "Event";
   const isPaidAccessType = isCourseType || isEventType;
 
+  const jsonLd = buildJsonLd(node, uri);
+  const ldScript = (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+
   // Add your own CPT templates here for single post types
-  if (contentType === "Post") return <Post data={data.nodeByUri} />;
-  if (contentType === "Page") return <Page data={data.nodeByUri} />;
-  if (isProductType) return <Product data={data.nodeByUri} />;
+  if (contentType === "Post") return <>{ldScript}<Post data={node} /></>;
+  if (contentType === "Page") return <>{ldScript}<Page data={node} /></>;
+  if (isProductType) return <>{ldScript}<Product data={node} /></>;
   if (isPaidAccessType) {
     const session = await auth();
     if (!session?.user) {
@@ -146,7 +254,7 @@ export default async function ContentPage({ params, searchParams }) {
       return (
         <Paywall
           courseUri={uri}
-          courseTitle={data?.nodeByUri?.title}
+          courseTitle={node?.title}
           userEmail={userEmail}
           priceCents={accessConfig?.priceCents ?? (Number.isFinite(defaultPrice) ? defaultPrice : 0)}
           currency={accessConfig?.currency || process.env.DEFAULT_COURSE_FEE_CURRENCY || "usd"}
@@ -155,7 +263,9 @@ export default async function ContentPage({ params, searchParams }) {
         />
       );
     }
-    return isEventType ? <Event data={data.nodeByUri} /> : <Course data={data.nodeByUri} />;
+    return isEventType
+      ? <>{ldScript}<Event data={node} /></>
+      : <>{ldScript}<Course data={node} /></>;
   }
   notFound();
 }

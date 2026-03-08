@@ -1,10 +1,12 @@
 /* Auto-generated from theme.json. Do not edit manually. */
 :root {
-  --color-background: #f5f5f4;
-  --color-foreground: #1f2937;
-  --color-primary: #0f766e;
-  --color-muted: #6b7280;
-  --font-body: var(--font-nunito), "Segoe UI", sans-serif;
+  --color-background: #fff1f1;
+  --color-foreground: #1a1a1a;
+  --color-primary: #6d003e;
+  --color-secondary: #ffb606;
+  --color-tertiary: #442e66;
+  --color-muted: #686868;
+  --font-body: var(--font-merriweather), Georgia, serif;
   --font-heading: var(--font-montserrat), "Helvetica Neue", sans-serif;
   --background: var(--color-background);
   --foreground: var(--color-foreground);
@@ -16,6 +18,10 @@
 .has-foreground-background-color { background-color: var(--color-foreground); }
 .has-primary-color { color: var(--color-primary); }
 .has-primary-background-color { background-color: var(--color-primary); }
+.has-secondary-color { color: var(--color-secondary); }
+.has-secondary-background-color { background-color: var(--color-secondary); }
+.has-tertiary-color { color: var(--color-tertiary); }
+.has-tertiary-background-color { background-color: var(--color-tertiary); }
 .has-muted-color { color: var(--color-muted); }
 .has-muted-background-color { background-color: var(--color-muted); }
 

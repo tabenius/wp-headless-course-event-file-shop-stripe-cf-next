@@ -6,6 +6,21 @@ import {
   listAccessUsers,
   setCourseAccess,
 } from "@/lib/courseAccess";
+import { fetchGraphQL } from "@/lib/client";
+
+async function fetchLearnPressCourses() {
+  if (process.env.NEXT_PUBLIC_WORDPRESS_LEARNPRESS !== "1") return [];
+  try {
+    const data = await fetchGraphQL(
+      `{ lpCourses(first: 100) { edges { node { databaseId uri title price priceRendered duration } } } }`,
+      {},
+      300,
+    );
+    return (data?.lpCourses?.edges || []).map((e) => e.node);
+  } catch {
+    return [];
+  }
+}
 
 function unauthorized() {
   return NextResponse.json({ ok: false, error: "Du behöver logga in som administratör." }, { status: 401 });
@@ -15,11 +30,16 @@ export async function GET(request) {
   const session = getAdminSessionFromCookieHeader(request.headers.get("cookie") || "");
   if (!session) return unauthorized();
 
-  const [state, users] = await Promise.all([getCourseAccessState(), listAccessUsers()]);
+  const [state, users, wpCourses] = await Promise.all([
+    getCourseAccessState(),
+    listAccessUsers(),
+    fetchLearnPressCourses(),
+  ]);
   return NextResponse.json({
     ok: true,
     courses: state.courses,
     users,
+    wpCourses,
     storage: getCourseStorageInfo(),
   });
 }

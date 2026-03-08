@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { fetchGraphQL } from "@/lib/client";
 import { FeaturedImage } from "@/components/image/FeaturedImage";
+import site from "@/lib/site";
 
 export const metadata = {
-  title: "Onlinekurser",
+  title: site.pages.courses.title,
+  description: site.pages.courses.description,
+  alternates: { canonical: "/courses" },
 };
 
 const LIST_COURSES_QUERY = `
