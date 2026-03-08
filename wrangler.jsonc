@@ -1,12 +1,31 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "articulate-learnpress-stripe",
-  "main": ".open-next/worker.js",
-  "compatibility_date": "2025-01-15",
-  "compatibility_flags": ["nodejs_compat"],
-  "vars": {
-    "CLOUDFLARE_IMAGE_RESIZING": "1",
-    "COURSE_ACCESS_STORE": "cloudflare",
-    "USER_STORE_BACKEND": "cloudflare"
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "articulate-learnpress-stripe",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2025-01-15",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"vars": {
+		"CLOUDFLARE_IMAGE_RESIZING": "1",
+		"COURSE_ACCESS_STORE": "cloudflare",
+		"USER_STORE_BACKEND": "cloudflare",
+		"DIGITAL_ACCESS_STORE": "cloudflare",
+		"NEXT_PUBLIC_WORDPRESS_LEARNPRESS": "1",
+		"DEFAULT_COURSE_FEE_CENTS": "499900",
+		"DEFAULT_COURSE_FEE_CURRENCY": "sek",
+		"CF_KV_KEY": "course-access",
+		"CF_USERS_KV_KEY": "course-users"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "COURSE_ACCESS",
+			"id": "0ac8a81b4e404ebbbc23172b59154191",
+			"remote": true
+		}
+	]
 }
