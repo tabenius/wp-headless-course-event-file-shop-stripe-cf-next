@@ -25,12 +25,41 @@ Styrkorna är att du kan förlita dig på WordPress för välkända publicerings
 
 - `NEXT_PUBLIC_WORDPRESS_URL`: WordPress-URL för GraphQL-innehåll.
 - `COURSE_ACCESS_BACKEND=wordpress`: använder WordPress/LearnPress-backend.
-- `WORDPRESS_GRAPHQL_AUTH_TOKEN`: token för admin-mutationer.
+- `WORDPRESS_GRAPHQL_AUTH_TOKEN`: Bearer-token för admin-mutationer, eller:
+- `WORDPRESS_GRAPHQL_USERNAME` + `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD`: Basic auth med WordPress Application Password.
 - `AUTH_SECRET`: signerar auth/session.
 - `ADMIN_EMAILS` och `ADMIN_PASSWORDS`: kommaseparerade admin-par för inloggning till admin-UI.
 - `STRIPE_SECRET_KEY` och `STRIPE_WEBHOOK_SECRET`: Stripe-betalningar.
 - `COURSE_ACCESS_STORE` och `USER_STORE_BACKEND`: lokal lagring eller Cloudflare KV.
 - `DIGITAL_ACCESS_STORE` och `CF_DIGITAL_ACCESS_KV_KEY`: lagring av åtkomst till köpta digitala filer.
+
+## WordPress GraphQL-autentisering
+
+Två autentiseringsmetoder stöds för WPGraphQL-förfrågningar:
+
+| Metod | Miljövariabler | Header |
+|-------|----------------|--------|
+| **Bearer token** (JWT / plugin-token) | `WORDPRESS_GRAPHQL_AUTH_TOKEN` | `Authorization: Bearer <token>` |
+| **Basic auth** (WP Application Password) | `WORDPRESS_GRAPHQL_USERNAME` + `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | `Authorization: Basic <base64>` |
+
+Om både användarnamn och application password är satta används Basic auth. Om bara en bearer-token finns används den. Logiken finns i `src/lib/wordpressGraphqlAuth.js` och används av alla GraphQL-konsumenter (`client.js`, `courseAccess.js`, `health/route.js`).
+
+**Bakåtkompatibilitet:** om `WORDPRESS_GRAPHQL_USERNAME` är satt och token i `WORDPRESS_GRAPHQL_AUTH_TOKEN` ser ut som ett application password (innehåller mellanslag, inga punkter) används det automatiskt som Basic auth.
+
+## Valfria WPGraphQL-funktioner
+
+Vissa GraphQL-fält kräver specifika WordPress-plugins. De är avstängda som standard och aktiveras via miljövariabler:
+
+| Funktion | Miljövariabel | Plugin som krävs |
+|----------|---------------|------------------|
+| Editor Blocks (Gutenberg-blockdata) | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1` | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) |
+| Event CPT | `NEXT_PUBLIC_WORDPRESS_EVENT_CPT=1` | Ett plugin som registrerar en `Event`-posttyp i WPGraphQL |
+
+När de är avstängda utelämnas fälten helt ur GraphQL-frågor, så de aldrig orsakar schemafel. Rendering faller tillbaka på `content`-HTML-fältet om `editorBlocks` inte finns tillgängligt.
+
+## Felsökning
+
+- `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` loggar varje GraphQL-anrop (auth-läge, endpoint, HTTP-status, payload) i serverkonsolen.
 
 ## Digitala filer
 
@@ -61,4 +90,3 @@ npm install
 cp .env.example .env
 npm run dev
 ```
-Aktivera `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` i din `.env` för att logga varje WordPress GraphQL-anrop (payload, status och svar) i serverkonsolen om du vill felsöka varför sidor inte renderas.

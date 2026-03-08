@@ -24,6 +24,34 @@ This project combines Next.js, WordPress/WPGraphQL, and Stripe to protect course
 - `COURSE_ACCESS_STORE` and `USER_STORE_BACKEND`: local vs Cloudflare KV state.
 - `DIGITAL_ACCESS_STORE` and `CF_DIGITAL_ACCESS_KV_KEY`: storage for purchased digital file access.
 
+## WordPress GraphQL Authentication
+
+Two authentication methods are supported for WPGraphQL requests:
+
+| Method | Variables | Header |
+|--------|-----------|--------|
+| **Bearer token** (JWT / plugin token) | `WORDPRESS_GRAPHQL_AUTH_TOKEN` | `Authorization: Bearer <token>` |
+| **Basic auth** (WP Application Password) | `WORDPRESS_GRAPHQL_USERNAME` + `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | `Authorization: Basic <base64>` |
+
+If both a username and an application password are set, Basic auth takes precedence. If only a bearer token is set, it is used as-is. The helper in `src/lib/wordpressGraphqlAuth.js` handles the logic and is used by all GraphQL consumers (`client.js`, `courseAccess.js`, `health/route.js`).
+
+**Backwards compatibility:** if `WORDPRESS_GRAPHQL_USERNAME` is set and the token in `WORDPRESS_GRAPHQL_AUTH_TOKEN` looks like an application password (contains spaces, no dots), it is automatically used as Basic auth credentials.
+
+## Optional WPGraphQL Features
+
+Some GraphQL fragment fields require specific WordPress plugins. They are disabled by default and can be enabled via environment variables:
+
+| Feature | Env var | Required plugin |
+|---------|---------|-----------------|
+| Editor Blocks (Gutenberg block data) | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1` | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) |
+| Event CPT | `NEXT_PUBLIC_WORDPRESS_EVENT_CPT=1` | A plugin that registers an `Event` post type in WPGraphQL |
+
+When disabled, queries omit these fields entirely so they never cause schema errors. Content rendering falls back to the `content` HTML field when `editorBlocks` is unavailable.
+
+## Diagnostics
+
+- `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` logs every GraphQL request/response (auth mode, endpoint, HTTP status, payload) to the server console.
+
 ## Digital files
 
 Digital products are configured in `config/digital-products.json`:
