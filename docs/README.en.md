@@ -17,7 +17,7 @@ This project combines Next.js, WordPress/WPGraphQL, and Stripe to protect course
 
 - `NEXT_PUBLIC_WORDPRESS_URL`: WordPress base URL for GraphQL content.
 - `COURSE_ACCESS_BACKEND=wordpress`: use WordPress/LearnPress integration.
-- `WORDPRESS_GRAPHQL_AUTH_TOKEN`: token for privileged admin mutations.
+- `WORDPRESS_GRAPHQL_AUTH_TOKEN`: bearer token for privileged admin mutations, or use `WORDPRESS_GRAPHQL_USERNAME` + `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` for WordPress Application Password auth.
 - `AUTH_SECRET`: signs auth/session state.
 - `ADMIN_EMAILS` and `ADMIN_PASSWORDS`: comma-separated admin login pairs for the admin UI.
 - `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`: Stripe payments.

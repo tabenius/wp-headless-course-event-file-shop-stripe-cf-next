@@ -1,3 +1,5 @@
+import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
+
 export async function fetchGraphQL(query, variables = {}, revalidate = null) {
   if (typeof query !== "string" || query.trim().length === 0) {
     console.error("fetchGraphQL called with an invalid query");
@@ -18,11 +20,11 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       console.debug("[GraphQL Debug] Query:", query);
       console.debug("[GraphQL Debug] Variables:", variables);
     }
-    const authToken = process.env.WORDPRESS_GRAPHQL_AUTH_TOKEN;
+    const auth = getWordPressGraphqlAuth();
     const headers = {
       Accept: "application/json",
       "Content-Type": "application/json",
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
     };
 
     const fetchOptions = {
@@ -45,6 +47,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
 
     const response = await fetch(graphqlEndpoint, fetchOptions);
     if (debugGraphQL) {
+      console.debug("[GraphQL Debug] Auth mode:", auth.mode);
       console.debug("[GraphQL Debug] Endpoint:", graphqlEndpoint);
       console.debug("[GraphQL Debug] HTTP status:", response.status, response.statusText);
     }

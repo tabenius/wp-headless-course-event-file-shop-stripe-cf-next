@@ -1,24 +1,30 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionFromCookieHeader, isAdminCredentialsConfigured } from "@/auth";
 import { getEnabledProviders } from "@/lib/oauthProviders";
+import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { isStripeEnabled } from "@/lib/stripe";
 
 async function checkWordPressGraphQL() {
   const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
-  const token = process.env.WORDPRESS_GRAPHQL_AUTH_TOKEN;
+  const auth = getWordPressGraphqlAuth();
   if (!url) {
     return { ok: false, message: "WordPress-anslutningen är inte inställd ännu." };
   }
-  if (!token) {
-    return { ok: false, message: "WordPress-behörighet saknas." };
+  if (!auth.authorization) {
+    return {
+      ok: false,
+      message:
+        "WordPress-behorighet saknas. Ange WORDPRESS_GRAPHQL_AUTH_TOKEN eller WORDPRESS_GRAPHQL_USERNAME + WORDPRESS_GRAPHQL_APPLICATION_PASSWORD.",
+    };
   }
 
   try {
     const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
       method: "POST",
       headers: {
+        Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: auth.authorization,
       },
       body: JSON.stringify({
         query:

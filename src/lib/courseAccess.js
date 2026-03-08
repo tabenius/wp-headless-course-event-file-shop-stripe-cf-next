@@ -7,6 +7,7 @@ import {
   setCourseAccess as setLocalCourseAccess,
 } from "@/lib/courseAccessStore";
 import { listUsers as listLocalUsers } from "@/lib/userStore";
+import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 
 function isWordPressBackend() {
   return process.env.COURSE_ACCESS_BACKEND === "wordpress";
@@ -27,9 +28,12 @@ async function fetchWordPressGraphQL(query, variables = {}) {
     throw new Error("NEXT_PUBLIC_WORDPRESS_URL is required for wordpress backend");
   }
 
-  const headers = { "Content-Type": "application/json" };
-  const authToken = process.env.WORDPRESS_GRAPHQL_AUTH_TOKEN;
-  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const auth = getWordPressGraphqlAuth();
+  const headers = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+  };
 
   const response = await fetch(endpoint, {
     method: "POST",

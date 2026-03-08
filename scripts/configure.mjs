@@ -119,6 +119,21 @@ async function setupEnv({ rl, rootDir, envFile, shopFile, shopExampleFile }) {
   };
 
   await askValue("WordPress URL", "NEXT_PUBLIC_WORDPRESS_URL", "https://www.example.com/");
+  await askValue(
+    "WordPress GraphQL Bearer token (optional)",
+    "WORDPRESS_GRAPHQL_AUTH_TOKEN",
+    "",
+  );
+  await askValue(
+    "WordPress GraphQL username (optional, for app password)",
+    "WORDPRESS_GRAPHQL_USERNAME",
+    "",
+  );
+  await askValue(
+    "WordPress GraphQL application password (optional)",
+    "WORDPRESS_GRAPHQL_APPLICATION_PASSWORD",
+    "",
+  );
   await askValue("Admin emails (comma-separated)", "ADMIN_EMAILS", "admin@example.com");
   await askValue(
     "Admin passwords (comma-separated, same order)",
