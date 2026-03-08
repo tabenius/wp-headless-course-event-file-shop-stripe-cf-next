@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import DarkModeToggle from "./DarkModeToggle";
 
 export default function MobileNav({ items, authLinks }) {
   const [open, setOpen] = useState(false);
@@ -61,6 +62,10 @@ export default function MobileNav({ items, authLinks }) {
               {item.label}
             </Link>
           ))}
+          <div className="flex items-center gap-2 py-2">
+            <DarkModeToggle />
+            <span className="text-[13px] font-[family-name:var(--font-montserrat)]">Mörkt läge</span>
+          </div>
           {authLinks}
         </div>
       </nav>

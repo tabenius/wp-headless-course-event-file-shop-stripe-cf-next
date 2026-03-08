@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import SignOutButton from "./SignOutButton";
 import MobileNav from "./MobileNav";
 import UserMenu from "./UserMenu";
+import DarkModeToggle from "./DarkModeToggle";
 import site from "@/lib/site";
 
 async function fetchSiteTitle() {
@@ -62,6 +63,7 @@ export default async function Header() {
               </Link>
             ))}
           </nav>
+          <DarkModeToggle />
           <UserMenu
             isLoggedIn={!!session?.user}
             signOutButton={userMenuSignOut}

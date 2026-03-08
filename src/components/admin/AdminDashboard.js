@@ -229,6 +229,33 @@ export default function AdminDashboard() {
     router.refresh();
   }
 
+  async function uploadFile(index, field) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = field === "imageUrl" ? "image/*" : "*/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.ok) {
+          setError(json?.error || "Uppladdning misslyckades.");
+          return;
+        }
+        updateProduct(index, field, json.url);
+      } catch {
+        setError("Uppladdning misslyckades.");
+      }
+    };
+    input.click();
+  }
+
   async function runHealthCheck() {
     setHealthLoading(true);
     setError("");
@@ -301,11 +328,11 @@ export default function AdminDashboard() {
 
       <div className="border rounded p-5 space-y-4">
         <h2 className="text-2xl font-semibold">Shop-produkter</h2>
-        <p className="text-sm text-gray-600">Hantera filer och kursprodukter för /shop.</p>
+        <p className="text-sm text-gray-600">Hantera filer och kursprodukter för /shop. Uppladdade filer sparas i WordPress mediebibliotek (max filstorlek beror på din WordPress-konfiguration, vanligtvis 2–64 MB).</p>
 
         <div className="space-y-6">
           {products.map((product, index) => (
-            <div key={`${product.slug || "row"}-${index}`} className="border rounded p-4 space-y-3">
+            <div key={index} className="border rounded p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold">Produkt {index + 1}</h3>
                 <button
@@ -376,22 +403,45 @@ export default function AdminDashboard() {
                 className="w-full border rounded px-3 py-2"
               />
 
-              <input
-                type="text"
-                placeholder="Bild-URL (https://...)"
-                value={product.imageUrl}
-                onChange={(event) => updateProduct(index, "imageUrl", event.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-
-              {product.type === "digital_file" ? (
+              <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Fil-URL (https://...)"
-                  value={product.fileUrl}
-                  onChange={(event) => updateProduct(index, "fileUrl", event.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  placeholder="Bild-URL (https://...)"
+                  value={product.imageUrl}
+                  onChange={(event) => updateProduct(index, "imageUrl", event.target.value)}
+                  className="flex-1 border rounded px-3 py-2"
                 />
+                <button
+                  type="button"
+                  onClick={() => uploadFile(index, "imageUrl")}
+                  className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+                  title="Max filstorlek beror på WordPress-inställningar (vanligtvis 2–64 MB)"
+                >
+                  Ladda upp bild
+                </button>
+              </div>
+              {product.imageUrl && (
+                <img src={product.imageUrl} alt="" className="h-16 w-auto rounded border object-cover" />
+              )}
+
+              {product.type === "digital_file" ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Fil-URL (https://...)"
+                    value={product.fileUrl}
+                    onChange={(event) => updateProduct(index, "fileUrl", event.target.value)}
+                    className="flex-1 border rounded px-3 py-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => uploadFile(index, "fileUrl")}
+                    className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+                    title="Max filstorlek beror på WordPress-inställningar (vanligtvis 2–64 MB)"
+                  >
+                    Ladda upp fil
+                  </button>
+                </div>
               ) : (
                 <input
                   type="text"

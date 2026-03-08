@@ -193,3 +193,65 @@ a:focus {
   background-color: #333;
   color: #fff;
 }
+
+/* Dark mode — content area only (header, footer, menus stay light) */
+.dark-mode {
+  --color-background: #1a1a1a;
+  --color-foreground: #e8e0e0;
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+}
+
+/* Darken the background image */
+.dark-mode body::before {
+  filter: brightness(0.25);
+}
+
+/* Content area text and links */
+.dark-mode article,
+.dark-mode .wp-content,
+.dark-mode main {
+  color: var(--color-foreground);
+}
+.dark-mode article a,
+.dark-mode .wp-content a {
+  color: var(--color-secondary);
+}
+.dark-mode article a:hover,
+.dark-mode .wp-content a:hover {
+  color: #ffd966;
+}
+
+/* Headings in content */
+.dark-mode article h1,
+.dark-mode article h2,
+.dark-mode article h3,
+.dark-mode article h4,
+.dark-mode article h5,
+.dark-mode article h6 {
+  color: #f5eeee;
+}
+
+/* Paragraphs and prose */
+.dark-mode article p,
+.dark-mode .text-gray-800 {
+  color: var(--color-foreground) !important;
+}
+.dark-mode .text-gray-600 {
+  color: #bbb !important;
+}
+
+/* Buttons in dark mode */
+.dark-mode .wp-block-button__link,
+.dark-mode .wp-element-button {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+/* Paywall and card backgrounds */
+.dark-mode .bg-white {
+  background-color: #2a2a2a !important;
+}
+.dark-mode .bg-gray-50 {
+  background-color: #222 !important;
+}
