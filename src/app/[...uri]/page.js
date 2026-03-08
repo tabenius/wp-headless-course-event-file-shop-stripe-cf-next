@@ -71,10 +71,16 @@ async function buildContentQuery() {
 `;
 }
 
-// Cache the built query so introspection only runs once per process
+// Cache the built query so introspection only runs once per process.
+// If the promise rejects, clear it so the next request retries.
 let _queryPromise = null;
 function getContentQuery() {
-  if (!_queryPromise) _queryPromise = buildContentQuery();
+  if (!_queryPromise) {
+    _queryPromise = buildContentQuery().catch((err) => {
+      _queryPromise = null;
+      throw err;
+    });
+  }
   return _queryPromise;
 }
 
