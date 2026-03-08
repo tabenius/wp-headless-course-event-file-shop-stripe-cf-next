@@ -113,3 +113,83 @@ a:focus {
 .wp-content h6 {
   font-weight: 900;
 }
+
+/* WordPress button blocks */
+.wp-block-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin: 1.75em 0;
+}
+.wp-block-buttons.is-content-justification-center {
+  justify-content: center;
+}
+.wp-block-buttons.is-content-justification-right {
+  justify-content: flex-end;
+}
+
+.wp-block-button {
+  display: inline-flex;
+}
+.wp-block-button.wp-block-button__width-25 { width: 25%; }
+.wp-block-button.wp-block-button__width-50 { width: 50%; }
+.wp-block-button.wp-block-button__width-75 { width: 75%; }
+.wp-block-button.wp-block-button__width-100 { width: 100%; }
+.wp-block-button.has-custom-width .wp-block-button__link {
+  width: 100%;
+}
+
+.wp-block-button__link,
+.wp-element-button {
+  display: inline-block;
+  padding: 0.75em 1.5em;
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  background-color: var(--color-primary);
+  color: #fff;
+}
+.wp-block-button__link:hover,
+.wp-element-button:hover {
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+/* Outline style */
+.wp-block-button.is-style-outline .wp-block-button__link,
+.wp-block-button.is-style-outline .wp-element-button {
+  background-color: transparent;
+  border-color: currentColor;
+  color: var(--color-primary);
+}
+.wp-block-button.is-style-outline .wp-block-button__link:hover,
+.wp-block-button.is-style-outline .wp-element-button:hover {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* WordPress inline color/background overrides */
+.wp-block-button__link.has-background {
+  background-color: var(--wp--custom--color--background, #eee);
+}
+.wp-block-button__link.has-text-color {
+  color: var(--wp--custom--color--text, #333);
+}
+.wp-block-button__link.has-dark-gray-color { color: #333; }
+.wp-block-button__link.has-light-gray-background-color { background-color: #eee; }
+.wp-block-button.is-style-outline .wp-block-button__link.has-dark-gray-color {
+  color: #333;
+  border-color: #333;
+}
+.wp-block-button.is-style-outline .wp-block-button__link.has-dark-gray-color:hover {
+  background-color: #333;
+  color: #fff;
+}
