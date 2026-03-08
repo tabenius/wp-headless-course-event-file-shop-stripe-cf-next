@@ -14,15 +14,19 @@
 
 body {
   background-color: var(--background);
-  background-image: var(--bg-image);
-  background-position: left top;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.75;
+}
+
+/* Fixed background via a pseudo-element avoids forced full-page composite */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--background) var(--bg-image) left top / cover no-repeat;
 }
 
 h1,

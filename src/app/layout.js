@@ -66,12 +66,17 @@ const organizationJsonLd = {
   },
 };
 
+// Tiny blurred placeholder inlined as data URI — paints instantly before bg loads
+const bgPlaceholder =
+  "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAADwAgCdASogABUAPzmSvFg0qiWjqAqqkCcJaQAAO4n8gAD+7UM5ZWObmXzS3IAAAAA=";
+
 export default function RootLayout({ children }) {
   return (
     <html lang={site.lang}>
       <head>
         <link rel="preconnect" href={site.url} />
         <link rel="dns-prefetch" href={site.url} />
+        <link rel="preload" href={site.logoUrl} as="image" type="image/png" fetchPriority="high" />
         <link rel="preload" href={site.bgImageUrl} as="image" type="image/webp" />
         <script
           type="application/ld+json"
@@ -80,8 +85,14 @@ export default function RootLayout({ children }) {
       </head>
       <body
         className={`${montserrat.variable} ${merriweather.variable} antialiased`}
-        style={{ "--bg-image": `url(${site.bgImageUrl})` }}
+        style={{ "--bg-image": `url(${bgPlaceholder})` }}
       >
+        {/* Swap in the real bg after it loads */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var i=new Image();i.onload=function(){document.body.style.setProperty('--bg-image','url(${site.bgImageUrl})')};i.src='${site.bgImageUrl}'})()`,
+          }}
+        />
         <main className="text-gray-800 min-h-screen pt-16 lg:pt-[68px]">
           <Header />
           {children}
