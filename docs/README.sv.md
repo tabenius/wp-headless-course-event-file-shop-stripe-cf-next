@@ -54,8 +54,18 @@ Vissa GraphQL-fält kräver specifika WordPress-plugins. De är avstängda som s
 |----------|---------------|------------------|
 | Editor Blocks (Gutenberg-blockdata) | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1` | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) |
 | Event CPT | `NEXT_PUBLIC_WORDPRESS_EVENT_CPT=1` | Ett plugin som registrerar en `Event`-posttyp i WPGraphQL |
+| LearnPress-kurser | `NEXT_PUBLIC_WORDPRESS_LEARNPRESS=1` | LearnPress + `Articulate-LearnPress-Stripe` mu-plugin (se `docs/wordpress/mu-plugins/`) |
 
 När de är avstängda utelämnas fälten helt ur GraphQL-frågor, så de aldrig orsakar schemafel. Rendering faller tillbaka på `content`-HTML-fältet om `editorBlocks` inte finns tillgängligt.
+
+## LearnPress-integration
+
+Med `NEXT_PUBLIC_WORDPRESS_LEARNPRESS=1` och mu-pluginet installerat:
+
+- `/courses` listar alla LearnPress-kurser med pris, varaktighet och utvald bild.
+- Enskilda kurssidor (`/courses/<slug>`) renderas via catch-all-routen med appens auth/paywall.
+- Mu-pluginet registrerar `lp_course` och `lp_lesson` som WPGraphQL-typer (`LpCourse`/`LpLesson`) med fälten `price`, `priceRendered`, `duration` och `curriculum`.
+- Kursåtkomst styrs av samma mekanism som tidigare — se [WordPress LearnPress-setup](wordpress-learnpress-course-access.md).
 
 ## Felsökning
 

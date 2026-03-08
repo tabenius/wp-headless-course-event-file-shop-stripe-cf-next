@@ -134,10 +134,87 @@ function hwptoolkit_has_access($course_uri, $email) {
   return false;
 }
 
+// ---------------------------------------------------------------------------
+// Register LearnPress CPTs in WPGraphQL
+// ---------------------------------------------------------------------------
+add_filter('register_post_type_args', function ($args, $post_type) {
+  $lp_types = [
+    'lp_course' => ['graphql_single' => 'LpCourse',  'graphql_plural' => 'LpCourses'],
+    'lp_lesson' => ['graphql_single' => 'LpLesson',  'graphql_plural' => 'LpLessons'],
+  ];
+  if (isset($lp_types[$post_type])) {
+    $args['show_in_graphql']     = true;
+    $args['graphql_single_name'] = $lp_types[$post_type]['graphql_single'];
+    $args['graphql_plural_name'] = $lp_types[$post_type]['graphql_plural'];
+  }
+  return $args;
+}, 10, 2);
+
 add_action('graphql_register_types', function () {
   if (!function_exists('register_graphql_object_type')) {
     return;
   }
+
+  // -- LearnPress custom fields on LpCourse --
+  register_graphql_field('LpCourse', 'price', [
+    'type'    => 'Float',
+    'resolve' => function ($post) {
+      $val = get_post_meta($post->databaseId, '_lp_price', true);
+      return $val !== '' ? (float) $val : null;
+    },
+  ]);
+
+  register_graphql_field('LpCourse', 'priceRendered', [
+    'type'    => 'String',
+    'resolve' => function ($post) {
+      $val = get_post_meta($post->databaseId, '_lp_price', true);
+      if ($val === '' || $val === false) return null;
+      return 'kr' . number_format((float) $val, 2, '.', '');
+    },
+  ]);
+
+  register_graphql_field('LpCourse', 'duration', [
+    'type'    => 'String',
+    'resolve' => function ($post) {
+      $val = get_post_meta($post->databaseId, '_lp_duration', true);
+      return $val !== '' ? (string) $val : null;
+    },
+  ]);
+
+  register_graphql_field('LpCourse', 'curriculum', [
+    'type'    => ['list_of' => 'LpLesson'],
+    'resolve' => function ($post) {
+      global $wpdb;
+      $course_id = $post->databaseId;
+      $section_table = $wpdb->prefix . 'learnpress_sections';
+      $items_table   = $wpdb->prefix . 'learnpress_section_items';
+
+      $items = $wpdb->get_results($wpdb->prepare(
+        "SELECT si.item_id
+         FROM {$items_table} si
+         JOIN {$section_table} s ON s.section_id = si.section_id
+         WHERE s.section_course_id = %d
+           AND si.item_type = 'lp_lesson'
+         ORDER BY s.section_order ASC, si.item_order ASC",
+        $course_id
+      ));
+
+      if (empty($items)) return [];
+
+      $ids = array_map(function ($row) { return (int) $row->item_id; }, $items);
+      $posts = get_posts([
+        'post_type'      => 'lp_lesson',
+        'post__in'       => $ids,
+        'posts_per_page' => count($ids),
+        'orderby'        => 'post__in',
+        'post_status'    => 'publish',
+      ]);
+
+      return array_map(function ($p) {
+        return new \WPGraphQL\Model\Post($p);
+      }, $posts);
+    },
+  ]);
 
   register_graphql_object_type('CourseAccessRule', [
     'fields' => [

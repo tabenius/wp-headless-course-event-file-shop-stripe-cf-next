@@ -45,8 +45,18 @@ Some GraphQL fragment fields require specific WordPress plugins. They are disabl
 |---------|---------|-----------------|
 | Editor Blocks (Gutenberg block data) | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1` | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) |
 | Event CPT | `NEXT_PUBLIC_WORDPRESS_EVENT_CPT=1` | A plugin that registers an `Event` post type in WPGraphQL |
+| LearnPress courses | `NEXT_PUBLIC_WORDPRESS_LEARNPRESS=1` | LearnPress + the `Articulate-LearnPress-Stripe` mu-plugin (see `docs/wordpress/mu-plugins/`) |
 
 When disabled, queries omit these fields entirely so they never cause schema errors. Content rendering falls back to the `content` HTML field when `editorBlocks` is unavailable.
+
+## LearnPress Integration
+
+When `NEXT_PUBLIC_WORDPRESS_LEARNPRESS=1` is set and the mu-plugin is installed:
+
+- `/courses` lists all LearnPress courses with price, duration, and featured image.
+- Individual course pages (`/courses/<slug>`) are rendered via the catch-all route with the app's auth/paywall flow.
+- The mu-plugin registers `lp_course` and `lp_lesson` as WPGraphQL types (`LpCourse`/`LpLesson`) and adds custom fields: `price`, `priceRendered`, `duration`, and `curriculum`.
+- Course access is controlled by the same mechanism as before — see [WordPress LearnPress setup](wordpress-learnpress-course-access.md).
 
 ## Diagnostics
 

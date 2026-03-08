@@ -51,7 +51,7 @@ export default async function Header() {
           <Link href="/shop" className={menuItemClass}>
             Butik
           </Link>
-          <Link href="https://www.xtas.nu/courses/" className={menuItemClass}>
+          <Link href="/courses" className={menuItemClass}>
             Onlinekurser
           </Link>
           <Link href="/admin" className={menuItemClass}>

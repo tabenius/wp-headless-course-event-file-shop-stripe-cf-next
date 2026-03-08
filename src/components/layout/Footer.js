@@ -77,7 +77,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li className={menuItemClass}>
-                <Link href="https://www.xtas.nu/courses/" className={menuItemLinkClass}>
+                <Link href="/courses" className={menuItemLinkClass}>
                   Onlinekurser
                 </Link>
               </li>

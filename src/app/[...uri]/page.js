@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import { redirect } from "next/navigation";
 import { SingleEventFragment } from "@/lib/fragments/SingleEventFragment";
+import { LpCourseFragment } from "@/lib/fragments/LpCourseFragment";
 import { SinglePageFragment } from "@/lib/fragments/SinglePageFragment";
 import { SinglePostFragment } from "@/lib/fragments/SinglePostFragment";
 import Page from "@/components/single/Page";
@@ -23,8 +24,11 @@ import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 // SingleEventFragment is only included when the Event CPT is registered
 const eventFragmentDef = SingleEventFragment ? SingleEventFragment : "";
 const eventFragmentSpread = SingleEventFragment ? "...SingleEventFragment" : "";
+const courseFragmentDef = LpCourseFragment ? LpCourseFragment : "";
+const courseFragmentSpread = LpCourseFragment ? "...LpCourseFragment" : "";
 const GET_CONTENT_QUERY = `
   ${eventFragmentDef}
+  ${courseFragmentDef}
   ${SinglePageFragment}
   ${SinglePostFragment}
   query GetNodeByUri($uri: String!) {
@@ -55,6 +59,7 @@ const GET_CONTENT_QUERY = `
       ...SinglePageFragment
       ...SinglePostFragment
       ${eventFragmentSpread}
+      ${courseFragmentSpread}
     }
   }
 `;
