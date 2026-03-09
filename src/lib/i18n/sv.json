@@ -158,7 +158,8 @@
     "saveProductsFailed": "Det gick inte att spara produkter.",
     "saveFailed": "Det gick inte att spara.",
     "healthCheckFailed": "Hälsokontrollen misslyckades.",
-    "uploadFailed": "Uppladdning misslyckades."
+    "uploadFailed": "Uppladdning misslyckades.",
+    "documentation": "Dokumentation"
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",

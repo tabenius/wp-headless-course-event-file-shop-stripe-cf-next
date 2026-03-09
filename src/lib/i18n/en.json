@@ -158,7 +158,8 @@
     "saveProductsFailed": "Could not save products.",
     "saveFailed": "Could not save.",
     "healthCheckFailed": "Health check failed.",
-    "uploadFailed": "Upload failed."
+    "uploadFailed": "Upload failed.",
+    "documentation": "Documentation"
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",

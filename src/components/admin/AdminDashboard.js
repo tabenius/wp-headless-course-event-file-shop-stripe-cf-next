@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { t } from "@/lib/i18n";
 
 function toCurrencyUnits(cents) {
@@ -282,13 +283,21 @@ export default function AdminDashboard() {
     <section className="max-w-6xl mx-auto px-6 py-16 space-y-10">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">{t("admin.title")}</h1>
-        <button
-          type="button"
-          onClick={logoutAdmin}
-          className="px-4 py-2 rounded border hover:bg-gray-50"
-        >
-          {t("admin.signOut")}
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/docs"
+            className="px-4 py-2 rounded border hover:bg-gray-50 text-sm"
+          >
+            {t("admin.documentation")}
+          </Link>
+          <button
+            type="button"
+            onClick={logoutAdmin}
+            className="px-4 py-2 rounded border hover:bg-gray-50"
+          >
+            {t("admin.signOut")}
+          </button>
+        </div>
       </div>
 
       {storage ? (
