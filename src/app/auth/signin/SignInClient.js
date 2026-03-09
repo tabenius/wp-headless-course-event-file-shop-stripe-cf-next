@@ -158,7 +158,7 @@ export default function SignInClient() {
 
       <p className="mt-8 text-sm text-gray-600">
         {t("auth.noAccount")}{" "}
-        <Link href="/auth/register" className="text-orange-700 hover:underline">
+        <Link href={`/auth/register${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`} className="text-orange-700 hover:underline">
           {t("auth.createOne")}
         </Link>
       </p>

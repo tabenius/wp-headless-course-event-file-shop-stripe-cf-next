@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { t } from "@/lib/i18n";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,6 +54,8 @@ function generateMemorablePassword() {
 
 export default function RegisterClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get("callbackUrl") || "/";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -97,7 +99,7 @@ export default function RegisterClient() {
       }
 
       // Registration sets the session cookie directly — no separate login needed.
-      router.push("/");
+      router.push(callbackUrl);
     } catch {
       setError(t("authErrors.registerNetworkError"));
       setLoading(false);
@@ -191,7 +193,7 @@ export default function RegisterClient() {
 
       <p className="mt-8 text-sm text-gray-600">
         {t("auth.haveAccount")}{" "}
-        <Link href="/auth/signin" className="text-orange-700 hover:underline">
+        <Link href={`/auth/signin${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`} className="text-orange-700 hover:underline">
           {t("common.signIn")}
         </Link>
       </p>
