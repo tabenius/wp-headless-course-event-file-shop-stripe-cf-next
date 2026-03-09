@@ -92,31 +92,12 @@ export default function Paywall({
             </button>
           </>
         ) : (
-          <>
-            <p className="text-gray-700">
-              {t("paywall.signInToAccess", { contentKind: kindLabel })}
-            </p>
-            <div className="flex justify-center gap-4">
-              <Link
-                href={`/auth/signin?callbackUrl=${encodeURIComponent(courseUri)}`}
-                className="inline-block px-8 py-3 rounded bg-gray-800 text-white hover:bg-gray-700"
-              >
-                {t("paywall.buyNow")}
-              </Link>
-              <Link
-                href={`/auth/signin?callbackUrl=${encodeURIComponent(courseUri)}`}
-                className="inline-block px-8 py-3 rounded border border-gray-800 text-gray-800 hover:bg-gray-100"
-              >
-                {t("common.signIn")}
-              </Link>
-              <Link
-                href={`/auth/register?callbackUrl=${encodeURIComponent(courseUri)}`}
-                className="inline-block px-8 py-3 rounded border border-gray-800 text-gray-800 hover:bg-gray-100"
-              >
-                {t("common.register")}
-              </Link>
-            </div>
-          </>
+          <Link
+            href={`/auth/signin?callbackUrl=${encodeURIComponent(courseUri)}`}
+            className="inline-block px-8 py-3 rounded bg-gray-800 text-white hover:bg-gray-700"
+          >
+            {t("paywall.buyNow")}
+          </Link>
         )}
 
         {error ? <p className="text-red-600">{error}</p> : null}
