@@ -84,7 +84,8 @@ export default function Paywall({
               type="button"
               onClick={checkout}
               disabled={loading}
-              className="px-8 py-3 rounded bg-[var(--color-primary)] !text-white hover:opacity-85 disabled:opacity-50"
+              className="px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50"
+              style={{ color: "#fff" }}
             >
               {loading
                 ? t("paywall.redirectingToStripe")
@@ -94,7 +95,8 @@ export default function Paywall({
         ) : (
           <Link
             href={`/auth/signin?callbackUrl=${encodeURIComponent(courseUri)}`}
-            className="inline-block px-8 py-3 rounded bg-[var(--color-primary)] !text-white hover:opacity-85 no-underline"
+            className="inline-block px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 no-underline"
+            style={{ color: "#fff" }}
           >
             {t("paywall.buyNow")}
           </Link>
