@@ -23,6 +23,7 @@ const nextConfig = {
       { protocol: "https", hostname: "localhost" },
       { protocol: "http", hostname: wpHostname },
       { protocol: "https", hostname: wpHostname },
+      { protocol: "https", hostname: "usercontent.one" },
     ],
     ...(process.env.CLOUDFLARE_IMAGE_RESIZING === "1"
       ? {
