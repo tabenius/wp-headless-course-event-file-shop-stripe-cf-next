@@ -1,11 +1,9 @@
-import { formatDate } from "@/lib/utils";
 import SingleContent from "./SingleContent";
 
 export default function Event({ data }) {
-  const { title, eventFields } = data ?? {};
-  const { date, startTime, endTime } = eventFields ?? {};
-  const locations =
-    data?.location?.edges
+  const { title } = data ?? {};
+  const venues =
+    data?.eventVenues?.edges
       ?.map((edge) => edge?.node?.name)
       .filter((name) => typeof name === "string" && name.trim() !== "") || [];
 
@@ -14,26 +12,13 @@ export default function Event({ data }) {
       data={data}
       title={title}
       meta={
-        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600 my-2">
-          {date ? (
+        venues.length > 0 ? (
+          <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600 my-2">
             <div className="flex items-center">
-              <time dateTime={date}>{formatDate(date)}</time>
+              <span>{venues.join(", ")}</span>
             </div>
-          ) : null}
-          {startTime ? (
-            <div className="flex items-center">
-              <span>
-                {startTime}
-                {endTime ? ` - ${endTime}` : ""}
-              </span>
-            </div>
-          ) : null}
-          {locations.length > 0 ? (
-            <div className="flex items-center">
-              <span>{locations.join(", ")}</span>
-            </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null
       }
     />
   );

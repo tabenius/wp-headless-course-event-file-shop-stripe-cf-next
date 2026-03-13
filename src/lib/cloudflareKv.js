@@ -29,15 +29,29 @@ export async function readCloudflareKvJson(key) {
   return JSON.parse(text);
 }
 
-export async function writeCloudflareKvJson(key, value) {
+export async function writeCloudflareKvJson(key, value, { expirationTtl } = {}) {
   if (!hasCloudflareConfig()) return false;
-  const response = await fetch(getKvUrl(key), {
+  let url = getKvUrl(key);
+  if (expirationTtl) url += `?expiration_ttl=${expirationTtl}`;
+  const response = await fetch(url, {
     method: "PUT",
     headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
     body: JSON.stringify(value),
   });
   if (!response.ok) {
     throw new Error(`Cloudflare KV write failed (${response.status})`);
+  }
+  return true;
+}
+
+export async function deleteCloudflareKv(key) {
+  if (!hasCloudflareConfig()) return false;
+  const response = await fetch(getKvUrl(key), {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Cloudflare KV delete failed (${response.status})`);
   }
   return true;
 }

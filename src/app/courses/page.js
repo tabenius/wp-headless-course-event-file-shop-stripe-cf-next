@@ -51,7 +51,7 @@ export default async function CoursesPage() {
     );
   }
 
-  const data = await fetchGraphQL(LIST_COURSES_QUERY, {}, 3600);
+  const data = await fetchGraphQL(LIST_COURSES_QUERY, {}, 1800);
   const courses = data?.lpCourses?.edges?.map((e) => e.node) || [];
 
   return (

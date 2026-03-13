@@ -60,6 +60,11 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsMessage, setProductsMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("health");
+  const [purging, setPurging] = useState(false);
+  const [purgeMessage, setPurgeMessage] = useState("");
+  const [deploying, setDeploying] = useState(false);
+  const [deployMessage, setDeployMessage] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/course-access")
@@ -279,6 +284,36 @@ export default function AdminDashboard() {
     }
   }
 
+  async function purgeCache() {
+    setPurging(true);
+    setPurgeMessage("");
+    try {
+      const res = await fetch("/api/admin/purge-cache", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.purgeFailed"));
+      setPurgeMessage(t("admin.cachePurged"));
+    } catch (err) {
+      setError(err.message || t("admin.purgeFailed"));
+    } finally {
+      setPurging(false);
+    }
+  }
+
+  async function triggerDeploy() {
+    setDeploying(true);
+    setDeployMessage("");
+    try {
+      const res = await fetch("/api/admin/deploy", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.deployFailed"));
+      setDeployMessage(t("admin.deployTriggered"));
+    } catch (err) {
+      setError(err.message || t("admin.deployFailed"));
+    } finally {
+      setDeploying(false);
+    }
+  }
+
   return (
     <section className="max-w-6xl mx-auto px-6 py-16 space-y-10">
       <div className="flex justify-between items-center">
@@ -306,6 +341,82 @@ export default function AdminDashboard() {
         </p>
       ) : null}
 
+      {/* Architecture overview */}
+      <div className="border rounded p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">{t("admin.architecture")}</h2>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={purgeCache}
+              disabled={purging}
+              className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm disabled:opacity-50"
+            >
+              {purging ? t("admin.purgingCache") : t("admin.purgeCache")}
+            </button>
+            <button
+              type="button"
+              onClick={triggerDeploy}
+              disabled={deploying}
+              className="px-3 py-1.5 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm disabled:opacity-50"
+            >
+              {deploying ? t("admin.deploying") : t("admin.deploy")}
+            </button>
+          </div>
+        </div>
+        {purgeMessage && <p className="text-green-700 text-sm">{purgeMessage}</p>}
+        {deployMessage && <p className="text-green-700 text-sm">{deployMessage}</p>}
+
+        {/* Simple architecture diagram */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-xs text-center">
+          <div className="border-2 border-blue-300 bg-blue-50 rounded-lg px-4 py-3 w-36">
+            <div className="font-bold text-blue-800">WordPress</div>
+            <div className="text-gray-500 mt-1">WPGraphQL</div>
+            <div className="text-gray-400">CMS + Media</div>
+          </div>
+          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">&rarr;</div>
+          <div className="border-2 border-green-300 bg-green-50 rounded-lg px-4 py-3 w-36">
+            <div className="font-bold text-green-800">Next.js</div>
+            <div className="text-gray-500 mt-1">OpenNext</div>
+            <div className="text-gray-400">{t("admin.cacheTime")}</div>
+          </div>
+          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">&rarr;</div>
+          <div className="border-2 border-orange-300 bg-orange-50 rounded-lg px-4 py-3 w-36">
+            <div className="font-bold text-orange-800">Cloudflare</div>
+            <div className="text-gray-500 mt-1">Workers + KV</div>
+            <div className="text-gray-400">Edge CDN</div>
+          </div>
+          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">&rarr;</div>
+          <div className="border-2 border-purple-300 bg-purple-50 rounded-lg px-4 py-3 w-36">
+            <div className="font-bold text-purple-800">Stripe</div>
+            <div className="text-gray-500 mt-1">Payments</div>
+            <div className="text-gray-400">Webhooks</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex border-b">
+        {[
+          { id: "health", label: t("admin.healthCheck") },
+          { id: "products", label: t("admin.shopProducts") },
+          { id: "access", label: t("admin.courseAccess") },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-5 py-2.5 text-sm font-medium -mb-px border-b-2 transition-colors ${
+              activeTab === tab.id
+                ? "border-gray-800 text-gray-900"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "health" && (
       <div className="border rounded p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">{t("admin.healthCheck")}</h2>
@@ -373,7 +484,9 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+      )}
 
+      {activeTab === "products" && (
       <div className="border rounded p-5 space-y-4">
         <h2 className="text-2xl font-semibold">{t("admin.shopProducts")}</h2>
         <p className="text-sm text-gray-600">{t("admin.shopProductsHint")}</p>
@@ -522,7 +635,9 @@ export default function AdminDashboard() {
         </div>
         {productsMessage ? <p className="text-green-700 text-sm">{productsMessage}</p> : null}
       </div>
+      )}
 
+      {activeTab === "access" && (
       <div className="border rounded p-5 space-y-4">
         <h2 className="text-2xl font-semibold">{t("admin.courseAccess")}</h2>
         <div className="grid md:grid-cols-2 gap-8">
@@ -661,6 +776,7 @@ export default function AdminDashboard() {
           {loading ? t("admin.saving") : t("admin.saveCourseAccess")}
         </button>
       </div>
+      )}
 
       {message ? <p className="text-green-700">{message}</p> : null}
       {error ? <p className="text-red-600">{error}</p> : null}

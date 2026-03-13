@@ -60,16 +60,17 @@ export async function createStripeCheckoutSession({
   email,
   successUrl,
   cancelUrl,
+  contentKind = "course",
 }) {
   return createStripePaymentSession({
-    itemName: courseTitle || `Course access: ${courseUri}`,
+    itemName: courseTitle || `${contentKind === "event" ? "Event" : "Course"} access: ${courseUri}`,
     priceCents,
     currency,
     email,
     successUrl,
     cancelUrl,
     metadata: {
-      purchase_kind: "course",
+      purchase_kind: contentKind,
       course_uri: courseUri,
     },
   });

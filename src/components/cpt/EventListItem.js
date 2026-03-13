@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { FeaturedImage } from "../image/FeaturedImage";
-import { formatDate, createExcerpt } from "@/lib/utils";
+import { createExcerpt } from "@/lib/utils";
 
 export default function EventListItem({ post }) {
   if (!post) return null;
-  const { content, eventFields, title, uri } = post;
-  const { date, startTime, endTime } = eventFields ?? {};
+  const { content, title, uri } = post;
 
-  const locations =
-    post.location?.edges
+  const venues =
+    (post.eventVenues || post.location)?.edges
       ?.map((edge) => edge?.node?.name)
       .filter((name) => typeof name === "string" && name.trim() !== "") || [];
+
   return (
     <article className="container max-w-4xl px-10 py-6 mx-auto rounded-lg shadow-sm bg-gray-50 mb-4">
       <h2 className="mt-3">
@@ -23,51 +23,8 @@ export default function EventListItem({ post }) {
         </Link>
       </h2>
 
-      <div className="flex flex-wrap gap-4 text-sm text-gray-600 my-2">
-        {date && (
-          <div className="flex items-center">
-            <svg
-              className="w-4 h-4 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
-            <time dateTime={date}>{formatDate(date)}</time>
-          </div>
-        )}
-
-        {startTime && (
-          <div className="flex items-center">
-            <svg
-              className="w-4 h-4 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
-            <span>
-              {startTime}
-              {endTime ? ` - ${endTime}` : ""}
-            </span>
-          </div>
-        )}
-
-        {locations.length > 0 && (
+      {venues.length > 0 && (
+        <div className="flex flex-wrap gap-4 text-sm text-gray-600 my-2">
           <div className="flex items-center">
             <svg
               className="w-4 h-4 mr-1"
@@ -89,10 +46,10 @@ export default function EventListItem({ post }) {
                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
               ></path>
             </svg>
-            <span>{locations.join(", ")}</span>
+            <span>{venues.join(", ")}</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <FeaturedImage
         post={post}

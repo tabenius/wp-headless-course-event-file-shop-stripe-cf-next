@@ -169,6 +169,25 @@ export async function validateUserPassword(email, password) {
   return { id: user.id, name: user.name, email: user.email };
 }
 
+export async function updateUserPassword(email, newPassword) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || typeof newPassword !== "string" || newPassword.length < 8) {
+    throw new Error("Invalid input");
+  }
+  const users = await readUsers();
+  const index = users.findIndex(
+    (user) => normalizeEmail(user?.email) === normalizedEmail,
+  );
+  if (index < 0) throw new Error("User not found");
+  users[index] = {
+    ...users[index],
+    passwordHash: hashPassword(newPassword),
+    updatedAt: new Date().toISOString(),
+  };
+  await writeUsers(users);
+  return { id: users[index].id, name: users[index].name, email: users[index].email };
+}
+
 export async function listUsers() {
   const users = await readUsers();
   return users

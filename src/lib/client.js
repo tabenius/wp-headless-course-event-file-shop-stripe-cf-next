@@ -16,7 +16,7 @@ export async function hasGraphQLType(typeName) {
     const data = await fetchGraphQL(
       `query IntrospectType($name: String!) { __type(name: $name) { name } }`,
       { name: typeName },
-      3600,
+      1800,
     );
     const exists = !!data?.__type?.name;
     _typeCache.set(typeName, exists);

@@ -32,6 +32,10 @@ export default function SignInClient() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [providers, setProviders] = useState([]);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -102,6 +106,29 @@ export default function SignInClient() {
     return "";
   }
 
+  async function onForgotPassword(event) {
+    event.preventDefault();
+    const normalized = forgotEmail.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalized)) {
+      setError(t("authErrors.invalidEmail"));
+      return;
+    }
+    setError("");
+    setForgotLoading(true);
+    try {
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalized }),
+      });
+      setForgotMessage(t("resetPassword.emailSent"));
+    } catch {
+      setForgotMessage(t("resetPassword.emailSent"));
+    } finally {
+      setForgotLoading(false);
+    }
+  }
+
   const combinedError = error || getAuthErrorMessage();
 
   return (
@@ -109,34 +136,84 @@ export default function SignInClient() {
       <h1 className="text-3xl font-bold mb-2">{t("auth.signInTitle")}</h1>
       <p className="text-gray-600 mb-8">{t("auth.signInSubtitle")}</p>
 
-      <form className="space-y-4" onSubmit={onCredentialsSignIn}>
-        <input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder={t("common.email")}
-          className="w-full border rounded px-3 py-2"
-          autoComplete="email"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder={t("auth.passwordPlaceholder")}
-          className="w-full border rounded px-3 py-2"
-          minLength={MIN_PASSWORD_LENGTH}
-          autoComplete="current-password"
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50"
-        >
-          {loading ? t("auth.signingIn") : t("auth.signInWithEmail")}
-        </button>
-      </form>
+      {forgotMode ? (
+        forgotMessage ? (
+          <div className="space-y-4">
+            <p className="text-green-700">{forgotMessage}</p>
+            <button
+              type="button"
+              onClick={() => { setForgotMode(false); setForgotMessage(""); }}
+              className="text-sm text-gray-600 hover:underline"
+            >
+              {t("resetPassword.backToSignIn")}
+            </button>
+          </div>
+        ) : (
+          <form className="space-y-4" onSubmit={onForgotPassword}>
+            <input
+              type="email"
+              value={forgotEmail}
+              onChange={(event) => setForgotEmail(event.target.value)}
+              placeholder={t("common.email")}
+              className="w-full border rounded px-3 py-2"
+              autoComplete="email"
+              required
+            />
+            <button
+              type="submit"
+              disabled={forgotLoading}
+              className="w-full bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50"
+            >
+              {forgotLoading ? t("common.loading") : t("resetPassword.sendLink")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setForgotMode(false)}
+              className="text-sm text-gray-600 hover:underline"
+            >
+              {t("resetPassword.backToSignIn")}
+            </button>
+          </form>
+        )
+      ) : (
+        <form className="space-y-4" onSubmit={onCredentialsSignIn}>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder={t("common.email")}
+            className="w-full border rounded px-3 py-2"
+            autoComplete="email"
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder={t("auth.passwordPlaceholder")}
+            className="w-full border rounded px-3 py-2"
+            minLength={MIN_PASSWORD_LENGTH}
+            autoComplete="current-password"
+            required
+          />
+          <div className="flex justify-between items-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50"
+            >
+              {loading ? t("auth.signingIn") : t("auth.signInWithEmail")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setForgotMode(true); setForgotEmail(email); setError(""); }}
+              className="text-sm text-gray-500 hover:underline"
+            >
+              {t("resetPassword.forgotPassword")}
+            </button>
+          </div>
+        </form>
+      )}
 
       {oauthProviders.length > 0 ? (
         <div className="mt-8 space-y-3">

@@ -50,7 +50,7 @@
     { "href": "/om-sofia-cerne", "label": "Om Sofia" },
     { "href": "/blog", "label": "Blog" },
     { "href": "/relationsterapi-for-par", "label": "Utveckling för par" },
-    { "href": "https://www.xtas.nu/events/event/", "label": "Evenemang", "external": true },
+    { "href": "/events", "label": "Evenemang" },
     { "href": "/shop", "label": "Butik" },
     { "href": "/courses", "label": "Onlinekurser" }
   ],
@@ -73,7 +73,7 @@
         { "href": "/handbok-tantriskmassage", "label": "Boken Röra & Beröra" },
         { "href": "/blog", "label": "Blog" },
         { "href": "/relationsterapi-for-par", "label": "Utveckling för par" },
-        { "href": "https://www.xtas.nu/events/event/", "label": "Evenemang", "external": true },
+        { "href": "/events", "label": "Evenemang" },
         { "href": "/shop", "label": "Butik" },
         { "href": "/courses", "label": "Onlinekurser" }
       ]

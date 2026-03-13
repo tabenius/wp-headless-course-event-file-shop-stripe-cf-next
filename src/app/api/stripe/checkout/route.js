@@ -72,6 +72,7 @@ export async function POST(request) {
       email: session.user.email,
       successUrl,
       cancelUrl,
+      contentKind,
     });
     return NextResponse.json({ ok: true, url: checkout.url, id: checkout.id });
   } catch (error) {

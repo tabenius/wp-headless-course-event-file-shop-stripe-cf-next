@@ -89,7 +89,7 @@ function getContentQuery() {
 
 async function fetchContent(uri) {
   const query = await getContentQuery();
-  return await fetchGraphQL(query, { uri }, 3600);
+  return await fetchGraphQL(query, { uri }, 1800);
 }
 
 function stripHtml(html) {

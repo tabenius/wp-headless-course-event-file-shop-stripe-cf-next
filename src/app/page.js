@@ -19,7 +19,7 @@ export default async function HomePage({ params }) {
     {
       uri: "/",
     },
-    86400,
+    1800,
   );
 
   if (!data?.nodeByUri) {

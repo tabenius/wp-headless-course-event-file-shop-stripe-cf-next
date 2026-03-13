@@ -159,7 +159,18 @@
     "saveFailed": "Could not save.",
     "healthCheckFailed": "Health check failed.",
     "uploadFailed": "Upload failed.",
-    "documentation": "Documentation"
+    "documentation": "Documentation",
+    "purgeCache": "Purge cache",
+    "purgingCache": "Purging...",
+    "cachePurged": "Cache purged.",
+    "purgeFailed": "Could not purge cache.",
+    "deploy": "Deploy",
+    "deploying": "Deploying...",
+    "deployTriggered": "Deploy triggered.",
+    "deployFailed": "Could not trigger deploy.",
+    "deployNotConfigured": "Deploy is not configured. Set GITHUB_DEPLOY_TOKEN and GITHUB_REPO.",
+    "architecture": "Architecture",
+    "cacheTime": "Cache: 30 min"
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",
@@ -250,6 +261,24 @@
     "userMenu": "User menu",
     "closeMenu": "Close menu",
     "openMenu": "Open menu"
+  },
+  "resetPassword": {
+    "title": "Reset password",
+    "subtitle": "Enter your new password.",
+    "forgotPassword": "Forgot password?",
+    "sendLink": "Send reset link",
+    "backToSignIn": "Back to sign in",
+    "emailSent": "If an account exists with that email, a reset link has been sent.",
+    "emailSubject": "Reset your password",
+    "emailBody": "Click the link below to reset your password:",
+    "emailLinkText": "Reset my password",
+    "emailExpiry": "This link expires in 24 hours.",
+    "submit": "Set new password",
+    "success": "Your password has been reset. You can now sign in.",
+    "invalidToken": "This reset link is invalid or has expired.",
+    "tokenExpired": "This reset link has expired. Please request a new one.",
+    "resetFailed": "Could not reset the password right now. Please try again.",
+    "requestFailed": "Could not process the request right now."
   },
   "metadata": {
     "adminPage": "Course access admin",

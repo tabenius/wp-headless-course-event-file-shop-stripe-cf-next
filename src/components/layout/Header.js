@@ -7,18 +7,19 @@ import UserMenu from "./UserMenu";
 import DarkModeToggle from "./DarkModeToggle";
 import site from "@/lib/site";
 import { t } from "@/lib/i18n";
+import { getNavigation } from "@/lib/menu";
 
 async function fetchSiteTitle() {
   const data = await fetchGraphQL(
     `{ allSettings { generalSettingsTitle } }`,
     {},
-    86400,
+    1800,
   );
   return data?.allSettings?.generalSettingsTitle || site.shortName;
 }
 
 export default async function Header() {
-  const [session, title] = await Promise.all([auth(), fetchSiteTitle()]);
+  const [session, title, navigation] = await Promise.all([auth(), fetchSiteTitle(), getNavigation()]);
   const menuItemClass =
     "font-[family-name:var(--font-montserrat)] text-[13px] font-normal hover:underline focus:underline whitespace-nowrap";
   const mobileAuthClass =
@@ -63,7 +64,7 @@ export default async function Header() {
         {/* Desktop navigation + user icon */}
         <div className="hidden lg:flex items-center gap-x-4">
           <nav className="flex items-center gap-x-4">
-            {site.navigation.map((item) => (
+            {navigation.map((item) => (
               <Link key={item.href} href={item.href} className={menuItemClass}>
                 {item.label}
               </Link>
@@ -79,7 +80,7 @@ export default async function Header() {
 
         {/* Mobile hamburger + slide-out menu */}
         <MobileNav
-          items={[...site.navigation, { href: "/admin", label: t("common.admin") }]}
+          items={[...navigation, { href: "/admin", label: t("common.admin") }]}
           authLinks={mobileAuthLinks}
         />
       </div>

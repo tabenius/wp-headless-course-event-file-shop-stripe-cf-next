@@ -17,7 +17,7 @@ export async function BlogListingTemplate(query, params, titlePrefix) {
     query: query,
     slug,
     pageSize: getPostsPerPage(),
-    revalidate: 3600, // Caches for 60 minutes
+    revalidate: 1800, // Caches for 30 minutes
   });
 
   // Check if posts exists then throw a 404

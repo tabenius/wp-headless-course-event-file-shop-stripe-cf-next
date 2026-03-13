@@ -159,7 +159,18 @@
     "saveFailed": "Det gick inte att spara.",
     "healthCheckFailed": "Hälsokontrollen misslyckades.",
     "uploadFailed": "Uppladdning misslyckades.",
-    "documentation": "Dokumentation"
+    "documentation": "Dokumentation",
+    "purgeCache": "Rensa cache",
+    "purgingCache": "Rensar...",
+    "cachePurged": "Cache rensad.",
+    "purgeFailed": "Det gick inte att rensa cachen.",
+    "deploy": "Publicera",
+    "deploying": "Publicerar...",
+    "deployTriggered": "Publicering startad.",
+    "deployFailed": "Det gick inte att starta publicering.",
+    "deployNotConfigured": "Publicering är inte konfigurerad. Ange GITHUB_DEPLOY_TOKEN och GITHUB_REPO.",
+    "architecture": "Arkitektur",
+    "cacheTime": "Cache: 30 min"
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",
@@ -250,6 +261,24 @@
     "userMenu": "Användarmeny",
     "closeMenu": "Stäng meny",
     "openMenu": "Öppna meny"
+  },
+  "resetPassword": {
+    "title": "Återställ lösenord",
+    "subtitle": "Ange ditt nya lösenord.",
+    "forgotPassword": "Glömt lösenord?",
+    "sendLink": "Skicka återställningslänk",
+    "backToSignIn": "Tillbaka till inloggning",
+    "emailSent": "Om ett konto finns med den e-postadressen har en återställningslänk skickats.",
+    "emailSubject": "Återställ ditt lösenord",
+    "emailBody": "Klicka på länken nedan för att återställa ditt lösenord:",
+    "emailLinkText": "Återställ mitt lösenord",
+    "emailExpiry": "Länken är giltig i 24 timmar.",
+    "submit": "Sätt nytt lösenord",
+    "success": "Ditt lösenord har återställts. Du kan nu logga in.",
+    "invalidToken": "Återställningslänken är ogiltig eller har gått ut.",
+    "tokenExpired": "Återställningslänken har gått ut. Begär en ny.",
+    "resetFailed": "Det gick inte att återställa lösenordet just nu. Försök igen.",
+    "requestFailed": "Det gick inte att behandla förfrågan just nu."
   },
   "metadata": {
     "adminPage": "Admin för kursåtkomst",

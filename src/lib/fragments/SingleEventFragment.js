@@ -16,11 +16,6 @@ fragment SingleEventFragment on Event {
     title
     content
     ${editorBlocksFragment}
-    eventFields {
-      date
-      startTime
-      endTime
-    }
     featuredImage {
       node {
         sourceUrl
@@ -31,7 +26,7 @@ fragment SingleEventFragment on Event {
         }
       }
     }
-    location {
+    eventVenues {
       edges {
         node {
           name

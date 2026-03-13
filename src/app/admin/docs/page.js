@@ -4,6 +4,8 @@ import Link from "next/link";
 import { t } from "@/lib/i18n";
 
 const docs = [
+  { slug: "architecture", title: "Architecture Overview" },
+  { slug: "readme", title: "README — Overview & Quickstart" },
   { slug: "readme-sv", title: "Teknisk referens (Svenska)" },
   { slug: "readme-en", title: "Technical Reference (English)" },
   { slug: "cloudflare-workers-deploy", title: "Cloudflare Workers-deploy" },

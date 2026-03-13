@@ -13,13 +13,13 @@ fragment EventListFragment on Event {
     title
     uri
     content
-    location {
-  	  edges {
-  	    node {
-  	     	name
-  	    }
-  	  }
-  	}
+    eventVenues {
+      edges {
+        node {
+          name
+        }
+      }
+    }
     featuredImage {
       node {
         sourceUrl
@@ -33,11 +33,6 @@ fragment EventListFragment on Event {
           url
         }
       }
-    }
-    eventFields {
-      date
-      startTime
-      endTime
     }
   }
 `;
