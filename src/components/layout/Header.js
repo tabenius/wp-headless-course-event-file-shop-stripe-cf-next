@@ -48,8 +48,8 @@ export default async function Header() {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 bg-[#fff1f1]/90 backdrop-blur-sm h-16 lg:h-[68px] border-b border-[#333333]">
-      <div className="flex items-center justify-between h-full w-full px-4 lg:px-6">
+    <header className="fixed top-0 left-0 right-0 z-30 bg-[#fff1f1]/90 backdrop-blur-sm min-h-16 lg:min-h-[68px] border-b border-[#333333]">
+      <div className="flex items-center justify-between w-full px-4 lg:px-6 py-2">
         {/* Logo - far left with minimal space */}
         <Link href="/" className="shrink-0 mr-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -63,7 +63,7 @@ export default async function Header() {
 
         {/* Desktop navigation + user icon */}
         <div className="hidden lg:flex items-center gap-x-3">
-          <nav className="flex items-center gap-x-3">
+          <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
             {navigation.map((item) => (
               <Link key={item.href} href={item.href} className={menuItemClass}>
                 {item.label}
