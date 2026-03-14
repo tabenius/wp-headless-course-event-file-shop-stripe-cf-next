@@ -20,6 +20,8 @@ jobs:
 
       - name: Build
         run: npx opennextjs-cloudflare build
+        env:
+          NEXT_PUBLIC_WORDPRESS_URL: https://www.xtas.nu/
 
       - name: Deploy
         run: npx wrangler deploy

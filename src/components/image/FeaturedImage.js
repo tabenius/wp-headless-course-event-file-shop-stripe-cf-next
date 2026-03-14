@@ -15,6 +15,16 @@ export function FeaturedImage({
 
   const imageAlt = imageNode?.altText || post?.title || title || "Featured image";
 
+  const img = (
+    <Image
+      src={imageUrl}
+      alt={imageAlt}
+      fill
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      className="object-cover"
+    />
+  );
+
   return (
     <div className={classNames}>
       {typeof uri === "string" && uri.trim() !== "" ? (
@@ -23,22 +33,10 @@ export function FeaturedImage({
           title={title}
           className="opacity-80 hover:opacity-100 transition-opacity ease-in-out"
         >
-          <Image
-            src={imageUrl}
-            alt={imageAlt}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
-          />
+          {img}
         </Link>
       ) : (
-        <Image
-          src={imageUrl}
-          alt={imageAlt}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover"
-        />
+        img
       )}
     </div>
   );

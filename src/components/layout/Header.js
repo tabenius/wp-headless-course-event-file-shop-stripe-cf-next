@@ -8,6 +8,7 @@ import DarkModeToggle from "./DarkModeToggle";
 import site from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { getNavigation } from "@/lib/menu";
+import NavDropdown from "./NavDropdown";
 
 async function fetchSiteTitle() {
   const data = await fetchGraphQL(
@@ -64,11 +65,20 @@ export default async function Header() {
         {/* Desktop navigation + user icon */}
         <div className="hidden lg:flex items-center gap-x-3">
           <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-            {navigation.map((item) => (
-              <Link key={item.href} href={item.href} className={menuItemClass}>
-                {item.label}
-              </Link>
-            ))}
+            {navigation.map((item) =>
+              item.children?.length > 0 ? (
+                <NavDropdown
+                  key={item.href}
+                  item={item}
+                  className={menuItemClass}
+                  dropdownClassName="bg-[#fff1f1] border border-[#333333] rounded shadow-lg py-1 min-w-[180px]"
+                />
+              ) : (
+                <Link key={item.href} href={item.href} className={menuItemClass}>
+                  {item.label}
+                </Link>
+              ),
+            )}
           </nav>
           <DarkModeToggle />
           <UserMenu

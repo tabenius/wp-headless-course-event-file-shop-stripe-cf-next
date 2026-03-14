@@ -6,12 +6,21 @@ const MENU_QUERY = `
     menus(where: { location: PRIMARY }) {
       edges {
         node {
-          menuItems(first: 100) {
+          menuItems(first: 100, where: { parentId: 0 }) {
             edges {
               node {
                 label
                 path
                 url
+                childItems {
+                  edges {
+                    node {
+                      label
+                      path
+                      url
+                    }
+                  }
+                }
               }
             }
           }
@@ -21,9 +30,17 @@ const MENU_QUERY = `
   }
 `;
 
+function mapItem(node) {
+  return {
+    href: node.path || node.url || "#",
+    label: node.label || "",
+  };
+}
+
 /**
- * Fetch the primary WordPress menu. Falls back to site.json navigation
- * if the menu is empty or the query fails.
+ * Fetch the primary WordPress menu with submenus.
+ * Falls back to site.json navigation if the menu is empty or the query fails.
+ * Returns items with optional `children` arrays.
  */
 export async function getNavigation() {
   try {
@@ -33,10 +50,14 @@ export async function getNavigation() {
 
     if (menuItems.length === 0) return site.navigation;
 
-    return menuItems.map((item) => ({
-      href: item.path || item.url || "#",
-      label: item.label || "",
-    }));
+    return menuItems.map((item) => {
+      const children =
+        item.childItems?.edges?.map((e) => mapItem(e.node)) || [];
+      return {
+        ...mapItem(item),
+        ...(children.length > 0 ? { children } : {}),
+      };
+    });
   } catch {
     return site.navigation;
   }

@@ -54,14 +54,25 @@ export default function MobileNav({ items, authLinks }) {
         </div>
         <div className="px-5 pb-4">
           {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={menuItemClass}
-              onClick={() => setOpen(false)}
-            >
-              {item.label}
-            </Link>
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                className={menuItemClass}
+                onClick={() => setOpen(false)}
+              >
+                {item.label}
+              </Link>
+              {item.children?.map((child) => (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  className={`${menuItemClass} pl-4 text-[12px]`}
+                  onClick={() => setOpen(false)}
+                >
+                  {child.label}
+                </Link>
+              ))}
+            </div>
           ))}
           <div className="flex items-center gap-2 py-2">
             <DarkModeToggle />
