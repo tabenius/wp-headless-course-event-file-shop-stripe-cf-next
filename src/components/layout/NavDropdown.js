@@ -22,7 +22,7 @@ export default function NavDropdown({ item, className, dropdownClassName }) {
   return (
     <div
       ref={containerRef}
-      className="relative"
+      className="relative flex items-center"
       onMouseEnter={enter}
       onMouseLeave={leave}
     >
