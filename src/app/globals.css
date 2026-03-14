@@ -101,6 +101,23 @@ a:focus {
 /* WordPress content blocks */
 .wp-content {
   font-size: 1rem;
+  overflow-wrap: break-word;
+}
+.wp-content iframe,
+.wp-content embed,
+.wp-content video {
+  max-width: 100%;
+}
+.wp-content iframe[src*="youtube"],
+.wp-content iframe[src*="youtu.be"] {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
+}
+.wp-content .wp-block-embed,
+.wp-content figure {
+  max-width: 100%;
+  overflow: hidden;
 }
 .wp-content p {
   margin: 0 0 1.75em;
