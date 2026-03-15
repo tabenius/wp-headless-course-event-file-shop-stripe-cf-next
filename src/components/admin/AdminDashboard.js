@@ -926,31 +926,44 @@ export default function AdminDashboard() {
           </div>
 
           {/* Shop visibility toggles */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">{t("admin.shopVisibility", "Synliga i butiken")}</p>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-3 bg-gray-50 rounded-lg p-4 border">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">{t("admin.shopVisibility")}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {t("admin.shopVisibilityDesc")}
+              </p>
+            </div>
+            <div className="space-y-2">
               {[
-                { key: "product", label: "WooCommerce" },
-                { key: "course", label: "LearnPress" },
-                { key: "event", label: "Events" },
-                { key: "digital_file", label: t("admin.digitalFile") },
-                { key: "digital_course", label: t("admin.courseProduct") },
-              ].map(({ key, label }) => (
-                <button
+                { key: "product", label: "WooCommerce", desc: t("admin.shopTypeProductDesc") },
+                { key: "course", label: "LearnPress", desc: t("admin.shopTypeCourseDesc") },
+                { key: "event", label: "Events", desc: t("admin.shopTypeEventDesc") },
+                { key: "digital_file", label: t("admin.digitalFile"), desc: t("admin.shopTypeDigitalFileDesc") },
+                { key: "digital_course", label: t("admin.courseProduct"), desc: t("admin.shopTypeDigitalCourseDesc") },
+              ].map(({ key, label, desc }) => (
+                <label
                   key={key}
-                  type="button"
-                  onClick={() => toggleShopType(key)}
-                  disabled={shopSettingsSaving}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    shopVisibleTypes.includes(key)
-                      ? "bg-purple-100 border-purple-400 text-purple-800"
-                      : "bg-gray-50 border-gray-300 text-gray-400"
+                  className={`flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                    shopVisibleTypes.includes(key) ? "bg-purple-50" : "bg-white"
                   }`}
                 >
-                  {label}
-                </button>
+                  <input
+                    type="checkbox"
+                    checked={shopVisibleTypes.includes(key)}
+                    onChange={() => toggleShopType(key)}
+                    disabled={shopSettingsSaving}
+                    className="mt-0.5 accent-purple-600"
+                  />
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-gray-800">{label}</span>
+                    <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                  </div>
+                </label>
               ))}
             </div>
+            {shopSettingsSaving && (
+              <p className="text-xs text-purple-600">{t("common.saving", "Sparar...")}</p>
+            )}
           </div>
 
           {/* All products list */}
