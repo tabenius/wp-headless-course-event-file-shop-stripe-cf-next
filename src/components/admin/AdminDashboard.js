@@ -194,7 +194,7 @@ export default function AdminDashboard() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [healthLoading, setHealthLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [activeTab, setActiveTab] = useState("health");
+  const [activeTab, setActiveTab] = useState("products");
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);
@@ -601,290 +601,155 @@ export default function AdminDashboard() {
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
-      {storage ? (
-        <p className="text-sm text-gray-600">
-          {t("admin.storage")}: <strong>{storage.provider}</strong>
-        </p>
-      ) : null}
-
-      {/* Architecture overview */}
-      <div className="border rounded p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">{t("admin.architecture")}</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {t("admin.architectureHint")}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={purgeCache}
-              disabled={purging}
-              className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm disabled:opacity-50"
-              title={t("admin.purgeCacheTooltip")}
-            >
-              {purging ? t("admin.purgingCache") : t("admin.purgeCache")}
-            </button>
-            <button
-              type="button"
-              onClick={triggerDeploy}
-              disabled={deploying}
-              className="px-3 py-1.5 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm disabled:opacity-50"
-              title={t("admin.deployTooltip")}
-            >
-              {deploying ? t("admin.deploying") : t("admin.deploy")}
-            </button>
-          </div>
-        </div>
-        {purgeMessage && (
-          <p className="text-green-700 text-sm">{purgeMessage}</p>
-        )}
-        {deployMessage && (
-          <p className="text-green-700 text-sm">{deployMessage}</p>
-        )}
-
-        <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-xs text-center">
-          <div className="border-2 border-blue-300 bg-blue-50 rounded-lg px-4 py-3 w-36">
-            <div className="font-bold text-blue-800">WordPress</div>
-            <div className="text-gray-500 mt-1">WPGraphQL</div>
-            <div className="text-gray-400">CMS + Media</div>
-          </div>
-          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">
-            &rarr;
-          </div>
-          <div className="border-2 border-green-300 bg-green-50 rounded-lg px-4 py-3 w-36">
-            <div className="font-bold text-green-800">Next.js</div>
-            <div className="text-gray-500 mt-1">OpenNext</div>
-            <div className="text-gray-400">{t("admin.cacheTime")}</div>
-          </div>
-          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">
-            &rarr;
-          </div>
-          <div className="border-2 border-orange-300 bg-orange-50 rounded-lg px-4 py-3 w-36">
-            <div className="font-bold text-orange-800">Cloudflare</div>
-            <div className="text-gray-500 mt-1">Workers + KV</div>
-            <div className="text-gray-400">Edge CDN</div>
-          </div>
-          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">
-            &rarr;
-          </div>
-          <div className="border-2 border-purple-300 bg-purple-50 rounded-lg px-4 py-3 w-36">
-            <div className="font-bold text-purple-800">Stripe</div>
-            <div className="text-gray-500 mt-1">Payments</div>
-            <div className="text-gray-400">Webhooks</div>
-          </div>
-        </div>
-        {/* Secondary storage row */}
-        <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-center mt-2">
-          {storage?.provider === "r2" && (
-            <div className="border-2 border-cyan-300 bg-cyan-50 rounded-lg px-4 py-3 w-36">
-              <div className="font-bold text-cyan-800">Cloudflare R2</div>
-              <div className="text-gray-500 mt-1">S3-compatible</div>
-              <div className="text-gray-400">File storage</div>
-            </div>
-          )}
-          <div className="border-2 border-indigo-300 bg-indigo-50 rounded-lg px-4 py-3 w-36">
-            <div className="font-bold text-indigo-800">WP Media</div>
-            <div className="text-gray-500 mt-1">Uploads</div>
-            <div className="text-gray-400">Images &amp; files</div>
-          </div>
-          <div className="border-2 border-rose-300 bg-rose-50 rounded-lg px-4 py-3 w-36">
-            <div className="font-bold text-rose-800">Resend</div>
-            <div className="text-gray-500 mt-1">Email API</div>
-            <div className="text-gray-400">Transactional</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="border rounded p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">
-            {wcProducts.length + wpCourses.length + wpEvents.length + products.length}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">Total items</div>
-        </div>
-        <div className="border rounded p-4 text-center">
-          <div className="text-2xl font-bold text-blue-700">{wcProducts.length}</div>
-          <div className="text-xs text-gray-500 mt-1">WooCommerce</div>
-        </div>
-        <div className="border rounded p-4 text-center">
-          <div className="text-2xl font-bold text-green-700">
-            {wpCourses.length + wpEvents.length}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">Courses &amp; Events</div>
-        </div>
-        <div className="border rounded p-4 text-center">
-          <div className="text-2xl font-bold text-purple-700">{users.length}</div>
-          <div className="text-xs text-gray-500 mt-1">Registered users</div>
-        </div>
-      </div>
-
-      {/* Traffic analytics */}
-      {analytics && (
-        <div className="border rounded p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Traffic (last 24h)</h2>
-            <span className={`text-xs px-2 py-0.5 rounded ${
-              analyticsMode === "zone"
-                ? "bg-green-100 text-green-800"
-                : "bg-amber-100 text-amber-800"
-            }`}>
-              {analyticsMode === "zone" ? "Zone analytics (full)" : "Workers analytics (basic)"}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
-            <div className="bg-gray-50 rounded p-3">
-              <div className="text-xl font-bold">{analytics.totals.requests.toLocaleString()}</div>
-              <div className="text-xs text-gray-500">Requests</div>
-            </div>
-            {analyticsMode === "zone" ? (
-              <>
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-xl font-bold">{analytics.totals.pageViews.toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">Page views</div>
-                </div>
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-xl font-bold">{analytics.totals.uniques.toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">Unique visitors</div>
-                </div>
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-xl font-bold">{(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB</div>
-                  <div className="text-xs text-gray-500">Bandwidth</div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-xl font-bold">{(analytics.totals.subrequests || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">Subrequests</div>
-                </div>
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-xl font-bold">{(analytics.totals.errors || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">Errors</div>
-                </div>
-                <div className="bg-gray-50 rounded p-3 opacity-40">
-                  <div className="text-xl font-bold">—</div>
-                  <div className="text-xs text-gray-500">Bandwidth</div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Hourly chart */}
-            {analytics.hourly.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-700">Requests per hour</h3>
-                <div className="flex items-end gap-px h-24 bg-gray-50 rounded p-2">
-                  {(() => {
-                    const maxReq = Math.max(...analytics.hourly.map((h) => h.requests), 1);
-                    return analytics.hourly.map((h, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 bg-blue-400 rounded-t min-h-[2px]"
-                        style={{ height: `${(h.requests / maxReq) * 100}%` }}
-                        title={`${new Date(h.time).getHours()}:00 — ${h.requests} requests`}
-                      />
-                    ));
-                  })()}
-                </div>
-                <div className="flex justify-between text-[10px] text-gray-400 px-2">
-                  <span>{analytics.hourly.length > 0 ? new Date(analytics.hourly[0].time).getHours() + ":00" : ""}</span>
-                  <span>Now</span>
-                </div>
+      {/* ── Stats tab ── */}
+      {activeTab === "stats" && (
+        <div className="space-y-6">
+          {/* Quick stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="border rounded p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">
+                {wcProducts.length + wpCourses.length + wpEvents.length + products.length}
               </div>
-            )}
+              <div className="text-xs text-gray-500 mt-1">Total items</div>
+            </div>
+            <div className="border rounded p-4 text-center">
+              <div className="text-2xl font-bold text-blue-700">{wcProducts.length}</div>
+              <div className="text-xs text-gray-500 mt-1">WooCommerce</div>
+            </div>
+            <div className="border rounded p-4 text-center">
+              <div className="text-2xl font-bold text-green-700">
+                {wpCourses.length + wpEvents.length}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Courses &amp; Events</div>
+            </div>
+            <div className="border rounded p-4 text-center">
+              <div className="text-2xl font-bold text-purple-700">{users.length}</div>
+              <div className="text-xs text-gray-500 mt-1">Registered users</div>
+            </div>
+          </div>
 
-            {/* Top referrers (zone mode only) */}
-            {analyticsMode === "zone" && analytics.referrers.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-700">Top referrers</h3>
-                <div className="space-y-1">
-                  {analytics.referrers.slice(0, 10).map((r, i) => {
-                    const maxCount = analytics.referrers[0]?.count || 1;
-                    return (
-                      <div key={i} className="flex items-center gap-2 text-xs">
-                        <div className="w-24 truncate text-gray-600" title={r.host}>
-                          {r.host}
-                        </div>
-                        <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
+          {/* Traffic analytics */}
+          {analytics ? (
+            <div className="border rounded p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Traffic (last 24h)</h2>
+                <span className={`text-xs px-2 py-0.5 rounded ${
+                  analyticsMode === "zone"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-amber-100 text-amber-800"
+                }`}>
+                  {analyticsMode === "zone" ? "Zone analytics (full)" : "Workers analytics (basic)"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-xl font-bold">{analytics.totals.requests.toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">Requests</div>
+                </div>
+                {analyticsMode === "zone" ? (
+                  <>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">{analytics.totals.pageViews.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">Page views</div>
+                    </div>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">{analytics.totals.uniques.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">Unique visitors</div>
+                    </div>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">{(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB</div>
+                      <div className="text-xs text-gray-500">Bandwidth</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">{(analytics.totals.subrequests || 0).toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">Subrequests</div>
+                    </div>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">{(analytics.totals.errors || 0).toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">Errors</div>
+                    </div>
+                    <div className="bg-gray-50 rounded p-3 opacity-40">
+                      <div className="text-xl font-bold">&mdash;</div>
+                      <div className="text-xs text-gray-500">Bandwidth</div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Hourly chart */}
+                {analytics.hourly.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700">Requests per hour</h3>
+                    <div className="flex items-end gap-px h-24 bg-gray-50 rounded p-2">
+                      {(() => {
+                        const maxReq = Math.max(...analytics.hourly.map((h) => h.requests), 1);
+                        return analytics.hourly.map((h, i) => (
                           <div
-                            className="h-full bg-green-400 rounded"
-                            style={{ width: `${(r.count / maxCount) * 100}%` }}
+                            key={i}
+                            className="flex-1 bg-blue-400 rounded-t min-h-[2px]"
+                            style={{ height: `${(h.requests / maxReq) * 100}%` }}
+                            title={`${new Date(h.time).getHours()}:00 \u2014 ${h.requests} requests`}
                           />
-                        </div>
-                        <span className="text-gray-500 w-12 text-right">{r.count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                        ));
+                      })()}
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-400 px-2">
+                      <span>{analytics.hourly.length > 0 ? new Date(analytics.hourly[0].time).getHours() + ":00" : ""}</span>
+                      <span>Now</span>
+                    </div>
+                  </div>
+                )}
 
-            {analyticsMode === "workers" && (
-              <div className="flex items-center text-xs text-gray-400 p-4">
-                <p>
-                  Referrers, page views, and bandwidth require zone-level analytics.
-                  Route your Worker through a custom domain and set <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> to upgrade.
-                </p>
+                {/* Top referrers (zone mode only) */}
+                {analyticsMode === "zone" && analytics.referrers.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700">Top referrers</h3>
+                    <div className="space-y-1">
+                      {analytics.referrers.slice(0, 10).map((r, i) => {
+                        const maxCount = analytics.referrers[0]?.count || 1;
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-xs">
+                            <div className="w-24 truncate text-gray-600" title={r.host}>
+                              {r.host}
+                            </div>
+                            <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
+                              <div
+                                className="h-full bg-green-400 rounded"
+                                style={{ width: `${(r.count / maxCount) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-gray-500 w-12 text-right">{r.count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {analyticsMode === "workers" && (
+                  <div className="flex items-center text-xs text-gray-400 p-4">
+                    <p>
+                      Referrers, page views, and bandwidth require zone-level analytics.
+                      Route your Worker through a custom domain and set <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> to upgrade.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          ) : !analyticsConfigured ? (
+            <div className="border rounded p-4 text-sm text-gray-500">
+              <strong>Traffic analytics:</strong> Set <code className="bg-gray-100 px-1 rounded">CF_API_TOKEN</code> and
+              {" "}<code className="bg-gray-100 px-1 rounded">CLOUDFLARE_ACCOUNT_ID</code> for basic Workers analytics,
+              or also add <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> for full zone analytics
+              (referrers, page views, unique visitors).
+            </div>
+          ) : null}
         </div>
       )}
-
-      {!analyticsConfigured && !analytics && (
-        <div className="border rounded p-4 text-sm text-gray-500">
-          <strong>Traffic analytics:</strong> Set <code className="bg-gray-100 px-1 rounded">CF_API_TOKEN</code> and
-          {" "}<code className="bg-gray-100 px-1 rounded">CLOUDFLARE_ACCOUNT_ID</code> for basic Workers analytics,
-          or also add <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> for full zone analytics
-          (referrers, page views, unique visitors).
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div>
-        <div className="flex border-b">
-          {[
-            {
-              id: "health",
-              label: t("admin.healthCheck"),
-              desc: t("admin.healthTabDesc"),
-            },
-            {
-              id: "products",
-              label: t("admin.contentAccess"),
-              desc: t("admin.contentAccessTabDesc"),
-            },
-            {
-              id: "advanced",
-              label: "Advanced",
-              desc: "Storage configuration, environment settings, and system details.",
-            },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              title={tab.desc}
-              className={`px-5 py-2.5 text-sm font-medium -mb-px border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-gray-800 text-gray-900"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-gray-500 mt-2 px-1">
-          {activeTab === "health" && t("admin.healthTabDesc")}
-          {activeTab === "products" && t("admin.contentAccessTabDesc")}
-          {activeTab === "advanced" && "Storage configuration, environment settings, and system details."}
-        </p>
-      </div>
 
       {/* ── Health tab ── */}
       {activeTab === "health" && (
@@ -1020,8 +885,8 @@ export default function AdminDashboard() {
                         {product.price
                           ? ` (${product.price.replace(/&nbsp;/g, " ")})`
                           : ""}
-                        {cat ? ` — ${cat}` : ""}
-                        {configured ? " ✓" : ""}
+                        {cat ? ` \u2014 ${cat}` : ""}
+                        {configured ? " \u2713" : ""}
                       </option>
                     );
                   })}
@@ -1038,8 +903,8 @@ export default function AdminDashboard() {
                         {course.priceRendered
                           ? ` (${course.priceRendered})`
                           : ""}
-                        {course.duration ? ` — ${course.duration}` : ""}
-                        {configured ? " ✓" : ""}
+                        {course.duration ? ` \u2014 ${course.duration}` : ""}
+                        {configured ? " \u2713" : ""}
                       </option>
                     );
                   })}
@@ -1053,7 +918,7 @@ export default function AdminDashboard() {
                     return (
                       <option key={`ev-${event.uri}`} value={event.uri}>
                         {event.title}
-                        {configured ? " ✓" : ""}
+                        {configured ? " \u2713" : ""}
                       </option>
                     );
                   })}
@@ -1068,7 +933,7 @@ export default function AdminDashboard() {
                       {p.priceCents
                         ? ` (${toCurrencyUnits(p.priceCents)} ${p.currency || "SEK"})`
                         : ""}
-                      {p.type === "course" ? ` — ${t("admin.courseProduct")}` : ` — ${t("admin.digitalFile")}`}
+                      {p.type === "course" ? ` \u2014 ${t("admin.courseProduct")}` : ` \u2014 ${t("admin.digitalFile")}`}
                     </option>
                   ))}
                 </optgroup>
@@ -1267,7 +1132,7 @@ export default function AdminDashboard() {
                   />
                   {t("admin.activeProduct")}
                   <span className="text-[11px] text-gray-400 font-normal">
-                    — {t("admin.activeProductHint")}
+                    &mdash; {t("admin.activeProductHint")}
                   </span>
                 </label>
               </div>
@@ -1475,7 +1340,35 @@ export default function AdminDashboard() {
       {/* ── Advanced tab ── */}
       {activeTab === "advanced" && (
         <div className="border rounded p-5 space-y-6">
-          <h2 className="text-xl font-semibold">Advanced settings</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Advanced settings</h2>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={purgeCache}
+                disabled={purging}
+                className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm disabled:opacity-50"
+                title={t("admin.purgeCacheTooltip")}
+              >
+                {purging ? t("admin.purgingCache") : t("admin.purgeCache")}
+              </button>
+              <button
+                type="button"
+                onClick={triggerDeploy}
+                disabled={deploying}
+                className="px-3 py-1.5 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm disabled:opacity-50"
+                title={t("admin.deployTooltip")}
+              >
+                {deploying ? t("admin.deploying") : t("admin.deploy")}
+              </button>
+            </div>
+          </div>
+          {purgeMessage && (
+            <p className="text-green-700 text-sm">{purgeMessage}</p>
+          )}
+          {deployMessage && (
+            <p className="text-green-700 text-sm">{deployMessage}</p>
+          )}
 
           {/* Storage configuration */}
           <div className="space-y-3">
@@ -1501,7 +1394,7 @@ export default function AdminDashboard() {
                 {
                   id: "local-file",
                   name: "Local file",
-                  desc: "Stores data in .data/course-access.json on the server filesystem. Suitable for local development only — data is lost on redeploy.",
+                  desc: "Stores data in .data/course-access.json on the server filesystem. Suitable for local development only \u2014 data is lost on redeploy.",
                   active: storage?.provider === "local-file",
                 },
               ].map((opt) => (
@@ -1564,11 +1457,11 @@ export default function AdminDashboard() {
                 <div className="font-medium text-gray-700">Analytics</div>
                 <div className="text-gray-500">
                   {analyticsMode === "zone" ? (
-                    <span className="text-green-700">Zone analytics (full) — CF_ZONE_ID set</span>
+                    <span className="text-green-700">Zone analytics (full) &mdash; CF_ZONE_ID set</span>
                   ) : analyticsMode === "workers" ? (
-                    <span className="text-amber-700">Workers analytics (basic) — no CF_ZONE_ID</span>
+                    <span className="text-amber-700">Workers analytics (basic) &mdash; no CF_ZONE_ID</span>
                   ) : (
-                    <span>Not configured — set CF_API_TOKEN</span>
+                    <span>Not configured &mdash; set CF_API_TOKEN</span>
                   )}
                 </div>
                 {analyticsMode === "workers" && (

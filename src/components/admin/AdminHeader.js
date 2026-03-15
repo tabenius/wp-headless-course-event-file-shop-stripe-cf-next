@@ -4,8 +4,9 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "Products", tab: "products" },
-  { href: "/admin", label: "Advanced", tab: "advanced" },
+  { label: "Products", tab: "products" },
+  { label: "Stats", tab: "stats" },
+  { label: "Advanced", tab: "advanced" },
   { href: "/admin/docs", label: "Documentation" },
 ];
 
@@ -20,6 +21,15 @@ export default function AdminHeader({ logoUrl }) {
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin/login");
     router.refresh();
+  }
+
+  function switchTab(tab) {
+    if (pathname !== "/admin") {
+      router.push("/admin");
+    }
+    window.dispatchEvent(
+      new CustomEvent("admin:switchTab", { detail: tab }),
+    );
   }
 
   return (
@@ -45,26 +55,12 @@ export default function AdminHeader({ logoUrl }) {
         {/* Right: Nav + actions */}
         <nav className="flex items-center gap-1">
           {NAV_ITEMS.map((item) => {
-            const active =
-              !item.tab && item.href === "/admin"
-                ? pathname === "/admin"
-                : !item.tab
-                  ? pathname.startsWith(item.href)
-                  : false;
-
             if (item.tab) {
               return (
                 <button
                   key={item.label}
                   type="button"
-                  onClick={() => {
-                    if (pathname !== "/admin") {
-                      router.push("/admin");
-                    }
-                    window.dispatchEvent(
-                      new CustomEvent("admin:switchTab", { detail: item.tab }),
-                    );
-                  }}
+                  onClick={() => switchTab(item.tab)}
                   className="px-3 py-1.5 rounded text-sm transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 >
                   {item.label}
@@ -72,6 +68,7 @@ export default function AdminHeader({ logoUrl }) {
               );
             }
 
+            const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
@@ -90,11 +87,7 @@ export default function AdminHeader({ logoUrl }) {
           {/* Health check icon */}
           <button
             type="button"
-            onClick={() => {
-              // Scroll to health section or switch tab
-              const event = new CustomEvent("admin:showHealth");
-              window.dispatchEvent(event);
-            }}
+            onClick={() => switchTab("health")}
             className="p-2 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-50"
             title="Integration check"
           >
