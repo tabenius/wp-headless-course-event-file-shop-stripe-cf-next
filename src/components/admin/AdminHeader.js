@@ -41,7 +41,7 @@ export default function AdminHeader({ logoUrl }) {
         {/* Left: Logo + brand */}
         <div className="flex items-center gap-4">
           {logoUrl && (
-            <Link href="/admin">
+            <Link href="/">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
             </Link>
