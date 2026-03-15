@@ -128,6 +128,7 @@ export async function GET(request) {
     wcProducts,
     wpEvents,
     storage: getCourseStorageInfo(),
+    resendConfigured: !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
   });
 }
 

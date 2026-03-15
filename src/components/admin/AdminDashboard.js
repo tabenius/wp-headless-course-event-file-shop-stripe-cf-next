@@ -205,6 +205,7 @@ export default function AdminDashboard() {
   const [analyticsConfigured, setAnalyticsConfigured] = useState(false);
   const [commits, setCommits] = useState(null);
   const [commitsError, setCommitsError] = useState("");
+  const [resendConfigured, setResendConfigured] = useState(false);
 
   // Derived values for shop product selection
   const isShopSelection = selectedCourse.startsWith("__shop_");
@@ -248,6 +249,7 @@ export default function AdminDashboard() {
         setWcProducts(Array.isArray(json.wcProducts) ? json.wcProducts : []);
         setWpEvents(Array.isArray(json.wpEvents) ? json.wpEvents : []);
         setStorage(json.storage || null);
+        setResendConfigured(!!json.resendConfigured);
       })
       .catch((fetchError) => {
         setError(fetchError.message || t("admin.fetchAdminDataFailed"));
@@ -1462,7 +1464,7 @@ export default function AdminDashboard() {
               <div className="bg-gray-50 rounded p-3 space-y-1">
                 <div className="font-medium text-gray-700">Email delivery</div>
                 <div className="text-gray-500">
-                  {process.env.NEXT_PUBLIC_RESEND_CONFIGURED === "true" || process.env.RESEND_API_KEY
+                  {resendConfigured
                     ? "Resend API"
                     : "Not configured"}
                 </div>
