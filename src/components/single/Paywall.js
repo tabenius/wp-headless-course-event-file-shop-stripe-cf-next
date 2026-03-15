@@ -19,6 +19,8 @@ export default function Paywall({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestEmailConfirm, setGuestEmailConfirm] = useState("");
   const isLoggedIn = Boolean(userEmail);
   const kindLabel = contentKind === "event"
     ? t("common.event").toLowerCase()
@@ -31,29 +33,61 @@ export default function Paywall({
     || (priceCents != null ? `${(priceCents / 100).toFixed(2)} ${currency.toUpperCase()}` : "");
   const displayPrice = rawDisplayPrice.replace(/&nbsp;/g, " ");
 
-  async function checkout() {
+  const buyLabel = loading
+    ? t("paywall.redirectingToStripe")
+    : contentKind === "event"
+      ? t("paywall.payAndUnlockEvent")
+      : contentKind === "product"
+        ? t("paywall.payAndUnlockProduct")
+        : t("paywall.payAndUnlockCourse");
+
+  async function checkout(emailOverride) {
     setError("");
     if (!stripeEnabled) {
       setError(t("paywall.paymentNotAvailable"));
       return;
     }
+
+    const email = emailOverride || undefined;
+
     setLoading(true);
-    const response = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contentUri: courseUri,
-        contentTitle: courseTitle,
-        contentKind,
-      }),
-    });
-    const json = await response.json();
-    setLoading(false);
-    if (!response.ok || !json?.ok || !json?.url) {
-      setError(json?.error || t("paywall.checkoutFailed"));
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contentUri: courseUri,
+          contentTitle: courseTitle,
+          contentKind,
+          ...(email ? { guestEmail: email } : {}),
+        }),
+      });
+      const json = await response.json();
+      if (!response.ok || !json?.ok || !json?.url) {
+        setError(json?.error || t("paywall.checkoutFailed"));
+        setLoading(false);
+        return;
+      }
+      window.location.href = json.url;
+    } catch {
+      setError(t("paywall.checkoutFailed"));
+      setLoading(false);
+    }
+  }
+
+  function handleGuestCheckout() {
+    const email = guestEmail.trim().toLowerCase();
+    const confirm = guestEmailConfirm.trim().toLowerCase();
+
+    if (!email || !email.includes("@")) {
+      setError(t("paywall.emailRequired"));
       return;
     }
-    window.location.href = json.url;
+    if (email !== confirm) {
+      setError(t("paywall.emailMismatch"));
+      return;
+    }
+    checkout(email);
   }
 
   return (
@@ -92,28 +126,60 @@ export default function Paywall({
             </p>
             <button
               type="button"
-              onClick={checkout}
+              onClick={() => checkout()}
               disabled={loading}
               className="px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50"
               style={{ color: "#fff" }}
             >
-              {loading
-                ? t("paywall.redirectingToStripe")
-                : contentKind === "event"
-                  ? t("paywall.payAndUnlockEvent")
-                  : contentKind === "product"
-                    ? t("paywall.payAndUnlockProduct")
-                    : t("paywall.payAndUnlockCourse")}
+              {buyLabel}
             </button>
           </>
         ) : (
-          <Link
-            href={`/auth/signin?callbackUrl=${encodeURIComponent(courseUri)}`}
-            className="inline-block px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 no-underline"
-            style={{ color: "#fff" }}
-          >
-            {t("paywall.buyNow")}
-          </Link>
+          <div className="max-w-md mx-auto space-y-4">
+            <p className="text-sm text-gray-500">
+              {t("paywall.guestBuyHint")}
+            </p>
+
+            <div className="space-y-3">
+              <input
+                type="email"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                placeholder={t("paywall.enterEmail")}
+                className="w-full border rounded px-4 py-3 text-center"
+                autoComplete="email"
+              />
+              <input
+                type="email"
+                value={guestEmailConfirm}
+                onChange={(e) => setGuestEmailConfirm(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleGuestCheckout()}
+                placeholder={t("paywall.confirmEmail")}
+                className="w-full border rounded px-4 py-3 text-center"
+                autoComplete="email"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGuestCheckout}
+              disabled={loading}
+              className="w-full px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50 text-lg"
+              style={{ color: "#fff" }}
+            >
+              {buyLabel}
+            </button>
+
+            <p className="text-sm text-gray-500">
+              {t("paywall.alreadyHaveAccount")}{" "}
+              <Link
+                href={`/auth/signin?callbackUrl=${encodeURIComponent(courseUri)}`}
+                className="text-[var(--color-primary)] underline"
+              >
+                {t("common.signIn")}
+              </Link>
+            </p>
+          </div>
         )}
 
         {error ? <p className="text-red-600">{error}</p> : null}

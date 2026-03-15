@@ -238,7 +238,17 @@
     "signInToAccess": "Sign in or register to purchase this {contentKind}.",
     "duration": "Duration",
     "buyNow": "Buy now",
-    "checkoutFailed": "Could not start the payment."
+    "checkoutFailed": "Could not start the payment.",
+    "enterEmail": "Your email",
+    "confirmEmail": "Confirm email",
+    "emailMismatch": "The email addresses do not match.",
+    "emailRequired": "Enter your email address to continue.",
+    "guestBuyHint": "Enter your email to purchase. We'll create an account and send you a link to set your password.",
+    "alreadyHaveAccount": "Already have an account?",
+    "setPasswordSubject": "Set your password",
+    "setPasswordBody": "Welcome! Your account has been created. Click the link below to set your password:",
+    "setPasswordLinkText": "Set my password",
+    "setPasswordExpiry": "This link expires in 24 hours."
   },
   "shop": {
     "title": "Shop",

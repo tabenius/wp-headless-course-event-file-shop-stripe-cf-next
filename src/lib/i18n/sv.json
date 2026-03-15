@@ -238,7 +238,17 @@
     "signInToAccess": "Logga in eller registrera dig för att köpa denna {contentKind}.",
     "duration": "Längd",
     "buyNow": "Köp nu",
-    "checkoutFailed": "Det gick inte att starta betalningen."
+    "checkoutFailed": "Det gick inte att starta betalningen.",
+    "enterEmail": "Din e-post",
+    "confirmEmail": "Bekräfta e-post",
+    "emailMismatch": "E-postadresserna matchar inte.",
+    "emailRequired": "Ange din e-postadress för att fortsätta.",
+    "guestBuyHint": "Ange din e-post för att köpa. Vi skapar ett konto och skickar en länk för att sätta ditt lösenord.",
+    "alreadyHaveAccount": "Har du redan ett konto?",
+    "setPasswordSubject": "Sätt ditt lösenord",
+    "setPasswordBody": "Välkommen! Ditt konto har skapats. Klicka på länken nedan för att sätta ditt lösenord:",
+    "setPasswordLinkText": "Sätt mitt lösenord",
+    "setPasswordExpiry": "Länken är giltig i 24 timmar."
   },
   "shop": {
     "title": "Shop",
