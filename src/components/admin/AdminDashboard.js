@@ -1350,6 +1350,14 @@ export default function AdminDashboard() {
               </button>
             </>
           )}
+          {/* User management — reverse access view */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">{t("admin.userAccessOverview")}</h3>
+            <p className="text-xs text-gray-500">
+              {t("admin.userAccessOverviewDesc")}
+            </p>
+            <UserAccessPanel users={users} courses={courses} allWpContent={allWpContent} products={products} />
+          </div>
         </div>
       )}
 
@@ -1488,15 +1496,6 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
-          </div>
-
-          {/* User management — reverse access view */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">{t("admin.userAccessOverview")}</h3>
-            <p className="text-xs text-gray-500">
-              {t("admin.userAccessOverviewDesc")}
-            </p>
-            <UserAccessPanel users={users} courses={courses} allWpContent={allWpContent} products={products} />
           </div>
 
           {/* Recent commits */}
