@@ -1,7 +1,14 @@
-import path from "node:path";
+import {
+  isCloudflareKvConfigured,
+  readCloudflareKvJson,
+  writeCloudflareKvJson,
+} from "@/lib/cloudflareKv";
 
 export const PRODUCT_FILE = "config/digital-products.json";
 export const PRODUCT_EXAMPLE_FILE = "config/digital-products.example.json";
+
+const PRODUCTS_KV_KEY = process.env.CF_PRODUCTS_KV_KEY || "digital-products";
+let inMemoryProducts = null;
 
 function normalizeCurrency(currency) {
   return typeof currency === "string" && currency.trim()
@@ -99,14 +106,6 @@ function sanitizeProduct(product, seenSlugs) {
   };
 }
 
-async function readProductFileRaw() {
-  const [{ promises: fs }] = await Promise.all([import("node:fs")]);
-  const fullPath = path.join(process.cwd(), PRODUCT_FILE);
-  const raw = await fs.readFile(fullPath, "utf8");
-  const parsed = JSON.parse(raw);
-  return Array.isArray(parsed) ? parsed : [];
-}
-
 function sanitizeProducts(input) {
   const seenSlugs = new Set();
   const output = [];
@@ -117,9 +116,83 @@ function sanitizeProducts(input) {
   return output;
 }
 
+function shouldUseCloudflareBackend() {
+  return process.env.PRODUCT_STORE_BACKEND === "cloudflare" || isCloudflareKvConfigured();
+}
+
+async function readFromCloudflare() {
+  const data = await readCloudflareKvJson(PRODUCTS_KV_KEY);
+  if (!data) return null;
+  return Array.isArray(data) ? data : [];
+}
+
+async function writeToCloudflare(products) {
+  return writeCloudflareKvJson(PRODUCTS_KV_KEY, products);
+}
+
+async function readFromLocal() {
+  try {
+    const [{ promises: fs }, path] = await Promise.all([
+      import("node:fs"),
+      import("node:path"),
+    ]);
+    const fullPath = path.join(process.cwd(), PRODUCT_FILE);
+    const raw = await fs.readFile(fullPath, "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error(
+      "Local product file unavailable. Using in-memory product store fallback:",
+      error,
+    );
+    return inMemoryProducts || [];
+  }
+}
+
+async function writeToLocal(products) {
+  try {
+    const [{ promises: fs }, path] = await Promise.all([
+      import("node:fs"),
+      import("node:path"),
+    ]);
+    const fullPath = path.join(process.cwd(), PRODUCT_FILE);
+    await fs.writeFile(fullPath, JSON.stringify(products, null, 2), "utf8");
+  } catch (error) {
+    console.error(
+      "Local product file write unavailable. Updating in-memory product store fallback:",
+      error,
+    );
+    inMemoryProducts = products;
+  }
+}
+
+async function readProducts() {
+  if (shouldUseCloudflareBackend()) {
+    try {
+      const cloudflareProducts = await readFromCloudflare();
+      if (cloudflareProducts !== null) return cloudflareProducts;
+    } catch (error) {
+      console.error("Cloudflare KV products read failed, falling back:", error);
+    }
+  }
+  return readFromLocal();
+}
+
+async function writeProducts(products) {
+  if (shouldUseCloudflareBackend()) {
+    try {
+      const wrote = await writeToCloudflare(products);
+      if (wrote) return;
+    } catch (error) {
+      console.error("Cloudflare KV products write failed, falling back:", error);
+    }
+  }
+  await writeToLocal(products);
+}
+
 export async function listDigitalProducts({ includeInactive = false } = {}) {
   try {
-    const rawProducts = await readProductFileRaw();
+    const rawProducts = await readProducts();
     const products = sanitizeProducts(rawProducts);
     return includeInactive ? products : products.filter((product) => product.active);
   } catch (error) {
@@ -145,8 +218,6 @@ export function buildProductSlug(name) {
 
 export async function saveDigitalProducts(products) {
   const safeProducts = sanitizeProducts(products);
-  const [{ promises: fs }] = await Promise.all([import("node:fs")]);
-  const fullPath = path.join(process.cwd(), PRODUCT_FILE);
-  await fs.writeFile(fullPath, JSON.stringify(safeProducts, null, 2), "utf8");
+  await writeProducts(safeProducts);
   return safeProducts;
 }
