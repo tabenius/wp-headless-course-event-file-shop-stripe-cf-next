@@ -203,6 +203,8 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsMode, setAnalyticsMode] = useState("none"); // "zone" | "workers" | "none"
   const [analyticsConfigured, setAnalyticsConfigured] = useState(false);
+  const [commits, setCommits] = useState(null);
+  const [commitsError, setCommitsError] = useState("");
 
   // Derived values for shop product selection
   const isShopSelection = selectedCourse.startsWith("__shop_");
@@ -503,6 +505,18 @@ export default function AdminDashboard() {
       window.removeEventListener("admin:switchTab", onSwitchTab);
     };
   }, [showHealthTab]);
+
+  // Fetch commit log when advanced tab is shown
+  useEffect(() => {
+    if (activeTab !== "advanced" || commits) return;
+    fetch("/api/admin/commits")
+      .then(async (res) => {
+        const json = await res.json();
+        if (json?.ok) setCommits(json.commits);
+        else setCommitsError(json?.error || "Failed to load commits");
+      })
+      .catch(() => setCommitsError("Failed to load commits"));
+  }, [activeTab, commits]);
 
   // Listen for courses updated from UserAccessPanel
   useEffect(() => {
@@ -1481,6 +1495,26 @@ export default function AdminDashboard() {
               Find a user and see which content they can access. Check or uncheck items to grant or revoke access.
             </p>
             <UserAccessPanel users={users} courses={courses} allWpContent={allWpContent} products={products} />
+          </div>
+
+          {/* Recent commits */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Recent commits</h3>
+            {commitsError && (
+              <p className="text-xs text-gray-400">{commitsError}</p>
+            )}
+            {commits ? (
+              <div className="bg-gray-900 text-gray-100 rounded p-4 font-mono text-xs max-h-96 overflow-auto space-y-0.5">
+                {commits.map((c) => (
+                  <div key={c.sha} className="flex gap-2">
+                    <span className="text-yellow-400 shrink-0">{c.sha}</span>
+                    <span className="truncate">{c.message}</span>
+                  </div>
+                ))}
+              </div>
+            ) : !commitsError ? (
+              <p className="text-xs text-gray-400">Loading...</p>
+            ) : null}
           </div>
         </div>
       )}
