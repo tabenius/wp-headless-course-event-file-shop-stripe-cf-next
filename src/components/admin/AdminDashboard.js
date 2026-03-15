@@ -1095,15 +1095,24 @@ export default function AdminDashboard() {
           {/* ── Shop product edit form ── */}
           {isShopSelection && selectedShopProduct && (
             <div className="border rounded p-4 space-y-4 bg-amber-50">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">
-                    {selectedShopProduct.name ||
-                      `${t("admin.product")} ${shopIndex + 1}`}
-                  </h3>
-                  <span className="bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs">
-                    {t("admin.shopProducts")}
-                  </span>
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex items-start gap-4">
+                  {selectedShopProduct.imageUrl && (
+                    <img
+                      src={selectedShopProduct.imageUrl}
+                      alt=""
+                      className="w-24 h-24 object-cover rounded border shrink-0"
+                    />
+                  )}
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-semibold">
+                      {selectedShopProduct.name ||
+                        `${t("admin.product")} ${shopIndex + 1}`}
+                    </h3>
+                    <span className="bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs">
+                      {t("admin.shopProducts")}
+                    </span>
+                  </div>
                 </div>
                 <button
                   type="button"
