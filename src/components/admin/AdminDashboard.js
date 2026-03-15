@@ -1078,13 +1078,60 @@ export default function AdminDashboard() {
               return (
                 <div className="border rounded p-4 space-y-4 bg-gray-50">
                   <div className="flex gap-4">
-                    {imgUrl && (
-                      <img
-                        src={imgUrl}
-                        alt=""
-                        className="w-32 h-32 object-cover rounded border shrink-0"
-                      />
-                    )}
+                    <ImageUploader
+                      value={imgUrl || ""}
+                      onUploaded={(url) => {
+                        setWpEvents((prev) =>
+                          prev.map((ev) =>
+                            ev.uri === selectedCourse
+                              ? { ...ev, featuredImage: { node: { sourceUrl: url } } }
+                              : ev,
+                          ),
+                        );
+                        setWcProducts((prev) =>
+                          prev.map((p) =>
+                            p.uri === selectedCourse
+                              ? { ...p, featuredImage: { node: { sourceUrl: url } } }
+                              : p,
+                          ),
+                        );
+                        setWpCourses((prev) =>
+                          prev.map((c) =>
+                            c.uri === selectedCourse
+                              ? { ...c, featuredImage: { node: { sourceUrl: url } } }
+                              : c,
+                          ),
+                        );
+                      }}
+                      onError={(msg) => setError(msg)}
+                      renderTrigger={(openPicker) => (
+                        <button
+                          type="button"
+                          onClick={openPicker}
+                          className="relative w-36 h-36 rounded border shrink-0 overflow-hidden group bg-gray-100"
+                          title={t("admin.uploadImage")}
+                        >
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10">
+                                <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                            </svg>
+                          </div>
+                        </button>
+                      )}
+                    />
                     <div className="flex-1 min-w-0 space-y-1">
                       <h3 className="text-lg font-semibold truncate">
                         {wpItem?.title || wpItem?.name || selectedCourse}
@@ -1118,34 +1165,6 @@ export default function AdminDashboard() {
                       dangerouslySetInnerHTML={{ __html: desc }}
                     />
                   )}
-                  <ImageUploader
-                    value={imgUrl || ""}
-                    onUploaded={(url) => {
-                      // Update the image in the local WP content list
-                      setWpEvents((prev) =>
-                        prev.map((ev) =>
-                          ev.uri === selectedCourse
-                            ? { ...ev, featuredImage: { node: { sourceUrl: url } } }
-                            : ev,
-                        ),
-                      );
-                      setWcProducts((prev) =>
-                        prev.map((p) =>
-                          p.uri === selectedCourse
-                            ? { ...p, featuredImage: { node: { sourceUrl: url } } }
-                            : p,
-                        ),
-                      );
-                      setWpCourses((prev) =>
-                        prev.map((c) =>
-                          c.uri === selectedCourse
-                            ? { ...c, featuredImage: { node: { sourceUrl: url } } }
-                            : c,
-                        ),
-                      );
-                    }}
-                    onError={(msg) => setError(msg)}
-                  />
                 </div>
               );
             })()}
@@ -1155,13 +1174,38 @@ export default function AdminDashboard() {
             <div className="border rounded p-4 space-y-4 bg-amber-50">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex items-start gap-4">
-                  {selectedShopProduct.imageUrl && (
-                    <img
-                      src={selectedShopProduct.imageUrl}
-                      alt=""
-                      className="w-24 h-24 object-cover rounded border shrink-0"
-                    />
-                  )}
+                  <ImageUploader
+                    value={selectedShopProduct.imageUrl}
+                    onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
+                    onError={(msg) => setError(msg)}
+                    renderTrigger={(openPicker) => (
+                      <button
+                        type="button"
+                        onClick={openPicker}
+                        className="relative w-36 h-36 rounded border shrink-0 overflow-hidden group bg-gray-100"
+                        title={t("admin.uploadImage")}
+                      >
+                        {selectedShopProduct.imageUrl ? (
+                          <img
+                            src={selectedShopProduct.imageUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10">
+                              <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                            <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                          </svg>
+                        </div>
+                      </button>
+                    )}
+                  />
                   <div className="space-y-1">
                     <h3 className="text-lg font-semibold">
                       {selectedShopProduct.name ||
@@ -1256,12 +1300,6 @@ export default function AdminDashboard() {
                   updateProduct(shopIndex, "description", e.target.value)
                 }
                 className="w-full border rounded px-3 py-2"
-              />
-
-              <ImageUploader
-                value={selectedShopProduct.imageUrl}
-                onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
-                onError={(msg) => setError(msg)}
               />
 
               {selectedShopProduct.type === "digital_file" ? (

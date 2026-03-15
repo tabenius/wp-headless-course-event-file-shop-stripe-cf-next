@@ -6,12 +6,13 @@ import { t } from "@/lib/i18n";
 /**
  * Image uploader with crop & scale preview.
  * Props:
- *   value       — current image URL
- *   onUploaded  — callback(url) after upload completes
- *   onError     — callback(message) on failure
- *   className   — wrapper class
+ *   value         — current image URL
+ *   onUploaded    — callback(url) after upload completes
+ *   onError       — callback(message) on failure
+ *   className     — wrapper class
+ *   renderTrigger — optional (openFilePicker) => ReactNode to replace default UI
  */
-export default function ImageUploader({ value, onUploaded, onError, className = "" }) {
+export default function ImageUploader({ value, onUploaded, onError, className = "", renderTrigger }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -160,33 +161,37 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
 
   return (
     <div className={className}>
-      {/* Current image + pick button */}
-      <div className="flex items-center gap-3">
-        {value && (
-          <img
-            src={value}
-            alt=""
-            className="h-32 w-32 rounded border object-cover shrink-0"
-          />
-        )}
-        <button
-          type="button"
-          onClick={openFilePicker}
-          className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
-          title={t("admin.uploadSizeHint")}
-        >
-          {value ? t("admin.uploadImage") : t("admin.uploadImage")}
-        </button>
-        {value && (
-          <input
-            type="text"
-            value={value}
-            readOnly
-            className="flex-1 border rounded px-3 py-2 text-xs text-gray-500 bg-gray-50 min-w-0"
-            title={value}
-          />
-        )}
-      </div>
+      {/* Trigger area — custom or default */}
+      {renderTrigger ? (
+        renderTrigger(openFilePicker)
+      ) : (
+        <div className="flex items-center gap-3">
+          {value && (
+            <img
+              src={value}
+              alt=""
+              className="h-32 w-32 rounded border object-cover shrink-0"
+            />
+          )}
+          <button
+            type="button"
+            onClick={openFilePicker}
+            className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+            title={t("admin.uploadSizeHint")}
+          >
+            {t("admin.uploadImage")}
+          </button>
+          {value && (
+            <input
+              type="text"
+              value={value}
+              readOnly
+              className="flex-1 border rounded px-3 py-2 text-xs text-gray-500 bg-gray-50 min-w-0"
+              title={value}
+            />
+          )}
+        </div>
+      )}
 
       {/* Crop/scale editor modal */}
       {showEditor && (
