@@ -30,9 +30,20 @@ const MENU_QUERY = `
   }
 `;
 
+/** Remap known WordPress paths to frontend routes */
+const PATH_REWRITES = {
+  "/events/event/": "/events",
+  "/events/event": "/events",
+  "/butik/": "/shop",
+  "/butik": "/shop",
+  "/blog-section/": "/blog",
+  "/blog-section": "/blog",
+};
+
 function mapItem(node) {
+  const rawHref = node.path || node.url || "#";
   return {
-    href: node.path || node.url || "#",
+    href: PATH_REWRITES[rawHref] || rawHref,
     label: node.label || "",
   };
 }
