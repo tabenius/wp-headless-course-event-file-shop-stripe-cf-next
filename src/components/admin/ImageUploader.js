@@ -166,7 +166,7 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
           <img
             src={value}
             alt=""
-            className="h-16 w-16 rounded border object-cover shrink-0"
+            className="h-32 w-32 rounded border object-cover shrink-0"
           />
         )}
         <button

@@ -1024,7 +1024,7 @@ export default function AdminDashboard() {
                       <img
                         src={imgUrl}
                         alt=""
-                        className="w-24 h-24 object-cover rounded border shrink-0"
+                        className="w-32 h-32 object-cover rounded border shrink-0"
                       />
                     )}
                     <div className="flex-1 min-w-0 space-y-1">
@@ -1060,6 +1060,34 @@ export default function AdminDashboard() {
                       dangerouslySetInnerHTML={{ __html: desc }}
                     />
                   )}
+                  <ImageUploader
+                    value={imgUrl || ""}
+                    onUploaded={(url) => {
+                      // Update the image in the local WP content list
+                      setWpEvents((prev) =>
+                        prev.map((ev) =>
+                          ev.uri === selectedCourse
+                            ? { ...ev, featuredImage: { node: { sourceUrl: url } } }
+                            : ev,
+                        ),
+                      );
+                      setWcProducts((prev) =>
+                        prev.map((p) =>
+                          p.uri === selectedCourse
+                            ? { ...p, featuredImage: { node: { sourceUrl: url } } }
+                            : p,
+                        ),
+                      );
+                      setWpCourses((prev) =>
+                        prev.map((c) =>
+                          c.uri === selectedCourse
+                            ? { ...c, featuredImage: { node: { sourceUrl: url } } }
+                            : c,
+                        ),
+                      );
+                    }}
+                    onError={(msg) => setError(msg)}
+                  />
                 </div>
               );
             })()}
