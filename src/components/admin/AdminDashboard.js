@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
+import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
 
 function toCurrencyUnits(cents) {
@@ -529,6 +530,8 @@ export default function AdminDashboard() {
     return () => window.removeEventListener("admin:coursesUpdated", onCoursesUpdated);
   }, []);
 
+  const [uploadProgress, setUploadProgress] = useState(null);
+
   async function uploadFile(index, field) {
     const input = document.createElement("input");
     input.type = "file";
@@ -536,21 +539,36 @@ export default function AdminDashboard() {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const formData = new FormData();
-      formData.append("file", file);
+
+      const MULTIPART_THRESHOLD = 95 * 1024 * 1024; // 95 MB
+
       try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body: formData,
-        });
-        const json = await res.json();
-        if (!res.ok || !json?.ok) {
-          setError(json?.error || t("admin.uploadFailed"));
-          return;
+        if (file.size > MULTIPART_THRESHOLD) {
+          // Large file — use multipart upload directly to R2
+          setUploadProgress({ percent: 0, currentPart: 0, totalParts: 0 });
+          const url = await multipartUpload(file, {
+            onProgress: (p) => setUploadProgress(p),
+          });
+          setUploadProgress(null);
+          updateProduct(index, field, url);
+        } else {
+          // Small file — use regular upload through Worker
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          });
+          const json = await res.json();
+          if (!res.ok || !json?.ok) {
+            setError(json?.error || t("admin.uploadFailed"));
+            return;
+          }
+          updateProduct(index, field, json.url);
         }
-        updateProduct(index, field, json.url);
-      } catch {
-        setError(t("admin.uploadFailed"));
+      } catch (err) {
+        setUploadProgress(null);
+        setError(err.message || t("admin.uploadFailed"));
       }
     };
     input.click();
@@ -1728,6 +1746,20 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {uploadProgress && (
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-gray-600">
+            <span>Uploading part {uploadProgress.currentPart} / {uploadProgress.totalParts}</span>
+            <span>{uploadProgress.percent}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-purple-600 h-2 rounded-full transition-all"
+              style={{ width: `${uploadProgress.percent}%` }}
+            />
+          </div>
+        </div>
+      )}
       {message ? <p className="text-green-700">{message}</p> : null}
       {error ? <p className="text-red-600">{error}</p> : null}
     </section>

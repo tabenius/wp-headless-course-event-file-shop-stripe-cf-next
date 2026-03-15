@@ -1,4 +1,11 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { t } from "@/lib/i18n";
 
@@ -117,6 +124,96 @@ export async function createPresignedUpload(fileName, contentType, expiresIn = 3
     key,
     expiresIn,
   };
+}
+
+/**
+ * Initiate a multipart upload. Returns { uploadId, key, publicUrl }.
+ * The client then requests presigned URLs for each part.
+ */
+export async function createMultipartUpload(fileName, contentType) {
+  const client = getS3Client();
+  const bucket = getBucket();
+  const publicBaseUrl = getPublicUrl();
+  const key = `uploads/${Date.now()}-${fileName}`;
+
+  const { UploadId } = await client.send(
+    new CreateMultipartUploadCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: contentType || "application/octet-stream",
+    }),
+  );
+
+  return { uploadId: UploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
+}
+
+/**
+ * Generate presigned URLs for one or more parts of a multipart upload.
+ * partNumbers is an array of 1-based part numbers.
+ * Returns an array of { partNumber, uploadUrl }.
+ */
+export async function signMultipartParts(key, uploadId, partNumbers, expiresIn = 3600) {
+  const client = getS3Client();
+  const bucket = getBucket();
+
+  const signed = await Promise.all(
+    partNumbers.map(async (partNumber) => {
+      const command = new UploadPartCommand({
+        Bucket: bucket,
+        Key: key,
+        UploadId: uploadId,
+        PartNumber: partNumber,
+      });
+      const uploadUrl = await getSignedUrl(client, command, { expiresIn });
+      return { partNumber, uploadUrl };
+    }),
+  );
+
+  return signed;
+}
+
+/**
+ * Complete a multipart upload.
+ * parts is an array of { partNumber, etag } (etag from each PUT response).
+ */
+export async function completeMultipartUpload(key, uploadId, parts) {
+  const client = getS3Client();
+  const bucket = getBucket();
+  const publicBaseUrl = getPublicUrl();
+
+  await client.send(
+    new CompleteMultipartUploadCommand({
+      Bucket: bucket,
+      Key: key,
+      UploadId: uploadId,
+      MultipartUpload: {
+        Parts: parts
+          .sort((a, b) => a.partNumber - b.partNumber)
+          .map((p) => ({
+            PartNumber: p.partNumber,
+            ETag: p.etag,
+          })),
+      },
+    }),
+  );
+
+  return `${publicBaseUrl}/${key}`;
+}
+
+/**
+ * Abort a multipart upload (cleanup on failure).
+ */
+export async function abortMultipartUpload(key, uploadId) {
+  const client = getS3Client();
+  const bucket = getBucket();
+
+  await client.send(
+    new AbortMultipartUploadCommand({
+      Bucket: bucket,
+      Key: key,
+      UploadId: uploadId,
+    }),
+  );
 }
 
 export function getUploadBackend() {
