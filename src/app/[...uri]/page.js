@@ -65,6 +65,21 @@ async function buildContentQuery() {
           }
         }
       }
+      ... on SimpleProduct {
+        name
+        price
+        shortDescription
+      }
+      ... on VariableProduct {
+        name
+        price
+        shortDescription
+      }
+      ... on ExternalProduct {
+        name
+        price
+        shortDescription
+      }
       ...SinglePageFragment
       ...SinglePostFragment
       ${eventSpread}
@@ -233,7 +248,7 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
   const isCourseType =
     typeof contentType === "string" && contentType.includes("Course");
   const isEventType = contentType === "Event";
-  const isPaidAccessType = isCourseType || isEventType;
+  const isPaidAccessType = isCourseType || isEventType || isProductType;
 
   const jsonLd = buildJsonLd(node, uri);
   const ldScript = (
@@ -246,7 +261,6 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
   // Add your own CPT templates here for single post types
   if (contentType === "Post") return <>{ldScript}<Post data={node} /></>;
   if (contentType === "Page") return <>{ldScript}<Page data={node} /></>;
-  if (isProductType) return <>{ldScript}<Product data={node} /></>;
   if (isPaidAccessType) {
     const session = await auth();
     const userEmail = session?.user?.email || "";
@@ -284,21 +298,23 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
       const defaultPrice = process.env.DEFAULT_COURSE_FEE_CENTS
         ? Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS, 10)
         : undefined;
+      const contentKind = isEventType ? "event" : isProductType ? "product" : "course";
       return (
         <Paywall
           courseUri={uri}
-          courseTitle={node?.title}
-          courseContent={node?.content || ""}
-          coursePriceRendered={node?.priceRendered || ""}
+          courseTitle={node?.title || node?.name || ""}
+          courseContent={node?.content || node?.shortDescription || ""}
+          coursePriceRendered={node?.priceRendered || node?.price || ""}
           courseDuration={node?.duration || ""}
           userEmail={userEmail}
           priceCents={accessConfig?.priceCents ?? (Number.isFinite(defaultPrice) ? defaultPrice : undefined)}
           currency={accessConfig?.currency || process.env.DEFAULT_COURSE_FEE_CURRENCY || site.defaultCurrency || "SEK"}
           stripeEnabled={isStripeEnabled()}
-          contentKind={isEventType ? "event" : "course"}
+          contentKind={contentKind}
         />
       );
     }
+    if (isProductType) return <>{ldScript}<Product data={node} /></>;
     return isEventType
       ? <>{ldScript}<Event data={node} /></>
       : <>{ldScript}<Course data={node} /></>;

@@ -7,31 +7,33 @@ import {
   listAccessUsers,
   setCourseAccess,
 } from "@/lib/courseAccess";
-import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
+import { fetchGraphQL } from "@/lib/client";
 
 async function fetchLearnPressCourses() {
-  if (!(await hasGraphQLType("LpCourse"))) return [];
   try {
     const data = await fetchGraphQL(
       `{ lpCourses(first: 100) { edges { node { databaseId uri title price priceRendered duration } } } }`,
       {},
       300,
     );
-    return (data?.lpCourses?.edges || []).map((e) => e.node);
+    return (data?.lpCourses?.edges || []).map((e) => ({
+      ...e.node,
+      _source: "learnpress",
+      _type: "course",
+    }));
   } catch {
     return [];
   }
 }
 
 async function fetchWooCommerceProducts() {
-  // Skip hasGraphQLType check — introspection may require auth.
-  // Just try the query; it fails gracefully if WooCommerce isn't available.
   try {
     const data = await fetchGraphQL(
       `{
         products(first: 100, where: { status: "publish" }) {
           edges {
             node {
+              __typename
               ... on SimpleProduct {
                 databaseId
                 name
@@ -39,7 +41,28 @@ async function fetchWooCommerceProducts() {
                 uri
                 price
                 regularPrice
-                description
+                shortDescription
+                featuredImage { node { sourceUrl } }
+                productCategories { edges { node { name } } }
+              }
+              ... on VariableProduct {
+                databaseId
+                name
+                slug
+                uri
+                price
+                regularPrice
+                shortDescription
+                featuredImage { node { sourceUrl } }
+                productCategories { edges { node { name } } }
+              }
+              ... on ExternalProduct {
+                databaseId
+                name
+                slug
+                uri
+                price
+                regularPrice
                 shortDescription
                 featuredImage { node { sourceUrl } }
                 productCategories { edges { node { name } } }
@@ -53,7 +76,30 @@ async function fetchWooCommerceProducts() {
     );
     return (data?.products?.edges || [])
       .map((e) => e.node)
-      .filter((n) => n?.name);
+      .filter((n) => n?.name)
+      .map((n) => ({
+        ...n,
+        title: n.name,
+        _source: "woocommerce",
+        _type: "product",
+      }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchEvents() {
+  try {
+    const data = await fetchGraphQL(
+      `{ events(first: 100) { edges { node { databaseId uri title slug } } } }`,
+      {},
+      300,
+    );
+    return (data?.events?.edges || []).map((e) => ({
+      ...e.node,
+      _source: "wordpress",
+      _type: "event",
+    }));
   } catch {
     return [];
   }
@@ -67,11 +113,12 @@ export async function GET(request) {
   const session = getAdminSessionFromCookieHeader(request.headers.get("cookie") || "");
   if (!session) return unauthorized();
 
-  const [state, users, wpCourses, wcProducts] = await Promise.all([
+  const [state, users, wpCourses, wcProducts, wpEvents] = await Promise.all([
     getCourseAccessState(),
     listAccessUsers(),
     fetchLearnPressCourses(),
     fetchWooCommerceProducts(),
+    fetchEvents(),
   ]);
   return NextResponse.json({
     ok: true,
@@ -79,6 +126,7 @@ export async function GET(request) {
     users,
     wpCourses,
     wcProducts,
+    wpEvents,
     storage: getCourseStorageInfo(),
   });
 }

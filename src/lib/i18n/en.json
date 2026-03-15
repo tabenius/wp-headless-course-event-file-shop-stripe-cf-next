@@ -20,6 +20,7 @@
     "back": "Back",
     "course": "Course",
     "event": "Event",
+    "product": "Product",
     "noDetails": "No details"
   },
   "auth": {
@@ -140,8 +141,10 @@
     "saveProducts": "Save products",
     "productsSaved": "Product list saved.",
     "courseAccess": "Course access",
+    "contentAccess": "Content & access",
     "selectCourse": "Select course",
     "selectCourseDefault": "-- Select a course --",
+    "selectContentDefault": "-- Select product / course / event --",
     "courseUriInputPlaceholder": "/courses/my-course",
     "selectExistingCourse": "Select existing course",
     "courseFee": "Course fee (required, can be 0)",
@@ -201,6 +204,7 @@
     "redirectingToStripe": "Redirecting to Stripe...",
     "payAndUnlockCourse": "Pay and unlock the course",
     "payAndUnlockEvent": "Pay and unlock the event",
+    "payAndUnlockProduct": "Pay and unlock the product",
     "paymentNotAvailable": "Payment is not available yet. Contact the administrator.",
     "signInToAccess": "Sign in or register to purchase this {contentKind}.",
     "duration": "Duration",

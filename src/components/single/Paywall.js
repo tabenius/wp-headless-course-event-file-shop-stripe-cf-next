@@ -21,11 +21,14 @@ export default function Paywall({
   const isLoggedIn = Boolean(userEmail);
   const kindLabel = contentKind === "event"
     ? t("common.event").toLowerCase()
-    : t("common.course").toLowerCase();
+    : contentKind === "product"
+      ? t("common.product").toLowerCase()
+      : t("common.course").toLowerCase();
 
-  // Show LP price if available, otherwise fall back to access config price
-  const displayPrice = coursePriceRendered
+  // Show WordPress price if available, otherwise fall back to access config price
+  const rawDisplayPrice = coursePriceRendered
     || (priceCents != null ? `${(priceCents / 100).toFixed(2)} ${currency.toUpperCase()}` : "");
+  const displayPrice = rawDisplayPrice.replace(/&nbsp;/g, " ");
 
   async function checkout() {
     setError("");
@@ -89,7 +92,11 @@ export default function Paywall({
             >
               {loading
                 ? t("paywall.redirectingToStripe")
-                : contentKind === "event" ? t("paywall.payAndUnlockEvent") : t("paywall.payAndUnlockCourse")}
+                : contentKind === "event"
+                  ? t("paywall.payAndUnlockEvent")
+                  : contentKind === "product"
+                    ? t("paywall.payAndUnlockProduct")
+                    : t("paywall.payAndUnlockCourse")}
             </button>
           </>
         ) : (

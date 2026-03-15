@@ -20,6 +20,7 @@
     "back": "Tillbaka",
     "course": "Kurs",
     "event": "Evenemang",
+    "product": "Produkt",
     "noDetails": "Inga detaljer"
   },
   "auth": {
@@ -140,8 +141,10 @@
     "saveProducts": "Spara produkter",
     "productsSaved": "Produktlistan sparades.",
     "courseAccess": "Kursåtkomst",
+    "contentAccess": "Innehåll & åtkomst",
     "selectCourse": "Välj kurs",
     "selectCourseDefault": "-- Välj en kurs --",
+    "selectContentDefault": "-- Välj produkt / kurs / event --",
     "courseUriInputPlaceholder": "/courses/my-course",
     "selectExistingCourse": "Välj befintlig kurs",
     "courseFee": "Kursavgift (obligatoriskt, kan vara 0)",
@@ -201,6 +204,7 @@
     "redirectingToStripe": "Skickar dig till Stripe...",
     "payAndUnlockCourse": "Betala och lås upp kursen",
     "payAndUnlockEvent": "Betala och lås upp händelsen",
+    "payAndUnlockProduct": "Betala och lås upp produkten",
     "paymentNotAvailable": "Betalning är inte tillgänglig ännu. Kontakta administratören.",
     "signInToAccess": "Logga in eller registrera dig för att köpa denna {contentKind}.",
     "duration": "Längd",

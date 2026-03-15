@@ -34,7 +34,8 @@ export async function POST(request) {
         : typeof body?.courseTitle === "string"
           ? body.courseTitle
           : "";
-    const contentKind = body?.contentKind === "event" ? "event" : "course";
+    const rawKind = body?.contentKind;
+    const contentKind = rawKind === "event" ? "event" : rawKind === "product" ? "product" : "course";
     if (!courseUri) {
       console.error("Stripe checkout request rejected: missing content URI");
       return NextResponse.json(
@@ -55,7 +56,9 @@ export async function POST(request) {
           error:
             contentKind === "event"
               ? t("apiErrors.eventNotAvailable")
-              : t("apiErrors.courseNotAvailable"),
+              : contentKind === "product"
+                ? t("apiErrors.productNotAvailable")
+                : t("apiErrors.courseNotAvailable"),
         },
         { status: 400 },
       );
