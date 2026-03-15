@@ -23,6 +23,41 @@ async function fetchLearnPressCourses() {
   }
 }
 
+async function fetchWooCommerceProducts() {
+  if (!(await hasGraphQLType("SimpleProduct"))) return [];
+  try {
+    const data = await fetchGraphQL(
+      `{
+        products(first: 100, where: { status: "publish" }) {
+          edges {
+            node {
+              ... on SimpleProduct {
+                databaseId
+                name
+                slug
+                uri
+                price
+                regularPrice
+                description
+                shortDescription
+                featuredImage { node { sourceUrl } }
+                productCategories { edges { node { name } } }
+              }
+            }
+          }
+        }
+      }`,
+      {},
+      300,
+    );
+    return (data?.products?.edges || [])
+      .map((e) => e.node)
+      .filter((n) => n?.name);
+  } catch {
+    return [];
+  }
+}
+
 function unauthorized() {
   return NextResponse.json({ ok: false, error: t("apiErrors.adminLoginRequired") }, { status: 401 });
 }
@@ -31,16 +66,18 @@ export async function GET(request) {
   const session = getAdminSessionFromCookieHeader(request.headers.get("cookie") || "");
   if (!session) return unauthorized();
 
-  const [state, users, wpCourses] = await Promise.all([
+  const [state, users, wpCourses, wcProducts] = await Promise.all([
     getCourseAccessState(),
     listAccessUsers(),
     fetchLearnPressCourses(),
+    fetchWooCommerceProducts(),
   ]);
   return NextResponse.json({
     ok: true,
     courses: state.courses,
     users,
     wpCourses,
+    wcProducts,
     storage: getCourseStorageInfo(),
   });
 }

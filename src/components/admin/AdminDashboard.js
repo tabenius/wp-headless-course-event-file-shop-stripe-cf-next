@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [courses, setCourses] = useState({});
   const [users, setUsers] = useState([]);
   const [wpCourses, setWpCourses] = useState([]);
+  const [wcProducts, setWcProducts] = useState([]);
   const [storage, setStorage] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [price, setPrice] = useState("0.00");
@@ -75,6 +76,7 @@ export default function AdminDashboard() {
         setCourses(json.courses || {});
         setUsers(Array.isArray(json.users) ? json.users : []);
         setWpCourses(Array.isArray(json.wpCourses) ? json.wpCourses : []);
+        setWcProducts(Array.isArray(json.wcProducts) ? json.wcProducts : []);
         setStorage(json.storage || null);
       })
       .catch((fetchError) => {
@@ -103,16 +105,27 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!selectedCourse) return;
     const config = courses[selectedCourse];
-    if (!config) {
-      setPrice("");
-      setCurrency("SEK");
-      setAllowedUsers([]);
+    if (config) {
+      setPrice(toCurrencyUnits(config.priceCents ?? 0));
+      setCurrency((config.currency || "SEK").toUpperCase());
+      setAllowedUsers(Array.isArray(config.allowedUsers) ? config.allowedUsers : []);
       return;
     }
-    setPrice(toCurrencyUnits(config.priceCents ?? 0));
-    setCurrency((config.currency || "SEK").toUpperCase());
-    setAllowedUsers(Array.isArray(config.allowedUsers) ? config.allowedUsers : []);
-  }, [selectedCourse, courses]);
+    // Auto-fill from WooCommerce product price if no existing config
+    const wcMatch = wcProducts.find((p) => p.uri === selectedCourse);
+    if (wcMatch?.price) {
+      const numericPrice = parseFloat(String(wcMatch.price).replace(/[^\d.,]/g, "").replace(",", "."));
+      if (Number.isFinite(numericPrice) && numericPrice > 0) {
+        setPrice(numericPrice.toFixed(2));
+      } else {
+        setPrice("");
+      }
+    } else {
+      setPrice("");
+    }
+    setCurrency("SEK");
+    setAllowedUsers([]);
+  }, [selectedCourse, courses, wcProducts]);
 
   const knownCourses = useMemo(
     () => Object.keys(courses).sort((a, b) => a.localeCompare(b)),
@@ -643,22 +656,43 @@ export default function AdminDashboard() {
         <div className="grid md:grid-cols-2 gap-8">
           <div className="space-y-3">
             <label className="text-sm text-gray-700">{t("admin.selectCourse")}</label>
-            {wpCourses.length > 0 ? (
+            {wpCourses.length > 0 || wcProducts.length > 0 ? (
               <select
                 className="w-full border rounded px-3 py-2"
                 value={selectedCourse}
                 onChange={(event) => setSelectedCourse(event.target.value)}
               >
                 <option value="">{t("admin.selectCourseDefault")}</option>
-                {wpCourses.map((course) => (
-                  <option key={course.uri} value={course.uri}>
-                    {course.title}
-                    {course.priceRendered ? ` (${course.priceRendered})` : ""}
-                    {course.duration ? ` — ${course.duration}` : ""}
-                  </option>
-                ))}
+                {wcProducts.length > 0 && (
+                  <optgroup label="WooCommerce">
+                    {wcProducts.map((product) => (
+                      <option key={`wc-${product.uri}`} value={product.uri}>
+                        {product.name}
+                        {product.price ? ` (${product.price})` : ""}
+                        {product.productCategories?.edges?.[0]?.node?.name
+                          ? ` — ${product.productCategories.edges[0].node.name}`
+                          : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {wpCourses.length > 0 && (
+                  <optgroup label="LearnPress">
+                    {wpCourses.map((course) => (
+                      <option key={`lp-${course.uri}`} value={course.uri}>
+                        {course.title}
+                        {course.priceRendered ? ` (${course.priceRendered})` : ""}
+                        {course.duration ? ` — ${course.duration}` : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
                 {knownCourses
-                  .filter((uri) => !wpCourses.some((c) => c.uri === uri))
+                  .filter(
+                    (uri) =>
+                      !wpCourses.some((c) => c.uri === uri) &&
+                      !wcProducts.some((p) => p.uri === uri),
+                  )
                   .map((courseUri) => (
                     <option key={courseUri} value={courseUri}>
                       {courseUri}
