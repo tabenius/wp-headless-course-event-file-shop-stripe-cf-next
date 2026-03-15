@@ -47,7 +47,7 @@ export default function AdminHeader({ logoUrl }) {
   }
 
   return (
-    <header className="bg-white border-b sticky top-0 z-30">
+    <header className="bg-gray-100 border-b sticky top-0 z-30">
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
         {/* Left: Logo + brand */}
         <div className="flex items-center gap-4">
