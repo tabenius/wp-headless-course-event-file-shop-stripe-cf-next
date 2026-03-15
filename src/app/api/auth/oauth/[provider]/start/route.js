@@ -14,8 +14,8 @@ function safeCallbackUrl(value, origin) {
   }
 }
 
-export async function GET(request, { params }) {
-  const provider = params?.provider;
+export async function GET(request, { params: paramsPromise }) {
+  const { provider } = await paramsPromise;
   const providerConfig = getProviderConfig(provider);
   if (!providerConfig) {
     console.error(`OAuth start unavailable: provider ${provider} is not configured`);

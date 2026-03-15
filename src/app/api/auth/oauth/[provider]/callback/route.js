@@ -59,8 +59,8 @@ async function getAccessToken(provider, providerConfig, code, redirectUri) {
   return tokenJson;
 }
 
-export async function GET(request, { params }) {
-  const provider = params?.provider;
+export async function GET(request, { params: paramsPromise }) {
+  const { provider } = await paramsPromise;
   const providerConfig = getProviderConfig(provider);
   if (!providerConfig) {
     return NextResponse.redirect(new URL("/auth/signin?error=provider", request.url));

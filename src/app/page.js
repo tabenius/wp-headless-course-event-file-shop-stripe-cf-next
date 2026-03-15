@@ -13,7 +13,7 @@ query GetNodeByUri($uri: String!) {
 }
 `;
 
-export default async function HomePage({ params }) {
+export default async function HomePage() {
   const data = await fetchGraphQL(
     GET_CONTENT_QUERY,
     {
