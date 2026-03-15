@@ -20,12 +20,15 @@ export async function GET(request) {
   }
 
   try {
+    // Fine-grained tokens use "Bearer", classic PATs use "token"
+    const authPrefix = token.startsWith("ghp_") ? "token" : "Bearer";
     const response = await fetch(
       `https://api.github.com/repos/${repo}/commits?per_page=50`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `${authPrefix} ${token}`,
           Accept: "application/vnd.github.v3+json",
+          "User-Agent": "ragbaz-admin",
         },
       },
     );
@@ -33,9 +36,15 @@ export async function GET(request) {
     if (!response.ok) {
       const text = await response.text();
       console.error("GitHub commits API failed:", response.status, text);
+      const hint =
+        response.status === 403
+          ? " — the token may need 'contents:read' permission"
+          : response.status === 404
+            ? " — check that GITHUB_REPO is correct (owner/repo)"
+            : "";
       return NextResponse.json({
         ok: false,
-        error: `GitHub API returned ${response.status}`,
+        error: `GitHub API returned ${response.status}${hint}`,
       });
     }
 

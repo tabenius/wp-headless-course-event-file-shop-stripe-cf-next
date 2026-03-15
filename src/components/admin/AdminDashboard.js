@@ -1355,7 +1355,7 @@ export default function AdminDashboard() {
       {activeTab === "advanced" && (
         <div className="border rounded p-5 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Advanced settings</h2>
+            <h2 className="text-xl font-semibold">{t("admin.advancedSettings")}</h2>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -1386,7 +1386,7 @@ export default function AdminDashboard() {
 
           {/* Storage configuration */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">Storage backend</h3>
+            <h3 className="text-sm font-semibold text-gray-700">{t("admin.storageBackend")}</h3>
             <p className="text-xs text-gray-500">
               Controls where course access rules, pricing, and user permissions are stored.
               Set the <code className="bg-gray-100 px-1 rounded">COURSE_ACCESS_BACKEND</code> environment variable to change.
@@ -1437,7 +1437,7 @@ export default function AdminDashboard() {
 
           {/* Environment info */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">Environment</h3>
+            <h3 className="text-sm font-semibold text-gray-700">{t("admin.environment")}</h3>
             <div className="grid md:grid-cols-2 gap-3 text-xs">
               <div className="bg-gray-50 rounded p-3 space-y-1">
                 <div className="font-medium text-gray-700">WordPress</div>
@@ -1490,16 +1490,16 @@ export default function AdminDashboard() {
 
           {/* User management — reverse access view */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">User access overview</h3>
+            <h3 className="text-sm font-semibold text-gray-700">{t("admin.userAccessOverview")}</h3>
             <p className="text-xs text-gray-500">
-              Find a user and see which content they can access. Check or uncheck items to grant or revoke access.
+              {t("admin.userAccessOverviewDesc")}
             </p>
             <UserAccessPanel users={users} courses={courses} allWpContent={allWpContent} products={products} />
           </div>
 
           {/* Recent commits */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">Recent commits</h3>
+            <h3 className="text-sm font-semibold text-gray-700">{t("admin.recentCommits")}</h3>
             {commitsError && (
               <p className="text-xs text-gray-400">{commitsError}</p>
             )}
@@ -1513,7 +1513,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             ) : !commitsError ? (
-              <p className="text-xs text-gray-400">Loading...</p>
+              <p className="text-xs text-gray-400">{t("admin.commitsLoading")}</p>
             ) : null}
           </div>
         </div>

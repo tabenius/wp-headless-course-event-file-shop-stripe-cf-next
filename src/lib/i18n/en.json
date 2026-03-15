@@ -202,7 +202,17 @@
     "manualEntry": "Enter URI manually...",
     "cropAndScale": "Crop & scale image",
     "cropHint": "Drag to reposition, use the slider to zoom in or out. The result is saved as a square image.",
-    "scaleLabel": "Zoom"
+    "scaleLabel": "Zoom",
+    "navProducts": "Products",
+    "navStats": "Stats",
+    "navAdvanced": "Advanced",
+    "recentCommits": "Recent commits",
+    "commitsLoading": "Loading...",
+    "advancedSettings": "Advanced settings",
+    "storageBackend": "Storage backend",
+    "environment": "Environment",
+    "userAccessOverview": "User access overview",
+    "userAccessOverviewDesc": "Find a user and see which content they can access. Check or uncheck items to grant or revoke access."
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",

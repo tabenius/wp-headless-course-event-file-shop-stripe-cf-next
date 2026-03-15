@@ -202,7 +202,17 @@
     "manualEntry": "Ange URI manuellt...",
     "cropAndScale": "Beskär & skala bild",
     "cropHint": "Dra för att flytta, använd reglaget för att zooma in eller ut. Resultatet sparas som en kvadratisk bild.",
-    "scaleLabel": "Zoom"
+    "scaleLabel": "Zoom",
+    "navProducts": "Produkter",
+    "navStats": "Statistik",
+    "navAdvanced": "Avancerat",
+    "recentCommits": "Senaste commits",
+    "commitsLoading": "Laddar...",
+    "advancedSettings": "Avancerade inställningar",
+    "storageBackend": "Lagringsbackend",
+    "environment": "Miljö",
+    "userAccessOverview": "Användaråtkomst",
+    "userAccessOverviewDesc": "Hitta en användare och se vilka resurser de har tillgång till. Bocka i eller ur för att ge eller ta bort åtkomst."
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",

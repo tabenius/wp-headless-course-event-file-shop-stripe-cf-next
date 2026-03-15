@@ -2,13 +2,16 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 
-const NAV_ITEMS = [
-  { label: "Products", tab: "products" },
-  { label: "Stats", tab: "stats" },
-  { label: "Advanced", tab: "advanced" },
-  { href: "/admin/docs", label: "Documentation" },
-];
+function getNavItems() {
+  return [
+    { label: t("admin.navProducts"), tab: "products" },
+    { label: t("admin.navStats"), tab: "stats" },
+    { label: t("admin.navAdvanced"), tab: "advanced" },
+    { href: "/admin/docs", label: t("admin.documentation") },
+  ];
+}
 
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
@@ -54,7 +57,7 @@ export default function AdminHeader({ logoUrl }) {
 
         {/* Right: Nav + actions */}
         <nav className="flex items-center gap-1">
-          {NAV_ITEMS.map((item) => {
+          {getNavItems().map((item) => {
             if (item.tab) {
               return (
                 <button
@@ -89,7 +92,7 @@ export default function AdminHeader({ logoUrl }) {
             type="button"
             onClick={() => switchTab("health")}
             className="p-2 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-            title="Integration check"
+            title={t("admin.healthCheck")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -147,7 +150,7 @@ export default function AdminHeader({ logoUrl }) {
             onClick={logoutAdmin}
             className="ml-2 px-3 py-1.5 rounded border text-sm text-gray-600 hover:bg-gray-50"
           >
-            Sign out
+            {t("admin.signOut")}
           </button>
         </nav>
       </div>
