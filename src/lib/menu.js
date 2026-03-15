@@ -40,11 +40,36 @@ const PATH_REWRITES = {
   "/blog-section": "/blog",
 };
 
+/** Strip the WordPress domain so all menu links become internal paths. */
+function toRelativePath(href) {
+  if (!href || href === "#") return href;
+  try {
+    const parsed = new URL(href, "https://_");
+    // If it's an absolute URL pointing to the WP site, keep only the path
+    if (href.startsWith("http")) {
+      const wpHost = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "")
+        .replace(/^https?:\/\//, "")
+        .replace(/\/+$/, "")
+        .toLowerCase();
+      const siteHost = (site.url || "")
+        .replace(/^https?:\/\//, "")
+        .replace(/\/+$/, "")
+        .toLowerCase();
+      const linkHost = parsed.hostname.toLowerCase();
+      if (linkHost === wpHost || linkHost === siteHost || linkHost === `www.${siteHost}` || `www.${linkHost}` === siteHost) {
+        return parsed.pathname.replace(/\/+$/, "") || "/";
+      }
+    }
+  } catch { /* not a URL, treat as path */ }
+  return href.replace(/\/+$/, "") || "/";
+}
+
 function mapItem(node, { uppercase = false } = {}) {
   const rawHref = node.path || node.url || "#";
   const label = node.label || "";
+  const rewritten = PATH_REWRITES[rawHref] || PATH_REWRITES[rawHref.replace(/\/+$/, "")] || rawHref;
   return {
-    href: PATH_REWRITES[rawHref] || rawHref,
+    href: toRelativePath(rewritten),
     label: uppercase ? label.toUpperCase() : label,
   };
 }

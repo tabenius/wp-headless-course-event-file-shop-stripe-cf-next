@@ -15,9 +15,13 @@
 		"COURSE_ACCESS_STORE": "cloudflare",
 		"USER_STORE_BACKEND": "cloudflare",
 		"DIGITAL_ACCESS_STORE": "cloudflare",
+		"PRODUCT_STORE_BACKEND": "cloudflare",
 		"DEFAULT_COURSE_FEE_CURRENCY": "SEK",
 		"CF_KV_KEY": "course-access",
-		"CF_USERS_KV_KEY": "course-users"
+		"CF_USERS_KV_KEY": "course-users",
+		"UPLOAD_BACKEND": "r2",
+		"RESEND_API_KEY": "re_hx5XBu3y_FsuAYLVWsV2tCFZFK9RxitUd",
+		"RESEND_FROM_EMAIL": "xtas.nu@ragbaz.xyz"
 	},
 	"kv_namespaces": [
 		{

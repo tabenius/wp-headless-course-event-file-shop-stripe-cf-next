@@ -104,7 +104,12 @@ function getContentQuery() {
 
 async function fetchContent(uri) {
   const query = await getContentQuery();
-  return await fetchGraphQL(query, { uri }, 1800);
+  const data = await fetchGraphQL(query, { uri }, 1800);
+  // WPGraphQL sometimes requires trailing slash — retry if first attempt found nothing
+  if (!data?.nodeByUri && !uri.endsWith("/")) {
+    return await fetchGraphQL(query, { uri: `${uri}/` }, 1800);
+  }
+  return data;
 }
 
 function stripHtml(html) {

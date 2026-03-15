@@ -131,6 +131,7 @@ async function writeToCloudflare(products) {
 }
 
 async function readFromLocal() {
+  // Try dynamic fs.readFile first (works in Node.js dev, not on Cloudflare Workers)
   try {
     const [{ promises: fs }, path] = await Promise.all([
       import("node:fs"),
@@ -140,12 +141,14 @@ async function readFromLocal() {
     const raw = await fs.readFile(fullPath, "utf8");
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.error(
-      "Local product file unavailable. Using in-memory product store fallback:",
-      error,
-    );
-    return inMemoryProducts || [];
+  } catch {
+    // fs.readFile unavailable (e.g. Cloudflare Workers) — use build-time bundled JSON
+    try {
+      const data = (await import("../../config/digital-products.json")).default;
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return inMemoryProducts || [];
+    }
   }
 }
 

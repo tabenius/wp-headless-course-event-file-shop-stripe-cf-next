@@ -909,12 +909,12 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-0">
               {/* WooCommerce Products */}
               {wcProducts.length > 0 && (
                 <>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">WooCommerce</p>
-                  {wcProducts.map((product) => {
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2 pb-1">WooCommerce</p>
+                  {wcProducts.map((product, _wcIdx) => { const _rowIdx = _wcIdx;
                     const isActive = selectedCourse === product.uri;
                     const configured = courses[product.uri];
                     const cat = product.productCategories?.edges?.[0]?.node?.name;
@@ -926,8 +926,8 @@ export default function AdminDashboard() {
                         onClick={() => handleSelection(product.uri)}
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? "bg-purple-100 border-2 border-purple-400"
-                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                            ? "bg-purple-100 border border-purple-500"
+                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
                         }`}
                       >
                         {imgUrl ? (
@@ -956,7 +956,7 @@ export default function AdminDashboard() {
               {wpCourses.length > 0 && (
                 <>
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">LearnPress</p>
-                  {wpCourses.map((course) => {
+                  {wpCourses.map((course, _lpIdx) => { const _rowIdx = _lpIdx;
                     const isActive = selectedCourse === course.uri;
                     const configured = courses[course.uri];
                     return (
@@ -966,8 +966,8 @@ export default function AdminDashboard() {
                         onClick={() => handleSelection(course.uri)}
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? "bg-purple-100 border-2 border-purple-400"
-                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                            ? "bg-purple-100 border border-purple-500"
+                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
                         }`}
                       >
                         <div className="w-10 h-10 rounded bg-blue-50 shrink-0 flex items-center justify-center text-blue-400 text-xs font-bold">LP</div>
@@ -992,7 +992,7 @@ export default function AdminDashboard() {
               {wpEvents.length > 0 && (
                 <>
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">Events</p>
-                  {wpEvents.map((event) => {
+                  {wpEvents.map((event, _evIdx) => { const _rowIdx = _evIdx;
                     const isActive = selectedCourse === event.uri;
                     const configured = courses[event.uri];
                     const imgUrl = event.featuredImage?.node?.sourceUrl;
@@ -1003,8 +1003,8 @@ export default function AdminDashboard() {
                         onClick={() => handleSelection(event.uri)}
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? "bg-purple-100 border-2 border-purple-400"
-                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                            ? "bg-purple-100 border border-purple-500"
+                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
                         }`}
                       >
                         {imgUrl ? (
@@ -1029,7 +1029,7 @@ export default function AdminDashboard() {
               {products.length > 0 && (
                 <>
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">{t("admin.shopProducts")}</p>
-                  {products.map((p, i) => {
+                  {products.map((p, i) => { const _rowIdx = i;
                     const isActive = selectedCourse === `__shop_${i}`;
                     return (
                       <button
@@ -1038,8 +1038,8 @@ export default function AdminDashboard() {
                         onClick={() => handleSelection(`__shop_${i}`)}
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? "bg-purple-100 border-2 border-purple-400"
-                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                            ? "bg-purple-100 border border-purple-500"
+                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
                         }`}
                       >
                         {p.imageUrl ? (
@@ -1085,7 +1085,7 @@ export default function AdminDashboard() {
                         !allWpContent.some((item) => item.uri === uri) &&
                         !products.some((p) => p.courseUri === uri || p.slug === uri),
                     )
-                    .map((courseUri) => {
+                    .map((courseUri, _otherIdx) => { const _rowIdx = _otherIdx;
                       const isActive = selectedCourse === courseUri;
                       return (
                         <button
@@ -1094,8 +1094,8 @@ export default function AdminDashboard() {
                           onClick={() => handleSelection(courseUri)}
                           className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                             isActive
-                              ? "bg-purple-100 border-2 border-purple-400"
-                              : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                              ? "bg-purple-100 border border-purple-500"
+                              : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
                           }`}
                         >
                           <div className="w-10 h-10 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-xs font-bold">URI</div>
