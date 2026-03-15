@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import NavLink from "./NavLink";
 import DarkModeToggle from "./DarkModeToggle";
 import { t } from "@/lib/i18n";
 
@@ -25,6 +26,7 @@ export default function MobileNav({ items, authLinks }) {
 
   const menuItemClass =
     "block font-[family-name:var(--font-montserrat)] text-[13px] font-normal py-[6px] border-b border-[#f0d0d0] hover:text-[#6d003e] leading-tight";
+  const activeMobileClass = "text-[#6d003e] font-semibold";
 
   const overlay = (
     <>
@@ -55,22 +57,24 @@ export default function MobileNav({ items, authLinks }) {
         <div className="px-5 pb-4">
           {items.map((item) => (
             <div key={item.href}>
-              <Link
+              <NavLink
                 href={item.href}
                 className={menuItemClass}
+                activeClassName={activeMobileClass}
                 onClick={() => setOpen(false)}
               >
                 {item.label}
-              </Link>
+              </NavLink>
               {item.children?.map((child) => (
-                <Link
+                <NavLink
                   key={child.href}
                   href={child.href}
                   className={`${menuItemClass} pl-4 text-[12px]`}
+                  activeClassName={activeMobileClass}
                   onClick={() => setOpen(false)}
                 >
                   {child.label}
-                </Link>
+                </NavLink>
               ))}
             </div>
           ))}

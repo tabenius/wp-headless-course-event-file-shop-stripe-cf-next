@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import NavLink from "./NavLink";
 
-export default function NavDropdown({ item, className, dropdownClassName }) {
+export default function NavDropdown({ item, className, activeClassName, dropdownClassName }) {
   const [open, setOpen] = useState(false);
   const timeoutRef = useRef(null);
   const containerRef = useRef(null);
@@ -26,7 +27,7 @@ export default function NavDropdown({ item, className, dropdownClassName }) {
       onMouseEnter={enter}
       onMouseLeave={leave}
     >
-      <Link href={item.href} className={className}>
+      <NavLink href={item.href} className={className} activeClassName={activeClassName}>
         {item.label}
         <svg
           className="inline-block w-3 h-3 ml-0.5 -mt-0.5"
@@ -36,7 +37,7 @@ export default function NavDropdown({ item, className, dropdownClassName }) {
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
-      </Link>
+      </NavLink>
       {open && (
         <div className="absolute top-full left-0 pt-1 z-50">
           <div className={dropdownClassName}>

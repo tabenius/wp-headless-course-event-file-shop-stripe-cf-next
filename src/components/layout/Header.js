@@ -5,6 +5,7 @@ import SignOutButton from "./SignOutButton";
 import MobileNav from "./MobileNav";
 import UserMenu from "./UserMenu";
 import DarkModeToggle from "./DarkModeToggle";
+import NavLink from "./NavLink";
 import site from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { getNavigation } from "@/lib/menu";
@@ -23,6 +24,7 @@ export default async function Header() {
   const [session, title, navigation] = await Promise.all([auth(), fetchSiteTitle(), getNavigation()]);
   const menuItemClass =
     "font-[family-name:var(--font-montserrat)] text-[13px] font-normal hover:underline focus:underline whitespace-nowrap";
+  const activeMenuClass = "text-[#6d003e] underline underline-offset-4 decoration-2 decoration-[#6d003e]";
   const mobileAuthClass =
     "block font-[family-name:var(--font-montserrat)] text-[13px] font-normal py-[6px] border-b border-[#f0d0d0] hover:text-[#6d003e] leading-tight";
 
@@ -71,12 +73,13 @@ export default async function Header() {
                   key={item.href}
                   item={item}
                   className={menuItemClass}
+                  activeClassName={activeMenuClass}
                   dropdownClassName="bg-[#fff1f1] border border-[#333333] rounded shadow-lg py-1 min-w-[180px]"
                 />
               ) : (
-                <Link key={item.href} href={item.href} className={menuItemClass}>
+                <NavLink key={item.href} href={item.href} className={menuItemClass} activeClassName={activeMenuClass}>
                   {item.label}
-                </Link>
+                </NavLink>
               ),
             )}
           </nav>
