@@ -874,173 +874,248 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* Product grid — clickable cards for quick editing */}
-          {products.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">{t("admin.shopProducts")}</label>
+          {/* All products list */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">
+                {t("admin.selectContent")}
+              </label>
+              <button
+                type="button"
+                onClick={() => handleSelection("__new__")}
+                className="text-sm text-purple-700 hover:underline"
+              >
+                + {t("admin.addProduct")}
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              {/* WooCommerce Products */}
+              {wcProducts.length > 0 && (
+                <>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">WooCommerce</p>
+                  {wcProducts.map((product) => {
+                    const isActive = selectedCourse === product.uri;
+                    const configured = courses[product.uri];
+                    const cat = product.productCategories?.edges?.[0]?.node?.name;
+                    const imgUrl = product.featuredImage?.node?.sourceUrl;
+                    return (
+                      <button
+                        key={`wc-${product.uri}`}
+                        type="button"
+                        onClick={() => handleSelection(product.uri)}
+                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-purple-100 border-2 border-purple-400"
+                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                        }`}
+                      >
+                        {imgUrl ? (
+                          <img src={imgUrl} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-gray-100 shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{product.name}</p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {product.price ? product.price.replace(/&nbsp;/g, " ") : ""}
+                            {cat ? ` · ${cat}` : ""}
+                            {product.uri ? ` · ${product.uri}` : ""}
+                          </p>
+                        </div>
+                        {configured && (
+                          <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* LearnPress Courses */}
+              {wpCourses.length > 0 && (
+                <>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">LearnPress</p>
+                  {wpCourses.map((course) => {
+                    const isActive = selectedCourse === course.uri;
+                    const configured = courses[course.uri];
+                    return (
+                      <button
+                        key={`lp-${course.uri}`}
+                        type="button"
+                        onClick={() => handleSelection(course.uri)}
+                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-purple-100 border-2 border-purple-400"
+                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded bg-blue-50 shrink-0 flex items-center justify-center text-blue-400 text-xs font-bold">LP</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{course.title}</p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {course.priceRendered || ""}
+                            {course.duration ? ` · ${course.duration}` : ""}
+                            {course.uri ? ` · ${course.uri}` : ""}
+                          </p>
+                        </div>
+                        {configured && (
+                          <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Events */}
+              {wpEvents.length > 0 && (
+                <>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">Events</p>
+                  {wpEvents.map((event) => {
+                    const isActive = selectedCourse === event.uri;
+                    const configured = courses[event.uri];
+                    const imgUrl = event.featuredImage?.node?.sourceUrl;
+                    return (
+                      <button
+                        key={`ev-${event.uri}`}
+                        type="button"
+                        onClick={() => handleSelection(event.uri)}
+                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-purple-100 border-2 border-purple-400"
+                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                        }`}
+                      >
+                        {imgUrl ? (
+                          <img src={imgUrl} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-400 text-xs font-bold">EV</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{event.title}</p>
+                          <p className="text-xs text-gray-500 truncate">{event.uri}</p>
+                        </div>
+                        {configured && (
+                          <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Shop Products */}
+              {products.length > 0 && (
+                <>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">{t("admin.shopProducts")}</p>
+                  {products.map((p, i) => {
+                    const isActive = selectedCourse === `__shop_${i}`;
+                    return (
+                      <button
+                        key={`shop-${i}`}
+                        type="button"
+                        onClick={() => handleSelection(`__shop_${i}`)}
+                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-purple-100 border-2 border-purple-400"
+                            : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                        }`}
+                      >
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                              <path fillRule="evenodd" d="M1 5.25A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25v9.5A2.25 2.25 0 0116.75 17H3.25A2.25 2.25 0 011 14.75v-9.5zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75v-2.69l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L2.5 11.06zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {p.name || `${t("admin.product")} ${i + 1}`}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {p.priceCents ? `${toCurrencyUnits(p.priceCents)} ${p.currency || "SEK"}` : "—"}
+                            {" · "}
+                            {p.type === "course" ? t("admin.courseProduct") : t("admin.digitalFile")}
+                            {p.slug ? ` · /${p.slug}` : ""}
+                          </p>
+                        </div>
+                        {p.active === false && (
+                          <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded shrink-0">Inactive</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Known course URIs not in WP or shop */}
+              {knownCourses.filter(
+                (uri) =>
+                  !allWpContent.some((item) => item.uri === uri) &&
+                  !products.some((p) => p.courseUri === uri || p.slug === uri),
+              ).length > 0 && (
+                <>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">Other</p>
+                  {knownCourses
+                    .filter(
+                      (uri) =>
+                        !allWpContent.some((item) => item.uri === uri) &&
+                        !products.some((p) => p.courseUri === uri || p.slug === uri),
+                    )
+                    .map((courseUri) => {
+                      const isActive = selectedCourse === courseUri;
+                      return (
+                        <button
+                          key={courseUri}
+                          type="button"
+                          onClick={() => handleSelection(courseUri)}
+                          className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            isActive
+                              ? "bg-purple-100 border-2 border-purple-400"
+                              : "bg-white border-2 border-transparent hover:bg-purple-50 hover:border-purple-200"
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-xs font-bold">URI</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{courseUri}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                </>
+              )}
+
+              {/* Manual entry */}
+              <div className="pt-2 flex gap-2">
                 <button
                   type="button"
                   onClick={() => handleSelection("__new__")}
-                  className="text-sm text-purple-700 hover:underline"
+                  className="px-3 py-1.5 rounded border text-sm text-purple-700 hover:bg-purple-50"
                 >
                   + {t("admin.addProduct")}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCourse("__custom__")}
+                  className="px-3 py-1.5 rounded border text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  {t("admin.manualEntry")}
+                </button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {products.map((p, i) => {
-                  const isActive = selectedCourse === `__shop_${i}`;
-                  return (
-                    <button
-                      key={`card-${i}`}
-                      type="button"
-                      onClick={() => handleSelection(`__shop_${i}`)}
-                      className={`text-left border-2 rounded-lg p-3 transition-colors ${
-                        isActive
-                          ? "border-purple-500 bg-purple-50"
-                          : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
-                      }`}
-                    >
-                      {p.imageUrl ? (
-                        <img
-                          src={p.imageUrl}
-                          alt=""
-                          className="w-full aspect-square object-cover rounded mb-2"
-                        />
-                      ) : (
-                        <div className="w-full aspect-square bg-gray-100 rounded mb-2 flex items-center justify-center text-gray-300">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-                            <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
-                      <p className="text-sm font-medium truncate">
-                        {p.name || `${t("admin.product")} ${i + 1}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {p.priceCents ? `${toCurrencyUnits(p.priceCents)} ${p.currency || "SEK"}` : "—"}
-                        {" · "}
-                        {p.type === "course" ? t("admin.courseProduct") : t("admin.digitalFile")}
-                      </p>
-                      {p.active === false && (
-                        <span className="text-[10px] text-red-500 font-medium">Inactive</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              {selectedCourse === "__custom__" && (
+                <input
+                  type="text"
+                  value=""
+                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  placeholder={t("admin.courseUriInputPlaceholder")}
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  autoFocus
+                />
+              )}
             </div>
-          )}
-
-          {/* Unified content selector */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              {t("admin.selectContent")}
-            </label>
-            <p className="text-xs text-gray-400">
-              {t("admin.selectContentHint")}
-            </p>
-            <select
-              className="w-full border rounded px-3 py-2"
-              value={selectedCourse}
-              onChange={(e) => handleSelection(e.target.value)}
-            >
-              <option value="">{t("admin.selectContentDefault")}</option>
-
-              {wcProducts.length > 0 && (
-                <optgroup label="WooCommerce Products">
-                  {wcProducts.map((product) => {
-                    const cat =
-                      product.productCategories?.edges?.[0]?.node?.name;
-                    const configured = courses[product.uri];
-                    return (
-                      <option key={`wc-${product.uri}`} value={product.uri}>
-                        {product.name}
-                        {product.price
-                          ? ` (${product.price.replace(/&nbsp;/g, " ")})`
-                          : ""}
-                        {cat ? ` \u2014 ${cat}` : ""}
-                        {configured ? " \u2713" : ""}
-                      </option>
-                    );
-                  })}
-                </optgroup>
-              )}
-
-              {wpCourses.length > 0 && (
-                <optgroup label="LearnPress Courses">
-                  {wpCourses.map((course) => {
-                    const configured = courses[course.uri];
-                    return (
-                      <option key={`lp-${course.uri}`} value={course.uri}>
-                        {course.title}
-                        {course.priceRendered
-                          ? ` (${course.priceRendered})`
-                          : ""}
-                        {course.duration ? ` \u2014 ${course.duration}` : ""}
-                        {configured ? " \u2713" : ""}
-                      </option>
-                    );
-                  })}
-                </optgroup>
-              )}
-
-              {wpEvents.length > 0 && (
-                <optgroup label="Events">
-                  {wpEvents.map((event) => {
-                    const configured = courses[event.uri];
-                    return (
-                      <option key={`ev-${event.uri}`} value={event.uri}>
-                        {event.title}
-                        {configured ? " \u2713" : ""}
-                      </option>
-                    );
-                  })}
-                </optgroup>
-              )}
-
-              {products.length > 0 && (
-                <optgroup label={t("admin.shopProducts")}>
-                  {products.map((p, i) => (
-                    <option key={`shop-${i}`} value={`__shop_${i}`}>
-                      {p.name || `${t("admin.product")} ${i + 1}`}
-                      {p.priceCents
-                        ? ` (${toCurrencyUnits(p.priceCents)} ${p.currency || "SEK"})`
-                        : ""}
-                      {p.type === "course" ? ` \u2014 ${t("admin.courseProduct")}` : ` \u2014 ${t("admin.digitalFile")}`}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-
-              {knownCourses
-                .filter(
-                  (uri) =>
-                    !allWpContent.some((item) => item.uri === uri) &&
-                    !products.some(
-                      (p) => p.courseUri === uri || p.slug === uri,
-                    ),
-                )
-                .map((courseUri) => (
-                  <option key={courseUri} value={courseUri}>
-                    {courseUri}
-                  </option>
-                ))}
-
-              <option value="__new__">+ {t("admin.addProduct")}</option>
-              <option value="__custom__">{t("admin.manualEntry")}</option>
-            </select>
-
-            {selectedCourse === "__custom__" && (
-              <input
-                type="text"
-                value=""
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                placeholder={t("admin.courseUriInputPlaceholder")}
-                className="w-full border rounded px-3 py-2 text-sm"
-                autoFocus
-              />
-            )}
           </div>
 
           {/* ── WP item info card ── */}
