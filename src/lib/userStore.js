@@ -5,7 +5,7 @@ import {
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
-const USERS_KV_KEY = process.env.CF_USERS_KV_KEY || "users";
+function getUsersKvKey() { return process.env.CF_USERS_KV_KEY || "users"; }
 const LOCAL_USERS_FILE = ".data/users.json";
 let inMemoryUsers = [];
 
@@ -86,13 +86,13 @@ async function writeLocalUsers(users) {
 }
 
 async function readCloudflareUsers() {
-  const data = await readCloudflareKvJson(USERS_KV_KEY);
+  const data = await readCloudflareKvJson(getUsersKvKey());
   if (!data) return [];
   return Array.isArray(data) ? data : [];
 }
 
 async function writeCloudflareUsers(users) {
-  return writeCloudflareKvJson(USERS_KV_KEY, users);
+  return writeCloudflareKvJson(getUsersKvKey(), users);
 }
 
 async function readUsers() {

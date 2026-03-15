@@ -8,7 +8,7 @@ import { slugify } from "@/lib/slugify";
 export const PRODUCT_FILE = "config/digital-products.json";
 export const PRODUCT_EXAMPLE_FILE = "config/digital-products.example.json";
 
-const PRODUCTS_KV_KEY = process.env.CF_PRODUCTS_KV_KEY || "digital-products";
+function getProductsKvKey() { return process.env.CF_PRODUCTS_KV_KEY || "digital-products"; }
 let inMemoryProducts = null;
 
 function normalizeCurrency(currency) {
@@ -113,13 +113,13 @@ function shouldUseCloudflareBackend() {
 }
 
 async function readFromCloudflare() {
-  const data = await readCloudflareKvJson(PRODUCTS_KV_KEY);
+  const data = await readCloudflareKvJson(getProductsKvKey());
   if (!data) return null;
   return Array.isArray(data) ? data : [];
 }
 
 async function writeToCloudflare(products) {
-  return writeCloudflareKvJson(PRODUCTS_KV_KEY, products);
+  return writeCloudflareKvJson(getProductsKvKey(), products);
 }
 
 async function readFromLocal() {

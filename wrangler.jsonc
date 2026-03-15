@@ -12,6 +12,7 @@
 	},
 	"vars": {
 		"CLOUDFLARE_IMAGE_RESIZING": "1",
+		"COURSE_ACCESS_BACKEND": "wordpress",
 		"COURSE_ACCESS_STORE": "cloudflare",
 		"USER_STORE_BACKEND": "cloudflare",
 		"DIGITAL_ACCESS_STORE": "cloudflare",
@@ -19,9 +20,15 @@
 		"DEFAULT_COURSE_FEE_CURRENCY": "SEK",
 		"CF_KV_KEY": "course-access",
 		"CF_USERS_KV_KEY": "course-users",
+		"CF_DIGITAL_ACCESS_KV_KEY": "digital-access",
 		"UPLOAD_BACKEND": "r2",
-		"RESEND_API_KEY": "re_hx5XBu3y_FsuAYLVWsV2tCFZFK9RxitUd",
-		"RESEND_FROM_EMAIL": "xtas.nu@ragbaz.xyz"
+		"S3_BUCKET_NAME": "sofiacerne",
+		"S3_REGION": "auto",
+		"S3_PUBLIC_URL": "https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev",
+		"AUTH_MICROSOFT_ENTRA_ID_TENANT": "common",
+		"RESEND_FROM_EMAIL": "xtas.nu@ragbaz.xyz",
+		"GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
+		"GITHUB_DEPLOY_WORKFLOW": "deploy.yml"
 	},
 	"kv_namespaces": [
 		{

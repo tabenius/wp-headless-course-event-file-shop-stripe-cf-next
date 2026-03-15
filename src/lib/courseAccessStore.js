@@ -4,7 +4,7 @@ import {
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
-const DEFAULT_KEY = process.env.CF_KV_KEY || "course-access";
+function getKvKey() { return process.env.CF_KV_KEY || "course-access"; }
 const LOCAL_ACCESS_FILE = ".data/course-access.json";
 
 let inMemoryAccessState = { courses: {} };
@@ -57,12 +57,12 @@ function shouldUseCloudflareBackend() {
 }
 
 async function readFromCloudflare() {
-  const value = await readCloudflareKvJson(DEFAULT_KEY);
+  const value = await readCloudflareKvJson(getKvKey());
   return value ? sanitizeState(value) : { courses: {} };
 }
 
 async function writeToCloudflare(state) {
-  return writeCloudflareKvJson(DEFAULT_KEY, state);
+  return writeCloudflareKvJson(getKvKey(), state);
 }
 
 async function ensureLocalStore() {
@@ -211,6 +211,6 @@ export async function getCourseAccessConfig(courseUri) {
 
 export function getCourseStorageInfo() {
   return shouldUseCloudflareBackend()
-    ? { provider: "cloudflare-kv", key: DEFAULT_KEY }
+    ? { provider: "cloudflare-kv", key: getKvKey() }
     : { provider: "local-file", path: LOCAL_ACCESS_FILE };
 }

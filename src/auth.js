@@ -5,7 +5,7 @@ const COOKIE_NAME = "app_session";
 const OAUTH_STATE_COOKIE = "oauth_state";
 const ADMIN_COOKIE_NAME = "admin_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
-const SECURE_COOKIE = process.env.NODE_ENV === "production" ? "; Secure" : "";
+function getSecureCookie() { return process.env.NODE_ENV === "production" ? "; Secure" : ""; }
 
 function getSecret() {
   return process.env.AUTH_SECRET || "dev-only-change-me";
@@ -72,11 +72,11 @@ export function createSessionToken(user) {
 }
 
 export function clearSessionCookie() {
-  return `${COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${SECURE_COOKIE}`;
+  return `${COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${getSecureCookie()}`;
 }
 
 export function createSessionCookie(token) {
-  return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${SESSION_TTL_SECONDS}; SameSite=Lax${SECURE_COOKIE}`;
+  return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${SESSION_TTL_SECONDS}; SameSite=Lax${getSecureCookie()}`;
 }
 
 export function getSessionFromCookieHeader(cookieHeader) {
@@ -95,11 +95,11 @@ export function createOAuthStateCookie(statePayload) {
     ...statePayload,
     exp: Date.now() + 10 * 60 * 1000,
   });
-  return `${OAUTH_STATE_COOKIE}=${payload}; HttpOnly; Path=/; Max-Age=600; SameSite=Lax${SECURE_COOKIE}`;
+  return `${OAUTH_STATE_COOKIE}=${payload}; HttpOnly; Path=/; Max-Age=600; SameSite=Lax${getSecureCookie()}`;
 }
 
 export function clearOAuthStateCookie() {
-  return `${OAUTH_STATE_COOKIE}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${SECURE_COOKIE}`;
+  return `${OAUTH_STATE_COOKIE}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${getSecureCookie()}`;
 }
 
 export function getOAuthStateFromCookieHeader(cookieHeader) {
@@ -163,11 +163,11 @@ export function createAdminSessionToken() {
 }
 
 export function createAdminSessionCookie(token) {
-  return `${ADMIN_COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${SESSION_TTL_SECONDS}; SameSite=Lax${SECURE_COOKIE}`;
+  return `${ADMIN_COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${SESSION_TTL_SECONDS}; SameSite=Lax${getSecureCookie()}`;
 }
 
 export function clearAdminSessionCookie() {
-  return `${ADMIN_COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${SECURE_COOKIE}`;
+  return `${ADMIN_COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${getSecureCookie()}`;
 }
 
 export async function adminAuth() {

@@ -4,7 +4,7 @@ import {
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
-const DEFAULT_KEY = process.env.CF_DIGITAL_ACCESS_KV_KEY || "digital-access";
+function getKvKey() { return process.env.CF_DIGITAL_ACCESS_KV_KEY || "digital-access"; }
 const LOCAL_ACCESS_FILE = ".data/digital-access.json";
 
 let inMemoryState = { users: {} };
@@ -96,12 +96,12 @@ async function writeLocalState(state) {
 }
 
 async function readCloudflareState() {
-  const value = await readCloudflareKvJson(DEFAULT_KEY);
+  const value = await readCloudflareKvJson(getKvKey());
   return value ? sanitizeState(value) : { users: {} };
 }
 
 async function writeCloudflareState(state) {
-  return writeCloudflareKvJson(DEFAULT_KEY, state);
+  return writeCloudflareKvJson(getKvKey(), state);
 }
 
 async function getState() {
@@ -171,6 +171,6 @@ export async function listAccessibleDigitalProductIds(email) {
 
 export function getDigitalStorageInfo() {
   return shouldUseCloudflareBackend()
-    ? { provider: "cloudflare-kv", key: DEFAULT_KEY }
+    ? { provider: "cloudflare-kv", key: getKvKey() }
     : { provider: "local-file", path: LOCAL_ACCESS_FILE };
 }
