@@ -143,6 +143,8 @@
     "courseAccess": "Kursåtkomst",
     "contentAccess": "Innehåll & åtkomst",
     "selectCourse": "Välj kurs",
+    "selectContent": "Välj innehåll",
+    "priceSavedLocally": "Priset sparas i Cloudflare KV och används vid Stripe-checkout.",
     "selectCourseDefault": "-- Välj en kurs --",
     "selectContentDefault": "-- Välj produkt / kurs / event --",
     "courseUriInputPlaceholder": "/courses/my-course",

@@ -143,6 +143,8 @@
     "courseAccess": "Course access",
     "contentAccess": "Content & access",
     "selectCourse": "Select course",
+    "selectContent": "Select content",
+    "priceSavedLocally": "Price is saved to Cloudflare KV and used at Stripe checkout.",
     "selectCourseDefault": "-- Select a course --",
     "selectContentDefault": "-- Select product / course / event --",
     "courseUriInputPlaceholder": "/courses/my-course",

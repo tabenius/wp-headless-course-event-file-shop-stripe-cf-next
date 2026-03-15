@@ -306,6 +306,7 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
           courseContent={node?.content || node?.shortDescription || ""}
           coursePriceRendered={node?.priceRendered || node?.price || ""}
           courseDuration={node?.duration || ""}
+          courseImage={node?.featuredImage?.node?.sourceUrl || ""}
           userEmail={userEmail}
           priceCents={accessConfig?.priceCents ?? (Number.isFinite(defaultPrice) ? defaultPrice : undefined)}
           currency={accessConfig?.currency || process.env.DEFAULT_COURSE_FEE_CURRENCY || site.defaultCurrency || "SEK"}

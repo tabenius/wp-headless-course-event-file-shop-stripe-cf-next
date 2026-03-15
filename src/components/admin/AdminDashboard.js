@@ -664,179 +664,232 @@ export default function AdminDashboard() {
 
       {activeTab === "access" && (
       <div className="border rounded p-5 space-y-4">
-        <h2 className="text-2xl font-semibold">{t("admin.contentAccess")}</h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-3">
-            <label className="text-sm text-gray-700">{t("admin.selectCourse")}</label>
-            {allWpContent.length > 0 ? (
-              <select
-                className="w-full border rounded px-3 py-2"
-                value={selectedCourse}
-                onChange={(event) => setSelectedCourse(event.target.value)}
-              >
-                <option value="">{t("admin.selectContentDefault")}</option>
-                {wcProducts.length > 0 && (
-                  <optgroup label="WooCommerce Products">
-                    {wcProducts.map((product) => {
-                      const cat = product.productCategories?.edges?.[0]?.node?.name;
-                      const configured = courses[product.uri];
-                      return (
-                        <option key={`wc-${product.uri}`} value={product.uri}>
-                          {product.name}
-                          {product.price ? ` (${product.price.replace(/&nbsp;/g, " ")})` : ""}
-                          {cat ? ` — ${cat}` : ""}
-                          {configured ? " ✓" : ""}
-                        </option>
-                      );
-                    })}
-                  </optgroup>
-                )}
-                {wpCourses.length > 0 && (
-                  <optgroup label="LearnPress Courses">
-                    {wpCourses.map((course) => {
-                      const configured = courses[course.uri];
-                      return (
-                        <option key={`lp-${course.uri}`} value={course.uri}>
-                          {course.title}
-                          {course.priceRendered ? ` (${course.priceRendered})` : ""}
-                          {course.duration ? ` — ${course.duration}` : ""}
-                          {configured ? " ✓" : ""}
-                        </option>
-                      );
-                    })}
-                  </optgroup>
-                )}
-                {wpEvents.length > 0 && (
-                  <optgroup label="Events">
-                    {wpEvents.map((event) => {
-                      const configured = courses[event.uri];
-                      return (
-                        <option key={`ev-${event.uri}`} value={event.uri}>
-                          {event.title}
-                          {configured ? " ✓" : ""}
-                        </option>
-                      );
-                    })}
-                  </optgroup>
-                )}
-                {knownCourses
-                  .filter((uri) => !allWpContent.some((item) => item.uri === uri))
-                  .map((courseUri) => (
-                    <option key={courseUri} value={courseUri}>
-                      {courseUri}
-                    </option>
-                  ))}
-              </select>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  value={selectedCourse}
-                  onChange={(event) => setSelectedCourse(event.target.value)}
-                  placeholder={t("admin.courseUriInputPlaceholder")}
-                  className="w-full border rounded px-3 py-2"
-                />
-                {knownCourses.length > 0 ? (
-                  <select
-                    className="w-full border rounded px-3 py-2"
-                    value={selectedCourse}
-                    onChange={(event) => setSelectedCourse(event.target.value)}
-                  >
-                    <option value="">{t("admin.selectExistingCourse")}</option>
-                    {knownCourses.map((courseUri) => (
-                      <option key={courseUri} value={courseUri}>
-                        {courseUri}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-              </>
-            )}
-
-            <label className="text-sm text-gray-700">{t("admin.courseFee")}</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={price}
-                onChange={(event) => setPrice(event.target.value)}
-                min="0"
-                step="0.01"
-                required
-                placeholder="0.00"
-                className="w-full border rounded px-3 py-2"
-              />
-              <input
-                type="text"
-                value={currency}
-                onChange={(event) => setCurrency(event.target.value.toUpperCase())}
-                className="w-24 border rounded px-3 py-2"
-                maxLength={5}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <label className="text-sm text-gray-700">{t("admin.allowedUsers")}</label>
-            <div className="border rounded p-3 max-h-72 overflow-auto space-y-2">
-              {users.length === 0 && allowedUsers.length === 0 ? (
-                <p className="text-sm text-gray-500">{t("admin.noUsersFound")}</p>
-              ) : (
-                <>
-                  {users.map((user) => (
-                    <label key={user.email} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={allowedUsers.includes(user.email)}
-                        onChange={() => toggleUser(user.email)}
-                      />
-                      <span>
-                        {user.name} ({user.email})
-                      </span>
-                    </label>
-                  ))}
-                  {allowedUsers
-                    .filter((email) => !users.some((u) => u.email === email))
-                    .map((email) => (
-                      <label key={email} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={true}
-                          onChange={() => toggleUser(email)}
-                        />
-                        <span>{email}</span>
-                      </label>
-                    ))}
-                </>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={manualEmail}
-                onChange={(event) => setManualEmail(event.target.value)}
-                onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), addManualEmail())}
-                placeholder={t("admin.addEmailPlaceholder")}
-                className="w-full border rounded px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={addManualEmail}
-                className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
-              >
-                {t("common.add")}
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">{t("admin.contentAccess")}</h2>
+          {process.env.NEXT_PUBLIC_STRIPE_MODE !== "live" && (
+            <a
+              href="https://dashboard.stripe.com/test/payments"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-purple-700 hover:underline"
+            >
+              Stripe Payments &rarr;
+            </a>
+          )}
         </div>
 
-        <button
-          type="button"
-          onClick={saveCourse}
-          className="px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? t("admin.saving") : t("admin.saveCourseAccess")}
-        </button>
+        {/* Content selector */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">{t("admin.selectContent")}</label>
+          <div className="flex gap-2">
+            <select
+              className="flex-1 border rounded px-3 py-2"
+              value={selectedCourse}
+              onChange={(event) => setSelectedCourse(event.target.value)}
+            >
+              <option value="">{t("admin.selectContentDefault")}</option>
+              {wcProducts.length > 0 && (
+                <optgroup label="WooCommerce Products">
+                  {wcProducts.map((product) => {
+                    const cat = product.productCategories?.edges?.[0]?.node?.name;
+                    const configured = courses[product.uri];
+                    return (
+                      <option key={`wc-${product.uri}`} value={product.uri}>
+                        {product.name}
+                        {product.price ? ` (${product.price.replace(/&nbsp;/g, " ")})` : ""}
+                        {cat ? ` — ${cat}` : ""}
+                        {configured ? " ✓" : ""}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              )}
+              {wpCourses.length > 0 && (
+                <optgroup label="LearnPress Courses">
+                  {wpCourses.map((course) => {
+                    const configured = courses[course.uri];
+                    return (
+                      <option key={`lp-${course.uri}`} value={course.uri}>
+                        {course.title}
+                        {course.priceRendered ? ` (${course.priceRendered})` : ""}
+                        {course.duration ? ` — ${course.duration}` : ""}
+                        {configured ? " ✓" : ""}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              )}
+              {wpEvents.length > 0 && (
+                <optgroup label="Events">
+                  {wpEvents.map((event) => {
+                    const configured = courses[event.uri];
+                    return (
+                      <option key={`ev-${event.uri}`} value={event.uri}>
+                        {event.title}
+                        {configured ? " ✓" : ""}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              )}
+              {knownCourses
+                .filter((uri) => !allWpContent.some((item) => item.uri === uri))
+                .map((courseUri) => (
+                  <option key={courseUri} value={courseUri}>
+                    {courseUri}
+                  </option>
+                ))}
+              <option value="__custom__">Enter URI manually...</option>
+            </select>
+          </div>
+          {selectedCourse === "__custom__" && (
+            <input
+              type="text"
+              value=""
+              onChange={(event) => setSelectedCourse(event.target.value)}
+              placeholder={t("admin.courseUriInputPlaceholder")}
+              className="w-full border rounded px-3 py-2 text-sm"
+              autoFocus
+            />
+          )}
+        </div>
+
+        {/* Detailed content view */}
+        {selectedCourse && selectedCourse !== "__custom__" && (() => {
+          const wpItem = allWpContent.find((item) => item.uri === selectedCourse);
+          const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
+          const desc = wpItem?.shortDescription || wpItem?.content || "";
+          const wpPrice = (wpItem?.price || wpItem?.priceRendered || "").replace(/&nbsp;/g, " ");
+          const sourceLabel = wpItem?._source === "woocommerce" ? "WooCommerce"
+            : wpItem?._source === "learnpress" ? "LearnPress"
+            : wpItem?._source === "wordpress" ? "WordPress Event"
+            : "Manual";
+          const typeLabel = wpItem?._type === "product" ? "Product"
+            : wpItem?._type === "course" ? "Course"
+            : wpItem?._type === "event" ? "Event"
+            : "Content";
+
+          return (
+            <div className="border rounded p-4 space-y-4 bg-gray-50">
+              <div className="flex gap-4">
+                {imgUrl && (
+                  <img src={imgUrl} alt="" className="w-24 h-24 object-cover rounded border shrink-0" />
+                )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <h3 className="text-lg font-semibold truncate">{wpItem?.title || wpItem?.name || selectedCourse}</h3>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{sourceLabel}</span>
+                    <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded">{typeLabel}</span>
+                    {wpPrice && <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">WP: {wpPrice}</span>}
+                    {courses[selectedCourse] && <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Configured</span>}
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">URI: {selectedCourse}</p>
+                </div>
+              </div>
+              {desc && (
+                <div
+                  className="text-sm text-gray-600 max-h-24 overflow-auto prose prose-sm"
+                  dangerouslySetInnerHTML={{ __html: desc }}
+                />
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Price & access config */}
+        {selectedCourse && selectedCourse !== "__custom__" && (
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">{t("admin.courseFee")}</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={price}
+                  onChange={(event) => setPrice(event.target.value)}
+                  min="0"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                  className="w-full border rounded px-3 py-2"
+                />
+                <input
+                  type="text"
+                  value={currency}
+                  onChange={(event) => setCurrency(event.target.value.toUpperCase())}
+                  className="w-24 border rounded px-3 py-2"
+                  maxLength={5}
+                />
+              </div>
+              <p className="text-xs text-gray-400">
+                {t("admin.priceSavedLocally")}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">{t("admin.allowedUsers")}</label>
+              <div className="border rounded p-3 max-h-56 overflow-auto space-y-2 bg-white">
+                {users.length === 0 && allowedUsers.length === 0 ? (
+                  <p className="text-sm text-gray-500">{t("admin.noUsersFound")}</p>
+                ) : (
+                  <>
+                    {users.map((user) => (
+                      <label key={user.email} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={allowedUsers.includes(user.email)}
+                          onChange={() => toggleUser(user.email)}
+                        />
+                        <span>
+                          {user.name} ({user.email})
+                        </span>
+                      </label>
+                    ))}
+                    {allowedUsers
+                      .filter((email) => !users.some((u) => u.email === email))
+                      .map((email) => (
+                        <label key={email} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={true}
+                            onChange={() => toggleUser(email)}
+                          />
+                          <span>{email}</span>
+                        </label>
+                      ))}
+                  </>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={manualEmail}
+                  onChange={(event) => setManualEmail(event.target.value)}
+                  onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), addManualEmail())}
+                  placeholder={t("admin.addEmailPlaceholder")}
+                  className="w-full border rounded px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={addManualEmail}
+                  className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+                >
+                  {t("common.add")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedCourse && selectedCourse !== "__custom__" && (
+          <button
+            type="button"
+            onClick={saveCourse}
+            className="px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? t("admin.saving") : t("admin.saveCourseAccess")}
+          </button>
+        )}
       </div>
       )}
 

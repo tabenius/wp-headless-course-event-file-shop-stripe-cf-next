@@ -10,6 +10,7 @@ export default function Paywall({
   courseContent,
   coursePriceRendered,
   courseDuration,
+  courseImage,
   userEmail,
   priceCents,
   currency,
@@ -57,6 +58,12 @@ export default function Paywall({
 
   return (
     <article className="max-w-2xl mx-auto px-6 py-24 space-y-6">
+      {courseImage && (
+        <div className="flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={courseImage} alt={courseTitle || ""} className="max-h-64 rounded-lg shadow-md object-cover" />
+        </div>
+      )}
       <h1 className="text-4xl font-bold text-center">{courseTitle || t("paywall.content")}</h1>
 
       {(displayPrice || courseDuration) && (
