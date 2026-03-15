@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { t } from "@/lib/i18n";
 
 let _client = null;
@@ -88,6 +89,34 @@ export async function uploadToS3(buffer, fileName, contentType) {
   );
 
   return `${publicUrl}/${key}`;
+}
+
+/**
+ * Generate a presigned PUT URL for direct browser-to-R2/S3 upload.
+ * Bypasses the Worker entirely — supports files up to 5 GB.
+ * Returns { uploadUrl, publicUrl, key, expiresIn }.
+ */
+export async function createPresignedUpload(fileName, contentType, expiresIn = 3600) {
+  const client = getS3Client();
+  const bucket = getBucket();
+  const publicBaseUrl = getPublicUrl();
+
+  const key = `uploads/${Date.now()}-${fileName}`;
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ContentType: contentType || "application/octet-stream",
+  });
+
+  const uploadUrl = await getSignedUrl(client, command, { expiresIn });
+
+  return {
+    uploadUrl,
+    publicUrl: `${publicBaseUrl}/${key}`,
+    key,
+    expiresIn,
+  };
 }
 
 export function getUploadBackend() {
