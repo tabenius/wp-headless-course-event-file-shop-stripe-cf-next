@@ -211,6 +211,13 @@ a:focus {
   color: #fff;
 }
 
+/* Admin layout: hide root header/footer, reset padding */
+main:has(.admin-layout) { padding-top: 0 !important; }
+main:has(.admin-layout) > header { display: none; }
+main:has(.admin-layout) > footer { display: none; }
+.admin-layout { background: #fff; min-height: 100vh; }
+body:has(.admin-layout)::before { display: none; }
+
 /* Dark mode — content area only (header, footer, menus stay light) */
 .dark-mode {
   --color-background: #1a1a1a;

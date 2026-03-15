@@ -134,7 +134,9 @@ export default function SignInClient() {
   return (
     <section className="max-w-md mx-auto px-6 py-16">
       <h1 className="text-3xl font-bold mb-2">{t("auth.signInTitle")}</h1>
-      <p className="text-gray-600 mb-8">{t("auth.signInSubtitle")}</p>
+      {oauthProviders.length > 0 && (
+        <p className="text-gray-600 mb-8">{t("auth.signInSubtitle")}</p>
+      )}
 
       {forgotMode ? (
         forgotMessage ? (

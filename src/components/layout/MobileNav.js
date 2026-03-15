@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import Link from "next/link";
 import NavLink from "./NavLink";
 import DarkModeToggle from "./DarkModeToggle";
 import { t } from "@/lib/i18n";
@@ -57,14 +56,20 @@ export default function MobileNav({ items, authLinks }) {
         <div className="px-5 pb-4">
           {items.map((item) => (
             <div key={item.href}>
-              <NavLink
-                href={item.href}
-                className={menuItemClass}
-                activeClassName={activeMobileClass}
-                onClick={() => setOpen(false)}
-              >
-                {item.label}
-              </NavLink>
+              {item.children?.length > 0 ? (
+                <span className={`${menuItemClass} text-gray-500 cursor-default`}>
+                  {item.label}
+                </span>
+              ) : (
+                <NavLink
+                  href={item.href}
+                  className={menuItemClass}
+                  activeClassName={activeMobileClass}
+                  onClick={() => setOpen(false)}
+                >
+                  {item.label}
+                </NavLink>
+              )}
               {item.children?.map((child) => (
                 <NavLink
                   key={child.href}

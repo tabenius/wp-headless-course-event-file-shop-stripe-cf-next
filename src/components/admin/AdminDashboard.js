@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
 import ImageUploader from "./ImageUploader";
 
@@ -41,8 +39,143 @@ function emptyProduct() {
   };
 }
 
+function UserAccessPanel({ users, courses, allWpContent, products }) {
+  const [search, setSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [panelMsg, setPanelMsg] = useState("");
+
+  const filtered = search.trim()
+    ? users.filter(
+        (u) =>
+          u.email.toLowerCase().includes(search.toLowerCase()) ||
+          (u.name || "").toLowerCase().includes(search.toLowerCase()),
+      )
+    : users;
+
+  // All URIs that have access configs
+  const allUris = Object.keys(courses).sort();
+
+  // Which URIs this user has access to
+  const userAccess = selectedUser
+    ? allUris.filter((uri) =>
+        Array.isArray(courses[uri]?.allowedUsers) &&
+        courses[uri].allowedUsers.includes(selectedUser.email),
+      )
+    : [];
+
+  function uriLabel(uri) {
+    const wp = allWpContent.find((item) => item.uri === uri);
+    if (wp) return wp.title || wp.name || uri;
+    const shop = products.find((p) => p.courseUri === uri);
+    if (shop) return shop.name || uri;
+    return uri;
+  }
+
+  async function toggleAccess(uri, grant) {
+    if (!selectedUser) return;
+    setSaving(true);
+    setPanelMsg("");
+    try {
+      const config = courses[uri] || { allowedUsers: [], priceCents: 0, currency: "SEK" };
+      const currentUsers = Array.isArray(config.allowedUsers) ? [...config.allowedUsers] : [];
+      const nextUsers = grant
+        ? [...new Set([...currentUsers, selectedUser.email])]
+        : currentUsers.filter((e) => e !== selectedUser.email);
+      const res = await fetch("/api/admin/course-access", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseUri: uri,
+          allowedUsers: nextUsers,
+          priceCents: config.priceCents || 0,
+          currency: config.currency || "SEK",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed");
+      // Update courses in parent — use a custom event
+      window.dispatchEvent(new CustomEvent("admin:coursesUpdated", { detail: json.courses }));
+      setPanelMsg(grant ? "Access granted." : "Access revoked.");
+    } catch (err) {
+      setPanelMsg(err.message || "Failed to update access.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by name or email..."
+        className="w-full border rounded px-3 py-2 text-sm"
+      />
+      {filtered.length > 0 && (
+        <div className="border rounded max-h-40 overflow-auto divide-y">
+          {filtered.slice(0, 20).map((u) => (
+            <button
+              key={u.email}
+              type="button"
+              onClick={() => setSelectedUser(u)}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                selectedUser?.email === u.email ? "bg-blue-50 font-medium" : ""
+              }`}
+            >
+              {u.name} <span className="text-gray-400">({u.email})</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {selectedUser && (
+        <div className="border rounded p-4 space-y-3 bg-gray-50">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="font-medium">{selectedUser.name}</div>
+              <div className="text-xs text-gray-500">{selectedUser.email}</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedUser(null)}
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="text-xs font-medium text-gray-600">Content access:</div>
+          {allUris.length === 0 ? (
+            <p className="text-xs text-gray-400">No content items configured yet.</p>
+          ) : (
+            <div className="space-y-1 max-h-48 overflow-auto">
+              {allUris.map((uri) => {
+                const hasAccess = userAccess.includes(uri);
+                return (
+                  <label key={uri} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={hasAccess}
+                      disabled={saving}
+                      onChange={() => toggleAccess(uri, !hasAccess)}
+                    />
+                    <span className={hasAccess ? "text-gray-900" : "text-gray-500"}>
+                      {uriLabel(uri)}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{uri}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {panelMsg && <p className="text-xs text-green-700">{panelMsg}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
-  const router = useRouter();
   const [courses, setCourses] = useState({});
   const [users, setUsers] = useState([]);
   const [wpCourses, setWpCourses] = useState([]);
@@ -66,6 +199,10 @@ export default function AdminDashboard() {
   const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [deployMessage, setDeployMessage] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsMode, setAnalyticsMode] = useState("none"); // "zone" | "workers" | "none"
+  const [analyticsConfigured, setAnalyticsConfigured] = useState(false);
 
   // Derived values for shop product selection
   const isShopSelection = selectedCourse.startsWith("__shop_");
@@ -131,6 +268,17 @@ export default function AdminDashboard() {
       .catch((fetchError) => {
         setError(fetchError.message || t("admin.fetchProductListFailed"));
       });
+
+    fetch("/api/admin/analytics")
+      .then(async (res) => {
+        const json = await res.json();
+        if (res.ok && json?.ok) {
+          setAnalytics(json.analytics);
+          setAnalyticsMode(json.mode || "none");
+          setAnalyticsConfigured(json.configured);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Build a unified list of all WordPress content items
@@ -201,6 +349,14 @@ export default function AdminDashboard() {
     () => Object.keys(courses).sort((a, b) => a.localeCompare(b)),
     [courses],
   );
+
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter(
+      (u) => u.email.toLowerCase().includes(q) || (u.name || "").toLowerCase().includes(q),
+    );
+  }, [users, userSearch]);
 
   function toggleUser(email) {
     setAllowedUsers((prev) =>
@@ -334,11 +490,28 @@ export default function AdminDashboard() {
     }
   }
 
-  async function logoutAdmin() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
-  }
+  // Listen for tab-switch events from AdminHeader
+  const showHealthTab = useCallback(() => setActiveTab("health"), []);
+  useEffect(() => {
+    window.addEventListener("admin:showHealth", showHealthTab);
+    function onSwitchTab(e) {
+      if (e.detail) setActiveTab(e.detail);
+    }
+    window.addEventListener("admin:switchTab", onSwitchTab);
+    return () => {
+      window.removeEventListener("admin:showHealth", showHealthTab);
+      window.removeEventListener("admin:switchTab", onSwitchTab);
+    };
+  }, [showHealthTab]);
+
+  // Listen for courses updated from UserAccessPanel
+  useEffect(() => {
+    function onCoursesUpdated(e) {
+      if (e.detail) setCourses(e.detail);
+    }
+    window.addEventListener("admin:coursesUpdated", onCoursesUpdated);
+    return () => window.removeEventListener("admin:coursesUpdated", onCoursesUpdated);
+  }, []);
 
   async function uploadFile(index, field) {
     const input = document.createElement("input");
@@ -427,26 +600,7 @@ export default function AdminDashboard() {
     selectedCourse !== "__custom__";
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-16 space-y-10">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">{t("admin.title")}</h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/docs"
-            className="px-4 py-2 rounded border hover:bg-gray-50 text-sm"
-          >
-            {t("admin.documentation")}
-          </Link>
-          <button
-            type="button"
-            onClick={logoutAdmin}
-            className="px-4 py-2 rounded border hover:bg-gray-50"
-          >
-            {t("admin.signOut")}
-          </button>
-        </div>
-      </div>
-
+    <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
       {storage ? (
         <p className="text-sm text-gray-600">
           {t("admin.storage")}: <strong>{storage.provider}</strong>
@@ -521,7 +675,174 @@ export default function AdminDashboard() {
             <div className="text-gray-400">Webhooks</div>
           </div>
         </div>
+        {/* Secondary storage row */}
+        <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-center mt-2">
+          {storage?.provider === "r2" && (
+            <div className="border-2 border-cyan-300 bg-cyan-50 rounded-lg px-4 py-3 w-36">
+              <div className="font-bold text-cyan-800">Cloudflare R2</div>
+              <div className="text-gray-500 mt-1">S3-compatible</div>
+              <div className="text-gray-400">File storage</div>
+            </div>
+          )}
+          <div className="border-2 border-indigo-300 bg-indigo-50 rounded-lg px-4 py-3 w-36">
+            <div className="font-bold text-indigo-800">WP Media</div>
+            <div className="text-gray-500 mt-1">Uploads</div>
+            <div className="text-gray-400">Images &amp; files</div>
+          </div>
+          <div className="border-2 border-rose-300 bg-rose-50 rounded-lg px-4 py-3 w-36">
+            <div className="font-bold text-rose-800">Resend</div>
+            <div className="text-gray-500 mt-1">Email API</div>
+            <div className="text-gray-400">Transactional</div>
+          </div>
+        </div>
       </div>
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="border rounded p-4 text-center">
+          <div className="text-2xl font-bold text-gray-900">
+            {wcProducts.length + wpCourses.length + wpEvents.length + products.length}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Total items</div>
+        </div>
+        <div className="border rounded p-4 text-center">
+          <div className="text-2xl font-bold text-blue-700">{wcProducts.length}</div>
+          <div className="text-xs text-gray-500 mt-1">WooCommerce</div>
+        </div>
+        <div className="border rounded p-4 text-center">
+          <div className="text-2xl font-bold text-green-700">
+            {wpCourses.length + wpEvents.length}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Courses &amp; Events</div>
+        </div>
+        <div className="border rounded p-4 text-center">
+          <div className="text-2xl font-bold text-purple-700">{users.length}</div>
+          <div className="text-xs text-gray-500 mt-1">Registered users</div>
+        </div>
+      </div>
+
+      {/* Traffic analytics */}
+      {analytics && (
+        <div className="border rounded p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Traffic (last 24h)</h2>
+            <span className={`text-xs px-2 py-0.5 rounded ${
+              analyticsMode === "zone"
+                ? "bg-green-100 text-green-800"
+                : "bg-amber-100 text-amber-800"
+            }`}>
+              {analyticsMode === "zone" ? "Zone analytics (full)" : "Workers analytics (basic)"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
+            <div className="bg-gray-50 rounded p-3">
+              <div className="text-xl font-bold">{analytics.totals.requests.toLocaleString()}</div>
+              <div className="text-xs text-gray-500">Requests</div>
+            </div>
+            {analyticsMode === "zone" ? (
+              <>
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-xl font-bold">{analytics.totals.pageViews.toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">Page views</div>
+                </div>
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-xl font-bold">{analytics.totals.uniques.toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">Unique visitors</div>
+                </div>
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-xl font-bold">{(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB</div>
+                  <div className="text-xs text-gray-500">Bandwidth</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-xl font-bold">{(analytics.totals.subrequests || 0).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">Subrequests</div>
+                </div>
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-xl font-bold">{(analytics.totals.errors || 0).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">Errors</div>
+                </div>
+                <div className="bg-gray-50 rounded p-3 opacity-40">
+                  <div className="text-xl font-bold">—</div>
+                  <div className="text-xs text-gray-500">Bandwidth</div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Hourly chart */}
+            {analytics.hourly.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-700">Requests per hour</h3>
+                <div className="flex items-end gap-px h-24 bg-gray-50 rounded p-2">
+                  {(() => {
+                    const maxReq = Math.max(...analytics.hourly.map((h) => h.requests), 1);
+                    return analytics.hourly.map((h, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 bg-blue-400 rounded-t min-h-[2px]"
+                        style={{ height: `${(h.requests / maxReq) * 100}%` }}
+                        title={`${new Date(h.time).getHours()}:00 — ${h.requests} requests`}
+                      />
+                    ));
+                  })()}
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-400 px-2">
+                  <span>{analytics.hourly.length > 0 ? new Date(analytics.hourly[0].time).getHours() + ":00" : ""}</span>
+                  <span>Now</span>
+                </div>
+              </div>
+            )}
+
+            {/* Top referrers (zone mode only) */}
+            {analyticsMode === "zone" && analytics.referrers.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-700">Top referrers</h3>
+                <div className="space-y-1">
+                  {analytics.referrers.slice(0, 10).map((r, i) => {
+                    const maxCount = analytics.referrers[0]?.count || 1;
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <div className="w-24 truncate text-gray-600" title={r.host}>
+                          {r.host}
+                        </div>
+                        <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
+                          <div
+                            className="h-full bg-green-400 rounded"
+                            style={{ width: `${(r.count / maxCount) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-gray-500 w-12 text-right">{r.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {analyticsMode === "workers" && (
+              <div className="flex items-center text-xs text-gray-400 p-4">
+                <p>
+                  Referrers, page views, and bandwidth require zone-level analytics.
+                  Route your Worker through a custom domain and set <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> to upgrade.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!analyticsConfigured && !analytics && (
+        <div className="border rounded p-4 text-sm text-gray-500">
+          <strong>Traffic analytics:</strong> Set <code className="bg-gray-100 px-1 rounded">CF_API_TOKEN</code> and
+          {" "}<code className="bg-gray-100 px-1 rounded">CLOUDFLARE_ACCOUNT_ID</code> for basic Workers analytics,
+          or also add <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> for full zone analytics
+          (referrers, page views, unique visitors).
+        </div>
+      )}
 
       {/* Tabs */}
       <div>
@@ -536,6 +857,11 @@ export default function AdminDashboard() {
               id: "products",
               label: t("admin.contentAccess"),
               desc: t("admin.contentAccessTabDesc"),
+            },
+            {
+              id: "advanced",
+              label: "Advanced",
+              desc: "Storage configuration, environment settings, and system details.",
             },
           ].map((tab) => (
             <button
@@ -556,6 +882,7 @@ export default function AdminDashboard() {
         <p className="text-xs text-gray-500 mt-2 px-1">
           {activeTab === "health" && t("admin.healthTabDesc")}
           {activeTab === "products" && t("admin.contentAccessTabDesc")}
+          {activeTab === "advanced" && "Storage configuration, environment settings, and system details."}
         </p>
       </div>
 
@@ -1053,6 +1380,13 @@ export default function AdminDashboard() {
                   <p className="text-xs text-gray-400">
                     {t("admin.allowedUsersHint")}
                   </p>
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="Search users..."
+                    className="w-full border rounded px-3 py-1.5 text-sm mb-1"
+                  />
                   <div className="border rounded p-3 max-h-56 overflow-auto space-y-2 bg-white">
                     {users.length === 0 && allowedUsers.length === 0 ? (
                       <p className="text-sm text-gray-500">
@@ -1060,7 +1394,7 @@ export default function AdminDashboard() {
                       </p>
                     ) : (
                       <>
-                        {users.map((user) => (
+                        {filteredUsers.map((user) => (
                           <label
                             key={user.email}
                             className="flex items-center gap-2 text-sm"
@@ -1135,6 +1469,126 @@ export default function AdminDashboard() {
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* ── Advanced tab ── */}
+      {activeTab === "advanced" && (
+        <div className="border rounded p-5 space-y-6">
+          <h2 className="text-xl font-semibold">Advanced settings</h2>
+
+          {/* Storage configuration */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Storage backend</h3>
+            <p className="text-xs text-gray-500">
+              Controls where course access rules, pricing, and user permissions are stored.
+              Set the <code className="bg-gray-100 px-1 rounded">COURSE_ACCESS_BACKEND</code> environment variable to change.
+            </p>
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                {
+                  id: "cloudflare-kv",
+                  name: "Cloudflare KV",
+                  desc: "Fast, edge-distributed key-value store. Best for production on Cloudflare Workers. Requires CLOUDFLARE_ACCOUNT_ID, CF_API_TOKEN, and CF_KV_NAMESPACE_ID.",
+                  active: storage?.provider === "cloudflare-kv",
+                },
+                {
+                  id: "wordpress-graphql-user-meta",
+                  name: "WordPress GraphQL",
+                  desc: "Stores access data in WordPress user meta via WPGraphQL mutations. Requires a custom WordPress plugin and COURSE_ACCESS_BACKEND=wordpress.",
+                  active: storage?.provider === "wordpress-graphql-user-meta",
+                },
+                {
+                  id: "local-file",
+                  name: "Local file",
+                  desc: "Stores data in .data/course-access.json on the server filesystem. Suitable for local development only — data is lost on redeploy.",
+                  active: storage?.provider === "local-file",
+                },
+              ].map((opt) => (
+                <div
+                  key={opt.id}
+                  className={`border-2 rounded p-4 space-y-2 ${
+                    opt.active
+                      ? "border-green-400 bg-green-50"
+                      : "border-gray-200 bg-white opacity-70"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${opt.active ? "bg-green-600" : "bg-gray-300"}`} />
+                    <span className="font-medium text-sm">{opt.name}</span>
+                  </div>
+                  <p className="text-xs text-gray-500">{opt.desc}</p>
+                  {opt.active && (
+                    <span className="inline-block text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded">
+                      Active
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Environment info */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Environment</h3>
+            <div className="grid md:grid-cols-2 gap-3 text-xs">
+              <div className="bg-gray-50 rounded p-3 space-y-1">
+                <div className="font-medium text-gray-700">WordPress</div>
+                <div className="text-gray-500 break-all">
+                  {process.env.NEXT_PUBLIC_WORDPRESS_URL || "Not configured"}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded p-3 space-y-1">
+                <div className="font-medium text-gray-700">Stripe mode</div>
+                <div className="text-gray-500">
+                  {process.env.NEXT_PUBLIC_STRIPE_MODE === "live" ? "Live" : "Test"}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded p-3 space-y-1">
+                <div className="font-medium text-gray-700">File uploads</div>
+                <div className="text-gray-500">
+                  {storage?.provider === "cloudflare-kv" || process.env.S3_BUCKET_NAME
+                    ? "Cloudflare R2 (S3-compatible)"
+                    : "WordPress Media Library"}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded p-3 space-y-1">
+                <div className="font-medium text-gray-700">Email delivery</div>
+                <div className="text-gray-500">
+                  {process.env.NEXT_PUBLIC_RESEND_CONFIGURED === "true" || process.env.RESEND_API_KEY
+                    ? "Resend API"
+                    : "Not configured"}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded p-3 space-y-1">
+                <div className="font-medium text-gray-700">Analytics</div>
+                <div className="text-gray-500">
+                  {analyticsMode === "zone" ? (
+                    <span className="text-green-700">Zone analytics (full) — CF_ZONE_ID set</span>
+                  ) : analyticsMode === "workers" ? (
+                    <span className="text-amber-700">Workers analytics (basic) — no CF_ZONE_ID</span>
+                  ) : (
+                    <span>Not configured — set CF_API_TOKEN</span>
+                  )}
+                </div>
+                {analyticsMode === "workers" && (
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Add a custom domain (e.g. xtas.nu) to Cloudflare, route your Worker through it,
+                    and set CF_ZONE_ID to unlock referrers, page views, unique visitors, and bandwidth.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* User management — reverse access view */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">User access overview</h3>
+            <p className="text-xs text-gray-500">
+              Find a user and see which content they can access. Check or uncheck items to grant or revoke access.
+            </p>
+            <UserAccessPanel users={users} courses={courses} allWpContent={allWpContent} products={products} />
+          </div>
         </div>
       )}
 

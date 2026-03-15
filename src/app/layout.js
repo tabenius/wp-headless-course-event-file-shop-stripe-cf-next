@@ -24,6 +24,7 @@ export const metadata = {
     template: `%s | ${site.shortName}`,
   },
   description: site.description,
+  generator: "RAGBAZ Articulate StoreFront",
   metadataBase: new URL(site.url),
   openGraph: {
     siteName: site.name,
