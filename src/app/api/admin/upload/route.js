@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAdminSessionFromCookieHeader } from "@/auth";
+import { requireAdmin } from "@/lib/adminRoute";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { isS3Upload, uploadToS3 } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
-
-function unauthorized() {
-  return NextResponse.json(
-    { ok: false, error: t("apiErrors.adminLoginRequired") },
-    { status: 401 },
-  );
-}
 
 async function uploadToWordPress(arrayBuffer, file) {
   const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
@@ -43,10 +36,8 @@ async function uploadToWordPress(arrayBuffer, file) {
 }
 
 export async function POST(request) {
-  const session = getAdminSessionFromCookieHeader(
-    request.headers.get("cookie") || "",
-  );
-  if (!session) return unauthorized();
+  const auth = requireAdmin(request);
+  if (auth.error) return auth.error;
 
   try {
     const formData = await request.formData();

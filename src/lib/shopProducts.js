@@ -2,6 +2,7 @@ import { fetchGraphQL } from "@/lib/client";
 import { getCourseAccessState } from "@/lib/courseAccess";
 import { listDigitalProducts } from "@/lib/digitalProducts";
 import { getShopSettings } from "@/lib/shopSettings";
+import { stripHtml } from "@/lib/slugify";
 import site from "@/lib/site";
 
 /**
@@ -84,10 +85,6 @@ async function fetchEvents() {
   } catch {
     return [];
   }
-}
-
-function stripHtml(html) {
-  return (html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 }
 
 /**

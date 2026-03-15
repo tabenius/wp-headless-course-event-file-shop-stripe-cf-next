@@ -4,7 +4,7 @@ import site from "@/lib/site";
  * Transform WordPress HTML content:
  * - Add mailto: prefix to bare email links
  * - Strip site hostname from internal links (href)
- * - Handles both www and non-www variants
+ * - Handles http/https, www/non-www variants
  */
 export function transformContent(html) {
   if (!html) return html;
@@ -18,18 +18,24 @@ export function transformContent(html) {
     },
   );
 
-  // Collect all origin variants to strip (www / non-www, with / without trailing slash)
+  // Collect all origin variants to strip
+  // (http/https, www/non-www, with/without trailing slash)
   const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
   const siteUrl = (site.url || "").replace(/\/+$/, "");
   const origins = new Set();
   for (const url of [wpUrl, siteUrl]) {
     if (!url) continue;
-    origins.add(url);
-    // Add www / non-www counterpart
-    if (url.includes("://www.")) {
-      origins.add(url.replace("://www.", "://"));
-    } else {
-      origins.add(url.replace("://", "://www."));
+    // Add both http and https variants
+    const httpsUrl = url.replace(/^http:/, "https:");
+    const httpUrl = url.replace(/^https:/, "http:");
+    for (const variant of [httpsUrl, httpUrl]) {
+      origins.add(variant);
+      // Add www / non-www counterpart
+      if (variant.includes("://www.")) {
+        origins.add(variant.replace("://www.", "://"));
+      } else {
+        origins.add(variant.replace("://", "://www."));
+      }
     }
   }
 

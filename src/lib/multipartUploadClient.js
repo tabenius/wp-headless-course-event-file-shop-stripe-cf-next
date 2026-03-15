@@ -23,9 +23,12 @@ export async function multipartUpload(file, { onProgress } = {}) {
       }),
     },
   );
-  const createJson = await createRes.json();
+  let createJson;
+  try { createJson = await createRes.json(); } catch {
+    throw new Error(`Failed to initiate upload (HTTP ${createRes.status}).`);
+  }
   if (!createRes.ok || !createJson.ok) {
-    throw new Error(createJson.error || "Failed to initiate upload.");
+    throw new Error(createJson?.error || "Failed to initiate upload.");
   }
 
   const { uploadId, key, parts: signedParts, totalParts } = createJson;
@@ -86,9 +89,12 @@ export async function multipartUpload(file, { onProgress } = {}) {
       body: JSON.stringify({ key, uploadId, parts: completedParts }),
     },
   );
-  const completeJson = await completeRes.json();
+  let completeJson;
+  try { completeJson = await completeRes.json(); } catch {
+    throw new Error(`Failed to finalize upload (HTTP ${completeRes.status}).`);
+  }
   if (!completeRes.ok || !completeJson.ok) {
-    throw new Error(completeJson.error || "Failed to finalize upload.");
+    throw new Error(completeJson?.error || "Failed to finalize upload.");
   }
 
   return completeJson.publicUrl;

@@ -55,8 +55,12 @@ function toRelativePath(href) {
         .replace(/^https?:\/\//, "")
         .replace(/\/+$/, "")
         .toLowerCase();
-      const linkHost = parsed.hostname.toLowerCase();
-      if (linkHost === wpHost || linkHost === siteHost || linkHost === `www.${siteHost}` || `www.${linkHost}` === siteHost) {
+      const linkHost = (parsed.hostname || "").toLowerCase();
+      if (!linkHost) return href.replace(/\/+$/, "") || "/";
+      const bareLink = linkHost.replace(/^www\./, "");
+      const bareWp = wpHost.replace(/^www\./, "");
+      const bareSite = siteHost.replace(/^www\./, "");
+      if (bareLink === bareWp || bareLink === bareSite) {
         return parsed.pathname.replace(/\/+$/, "") || "/";
       }
     }

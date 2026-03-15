@@ -1,26 +1,19 @@
 import { NextResponse } from "next/server";
-import { getAdminSessionFromCookieHeader } from "@/auth";
+import { requireAdmin } from "@/lib/adminRoute";
 import { listDigitalProducts, saveDigitalProducts } from "@/lib/digitalProducts";
 import { t } from "@/lib/i18n";
 
-function unauthorized() {
-  return NextResponse.json(
-    { ok: false, error: t("apiErrors.adminLoginRequired") },
-    { status: 401 },
-  );
-}
-
 export async function GET(request) {
-  const session = getAdminSessionFromCookieHeader(request.headers.get("cookie") || "");
-  if (!session) return unauthorized();
+  const auth = requireAdmin(request);
+  if (auth.error) return auth.error;
 
   const products = await listDigitalProducts({ includeInactive: true });
   return NextResponse.json({ ok: true, products });
 }
 
 export async function PUT(request) {
-  const session = getAdminSessionFromCookieHeader(request.headers.get("cookie") || "");
-  if (!session) return unauthorized();
+  const auth = requireAdmin(request);
+  if (auth.error) return auth.error;
 
   try {
     const body = await request.json();

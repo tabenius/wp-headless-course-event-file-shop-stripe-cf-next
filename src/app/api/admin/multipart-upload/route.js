@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSessionFromCookieHeader } from "@/auth";
+import { requireAdmin } from "@/lib/adminRoute";
 import {
   createMultipartUpload,
   signMultipartParts,
@@ -7,27 +7,9 @@ import {
   abortMultipartUpload,
   isS3Upload,
 } from "@/lib/s3upload";
-import { t } from "@/lib/i18n";
 
 const PART_SIZE = 100 * 1024 * 1024; // 100 MB per part
 const MAX_PARTS = 10000;
-
-function unauthorized() {
-  return NextResponse.json(
-    { ok: false, error: t("apiErrors.adminLoginRequired") },
-    { status: 401 },
-  );
-}
-
-function requireS3() {
-  if (!isS3Upload()) {
-    return NextResponse.json(
-      { ok: false, error: "Multipart upload requires UPLOAD_BACKEND=r2 or s3." },
-      { status: 400 },
-    );
-  }
-  return null;
-}
 
 /**
  * POST /api/admin/multipart-upload
@@ -39,13 +21,15 @@ function requireS3() {
  *   abort      — cancel and clean up
  */
 export async function POST(request) {
-  const session = getAdminSessionFromCookieHeader(
-    request.headers.get("cookie") || "",
-  );
-  if (!session) return unauthorized();
+  const auth = requireAdmin(request);
+  if (auth.error) return auth.error;
 
-  const s3Check = requireS3();
-  if (s3Check) return s3Check;
+  if (!isS3Upload()) {
+    return NextResponse.json(
+      { ok: false, error: "Multipart upload requires UPLOAD_BACKEND=r2 or s3." },
+      { status: 400 },
+    );
+  }
 
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action") || "";

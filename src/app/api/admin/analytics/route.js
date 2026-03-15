@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAdminSessionFromCookieHeader } from "@/auth";
+import { requireAdmin } from "@/lib/adminRoute";
 import { t } from "@/lib/i18n";
-
-function unauthorized() {
-  return NextResponse.json(
-    { ok: false, error: t("apiErrors.adminLoginRequired") },
-    { status: 401 },
-  );
-}
 
 const CF_GRAPHQL = "https://api.cloudflare.com/client/v4/graphql";
 
@@ -197,10 +190,8 @@ async function fetchWorkersAnalytics(token, accountId) {
 }
 
 export async function GET(request) {
-  const session = getAdminSessionFromCookieHeader(
-    request.headers.get("cookie") || "",
-  );
-  if (!session) return unauthorized();
+  const auth = requireAdmin(request);
+  if (auth.error) return auth.error;
 
   const token = process.env.CF_API_TOKEN;
   const zoneId = process.env.CF_ZONE_ID;

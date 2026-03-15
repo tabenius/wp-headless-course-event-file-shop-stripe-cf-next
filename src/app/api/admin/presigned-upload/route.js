@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAdminSessionFromCookieHeader } from "@/auth";
+import { requireAdmin } from "@/lib/adminRoute";
 import { createPresignedUpload, isS3Upload } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
 export async function POST(request) {
-  const session = getAdminSessionFromCookieHeader(
-    request.headers.get("cookie") || "",
-  );
-  if (!session) {
-    return NextResponse.json(
-      { ok: false, error: t("apiErrors.adminLoginRequired") },
-      { status: 401 },
-    );
-  }
+  const auth = requireAdmin(request);
+  if (auth.error) return auth.error;
 
   if (!isS3Upload()) {
     return NextResponse.json(

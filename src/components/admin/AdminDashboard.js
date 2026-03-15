@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
+import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
 
@@ -15,13 +16,9 @@ function toCents(units) {
   return Math.round(parsed * 100);
 }
 
-function slugify(value) {
-  return String(value || "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+/** Alternating row background for product lists. */
+function rowBg(index) {
+  return index % 2 === 0 ? "bg-gray-50" : "bg-white";
 }
 
 function emptyProduct() {
@@ -307,7 +304,9 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visibleTypes: types }),
       });
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("Failed to save shop settings:", err);
+    }
     setShopSettingsSaving(false);
   }
 
@@ -999,7 +998,7 @@ export default function AdminDashboard() {
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
                             ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
+                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
                         }`}
                       >
                         {imgUrl ? (
@@ -1039,7 +1038,7 @@ export default function AdminDashboard() {
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
                             ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
+                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
                         }`}
                       >
                         <div className="w-10 h-10 rounded bg-blue-50 shrink-0 flex items-center justify-center text-blue-400 text-xs font-bold">LP</div>
@@ -1076,7 +1075,7 @@ export default function AdminDashboard() {
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
                             ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
+                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
                         }`}
                       >
                         {imgUrl ? (
@@ -1111,7 +1110,7 @@ export default function AdminDashboard() {
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
                             ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
+                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
                         }`}
                       >
                         {p.imageUrl ? (
@@ -1167,7 +1166,7 @@ export default function AdminDashboard() {
                           className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                             isActive
                               ? "bg-purple-100 border border-purple-500"
-                              : `border border-gray-900 hover:bg-purple-50 ${typeof _rowIdx !== "undefined" && _rowIdx % 2 === 0 ? "bg-gray-50" : "bg-white"}`
+                              : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
                           }`}
                         >
                           <div className="w-10 h-10 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-xs font-bold">URI</div>

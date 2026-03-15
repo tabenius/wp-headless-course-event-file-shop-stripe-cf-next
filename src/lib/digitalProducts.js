@@ -3,6 +3,7 @@ import {
   readCloudflareKvJson,
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
+import { slugify } from "@/lib/slugify";
 
 export const PRODUCT_FILE = "config/digital-products.json";
 export const PRODUCT_EXAMPLE_FILE = "config/digital-products.example.json";
@@ -19,15 +20,6 @@ function normalizeCurrency(currency) {
 function normalizeType(type) {
   const safe = typeof type === "string" ? type.trim().toLowerCase() : "";
   return safe === "course" ? "course" : "digital_file";
-}
-
-function slugify(value) {
-  return String(value || "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 function normalizeCourseUri(courseUri) {
@@ -77,10 +69,10 @@ function sanitizeProduct(product, seenSlugs) {
     typeof product?.description === "string" ? product.description.trim() : "";
   const imageUrl = typeof product?.imageUrl === "string" ? product.imageUrl.trim() : "";
   const type = normalizeType(product?.type);
-  const priceCents =
-    typeof product?.priceCents === "number"
-      ? Math.max(0, Math.floor(product.priceCents))
-      : Number.parseInt(String(product?.priceCents || "0"), 10) || 0;
+  const rawPrice = product?.priceCents;
+  const priceCents = typeof rawPrice === "number" && Number.isFinite(rawPrice)
+    ? Math.max(0, Math.floor(rawPrice))
+    : Math.max(0, Number.parseInt(String(rawPrice || "0"), 10) || 0);
 
   const fileUrl = typeof product?.fileUrl === "string" ? product.fileUrl.trim() : "";
   const courseUri = normalizeCourseUri(product?.courseUri);

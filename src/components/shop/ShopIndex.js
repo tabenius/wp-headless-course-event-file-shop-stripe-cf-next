@@ -55,18 +55,23 @@ export default function ShopIndex({
     }
     setError("");
     setLoadingId(productSlug);
-    const response = await fetch("/api/digital/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productSlug }),
-    });
-    const json = await response.json();
-    setLoadingId("");
-    if (!response.ok || !json?.ok || !json?.url) {
-      setError(json?.error || t("shop.checkoutFailed"));
-      return;
+    try {
+      const response = await fetch("/api/digital/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productSlug }),
+      });
+      const json = await response.json();
+      if (!response.ok || !json?.ok || !json?.url) {
+        setError(json?.error || t("shop.checkoutFailed"));
+        return;
+      }
+      window.location.href = json.url;
+    } catch {
+      setError(t("shop.checkoutFailed"));
+    } finally {
+      setLoadingId("");
     }
-    window.location.href = json.url;
   }
 
   function isOwned(item) {

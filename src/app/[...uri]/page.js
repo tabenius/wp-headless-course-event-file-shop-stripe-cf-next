@@ -19,6 +19,7 @@ import {
   hasCourseAccess,
 } from "@/lib/courseAccess";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
+import { stripHtml } from "@/lib/slugify";
 import site from "@/lib/site";
 
 // Force dynamic rendering — this route uses searchParams and external data
@@ -110,10 +111,6 @@ async function fetchContent(uri) {
     return await fetchGraphQL(query, { uri: `${uri}/` }, 1800);
   }
   return data;
-}
-
-function stripHtml(html) {
-  return (html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 }
 
 function makeExcerpt(content, maxLen = 160) {

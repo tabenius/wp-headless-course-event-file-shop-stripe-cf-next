@@ -102,7 +102,7 @@ function renderSingleBlock(block, key) {
               {image.caption.trim() !== "" ? (
                 <figcaption
                   className="text-sm text-gray-600"
-                  dangerouslySetInnerHTML={{ __html: image.caption }}
+                  dangerouslySetInnerHTML={{ __html: transformContent(image.caption) }}
                 />
               ) : null}
             </figure>
