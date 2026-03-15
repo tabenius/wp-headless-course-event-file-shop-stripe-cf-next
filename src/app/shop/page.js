@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import ShopIndex from "@/components/shop/ShopIndex";
 import { listAccessibleDigitalProductIds, grantDigitalAccess } from "@/lib/digitalAccessStore";
-import { grantCourseAccess } from "@/lib/courseAccess";
-import { listDigitalProducts } from "@/lib/digitalProducts";
+import { grantCourseAccess, hasCourseAccess } from "@/lib/courseAccess";
+import { listAllShopItems } from "@/lib/shopProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import site from "@/lib/site";
 
@@ -54,16 +54,31 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
     }
   }
 
-  const [products, ownedProductIds] = await Promise.all([
-    listDigitalProducts(),
+  const [items, ownedProductIds] = await Promise.all([
+    listAllShopItems(),
     userEmail ? listAccessibleDigitalProductIds(userEmail) : Promise.resolve([]),
   ]);
+
+  // Check course/event/product access for WP items the user might own
+  let ownedUris = [];
+  if (userEmail) {
+    const wpItems = items.filter((i) => i.source !== "digital");
+    const accessChecks = await Promise.all(
+      wpItems.map((item) =>
+        hasCourseAccess(item.uri, userEmail)
+          .then((has) => (has ? item.uri : null))
+          .catch(() => null),
+      ),
+    );
+    ownedUris = accessChecks.filter(Boolean);
+  }
 
   return (
     <ShopIndex
       user={session?.user || null}
-      products={products}
+      items={items}
       ownedProductIds={ownedProductIds}
+      ownedUris={ownedUris}
       stripeEnabled={isStripeEnabled()}
       checkoutStatus={checkoutStatus}
     />

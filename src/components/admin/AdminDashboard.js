@@ -208,6 +208,8 @@ export default function AdminDashboard() {
   const [commitsError, setCommitsError] = useState("");
   const editFormRef = useRef(null);
   const [resendConfigured, setResendConfigured] = useState(false);
+  const [shopVisibleTypes, setShopVisibleTypes] = useState(["product", "course", "event", "digital_file", "digital_course"]);
+  const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
 
   // Derived values for shop product selection
   const isShopSelection = selectedCourse.startsWith("__shop_");
@@ -285,7 +287,36 @@ export default function AdminDashboard() {
         }
       })
       .catch(() => {});
+
+    fetch("/api/admin/shop-settings")
+      .then(async (res) => {
+        const json = await res.json();
+        if (res.ok && json?.ok && Array.isArray(json.settings?.visibleTypes)) {
+          setShopVisibleTypes(json.settings.visibleTypes);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  async function saveShopVisibility(types) {
+    setShopVisibleTypes(types);
+    setShopSettingsSaving(true);
+    try {
+      await fetch("/api/admin/shop-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visibleTypes: types }),
+      });
+    } catch { /* ignore */ }
+    setShopSettingsSaving(false);
+  }
+
+  function toggleShopType(type) {
+    const next = shopVisibleTypes.includes(type)
+      ? shopVisibleTypes.filter((t) => t !== type)
+      : [...shopVisibleTypes, type];
+    saveShopVisibility(next);
+  }
 
   // Build a unified list of all WordPress content items
   const allWpContent = useMemo(() => {
@@ -892,6 +923,34 @@ export default function AdminDashboard() {
                 {t("admin.stripePayments")} &rarr;
               </a>
             )}
+          </div>
+
+          {/* Shop visibility toggles */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700">{t("admin.shopVisibility", "Synliga i butiken")}</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "product", label: "WooCommerce" },
+                { key: "course", label: "LearnPress" },
+                { key: "event", label: "Events" },
+                { key: "digital_file", label: t("admin.digitalFile") },
+                { key: "digital_course", label: t("admin.courseProduct") },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleShopType(key)}
+                  disabled={shopSettingsSaving}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    shopVisibleTypes.includes(key)
+                      ? "bg-purple-100 border-purple-400 text-purple-800"
+                      : "bg-gray-50 border-gray-300 text-gray-400"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* All products list */}
