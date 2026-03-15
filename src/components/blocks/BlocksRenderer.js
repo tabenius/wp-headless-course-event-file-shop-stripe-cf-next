@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { transformContent } from "@/lib/transformContent";
 
 function parseAttributes(attributesJSON) {
   if (typeof attributesJSON !== "string" || attributesJSON.trim() === "") {
@@ -71,7 +72,7 @@ function renderSingleBlock(block, key) {
         {imageData.caption.trim() !== "" ? (
           <figcaption
             className="mt-2 text-sm text-gray-600"
-            dangerouslySetInnerHTML={{ __html: imageData.caption }}
+            dangerouslySetInnerHTML={{ __html: transformContent(imageData.caption) }}
           />
         ) : null}
       </figure>
@@ -150,7 +151,7 @@ function renderSingleBlock(block, key) {
             )
           ) : typeof block.renderedHtml === "string" &&
             block.renderedHtml.trim() !== "" ? (
-            <div dangerouslySetInnerHTML={{ __html: block.renderedHtml }} />
+            <div dangerouslySetInnerHTML={{ __html: transformContent(block.renderedHtml) }} />
           ) : null}
         </div>
       </section>
@@ -161,7 +162,7 @@ function renderSingleBlock(block, key) {
     return (
       <div
         key={key}
-        dangerouslySetInnerHTML={{ __html: block.renderedHtml }}
+        dangerouslySetInnerHTML={{ __html: transformContent(block.renderedHtml) }}
       />
     );
   }

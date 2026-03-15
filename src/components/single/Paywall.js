@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
+import { transformContent } from "@/lib/transformContent";
 
 export default function Paywall({
   courseUri,
@@ -114,7 +115,7 @@ export default function Paywall({
       {courseContent && (
         <div
           className="text-gray-800 prose prose-p:my-4 max-w-none wp-content text-xl"
-          dangerouslySetInnerHTML={{ __html: courseContent }}
+          dangerouslySetInnerHTML={{ __html: transformContent(courseContent) }}
         />
       )}
 

@@ -174,6 +174,12 @@ async function readProducts() {
     try {
       const cloudflareProducts = await readFromCloudflare();
       if (cloudflareProducts !== null) return cloudflareProducts;
+      // KV key doesn't exist yet — seed from local/bundled defaults
+      const seed = await readFromLocal();
+      if (seed.length > 0) {
+        await writeToCloudflare(seed).catch(() => {});
+      }
+      return seed;
     } catch (error) {
       console.error("Cloudflare KV products read failed, falling back:", error);
     }
