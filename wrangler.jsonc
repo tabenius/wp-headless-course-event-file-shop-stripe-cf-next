@@ -26,7 +26,6 @@
 		"S3_REGION": "auto",
 		"S3_PUBLIC_URL": "https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev",
 		"AUTH_MICROSOFT_ENTRA_ID_TENANT": "common",
-		"RESEND_FROM_EMAIL": "xtas.nu@ragbaz.xyz",
 		"GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
 		"GITHUB_DEPLOY_WORKFLOW": "deploy.yml"
 	},
