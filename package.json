@@ -1,5 +1,5 @@
 {
-  "name": "example-app",
+  "name": "ragbaz-articulate-storefront",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,7 +17,7 @@
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && wrangler dev",
     "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
-    "lint": "next lint",
+    "lint": "eslint .",
     "prettier": "prettier --write ."
   },
   "dependencies": {
@@ -30,7 +30,7 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
+    "@eslint/eslintrc": "^3.3.5",
     "@opennextjs/cloudflare": "^1.4.0",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
