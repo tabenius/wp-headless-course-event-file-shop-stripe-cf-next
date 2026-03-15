@@ -40,11 +40,12 @@ const PATH_REWRITES = {
   "/blog-section": "/blog",
 };
 
-function mapItem(node) {
+function mapItem(node, { uppercase = false } = {}) {
   const rawHref = node.path || node.url || "#";
+  const label = node.label || "";
   return {
     href: PATH_REWRITES[rawHref] || rawHref,
-    label: node.label || "",
+    label: uppercase ? label.toUpperCase() : label,
   };
 }
 
@@ -65,7 +66,7 @@ export async function getNavigation() {
       const children =
         item.childItems?.edges?.map((e) => mapItem(e.node)) || [];
       return {
-        ...mapItem(item),
+        ...mapItem(item, { uppercase: true }),
         ...(children.length > 0 ? { children } : {}),
       };
     });
