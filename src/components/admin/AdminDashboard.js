@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
+import ImageUploader from "./ImageUploader";
 
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
@@ -60,13 +61,41 @@ export default function AdminDashboard() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [healthLoading, setHealthLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(false);
-  const [productsMessage, setProductsMessage] = useState("");
   const [activeTab, setActiveTab] = useState("health");
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [deployMessage, setDeployMessage] = useState("");
+
+  // Derived values for shop product selection
+  const isShopSelection = selectedCourse.startsWith("__shop_");
+  const shopIndex = isShopSelection
+    ? Number.parseInt(selectedCourse.replace("__shop_", ""), 10)
+    : -1;
+  const selectedShopProduct =
+    isShopSelection && shopIndex >= 0 && shopIndex < products.length
+      ? products[shopIndex]
+      : null;
+  const isWpSelection =
+    selectedCourse &&
+    !selectedCourse.startsWith("__") &&
+    selectedCourse !== "";
+
+  // The URI used for access config (empty if not applicable)
+  const accessUri = useMemo(() => {
+    if (
+      !selectedCourse ||
+      selectedCourse === "__custom__" ||
+      selectedCourse === "__new__"
+    )
+      return "";
+    if (isShopSelection) {
+      return selectedShopProduct?.type === "course"
+        ? selectedShopProduct.courseUri
+        : "";
+    }
+    return selectedCourse;
+  }, [selectedCourse, isShopSelection, selectedShopProduct]);
 
   useEffect(() => {
     fetch("/api/admin/course-access")
@@ -113,20 +142,49 @@ export default function AdminDashboard() {
     return items;
   }, [wcProducts, wpCourses, wpEvents]);
 
+  // Load price + access when selection changes
   useEffect(() => {
-    if (!selectedCourse) return;
+    if (!selectedCourse || selectedCourse === "__new__") return;
+
+    // Shop product: load price from product data
+    if (isShopSelection && selectedShopProduct) {
+      setPrice(toCurrencyUnits(selectedShopProduct.priceCents ?? 0));
+      setCurrency((selectedShopProduct.currency || "SEK").toUpperCase());
+      const uri =
+        selectedShopProduct.type === "course"
+          ? selectedShopProduct.courseUri
+          : "";
+      if (uri && courses[uri]) {
+        setAllowedUsers(
+          Array.isArray(courses[uri].allowedUsers)
+            ? courses[uri].allowedUsers
+            : [],
+        );
+      } else {
+        setAllowedUsers([]);
+      }
+      return;
+    }
+
+    // WP item or manual URI
     const config = courses[selectedCourse];
     if (config) {
       setPrice(toCurrencyUnits(config.priceCents ?? 0));
       setCurrency((config.currency || "SEK").toUpperCase());
-      setAllowedUsers(Array.isArray(config.allowedUsers) ? config.allowedUsers : []);
+      setAllowedUsers(
+        Array.isArray(config.allowedUsers) ? config.allowedUsers : [],
+      );
       return;
     }
-    // Auto-fill price from WordPress content if no existing config
+    // Auto-fill price from WordPress content
     const match = allWpContent.find((item) => item.uri === selectedCourse);
     const rawPrice = match?.price || match?.priceRendered || "";
     if (rawPrice) {
-      const numericPrice = parseFloat(String(rawPrice).replace(/[^\d.,]/g, "").replace(",", "."));
+      const numericPrice = parseFloat(
+        String(rawPrice)
+          .replace(/[^\d.,]/g, "")
+          .replace(",", "."),
+      );
       if (Number.isFinite(numericPrice) && numericPrice > 0) {
         setPrice(numericPrice.toFixed(2));
       } else {
@@ -137,7 +195,7 @@ export default function AdminDashboard() {
     }
     setCurrency("SEK");
     setAllowedUsers([]);
-  }, [selectedCourse, courses, allWpContent]);
+  }, [selectedCourse, courses, allWpContent, isShopSelection, selectedShopProduct]);
 
   const knownCourses = useMemo(
     () => Object.keys(courses).sort((a, b) => a.localeCompare(b)),
@@ -146,7 +204,9 @@ export default function AdminDashboard() {
 
   function toggleUser(email) {
     setAllowedUsers((prev) =>
-      prev.includes(email) ? prev.filter((value) => value !== email) : [...prev, email],
+      prev.includes(email)
+        ? prev.filter((value) => value !== email)
+        : [...prev, email],
     );
   }
 
@@ -165,7 +225,9 @@ export default function AdminDashboard() {
         if (idx !== index) return product;
         if (key === "name") {
           const nextName = value;
-          const nextSlug = product.slugEdited ? product.slug : slugify(nextName);
+          const nextSlug = product.slugEdited
+            ? product.slug
+            : slugify(nextName);
           return { ...product, name: nextName, slug: nextSlug };
         }
         if (key === "slug") {
@@ -176,84 +238,100 @@ export default function AdminDashboard() {
     );
   }
 
-  function addProductRow() {
-    setProducts((prev) => [...prev, emptyProduct()]);
-  }
-
-  function removeProductRow(index) {
+  function removeShopProduct(index) {
     setProducts((prev) => prev.filter((_, idx) => idx !== index));
+    setSelectedCourse("");
   }
 
-  async function saveProducts() {
-    setProductsLoading(true);
-    setProductsMessage("");
-    setError("");
-
-    const payload = products.map((product) => ({
-      name: product.name,
-      slug: product.slug,
-      type: product.type === "course" ? "course" : "digital_file",
-      description: product.description,
-      imageUrl: product.imageUrl,
-      priceCents: Number.isFinite(product.priceCents)
-        ? product.priceCents
-        : Number.parseInt(String(product.priceCents || "0"), 10) || 0,
-      currency: (product.currency || "SEK").toUpperCase(),
-      fileUrl: product.fileUrl,
-      courseUri: product.courseUri,
-      active: product.active !== false,
-    }));
-
-    try {
-      const response = await fetch("/api/admin/products", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ products: payload }),
-      });
-      const json = await response.json();
-      if (!response.ok || !json?.ok) {
-        throw new Error(json?.error || t("admin.saveProductsFailed"));
-      }
-      const rows = Array.isArray(json.products) ? json.products : [];
-      setProducts(rows.map((product) => ({ ...emptyProduct(), ...product, slugEdited: true })));
-      setProductsMessage(t("admin.productsSaved"));
-    } catch (saveError) {
-      setError(saveError.message || t("admin.saveProductsFailed"));
-    } finally {
-      setProductsLoading(false);
+  function handleSelection(value) {
+    if (value === "__new__") {
+      const newProducts = [...products, emptyProduct()];
+      setProducts(newProducts);
+      setSelectedCourse(`__shop_${newProducts.length - 1}`);
+    } else {
+      setSelectedCourse(value);
     }
   }
 
-  async function saveCourse() {
-    if (!selectedCourse) {
-      setError(t("admin.enterCourseUri"));
-      return;
-    }
-    if (price === "" || price === null || price === undefined) {
-      setError(t("admin.enterPrice"));
-      return;
-    }
+  // Unified save: handles both shop products and content access
+  async function saveUnified() {
     setError("");
     setMessage("");
-    setLoading(true);
-    const response = await fetch("/api/admin/course-access", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        courseUri: selectedCourse,
-        allowedUsers,
-        priceCents: toCents(price),
-        currency,
-      }),
-    });
-    const json = await response.json();
-    setLoading(false);
-    if (!response.ok || !json?.ok) {
-      setError(json?.error || t("admin.saveFailed"));
-      return;
+
+    // Validate WP item selection
+    if (isWpSelection) {
+      if (price === "" || price === null || price === undefined) {
+        setError(t("admin.enterPrice"));
+        return;
+      }
     }
-    setCourses(json.courses || {});
-    setMessage(t("admin.courseAccessUpdated"));
+
+    setLoading(true);
+
+    try {
+      // If a shop product was edited, sync price back and save all products
+      if (isShopSelection && shopIndex >= 0) {
+        const updated = products.map((p, i) =>
+          i === shopIndex
+            ? { ...p, priceCents: toCents(price), currency: currency.toUpperCase() }
+            : p,
+        );
+        const payload = updated.map((p) => ({
+          name: p.name,
+          slug: p.slug,
+          type: p.type === "course" ? "course" : "digital_file",
+          description: p.description,
+          imageUrl: p.imageUrl,
+          priceCents: Number.isFinite(p.priceCents)
+            ? p.priceCents
+            : Number.parseInt(String(p.priceCents || "0"), 10) || 0,
+          currency: (p.currency || "SEK").toUpperCase(),
+          fileUrl: p.fileUrl,
+          courseUri: p.courseUri,
+          active: p.active !== false,
+        }));
+
+        const res = await fetch("/api/admin/products", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ products: payload }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || t("admin.saveProductsFailed"));
+        }
+        const rows = Array.isArray(json.products) ? json.products : [];
+        setProducts(
+          rows.map((p) => ({ ...emptyProduct(), ...p, slugEdited: true })),
+        );
+      }
+
+      // Save access config if there's a content URI
+      const uri = accessUri;
+      if (uri) {
+        const res = await fetch("/api/admin/course-access", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            courseUri: uri,
+            allowedUsers,
+            priceCents: toCents(price),
+            currency,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || t("admin.saveFailed"));
+        }
+        setCourses(json.courses || {});
+      }
+
+      setMessage(t("admin.courseAccessUpdated"));
+    } catch (err) {
+      setError(err.message || t("admin.saveFailed"));
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function logoutAdmin() {
@@ -302,7 +380,9 @@ export default function AdminDashboard() {
       if (json.webhookUrl) setWebhookUrl(json.webhookUrl);
     } catch (healthError) {
       const msg =
-        healthError instanceof Error ? healthError.message : t("admin.healthCheckFailed");
+        healthError instanceof Error
+          ? healthError.message
+          : t("admin.healthCheckFailed");
       setError(msg);
     } finally {
       setHealthLoading(false);
@@ -315,7 +395,8 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/admin/purge-cache", { method: "POST" });
       const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.purgeFailed"));
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.purgeFailed"));
       setPurgeMessage(t("admin.cachePurged"));
     } catch (err) {
       setError(err.message || t("admin.purgeFailed"));
@@ -330,7 +411,8 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/admin/deploy", { method: "POST" });
       const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.deployFailed"));
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.deployFailed"));
       setDeployMessage(t("admin.deployTriggered"));
     } catch (err) {
       setError(err.message || t("admin.deployFailed"));
@@ -338,6 +420,11 @@ export default function AdminDashboard() {
       setDeploying(false);
     }
   }
+
+  // Whether to show the detail panel
+  const showDetail =
+    (isWpSelection || isShopSelection) &&
+    selectedCourse !== "__custom__";
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-16 space-y-10">
@@ -369,13 +456,19 @@ export default function AdminDashboard() {
       {/* Architecture overview */}
       <div className="border rounded p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t("admin.architecture")}</h2>
+          <div>
+            <h2 className="text-lg font-semibold">{t("admin.architecture")}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {t("admin.architectureHint")}
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={purgeCache}
               disabled={purging}
               className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm disabled:opacity-50"
+              title={t("admin.purgeCacheTooltip")}
             >
               {purging ? t("admin.purgingCache") : t("admin.purgeCache")}
             </button>
@@ -384,34 +477,44 @@ export default function AdminDashboard() {
               onClick={triggerDeploy}
               disabled={deploying}
               className="px-3 py-1.5 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm disabled:opacity-50"
+              title={t("admin.deployTooltip")}
             >
               {deploying ? t("admin.deploying") : t("admin.deploy")}
             </button>
           </div>
         </div>
-        {purgeMessage && <p className="text-green-700 text-sm">{purgeMessage}</p>}
-        {deployMessage && <p className="text-green-700 text-sm">{deployMessage}</p>}
+        {purgeMessage && (
+          <p className="text-green-700 text-sm">{purgeMessage}</p>
+        )}
+        {deployMessage && (
+          <p className="text-green-700 text-sm">{deployMessage}</p>
+        )}
 
-        {/* Simple architecture diagram */}
         <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-xs text-center">
           <div className="border-2 border-blue-300 bg-blue-50 rounded-lg px-4 py-3 w-36">
             <div className="font-bold text-blue-800">WordPress</div>
             <div className="text-gray-500 mt-1">WPGraphQL</div>
             <div className="text-gray-400">CMS + Media</div>
           </div>
-          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">&rarr;</div>
+          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">
+            &rarr;
+          </div>
           <div className="border-2 border-green-300 bg-green-50 rounded-lg px-4 py-3 w-36">
             <div className="font-bold text-green-800">Next.js</div>
             <div className="text-gray-500 mt-1">OpenNext</div>
             <div className="text-gray-400">{t("admin.cacheTime")}</div>
           </div>
-          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">&rarr;</div>
+          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">
+            &rarr;
+          </div>
           <div className="border-2 border-orange-300 bg-orange-50 rounded-lg px-4 py-3 w-36">
             <div className="font-bold text-orange-800">Cloudflare</div>
             <div className="text-gray-500 mt-1">Workers + KV</div>
             <div className="text-gray-400">Edge CDN</div>
           </div>
-          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">&rarr;</div>
+          <div className="text-gray-400 text-lg md:rotate-0 rotate-90">
+            &rarr;
+          </div>
           <div className="border-2 border-purple-300 bg-purple-50 rounded-lg px-4 py-3 w-36">
             <div className="font-bold text-purple-800">Stripe</div>
             <div className="text-gray-500 mt-1">Payments</div>
@@ -420,283 +523,176 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex border-b">
-        {[
-          { id: "health", label: t("admin.healthCheck") },
-          { id: "products", label: t("admin.shopProducts") },
-          { id: "access", label: t("admin.contentAccess") },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-5 py-2.5 text-sm font-medium -mb-px border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? "border-gray-800 text-gray-900"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "health" && (
-      <div className="border rounded p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">{t("admin.healthCheck")}</h2>
-          <button
-            type="button"
-            onClick={runHealthCheck}
-            className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50"
-            disabled={healthLoading}
-          >
-            {healthLoading ? t("admin.running") : t("admin.runCheck")}
-          </button>
-        </div>
-        {healthChecks ? (
-          <ul className="space-y-2 text-sm">
-            {Object.entries(healthChecks).map(([key, value]) => (
-              <li key={key} className="flex items-start gap-2">
-                <span
-                  className={`inline-block w-2 h-2 rounded-full mt-1.5 ${
-                    value?.ok ? "bg-green-600" : "bg-red-600"
-                  }`}
-                />
-                <span>
-                  <strong>{key}:</strong> {value?.message || t("common.noDetails")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-gray-600">{t("admin.runCheckHint")}</p>
-        )}
-
-        {webhookUrl && (
-          <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
-            <h3 className="font-semibold">{t("admin.stripeWebhook")}</h3>
-            <p className="text-gray-600">
-              {t("admin.stripeWebhookConfigureIn")}{" "}
-              <a
-                href="https://dashboard.stripe.com/webhooks"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-700 underline"
-              >
-                {t("admin.stripeWebhookDashboardLink")}
-              </a>
-            </p>
-            <div className="flex items-center gap-2">
-              <label className="text-gray-500 shrink-0">{t("admin.endpointUrl")}:</label>
-              <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
-                {webhookUrl}
-              </code>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(webhookUrl);
-                }}
-                className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
-                title={t("common.copy")}
-              >
-                {t("common.copy")}
-              </button>
-            </div>
-            <p className="text-gray-500">
-              {t("admin.eventsToListen")}: <code className="bg-white border rounded px-1 text-xs">checkout.session.completed</code>
-            </p>
-          </div>
-        )}
-      </div>
-      )}
-
-      {activeTab === "products" && (
-      <div className="border rounded p-5 space-y-4">
-        <h2 className="text-2xl font-semibold">{t("admin.shopProducts")}</h2>
-        <p className="text-sm text-gray-600">{t("admin.shopProductsHint")}</p>
-
-        <div className="space-y-6">
-          {products.map((product, index) => (
-            <div key={index} className="border rounded p-4 space-y-3">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold">{t("admin.product")} {index + 1}</h3>
-                <button
-                  type="button"
-                  onClick={() => removeProductRow(index)}
-                  className="text-red-700 text-sm hover:underline"
-                >
-                  {t("common.remove")}
-                </button>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder={t("admin.namePlaceholder")}
-                  value={product.name}
-                  onChange={(event) => updateProduct(index, "name", event.target.value)}
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  type="text"
-                  placeholder={t("admin.slugPlaceholder")}
-                  value={product.slug}
-                  onChange={(event) => updateProduct(index, "slug", event.target.value)}
-                  className="border rounded px-3 py-2"
-                />
-                <select
-                  value={product.type}
-                  onChange={(event) => updateProduct(index, "type", event.target.value)}
-                  className="border rounded px-3 py-2"
-                >
-                  <option value="digital_file">{t("admin.digitalFile")}</option>
-                  <option value="course">{t("admin.courseProduct")}</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder={t("admin.currencyPlaceholder")}
-                  value={product.currency}
-                  onChange={(event) => updateProduct(index, "currency", event.target.value.toUpperCase())}
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  placeholder={t("admin.priceCentsPlaceholder")}
-                  value={product.priceCents}
-                  onChange={(event) =>
-                    updateProduct(index, "priceCents", Number.parseInt(event.target.value || "0", 10) || 0)
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={product.active !== false}
-                    onChange={(event) => updateProduct(index, "active", event.target.checked)}
-                  />
-                  {t("admin.activeProduct")}
-                </label>
-              </div>
-
-              <textarea
-                rows="3"
-                placeholder={t("admin.descriptionPlaceholder")}
-                value={product.description}
-                onChange={(event) => updateProduct(index, "description", event.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder={t("admin.imageUrlPlaceholder")}
-                  value={product.imageUrl}
-                  onChange={(event) => updateProduct(index, "imageUrl", event.target.value)}
-                  className="flex-1 border rounded px-3 py-2"
-                />
-                <button
-                  type="button"
-                  onClick={() => uploadFile(index, "imageUrl")}
-                  className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
-                  title={t("admin.uploadSizeHint")}
-                >
-                  {t("admin.uploadImage")}
-                </button>
-              </div>
-              {product.imageUrl && (
-                <img src={product.imageUrl} alt="" className="h-16 w-auto rounded border object-cover" />
-              )}
-
-              {product.type === "digital_file" ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder={t("admin.fileUrlPlaceholder")}
-                    value={product.fileUrl}
-                    onChange={(event) => updateProduct(index, "fileUrl", event.target.value)}
-                    className="flex-1 border rounded px-3 py-2"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => uploadFile(index, "fileUrl")}
-                    className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
-                    title={t("admin.uploadSizeHint")}
-                  >
-                    {t("admin.uploadFile")}
-                  </button>
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  placeholder={t("admin.courseUriPlaceholder")}
-                  value={product.courseUri}
-                  onChange={(event) => updateProduct(index, "courseUri", event.target.value)}
-                  className="w-full border rounded px-3 py-2"
-                />
-              )}
-            </div>
+      {/* Tabs */}
+      <div>
+        <div className="flex border-b">
+          {[
+            {
+              id: "health",
+              label: t("admin.healthCheck"),
+              desc: t("admin.healthTabDesc"),
+            },
+            {
+              id: "products",
+              label: t("admin.contentAccess"),
+              desc: t("admin.contentAccessTabDesc"),
+            },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              title={tab.desc}
+              className={`px-5 py-2.5 text-sm font-medium -mb-px border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "border-gray-800 text-gray-900"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={addProductRow}
-            className="px-4 py-2 rounded border hover:bg-gray-50"
-          >
-            {t("admin.addProduct")}
-          </button>
-          <button
-            type="button"
-            onClick={saveProducts}
-            className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
-            disabled={productsLoading}
-          >
-            {productsLoading ? t("admin.saving") : t("admin.saveProducts")}
-          </button>
-        </div>
-        {productsMessage ? <p className="text-green-700 text-sm">{productsMessage}</p> : null}
+        <p className="text-xs text-gray-500 mt-2 px-1">
+          {activeTab === "health" && t("admin.healthTabDesc")}
+          {activeTab === "products" && t("admin.contentAccessTabDesc")}
+        </p>
       </div>
-      )}
 
-      {activeTab === "access" && (
-      <div className="border rounded p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">{t("admin.contentAccess")}</h2>
-          {process.env.NEXT_PUBLIC_STRIPE_MODE !== "live" && (
-            <a
-              href="https://dashboard.stripe.com/test/payments"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-purple-700 hover:underline"
+      {/* ── Health tab ── */}
+      {activeTab === "health" && (
+        <div className="border rounded p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              {t("admin.healthCheck")}
+            </h2>
+            <button
+              type="button"
+              onClick={runHealthCheck}
+              className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50"
+              disabled={healthLoading}
+              title={t("admin.healthCheckDesc")}
             >
-              Stripe Payments &rarr;
-            </a>
+              {healthLoading ? t("admin.running") : t("admin.runCheck")}
+            </button>
+          </div>
+          {healthChecks ? (
+            <ul className="space-y-2 text-sm">
+              {Object.entries(healthChecks).map(([key, value]) => (
+                <li key={key} className="flex items-start gap-2">
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full mt-1.5 ${
+                      value?.ok ? "bg-green-600" : "bg-red-600"
+                    }`}
+                  />
+                  <span>
+                    <strong>{key}:</strong>{" "}
+                    {value?.message || t("common.noDetails")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-600">
+              {t("admin.healthCheckDesc")}
+            </p>
+          )}
+
+          {webhookUrl && (
+            <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
+              <h3 className="font-semibold">{t("admin.stripeWebhook")}</h3>
+              <p className="text-gray-600">
+                {t("admin.stripeWebhookConfigureIn")}{" "}
+                <a
+                  href="https://dashboard.stripe.com/webhooks"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 underline"
+                >
+                  {t("admin.stripeWebhookDashboardLink")}
+                </a>
+              </p>
+              <div className="flex items-center gap-2">
+                <label className="text-gray-500 shrink-0">
+                  {t("admin.endpointUrl")}:
+                </label>
+                <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
+                  {webhookUrl}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(webhookUrl);
+                  }}
+                  className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
+                  title={t("common.copy")}
+                >
+                  {t("common.copy")}
+                </button>
+              </div>
+              <p className="text-gray-500">
+                {t("admin.eventsToListen")}:{" "}
+                <code className="bg-white border rounded px-1 text-xs">
+                  checkout.session.completed
+                </code>
+              </p>
+            </div>
           )}
         </div>
+      )}
 
-        {/* Content selector */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">{t("admin.selectContent")}</label>
-          <div className="flex gap-2">
+      {/* ── Unified Products & Access tab ── */}
+      {activeTab === "products" && (
+        <div className="border rounded p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">
+                {t("admin.contentAccess")}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {t("admin.contentAccessDesc")}
+              </p>
+            </div>
+            {process.env.NEXT_PUBLIC_STRIPE_MODE !== "live" && (
+              <a
+                href="https://dashboard.stripe.com/test/payments"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-purple-700 hover:underline shrink-0"
+                title={t("admin.stripePaymentsTooltip")}
+              >
+                {t("admin.stripePayments")} &rarr;
+              </a>
+            )}
+          </div>
+
+          {/* Unified content selector */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              {t("admin.selectContent")}
+            </label>
+            <p className="text-xs text-gray-400">
+              {t("admin.selectContentHint")}
+            </p>
             <select
-              className="flex-1 border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2"
               value={selectedCourse}
-              onChange={(event) => setSelectedCourse(event.target.value)}
+              onChange={(e) => handleSelection(e.target.value)}
             >
               <option value="">{t("admin.selectContentDefault")}</option>
+
               {wcProducts.length > 0 && (
                 <optgroup label="WooCommerce Products">
                   {wcProducts.map((product) => {
-                    const cat = product.productCategories?.edges?.[0]?.node?.name;
+                    const cat =
+                      product.productCategories?.edges?.[0]?.node?.name;
                     const configured = courses[product.uri];
                     return (
                       <option key={`wc-${product.uri}`} value={product.uri}>
                         {product.name}
-                        {product.price ? ` (${product.price.replace(/&nbsp;/g, " ")})` : ""}
+                        {product.price
+                          ? ` (${product.price.replace(/&nbsp;/g, " ")})`
+                          : ""}
                         {cat ? ` — ${cat}` : ""}
                         {configured ? " ✓" : ""}
                       </option>
@@ -704,6 +700,7 @@ export default function AdminDashboard() {
                   })}
                 </optgroup>
               )}
+
               {wpCourses.length > 0 && (
                 <optgroup label="LearnPress Courses">
                   {wpCourses.map((course) => {
@@ -711,7 +708,9 @@ export default function AdminDashboard() {
                     return (
                       <option key={`lp-${course.uri}`} value={course.uri}>
                         {course.title}
-                        {course.priceRendered ? ` (${course.priceRendered})` : ""}
+                        {course.priceRendered
+                          ? ` (${course.priceRendered})`
+                          : ""}
                         {course.duration ? ` — ${course.duration}` : ""}
                         {configured ? " ✓" : ""}
                       </option>
@@ -719,6 +718,7 @@ export default function AdminDashboard() {
                   })}
                 </optgroup>
               )}
+
               {wpEvents.length > 0 && (
                 <optgroup label="Events">
                   {wpEvents.map((event) => {
@@ -732,165 +732,410 @@ export default function AdminDashboard() {
                   })}
                 </optgroup>
               )}
+
+              {products.length > 0 && (
+                <optgroup label={t("admin.shopProducts")}>
+                  {products.map((p, i) => (
+                    <option key={`shop-${i}`} value={`__shop_${i}`}>
+                      {p.name || `${t("admin.product")} ${i + 1}`}
+                      {p.priceCents
+                        ? ` (${toCurrencyUnits(p.priceCents)} ${p.currency || "SEK"})`
+                        : ""}
+                      {p.type === "course" ? ` — ${t("admin.courseProduct")}` : ` — ${t("admin.digitalFile")}`}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
               {knownCourses
-                .filter((uri) => !allWpContent.some((item) => item.uri === uri))
+                .filter(
+                  (uri) =>
+                    !allWpContent.some((item) => item.uri === uri) &&
+                    !products.some(
+                      (p) => p.courseUri === uri || p.slug === uri,
+                    ),
+                )
                 .map((courseUri) => (
                   <option key={courseUri} value={courseUri}>
                     {courseUri}
                   </option>
                 ))}
-              <option value="__custom__">Enter URI manually...</option>
+
+              <option value="__new__">+ {t("admin.addProduct")}</option>
+              <option value="__custom__">{t("admin.manualEntry")}</option>
             </select>
+
+            {selectedCourse === "__custom__" && (
+              <input
+                type="text"
+                value=""
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                placeholder={t("admin.courseUriInputPlaceholder")}
+                className="w-full border rounded px-3 py-2 text-sm"
+                autoFocus
+              />
+            )}
           </div>
-          {selectedCourse === "__custom__" && (
-            <input
-              type="text"
-              value=""
-              onChange={(event) => setSelectedCourse(event.target.value)}
-              placeholder={t("admin.courseUriInputPlaceholder")}
-              className="w-full border rounded px-3 py-2 text-sm"
-              autoFocus
-            />
-          )}
-        </div>
 
-        {/* Detailed content view */}
-        {selectedCourse && selectedCourse !== "__custom__" && (() => {
-          const wpItem = allWpContent.find((item) => item.uri === selectedCourse);
-          const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
-          const desc = wpItem?.shortDescription || wpItem?.content || "";
-          const wpPrice = (wpItem?.price || wpItem?.priceRendered || "").replace(/&nbsp;/g, " ");
-          const sourceLabel = wpItem?._source === "woocommerce" ? "WooCommerce"
-            : wpItem?._source === "learnpress" ? "LearnPress"
-            : wpItem?._source === "wordpress" ? "WordPress Event"
-            : "Manual";
-          const typeLabel = wpItem?._type === "product" ? "Product"
-            : wpItem?._type === "course" ? "Course"
-            : wpItem?._type === "event" ? "Event"
-            : "Content";
+          {/* ── WP item info card ── */}
+          {isWpSelection &&
+            (() => {
+              const wpItem = allWpContent.find(
+                (item) => item.uri === selectedCourse,
+              );
+              if (!wpItem) return null;
+              const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
+              const desc =
+                wpItem?.shortDescription || wpItem?.content || "";
+              const wpPrice = (
+                wpItem?.price ||
+                wpItem?.priceRendered ||
+                ""
+              ).replace(/&nbsp;/g, " ");
+              const sourceLabel =
+                wpItem?._source === "woocommerce"
+                  ? "WooCommerce"
+                  : wpItem?._source === "learnpress"
+                    ? "LearnPress"
+                    : wpItem?._source === "wordpress"
+                      ? "WordPress Event"
+                      : "Manual";
+              const typeLabel =
+                wpItem?._type === "product"
+                  ? t("common.product")
+                  : wpItem?._type === "course"
+                    ? t("common.course")
+                    : wpItem?._type === "event"
+                      ? t("common.event")
+                      : "Content";
 
-          return (
-            <div className="border rounded p-4 space-y-4 bg-gray-50">
-              <div className="flex gap-4">
-                {imgUrl && (
-                  <img src={imgUrl} alt="" className="w-24 h-24 object-cover rounded border shrink-0" />
-                )}
-                <div className="flex-1 min-w-0 space-y-1">
-                  <h3 className="text-lg font-semibold truncate">{wpItem?.title || wpItem?.name || selectedCourse}</h3>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{sourceLabel}</span>
-                    <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded">{typeLabel}</span>
-                    {wpPrice && <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">WP: {wpPrice}</span>}
-                    {courses[selectedCourse] && <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Configured</span>}
-                  </div>
-                  <p className="text-xs text-gray-500 truncate">URI: {selectedCourse}</p>
-                </div>
-              </div>
-              {desc && (
-                <div
-                  className="text-sm text-gray-600 max-h-24 overflow-auto prose prose-sm"
-                  dangerouslySetInnerHTML={{ __html: desc }}
-                />
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Price & access config */}
-        {selectedCourse && selectedCourse !== "__custom__" && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">{t("admin.courseFee")}</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(event) => setPrice(event.target.value)}
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="0.00"
-                  className="w-full border rounded px-3 py-2"
-                />
-                <input
-                  type="text"
-                  value={currency}
-                  onChange={(event) => setCurrency(event.target.value.toUpperCase())}
-                  className="w-24 border rounded px-3 py-2"
-                  maxLength={5}
-                />
-              </div>
-              <p className="text-xs text-gray-400">
-                {t("admin.priceSavedLocally")}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">{t("admin.allowedUsers")}</label>
-              <div className="border rounded p-3 max-h-56 overflow-auto space-y-2 bg-white">
-                {users.length === 0 && allowedUsers.length === 0 ? (
-                  <p className="text-sm text-gray-500">{t("admin.noUsersFound")}</p>
-                ) : (
-                  <>
-                    {users.map((user) => (
-                      <label key={user.email} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={allowedUsers.includes(user.email)}
-                          onChange={() => toggleUser(user.email)}
-                        />
-                        <span>
-                          {user.name} ({user.email})
+              return (
+                <div className="border rounded p-4 space-y-4 bg-gray-50">
+                  <div className="flex gap-4">
+                    {imgUrl && (
+                      <img
+                        src={imgUrl}
+                        alt=""
+                        className="w-24 h-24 object-cover rounded border shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <h3 className="text-lg font-semibold truncate">
+                        {wpItem?.title || wpItem?.name || selectedCourse}
+                      </h3>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                          {sourceLabel}
                         </span>
-                      </label>
-                    ))}
-                    {allowedUsers
-                      .filter((email) => !users.some((u) => u.email === email))
-                      .map((email) => (
-                        <label key={email} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={true}
-                            onChange={() => toggleUser(email)}
-                          />
-                          <span>{email}</span>
-                        </label>
-                      ))}
-                  </>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  value={manualEmail}
-                  onChange={(event) => setManualEmail(event.target.value)}
-                  onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), addManualEmail())}
-                  placeholder={t("admin.addEmailPlaceholder")}
-                  className="w-full border rounded px-3 py-2 text-sm"
-                />
+                        <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
+                          {typeLabel}
+                        </span>
+                        {wpPrice && (
+                          <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                            WP: {wpPrice}
+                          </span>
+                        )}
+                        {courses[selectedCourse] && (
+                          <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                            {t("admin.configuredBadge")}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">
+                        URI: {selectedCourse}
+                      </p>
+                    </div>
+                  </div>
+                  {desc && (
+                    <div
+                      className="text-sm text-gray-600 max-h-24 overflow-auto prose prose-sm"
+                      dangerouslySetInnerHTML={{ __html: desc }}
+                    />
+                  )}
+                </div>
+              );
+            })()}
+
+          {/* ── Shop product edit form ── */}
+          {isShopSelection && selectedShopProduct && (
+            <div className="border rounded p-4 space-y-4 bg-amber-50">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">
+                    {selectedShopProduct.name ||
+                      `${t("admin.product")} ${shopIndex + 1}`}
+                  </h3>
+                  <span className="bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs">
+                    {t("admin.shopProducts")}
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={addManualEmail}
-                  className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+                  onClick={() => removeShopProduct(shopIndex)}
+                  className="text-red-700 text-sm hover:underline"
                 >
-                  {t("common.add")}
+                  {t("common.remove")}
                 </button>
               </div>
-            </div>
-          </div>
-        )}
 
-        {selectedCourse && selectedCourse !== "__custom__" && (
-          <button
-            type="button"
-            onClick={saveCourse}
-            className="px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
-            disabled={loading}
-          >
-            {loading ? t("admin.saving") : t("admin.saveCourseAccess")}
-          </button>
-        )}
-      </div>
+              <p className="text-xs text-gray-500">
+                {t("admin.shopProductsDesc")}
+              </p>
+
+              <div className="grid md:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder={t("admin.namePlaceholder")}
+                  value={selectedShopProduct.name}
+                  onChange={(e) =>
+                    updateProduct(shopIndex, "name", e.target.value)
+                  }
+                  className="border rounded px-3 py-2"
+                />
+                <div>
+                  <input
+                    type="text"
+                    placeholder={t("admin.slugPlaceholder")}
+                    value={selectedShopProduct.slug}
+                    onChange={(e) =>
+                      updateProduct(shopIndex, "slug", e.target.value)
+                    }
+                    className="w-full border rounded px-3 py-2"
+                    title={t("admin.slugHint")}
+                  />
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {t("admin.slugHint")}
+                  </p>
+                </div>
+                <div>
+                  <select
+                    value={selectedShopProduct.type}
+                    onChange={(e) =>
+                      updateProduct(shopIndex, "type", e.target.value)
+                    }
+                    className="w-full border rounded px-3 py-2"
+                    title={t("admin.productTypeHint")}
+                  >
+                    <option value="digital_file">
+                      {t("admin.digitalFile")}
+                    </option>
+                    <option value="course">
+                      {t("admin.courseProduct")}
+                    </option>
+                  </select>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {t("admin.productTypeHint")}
+                  </p>
+                </div>
+                <label
+                  className="flex items-center gap-2 text-sm"
+                  title={t("admin.activeProductHint")}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedShopProduct.active !== false}
+                    onChange={(e) =>
+                      updateProduct(shopIndex, "active", e.target.checked)
+                    }
+                  />
+                  {t("admin.activeProduct")}
+                  <span className="text-[11px] text-gray-400 font-normal">
+                    — {t("admin.activeProductHint")}
+                  </span>
+                </label>
+              </div>
+
+              <textarea
+                rows="3"
+                placeholder={t("admin.descriptionPlaceholder")}
+                value={selectedShopProduct.description}
+                onChange={(e) =>
+                  updateProduct(shopIndex, "description", e.target.value)
+                }
+                className="w-full border rounded px-3 py-2"
+              />
+
+              <ImageUploader
+                value={selectedShopProduct.imageUrl}
+                onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
+                onError={(msg) => setError(msg)}
+              />
+
+              {selectedShopProduct.type === "digital_file" ? (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder={t("admin.fileUrlPlaceholder")}
+                      value={selectedShopProduct.fileUrl}
+                      onChange={(e) =>
+                        updateProduct(shopIndex, "fileUrl", e.target.value)
+                      }
+                      className="flex-1 border rounded px-3 py-2"
+                      title={t("admin.fileUrlHint")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => uploadFile(shopIndex, "fileUrl")}
+                      className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+                      title={t("admin.uploadSizeHint")}
+                    >
+                      {t("admin.uploadFile")}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {t("admin.fileUrlHint")}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="text"
+                    placeholder={t("admin.courseUriPlaceholder")}
+                    value={selectedShopProduct.courseUri}
+                    onChange={(e) =>
+                      updateProduct(shopIndex, "courseUri", e.target.value)
+                    }
+                    className="w-full border rounded px-3 py-2"
+                    title={t("admin.courseUriHint")}
+                  />
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {t("admin.courseUriHint")}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Price & access config (shown for all selected items) ── */}
+          {showDetail && (
+            <>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    {t("admin.courseFee")}
+                  </label>
+                  <p className="text-xs text-gray-400">
+                    {t("admin.feeHint")}
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      min="0"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      className="w-full border rounded px-3 py-2"
+                      title={t("admin.feeHint")}
+                    />
+                    <input
+                      type="text"
+                      value={currency}
+                      onChange={(e) =>
+                        setCurrency(e.target.value.toUpperCase())
+                      }
+                      className="w-24 border rounded px-3 py-2"
+                      maxLength={5}
+                      title={t("admin.currencyHint")}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    {t("admin.priceSavedLocally")}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    {t("admin.allowedUsers")}
+                  </label>
+                  <p className="text-xs text-gray-400">
+                    {t("admin.allowedUsersHint")}
+                  </p>
+                  <div className="border rounded p-3 max-h-56 overflow-auto space-y-2 bg-white">
+                    {users.length === 0 && allowedUsers.length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        {t("admin.noUsersFound")}
+                      </p>
+                    ) : (
+                      <>
+                        {users.map((user) => (
+                          <label
+                            key={user.email}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={allowedUsers.includes(user.email)}
+                              onChange={() => toggleUser(user.email)}
+                            />
+                            <span>
+                              {user.name} ({user.email})
+                            </span>
+                          </label>
+                        ))}
+                        {allowedUsers
+                          .filter(
+                            (email) =>
+                              !users.some((u) => u.email === email),
+                          )
+                          .map((email) => (
+                            <label
+                              key={email}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={true}
+                                onChange={() => toggleUser(email)}
+                              />
+                              <span>{email}</span>
+                            </label>
+                          ))}
+                      </>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={manualEmail}
+                        onChange={(e) => setManualEmail(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addManualEmail())
+                        }
+                        placeholder={t("admin.addEmailPlaceholder")}
+                        className="w-full border rounded px-3 py-2 text-sm"
+                        title={t("admin.addEmailHint")}
+                      />
+                      <button
+                        type="button"
+                        onClick={addManualEmail}
+                        className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
+                      >
+                        {t("common.add")}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {t("admin.addEmailHint")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={saveUnified}
+                className="px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
+                disabled={loading}
+              >
+                {loading ? t("admin.saving") : t("admin.saveCourseAccess")}
+              </button>
+            </>
+          )}
+        </div>
       )}
 
       {message ? <p className="text-green-700">{message}</p> : null}

@@ -32,7 +32,7 @@ function getS3Client() {
   let region = process.env.S3_REGION || "auto";
 
   if (backend === "r2") {
-    const accountId = process.env.CF_ACCOUNT_ID;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     if (!accountId) throw new Error(t("s3.accountIdMissing"));
     endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
     region = "auto";

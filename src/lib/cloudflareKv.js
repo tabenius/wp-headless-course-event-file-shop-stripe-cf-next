@@ -1,13 +1,13 @@
 function hasCloudflareConfig() {
   return Boolean(
-    process.env.CF_ACCOUNT_ID &&
+    process.env.CLOUDFLARE_ACCOUNT_ID &&
       process.env.CF_API_TOKEN &&
       process.env.CF_KV_NAMESPACE_ID,
   );
 }
 
 function getKvUrl(key) {
-  return `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CF_KV_NAMESPACE_ID}/values/${key}`;
+  return `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CF_KV_NAMESPACE_ID}/values/${key}`;
 }
 
 export function isCloudflareKvConfigured() {
