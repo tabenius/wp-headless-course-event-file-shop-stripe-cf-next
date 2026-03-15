@@ -24,7 +24,8 @@ async function fetchLearnPressCourses() {
 }
 
 async function fetchWooCommerceProducts() {
-  if (!(await hasGraphQLType("SimpleProduct"))) return [];
+  // Skip hasGraphQLType check — introspection may require auth.
+  // Just try the query; it fails gracefully if WooCommerce isn't available.
   try {
     const data = await fetchGraphQL(
       `{
