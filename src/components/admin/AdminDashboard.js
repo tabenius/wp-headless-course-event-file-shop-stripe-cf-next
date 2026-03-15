@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
@@ -206,6 +206,7 @@ export default function AdminDashboard() {
   const [analyticsConfigured, setAnalyticsConfigured] = useState(false);
   const [commits, setCommits] = useState(null);
   const [commitsError, setCommitsError] = useState("");
+  const editFormRef = useRef(null);
   const [resendConfigured, setResendConfigured] = useState(false);
 
   // Derived values for shop product selection
@@ -409,6 +410,7 @@ export default function AdminDashboard() {
       const newProducts = [...products, emptyProduct()];
       setProducts(newProducts);
       setSelectedCourse(`__shop_${newProducts.length - 1}`);
+      setTimeout(() => editFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } else {
       setSelectedCourse(value);
     }
@@ -1136,6 +1138,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          <div ref={editFormRef} />
           {/* ── WP item info card ── */}
           {isWpSelection &&
             (() => {
