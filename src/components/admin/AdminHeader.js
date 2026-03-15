@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
@@ -16,6 +17,16 @@ function getNavItems() {
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState("products");
+
+  // Keep activeTab in sync with AdminDashboard
+  useEffect(() => {
+    function onTabSwitch(e) {
+      setActiveTab(e.detail);
+    }
+    window.addEventListener("admin:switchTab", onTabSwitch);
+    return () => window.removeEventListener("admin:switchTab", onTabSwitch);
+  }, []);
 
   // Don't show admin header on login page
   if (pathname === "/admin/login") return null;
@@ -59,27 +70,32 @@ export default function AdminHeader({ logoUrl }) {
         <nav className="flex items-center gap-1">
           {getNavItems().map((item) => {
             if (item.tab) {
+              const isActive = pathname === "/admin" && activeTab === item.tab;
               return (
                 <button
-                  key={item.label}
+                  key={item.tab}
                   type="button"
                   onClick={() => switchTab(item.tab)}
-                  className="px-3 py-1.5 rounded text-sm transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                    isActive
+                      ? "bg-purple-100 text-purple-800 font-medium"
+                      : "text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                  }`}
                 >
                   {item.label}
                 </button>
               );
             }
 
-            const active = pathname.startsWith(item.href);
+            const isActive = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                  active
-                    ? "bg-gray-100 text-gray-900 font-medium"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  isActive
+                    ? "bg-purple-100 text-purple-800 font-medium"
+                    : "text-purple-600 hover:text-purple-800 hover:bg-purple-50"
                 }`}
               >
                 {item.label}
@@ -91,7 +107,11 @@ export default function AdminHeader({ logoUrl }) {
           <button
             type="button"
             onClick={() => switchTab("health")}
-            className="p-2 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            className={`p-2 rounded transition-colors ${
+              pathname === "/admin" && activeTab === "health"
+                ? "text-purple-800 bg-purple-100"
+                : "text-purple-400 hover:text-purple-800 hover:bg-purple-50"
+            }`}
             title={t("admin.healthCheck")}
           >
             <svg
@@ -113,7 +133,7 @@ export default function AdminHeader({ logoUrl }) {
             href="https://github.com/tabenius/wp-headless-course-event-file-shop-stripe-cf-next"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            className="p-2 rounded text-purple-400 hover:text-purple-800 hover:bg-purple-50 transition-colors"
             title="GitHub project"
           >
             <svg
@@ -131,7 +151,7 @@ export default function AdminHeader({ logoUrl }) {
             href="https://dashboard.stripe.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded text-gray-500 hover:text-purple-700 hover:bg-gray-50"
+            className="p-2 rounded text-purple-400 hover:text-purple-800 hover:bg-purple-50 transition-colors"
             title="Stripe Dashboard"
           >
             <svg
@@ -148,7 +168,7 @@ export default function AdminHeader({ logoUrl }) {
           <button
             type="button"
             onClick={logoutAdmin}
-            className="ml-2 px-3 py-1.5 rounded border text-sm text-gray-600 hover:bg-gray-50"
+            className="ml-2 px-3 py-1.5 rounded border border-purple-200 text-sm text-purple-600 hover:bg-purple-50 hover:text-purple-800 transition-colors"
           >
             {t("admin.signOut")}
           </button>
