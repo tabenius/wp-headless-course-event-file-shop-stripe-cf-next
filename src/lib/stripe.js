@@ -72,6 +72,7 @@ export async function createStripeCheckoutSession({
     metadata: {
       purchase_kind: contentKind,
       course_uri: courseUri,
+      course_title: courseTitle || "",
     },
   });
 }

@@ -51,6 +51,7 @@ export async function POST(request) {
       metadata: {
         purchase_kind: product.type === "course" ? "course_product" : "digital_file",
         digital_product_id: product.id,
+        product_name: product.name || "",
         ...(product.courseUri ? { course_uri: product.courseUri } : {}),
       },
     });

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { grantCourseAccess } from "@/lib/courseAccess";
 import { grantDigitalAccess } from "@/lib/digitalAccessStore";
+import { sendEmail } from "@/lib/email";
 
 function parseSignature(headerValue) {
   if (typeof headerValue !== "string") return {};
@@ -69,6 +70,40 @@ export async function POST(request) {
           }
         } else if (courseUri) {
           await grantCourseAccess(courseUri, email);
+        }
+
+        // Send purchase confirmation email
+        try {
+          const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.xtas.nu";
+          const productName = session?.metadata?.product_name || session?.metadata?.course_title || session?.metadata?.course_uri || "din produkt";
+          const amountTotal = session?.amount_total;
+          const currency = (session?.currency || "sek").toUpperCase();
+          const formattedAmount = typeof amountTotal === "number"
+            ? `${(amountTotal / 100).toFixed(2)} ${currency}`
+            : "";
+
+          let productUrl = origin;
+          if (courseUri) {
+            productUrl = `${origin}${courseUri}`;
+          } else if (digitalProductId) {
+            productUrl = `${origin}/shop`;
+          }
+
+          await sendEmail({
+            to: email,
+            subject: `Orderbekräftelse – ${productName}`,
+            html: [
+              `<h2>Tack för ditt köp!</h2>`,
+              `<p>Hej,</p>`,
+              `<p>Vi har tagit emot din betalning${formattedAmount ? ` på <strong>${formattedAmount}</strong>` : ""}.</p>`,
+              `<p><strong>Produkt:</strong> ${productName}</p>`,
+              `<p><a href="${productUrl}" style="display:inline-block;padding:12px 24px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:6px;">Öppna ${courseUri ? "kursen" : "produkten"}</a></p>`,
+              `<p style="color:#888;font-size:13px;">Logga in med ${email} för att komma åt ditt innehåll.</p>`,
+              `<br><p style="color:#888;font-size:13px;">– Xtas.nu</p>`,
+            ].join(""),
+          });
+        } catch (emailErr) {
+          console.error("Purchase confirmation email failed:", emailErr);
         }
       }
     }
