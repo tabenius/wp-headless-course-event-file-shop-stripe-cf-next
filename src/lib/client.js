@@ -68,6 +68,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         Accept: "application/json",
         "Content-Type": "application/json",
         ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+        ...(auth.headers || {}),
       };
 
       const fetchOptions = {

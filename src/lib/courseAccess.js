@@ -41,6 +41,7 @@ async function fetchWordPressGraphQL(query, variables = {}) {
       Accept: "application/json",
       "Content-Type": "application/json",
       ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+      ...(auth.headers || {}),
     };
 
     if (delayMs > 0) {

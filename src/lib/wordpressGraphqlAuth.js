@@ -10,6 +10,14 @@ function looksLikeApplicationPassword(value) {
   return value.includes(" ") && !value.includes(".");
 }
 
+function getFaustSecret() {
+  return (
+    normalizeEnv(process.env.FAUST_SECRET_KEY) ||
+    normalizeEnv(process.env.FAUSTWP_SECRET_KEY) ||
+    normalizeEnv(process.env.FAUST_SECRET)
+  );
+}
+
 /**
  * Returns an ordered list of auth header options to try for WordPress GraphQL.
  * Preference: Bearer token first (if present), then Basic (username + app password).
@@ -30,6 +38,18 @@ export function getWordPressGraphqlAuthOptions() {
     options.push({
       mode: "bearer",
       authorization: `Bearer ${bearerToken}`,
+    });
+  }
+
+  const faustSecret = getFaustSecret();
+  if (faustSecret) {
+    options.push({
+      mode: "faust",
+      authorization: `Bearer ${faustSecret}`,
+      headers: {
+        "X-Headless-Secret": faustSecret,
+        "X-Faust-Secret": faustSecret,
+      },
     });
   }
 
