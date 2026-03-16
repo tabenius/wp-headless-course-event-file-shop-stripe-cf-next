@@ -13,7 +13,7 @@
 - Upload UX: clearer WP media failure hints; toast errors instead of silent failures; save label clarified.  
 - 404 CTA forced to white text; admin shop thumbnails enlarged (32x32).  
 - Added admin support ticket system (KV/local backed) with CRUD, comments, status/priority controls, and toast feedback; new nav tab and translations included.  
-- Support tickets now persist to R2 (S3 API) when configured, fallback to Cloudflare KV; no local file usage.  
+- Support tickets now persist to Cloudflare KV (edge-safe); R2 path disabled on edge to avoid AWS SDK incompatibility.  
 - WPGraphQL auth now also tries Faust secret header/Bearer; env keys FAUST_SECRET_KEY/FAUSTWP_SECRET_KEY supported.  
 - Admin advanced now shows build timestamp (from NEXT_PUBLIC_BUILD_TIME/BUILD_TIME/VERCEL_*) alongside last deploy time.  
 - Admin advanced now also shows git revision (NEXT_PUBLIC_GIT_SHA/GIT_COMMIT_SHA/VERCEL_GIT_COMMIT_SHA).  

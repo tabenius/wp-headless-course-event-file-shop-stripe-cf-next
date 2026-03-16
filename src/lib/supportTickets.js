@@ -1,9 +1,4 @@
 import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import {
   isCloudflareKvConfigured,
   readCloudflareKvJson,
   writeCloudflareKvJson,
@@ -12,6 +7,10 @@ import {
 const KV_KEY = process.env.CF_TICKETS_KV_KEY || "support-tickets";
 const R2_KEY = process.env.CF_TICKETS_R2_KEY || "support-tickets.json";
 let inMemoryState = { tickets: [] };
+
+function canUseNode() {
+  return typeof process !== "undefined" && process.versions?.node && process.env.NEXT_RUNTIME !== "edge";
+}
 
 function sanitizeTicket(ticket) {
   if (!ticket || typeof ticket !== "object") return null;
@@ -52,54 +51,11 @@ function isR2Configured() {
   const secret = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
   const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  return Boolean(accessKeyId && secret && bucket && accountId);
-}
-
-function getR2Client() {
-  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
-  const endpoint = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-  return new S3Client({
-    region: "auto",
-    endpoint,
-    credentials: { accessKeyId, secretAccessKey },
-  });
+  return Boolean(accessKeyId && secret && bucket && accountId && canUseNode());
 }
 
 function getR2Bucket() {
   return process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
-}
-
-async function readR2State() {
-  const client = getR2Client();
-  const bucket = getR2Bucket();
-  try {
-    const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: R2_KEY }));
-    const text = res.Body && res.Body.transformToString ? await res.Body.transformToString("utf8") : "";
-    return sanitizeState(text ? JSON.parse(text) : { tickets: [] });
-  } catch (error) {
-    // If not found, return empty state
-    if (error?.$metadata?.httpStatusCode === 404) {
-      return { tickets: [] };
-    }
-    console.error("Support tickets R2 read failed", error);
-    throw error;
-  }
-}
-
-async function writeR2State(state) {
-  const client = getR2Client();
-  const bucket = getR2Bucket();
-  const safe = sanitizeState(state);
-  await client.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: R2_KEY,
-      Body: JSON.stringify(safe),
-      ContentType: "application/json",
-    }),
-  );
-  return safe;
 }
 
 async function readKvState() {
@@ -114,13 +70,6 @@ async function writeKvState(state) {
 }
 
 async function getState() {
-  if (isR2Configured()) {
-    try {
-      return await readR2State();
-    } catch (error) {
-      console.error("R2 support tickets read failed, trying KV", error);
-    }
-  }
   if (isCloudflareKvConfigured()) {
     try {
       return await readKvState();
@@ -134,13 +83,6 @@ async function getState() {
 
 async function saveState(state) {
   const safe = sanitizeState(state);
-  if (isR2Configured()) {
-    try {
-      return await writeR2State(safe);
-    } catch (error) {
-      console.error("R2 support tickets write failed, trying KV", error);
-    }
-  }
   if (isCloudflareKvConfigured()) {
     try {
       return await writeKvState(safe);
@@ -201,9 +143,6 @@ export async function updateTicket(id, { status, comment, author = "admin" }) {
 }
 
 export function getSupportTicketStorageInfo() {
-  if (isR2Configured()) {
-    return { provider: "r2", bucket: getR2Bucket(), key: R2_KEY };
-  }
   if (isCloudflareKvConfigured()) {
     return { provider: "cloudflare-kv", key: KV_KEY };
   }

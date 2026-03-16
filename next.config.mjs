@@ -10,6 +10,19 @@ const wpHostname = (() => {
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: '.',
+  env: {
+    NEXT_PUBLIC_BUILD_TIME:
+      process.env.NEXT_PUBLIC_BUILD_TIME ||
+      process.env.BUILD_TIME ||
+      process.env.VERCEL_GIT_COMMIT_TIMESTAMP ||
+      process.env.VERCEL_DEPLOYMENT_TIME ||
+      new Date().toISOString(),
+    NEXT_PUBLIC_GIT_SHA:
+      process.env.NEXT_PUBLIC_GIT_SHA ||
+      process.env.GIT_COMMIT_SHA ||
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      "",
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.md$/,
