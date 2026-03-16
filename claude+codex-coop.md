@@ -6,3 +6,6 @@
 - Added upload destination selector (WordPress vs R2/S3) in admin, with backend-aware upload/presigned/multipart APIs and configuration exposure in admin UI/health data.  
 - Updated environment/exported settings to show access replicas, upload backend, and clearer email configuration hints; `.env.example` documents Basic auth fields.  
 - Ran `npm run build` (passes; only Next image lint warnings remain).
+- Added REST fallback for pages/posts/events and LearnPress `lpCourse` lookup by URI/slug to reduce 404s; documented content fallback logic.  
+- Event list titles/excerpts decode entities; featured images hide on error; shop/product detail images also hide on error.  
+- Admin advanced shows last deploy timestamp from env (LAST_DEPLOYED_AT or Vercel vars).

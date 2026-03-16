@@ -461,6 +461,7 @@ Key design decisions:
 - **Lazy env reads** — All `process.env` reads happen inside functions (not at module level) so Cloudflare Workers secrets properly override `.env` values at request time.
 - **KV-first storage** — User data, access rules, and product entitlements use Cloudflare KV in production, with local file and in-memory fallbacks for development.
 - **Unified shop** — The `/shop` page aggregates products from WooCommerce, LearnPress, Events, and digital products into a single storefront, with admin-configurable visibility per type.
+- **Content fallbacks** — Catch-all routing first queries `nodeByUri` (with trailing-slash retry), then falls back to WordPress REST (pages/posts/events) and finally LearnPress `lpCourse` lookups by URI/slug to avoid 404s when WPGraphQL misses a node.
 
 ### Project structure
 
