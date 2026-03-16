@@ -219,6 +219,7 @@ export default function AdminDashboard() {
   const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [deployMessage, setDeployMessage] = useState("");
+  const [lastDeployAt, setLastDeployAt] = useState(null);
   const [userSearch, setUserSearch] = useState("");
   const [analytics, setAnalytics] = useState(null);
   const [analyticsMode, setAnalyticsMode] = useState("none"); // "zone" | "workers" | "none"
@@ -312,6 +313,13 @@ export default function AdminDashboard() {
           setAnalyticsMode(json.mode || "none");
           setAnalyticsConfigured(json.configured);
         }
+      })
+      .catch(() => {});
+
+    fetch("/api/admin/deploy/last")
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (json?.timestamp) setLastDeployAt(json.timestamp);
       })
       .catch(() => {});
 
@@ -1739,6 +1747,11 @@ export default function AdminDashboard() {
           )}
           {deployMessage && (
             <p className="text-green-700 text-sm">{deployMessage}</p>
+          )}
+          {lastDeployAt && (
+            <p className="text-xs text-gray-500">
+              Senaste deploy: {new Date(lastDeployAt).toLocaleString("sv-SE")}
+            </p>
           )}
 
           {/* Storage configuration */}
