@@ -612,6 +612,11 @@ export default function AdminDashboard() {
     }
   }
 
+  // Whether to show the detail panel
+  const showDetail =
+    (isWpSelection || isShopSelection) &&
+    selectedCourse !== "__custom__";
+
   // Scroll to edit section when a product/content is selected
   useEffect(() => {
     if (!selectedCourse) return;
@@ -862,11 +867,6 @@ export default function AdminDashboard() {
       setDeploying(false);
     }
   }
-
-  // Whether to show the detail panel
-  const showDetail =
-    (isWpSelection || isShopSelection) &&
-    selectedCourse !== "__custom__";
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
