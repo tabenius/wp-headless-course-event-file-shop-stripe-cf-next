@@ -34,4 +34,5 @@
 - Enabled source maps for client bundles and upload to Cloudflare Workers; added admin-protected `/__maps/*` proxy for maps. Request-id middleware tags admin/API requests; adminFetch helper logs durations and request IDs; health tab shows recent request log panel for debugging.
 - Admin dashboard data loading now lazy-loads per tab with once-only fetches; default load limited to course-access + products, reducing log noise and API chatter.
 - Admin product rows now alternate purple backgrounds for clearer visual grouping.
+- Admin header now uses full width; logo and brand text slightly larger, build stamp smaller/tighter.
 - Enabled source maps for client bundles and upload to Cloudflare Workers; added admin-protected `/__maps/*` proxy for maps. Request-id middleware tags admin/API requests; adminFetch helper logs durations and request IDs; health tab shows recent request log panel for debugging.
