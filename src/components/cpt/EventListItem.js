@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FeaturedImage } from "../image/FeaturedImage";
 import { createExcerpt } from "@/lib/utils";
+import { decodeEntities } from "@/lib/decodeEntities";
 
 export default function EventListItem({ post }) {
   if (!post) return null;
@@ -19,7 +20,7 @@ export default function EventListItem({ post }) {
           title={title || ""}
           className="text-2xl font-bold hover:underline"
         >
-          {title || "Untitled"}
+          {decodeEntities(title || "Untitled")}
         </Link>
       </h2>
 
@@ -59,7 +60,7 @@ export default function EventListItem({ post }) {
       />
 
       <div className="mt-2 mb-4">
-        <p>{createExcerpt(content)}</p>
+        <p>{decodeEntities(createExcerpt(content))}</p>
       </div>
 
       <Link
