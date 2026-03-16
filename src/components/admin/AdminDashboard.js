@@ -207,6 +207,7 @@ export default function AdminDashboard() {
     process.env.GIT_COMMIT_SHA ||
     process.env.VERCEL_GIT_COMMIT_SHA ||
     "";
+  const runtime = process.env.NEXT_RUNTIME || "node";
   const [courses, setCourses] = useState({});
   const [users, setUsers] = useState([]);
   const [wpCourses, setWpCourses] = useState([]);
@@ -1644,6 +1645,23 @@ export default function AdminDashboard() {
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5">
                     {t("admin.fileUrlHint")}
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    {t("admin.uploadBackendCurrent")}:{" "}
+                    <span className="font-semibold text-gray-700">
+                      {uploadBackend === "wordpress"
+                        ? "WordPress Media"
+                        : uploadBackend === "r2"
+                          ? "Cloudflare R2 (edge-signed)"
+                          : "S3/Spaces (Node SDK)"}
+                    </span>
+                    . {t("admin.uploadSizeHintShort", "Direct uploads up to ~95 MB; larger files use multipart automatically.")}{" "}
+                    {runtime === "edge"
+                      ? t("admin.uploadEdgeLimit", "Edge R2 path: single PUT up to 100 MB, multipart for bigger files.")
+                      : t("admin.uploadNodeLimit", "Node path: multipart upload for large files.")}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {t("admin.uploadAltLarge", "For very large files (e.g. >2 GB), upload via an S3/R2 client like WinSCP or Cyberduck to your bucket and paste the public URL here.")}
                   </p>
                 </div>
               ) : (
