@@ -8,12 +8,16 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { t } from "@/lib/i18n";
+import { signR2Put, signR2Request, presignR2Url, buildR2Url, toHex } from "@/lib/r2Edge";
 
 const _clients = new Map();
 const isNodeRuntime =
   typeof process !== "undefined" &&
   process.versions?.node &&
   process.env.NEXT_RUNTIME !== "edge";
+const isEdgeRuntime =
+  typeof EdgeRuntime !== "undefined" || process.env.NEXT_RUNTIME === "edge";
+export const EDGE_R2_MAX_BYTES = 100 * 1024 * 1024; // 100 MB cap for edge uploads
 
 function resolveBackend(preferred) {
   return (preferred || process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
@@ -33,7 +37,7 @@ function resolveBackend(preferred) {
  */
 function getS3Client(backend = resolveBackend()) {
   if (!isNodeRuntime) {
-    throw new Error("S3/R2 uploads are not available in edge runtime; use WordPress backend or configure a Node adapter.");
+    throw new Error("S3/R2 uploads via AWS SDK are not available in edge runtime; use WordPress backend or the edge R2 path.");
   }
   if (_clients.has(backend)) return _clients.get(backend);
   const accessKeyId =
@@ -85,11 +89,82 @@ function getPublicUrl() {
   return url;
 }
 
+function assertNodeS3Support(backend) {
+  if (!isNodeRuntime) {
+    throw new Error(
+      backend === "r2"
+        ? "R2 uploads via SDK require Node runtime; on edge we use a signed fetch path."
+        : "S3 uploads require Node runtime.",
+    );
+  }
+}
+
+function assertEdgeR2Support() {
+  if (!isEdgeRuntime) {
+    throw new Error("Edge R2 path only applies on edge runtime.");
+  }
+  if (!process.env.CLOUDFLARE_ACCOUNT_ID) {
+    throw new Error("CLOUDFLARE_ACCOUNT_ID is required for R2 uploads.");
+  }
+  if (!process.env.S3_ACCESS_KEY_ID && !process.env.CF_R2_ACCESS_KEY_ID) {
+    throw new Error("R2 access key is missing.");
+  }
+  if (!process.env.S3_SECRET_ACCESS_KEY && !process.env.CF_R2_SECRET_ACCESS_KEY) {
+    throw new Error("R2 secret key is missing.");
+  }
+  if (!process.env.S3_BUCKET_NAME && !process.env.CF_R2_BUCKET_NAME) {
+    throw new Error("R2 bucket is missing.");
+  }
+  if (!process.env.S3_PUBLIC_URL && !process.env.CF_R2_PUBLIC_URL) {
+    throw new Error("R2 public URL is missing.");
+  }
+}
+
+async function uploadToR2Edge(buffer, fileName, contentType) {
+  assertEdgeR2Support();
+  if (buffer.byteLength > EDGE_R2_MAX_BYTES) {
+    throw new Error(`File too large for edge R2 upload (max ${EDGE_R2_MAX_BYTES / (1024 * 1024)} MB).`);
+  }
+  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
+  const publicUrl = (process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "").replace(/\/+$/, "");
+  const key = `uploads/${Date.now()}-${fileName}`;
+  const url = buildR2Url({ accountId, bucket, key });
+
+  const signedHeaders = await signR2Put({
+    url,
+    body: buffer,
+    accessKeyId,
+    secretAccessKey,
+    region: "auto",
+  });
+
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      ...signedHeaders,
+      "content-type": contentType || "application/octet-stream",
+    },
+    body: buffer,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`R2 upload failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+  return `${publicUrl}/${key}`;
+}
+
 /**
  * Upload a file to S3-compatible storage.
  * Returns the public URL of the uploaded object.
  */
 export async function uploadToS3(buffer, fileName, contentType, backend = resolveBackend()) {
+  if (backend === "r2" && isEdgeRuntime) {
+    return uploadToR2Edge(buffer, fileName, contentType);
+  }
+  assertNodeS3Support(backend);
   const client = getS3Client(backend);
   const bucket = getBucket();
   const publicUrl = getPublicUrl();
@@ -114,6 +189,9 @@ export async function uploadToS3(buffer, fileName, contentType, backend = resolv
  * Returns { uploadUrl, publicUrl, key, expiresIn }.
  */
 export async function createPresignedUpload(fileName, contentType, expiresIn = 3600, backend = resolveBackend()) {
+  if (backend === "r2" && isEdgeRuntime) {
+    throw new Error("Presigned browser uploads to R2 are not supported on edge runtime. Use direct upload path.");
+  }
   const client = getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
@@ -141,6 +219,35 @@ export async function createPresignedUpload(fileName, contentType, expiresIn = 3
  * The client then requests presigned URLs for each part.
  */
 export async function createMultipartUpload(fileName, contentType, backend = resolveBackend()) {
+  if (backend === "r2" && isEdgeRuntime) {
+    assertEdgeR2Support();
+    const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
+    const publicBaseUrl = (process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "").replace(/\/+$/, "");
+    const key = `uploads/${Date.now()}-${fileName}`;
+    const url = buildR2Url({ accountId, bucket, key }) + "?uploads";
+    const signedHeaders = await signR2Request({
+      method: "POST",
+      url,
+      headers: {},
+      payloadHash: "UNSIGNED-PAYLOAD",
+      accessKeyId,
+      secretAccessKey,
+      region: "auto",
+    });
+    const res = await fetch(url, { method: "POST", headers: signedHeaders });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`R2 multipart create failed (${res.status}): ${text.slice(0, 200)}`);
+    }
+    const xml = await res.text();
+    const uploadIdMatch = xml.match(/<UploadId>([^<]+)<\\/UploadId>/);
+    const uploadId = uploadIdMatch ? uploadIdMatch[1] : null;
+    if (!uploadId) throw new Error("R2 multipart create failed (no uploadId)");
+    return { uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
+  }
   const client = getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
@@ -163,6 +270,28 @@ export async function createMultipartUpload(fileName, contentType, backend = res
  * Returns an array of { partNumber, uploadUrl }.
  */
 export async function signMultipartParts(key, uploadId, partNumbers, expiresIn = 3600, backend = resolveBackend()) {
+  if (backend === "r2" && isEdgeRuntime) {
+    assertEdgeR2Support();
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
+    const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+
+    const signed = [];
+    for (const partNumber of partNumbers) {
+      const url = buildR2Url({ accountId, bucket, key }) + `?partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`;
+      const signedUrl = await presignR2Url({
+        method: "PUT",
+        url,
+        expiresIn,
+        accessKeyId,
+        secretAccessKey,
+        region: "auto",
+      });
+      signed.push({ partNumber, uploadUrl: signedUrl });
+    }
+    return signed;
+  }
   const client = getS3Client(backend);
   const bucket = getBucket();
 
@@ -187,6 +316,38 @@ export async function signMultipartParts(key, uploadId, partNumbers, expiresIn =
  * parts is an array of { partNumber, etag } (etag from each PUT response).
  */
 export async function completeMultipartUpload(key, uploadId, parts, backend = resolveBackend()) {
+  if (backend === "r2" && isEdgeRuntime) {
+    assertEdgeR2Support();
+    const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
+    const publicBaseUrl = (process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "").replace(/\/+$/, "");
+
+    const sortedParts = parts.slice().sort((a, b) => a.partNumber - b.partNumber);
+    const body = `<CompleteMultipartUpload>${sortedParts
+      .map((p) => `<Part><PartNumber>${p.partNumber}</PartNumber><ETag>${p.etag}</ETag></Part>`)
+      .join("")}</CompleteMultipartUpload>`;
+
+    const url = buildR2Url({ accountId, bucket, key }) + `?uploadId=${encodeURIComponent(uploadId)}`;
+    const payloadHash = toHex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body)));
+    const signedHeaders = await signR2Request({
+      method: "POST",
+      url,
+      headers: { "content-type": "application/xml" },
+      payloadHash,
+      accessKeyId,
+      secretAccessKey,
+      region: "auto",
+    });
+
+    const res = await fetch(url, { method: "POST", headers: signedHeaders, body });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`R2 multipart complete failed (${res.status}): ${text.slice(0, 200)}`);
+    }
+    return `${publicBaseUrl}/${key}`;
+  }
   const client = getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
@@ -214,6 +375,25 @@ export async function completeMultipartUpload(key, uploadId, parts, backend = re
  * Abort a multipart upload (cleanup on failure).
  */
 export async function abortMultipartUpload(key, uploadId, backend = resolveBackend()) {
+  if (backend === "r2" && isEdgeRuntime) {
+    assertEdgeR2Support();
+    const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
+    const url = buildR2Url({ accountId, bucket, key }) + `?uploadId=${encodeURIComponent(uploadId)}`;
+    const signedHeaders = await signR2Request({
+      method: "DELETE",
+      url,
+      headers: {},
+      payloadHash: "UNSIGNED-PAYLOAD",
+      accessKeyId,
+      secretAccessKey,
+      region: "auto",
+    });
+    await fetch(url, { method: "DELETE", headers: signedHeaders });
+    return;
+  }
   const client = getS3Client(backend);
   const bucket = getBucket();
 
@@ -236,7 +416,6 @@ export function isS3Upload(preferred) {
 }
 
 export function isS3Configured(preferred) {
-  if (!isNodeRuntime) return false;
   const backend = resolveBackend(preferred);
   if (backend !== "r2" && backend !== "s3") return false;
   const accessKeyId =
@@ -249,7 +428,11 @@ export function isS3Configured(preferred) {
     (process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "").replace(/\/+$/, "");
   if (!accessKeyId || !secretAccessKey || !bucket || !publicUrl) return false;
   if (backend === "r2") {
+    if (isEdgeRuntime) {
+      return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID);
+    }
     return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID);
   }
+  if (!isNodeRuntime) return false;
   return Boolean(process.env.S3_ENDPOINT);
 }
