@@ -8,9 +8,16 @@ export async function generateMetadata() {
 }
 
 export default async function AdminPage() {
-  const session = await adminAuth();
-  if (!session) {
-    redirect("/admin/login");
+  try {
+    const session = await adminAuth();
+    if (!session) {
+      redirect("/admin/login");
+    }
+    return <AdminDashboard />;
+  } catch (err) {
+    // Re-throw redirect (Next.js uses a special error for redirect())
+    if (err?.digest === "NEXT_REDIRECT") throw err;
+    console.error("AdminPage render error:", err);
+    throw err;
   }
-  return <AdminDashboard />;
 }
