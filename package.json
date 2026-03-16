@@ -14,7 +14,7 @@
     "precf:build": "npm run theme:css",
     "config": "./configure.sh",
     "doc": "node scripts/render-doc.cjs",
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "cf:build": "opennextjs-cloudflare build",
@@ -42,6 +42,7 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
+    "raw-loader": "^4.0.2",
     "tailwindcss": "^4",
     "wrangler": "^4.70.0"
   }

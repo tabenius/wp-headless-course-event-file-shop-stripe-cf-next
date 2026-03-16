@@ -24,6 +24,14 @@ const nextConfig = {
       process.env.VERCEL_GIT_COMMIT_SHA ||
       "",
   },
+  turbopack: {
+    rules: {
+      "*.md": {
+        loaders: [{ loader: "raw-loader" }],
+        as: "*.js",
+      },
+    },
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.md$/,
