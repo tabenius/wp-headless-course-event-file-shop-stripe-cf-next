@@ -70,17 +70,17 @@ async function buildContentQuery() {
       }
       ... on SimpleProduct {
         name
-        price
+        priceText: price
         shortDescription
       }
       ... on VariableProduct {
         name
-        price
+        priceText: price
         shortDescription
       }
       ... on ExternalProduct {
         name
-        price
+        priceText: price
         shortDescription
       }
       ...SinglePageFragment
@@ -386,7 +386,7 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
           courseUri={uri}
           courseTitle={node?.title || node?.name || ""}
           courseContent={node?.content || node?.shortDescription || ""}
-          coursePriceRendered={node?.priceRendered || node?.price || ""}
+          coursePriceRendered={node?.priceRendered || node?.priceText || node?.price || ""}
           courseDuration={node?.duration || ""}
           courseImage={node?.featuredImage?.node?.sourceUrl || ""}
           userEmail={userEmail}
