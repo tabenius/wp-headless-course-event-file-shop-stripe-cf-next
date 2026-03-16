@@ -171,7 +171,7 @@ export default function ShopIndex({
                 {item.description && (
                   <p className="text-gray-700 line-clamp-3 text-sm">{item.description}</p>
                 )}
-                {item.duration && (
+                {item.duration && !/^0\s/.test(item.duration) && (
                   <p className="text-xs text-gray-500">{item.duration}</p>
                 )}
 

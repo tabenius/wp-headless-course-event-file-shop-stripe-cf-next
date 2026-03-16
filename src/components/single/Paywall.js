@@ -123,7 +123,7 @@ export default function Paywall({
           {displayPrice && (
             <span><strong>{t("paywall.fee")}:</strong> {displayPrice}</span>
           )}
-          {courseDuration && (
+          {courseDuration && !/^0\s/.test(courseDuration) && (
             <span><strong>{t("paywall.duration")}:</strong> {courseDuration}</span>
           )}
         </div>
