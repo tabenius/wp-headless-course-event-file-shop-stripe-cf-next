@@ -154,6 +154,8 @@ async function fetchCourseFallback(uri) {
   if (!fragment) return null;
   const slug = uri.split("/").filter(Boolean).pop();
   if (!slug) return null;
+  const wp = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+  const auth = getWordPressGraphqlAuth();
   const query = `
     ${fragment}
     query LpCourseByUri($uri: ID!) {
@@ -165,7 +167,29 @@ async function fetchCourseFallback(uri) {
   const data = await fetchGraphQL(query, { uri }, 1800);
   if (data?.lpCourse) return data.lpCourse;
   const dataBySlug = await fetchGraphQL(query, { uri: slug }, 1800);
-  return dataBySlug?.lpCourse || null;
+  if (dataBySlug?.lpCourse) return dataBySlug.lpCourse;
+
+  // REST fallback for LearnPress course
+  if (!wp) return null;
+  const res = await fetch(`${wp}/wp-json/wp/v2/lp_course?slug=${encodeURIComponent(slug)}`, {
+    headers: {
+      Accept: "application/json",
+      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  if (!Array.isArray(json) || json.length === 0) return null;
+  const course = json[0];
+  return {
+    __typename: "LpCourse",
+    title: decodeEntities(course?.title?.rendered || ""),
+    content: course?.content?.rendered || "",
+    uri: course?.link ? new URL(course.link).pathname : uri,
+    featuredImage: null,
+    priceRendered: "",
+  };
 }
 
 function makeExcerpt(content, maxLen = 160) {
