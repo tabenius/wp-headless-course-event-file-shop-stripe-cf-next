@@ -33,6 +33,8 @@ async function fetchWordPressGraphQL(query, variables = {}) {
   let lastError = null;
   const delayMs = Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const firstLines = (text, lines = 3) =>
+    text ? text.split("\n").slice(0, lines).join("\n") : "";
 
   for (const auth of authOptions) {
     const headers = {
@@ -54,8 +56,9 @@ async function fetchWordPressGraphQL(query, variables = {}) {
     const contentType = response.headers.get("content-type") || "";
     if (!response.ok || !contentType.includes("application/json")) {
       const text = await response.text().catch(() => "<unable to read body>");
-      lastError = `WordPress GraphQL response (${response.status}) ${contentType} ${text}`;
-      if (/varnish|too many/i.test(text)) {
+      const statusTooMany = response.status === 429 || response.status === 503;
+      lastError = `WordPress GraphQL response (${response.status}) ${contentType} ${firstLines(text)}`;
+      if (/varnish|too many/i.test(text) || statusTooMany) {
         await sleep(250);
         continue;
       }

@@ -7,6 +7,11 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function firstLines(text, lines = 3) {
+  if (!text) return "";
+  return text.split("\n").slice(0, lines).join("\n");
+}
+
 /**
  * Cache of GraphQL type existence checks.
  * Populated lazily on first call to hasGraphQLType().
@@ -100,8 +105,9 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
 
       if (!response.ok || !contentType.includes("application/json")) {
         const text = await response.text().catch(() => "<unable to read body>");
-        const varnishHit = /varnish|too many/i.test(text);
-        lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${text}`;
+        const statusTooMany = response.status === 429 || response.status === 503;
+        const varnishHit = /varnish|too many/i.test(text) || statusTooMany;
+        lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${firstLines(text)}`;
         if (debugGraphQL) console.error(lastError);
         if (varnishHit) {
           await sleep(250);
