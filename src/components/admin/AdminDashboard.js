@@ -22,9 +22,9 @@ function toCents(units) {
   return Math.round(parsed * 100);
 }
 
-/** Alternating row background for product lists. */
+/** Alternating row background for product lists (purple hues). */
 function rowBg(index) {
-  return index % 2 === 0 ? "bg-gray-50" : "bg-white";
+  return index % 2 === 0 ? "bg-purple-50" : "bg-purple-100";
 }
 
 function emptyProduct() {
