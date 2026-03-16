@@ -142,7 +142,7 @@ async function fetchRestFallback(uri) {
     return {
       __typename: "Page",
       title: decodeEntities(page?.title?.rendered || ""),
-      content: page?.content?.rendered || "",
+      content: decodeEntities(page?.content?.rendered || ""),
       featuredImage: null,
     };
   }
@@ -185,7 +185,7 @@ async function fetchCourseFallback(uri) {
   return {
     __typename: "LpCourse",
     title: decodeEntities(course?.title?.rendered || ""),
-    content: course?.content?.rendered || "",
+    content: decodeEntities(course?.content?.rendered || ""),
     uri: course?.link ? new URL(course.link).pathname : uri,
     featuredImage: null,
     priceRendered: "",
