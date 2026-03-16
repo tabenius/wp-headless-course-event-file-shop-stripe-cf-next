@@ -149,6 +149,25 @@ async function fetchRestFallback(uri) {
   return null;
 }
 
+async function fetchCourseFallback(uri) {
+  const fragment = await getLpCourseFragment();
+  if (!fragment) return null;
+  const slug = uri.split("/").filter(Boolean).pop();
+  if (!slug) return null;
+  const query = `
+    ${fragment}
+    query LpCourseByUri($uri: ID!) {
+      lpCourse(id: $uri, idType: URI) {
+        ...LpCourseFragment
+      }
+    }
+  `;
+  const data = await fetchGraphQL(query, { uri }, 1800);
+  if (data?.lpCourse) return data.lpCourse;
+  const dataBySlug = await fetchGraphQL(query, { uri: slug }, 1800);
+  return dataBySlug?.lpCourse || null;
+}
+
 function makeExcerpt(content, maxLen = 160) {
   const text = stripHtml(content);
   if (text.length <= maxLen) return text;
@@ -275,12 +294,11 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
   const data = await fetchContent(uri);
 
   let node = data?.nodeByUri;
+  if (!node) node = await fetchRestFallback(uri);
+  if (!node) node = await fetchCourseFallback(uri);
   if (!node) {
-    node = await fetchRestFallback(uri);
-    if (!node) {
-      console.warn("No nodeByUri data found, returning 404");
-      notFound();
-    }
+    console.warn("No nodeByUri data found, returning 404");
+    notFound();
   }
   const contentType = node?.__typename;
   const isProductType =
