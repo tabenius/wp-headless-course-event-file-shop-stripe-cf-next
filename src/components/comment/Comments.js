@@ -22,7 +22,7 @@ export default function Comments({ comments }) {
 
               <div
                 className="mt-2 text-gray-800"
-                dangerouslySetInnerHTML={{ __html: c.content }}
+                dangerouslySetInnerHTML={{ __html: c.content || "" }}
               />
             </div>
           ))

@@ -22,7 +22,7 @@ export default function BlogListItem({ post }) {
       </h2>
 
       <div className="flex items-center mr-4">
-        <span>av {post.author.node.name}</span>
+        <span>av {post.author?.node?.name}</span>
       </div>
 
       <FeaturedImage
@@ -34,7 +34,7 @@ export default function BlogListItem({ post }) {
 
       <div
         className="mt-2 mb-4"
-        dangerouslySetInnerHTML={{ __html: excerpt }}
+        dangerouslySetInnerHTML={{ __html: excerpt || "" }}
       />
 
       <Link

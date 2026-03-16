@@ -8,7 +8,7 @@ import { decodeEntities } from "@/lib/decodeEntities";
  * - Handles http/https, www/non-www variants
  */
 export function transformContent(html) {
-  if (!html) return html;
+  if (!html) return "";
 
   let result = decodeEntities(html);
 

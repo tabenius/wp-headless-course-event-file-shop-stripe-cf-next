@@ -23,6 +23,7 @@ export default function Paywall({
   const [error, setError] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestEmailConfirm, setGuestEmailConfirm] = useState("");
+  const [imageBroken, setImageBroken] = useState(false);
   const isLoggedIn = Boolean(userEmail);
   const kindLabel = contentKind === "event"
     ? t("common.event").toLowerCase()
@@ -94,10 +95,10 @@ export default function Paywall({
 
   return (
     <article className="max-w-2xl mx-auto px-6 py-24 space-y-6">
-      {courseImage && (
+      {courseImage && !imageBroken && (
         <div className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={courseImage} alt={courseTitle || ""} className="max-h-64 rounded-lg shadow-md object-cover" />
+          <img src={courseImage} alt={courseTitle || ""} className="max-h-64 rounded-lg shadow-md object-cover" onError={() => setImageBroken(true)} />
         </div>
       )}
       <h1 className="text-4xl font-bold text-center">{courseTitle || t("paywall.content")}</h1>

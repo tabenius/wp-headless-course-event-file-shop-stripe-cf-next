@@ -1,4 +1,4 @@
-import Image from "next/image";
+import SafeImage from "@/components/image/SafeImage";
 import { transformContent } from "@/lib/transformContent";
 
 function parseAttributes(attributesJSON) {
@@ -61,7 +61,7 @@ function renderSingleBlock(block, key) {
 
     return (
       <figure key={key} className="my-8">
-        <Image
+        <SafeImage
           src={imageData.url}
           alt={imageData.alt}
           width={imageData.width}
@@ -91,7 +91,7 @@ function renderSingleBlock(block, key) {
         <section key={key} className="my-8 grid gap-4 sm:grid-cols-2">
           {galleryImages.map((image, imageIndex) => (
             <figure key={`${key}-gallery-${imageIndex}`} className="space-y-2">
-              <Image
+              <SafeImage
                 src={image.url}
                 alt={image.alt}
                 width={image.width}
@@ -136,7 +136,7 @@ function renderSingleBlock(block, key) {
         className="my-8 relative overflow-hidden rounded"
         style={{ minHeight: `${minHeight}px` }}
       >
-        <Image
+        <SafeImage
           src={coverImage.url}
           alt={coverImage.alt}
           fill
