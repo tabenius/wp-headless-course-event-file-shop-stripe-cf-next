@@ -1,23 +1,17 @@
 import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import {
   isCloudflareKvConfigured,
   readCloudflareKvJson,
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
-function getKvKey() {
-  return process.env.CF_TICKETS_KV_KEY || "support-tickets";
-}
-
-const LOCAL_FILE = ".data/support-tickets.json";
+const KV_KEY = process.env.CF_TICKETS_KV_KEY || "support-tickets";
+const R2_KEY = process.env.CF_TICKETS_R2_KEY || "support-tickets.json";
 let inMemoryState = { tickets: [] };
-
-function canUseFs() {
-  return (
-    typeof process !== "undefined" &&
-    process.versions?.node &&
-    process.env.NEXT_RUNTIME !== "edge"
-  );
-}
 
 function sanitizeTicket(ticket) {
   if (!ticket || typeof ticket !== "object") return null;
@@ -46,102 +40,116 @@ function sanitizeTicket(ticket) {
 }
 
 function sanitizeState(state) {
-  const safeTickets = Array.isArray(state?.tickets) ? state.tickets.map(sanitizeTicket).filter(Boolean) : [];
+  const safeTickets = Array.isArray(state?.tickets)
+    ? state.tickets.map(sanitizeTicket).filter(Boolean)
+    : [];
   safeTickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return { tickets: safeTickets };
 }
 
-function shouldUseKv() {
-  return process.env.SUPPORT_TICKETS_BACKEND === "cloudflare" || isCloudflareKvConfigured();
+function isR2Configured() {
+  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+  const secret = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  return Boolean(accessKeyId && secret && bucket && accountId);
 }
 
-async function ensureLocalFile() {
-  if (!canUseFs()) return;
-  const [{ promises: fs }, path] = await Promise.all([
-    import("node:fs"),
-    import("node:path"),
-  ]);
-  const dataDir = path.join(process.cwd(), ".data");
-  const filePath = path.join(process.cwd(), LOCAL_FILE);
-  await fs.mkdir(dataDir, { recursive: true });
-  try {
-    await fs.access(filePath);
-  } catch {
-    await fs.writeFile(filePath, JSON.stringify({ tickets: [] }, null, 2), "utf8");
-  }
+function getR2Client() {
+  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+  const endpoint = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  return new S3Client({
+    region: "auto",
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+  });
 }
 
-async function readLocalState() {
-  if (!canUseFs()) return sanitizeState(inMemoryState);
+function getR2Bucket() {
+  return process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
+}
+
+async function readR2State() {
+  const client = getR2Client();
+  const bucket = getR2Bucket();
   try {
-    await ensureLocalFile();
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const filePath = path.join(process.cwd(), LOCAL_FILE);
-    const raw = await fs.readFile(filePath, "utf8");
-    return sanitizeState(JSON.parse(raw));
+    const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: R2_KEY }));
+    const text = res.Body && res.Body.transformToString ? await res.Body.transformToString("utf8") : "";
+    return sanitizeState(text ? JSON.parse(text) : { tickets: [] });
   } catch (error) {
-    console.error("Support tickets local read failed; using memory fallback", error);
-    return sanitizeState(inMemoryState);
+    // If not found, return empty state
+    if (error?.$metadata?.httpStatusCode === 404) {
+      return { tickets: [] };
+    }
+    console.error("Support tickets R2 read failed", error);
+    throw error;
   }
 }
 
-async function writeLocalState(state) {
+async function writeR2State(state) {
+  const client = getR2Client();
+  const bucket = getR2Bucket();
   const safe = sanitizeState(state);
-  if (!canUseFs()) {
-    inMemoryState = safe;
-    return safe;
-  }
-  try {
-    await ensureLocalFile();
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const filePath = path.join(process.cwd(), LOCAL_FILE);
-    await fs.writeFile(filePath, JSON.stringify(safe, null, 2), "utf8");
-  } catch (error) {
-    console.error("Support tickets local write failed; storing in memory", error);
-    inMemoryState = safe;
-  }
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: R2_KEY,
+      Body: JSON.stringify(safe),
+      ContentType: "application/json",
+    }),
+  );
   return safe;
 }
 
 async function readKvState() {
-  const value = await readCloudflareKvJson(getKvKey());
+  const value = await readCloudflareKvJson(KV_KEY);
   return sanitizeState(value || { tickets: [] });
 }
 
 async function writeKvState(state) {
   const safe = sanitizeState(state);
-  await writeCloudflareKvJson(getKvKey(), safe);
+  await writeCloudflareKvJson(KV_KEY, safe);
   return safe;
 }
 
 async function getState() {
-  if (shouldUseKv()) {
+  if (isR2Configured()) {
+    try {
+      return await readR2State();
+    } catch (error) {
+      console.error("R2 support tickets read failed, trying KV", error);
+    }
+  }
+  if (isCloudflareKvConfigured()) {
     try {
       return await readKvState();
     } catch (error) {
-      console.error("Support tickets KV read failed, falling back to local", error);
+      console.error("KV support tickets read failed", error);
     }
   }
-  return readLocalState();
+  console.warn("No R2 or KV configured for support tickets; using in-memory only.");
+  return sanitizeState(inMemoryState);
 }
 
 async function saveState(state) {
   const safe = sanitizeState(state);
-  if (shouldUseKv()) {
+  if (isR2Configured()) {
     try {
-      const wrote = await writeKvState(safe);
-      if (wrote) return safe;
+      return await writeR2State(safe);
     } catch (error) {
-      console.error("Support tickets KV write failed, persisting locally", error);
+      console.error("R2 support tickets write failed, trying KV", error);
     }
   }
-  return writeLocalState(safe);
+  if (isCloudflareKvConfigured()) {
+    try {
+      return await writeKvState(safe);
+    } catch (error) {
+      console.error("KV support tickets write failed", error);
+    }
+  }
+  inMemoryState = safe;
+  return safe;
 }
 
 export async function listTickets() {
@@ -151,7 +159,16 @@ export async function listTickets() {
 
 export async function createTicket({ title, description, priority = "moderate", author = "admin" }) {
   const state = await getState();
-  const ticket = sanitizeTicket({ title, description, priority, status: "open", comments: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), author });
+  const ticket = sanitizeTicket({
+    title,
+    description,
+    priority,
+    status: "open",
+    comments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    author,
+  });
   state.tickets = [ticket, ...state.tickets];
   await saveState(state);
   return ticket;
@@ -184,7 +201,11 @@ export async function updateTicket(id, { status, comment, author = "admin" }) {
 }
 
 export function getSupportTicketStorageInfo() {
-  return shouldUseKv()
-    ? { provider: "cloudflare-kv", key: getKvKey() }
-    : { provider: "local-file", path: LOCAL_FILE };
+  if (isR2Configured()) {
+    return { provider: "r2", bucket: getR2Bucket(), key: R2_KEY };
+  }
+  if (isCloudflareKvConfigured()) {
+    return { provider: "cloudflare-kv", key: KV_KEY };
+  }
+  return { provider: "memory" };
 }

@@ -1801,10 +1801,12 @@ export default function AdminDashboard() {
             </div>
             <div className="text-xs text-gray-500 bg-gray-50 border rounded px-3 py-2">
               <div className="font-semibold text-gray-700 mb-1">{t("admin.storageBackend")}</div>
-              {process.env.CF_KV_NAMESPACE_ID ? (
+              {process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME ? (
+                <div>R2 bucket ({(process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME).slice(0, 24)}…)</div>
+              ) : process.env.CF_KV_NAMESPACE_ID ? (
                 <div>Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)</div>
               ) : (
-                <div>Local file ({".data/support-tickets.json"})</div>
+                <div className="text-red-700">No R2/KV configured</div>
               )}
             </div>
           </div>

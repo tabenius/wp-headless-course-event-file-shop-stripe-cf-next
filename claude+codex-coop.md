@@ -13,4 +13,5 @@
 - Upload UX: clearer WP media failure hints; toast errors instead of silent failures; save label clarified.  
 - 404 CTA forced to white text; admin shop thumbnails enlarged (32x32).  
 - Added admin support ticket system (KV/local backed) with CRUD, comments, status/priority controls, and toast feedback; new nav tab and translations included.  
+- Support tickets now persist to R2 (S3 API) when configured, fallback to Cloudflare KV; no local file usage.  
 - WPGraphQL auth now also tries Faust secret header/Bearer; env keys FAUST_SECRET_KEY/FAUSTWP_SECRET_KEY supported.  
