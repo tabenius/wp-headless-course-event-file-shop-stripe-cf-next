@@ -489,7 +489,7 @@ src/
 │   ├── stripe.js            # Stripe checkout and session handling
 │   └── site.js              # Site configuration (from site.json)
 ├── config/                 # Data files
-│   └── digital-products.json  # Product catalog
+│   └── digital-products.json  # Seed catalog (Cloudflare KV is used at runtime)
 ├── site.json               # Site branding, navigation, and metadata
 ├── theme.json              # Color palette and typography
 └── wrangler.jsonc          # Cloudflare Workers configuration

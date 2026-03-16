@@ -18,3 +18,4 @@
 - Admin advanced now shows build timestamp (from NEXT_PUBLIC_BUILD_TIME/BUILD_TIME/VERCEL_*) alongside last deploy time.  
 - Admin advanced now also shows git revision (NEXT_PUBLIC_GIT_SHA/GIT_COMMIT_SHA/VERCEL_GIT_COMMIT_SHA).  
 - Edge-safe R2 uploads implemented: single PUT and multipart (signed) using native crypto; AWS SDK path only on Node; S3 non-R2 still Node-only.  
+- Digital products use Cloudflare KV at runtime; config/digital-products.json only seeds on first run. README updated.  
