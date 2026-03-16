@@ -12,3 +12,4 @@
 - Edge-safe storage: avoid fs read/write on Cloudflare runtimes; fall back to KV/in-memory.  
 - Upload UX: clearer WP media failure hints; toast errors instead of silent failures; save label clarified.  
 - 404 CTA forced to white text; admin shop thumbnails enlarged (32x32).  
+- Added admin support ticket system (KV/local backed) with CRUD, comments, status/priority controls, and toast feedback; new nav tab and translations included.  

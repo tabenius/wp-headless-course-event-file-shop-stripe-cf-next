@@ -44,3 +44,10 @@ next-env.d.ts
 # python
 __pycache__/
 *.py[cod]
+
+# build cache & local artifacts
+/.open-next/
+/.serena/
+/outerr.txt
+/outlog.txt
+/docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.zip

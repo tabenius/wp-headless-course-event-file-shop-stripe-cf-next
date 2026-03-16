@@ -234,6 +234,12 @@ export default function AdminDashboard() {
   const [shopVisibleTypes, setShopVisibleTypes] = useState(["product", "course", "event", "digital_file", "digital_course"]);
   const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
   const [shopSettingsMessage, setShopSettingsMessage] = useState("");
+  const [tickets, setTickets] = useState([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsError, setTicketsError] = useState("");
+  const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [newTicket, setNewTicket] = useState({ title: "", description: "", priority: "moderate" });
+  const [commentText, setCommentText] = useState("");
 
   // Derived values for shop product selection
   const isShopSelection = selectedCourse.startsWith("__shop_");
@@ -355,6 +361,69 @@ export default function AdminDashboard() {
       ? shopVisibleTypes.filter((t) => t !== type)
       : [...shopVisibleTypes, type];
     saveShopVisibility(next);
+  }
+
+  const selectedTicket = useMemo(
+    () => tickets.find((t) => t.id === selectedTicketId) || tickets[0],
+    [tickets, selectedTicketId],
+  );
+
+  async function fetchTickets() {
+    setTicketsLoading(true);
+    setTicketsError("");
+    try {
+      const res = await fetch("/api/admin/tickets");
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.ticketFetchFailed"));
+      setTickets(Array.isArray(json.tickets) ? json.tickets : []);
+      if (!selectedTicketId && json.tickets?.[0]?.id) {
+        setSelectedTicketId(json.tickets[0].id);
+      }
+    } catch (err) {
+      setTicketsError(err.message || t("admin.ticketFetchFailed"));
+    } finally {
+      setTicketsLoading(false);
+    }
+  }
+
+  async function createSupportTicket() {
+    if (!newTicket.title.trim()) {
+      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "error", message: t("admin.requiredField") } }));
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTicket),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.ticketUpdateFailed"));
+      setTickets(Array.isArray(json.tickets) ? json.tickets : []);
+      setNewTicket({ title: "", description: "", priority: "moderate" });
+      setSelectedTicketId(json.ticket?.id || json.tickets?.[0]?.id || null);
+      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "success", message: t("admin.ticketCreated") } }));
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "error", message: err.message || t("admin.ticketUpdateFailed") } }));
+    }
+  }
+
+  async function updateSupportTicket({ status, comment }) {
+    if (!selectedTicket) return;
+    try {
+      const res = await fetch("/api/admin/tickets", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedTicket.id, status, comment }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.ticketUpdateFailed"));
+      setTickets(Array.isArray(json.tickets) ? json.tickets : []);
+      if (comment) setCommentText("");
+      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "success", message: t("admin.ticketUpdated") } }));
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "error", message: err.message || t("admin.ticketUpdateFailed") } }));
+    }
   }
 
   // Build a unified list of all WordPress content items
@@ -581,6 +650,12 @@ export default function AdminDashboard() {
       window.removeEventListener("admin:switchTab", onSwitchTab);
     };
   }, [showHealthTab]);
+
+  useEffect(() => {
+    if (activeTab === "support") {
+      fetchTickets();
+    }
+  }, [activeTab]);
 
   // Fetch commit log when advanced tab is shown
   useEffect(() => {
@@ -1712,6 +1787,197 @@ export default function AdminDashboard() {
               {t("admin.userAccessOverviewDesc")}
             </p>
             <UserAccessPanel users={users} courses={courses} allWpContent={allWpContent} products={products} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Support tab ── */}
+      {activeTab === "support" && (
+        <div className="border rounded p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold">{t("admin.supportTickets")}</h2>
+              <p className="text-sm text-gray-500 mt-1">{t("admin.supportIntro")}</p>
+            </div>
+            <div className="text-xs text-gray-500 bg-gray-50 border rounded px-3 py-2">
+              <div className="font-semibold text-gray-700 mb-1">{t("admin.storageBackend")}</div>
+              {process.env.CF_KV_NAMESPACE_ID ? (
+                <div>Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)</div>
+              ) : (
+                <div>Local file ({".data/support-tickets.json"})</div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-4">
+              <div className="border rounded p-3 space-y-2 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-700">Tickets</h3>
+                  {ticketsLoading && <span className="text-[11px] text-gray-500">{t("common.loading")}</span>}
+                </div>
+                {ticketsError && <p className="text-xs text-red-600">{ticketsError}</p>}
+                {tickets.length === 0 && !ticketsLoading ? (
+                  <p className="text-xs text-gray-500">{t("admin.noTickets")}</p>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-auto pr-1">
+                    {tickets.map((ticket) => (
+                      <button
+                        key={ticket.id}
+                        type="button"
+                        onClick={() => setSelectedTicketId(ticket.id)}
+                        className={`w-full text-left border rounded px-3 py-2 text-sm transition-colors ${
+                          selectedTicket?.id === ticket.id
+                            ? "border-purple-400 bg-purple-50"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-gray-800 truncate">{ticket.title}</span>
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-full capitalize ${
+                              ticket.priority === "critical"
+                                ? "bg-red-100 text-red-800"
+                                : ticket.priority === "moderate"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {t(
+                              ticket.priority === "critical"
+                                ? "admin.priorityCritical"
+                                : ticket.priority === "moderate"
+                                  ? "admin.priorityModerate"
+                                  : "admin.priorityLow",
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-1">
+                          <span
+                            className={`px-2 py-0.5 rounded-full capitalize ${
+                              ticket.status === "resolved"
+                                ? "bg-green-100 text-green-800"
+                                : ticket.status === "will-fix"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {t(
+                              ticket.status === "resolved"
+                                ? "admin.statusResolved"
+                                : ticket.status === "will-fix"
+                                  ? "admin.statusWillFix"
+                                  : "admin.statusOpen",
+                            )}
+                          </span>
+                          <span>{new Date(ticket.updatedAt || ticket.createdAt).toLocaleString("sv-SE")}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="border rounded p-3 space-y-2">
+                <h3 className="text-sm font-semibold text-gray-700">{t("admin.newTicket")}</h3>
+                <input
+                  type="text"
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  placeholder={t("admin.ticketTitle")}
+                  value={newTicket.title}
+                  onChange={(e) => setNewTicket((prev) => ({ ...prev, title: e.target.value }))}
+                />
+                <textarea
+                  className="w-full border rounded px-3 py-2 text-sm min-h-[100px]"
+                  placeholder={t("admin.ticketDescription")}
+                  value={newTicket.description}
+                  onChange={(e) => setNewTicket((prev) => ({ ...prev, description: e.target.value }))}
+                />
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="text-gray-600">{t("admin.priority")}:</label>
+                  <select
+                    value={newTicket.priority}
+                    onChange={(e) => setNewTicket((prev) => ({ ...prev, priority: e.target.value }))}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    <option value="critical">{t("admin.priorityCritical")}</option>
+                    <option value="moderate">{t("admin.priorityModerate")}</option>
+                    <option value="low">{t("admin.priorityLow")}</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={createSupportTicket}
+                  className="w-full px-3 py-2 rounded bg-gray-900 text-white hover:bg-gray-800 text-sm"
+                >
+                  {t("admin.createTicket")}
+                </button>
+              </div>
+            </div>
+
+            <div className="md:col-span-2 border rounded p-4 space-y-3 min-h-[340px]">
+              {selectedTicket ? (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{selectedTicket.title}</h3>
+                      <p className="text-xs text-gray-500">{new Date(selectedTicket.createdAt).toLocaleString("sv-SE")}</p>
+                    </div>
+                    <select
+                      className="border rounded px-2 py-1 text-sm"
+                      value={selectedTicket.status}
+                      onChange={(e) => updateSupportTicket({ status: e.target.value })}
+                    >
+                      <option value="open">{t("admin.statusOpen")}</option>
+                      <option value="will-fix">{t("admin.statusWillFix")}</option>
+                      <option value="resolved">{t("admin.statusResolved")}</option>
+                    </select>
+                  </div>
+                  {selectedTicket.description && (
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedTicket.description}</p>
+                  )}
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-gray-700">{t("admin.comments")}</h4>
+                    <div className="space-y-2 max-h-48 overflow-auto pr-1">
+                      {(selectedTicket.comments || []).length === 0 ? (
+                        <p className="text-xs text-gray-500">{t("admin.noComments")}</p>
+                      ) : (
+                        selectedTicket.comments.map((c) => (
+                          <div key={c.id} className="border rounded px-3 py-2 bg-gray-50 text-sm">
+                            <div className="flex items-center justify-between text-[11px] text-gray-500">
+                              <span>{c.author || "admin"}</span>
+                              <span>{new Date(c.createdAt).toLocaleString("sv-SE")}</span>
+                            </div>
+                            <p className="text-gray-800 text-sm whitespace-pre-wrap mt-1">{c.text}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <textarea
+                        className="w-full border rounded px-3 py-2 text-sm"
+                        placeholder={t("admin.commentPlaceholder")}
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateSupportTicket({ comment: commentText })}
+                          className="px-4 py-2 rounded bg-purple-700 text-white hover:bg-purple-800 text-sm disabled:opacity-50"
+                          disabled={!commentText.trim()}
+                        >
+                          {t("admin.addComment")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">{t("admin.noTickets")}</p>
+              )}
+            </div>
           </div>
         </div>
       )}
