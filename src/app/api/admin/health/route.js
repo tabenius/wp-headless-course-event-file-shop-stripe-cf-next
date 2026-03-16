@@ -192,6 +192,7 @@ export async function GET(request) {
     schema: wpSchemaCheck?.ok,
     ragbaz: ragbazCheck?.ok,
     stripe: stripeCheck?.ok,
+    reqId: request.headers.get("x-request-id") || null,
   });
 
   return NextResponse.json({

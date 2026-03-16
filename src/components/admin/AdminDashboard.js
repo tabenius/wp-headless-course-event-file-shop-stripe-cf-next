@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
+import { adminFetch } from "@/lib/adminFetch";
 
 const log = (...args) => {
   // Console output is streamed by wrangler tail in production.
@@ -231,6 +232,7 @@ export default function AdminDashboard() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [ragbazDownloadUrl, setRagbazDownloadUrl] = useState("");
   const [healthLoading, setHealthLoading] = useState(false);
+  const [debugLogs, setDebugLogs] = useState([]);
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("stats");
   const [purging, setPurging] = useState(false);
@@ -805,9 +807,11 @@ export default function AdminDashboard() {
     setHealthLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/health");
-      const json = await response.json();
-      if (!response.ok || !json?.ok) {
+      const { res, json, reqId, duration } = await adminFetch("/api/admin/health");
+      setDebugLogs((prev) =>
+        [{ ts: Date.now(), reqId, status: res.status, duration, path: "/api/admin/health" }, ...prev].slice(0, 10),
+      );
+      if (!res.ok || !json?.ok) {
         throw new Error(json?.error || t("admin.healthCheckFailed"));
       }
       setHealthChecks(json.checks || {});
@@ -1093,6 +1097,23 @@ export default function AdminDashboard() {
                   checkout.session.completed
                 </code>
               </p>
+            </div>
+          )}
+
+          {debugLogs.length > 0 && (
+            <div className="bg-gray-50 border rounded p-3 text-xs space-y-1">
+              <div className="font-semibold">Debug logs (latest)</div>
+              {debugLogs.map((logItem) => (
+                <div key={`${logItem.reqId}-${logItem.ts}`} className="flex flex-wrap gap-2">
+                  <span className="text-gray-500">
+                    {new Date(logItem.ts).toLocaleTimeString()}
+                  </span>
+                  <code className="bg-white border rounded px-1">{logItem.path}</code>
+                  <span>Status {logItem.status}</span>
+                  <span>{logItem.duration} ms</span>
+                  <code className="bg-white border rounded px-1">{logItem.reqId}</code>
+                </div>
+              ))}
             </div>
           )}
 
