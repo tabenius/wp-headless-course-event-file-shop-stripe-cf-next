@@ -1,5 +1,12 @@
 import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
 
+const DEFAULT_DELAY_MS = Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
+let lastCallTs = 0;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Cache of GraphQL type existence checks.
  * Populated lazily on first call to hasGraphQLType().
@@ -76,7 +83,14 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         };
       }
 
+      // Rate-limit calls to avoid overloading Varnish/GraphQL
+      const now = Date.now();
+      const diff = now - lastCallTs;
+      if (DEFAULT_DELAY_MS > 0 && diff < DEFAULT_DELAY_MS) {
+        await sleep(DEFAULT_DELAY_MS - diff);
+      }
       const response = await fetch(graphqlEndpoint, fetchOptions);
+      lastCallTs = Date.now();
       const contentType = response.headers.get("content-type") || "";
       if (debugGraphQL) {
         console.debug("[GraphQL Debug] Auth mode:", auth.mode);
@@ -86,8 +100,13 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
 
       if (!response.ok || !contentType.includes("application/json")) {
         const text = await response.text().catch(() => "<unable to read body>");
+        const varnishHit = /varnish|too many/i.test(text);
         lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${text}`;
         if (debugGraphQL) console.error(lastError);
+        if (varnishHit) {
+          await sleep(250);
+          continue;
+        }
         continue;
       }
 
