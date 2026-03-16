@@ -243,7 +243,7 @@ export async function createMultipartUpload(fileName, contentType, backend = res
       throw new Error(`R2 multipart create failed (${res.status}): ${text.slice(0, 200)}`);
     }
     const xml = await res.text();
-    const uploadIdMatch = xml.match(/<UploadId>([^<]+)<\\/UploadId>/);
+    const uploadIdMatch = xml.match(/<UploadId>([^<]+)<\/UploadId>/i);
     const uploadId = uploadIdMatch ? uploadIdMatch[1] : null;
     if (!uploadId) throw new Error("R2 multipart create failed (no uploadId)");
     return { uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
