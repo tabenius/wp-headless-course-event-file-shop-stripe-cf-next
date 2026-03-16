@@ -6,7 +6,7 @@ import { useState } from "react";
 import { t } from "@/lib/i18n";
 
 function formatPrice(priceCents, currency) {
-  return `${(priceCents / 100).toFixed(2)} ${String(currency || "SEK").toUpperCase()}`;
+  return `${(priceCents / 100).toFixed(0)} ${String(currency || "SEK").toUpperCase()}`;
 }
 
 export default function ShopProductDetail({ user, product, owned, stripeEnabled, checkoutStatus }) {

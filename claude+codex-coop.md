@@ -26,3 +26,5 @@
 - NavDropdown: parent menu items with children are now clickable links (Link) instead of just toggle buttons. Parent page also appears as first dropdown entry for touch devices. Fixes desktop nav items like "PARRETREATS", "TANTRISK MASSAGE", "OM SOFIA" that had URLs but were not navigable.
 - Admin header now shows build datetime and git hash (short) below the logo text.
 - Support tickets now include build info (buildTime + gitSha) as read-only metadata: shown in the ticket creation form and ticket detail view. Data flows through API → supportTickets lib → KV storage.
+- Normalized all price displays to consistent "750 SEK" format (no decimals, currency code after amount). Applies to ShopIndex, ShopProductDetail, and Paywall. WordPress-rendered prices like "kr750.00" are parsed and reformatted.
+- Shop listing now shows one button per product (View & Buy) instead of two buttons for digital products.

@@ -34,10 +34,22 @@ export default function Paywall({
   // Checkout requires a positive price configured in admin
   const canBuy = stripeEnabled && typeof priceCents === "number" && priceCents > 0;
 
-  // Show WordPress price if available, otherwise fall back to access config price
-  const rawDisplayPrice = coursePriceRendered
-    || (priceCents != null && priceCents > 0 ? `${(priceCents / 100).toFixed(2)} ${currency.toUpperCase()}` : "");
-  const displayPrice = decodeEntities(rawDisplayPrice).replace(/&nbsp;/g, " ");
+  // Normalize all prices to "750 SEK" format
+  function normalizePrice() {
+    if (priceCents != null && priceCents > 0) {
+      return `${(priceCents / 100).toFixed(0)} ${(currency || "SEK").toUpperCase()}`;
+    }
+    if (coursePriceRendered) {
+      const decoded = decodeEntities(coursePriceRendered).replace(/&nbsp;/g, " ");
+      const num = parseFloat(decoded.replace(/[^0-9.,]/g, "").replace(",", "."));
+      if (Number.isFinite(num) && num > 0) {
+        return `${Math.round(num)} ${(currency || "SEK").toUpperCase()}`;
+      }
+      return decoded;
+    }
+    return "";
+  }
+  const displayPrice = normalizePrice();
 
   const buyLabel = loading
     ? t("paywall.redirectingToStripe")

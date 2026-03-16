@@ -10,6 +10,14 @@ function formatPrice(priceCents, currency) {
   return `${(priceCents / 100).toFixed(0)} ${String(currency || "SEK").toUpperCase()}`;
 }
 
+/** Parse a WordPress-rendered price like "kr750.00" or "750,00&nbsp;kr" into cents */
+function parseWpPrice(priceStr) {
+  if (!priceStr) return 0;
+  const cleaned = priceStr.replace(/[^0-9.,]/g, "").replace(",", ".");
+  const num = parseFloat(cleaned);
+  return Number.isFinite(num) ? Math.round(num * 100) : 0;
+}
+
 function typeLabel(item) {
   switch (item.type) {
     case "product": return t("shop.typeProduct", "Produkt");
@@ -122,9 +130,9 @@ export default function ShopIndex({
           const owned = isOwned(item);
           const loading = loadingId === item.slug;
           const isDigital = item.source === "digital";
+          const effectiveCents = item.priceCents > 0 ? item.priceCents : parseWpPrice(item.price);
           const priceDisplay =
-            formatPrice(item.priceCents, item.currency) ||
-            item.price ||
+            formatPrice(effectiveCents, item.currency) ||
             "";
 
           return (
@@ -177,21 +185,6 @@ export default function ShopIndex({
                       <span className="text-green-700 text-sm font-semibold">
                         {t("shop.purchased")}
                       </span>
-                    ) : isDigital ? (
-                      <>
-                        <Link href={item.uri} className="px-3 py-2 rounded border hover:bg-gray-50 text-sm">
-                          {t("common.view")}
-                        </Link>
-                        <button
-                          type="button"
-                          disabled={loading}
-                          onClick={() => startDigitalCheckout(item.slug)}
-                          className="px-4 py-2 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 text-sm inline-flex items-center gap-2"
-                        >
-                          {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                          {loading ? t("shop.sending") : t("common.buy")}
-                        </button>
-                      </>
                     ) : (
                       <Link href={item.uri} className="px-4 py-2 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 text-sm">
                         {t("shop.viewAndBuy")}
