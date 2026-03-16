@@ -51,3 +51,4 @@ __pycache__/
 /outerr.txt
 /outlog.txt
 /docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.zip
+/.wrangler/
