@@ -2,6 +2,7 @@ import { FeaturedImage } from "@/components/image/FeaturedImage";
 import BlocksRenderer from "@/components/blocks/BlocksRenderer";
 import { transformContent } from "@/lib/transformContent";
 import { decodeEntities } from "@/lib/decodeEntities";
+import ContactFormHydrator from "@/components/forms/ContactFormHydrator";
 
 export default function SingleContent({
   data,
@@ -25,26 +26,29 @@ export default function SingleContent({
   const hasBlocks = editorBlocks.length > 0;
 
   return (
-    <article className="max-w-2xl px-6 py-24 mx-auto space-y-12">
-      <div className="w-full mx-auto space-y-4 text-center">
-        <h1 className="text-4xl font-bold leading-tight md:text-5xl">
-          {resolvedTitle}
-        </h1>
-        {meta}
-        <FeaturedImage
-          post={safeData}
-          title={resolvedTitle}
-          classNames={featuredImageClassNames}
-        />
-      </div>
-      <div className="text-gray-800 prose prose-p:my-4 max-w-none wp-content text-xl">
-        {hasBlocks ? (
-          <BlocksRenderer blocks={editorBlocks} />
-        ) : (
-          <div dangerouslySetInnerHTML={{ __html: content }} />
-        )}
-      </div>
-      {footer}
-    </article>
+    <>
+      <article className="max-w-2xl px-6 py-24 mx-auto space-y-12">
+        <div className="w-full mx-auto space-y-4 text-center">
+          <h1 className="text-4xl font-bold leading-tight md:text-5xl">
+            {resolvedTitle}
+          </h1>
+          {meta}
+          <FeaturedImage
+            post={safeData}
+            title={resolvedTitle}
+            classNames={featuredImageClassNames}
+          />
+        </div>
+        <div className="text-gray-800 prose prose-p:my-4 max-w-none wp-content text-xl">
+          {hasBlocks ? (
+            <BlocksRenderer blocks={editorBlocks} />
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: content }} />
+          )}
+        </div>
+        {footer}
+      </article>
+      <ContactFormHydrator />
+    </>
   );
 }
