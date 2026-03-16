@@ -260,6 +260,16 @@ export default function AdminDashboard() {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [newTicket, setNewTicket] = useState({ title: "", description: "", priority: "moderate" });
   const [commentText, setCommentText] = useState("");
+  const [loaded, setLoaded] = useState({
+    courseAccess: false,
+    products: false,
+    analytics: false,
+    deploy: false,
+    shopSettings: false,
+    tickets: false,
+    uploadInfo: false,
+    commits: false,
+  });
 
   useEffect(() => {
     log("mounted");
@@ -321,75 +331,149 @@ export default function AdminDashboard() {
     return selectedCourse;
   }, [selectedCourse, isShopSelection, selectedShopProduct]);
 
+  const loadCourseAccess = useCallback(async () => {
+    if (loaded.courseAccess) return;
+    try {
+      const { res, json } = await adminFetch("/api/admin/course-access");
+      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.fetchAdminDataFailed"));
+      setCourses(json.courses || {});
+      setUsers(Array.isArray(json.users) ? json.users : []);
+      setWpCourses(Array.isArray(json.wpCourses) ? json.wpCourses : []);
+      setWcProducts(Array.isArray(json.wcProducts) ? json.wcProducts : []);
+      setWpEvents(Array.isArray(json.wpEvents) ? json.wpEvents : []);
+      setStorage(json.storage || null);
+      setResendConfigured(!!json.resendConfigured);
+      if (json.upload) {
+        setUploadInfo(json.upload);
+        setUploadBackend(json.upload.backend || "wordpress");
+      }
+      setLoaded((s) => ({ ...s, courseAccess: true, uploadInfo: true }));
+    } catch (fetchError) {
+      console.error("AdminDashboard: failed to load course-access data", fetchError);
+      setError(fetchError.message || t("admin.fetchAdminDataFailed"));
+    }
+  }, [loaded.courseAccess, t]);
+
+  const loadProducts = useCallback(async () => {
+    if (loaded.products) return;
+    try {
+      const { res, json } = await adminFetch("/api/admin/products");
+      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.fetchProductsFailed"));
+      const rows = Array.isArray(json.products) ? json.products : [];
+      setProducts(rows.map((product) => ({ ...emptyProduct(), ...product, slugEdited: true })));
+      setLoaded((s) => ({ ...s, products: true }));
+    } catch (fetchError) {
+      console.error("AdminDashboard: failed to load products", fetchError);
+      setError(fetchError.message || t("admin.fetchProductListFailed"));
+    }
+  }, [loaded.products, t]);
+
+  const loadAnalytics = useCallback(async () => {
+    if (loaded.analytics) return;
+    try {
+      const { res, json } = await adminFetch("/api/admin/analytics");
+      if (res.ok && json?.ok) {
+        setAnalytics(json.analytics);
+        setAnalyticsMode(json.mode || "none");
+        setAnalyticsConfigured(json.configured);
+      }
+      setLoaded((s) => ({ ...s, analytics: true }));
+    } catch (err) {
+      console.error("AdminDashboard: failed to load analytics", err);
+    }
+  }, [loaded.analytics]);
+
+  const loadDeploy = useCallback(async () => {
+    if (loaded.deploy) return;
+    try {
+      const { json } = await adminFetch("/api/admin/deploy/last");
+      if (json?.timestamp) setLastDeployAt(json.timestamp);
+      setLoaded((s) => ({ ...s, deploy: true }));
+    } catch (err) {
+      console.error("AdminDashboard: failed to load last deploy timestamp", err);
+    }
+  }, [loaded.deploy]);
+
+  const loadShopSettings = useCallback(async () => {
+    if (loaded.shopSettings) return;
+    try {
+      const { res, json } = await adminFetch("/api/admin/shop-settings");
+      if (res.ok && json?.ok && Array.isArray(json.settings?.visibleTypes)) {
+        setShopVisibleTypes(json.settings.visibleTypes);
+      }
+      setLoaded((s) => ({ ...s, shopSettings: true }));
+    } catch (err) {
+      console.error("AdminDashboard: failed to load shop settings", err);
+    }
+  }, [loaded.shopSettings]);
+
+  const loadTickets = useCallback(async () => {
+    if (loaded.tickets) return;
+    await fetchTickets();
+    setLoaded((s) => ({ ...s, tickets: true }));
+  }, [loaded.tickets]);
+
+  const loadUploadInfo = useCallback(async () => {
+    if (loaded.uploadInfo) return;
+    try {
+      const res = await fetch("/api/admin/upload-info");
+      const json = await res.json().catch(() => ({}));
+      if (json?.upload) {
+        setUploadInfo(json.upload);
+        setUploadBackend(json.upload.backend || "wordpress");
+      }
+      setLoaded((s) => ({ ...s, uploadInfo: true }));
+    } catch (err) {
+      console.error("AdminDashboard: failed to load upload info", err);
+    }
+  }, [loaded.uploadInfo]);
+
+  const loadCommits = useCallback(async () => {
+    if (loaded.commits) return;
+    setCommitsError("");
+    try {
+      const res = await fetch("/api/admin/commits");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setCommits(Array.isArray(json?.commits) ? json.commits : []);
+      setLoaded((s) => ({ ...s, commits: true }));
+    } catch (err) {
+      setCommitsError(err.message || "Failed to load commits");
+    }
+  }, [loaded.commits]);
+
   useEffect(() => {
-    fetch("/api/admin/course-access")
-      .then(async (res) => {
-        const json = await res.json();
-        if (!res.ok || !json?.ok)
-          throw new Error(json?.error || t("admin.fetchAdminDataFailed"));
-        setCourses(json.courses || {});
-        setUsers(Array.isArray(json.users) ? json.users : []);
-        setWpCourses(Array.isArray(json.wpCourses) ? json.wpCourses : []);
-        setWcProducts(Array.isArray(json.wcProducts) ? json.wcProducts : []);
-        setWpEvents(Array.isArray(json.wpEvents) ? json.wpEvents : []);
-        setStorage(json.storage || null);
-        setResendConfigured(!!json.resendConfigured);
-        if (json.upload) {
-          setUploadInfo(json.upload);
-          setUploadBackend(json.upload.backend || "wordpress");
-        }
-      })
-      .catch((fetchError) => {
-        console.error("AdminDashboard: failed to load course-access data", fetchError);
-        setError(fetchError.message || t("admin.fetchAdminDataFailed"));
-      });
+    loadCourseAccess();
+    loadProducts();
+  }, [loadCourseAccess, loadProducts]);
 
-    fetch("/api/admin/products")
-      .then(async (res) => {
-        const json = await res.json();
-        if (!res.ok || !json?.ok)
-          throw new Error(json?.error || t("admin.fetchProductsFailed"));
-        const rows = Array.isArray(json.products) ? json.products : [];
-        setProducts(
-          rows.map((product) => ({
-            ...emptyProduct(),
-            ...product,
-            slugEdited: true,
-          })),
-        );
-      })
-      .catch((fetchError) => {
-        console.error("AdminDashboard: failed to load products", fetchError);
-        setError(fetchError.message || t("admin.fetchProductListFailed"));
-      });
-
-    fetch("/api/admin/analytics")
-      .then(async (res) => {
-        const json = await res.json();
-        if (res.ok && json?.ok) {
-          setAnalytics(json.analytics);
-          setAnalyticsMode(json.mode || "none");
-          setAnalyticsConfigured(json.configured);
-        }
-      })
-      .catch((err) => console.error("AdminDashboard: failed to load analytics", err));
-
-    fetch("/api/admin/deploy/last")
-      .then(async (res) => {
-        const json = await res.json().catch(() => ({}));
-        if (json?.timestamp) setLastDeployAt(json.timestamp);
-      })
-      .catch((err) => console.error("AdminDashboard: failed to load last deploy timestamp", err));
-
-    fetch("/api/admin/shop-settings")
-      .then(async (res) => {
-        const json = await res.json();
-        if (res.ok && json?.ok && Array.isArray(json.settings?.visibleTypes)) {
-          setShopVisibleTypes(json.settings.visibleTypes);
-        }
-      })
-      .catch((err) => console.error("AdminDashboard: failed to load shop settings", err));
-  }, []);
+  useEffect(() => {
+    if (activeTab === "stats") {
+      loadAnalytics();
+      loadDeploy();
+    }
+    if (activeTab === "shop") {
+      loadShopSettings();
+    }
+    if (activeTab === "support") {
+      loadTickets();
+    }
+    if (activeTab === "advanced") {
+      loadUploadInfo();
+      loadCommits();
+    }
+    if (activeTab === "health") {
+      runHealthCheck();
+    }
+  }, [
+    activeTab,
+    loadAnalytics,
+    loadDeploy,
+    loadShopSettings,
+    loadTickets,
+    loadUploadInfo,
+    loadCommits,
+  ]);
 
   async function saveShopVisibility(types) {
     setShopVisibleTypes(types);
