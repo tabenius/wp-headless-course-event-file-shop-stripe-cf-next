@@ -21,6 +21,8 @@ import {
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { stripHtml } from "@/lib/slugify";
 import site from "@/lib/site";
+import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
+import { decodeEntities } from "@/lib/decodeEntities";
 
 // Force dynamic rendering — this route uses searchParams and external data
 export const dynamic = "force-dynamic";
@@ -111,6 +113,31 @@ async function fetchContent(uri) {
     return await fetchGraphQL(query, { uri: `${uri}/` }, 1800);
   }
   return data;
+}
+
+async function fetchRestFallback(uri) {
+  const wp = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+  if (!wp) return null;
+  const slug = uri.split("/").filter(Boolean).pop();
+  if (!slug) return null;
+  const auth = getWordPressGraphqlAuth();
+  const res = await fetch(`${wp}/wp-json/wp/v2/pages?slug=${encodeURIComponent(slug)}`, {
+    headers: {
+      Accept: "application/json",
+      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  if (!Array.isArray(json) || json.length === 0) return null;
+  const page = json[0];
+  return {
+    __typename: "Page",
+    title: decodeEntities(page?.title?.rendered || ""),
+    content: page?.content?.rendered || "",
+    featuredImage: null,
+  };
 }
 
 function makeExcerpt(content, maxLen = 160) {
@@ -238,12 +265,14 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
     normalizedSegments.length > 0 ? `/${normalizedSegments.join("/")}` : "/";
   const data = await fetchContent(uri);
 
-  if (!data?.nodeByUri) {
-    console.warn("No nodeByUri data found, returning 404");
-    notFound();
+  let node = data?.nodeByUri;
+  if (!node) {
+    node = await fetchRestFallback(uri);
+    if (!node) {
+      console.warn("No nodeByUri data found, returning 404");
+      notFound();
+    }
   }
-
-  const node = data.nodeByUri;
   const contentType = node?.__typename;
   const isProductType =
     typeof contentType === "string" && contentType.includes("Product");
