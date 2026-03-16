@@ -4,6 +4,7 @@ import { getEnabledProviders } from "@/lib/oauthProviders";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { isStripeEnabled } from "@/lib/stripe";
 import { t } from "@/lib/i18n";
+import { buildRagbazDownloadUrl } from "./helpers";
 
 async function checkWordPressGraphQL() {
   const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
@@ -183,7 +184,7 @@ export async function GET(request) {
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
   const webhookUrl = `${origin}/api/stripe/webhook`;
-  const ragbazDownloadUrl = `${origin}/downloads/ragbaz-articulate/Ragbaz-Articulate.zip`;
+  const ragbazDownloadUrl = buildRagbazDownloadUrl(origin);
 
   console.info("[health] result", {
     backend,
