@@ -7,7 +7,8 @@ import {
   setCourseAccess as setLocalCourseAccess,
 } from "@/lib/courseAccessStore";
 import { listUsers as listLocalUsers } from "@/lib/userStore";
-import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
+import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
+import { isCloudflareKvConfigured, writeCloudflareKvJson } from "@/lib/cloudflareKv";
 
 function isWordPressBackend() {
   return process.env.COURSE_ACCESS_BACKEND === "wordpress";
@@ -28,26 +29,36 @@ async function fetchWordPressGraphQL(query, variables = {}) {
     throw new Error("NEXT_PUBLIC_WORDPRESS_URL is required for wordpress backend");
   }
 
-  const auth = getWordPressGraphqlAuth();
-  const headers = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    ...(auth.authorization ? { Authorization: auth.authorization } : {}),
-  };
+  const authOptions = getWordPressGraphqlAuthOptions();
+  let lastError = null;
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query, variables }),
-    cache: "no-store",
-  });
-  const json = await response.json();
-  if (!response.ok || (Array.isArray(json?.errors) && json.errors.length > 0)) {
-    const message =
-      json?.errors?.[0]?.message || `WordPress GraphQL error (${response.status})`;
-    throw new Error(message);
+  for (const auth of authOptions) {
+    const headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+    };
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query, variables }),
+      cache: "no-store",
+    });
+    const contentType = response.headers.get("content-type") || "";
+    if (!response.ok || !contentType.includes("application/json")) {
+      const text = await response.text().catch(() => "<unable to read body>");
+      lastError = `WordPress GraphQL response (${response.status}) ${contentType} ${text}`;
+      continue;
+    }
+    const json = await response.json();
+    if (Array.isArray(json?.errors) && json.errors.length > 0) {
+      lastError = json.errors[0]?.message || "WordPress GraphQL error";
+      continue;
+    }
+    return json?.data || {};
   }
-  return json?.data || {};
+  throw new Error(lastError || "WordPress GraphQL unavailable");
 }
 
 async function getWordPressAdminState() {
@@ -176,6 +187,18 @@ async function getWordPressCourseAccessConfig(courseUri) {
   return data?.courseAccessConfig || null;
 }
 
+async function replicateToCloudflare(state) {
+  const key = process.env.CF_KV_KEY || "course-access";
+  const shouldReplica =
+    process.env.COURSE_ACCESS_STORE === "cloudflare" || isCloudflareKvConfigured();
+  if (!shouldReplica) return;
+  try {
+    await writeCloudflareKvJson(key, state);
+  } catch (error) {
+    console.error("Failed to replicate course access to Cloudflare KV:", error);
+  }
+}
+
 export async function getCourseAccessState() {
   if (isWordPressBackend()) {
     if (!isWordPressBackendConfigured()) {
@@ -186,7 +209,9 @@ export async function getCourseAccessState() {
     }
     try {
       const data = await getWordPressAdminState();
-      return { courses: data.courses };
+      const state = { courses: data.courses };
+      await replicateToCloudflare(state);
+      return state;
     } catch (error) {
       console.error(
         "WordPress course access read failed. Falling back to local course access store:",
@@ -207,7 +232,11 @@ export async function setCourseAccess(payload) {
       return setLocalCourseAccess(payload);
     }
     try {
-      return setWordPressCourseAccess(payload);
+      const result = await setWordPressCourseAccess(payload);
+      if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+        await setLocalCourseAccess(payload);
+      }
+      return result;
     } catch (error) {
       console.error(
         "WordPress course access update failed. Falling back to local course access store:",
@@ -228,7 +257,12 @@ export async function hasCourseAccess(courseUri, email) {
       return hasLocalCourseAccess(courseUri, email);
     }
     try {
-      return hasWordPressCourseAccess(courseUri, email);
+      const wpHas = await hasWordPressCourseAccess(courseUri, email);
+      if (wpHas) return true;
+      if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+        return hasLocalCourseAccess(courseUri, email);
+      }
+      return false;
     } catch (error) {
       console.error(
         "WordPress course access check failed. Falling back to local course access store:",
@@ -249,7 +283,11 @@ export async function grantCourseAccess(courseUri, email) {
       return grantLocalCourseAccess(courseUri, email);
     }
     try {
-      return grantWordPressCourseAccess(courseUri, email);
+      await grantWordPressCourseAccess(courseUri, email);
+      if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+        await grantLocalCourseAccess(courseUri, email);
+      }
+      return;
     } catch (error) {
       console.error(
         "WordPress course access grant failed. Falling back to local course access store:",
@@ -306,7 +344,11 @@ export async function listAccessUsers() {
 
 export function getCourseStorageInfo() {
   if (isWordPressBackend()) {
-    return { provider: "wordpress-graphql-user-meta" };
+    const replicas = [];
+    if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+      replicas.push("cloudflare-kv");
+    }
+    return { provider: "wordpress-graphql-user-meta", replicas };
   }
   return getLocalStorageInfo();
 }

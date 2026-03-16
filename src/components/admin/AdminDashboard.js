@@ -142,6 +142,28 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
               Clear
             </button>
           </div>
+
+          {/* Access replication */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-gray-700">Access backends</h3>
+            <p className="text-xs text-gray-500">
+              Course access is written to WordPress via GraphQL, and mirrored to Cloudflare KV if it is configured.
+            </p>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="px-3 py-1 rounded bg-green-50 text-green-800 border border-green-200">
+                WordPress GraphQL: active
+              </span>
+              {storage?.replicas?.includes?.("cloudflare-kv") ? (
+                <span className="px-3 py-1 rounded bg-green-50 text-green-800 border border-green-200">
+                  Cloudflare KV mirror: active
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                  Cloudflare KV mirror: disabled
+                </span>
+              )}
+            </div>
+          </div>
           <div className="text-xs font-medium text-gray-600">Content access:</div>
           {allUris.length === 0 ? (
             <p className="text-xs text-gray-400">No content items configured yet.</p>
@@ -206,6 +228,8 @@ export default function AdminDashboard() {
   const [commitsExpanded, setCommitsExpanded] = useState(false);
   const editFormRef = useRef(null);
   const [resendConfigured, setResendConfigured] = useState(false);
+  const [uploadInfo, setUploadInfo] = useState({ backend: "wordpress", wordpress: true, s3: false, r2: false });
+  const [uploadBackend, setUploadBackend] = useState("wordpress");
   const [shopVisibleTypes, setShopVisibleTypes] = useState(["product", "course", "event", "digital_file", "digital_course"]);
   const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
   const [shopSettingsMessage, setShopSettingsMessage] = useState("");
@@ -253,6 +277,10 @@ export default function AdminDashboard() {
         setWpEvents(Array.isArray(json.wpEvents) ? json.wpEvents : []);
         setStorage(json.storage || null);
         setResendConfigured(!!json.resendConfigured);
+        if (json.upload) {
+          setUploadInfo(json.upload);
+          setUploadBackend(json.upload.backend || "wordpress");
+        }
       })
       .catch((fetchError) => {
         setError(fetchError.message || t("admin.fetchAdminDataFailed"));
@@ -585,6 +613,7 @@ export default function AdminDashboard() {
           // Large file — use multipart upload directly to R2
           setUploadProgress({ percent: 0, currentPart: 0, totalParts: 0 });
           const url = await multipartUpload(file, {
+            backend: uploadBackend,
             onProgress: (p) => setUploadProgress(p),
           });
           setUploadProgress(null);
@@ -594,7 +623,7 @@ export default function AdminDashboard() {
           setUploadingField(field);
           const formData = new FormData();
           formData.append("file", file);
-          const res = await fetch("/api/admin/upload", {
+          const res = await fetch(`/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`, {
             method: "POST",
             body: formData,
           });
@@ -1763,6 +1792,40 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* Upload destination */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-gray-700">Upload destination</h3>
+            <p className="text-xs text-gray-500">
+              Choose where product files/images are stored. WordPress Media Library works without extra setup. S3/R2 requires credentials.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: "wordpress", label: "WordPress media", enabled: true },
+                { id: "r2", label: "Cloudflare R2", enabled: uploadInfo?.r2 },
+                { id: "s3", label: "S3 / Spaces", enabled: uploadInfo?.s3 },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={!opt.enabled}
+                  onClick={() => setUploadBackend(opt.id)}
+                  className={`px-3 py-1.5 rounded border text-sm ${
+                    uploadBackend === opt.id
+                      ? "border-green-500 text-green-800 bg-green-50"
+                      : "border-gray-200 text-gray-700"
+                  } ${!opt.enabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {!uploadInfo?.s3 && !uploadInfo?.r2 && (
+              <p className="text-[11px] text-gray-500">
+                Configure S3/R2 credentials to enable direct uploads (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME, S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
+              </p>
+            )}
+          </div>
+
           {/* Environment info */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-gray-700">{t("admin.environment")}</h3>
@@ -1782,9 +1845,11 @@ export default function AdminDashboard() {
               <div className="bg-gray-50 rounded p-3 space-y-1">
                 <div className="font-medium text-gray-700">File uploads</div>
                 <div className="text-gray-500">
-                  {storage?.provider === "cloudflare-kv" || process.env.S3_BUCKET_NAME
-                    ? "Cloudflare R2 (S3-compatible)"
-                    : "WordPress Media Library"}
+                  {uploadBackend === "wordpress"
+                    ? "WordPress Media Library"
+                    : uploadBackend === "r2"
+                      ? "Cloudflare R2"
+                      : "S3 / Spaces"}
                 </div>
               </div>
               <div className="bg-gray-50 rounded p-3 space-y-1">
@@ -1792,7 +1857,7 @@ export default function AdminDashboard() {
                 <div className="text-gray-500">
                   {resendConfigured
                     ? "Resend API"
-                    : "Not configured"}
+                    : "Not configured — set RESEND_API_KEY and RESEND_FROM_EMAIL"}
                 </div>
               </div>
               <div className="bg-gray-50 rounded p-3 space-y-1">

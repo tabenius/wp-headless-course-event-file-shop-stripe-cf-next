@@ -321,6 +321,15 @@ body:has(.admin-layout)::before { display: none; }
   color: #1a1a1a;
 }
 
+/* Shop call-to-action buttons: force white text on dark backgrounds */
+.shop-cta {
+  color: #fff !important;
+}
+.shop-cta:hover,
+.shop-cta:focus {
+  color: #fff !important;
+}
+
 /* Paywall and card backgrounds */
 .dark-mode .bg-white {
   background-color: #2a2a2a !important;

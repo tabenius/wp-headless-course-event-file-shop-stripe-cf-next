@@ -5,7 +5,9 @@ import {
   signMultipartParts,
   completeMultipartUpload,
   abortMultipartUpload,
+  getUploadBackend,
   isS3Upload,
+  isS3Configured,
 } from "@/lib/s3upload";
 
 const PART_SIZE = 100 * 1024 * 1024; // 100 MB per part
@@ -24,9 +26,17 @@ export async function POST(request) {
   const auth = requireAdmin(request);
   if (auth.error) return auth.error;
 
-  if (!isS3Upload()) {
+  const backend = getUploadBackend(new URL(request.url).searchParams.get("backend"));
+
+  if (!isS3Upload(backend)) {
     return NextResponse.json(
       { ok: false, error: "Multipart upload requires UPLOAD_BACKEND=r2 or s3." },
+      { status: 400 },
+    );
+  }
+  if (!isS3Configured(backend)) {
+    return NextResponse.json(
+      { ok: false, error: "S3/R2 credentials are missing." },
       { status: 400 },
     );
   }
@@ -54,11 +64,11 @@ export async function POST(request) {
         );
       }
 
-      const result = await createMultipartUpload(fileName, contentType);
+      const result = await createMultipartUpload(fileName, contentType, backend);
 
       // Pre-sign all parts so the client has everything in one call
       const partNumbers = Array.from({ length: totalParts }, (_, i) => i + 1);
-      const signedParts = await signMultipartParts(result.key, result.uploadId, partNumbers);
+      const signedParts = await signMultipartParts(result.key, result.uploadId, partNumbers, 3600, backend);
 
       return NextResponse.json({
         ok: true,
@@ -85,7 +95,7 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-      const signed = await signMultipartParts(key, uploadId, partNumbers);
+      const signed = await signMultipartParts(key, uploadId, partNumbers, 3600, backend);
       return NextResponse.json({ ok: true, parts: signed });
     }
 
@@ -97,7 +107,7 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-      const publicUrl = await completeMultipartUpload(key, uploadId, parts);
+      const publicUrl = await completeMultipartUpload(key, uploadId, parts, backend);
       return NextResponse.json({ ok: true, publicUrl });
     }
 
@@ -109,7 +119,7 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-      await abortMultipartUpload(key, uploadId);
+      await abortMultipartUpload(key, uploadId, backend);
       return NextResponse.json({ ok: true });
     }
 

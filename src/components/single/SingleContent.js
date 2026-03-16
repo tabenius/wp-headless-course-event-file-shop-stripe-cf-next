@@ -1,6 +1,7 @@
 import { FeaturedImage } from "@/components/image/FeaturedImage";
 import BlocksRenderer from "@/components/blocks/BlocksRenderer";
 import { transformContent } from "@/lib/transformContent";
+import { decodeEntities } from "@/lib/decodeEntities";
 
 export default function SingleContent({
   data,
@@ -12,9 +13,9 @@ export default function SingleContent({
   const safeData = data && typeof data === "object" ? data : {};
   const resolvedTitle =
     typeof title === "string" && title.trim() !== ""
-      ? title
+      ? decodeEntities(title)
       : typeof safeData.title === "string"
-        ? safeData.title
+        ? decodeEntities(safeData.title)
         : "";
   const content =
     typeof safeData.content === "string" ? transformContent(safeData.content) : "";

@@ -3,6 +3,7 @@ import { getCourseAccessState } from "@/lib/courseAccess";
 import { listDigitalProducts } from "@/lib/digitalProducts";
 import { getShopSettings } from "@/lib/shopSettings";
 import { stripHtml } from "@/lib/slugify";
+import { decodeEntities } from "@/lib/decodeEntities";
 import site from "@/lib/site";
 
 /**
@@ -114,10 +115,10 @@ export async function listAllShopItems() {
     items.push({
       id: `wc-${p.databaseId}`,
       slug: p.slug,
-      name: p.name,
-      description: stripHtml(p.shortDescription),
+      name: decodeEntities(p.name),
+      description: decodeEntities(stripHtml(p.shortDescription)),
       imageUrl: p.featuredImage?.node?.sourceUrl || "",
-      price: p.price || p.regularPrice || "",
+      price: decodeEntities(p.price || p.regularPrice || ""),
       priceCents: config?.priceCents ?? 0,
       currency: config?.currency || defaultCurrency,
       type: "product",
@@ -134,10 +135,10 @@ export async function listAllShopItems() {
     items.push({
       id: `lp-${c.databaseId}`,
       slug: uri.replace(/^\//, ""),
-      name: c.title,
+      name: decodeEntities(c.title),
       description: "",
       imageUrl: c.featuredImage?.node?.sourceUrl || "",
-      price: c.priceRendered || c.price || "",
+      price: decodeEntities(c.priceRendered || c.price || ""),
       priceCents: config?.priceCents ?? 0,
       currency: config?.currency || defaultCurrency,
       type: "course",
@@ -156,7 +157,7 @@ export async function listAllShopItems() {
     items.push({
       id: `ev-${e.databaseId}`,
       slug: e.slug || uri.replace(/^\//, ""),
-      name: e.title,
+      name: decodeEntities(e.title),
       description: "",
       imageUrl: e.featuredImage?.node?.sourceUrl || "",
       price: "",

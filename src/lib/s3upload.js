@@ -9,7 +9,11 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { t } from "@/lib/i18n";
 
-let _client = null;
+const _clients = new Map();
+
+function resolveBackend(preferred) {
+  return (preferred || process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
+}
 
 /**
  * Supported UPLOAD_BACKEND values:
@@ -23,10 +27,8 @@ let _client = null;
  *
  * R2-specific env vars (CF_R2_*) are supported as fallbacks for backwards compatibility.
  */
-function getS3Client() {
-  if (_client) return _client;
-
-  const backend = getUploadBackend();
+function getS3Client(backend = resolveBackend()) {
+  if (_clients.has(backend)) return _clients.get(backend);
   const accessKeyId =
     process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
   const secretAccessKey =
@@ -49,13 +51,14 @@ function getS3Client() {
     if (!endpoint) throw new Error(t("s3.endpointMissing"));
   }
 
-  _client = new S3Client({
+  const client = new S3Client({
     region,
     endpoint,
     credentials: { accessKeyId, secretAccessKey },
     forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "1",
   });
-  return _client;
+  _clients.set(backend, client);
+  return client;
 }
 
 function getBucket() {
@@ -79,8 +82,8 @@ function getPublicUrl() {
  * Upload a file to S3-compatible storage.
  * Returns the public URL of the uploaded object.
  */
-export async function uploadToS3(buffer, fileName, contentType) {
-  const client = getS3Client();
+export async function uploadToS3(buffer, fileName, contentType, backend = resolveBackend()) {
+  const client = getS3Client(backend);
   const bucket = getBucket();
   const publicUrl = getPublicUrl();
 
@@ -103,8 +106,8 @@ export async function uploadToS3(buffer, fileName, contentType) {
  * Bypasses the Worker entirely — supports files up to 5 GB.
  * Returns { uploadUrl, publicUrl, key, expiresIn }.
  */
-export async function createPresignedUpload(fileName, contentType, expiresIn = 3600) {
-  const client = getS3Client();
+export async function createPresignedUpload(fileName, contentType, expiresIn = 3600, backend = resolveBackend()) {
+  const client = getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
 
@@ -130,8 +133,8 @@ export async function createPresignedUpload(fileName, contentType, expiresIn = 3
  * Initiate a multipart upload. Returns { uploadId, key, publicUrl }.
  * The client then requests presigned URLs for each part.
  */
-export async function createMultipartUpload(fileName, contentType) {
-  const client = getS3Client();
+export async function createMultipartUpload(fileName, contentType, backend = resolveBackend()) {
+  const client = getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
   const key = `uploads/${Date.now()}-${fileName}`;
@@ -152,8 +155,8 @@ export async function createMultipartUpload(fileName, contentType) {
  * partNumbers is an array of 1-based part numbers.
  * Returns an array of { partNumber, uploadUrl }.
  */
-export async function signMultipartParts(key, uploadId, partNumbers, expiresIn = 3600) {
-  const client = getS3Client();
+export async function signMultipartParts(key, uploadId, partNumbers, expiresIn = 3600, backend = resolveBackend()) {
+  const client = getS3Client(backend);
   const bucket = getBucket();
 
   const signed = await Promise.all(
@@ -176,8 +179,8 @@ export async function signMultipartParts(key, uploadId, partNumbers, expiresIn =
  * Complete a multipart upload.
  * parts is an array of { partNumber, etag } (etag from each PUT response).
  */
-export async function completeMultipartUpload(key, uploadId, parts) {
-  const client = getS3Client();
+export async function completeMultipartUpload(key, uploadId, parts, backend = resolveBackend()) {
+  const client = getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
 
@@ -203,8 +206,8 @@ export async function completeMultipartUpload(key, uploadId, parts) {
 /**
  * Abort a multipart upload (cleanup on failure).
  */
-export async function abortMultipartUpload(key, uploadId) {
-  const client = getS3Client();
+export async function abortMultipartUpload(key, uploadId, backend = resolveBackend()) {
+  const client = getS3Client(backend);
   const bucket = getBucket();
 
   await client.send(
@@ -216,11 +219,29 @@ export async function abortMultipartUpload(key, uploadId) {
   );
 }
 
-export function getUploadBackend() {
-  return (process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
+export function getUploadBackend(preferred) {
+  return resolveBackend(preferred);
 }
 
-export function isS3Upload() {
-  const backend = getUploadBackend();
+export function isS3Upload(preferred) {
+  const backend = resolveBackend(preferred);
   return backend === "r2" || backend === "s3";
+}
+
+export function isS3Configured(preferred) {
+  const backend = resolveBackend(preferred);
+  if (backend !== "r2" && backend !== "s3") return false;
+  const accessKeyId =
+    process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
+  const secretAccessKey =
+    process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY || "";
+  const bucket =
+    process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
+  const publicUrl =
+    (process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "").replace(/\/+$/, "");
+  if (!accessKeyId || !secretAccessKey || !bucket || !publicUrl) return false;
+  if (backend === "r2") {
+    return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID);
+  }
+  return Boolean(process.env.S3_ENDPOINT);
 }

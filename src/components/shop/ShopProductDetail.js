@@ -83,7 +83,7 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
         product.type === "digital_file" ? (
           <a
             href={`/api/digital/download?productId=${encodeURIComponent(product.id)}`}
-            className="inline-block px-5 py-3 rounded bg-teal-700 text-white hover:bg-teal-600"
+            className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600"
           >
             {t("shop.downloadFile")}
           </a>
@@ -94,7 +94,7 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
             {product.courseUri && (
               <Link
                 href={product.courseUri}
-                className="inline-block px-5 py-3 rounded bg-teal-700 text-white hover:bg-teal-600 font-semibold"
+                className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600 font-semibold"
               >
                 {t("shop.openCourse")}
               </Link>
@@ -106,7 +106,7 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
           type="button"
           onClick={startCheckout}
           disabled={loading}
-          className="px-5 py-3 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
+          className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
         >
           {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
           {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}

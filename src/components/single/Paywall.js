@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { transformContent } from "@/lib/transformContent";
+import { decodeEntities } from "@/lib/decodeEntities";
 
 export default function Paywall({
   courseUri,
@@ -32,7 +33,7 @@ export default function Paywall({
   // Show WordPress price if available, otherwise fall back to access config price
   const rawDisplayPrice = coursePriceRendered
     || (priceCents != null ? `${(priceCents / 100).toFixed(2)} ${currency.toUpperCase()}` : "");
-  const displayPrice = rawDisplayPrice.replace(/&nbsp;/g, " ");
+  const displayPrice = decodeEntities(rawDisplayPrice).replace(/&nbsp;/g, " ");
 
   const buyLabel = loading
     ? t("paywall.redirectingToStripe")

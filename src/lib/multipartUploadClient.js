@@ -3,16 +3,17 @@
  * Handles files of any size (up to ~1 TB with 100 MB parts).
  *
  * Usage:
- *   const url = await multipartUpload(file, { onProgress });
+ *   const url = await multipartUpload(file, { onProgress, backend });
  *
  * onProgress receives { loaded, total, percent, currentPart, totalParts }
  */
-export async function multipartUpload(file, { onProgress } = {}) {
+export async function multipartUpload(file, { onProgress, backend } = {}) {
   const PART_SIZE = 100 * 1024 * 1024; // must match server
+  const backendParam = backend ? `&backend=${encodeURIComponent(backend)}` : "";
 
   // Step 1: Create multipart upload and get presigned URLs for all parts
   const createRes = await fetch(
-    "/api/admin/multipart-upload?action=create",
+    `/api/admin/multipart-upload?action=create${backendParam}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,7 +51,7 @@ export async function multipartUpload(file, { onProgress } = {}) {
 
     if (!putRes.ok) {
       // Abort on failure
-      await fetch("/api/admin/multipart-upload?action=abort", {
+      await fetch(`/api/admin/multipart-upload?action=abort${backendParam}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key, uploadId }),
@@ -60,7 +61,7 @@ export async function multipartUpload(file, { onProgress } = {}) {
 
     const etag = putRes.headers.get("etag");
     if (!etag) {
-      await fetch("/api/admin/multipart-upload?action=abort", {
+      await fetch(`/api/admin/multipart-upload?action=abort${backendParam}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key, uploadId }),
@@ -81,14 +82,11 @@ export async function multipartUpload(file, { onProgress } = {}) {
   }
 
   // Step 3: Complete the multipart upload
-  const completeRes = await fetch(
-    "/api/admin/multipart-upload?action=complete",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, uploadId, parts: completedParts }),
-    },
-  );
+  const completeRes = await fetch(`/api/admin/multipart-upload?action=complete${backendParam}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key, uploadId, parts: completedParts }),
+  });
   let completeJson;
   try { completeJson = await completeRes.json(); } catch {
     throw new Error(`Failed to finalize upload (HTTP ${completeRes.status}).`);

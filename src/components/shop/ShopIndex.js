@@ -181,14 +181,14 @@ export default function ShopIndex({
                           type="button"
                           disabled={loading}
                           onClick={() => startDigitalCheckout(item.slug)}
-                          className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 text-sm inline-flex items-center gap-2"
+                          className="px-4 py-2 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 text-sm inline-flex items-center gap-2"
                         >
                           {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                           {loading ? t("shop.sending") : t("common.buy")}
                         </button>
                       </>
                     ) : (
-                      <Link href={item.uri} className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm">
+                      <Link href={item.uri} className="px-4 py-2 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 text-sm">
                         {t("shop.viewAndBuy")}
                       </Link>
                     )}

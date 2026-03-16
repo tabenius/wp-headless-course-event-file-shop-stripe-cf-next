@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
-import { createPresignedUpload, isS3Upload } from "@/lib/s3upload";
+import { createPresignedUpload, getUploadBackend, isS3Configured, isS3Upload } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
 export async function POST(request) {
   const auth = requireAdmin(request);
   if (auth.error) return auth.error;
 
-  if (!isS3Upload()) {
+  const backend = getUploadBackend(request.nextUrl.searchParams.get("backend"));
+
+  if (!isS3Upload(backend)) {
     return NextResponse.json(
       { ok: false, error: "Presigned uploads require UPLOAD_BACKEND=r2 or s3." },
+      { status: 400 },
+    );
+  }
+
+  if (!isS3Configured(backend)) {
+    return NextResponse.json(
+      { ok: false, error: "S3/R2 credentials missing." },
       { status: 400 },
     );
   }
@@ -26,7 +35,7 @@ export async function POST(request) {
       );
     }
 
-    const result = await createPresignedUpload(fileName, contentType);
+    const result = await createPresignedUpload(fileName, contentType, 3600, backend);
 
     return NextResponse.json({
       ok: true,

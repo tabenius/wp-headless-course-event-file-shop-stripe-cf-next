@@ -10,37 +10,44 @@ function looksLikeApplicationPassword(value) {
   return value.includes(" ") && !value.includes(".");
 }
 
-export function getWordPressGraphqlAuth() {
+/**
+ * Returns an ordered list of auth header options to try for WordPress GraphQL.
+ * Preference: Bearer token first (if present), then Basic (username + app password).
+ */
+export function getWordPressGraphqlAuthOptions() {
+  const options = [];
   const bearerToken = normalizeEnv(process.env.WORDPRESS_GRAPHQL_AUTH_TOKEN);
-  const username = normalizeEnv(process.env.WORDPRESS_GRAPHQL_USERNAME);
+  const username =
+    normalizeEnv(process.env.WORDPRESS_GRAPHQL_USERNAME) ||
+    normalizeEnv(process.env.WORDPRESS_USERNAME) ||
+    normalizeEnv(process.env.WORDPRESS_USER);
   const appPassword = normalizeEnv(
-    process.env.WORDPRESS_GRAPHQL_APPLICATION_PASSWORD || process.env.WORDPRESS_GRAPHQL_APP_PASSWORD,
+    process.env.WORDPRESS_GRAPHQL_APPLICATION_PASSWORD ||
+      process.env.WORDPRESS_GRAPHQL_APP_PASSWORD,
   );
 
-  if (username && appPassword) {
-    return {
-      mode: "basic",
-      authorization: `Basic ${encodeBasicCredentials(username, appPassword)}`,
-    };
-  }
-
-  // Backwards-compatible fallback: when token actually stores an app password.
-  if (username && bearerToken && looksLikeApplicationPassword(bearerToken)) {
-    return {
-      mode: "basic",
-      authorization: `Basic ${encodeBasicCredentials(username, bearerToken)}`,
-    };
-  }
-
   if (bearerToken) {
-    return {
+    options.push({
       mode: "bearer",
       authorization: `Bearer ${bearerToken}`,
-    };
+    });
   }
 
-  return {
-    mode: "none",
-    authorization: "",
-  };
+  if (username && (appPassword || looksLikeApplicationPassword(bearerToken))) {
+    const password = appPassword || bearerToken;
+    options.push({
+      mode: "basic",
+      authorization: `Basic ${encodeBasicCredentials(username, password)}`,
+    });
+  }
+
+  if (options.length === 0) {
+    options.push({ mode: "none", authorization: "" });
+  }
+  return options;
+}
+
+export function getWordPressGraphqlAuth() {
+  const [first] = getWordPressGraphqlAuthOptions();
+  return first || { mode: "none", authorization: "" };
 }

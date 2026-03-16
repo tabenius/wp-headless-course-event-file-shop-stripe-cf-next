@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
-import { isS3Upload, uploadToS3 } from "@/lib/s3upload";
+import { getUploadBackend, isS3Configured, isS3Upload, uploadToS3 } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
 async function uploadToWordPress(arrayBuffer, file) {
@@ -40,6 +40,7 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   try {
+    const backend = getUploadBackend(request.nextUrl.searchParams.get("backend"));
     const formData = await request.formData();
     const file = formData.get("file");
     if (!file || typeof file === "string") {
@@ -51,11 +52,18 @@ export async function POST(request) {
 
     const arrayBuffer = await file.arrayBuffer();
 
-    if (isS3Upload()) {
+    if (isS3Upload(backend)) {
+      if (!isS3Configured(backend)) {
+        return NextResponse.json(
+          { ok: false, error: "S3/R2 is not fully configured." },
+          { status: 400 },
+        );
+      }
       const url = await uploadToS3(
         new Uint8Array(arrayBuffer),
         file.name,
         file.type,
+        backend,
       );
       return NextResponse.json({ ok: true, url, title: file.name });
     }

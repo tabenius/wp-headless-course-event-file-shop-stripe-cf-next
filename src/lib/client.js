@@ -1,4 +1,4 @@
-import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
+import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
 
 /**
  * Cache of GraphQL type existence checks.
@@ -48,56 +48,66 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       console.debug("[GraphQL Debug] Query:", query);
       console.debug("[GraphQL Debug] Variables:", variables);
     }
-    const auth = getWordPressGraphqlAuth();
-    const headers = {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
-    };
+    const authOptions = getWordPressGraphqlAuthOptions();
+    let lastError = null;
 
-    const fetchOptions = {
-      method: "POST",
-      headers: {
-        ...headers,
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    };
-
-    // Revalidate with ISR if revalidate is set
-    if (typeof revalidate === "number" && revalidate >= 0) {
-      fetchOptions.next = {
-        revalidate,
+    for (const auth of authOptions) {
+      const headers = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(auth.authorization ? { Authorization: auth.authorization } : {}),
       };
+
+      const fetchOptions = {
+        method: "POST",
+        headers: {
+          ...headers,
+        },
+        body: JSON.stringify({
+          query,
+          variables,
+        }),
+      };
+
+      // Revalidate with ISR if revalidate is set
+      if (typeof revalidate === "number" && revalidate >= 0) {
+        fetchOptions.next = {
+          revalidate,
+        };
+      }
+
+      const response = await fetch(graphqlEndpoint, fetchOptions);
+      const contentType = response.headers.get("content-type") || "";
+      if (debugGraphQL) {
+        console.debug("[GraphQL Debug] Auth mode:", auth.mode);
+        console.debug("[GraphQL Debug] Endpoint:", graphqlEndpoint);
+        console.debug("[GraphQL Debug] HTTP status:", response.status, response.statusText);
+      }
+
+      if (!response.ok || !contentType.includes("application/json")) {
+        const text = await response.text().catch(() => "<unable to read body>");
+        lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${text}`;
+        if (debugGraphQL) console.error(lastError);
+        continue;
+      }
+
+      const result = await response.json();
+      if (debugGraphQL) {
+        console.debug("[GraphQL Debug] Response payload:", result);
+      }
+      if (Array.isArray(result?.errors) && result.errors.length > 0) {
+        lastError = `GraphQL Error: ${JSON.stringify(result.errors)}`;
+        if (debugGraphQL) console.error(lastError);
+        continue;
+      }
+
+      return result?.data || {};
     }
 
-    const response = await fetch(graphqlEndpoint, fetchOptions);
-    if (debugGraphQL) {
-      console.debug("[GraphQL Debug] Auth mode:", auth.mode);
-      console.debug("[GraphQL Debug] Endpoint:", graphqlEndpoint);
-      console.debug("[GraphQL Debug] HTTP status:", response.status, response.statusText);
+    if (lastError) {
+      console.error(lastError);
     }
-    const contentType = response.headers.get("content-type") || "";
-
-    if (!response.ok || !contentType.includes("application/json")) {
-      const text = await response.text().catch(() => "<unable to read body>");
-      console.error(
-        `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${text}`,
-      );
-      return {};
-    }
-
-    const result = await response.json();
-    if (debugGraphQL) {
-      console.debug("[GraphQL Debug] Response payload:", result);
-    }
-    if (Array.isArray(result?.errors) && result.errors.length > 0) {
-      console.error("GraphQL Error:", result.errors);
-    }
-
-    return result?.data || {};
+    return {};
   } catch (error) {
     console.error("Error fetching from WordPress:", error);
     return {};

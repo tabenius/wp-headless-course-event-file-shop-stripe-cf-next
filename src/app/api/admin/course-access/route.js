@@ -8,6 +8,7 @@ import {
   setCourseAccess,
 } from "@/lib/courseAccess";
 import { fetchGraphQL } from "@/lib/client";
+import { getUploadBackend, isS3Configured, isS3Upload } from "@/lib/s3upload";
 
 async function fetchLearnPressCourses() {
   try {
@@ -116,6 +117,7 @@ export async function GET(request) {
     fetchWooCommerceProducts(),
     fetchEvents(),
   ]);
+  const uploadBackend = getUploadBackend();
   return NextResponse.json({
     ok: true,
     courses: state.courses,
@@ -125,6 +127,12 @@ export async function GET(request) {
     wpEvents,
     storage: getCourseStorageInfo(),
     resendConfigured: !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
+    upload: {
+      backend: uploadBackend,
+      wordpress: true,
+      s3: isS3Upload(uploadBackend) && isS3Configured(uploadBackend),
+      r2: isS3Upload("r2") && isS3Configured("r2"),
+    },
   });
 }
 

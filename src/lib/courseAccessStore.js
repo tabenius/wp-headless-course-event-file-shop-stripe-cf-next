@@ -211,6 +211,6 @@ export async function getCourseAccessConfig(courseUri) {
 
 export function getCourseStorageInfo() {
   return shouldUseCloudflareBackend()
-    ? { provider: "cloudflare-kv", key: getKvKey() }
-    : { provider: "local-file", path: LOCAL_ACCESS_FILE };
+    ? { provider: "cloudflare-kv", key: getKvKey(), replicas: [] }
+    : { provider: "local-file", path: LOCAL_ACCESS_FILE, replicas: [] };
 }
