@@ -9,3 +9,6 @@
 - Added REST fallback for pages/posts/events and LearnPress `lpCourse` lookup by URI/slug to reduce 404s; documented content fallback logic.  
 - Event list titles/excerpts decode entities; featured images hide on error; shop/product detail images also hide on error.  
 - Admin advanced shows last deploy timestamp from env (LAST_DEPLOYED_AT or Vercel vars).
+- Edge-safe storage: avoid fs read/write on Cloudflare runtimes; fall back to KV/in-memory.  
+- Upload UX: clearer WP media failure hints; toast errors instead of silent failures; save label clarified.  
+- 404 CTA forced to white text; admin shop thumbnails enlarged (32x32).  
