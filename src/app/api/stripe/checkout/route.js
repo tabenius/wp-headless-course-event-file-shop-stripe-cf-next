@@ -7,8 +7,17 @@ import { findUserByEmail, createUser } from "@/lib/userStore";
 import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
 import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
+import { createTicket } from "@/lib/supportTickets";
 
 const SETUP_TTL = 86400; // 24 hours
+
+async function logCheckoutIssue(title, description, priority = "moderate") {
+  try {
+    await createTicket({ title, description, priority, author: "system" });
+  } catch (err) {
+    console.error("Failed to log checkout issue:", err);
+  }
+}
 
 /** Generate a 20-character random password. */
 function randomPassword() {
@@ -135,6 +144,11 @@ export async function POST(request) {
       console.error(
         "Stripe checkout request rejected: missing content URI",
       );
+      logCheckoutIssue(
+        "Checkout failed: missing content URI",
+        `Stripe checkout was requested but no content URI was resolved. Incoming body: ${JSON.stringify(body).slice(0, 500)}.`,
+        "moderate",
+      );
       return NextResponse.json(
         { ok: false, error: t("apiErrors.contentNotReady") },
         { status: 400 },
@@ -148,6 +162,11 @@ export async function POST(request) {
     if (priceCents <= 0) {
       console.error(
         `Stripe checkout unavailable for ${courseUri}: missing or invalid course price`,
+      );
+      logCheckoutIssue(
+        "Checkout blocked: no price configured",
+        `The item ${courseUri} (${contentKind}) has priceCents=${priceCents}. Set a price in the admin dashboard to enable payments.`,
+        "moderate",
       );
       return NextResponse.json(
         {
