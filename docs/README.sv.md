@@ -4,6 +4,44 @@ Det här dokumentet beskriver den tekniska bakgrunden till plattformen. För en 
 
 ## Arkitekturöversikt
 
+```mermaid
+graph TB
+    subgraph "Klient (Webbläsare)"
+        RC["React 19<br/>Server + Client Components"]
+    end
+
+    subgraph "Next.js 15 på Cloudflare Workers"
+        AR["App Router"]
+        MW["Middleware<br/><i>Autentisering, omdirigeringar</i>"]
+        SSR["Server-Side Rendering"]
+        API["API-rutter"]
+    end
+
+    subgraph "Datalager"
+        GQL["GraphQL-klient<br/><i>Cachning + schemainspektering</i>"]
+        KV["KV-adapter<br/><i>Cloudflare KV / lokal fil / minne</i>"]
+        S3C["S3-uppladdning<br/><i>R2 / S3 / WordPress Media</i>"]
+    end
+
+    subgraph "Externa tjänster"
+        WP["WordPress + WPGraphQL"]
+        ST["Stripe API"]
+        CKV["Cloudflare KV"]
+        R2["Cloudflare R2"]
+        RS["Resend (e-post)"]
+    end
+
+    RC --> AR
+    AR --> MW --> SSR
+    AR --> API
+    SSR --> GQL --> WP
+    API --> GQL
+    API --> KV --> CKV
+    API --> S3C --> R2
+    API --> ST
+    API --> RS
+```
+
 Applikationen följer ett **headless CMS**-mönster:
 
 - **WordPress** är innehållshanteringssystemet (CMS). Här skriver du alla texter, laddar upp bilder och hanterar kurser — precis som vanligt.
@@ -37,35 +75,55 @@ WordPress är utmärkt för att skapa innehåll men begränsat när det gäller 
 
 ### Kurs-/eventåtkomst
 
-```
-1. Besökaren öppnar en kurs- eller eventsida
-2. Appen kontrollerar: är besökaren inloggad?
-   ├── Nej → Omdirigering till /auth/signin
-   └── Ja  → Appen kontrollerar: har användaren åtkomst?
-       ├── Nej → Visa paywall med kurstitel, pris och "Betala nu"-knapp
-       │         → Stripe Checkout → Betalning → Webhook → Åtkomst beviljas
-       └── Ja  → Visa hela kurs-/eventinnehållet
+```mermaid
+flowchart TD
+    A[Besökare öppnar kurs-/eventsida] --> B{Inloggad?}
+    B -->|Nej| C[Omdirigera till /auth/signin<br/>med retur-URL]
+    C --> D[Användaren loggar in eller registrerar sig]
+    D --> B
+    B -->|Ja| E{Har åtkomst?}
+    E -->|Ja| F["Visa hela innehållet"]
+    E -->|Nej| G["Visa paywall<br/><i>Titel, pris, Betala-knapp</i>"]
+    G --> H[Stripe Checkout]
+    H --> I{Betalning OK?}
+    I -->|Ja| J[Stripe-webhook utlöses]
+    J --> K[Appen beviljar åtkomst]
+    K --> F
+    I -->|Nej| L[Visa fel, försök igen]
 ```
 
 ### Köp av digital produkt
 
-```
-1. Besökaren går till /shop
-2. Klickar på en produkt → /shop/{slug}
-3. Klickar "Köp" → Stripe Checkout
-4. Betalning lyckas → Webhook → Åtkomst registreras
-5. Användaren kan nu ladda ner filen eller öppna kursen
+```mermaid
+sequenceDiagram
+    participant B as Besökare
+    participant S as /shop
+    participant D as /shop/{slug}
+    participant SC as Stripe Checkout
+    participant WH as Webhook
+    participant KV as Cloudflare KV
+
+    B->>S: Bläddrar produkter
+    B->>D: Klickar på produkt
+    B->>SC: Klickar "Köp"
+    SC->>B: Betalningssida
+    B->>SC: Genomför betalning
+    SC->>WH: checkout.session.completed
+    WH->>KV: Beviljar åtkomst
+    WH->>B: Omdirigerar till produktsida
+    B->>D: Laddar ner fil / öppnar kurs
 ```
 
 ### Adminflöde
 
-```
-1. Admin går till /admin/login
-2. Loggar in med ADMIN_EMAILS/ADMIN_PASSWORDS
-3. Dashboarden visar:
-   - Integrationskontroll (verifierar WordPress, Stripe, lagring)
-   - Shop-produkter (lägg till/redigera, ladda upp bilder och filer)
-   - Kursåtkomst (sätt priser, hantera användare)
+```mermaid
+flowchart LR
+    A["/admin/login"] --> B["Admin Dashboard"]
+    B --> C["Hälsokontroll<br/><i>WordPress, Stripe,<br/>KV-status</i>"]
+    B --> D["Shop-produkter<br/><i>Lägg till/redigera,<br/>ladda upp filer</i>"]
+    B --> E["Kursåtkomst<br/><i>Sätt priser,<br/>hantera användare</i>"]
+    B --> F["Butikssynlighet<br/><i>Välj produkttyper</i>"]
+    B --> G["Analys<br/><i>Besöksstatistik</i>"]
 ```
 
 ## WordPress GraphQL-autentisering
@@ -89,6 +147,17 @@ query IntrospectType($name: String!) {
 }
 ```
 
+```mermaid
+flowchart LR
+    A["Appen startar"] --> B["Inspektera schema"]
+    B --> C{"Event-typ finns?"}
+    C -->|Ja| D["Inkludera Event-fragment"]
+    C -->|Nej| E["Hoppa över Event-frågor"]
+    B --> F{"LpCourse-typ finns?"}
+    F -->|Ja| G["Inkludera kurs-fragment"]
+    F -->|Nej| H["Hoppa över kursfrågor"]
+```
+
 Detta körs för `Event` och `LpCourse`. Resultat cachas i minnet. Om en typ inte finns utelämnas dess GraphQL-fragment helt — inga schemafel, inga trasiga sidor.
 
 ## LearnPress-integration
@@ -104,7 +173,27 @@ Installation: kopiera `docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.ph
 
 ## Lagringsbackends
 
-Appen stödjer flera lagringsbackends:
+```mermaid
+graph TB
+    subgraph "Lagringsbeslut"
+        ENV{"Miljö?"}
+    end
+
+    subgraph "Produktion (Cloudflare Workers)"
+        KV["Cloudflare KV<br/><i>Användare, åtkomstregler,<br/>produkträttigheter</i>"]
+        R2["Cloudflare R2<br/><i>Uppladdade filer<br/>(10 GB gratis)</i>"]
+    end
+
+    subgraph "Utveckling (Lokalt)"
+        FS["JSON-filer i .data/<br/><i>Användare, åtkomstregler,<br/>produkträttigheter</i>"]
+        WPM["WordPress mediebibliotek<br/><i>Uppladdade filer</i>"]
+    end
+
+    ENV -->|Workers| KV
+    ENV -->|Workers| R2
+    ENV -->|Lokal dev| FS
+    ENV -->|Lokal dev| WPM
+```
 
 | Vad | Miljövariabel | Alternativ | Förklaring |
 |-----|---------------|------------|------------|
@@ -113,7 +202,7 @@ Appen stödjer flera lagringsbackends:
 | Digitala produktköp | `DIGITAL_ACCESS_STORE` | `cloudflare`, `local` | Vilka användare som köpt vilka produkter |
 | Filuppladdningar | `UPLOAD_BACKEND` | `wordpress`, `r2`, `s3` | Var admin-uppladdade bilder och filer sparas |
 
-**`local`** — sparar data som JSON-filer i `config/`-katalogen. Bra för utveckling.
+**`local`** — sparar data som JSON-filer i `.data/`-katalogen. Bra för utveckling.
 
 **`cloudflare`** — sparar data i Cloudflare KV, en globalt distribuerad nyckel-värde-databas. Krävs för Cloudflare Workers (som saknar permanent filsystem).
 
@@ -123,9 +212,38 @@ Appen stödjer flera lagringsbackends:
 
 **`s3`** — skickar filer till valfri S3-kompatibel tjänst (AWS S3, DigitalOcean Spaces, Backblaze B2, MinIO, Wasabi).
 
+## Enhetlig butik
+
+Butikssidan `/shop` samlar produkter från flera källor:
+
+```mermaid
+graph TB
+    subgraph "Källor"
+        WC["WooCommerce<br/>(WPGraphQL)"]
+        LP["LearnPress<br/>(WPGraphQL)"]
+        EV["Event<br/>(WPGraphQL)"]
+        DP["Digitala produkter<br/>(KV / JSON)"]
+    end
+
+    AGG["shopProducts.js<br/><i>Samlar, filtrerar,<br/>normaliserar alla typer</i>"]
+
+    SET["shopSettings.js<br/><i>Adminkonfigurerad<br/>synlighet per typ</i>"]
+
+    SHOP["/shop-sida"]
+
+    WC --> AGG
+    LP --> AGG
+    EV --> AGG
+    DP --> AGG
+    SET --> AGG
+    AGG --> SHOP
+```
+
+Varje källa hämtas oberoende och produkter inkluderas bara om de har pris > 0. Admins kan välja vilka typer som visas via "Butikssynlighet" i admin-UI:t.
+
 ## Digitala produkter
 
-Produkter lagras i `config/digital-products.json`. Varje produkt har:
+Produkter lagras i `config/digital-products.json` (lokal dev) eller Cloudflare KV (produktion). Varje produkt har:
 
 | Fält | Typ | Beskrivning |
 |------|-----|-------------|
@@ -146,6 +264,23 @@ Produkter hanteras via admin-UI:t på `/admin` (sektionen "Shop-produkter") elle
 
 Webhooken är avgörande — det är så appen får veta om lyckade betalningar.
 
+```mermaid
+sequenceDiagram
+    participant A as Användare
+    participant App as Din App
+    participant S as Stripe
+
+    A->>App: Klickar "Betala"
+    App->>S: Skapar checkout-session<br/>(med metadata: course_uri, user_email)
+    S->>A: Omdirigerar till betalningssida
+    A->>S: Genomför betalning
+    S->>App: POST /api/stripe/webhook<br/>(checkout.session.completed)
+    App->>App: Verifierar signatur (whsec_)
+    App->>App: Beviljar åtkomst via KV/WordPress
+    S->>A: Omdirigerar till framgångs-URL
+    A->>App: Visar innehåll (åtkomst beviljad)
+```
+
 1. Gå till [Stripe Dashboard → Developers → Webhooks](https://dashboard.stripe.com/webhooks)
 2. Klicka "Add endpoint"
 3. URL: `https://din-domän.se/api/stripe/webhook`
@@ -157,6 +292,34 @@ Webhooken är avgörande — det är så appen får veta om lyckade betalningar.
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
+
+## Miljövariabelarkitektur
+
+```mermaid
+flowchart TD
+    subgraph "Byggtid"
+        ENV[".env-fil"]
+        BV["NEXT_PUBLIC_*-variabler<br/><i>Bakas in i JS-bundle</i>"]
+    end
+
+    subgraph "Anropstid (Cloudflare Workers)"
+        INIT["init.js<br/><i>Kopierar Worker-env<br/>till process.env</i>"]
+        SEC["Wrangler Secrets<br/><i>AUTH_SECRET, STRIPE_*,<br/>ADMIN_*, etc.</i>"]
+        VARS["wrangler.jsonc vars<br/><i>Icke-känslig konfiguration</i>"]
+    end
+
+    subgraph "Applikationskod"
+        LAZY["Lazy getter-funktioner<br/><i>getKvKey(), getBaseUrl(),<br/>getUsersKvKey(), etc.</i>"]
+    end
+
+    ENV -->|bygg| BV
+    SEC -->|anrop| INIT
+    VARS -->|anrop| INIT
+    INIT --> LAZY
+    LAZY -->|"Läser alltid<br/>aktuellt process.env"| APP["Modulkod"]
+```
+
+**Viktigt designval:** Alla `process.env`-läsningar sker inuti funktioner (lazy getters), inte på modulnivå. Detta säkerställer att Cloudflare Workers-hemligheter överstyr `.env`-värden vid anropstid, eftersom Workers injicerar miljövariabler efter att moduler laddats.
 
 ## Felsökning
 
@@ -188,8 +351,13 @@ src/components/
 src/lib/
   client.js                 GraphQL-klient med cachning och schemainspektering
   courseAccess.js            Kursåtkomstkontroll
+  shopProducts.js           Enhetlig butiksaggregering
+  shopSettings.js           Admin butikssynlighetsinställningar
   s3upload.js               S3/R2-uppladdningsklient
   stripe.js                 Stripe-sessioner
+  transformContent.js       WordPress-länkomskrivning
+  slugify.js                Delade slug/HTML-verktyg
+  adminRoute.js             Delad admin-auth-guard
   wordpressGraphqlAuth.js   WordPress-autentisering
 ```
 

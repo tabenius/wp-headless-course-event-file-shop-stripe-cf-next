@@ -1,326 +1,476 @@
 # Headless WordPress Course & Shop Platform
 
-A complete, production-ready web application that turns a WordPress website into a modern course platform with online payments, digital product sales, event registration, and access control — without changing how you use WordPress.
+Turn your WordPress website into a modern online store with courses, events, digital downloads, and secure payments — without changing how you write content.
 
-**In plain language:** You write your content in WordPress as usual. This app reads that content, wraps it in a fast modern website, and adds features WordPress doesn't have out of the box: user accounts, payment processing, course paywalls, a digital shop, and an admin dashboard — all deployed on Cloudflare's global network for speed and reliability.
+## What Is This?
 
-## What This Project Does
+If you have a WordPress website (or are thinking about setting one up), this project gives you a powerful online storefront that sits in front of your WordPress site. You keep writing pages, blog posts, and uploading images in WordPress exactly as you do today. This app takes that content and presents it on a fast, modern website with features WordPress doesn't have on its own:
 
-### For content creators and course sellers
+- **Sell online courses** — Protect lessons behind a paywall. Visitors must sign in and pay before they can read the content.
+- **Sell event access** — Charge for webinars, workshops, or in-person events.
+- **Sell digital files** — PDFs, videos, templates, or any downloadable file. Buyers get instant access after payment.
+- **Accept payments** — Payments are processed securely through [Stripe](https://stripe.com), the same payment system used by Shopify, Amazon, and thousands of online businesses.
+- **User accounts** — Visitors can register, sign in, and see what they've purchased. Supports Google, Facebook, Microsoft, and Apple sign-in.
+- **Admin dashboard** — A simple web page (at `/admin`) where you manage products, set prices, check that everything is working, and control who has access to what. No coding needed.
+- **Dark mode** — Visitors can switch between light and dark viewing modes.
 
-- **Sell courses and events** — Visitors must log in and pay before accessing protected content. Payment is handled securely through Stripe (the same payment processor used by Shopify, Amazon, and thousands of online businesses).
-- **Sell digital products** — PDFs, videos, templates, or any downloadable file. Buyers get instant access after payment.
-- **Control who sees what** — Set prices per course/event, grant free access to specific users, or make content available to everyone.
-- **Admin dashboard** — A simple web interface at `/admin` where you manage products, set prices, check system health, and control user access. No coding required.
-- **Dark mode** — Visitors can toggle between light and dark viewing modes.
+### How does it work?
 
-### For developers
+```mermaid
+graph LR
+    A["<b>WordPress</b><br/>You write content<br/>here as usual"] -->|GraphQL API| B["<b>This App</b><br/>Modern website with<br/>payments & accounts"]
+    B -->|Secure checkout| C["<b>Stripe</b><br/>Handles payments<br/>safely"]
+    C -->|Payment confirmed| B
+    B -->|Deployed on| D["<b>Cloudflare</b><br/>Fast worldwide<br/>delivery"]
+```
 
-- **Headless WordPress architecture** — WordPress serves as a content API via WPGraphQL. The frontend is a server-rendered Next.js 15 app with React 19.
-- **Auto-detection** — LearnPress courses and Event CPTs are detected at runtime via GraphQL schema introspection. No manual configuration flags needed.
-- **Pluggable storage** — Course access rules, user data, and digital product entitlements can be stored locally (filesystem) or in Cloudflare KV. File uploads go to WordPress Media Library, Cloudflare R2, or any S3-compatible storage.
-- **Edge deployment** — Runs on Cloudflare Workers via OpenNext for sub-50ms response times worldwide. Also works on Node.js (Vercel, Docker, bare metal).
-- **Stripe integration** — Checkout sessions, webhook-based access granting, and payment confirmation flows are fully implemented.
+1. You create pages, posts, courses, and events in WordPress.
+2. This app automatically reads that content and displays it as a polished website.
+3. When someone wants to buy a course or download, they click "Pay" and complete a secure Stripe checkout.
+4. After payment, they automatically get access — no manual work for you.
 
-## Tech Stack
+## Is This Right For Me?
+
+**This is a good fit if you:**
+- Already have a WordPress site (or want to start one) and want to sell courses, events, or digital files
+- Want a faster website than what WordPress themes typically offer
+- Want to accept credit card payments without installing a dozen WordPress plugins
+- Are comfortable following a step-by-step setup guide, or have someone who can help
+
+**This might not be for you if you:**
+- Just need a simple blog with no payments — regular WordPress is fine for that
+- Need a physical product store with shipping — this is built for digital content and access control
+- Want everything to happen inside the WordPress admin — this app has its own admin dashboard
+
+## System Overview
+
+```mermaid
+graph TB
+    subgraph "What You Manage"
+        WP["WordPress<br/><i>Pages, posts, courses,<br/>events, images</i>"]
+        AD["Admin Dashboard<br/><i>Products, prices,<br/>user access</i>"]
+    end
+
+    subgraph "What Visitors See"
+        FE["Your Website<br/><i>Modern design, fast loading,<br/>dark mode, mobile-friendly</i>"]
+        SH["Shop Page<br/><i>All your products<br/>in one place</i>"]
+        LO["Sign In / Register<br/><i>Email, Google, Facebook,<br/>Microsoft, Apple</i>"]
+    end
+
+    subgraph "Behind the Scenes"
+        ST["Stripe<br/><i>Payment processing</i>"]
+        CF["Cloudflare<br/><i>Hosting, storage,<br/>global delivery</i>"]
+    end
+
+    WP -->|Content| FE
+    AD -->|Settings| FE
+    FE --> SH
+    FE --> LO
+    SH -->|Checkout| ST
+    ST -->|Access granted| CF
+    FE ---|Runs on| CF
+```
+
+## What You Need Before Starting
+
+| What | Why | Cost |
+|------|-----|------|
+| A **WordPress website** with the [WPGraphQL](https://www.wpgraphql.com/) plugin | WPGraphQL is a free plugin that lets this app read your WordPress content. Install it from Plugins → Add New → search "WPGraphQL". | Free |
+| A **Stripe account** | Stripe processes your payments. Create one at [stripe.com](https://stripe.com). You only pay when you make a sale (typically 1.4% + ~3 kr per transaction in Sweden, varies by country). | Free to create |
+| A **Cloudflare account** (recommended) | Cloudflare runs your website on servers worldwide, making it fast for visitors anywhere. The free plan is enough to start. | Free plan available |
+| **Node.js 18+** installed on your computer | Needed to build and deploy the app. Download from [nodejs.org](https://nodejs.org). | Free |
+
+### Optional extras
+
+| What | What it adds |
+|------|-------------|
+| [LearnPress](https://wordpress.org/plugins/learnpress/) plugin | Course management in WordPress — lessons, quizzes, curricula. Without it, you manage courses in the admin dashboard instead. |
+| An event plugin (e.g., The Events Calendar) | Event pages with dates and locations. Without it, you can still create events as regular WordPress pages. |
+| [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) | Makes your WordPress pages look pixel-perfect instead of basic HTML. Recommended if you use the WordPress block editor heavily. |
+| OAuth provider credentials (Google, Facebook, etc.) | Lets visitors sign in with their existing accounts instead of creating a new username/password. |
+
+## Getting Started
+
+### Step 1: Install and configure
+
+```bash
+# Download the project and install its dependencies
+npm install
+
+# Run the interactive setup wizard
+npm run config
+```
+
+The setup wizard walks you through connecting to WordPress, setting up Stripe, and choosing your preferences. It creates a `.env` file with all your settings.
+
+**If you prefer manual setup**, copy the example file and edit it:
+
+```bash
+cp .env.example .env
+# Then open .env in a text editor and fill in your values
+```
+
+### Step 2: Test locally
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000` in your browser. You should see your WordPress content displayed in the new design. Check that:
+- Your pages and posts appear
+- The navigation menu works
+- The `/shop` page shows your products (if you've added any)
+
+### Step 3: Deploy to the internet
+
+The recommended way to put your site online is Cloudflare Workers:
+
+```bash
+npm run cf:deploy
+```
+
+See the [Cloudflare deployment guide](docs/cloudflare-workers-deploy.md) for detailed step-by-step instructions.
+
+**Alternative:** The app also runs on Vercel, DigitalOcean, or any server that supports Node.js.
+
+## Day-to-Day: Managing Your Store
+
+Once deployed, you manage everything through two places:
+
+### WordPress (content)
+Write and edit your content here, just like before:
+- Create pages and blog posts
+- Upload images
+- Manage LearnPress courses (if installed)
+- Create events (if you have an event plugin)
+
+### Admin Dashboard (shop & access)
+Go to `https://your-site.com/admin/login` and sign in with your admin credentials.
+
+**What you can do in the admin dashboard:**
+
+| Section | What it does |
+|---------|-------------|
+| **Health Check** | Verifies that WordPress, Stripe, and storage are all connected and working. Run this after setup or if something seems wrong. |
+| **Shop Products** | Add and manage digital products — set names, descriptions, prices, upload images and files. These appear in your `/shop` page. |
+| **Course Access** | Choose which courses require payment, set prices, and grant free access to specific people. |
+| **Shop Visibility** | Control which types of products appear in your shop — WordPress products, courses, events, and/or digital downloads. |
+| **Analytics** | View visitor statistics (when deployed on Cloudflare). |
+
+### The shop explained
+
+Your shop (`/shop` page) can display products from several sources:
+
+```mermaid
+graph LR
+    subgraph "Product Sources"
+        WC["WooCommerce<br/>Products"]
+        LP["LearnPress<br/>Courses"]
+        EV["Events<br/>(with prices)"]
+        DP["Digital Products<br/>(admin dashboard)"]
+    end
+
+    subgraph "Your Shop"
+        SP["/shop page<br/><i>All products<br/>in one place</i>"]
+    end
+
+    WC --> SP
+    LP --> SP
+    EV --> SP
+    DP --> SP
+```
+
+| Source | Where you manage it | Example |
+|--------|-------------------|---------|
+| **WooCommerce products** | WordPress → WooCommerce | Physical or digital products from WooCommerce |
+| **LearnPress courses** | WordPress → LearnPress, plus prices in admin dashboard | Online courses with lessons |
+| **Events** | WordPress → Events plugin, plus prices in admin dashboard | Paid workshops or webinars |
+| **Digital downloads** | Admin dashboard → Shop Products | PDFs, videos, templates — uploaded directly |
+
+You can enable or disable each source in the admin dashboard under "Shop Visibility". For example, if you only sell courses and digital files, turn off WooCommerce products and events.
+
+### How payments work
+
+```mermaid
+sequenceDiagram
+    participant V as Visitor
+    participant S as Your Site
+    participant P as Stripe
+    participant B as Bank Account
+
+    V->>S: Clicks "Buy"
+    S->>P: Creates checkout session
+    P->>V: Shows secure payment page
+    V->>P: Enters card details
+    P->>S: Payment confirmed (webhook)
+    S->>V: Access granted instantly
+    P->>B: Money deposited (weekly)
+```
+
+1. A visitor clicks "Buy" on a product, course, or event
+2. They're taken to a secure Stripe checkout page (hosted by Stripe — your site never sees their card number)
+3. After payment, Stripe notifies your app automatically
+4. The visitor immediately gets access to what they bought
+
+Stripe deposits the money into your bank account on a regular schedule (typically weekly). You can see all payments, refunds, and payouts in the [Stripe Dashboard](https://dashboard.stripe.com).
+
+### User journey
+
+```mermaid
+flowchart TD
+    A[Visitor arrives] --> B{Logged in?}
+    B -->|No| C[Sign in or Register]
+    C --> D[Email/password or<br/>Google/Facebook/etc.]
+    D --> B
+    B -->|Yes| E{Has access to<br/>this content?}
+    E -->|Free content| F[View page]
+    E -->|Paid, already bought| F
+    E -->|Paid, not bought| G[See price + Pay button]
+    G --> H[Stripe checkout]
+    H --> I[Payment succeeds]
+    I --> F
+    F --> J{Digital file?}
+    J -->|Yes| K[Download available]
+    J -->|No| L[Read course/event content]
+```
+
+### Password reset emails
+
+If a user forgets their password, they can click "Forgot password?" on the sign-in page. The app sends a reset link via email using [Resend](https://resend.com). You'll need a Resend API key (free tier: 100 emails/day) and a verified sender domain.
+
+## Frequently Asked Questions
+
+**Do I need to know how to code?**
+For the initial setup, you need to be comfortable running a few commands in a terminal (or have someone help you). After that, everything is managed through WordPress and the admin dashboard — no coding.
+
+**Will this break my existing WordPress site?**
+No. This app only *reads* from WordPress — it doesn't change your content, theme, or settings. Your WordPress site continues to work exactly as before. Visitors go to the new frontend URL instead.
+
+**Can I use my own domain name?**
+Yes. On Cloudflare, you add your domain in the dashboard and point it to your Workers project. The [deployment guide](docs/cloudflare-workers-deploy.md) explains how.
+
+**How much does it cost to run?**
+- WordPress hosting: whatever you're already paying
+- Cloudflare Workers: free plan includes 100,000 requests/day — enough for most small-to-medium sites
+- Stripe: no monthly fee; you pay per transaction (typically 1.4% + ~3 SEK)
+- Resend (email): free up to 100 emails/day
+
+**What currencies can I use?**
+Any currency Stripe supports (150+ currencies). Set the default in your configuration; individual products can override it.
+
+**Can multiple people be admins?**
+Yes. List multiple email/password pairs separated by commas in `ADMIN_EMAILS` and `ADMIN_PASSWORDS`.
+
+**What if Stripe is down?**
+Stripe has 99.99% uptime. If it's briefly unavailable, visitors see a "try again" message. No data is lost — payments are either completed fully or not at all.
+
+**Can I migrate away later?**
+Your content stays in WordPress. User accounts and purchase records are stored in Cloudflare KV (or local files), which you can export as JSON. There's no lock-in.
+
+## Configuration Reference
+
+All settings are managed through environment variables. The most important ones are listed below. For the complete list with detailed explanations, see [.env.example](.env.example).
+
+### Essential settings
+
+| Variable | What it does |
+|----------|-------------|
+| `NEXT_PUBLIC_WORDPRESS_URL` | Your WordPress site URL (e.g., `https://mysite.com`) |
+| `WORDPRESS_GRAPHQL_USERNAME` | WordPress admin username for API access |
+| `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | WordPress Application Password (see [how to create one](docs/wordpress-learnpress-course-access.md#how-to-create-a-wordpress-application-password)) |
+| `AUTH_SECRET` | A random secret for encrypting sessions. Generate with: `openssl rand -base64 32` |
+| `ADMIN_EMAILS` | Email addresses for admin dashboard access (comma-separated) |
+| `ADMIN_PASSWORDS` | Matching passwords for each admin email (comma-separated, same order) |
+| `STRIPE_SECRET_KEY` | Your Stripe API key (starts with `sk_test_` or `sk_live_`) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (starts with `whsec_`) |
+
+### Where data is stored
+
+```mermaid
+graph TB
+    subgraph "Development (your computer)"
+        LF["Local JSON files<br/><code>.data/</code> folder"]
+    end
+
+    subgraph "Production (Cloudflare)"
+        KV["Cloudflare KV<br/><i>Fast global database</i>"]
+        R2["Cloudflare R2<br/><i>File storage</i>"]
+    end
+
+    UA["User Accounts"] --> KV
+    PR["Purchase Records"] --> KV
+    CA["Course Access Rules"] --> KV
+    FI["Uploaded Files"] --> R2
+
+    UA -.->|dev| LF
+    PR -.->|dev| LF
+    CA -.->|dev| LF
+```
+
+When deployed to Cloudflare, all app data (user accounts, purchases, access rules) is stored in Cloudflare KV — a fast, globally distributed database included in the free plan. During local development, data is stored as JSON files in the `.data/` folder.
+
+| Variable | Set to | What it controls |
+|----------|--------|-----------------|
+| `COURSE_ACCESS_STORE` | `cloudflare` | Where course access rules are stored |
+| `USER_STORE_BACKEND` | `cloudflare` | Where user accounts are stored |
+| `DIGITAL_ACCESS_STORE` | `cloudflare` | Where purchase records are stored |
+| `UPLOAD_BACKEND` | `r2`, `s3`, or `wordpress` | Where uploaded files are stored |
+
+### Secrets vs. public settings
+
+When deploying to Cloudflare Workers, there are two kinds of configuration:
+
+- **Public settings** go in `wrangler.jsonc` under `"vars"`. These are non-sensitive values like currency codes and feature flags.
+- **Secrets** (API keys, passwords, tokens) are set via the command line and never appear in any file:
+
+```bash
+npx wrangler secret put AUTH_SECRET
+npx wrangler secret put STRIPE_SECRET_KEY
+npx wrangler secret put STRIPE_WEBHOOK_SECRET
+npx wrangler secret put ADMIN_EMAILS
+npx wrangler secret put ADMIN_PASSWORDS
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put RESEND_FROM_EMAIL
+# ... and so on for each sensitive value
+```
+
+See the [Cloudflare deployment guide](docs/cloudflare-workers-deploy.md) for the full list of secrets to set.
+
+## WordPress Setup
+
+### Required plugin
+
+| Plugin | What it does |
+|--------|-------------|
+| [WPGraphQL](https://www.wpgraphql.com/) | Makes your WordPress content available to this app. **This is the only required plugin.** Install from Plugins → Add New → search "WPGraphQL". |
+
+### Recommended plugins
+
+All optional. The app detects them automatically — no configuration flags needed.
+
+| Plugin | What it adds | How to tell it's working |
+|--------|-------------|-------------------------|
+| [LearnPress](https://wordpress.org/plugins/learnpress/) | Course management (lessons, quizzes, curriculum) | Courses appear at `/courses` |
+| Articulate-LearnPress-Stripe mu-plugin | Connects LearnPress courses to the payment system | Course pages show prices. Copy from `docs/wordpress/mu-plugins/` to `wp-content/mu-plugins/`. |
+| [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) | Better page rendering from the block editor | Pages look polished instead of plain HTML. Set `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`. |
+| An Event plugin | Event pages with dates/locations | Events appear at `/events` |
+| [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Smaller, faster images | Faster page loads |
+
+### How WordPress connects to the app
+
+```mermaid
+graph LR
+    WP["WordPress<br/><i>your-wordpress.com</i>"]
+    GQL["WPGraphQL Plugin"]
+    APP["This App<br/><i>your-storefront.com</i>"]
+
+    WP --- GQL
+    GQL -->|"Pages, posts,<br/>courses, events,<br/>menus, images"| APP
+
+    style GQL fill:#f9f,stroke:#333
+```
+
+WPGraphQL turns your WordPress content into a structured API. The app reads this API to build your website. Your visitors go to the app's URL — they never visit WordPress directly.
+
+## Content Types
+
+```mermaid
+graph TD
+    subgraph "Free Content"
+        PA["Pages<br/><i>/about, /contact, etc.</i>"]
+        PO["Blog Posts<br/><i>/my-post-title</i>"]
+    end
+
+    subgraph "Paid Content (login + payment required)"
+        CO["Courses<br/><i>/courses/my-course</i>"]
+        EV["Events<br/><i>/events/my-event</i>"]
+    end
+
+    subgraph "Shop"
+        DF["Digital Files<br/><i>/shop/my-ebook</i>"]
+        DC["Course Bundles<br/><i>/shop/course-pack</i>"]
+    end
+
+    PA --> FREE["Anyone can view"]
+    PO --> FREE
+    CO --> PAID["Must sign in + pay"]
+    EV --> PAID
+    DF --> BUY["Buy in shop, then<br/>download or access"]
+    DC --> BUY
+```
+
+| WordPress type | URL pattern | Access |
+|---------------|-------------|--------|
+| Pages | `/<slug>` | Free — anyone can view |
+| Posts | `/<slug>` | Free — anyone can view |
+| LearnPress Courses | `/courses/<slug>` | Login + payment required |
+| Events | `/events/<slug>` | Login + payment required |
+| Shop products | `/shop` and `/shop/<slug>` | Buy to download or access |
+
+## For Developers
+
+### Tech stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 15 (App Router), React 19, Tailwind CSS 4 |
 | Content | WordPress + WPGraphQL (GraphQL API) |
 | Payments | Stripe Checkout + Webhooks |
-| Auth | NextAuth.js (email/password + OAuth providers) |
+| Auth | Custom HMAC-signed sessions (email/password + OAuth) |
 | Deployment | Cloudflare Workers + KV (or any Node.js host) |
-| File storage | WordPress Media Library, Cloudflare R2, or any S3-compatible service |
+| File storage | WordPress Media Library, Cloudflare R2, or S3-compatible |
 
-## Quick Start
+### Architecture
 
-### Prerequisites
+```mermaid
+graph TB
+    subgraph "Client (Browser)"
+        RC["React 19 Components"]
+    end
 
-- **Node.js 18+** (check with `node --version`)
-- **A WordPress site** with the [WPGraphQL](https://www.wpgraphql.com/) plugin installed and activated
-- **A Stripe account** (free to create at [stripe.com](https://stripe.com)) — only needed if you want to accept payments
+    subgraph "Server (Cloudflare Workers)"
+        NX["Next.js 15 App Router"]
+        AUTH["Auth Module<br/><i>HMAC sessions, OAuth</i>"]
+        API["API Routes<br/><i>/api/stripe, /api/auth,<br/>/api/admin, /api/digital</i>"]
+        GQL["GraphQL Client<br/><i>Caching + introspection</i>"]
+        STR["Stripe SDK"]
+        KVM["KV Storage Layer<br/><i>Users, access, products</i>"]
+    end
 
-### Setup
+    subgraph "External Services"
+        WP["WordPress + WPGraphQL"]
+        SP["Stripe API"]
+        KV["Cloudflare KV"]
+        R2S["Cloudflare R2 / S3"]
+    end
 
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Copy the example environment file and fill in your values
-cp .env.example .env
-
-# 3. Start the development server
-npm run dev
+    RC --> NX
+    NX --> AUTH
+    NX --> API
+    API --> GQL
+    API --> STR
+    API --> KVM
+    GQL --> WP
+    STR --> SP
+    KVM --> KV
+    API --> R2S
 ```
 
-Open `http://localhost:3000` to see your site.
-
-### Interactive configuration
-
-```bash
-npm run config
-```
-
-This opens a guided setup tool that helps you configure your `.env` file, validate connections, set up your shop catalog, and more.
-
-## How It Works
-
-### The big picture
-
-```
-WordPress (CMS)          This App (Frontend)           Stripe (Payments)
-┌─────────────┐         ┌──────────────────┐          ┌──────────────┐
-│ Write posts  │◀─GraphQL─│  Renders pages   │──checkout─▶│ Processes    │
-│ Upload media │         │  Handles auth    │◀─webhook──│ payment      │
-│ Manage courses│        │  Controls access │          │              │
-└─────────────┘         │  Serves shop     │          └──────────────┘
-                        └──────────────────┘
-                               │
-                        Cloudflare Workers
-                        (or any Node.js host)
-```
-
-1. You create and edit content in WordPress — pages, posts, courses, events.
-2. This app fetches that content through WordPress's GraphQL API and renders it as a modern, fast website.
-3. When someone tries to access a paid course or event, the app checks if they're logged in and have paid.
-4. If they haven't paid, they see a paywall with a "Pay now" button that starts a Stripe checkout.
-5. After successful payment, Stripe sends a webhook notification, and the app automatically grants access.
-6. For digital products (in `/shop`), the same flow applies — pay, get access, download.
-
-### Content types supported
-
-| WordPress type | URL pattern | Features |
-|---------------|-------------|----------|
-| Pages | `/<slug>` | Static content, no paywall |
-| Posts | `/<slug>` | Blog posts with author/date |
-| LearnPress Courses | `/courses/<slug>` | Login + payment required |
-| Events | `/events/<slug>` | Login + payment required |
-| Shop products | `/shop` and `/shop/<slug>` | Digital file or course bundle sales |
-
-### User flow
-
-```
-Visit page → Not logged in? → Sign in / Register
-                                    ↓
-                              Logged in but no access? → Pay via Stripe
-                                    ↓
-                              Access granted → View content / Download file
-```
-
-## Configuration Guide
-
-All configuration is done through environment variables in your `.env` file. Below is every variable explained in detail.
-
-### WordPress Connection (Required)
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `NEXT_PUBLIC_WORDPRESS_URL` | `https://mysite.com` | The URL of your WordPress site. The app fetches all content from `{this URL}/graphql`. This is the only variable you absolutely must set. |
-
-### WordPress Authentication
-
-The app needs to authenticate with WordPress to access private content and perform admin operations. Choose **one** method:
-
-**Option A: Application Password** (recommended)
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `WORDPRESS_GRAPHQL_USERNAME` | `admin@mysite.com` | Your WordPress admin username or email |
-| `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | `abcd efgh ijkl mnop` | A WordPress Application Password (generated in WordPress → Users → Your Profile → Application Passwords). The spaces are part of the password. |
-
-**Option B: Bearer Token**
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `WORDPRESS_GRAPHQL_AUTH_TOKEN` | `eyJhbGci...` | A JWT or plugin-generated token. Used when you have a JWT auth plugin installed in WordPress. |
-
-If both methods are configured, Application Password takes priority. The auth logic lives in `src/lib/wordpressGraphqlAuth.js`.
-
-### Authentication & User Accounts
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `AUTH_SECRET` | `a-long-random-string-here` | A secret key used to encrypt user sessions. Generate one with `openssl rand -base64 32`. Keep this secret — if it leaks, anyone can forge login sessions. |
-| `ADMIN_EMAILS` | `alice@example.com,bob@example.com` | Comma-separated list of email addresses that can log into the admin dashboard at `/admin`. |
-| `ADMIN_PASSWORDS` | `password-for-alice,password-for-bob` | Matching passwords for each admin email (same order). These are only for the admin UI — regular users log in through the normal auth flow. |
-
-### OAuth Providers (Optional)
-
-Let users sign in with their existing accounts. Only configure the ones you want to offer. Each provider requires you to create an app in their developer console and paste the credentials here.
-
-| Provider | Variables needed |
-|----------|----------------|
-| Google | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` |
-| Facebook | `AUTH_FACEBOOK_ID`, `AUTH_FACEBOOK_SECRET` |
-| Microsoft | `AUTH_MICROSOFT_ENTRA_ID_ID`, `AUTH_MICROSOFT_ENTRA_ID_SECRET`, `AUTH_MICROSOFT_ENTRA_ID_TENANT` (use `common` for any Microsoft account) |
-| Apple | `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET` |
-
-### Stripe Payments
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `STRIPE_SECRET_KEY` | `sk_test_...` or `sk_live_...` | Your Stripe API key. Found in the [Stripe Dashboard](https://dashboard.stripe.com/apikeys) under Developers → API keys. Use `sk_test_` keys during development. |
-| `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Verifies that webhook notifications genuinely come from Stripe. Create a webhook endpoint in Stripe Dashboard → Developers → Webhooks, point it to `https://your-domain/api/stripe/webhook`, listen for `checkout.session.completed`. |
-
-**Important:** Without the webhook, payments will succeed in Stripe but the app won't know to grant access. The webhook is what closes the loop.
-
-### Course & Access Configuration
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `COURSE_ACCESS_BACKEND` | `wordpress` | Where course access rules are stored. `wordpress` uses the WPGraphQL mu-plugin (recommended for production). Leave unset to use local/KV storage. |
-| `COURSE_ACCESS_STORE` | `cloudflare` or `local` | Where to persist access data. `cloudflare` uses Cloudflare KV (recommended for production). `local` uses the filesystem (fine for development). |
-| `USER_STORE_BACKEND` | `cloudflare` or `local` | Same choice for user registration data. |
-| `DIGITAL_ACCESS_STORE` | `cloudflare` or `local` | Same choice for tracking which users have purchased which digital products. |
-| `DEFAULT_COURSE_FEE_CURRENCY` | `SEK` | Default currency for course prices. Uses [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) codes (SEK, USD, EUR, GBP, etc.). Individual courses can override this in the admin UI. |
-
-### Cloudflare KV (Required for Cloudflare deployment)
-
-Cloudflare KV is a key-value store that holds your access rules, user data, and product entitlements when deployed to Cloudflare Workers.
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `CF_ACCOUNT_ID` | `abc123def456` | Your Cloudflare account ID. Found in the Cloudflare dashboard URL or under Account Home → right sidebar. |
-| `CF_API_TOKEN` | `bearer-token-here` | An API token with KV read/write permissions. Create one at Cloudflare Dashboard → My Profile → API Tokens. |
-| `CF_KV_NAMESPACE_ID` | `0ac8a81b4e40...` | The ID of your KV namespace. Create one with `npx wrangler kv namespace create COURSE_ACCESS`. |
-| `CF_KV_KEY` | `course-access` | The KV key prefix for course access data. Default: `course-access`. |
-| `CF_USERS_KV_KEY` | `users` | The KV key prefix for user data. Default: `users`. |
-| `CF_DIGITAL_ACCESS_KV_KEY` | `digital-access` | The KV key prefix for digital product purchases. Default: `digital-access`. |
-
-### File Upload Backend
-
-Controls where uploaded images and files are stored when you use the upload buttons in the admin UI.
-
-| Variable | Value | What it does |
-|----------|-------|-------------|
-| `UPLOAD_BACKEND` | `wordpress` | **(Default)** Uploads to your WordPress Media Library. No extra setup needed. File size limit depends on your WordPress/PHP configuration (typically 2–64 MB). |
-| `UPLOAD_BACKEND` | `r2` | Uploads to **Cloudflare R2** — S3-compatible object storage with a generous free tier (10 GB storage, 10 million reads/month, no egress fees). Good for larger files. |
-| `UPLOAD_BACKEND` | `s3` | Uploads to **any S3-compatible storage** — AWS S3, DigitalOcean Spaces, Backblaze B2, MinIO, Wasabi, etc. |
-
-**Additional variables for R2 or S3:**
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `S3_ACCESS_KEY_ID` | `access-key-here` | Your S3/R2 access key. For R2, create one in Cloudflare Dashboard → R2 → Manage R2 API Tokens. |
-| `S3_SECRET_ACCESS_KEY` | `secret-key-here` | The matching secret key. |
-| `S3_BUCKET_NAME` | `my-uploads` | The name of your storage bucket. |
-| `S3_PUBLIC_URL` | `https://pub-xxx.r2.dev` | The public URL where uploaded files can be accessed. For R2, enable "Public access" on your bucket to get this URL. |
-| `S3_REGION` | `auto` | The AWS region. Use `auto` for R2 (it's always automatic). For AWS S3, use your bucket's region (e.g., `eu-north-1`). |
-| `S3_ENDPOINT` | `https://s3.amazonaws.com` | The S3 API endpoint. **Only needed for `UPLOAD_BACKEND=s3`** — R2 derives this automatically from `CF_ACCOUNT_ID`. |
-| `S3_FORCE_PATH_STYLE` | `0` or `1` | Set to `1` for services that require path-style URLs (e.g., MinIO). Default: `0`. |
-
-For backwards compatibility, the R2-specific names `CF_R2_ACCESS_KEY_ID`, `CF_R2_SECRET_ACCESS_KEY`, `CF_R2_BUCKET_NAME`, and `CF_R2_PUBLIC_URL` also work.
-
-### Image Optimization (Optional)
-
-| Variable | Example | What it does |
-|----------|---------|-------------|
-| `CLOUDFLARE_IMAGE_RESIZING` | `1` | Enables Cloudflare Image Resizing, which automatically optimizes and resizes images on the fly. Requires a Cloudflare Pro plan with a custom domain. |
-| `CLOUDFLARE_IMAGE_RESIZING_DOMAIN` | `www.mysite.com` | The domain with Image Resizing enabled. Required when your app runs on a `workers.dev` subdomain (which doesn't support Image Resizing) but you have a custom domain that does. |
-
-### Debugging
-
-| Variable | Value | What it does |
-|----------|-------|-------------|
-| `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG` | `1` | Logs every GraphQL request and response to the server console — useful for troubleshooting WordPress connection issues. Shows auth mode, endpoint, HTTP status, and payload. |
-
-## WordPress Setup
-
-### Required Plugin
-
-| Plugin | Why you need it |
-|--------|----------------|
-| [WPGraphQL](https://www.wpgraphql.com/) | This is the bridge between WordPress and this app. It turns your WordPress content into a GraphQL API that the app reads. **Without this, nothing works.** Install it from Plugins → Add New in WordPress. |
-
-### Recommended Plugins
-
-These add extra features. All are optional and the app detects their presence automatically.
-
-| Plugin | What it adds | How to tell it's working |
-|--------|-------------|-------------------------|
-| [LearnPress](https://wordpress.org/plugins/learnpress/) | Course management (lessons, quizzes, curriculum) | The `/courses` page shows your LearnPress courses |
-| Articulate-LearnPress-Stripe mu-plugin | Exposes LearnPress data to GraphQL (prices, durations, curricula) | Course pages show pricing and lesson lists. Copy from `docs/wordpress/mu-plugins/` to `wp-content/mu-plugins/`. |
-| [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) | Renders WordPress block editor content with proper structure instead of raw HTML | Pages look pixel-perfect instead of unstyled HTML. Enable with `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`. |
-| An Event CPT plugin | Event pages with date/location fields | Event pages appear with structured data. Works with The Events Calendar + WPGraphQL extension or similar. |
-| [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Smaller image files | Faster page loads — images are converted to modern formats before serving. |
-
-### Auto-Detection
-
-The app checks your WordPress GraphQL schema at startup for the `Event` and `LpCourse` types. If they exist, the app includes the relevant queries automatically. If they don't exist, the app skips them — no errors, no broken pages. This means you never need to toggle feature flags when adding or removing plugins.
-
-## Admin Dashboard
-
-Access the admin UI at `/admin/login`. Sign in with the credentials from `ADMIN_EMAILS` / `ADMIN_PASSWORDS`.
-
-### What you can do
-
-- **Shop products** — Add, edit, and remove products. Upload images and files directly (stored in WordPress Media Library, R2, or S3 depending on your `UPLOAD_BACKEND`). Set prices, descriptions, and link products to courses or downloadable files.
-- **Course access** — Select a course, set its price, and manage which users have access. You can grant free access to specific email addresses.
-- **Health check** — Run a diagnostic that verifies your WordPress connection, Stripe keys, and storage backends are all working.
-
-## Deployment
-
-### Cloudflare Workers (Recommended)
-
-The app is optimized for Cloudflare Workers, which gives you global edge deployment with sub-50ms response times.
-
-```bash
-# Build and deploy
-npm run cf:deploy
-```
-
-**Requirements:**
-- A Cloudflare account (free plan works for Workers)
-- Wrangler CLI (`npx wrangler` — included in dev dependencies)
-- KV namespace created (see Cloudflare KV section above)
-- Environment secrets set via `npx wrangler secret put VARIABLE_NAME`
-
-**Configuration:** See `wrangler.jsonc` for the Workers configuration. Public (non-secret) variables go in the `vars` section. Secrets (API keys, passwords) must be set via `wrangler secret put`.
-
-**Preview locally before deploying:**
-
-```bash
-npm run cf:preview
-```
-
-### Other Hosting (Vercel, Docker, Node.js)
-
-The app is a standard Next.js 15 application and works anywhere Next.js runs:
-
-```bash
-npm run build
-npm run start
-```
-
-When not on Cloudflare, set `COURSE_ACCESS_STORE=local`, `USER_STORE_BACKEND=local`, and `DIGITAL_ACCESS_STORE=local` to use filesystem storage instead of KV.
-
-## Scripts Reference
-
-| Command | What it does |
-|---------|-------------|
-| `npm run dev` | Start local development server with hot reload |
-| `npm run build` | Build for production |
-| `npm run start` | Run the production build locally |
-| `npm run lint` | Check code for errors and style issues |
-| `npm run prettier` | Auto-format all source code |
-| `npm run config` | Interactive configuration wizard |
-| `npm run theme:css` | Regenerate CSS variables from `theme.json` (runs automatically before dev/build) |
-| `npm run cf:build` | Build for Cloudflare Workers |
-| `npm run cf:preview` | Build and preview locally with Wrangler |
-| `npm run cf:deploy` | Build and deploy to Cloudflare Workers |
-
-## Project Structure
+Key design decisions:
+- **Auto-detection** — LearnPress courses and Event CPTs are detected at runtime via GraphQL schema introspection. No feature flags.
+- **Lazy env reads** — All `process.env` reads happen inside functions (not at module level) so Cloudflare Workers secrets properly override `.env` values at request time.
+- **KV-first storage** — User data, access rules, and product entitlements use Cloudflare KV in production, with local file and in-memory fallbacks for development.
+- **Unified shop** — The `/shop` page aggregates products from WooCommerce, LearnPress, Events, and digital products into a single storefront, with admin-configurable visibility per type.
+
+### Project structure
 
 ```
 src/
 ├── app/                    # Next.js routes and pages
-│   ├── [...uri]/page.js    # Catch-all route — renders any WordPress page/post/course/event
+│   ├── [...uri]/page.js    # Catch-all: renders any WordPress page/post/course/event
 │   ├── admin/              # Admin login and dashboard
 │   ├── api/                # API routes (Stripe, auth, uploads, downloads)
 │   ├── auth/               # Sign in and registration pages
-│   ├── blog/               # Blog listing
-│   ├── courses/            # Course listing
 │   ├── shop/               # Digital product shop
 │   └── layout.js           # Root layout (header, footer, fonts, metadata)
 ├── components/             # React components
@@ -333,6 +483,7 @@ src/
 │   ├── client.js           # GraphQL client with caching and introspection
 │   ├── courseAccess.js      # Course access check and granting
 │   ├── digitalProducts.js  # Product catalog management
+│   ├── shopProducts.js     # Unified shop item aggregation
 │   ├── s3upload.js          # S3/R2 file upload client
 │   ├── stripe.js            # Stripe checkout and session handling
 │   └── site.js              # Site configuration (from site.json)
@@ -343,14 +494,27 @@ src/
 └── wrangler.jsonc          # Cloudflare Workers configuration
 ```
 
-## Documentation
+### Scripts
+
+| Command | What it does |
+|---------|-------------|
+| `npm run dev` | Start local development server with hot reload |
+| `npm run build` | Build for production |
+| `npm run start` | Run the production build locally |
+| `npm run lint` | Check code for errors and style issues |
+| `npm run config` | Interactive configuration wizard |
+| `npm run cf:build` | Build for Cloudflare Workers |
+| `npm run cf:preview` | Build and preview locally with Wrangler |
+| `npm run cf:deploy` | Build and deploy to Cloudflare Workers |
+
+### Detailed documentation
 
 | Document | Language | Contents |
 |----------|----------|----------|
-| [English guide](docs/README.en.md) | English | Detailed technical reference |
-| [Svensk guide](docs/README.sv.md) | Svenska | Detaljerad teknisk referens |
-| [Cloudflare deploy](docs/cloudflare-workers-deploy.md) | Svenska | Step-by-step Cloudflare Workers deployment |
-| [WordPress LearnPress setup](docs/wordpress-learnpress-course-access.md) | English | WordPress plugin installation and configuration |
+| [English technical reference](docs/README.en.md) | English | Architecture, storage backends, GraphQL details |
+| [Svensk teknisk referens](docs/README.sv.md) | Svenska | Arkitektur, lagringsbackends, GraphQL-detaljer |
+| [Cloudflare deployment](docs/cloudflare-workers-deploy.md) | Svenska | Step-by-step Cloudflare Workers deployment |
+| [WordPress + LearnPress setup](docs/wordpress-learnpress-course-access.md) | English | Plugin installation and course access configuration |
 
 ## License
 

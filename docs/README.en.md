@@ -4,6 +4,44 @@ This document covers the technical details of the platform. For a high-level ove
 
 ## Architecture Overview
 
+```mermaid
+graph TB
+    subgraph "Client (Browser)"
+        RC["React 19<br/>Server + Client Components"]
+    end
+
+    subgraph "Next.js 15 on Cloudflare Workers"
+        AR["App Router"]
+        MW["Middleware<br/><i>Auth checks, redirects</i>"]
+        SSR["Server-Side Rendering"]
+        API["API Routes"]
+    end
+
+    subgraph "Data Layer"
+        GQL["GraphQL Client<br/><i>Caching + schema introspection</i>"]
+        KV["KV Storage Adapter<br/><i>Cloudflare KV / local file / in-memory</i>"]
+        S3C["S3 Upload Client<br/><i>R2 / S3 / WordPress Media</i>"]
+    end
+
+    subgraph "External Services"
+        WP["WordPress + WPGraphQL"]
+        ST["Stripe API"]
+        CKV["Cloudflare KV"]
+        R2["Cloudflare R2"]
+        RS["Resend (email)"]
+    end
+
+    RC --> AR
+    AR --> MW --> SSR
+    AR --> API
+    SSR --> GQL --> WP
+    API --> GQL
+    API --> KV --> CKV
+    API --> S3C --> R2
+    API --> ST
+    API --> RS
+```
+
 The application follows a **headless CMS** pattern:
 
 - **WordPress** is the content management system (CMS). Authors write content there using the familiar WordPress editor. WordPress also stores images and media.
@@ -44,37 +82,55 @@ WordPress is excellent for content creation but limited for custom application l
 
 ### Course/Event access flow
 
-```
-1. Visitor opens a course or event page
-2. App checks: is the visitor logged in?
-   ├── No  → Redirect to /auth/signin (with return URL)
-   └── Yes → App checks: does this user have access?
-       ├── No  → Show paywall with course title, price, and "Pay now" button
-       │         → User clicks "Pay now" → Stripe Checkout
-       │         → Payment succeeds → Stripe webhook → App grants access
-       │         → User is redirected back to the course page
-       └── Yes → Render the full course/event content
+```mermaid
+flowchart TD
+    A[Visitor opens course/event page] --> B{Logged in?}
+    B -->|No| C[Redirect to /auth/signin<br/>with return URL]
+    C --> D[User signs in or registers]
+    D --> B
+    B -->|Yes| E{Has access?}
+    E -->|Yes| F["Render full content"]
+    E -->|No| G["Show paywall<br/><i>Title, price, Pay button</i>"]
+    G --> H[Stripe Checkout]
+    H --> I{Payment OK?}
+    I -->|Yes| J[Stripe webhook fires]
+    J --> K[App grants access]
+    K --> F
+    I -->|No| L[Show error, try again]
 ```
 
 ### Digital product purchase flow
 
-```
-1. Visitor browses /shop
-2. Clicks a product → /shop/{slug} detail page
-3. Clicks "Buy" → Stripe Checkout
-4. Payment succeeds → Stripe webhook → Access recorded
-5. User can now download the file or access the linked course
+```mermaid
+sequenceDiagram
+    participant V as Visitor
+    participant Shop as /shop page
+    participant Detail as /shop/{slug}
+    participant Stripe as Stripe Checkout
+    participant WH as Webhook Handler
+    participant KV as Cloudflare KV
+
+    V->>Shop: Browse products
+    V->>Detail: Click product
+    V->>Stripe: Click "Buy"
+    Stripe->>V: Payment page
+    V->>Stripe: Complete payment
+    Stripe->>WH: checkout.session.completed
+    WH->>KV: Grant access
+    WH->>V: Redirect to product page
+    V->>Detail: Download file / access course
 ```
 
 ### Admin flow
 
-```
-1. Admin goes to /admin/login
-2. Signs in with ADMIN_EMAILS/ADMIN_PASSWORDS credentials
-3. Dashboard shows:
-   - Integration health check (verifies WordPress, Stripe, storage)
-   - Shop products (add/edit/remove, upload images and files)
-   - Course access (set prices, manage allowed users)
+```mermaid
+flowchart LR
+    A["/admin/login"] --> B["Admin Dashboard"]
+    B --> C["Health Check<br/><i>WordPress, Stripe,<br/>KV status</i>"]
+    B --> D["Shop Products<br/><i>Add/edit/remove,<br/>upload files</i>"]
+    B --> E["Course Access<br/><i>Set prices,<br/>manage users</i>"]
+    B --> F["Shop Visibility<br/><i>Toggle product types</i>"]
+    B --> G["Analytics<br/><i>Visitor stats</i>"]
 ```
 
 ## WordPress GraphQL Authentication
@@ -102,6 +158,17 @@ query IntrospectType($name: String!) {
 
 This runs for `Event` and `LpCourse`. Results are cached in memory for the lifetime of the process. If a type doesn't exist, its GraphQL fragments are omitted from queries entirely — no schema errors, no broken pages.
 
+```mermaid
+flowchart LR
+    A["App starts"] --> B["Introspect schema"]
+    B --> C{"Event type exists?"}
+    C -->|Yes| D["Include Event fragments"]
+    C -->|No| E["Skip Event queries"]
+    B --> F{"LpCourse type exists?"}
+    F -->|Yes| G["Include Course fragments"]
+    F -->|No| H["Skip Course queries"]
+```
+
 The introspection logic is in `src/lib/client.js` (`hasGraphQLType` function). The fragment builders are in `src/lib/fragments/`.
 
 ## LearnPress Integration
@@ -117,7 +184,33 @@ Setup: copy `docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.php` to `wp-
 
 ## Storage Backends
 
-The app supports multiple storage backends for different concerns:
+```mermaid
+graph TB
+    subgraph "Storage Decision"
+        ENV{"Environment?"}
+    end
+
+    subgraph "Production (Cloudflare Workers)"
+        KV["Cloudflare KV<br/><i>Users, access rules,<br/>product entitlements</i>"]
+        R2["Cloudflare R2<br/><i>Uploaded files<br/>(10 GB free)</i>"]
+    end
+
+    subgraph "Development (Local)"
+        FS["JSON files in .data/<br/><i>Users, access rules,<br/>product entitlements</i>"]
+        WPM["WordPress Media Library<br/><i>Uploaded files</i>"]
+    end
+
+    subgraph "Alternative (any host)"
+        S3["Any S3-compatible<br/><i>AWS, DigitalOcean,<br/>Backblaze, MinIO</i>"]
+    end
+
+    ENV -->|Workers| KV
+    ENV -->|Workers| R2
+    ENV -->|Local dev| FS
+    ENV -->|Local dev| WPM
+    ENV -->|Other host| FS
+    ENV -->|Other host| S3
+```
 
 | Concern | Variable | Options | Notes |
 |---------|----------|---------|-------|
@@ -126,7 +219,7 @@ The app supports multiple storage backends for different concerns:
 | Digital product purchases | `DIGITAL_ACCESS_STORE` | `cloudflare`, `local` | Which users bought which products |
 | File uploads | `UPLOAD_BACKEND` | `wordpress`, `r2`, `s3` | Where admin-uploaded images and files are stored |
 
-**`local`** stores data as JSON files in the `config/` directory. Good for development and single-server setups.
+**`local`** stores data as JSON files in the `.data/` directory. Good for development and single-server setups.
 
 **`cloudflare`** stores data in Cloudflare KV, a globally distributed key-value store. Required for Cloudflare Workers deployment (Workers have no persistent filesystem).
 
@@ -138,7 +231,7 @@ The app supports multiple storage backends for different concerns:
 
 ## Digital Products
 
-Products are stored in `config/digital-products.json`. Each product has:
+Products are stored in `config/digital-products.json` (local dev) or Cloudflare KV (production). Each product has:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -155,9 +248,55 @@ Products are stored in `config/digital-products.json`. Each product has:
 
 Products can be managed via the admin UI at `/admin` (section "Shop-produkter") or by editing the JSON file directly.
 
+## Unified Shop
+
+The `/shop` page aggregates products from multiple sources:
+
+```mermaid
+graph TB
+    subgraph "Sources"
+        WC["WooCommerce<br/>(WPGraphQL)"]
+        LP["LearnPress<br/>(WPGraphQL)"]
+        EV["Events<br/>(WPGraphQL)"]
+        DP["Digital Products<br/>(KV / JSON)"]
+    end
+
+    AGG["shopProducts.js<br/><i>Aggregates, filters,<br/>normalizes all types</i>"]
+
+    SET["shopSettings.js<br/><i>Admin-configured<br/>visibility per type</i>"]
+
+    SHOP["/shop page"]
+
+    WC --> AGG
+    LP --> AGG
+    EV --> AGG
+    DP --> AGG
+    SET --> AGG
+    AGG --> SHOP
+```
+
+Each source is fetched independently and items are only included if they have a price > 0. The admin can toggle which types appear in the shop via the "Shop Visibility" settings.
+
 ## Stripe Webhook Setup
 
 The webhook is critical — it's how the app learns about successful payments.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as Your App
+    participant S as Stripe
+
+    U->>A: Click "Pay"
+    A->>S: Create checkout session<br/>(with metadata: course_uri, user_email)
+    S->>U: Redirect to checkout page
+    U->>S: Complete payment
+    S->>A: POST /api/stripe/webhook<br/>(checkout.session.completed)
+    A->>A: Verify signature (whsec_)
+    A->>A: Grant access via KV/WordPress
+    S->>U: Redirect to success URL
+    U->>A: View content (access granted)
+```
 
 1. Go to [Stripe Dashboard → Developers → Webhooks](https://dashboard.stripe.com/webhooks)
 2. Click "Add endpoint"
@@ -170,6 +309,34 @@ The webhook is critical — it's how the app learns about successful payments.
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
+
+## Environment Variable Architecture
+
+```mermaid
+flowchart TD
+    subgraph "Build Time"
+        ENV[".env file"]
+        BV["NEXT_PUBLIC_* vars<br/><i>Baked into JS bundle</i>"]
+    end
+
+    subgraph "Request Time (Cloudflare Workers)"
+        INIT["init.js<br/><i>Copies Worker env<br/>to process.env</i>"]
+        SEC["Wrangler Secrets<br/><i>AUTH_SECRET, STRIPE_*,<br/>ADMIN_*, etc.</i>"]
+        VARS["wrangler.jsonc vars<br/><i>Non-sensitive config</i>"]
+    end
+
+    subgraph "Application Code"
+        LAZY["Lazy getter functions<br/><i>getKvKey(), getBaseUrl(),<br/>getUsersKvKey(), etc.</i>"]
+    end
+
+    ENV -->|build| BV
+    SEC -->|request| INIT
+    VARS -->|request| INIT
+    INIT --> LAZY
+    LAZY -->|"Always reads<br/>current process.env"| APP["Module code"]
+```
+
+**Critical design choice:** All `process.env` reads happen inside functions (lazy getters), not at module level. This ensures Cloudflare Workers secrets override `.env` values at request time, because Workers inject environment variables after modules are loaded.
 
 ## Debugging
 
@@ -201,8 +368,13 @@ src/components/
 src/lib/
   client.js                 GraphQL client, caching, schema introspection
   courseAccess.js            Course access check/grant logic
+  shopProducts.js           Unified shop item aggregation
+  shopSettings.js           Admin shop visibility settings
   s3upload.js               S3/R2 upload client
   stripe.js                 Stripe session creation and retrieval
+  transformContent.js       WordPress link rewriting
+  slugify.js                Shared slug/HTML utilities
+  adminRoute.js             Shared admin auth guard
   wordpressGraphqlAuth.js   WordPress auth header generation
 ```
 
