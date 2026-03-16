@@ -30,6 +30,18 @@ const nextConfig = {
     });
     return config;
   },
+  async rewrites() {
+    const wpBase = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+    const hasWp = Boolean(wpBase);
+    return hasWp
+      ? [
+          {
+            source: "/wp-content/:path*",
+            destination: `${wpBase}/wp-content/:path*`,
+          },
+        ]
+      : [];
+  },
   images: {
     remotePatterns: [
       { protocol: "http", hostname: "localhost" },
