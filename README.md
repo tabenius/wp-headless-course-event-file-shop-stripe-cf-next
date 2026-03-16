@@ -121,6 +121,8 @@ Open `http://localhost:3000` in your browser. You should see your WordPress cont
 - The navigation menu works
 - The `/shop` page shows your products (if you've added any)
 
+The local dev server uses [Turbopack](https://turbo.build/pack) for fast startup and instant hot-module replacement.
+
 ### Step 3: Deploy to the internet
 
 The recommended way to put your site online is Cloudflare Workers:
@@ -151,19 +153,20 @@ Go to `https://your-site.com/admin/login` and sign in with your admin credential
 
 | Section | What it does |
 |---------|-------------|
+| **Statistics** | Overview of site activity and key metrics. |
 | **Health Check** | Verifies that WordPress, Stripe, and storage are all connected and working. Run this after setup or if something seems wrong. |
 | **Shop Products** | Add and manage digital products — set names, descriptions, prices, upload images and files. These appear in your `/shop` page. |
 | **Course Access** | Choose which courses require payment, set prices, and grant free access to specific people. |
 | **Shop Visibility** | Control which types of products appear in your shop — WordPress products, courses, events, and/or digital downloads. |
-| **Analytics** | View visitor statistics (when deployed on Cloudflare). |
+| **Support Tickets** | Create and track internal support notes. Tickets automatically include build info to help with debugging. |
+| **Advanced** | Build info, git revision, deploy trigger, cache purge, upload backend settings, and plugin downloads. |
+
+The admin header shows the current build timestamp and git commit so you always know which version is running.
 
 ### The shop explained
 
 Your shop (`/shop` page) can display products from several sources:
 
-![Shop sources diagram](https://mermaid.ink/img/Z3JhcGggTFIKICAgIHN1YmdyYXBoICJQcm9kdWN0IFNvdXJjZXMiCiAgICAgICAgV0NbIldvb0NvbW1lcmNlPGJyLz5Qcm9kdWN0cyJdCiAgICAgICAgTFBbIkxlYXJuUHJlc3M8YnIvPkNvdXJzZXMiXQogICAgICAgIEVWWyJFdmVudHM8YnIvPih3aXRoIHByaWNlcykiXQogICAgICAgIERQWyJEaWdpdGFsIFByb2R1Y3RzPGJyLz4oYWRtaW4gZGFzaGJvYXJkKSJdCiAgICBlbmQKCiAgICBzdWJncmFwaCAiWW91ciBTaG9wIgogICAgICAgIFNQWyIvc2hvcCBwYWdlPGJyLz48aT5BbGwgcHJvZHVjdHM8YnIvPmluIG9uZSBwbGFjZTwvaT4iXQogICAgZW5kCgogICAgV0MgLS0-IFNQCiAgICBMUCAtLT4gU1AKICAgIEVWIC0tPiBTUAogICAgRFAgLS0-IFNQCg)
-
-Mermaid source (editable):
 ```mermaid
 graph LR
     subgraph "Product Sources"
@@ -354,7 +357,7 @@ All optional. The app detects them automatically — no configuration flags need
 | Plugin | What it adds | How to tell it's working |
 |--------|-------------|-------------------------|
 | [LearnPress](https://wordpress.org/plugins/learnpress/) | Course management (lessons, quizzes, curriculum) | Courses appear at `/courses` |
-| Articulate-LearnPress-Stripe mu-plugin | Connects LearnPress courses to the payment system | Course pages show prices. Copy from `docs/wordpress/mu-plugins/` to `wp-content/mu-plugins/`. |
+| **Ragbaz-Articulate** (included) | WPGraphQL glue for LearnPress courses and events; exposes a `ragbazInfo` probe so the storefront can auto-detect capabilities | Download from Admin → Advanced, install via Plugins → Add New → Upload. Health check shows green for LearnPress and events. |
 | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) | Better page rendering from the block editor | Pages look polished instead of plain HTML. Set `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`. |
 | An Event plugin | Event pages with dates/locations | Events appear at `/events` |
 | [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Smaller, faster images | Faster page loads |
@@ -417,6 +420,7 @@ graph TD
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 15 (App Router), React 19, Tailwind CSS 4 |
+| Bundler | Turbopack (dev), webpack (production build) |
 | Content | WordPress + WPGraphQL (GraphQL API) |
 | Payments | Stripe Checkout + Webhooks |
 | Auth | Custom HMAC-signed sessions (email/password + OAuth) |
@@ -465,6 +469,7 @@ Key design decisions:
 - **KV-first storage** — User data, access rules, and product entitlements use Cloudflare KV in production, with local file and in-memory fallbacks for development.
 - **Unified shop** — The `/shop` page aggregates products from WooCommerce, LearnPress, Events, and digital products into a single storefront, with admin-configurable visibility per type.
 - **Content fallbacks** — Catch-all routing first queries `nodeByUri` (with trailing-slash retry), then falls back to WordPress REST (pages/posts/events) and finally LearnPress `lpCourse` lookups by URI/slug to avoid 404s when WPGraphQL misses a node.
+- **Source maps** — Production client bundles include source maps, served via an auth-protected `/__maps/*` proxy so stack traces are readable without exposing maps publicly.
 
 ### Project structure
 
@@ -472,6 +477,7 @@ Key design decisions:
 src/
 ├── app/                    # Next.js routes and pages
 │   ├── [...uri]/page.js    # Catch-all: renders any WordPress page/post/course/event
+│   ├── __maps/             # Auth-protected source map proxy
 │   ├── admin/              # Admin login and dashboard
 │   ├── api/                # API routes (Stripe, auth, uploads, downloads)
 │   ├── auth/               # Sign in and registration pages
@@ -484,32 +490,46 @@ src/
 │   ├── shop/               # Shop product cards and detail views
 │   └── single/             # Single post/page/course/event templates
 ├── lib/                    # Shared logic
+│   ├── adminFetch.js       # Fetch helper with request-id tagging and duration logging
 │   ├── client.js           # GraphQL client with caching and introspection
-│   ├── courseAccess.js      # Course access check and granting
+│   ├── courseAccess.js     # Course access check and granting
 │   ├── digitalProducts.js  # Product catalog management
 │   ├── shopProducts.js     # Unified shop item aggregation
-│   ├── s3upload.js          # S3/R2 file upload client
-│   ├── stripe.js            # Stripe checkout and session handling
-│   └── site.js              # Site configuration (from site.json)
+│   ├── s3upload.js         # S3/R2 file upload client
+│   ├── stripe.js           # Stripe checkout and session handling
+│   └── site.js             # Site configuration (from site.json)
+├── middleware.js            # Request-id tagging for admin and map routes
 ├── config/                 # Data files
 │   └── digital-products.json  # Seed catalog (Cloudflare KV is used at runtime)
 ├── site.json               # Site branding, navigation, and metadata
-├── theme.json              # Color palette and typography
-└── wrangler.jsonc          # Cloudflare Workers configuration
+└── theme.json              # Color palette and typography
+packages/
+└── ragbaz-articulate-plugin/  # WPGraphQL helper plugin (buildable .zip)
+wrangler.jsonc              # Cloudflare Workers configuration
 ```
 
 ### Scripts
 
 | Command | What it does |
 |---------|-------------|
-| `npm run dev` | Start local development server with hot reload |
-| `npm run build` | Build for production |
+| `npm run dev` | Start local development server with Turbopack (fast HMR) |
+| `npm run build` | Build for production (webpack) |
 | `npm run start` | Run the production build locally |
 | `npm run lint` | Check code for errors and style issues |
 | `npm run config` | Interactive configuration wizard |
 | `npm run cf:build` | Build for Cloudflare Workers |
 | `npm run cf:preview` | Build and preview locally with Wrangler |
 | `npm run cf:deploy` | Build and deploy to Cloudflare Workers |
+
+### Debugging in production
+
+Every admin and API request is tagged with a `x-request-id` header and a short-lived `reqid` cookie. The Health tab in the admin dashboard shows a live request log with status codes and durations. Combine this with `wrangler tail` to stream logs from Cloudflare Workers in real time:
+
+```bash
+npx wrangler tail
+```
+
+Production client-side source maps are served at `/__maps/*` (admin session required), so browser devtools can show original source even on minified builds.
 
 ### Detailed documentation
 
