@@ -12,6 +12,7 @@ function formatPrice(priceCents, currency) {
 export default function ShopProductDetail({ user, product, owned, stripeEnabled, checkoutStatus }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [imageBroken, setImageBroken] = useState(false);
 
   async function startCheckout() {
     if (!user?.email) {
@@ -53,7 +54,7 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
         </Link>
       </p>
 
-      {product.imageUrl ? (
+      {product.imageUrl && !imageBroken ? (
         <Image
           src={product.imageUrl}
           alt={product.name}
@@ -61,6 +62,7 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
           height={700}
           unoptimized
           className="w-full max-h-[420px] object-cover rounded-lg"
+          onError={() => setImageBroken(true)}
         />
       ) : null}
 

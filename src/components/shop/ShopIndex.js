@@ -43,6 +43,7 @@ export default function ShopIndex({
 }) {
   const [loadingId, setLoadingId] = useState("");
   const [error, setError] = useState("");
+  const [brokenImages, setBrokenImages] = useState({});
 
   // Digital product checkout via /api/digital/checkout
   async function startDigitalCheckout(productSlug) {
@@ -117,6 +118,7 @@ export default function ShopIndex({
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {items.map((item) => {
+          const showImage = item.imageUrl && !brokenImages[item.id];
           const owned = isOwned(item);
           const loading = loadingId === item.slug;
           const isDigital = item.source === "digital";
@@ -130,7 +132,7 @@ export default function ShopIndex({
               key={item.id}
               className="border rounded-lg bg-white overflow-hidden flex flex-col"
             >
-              {item.imageUrl ? (
+              {showImage ? (
                 <Image
                   src={item.imageUrl}
                   alt={item.name}
@@ -138,6 +140,9 @@ export default function ShopIndex({
                   height={600}
                   unoptimized
                   className="w-full h-44 object-cover"
+                  onError={() =>
+                    setBrokenImages((prev) => ({ ...prev, [item.id]: true }))
+                  }
                 />
               ) : (
                 <div className="w-full h-44 bg-gray-100 flex items-center justify-center text-gray-300">
