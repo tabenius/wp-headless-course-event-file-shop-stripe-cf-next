@@ -33,6 +33,8 @@ function sanitizeTicket(ticket) {
           createdAt: c.createdAt || now,
         })).filter((c) => c.text)
       : [],
+    buildTime: typeof ticket.buildTime === "string" ? ticket.buildTime.slice(0, 40) : "",
+    gitSha: typeof ticket.gitSha === "string" ? ticket.gitSha.slice(0, 40) : "",
     createdAt: ticket.createdAt || now,
     updatedAt: ticket.updatedAt || now,
   };
@@ -99,7 +101,7 @@ export async function listTickets() {
   return state.tickets;
 }
 
-export async function createTicket({ title, description, priority = "moderate", author = "admin" }) {
+export async function createTicket({ title, description, priority = "moderate", author = "admin", buildTime = "", gitSha = "" }) {
   const state = await getState();
   const ticket = sanitizeTicket({
     title,
@@ -107,6 +109,8 @@ export async function createTicket({ title, description, priority = "moderate", 
     priority,
     status: "open",
     comments: [],
+    buildTime,
+    gitSha,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     author,

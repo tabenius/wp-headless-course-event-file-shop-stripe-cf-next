@@ -260,6 +260,8 @@
     "statusOpen": "Öppen",
     "statusWillFix": "Åtgärdas",
     "statusResolved": "Löst",
+    "buildTime": "Bygge",
+    "buildInfo": "Bygginfo",
     "createTicket": "Skapa ärende",
     "addComment": "Lägg till kommentar",
     "ticketCreated": "Ärende skapat.",

@@ -24,3 +24,5 @@
 - Bug fixes: transformContent() now returns "" instead of undefined (crashed dangerouslySetInnerHTML); added error.js + global-error.js error boundaries; SafeImage wrapper for next/image with onError in BlocksRenderer; fixed null access on post.author.node.name in BlogListItem; guarded dangerouslySetInnerHTML in Comments and BlogListItem against undefined.
 - More bug fixes: cloudflareKv JSON.parse wrapped in try/catch; admin/commits route null-guarded against missing GitHub API fields; admin/course-access GET wrapped Promise.all in try/catch.
 - NavDropdown: parent menu items with children are now clickable links (Link) instead of just toggle buttons. Parent page also appears as first dropdown entry for touch devices. Fixes desktop nav items like "PARRETREATS", "TANTRISK MASSAGE", "OM SOFIA" that had URLs but were not navigable.
+- Admin header now shows build datetime and git hash (short) below the logo text.
+- Support tickets now include build info (buildTime + gitSha) as read-only metadata: shown in the ticket creation form and ticket detail view. Data flows through API → supportTickets lib → KV storage.

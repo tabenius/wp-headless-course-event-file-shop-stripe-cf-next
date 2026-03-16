@@ -428,7 +428,11 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTicket),
+        body: JSON.stringify({
+          ...newTicket,
+          buildTime: process.env.NEXT_PUBLIC_BUILD_TIME || "",
+          gitSha: process.env.NEXT_PUBLIC_GIT_SHA || "",
+        }),
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.ticketUpdateFailed"));
@@ -1997,6 +2001,13 @@ export default function AdminDashboard() {
                     <option value="low">{t("admin.priorityLow")}</option>
                   </select>
                 </div>
+                {(process.env.NEXT_PUBLIC_BUILD_TIME || process.env.NEXT_PUBLIC_GIT_SHA) && (
+                  <div className="text-xs text-gray-400 bg-gray-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-500">{t("admin.buildInfo")}:</span>{" "}
+                    {process.env.NEXT_PUBLIC_BUILD_TIME ? new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString("sv-SE") : ""}
+                    {process.env.NEXT_PUBLIC_GIT_SHA ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})` : ""}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={createSupportTicket}
@@ -2027,6 +2038,13 @@ export default function AdminDashboard() {
                   </div>
                   {selectedTicket.description && (
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedTicket.description}</p>
+                  )}
+                  {(selectedTicket.buildTime || selectedTicket.gitSha) && (
+                    <p className="text-xs text-gray-400">
+                      <span className="font-medium text-gray-500">{t("admin.buildInfo")}:</span>{" "}
+                      {selectedTicket.buildTime ? new Date(selectedTicket.buildTime).toLocaleString("sv-SE") : ""}
+                      {selectedTicket.gitSha ? ` (${selectedTicket.gitSha.slice(0, 7)})` : ""}
+                    </p>
                   )}
 
                   <div className="space-y-2">

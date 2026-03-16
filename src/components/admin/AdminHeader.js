@@ -58,13 +58,21 @@ export default function AdminHeader({ logoUrl }) {
               <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
             </Link>
           )}
-          <Link
-            href="/admin"
-            className="font-serif text-lg font-bold tracking-tight text-gray-900"
-            style={{ fontFamily: "var(--font-merriweather), serif" }}
-          >
-            RAGBAZ Articulate StoreFront
-          </Link>
+          <div className="flex flex-col">
+            <Link
+              href="/admin"
+              className="font-serif text-lg font-bold tracking-tight text-gray-900"
+              style={{ fontFamily: "var(--font-merriweather), serif" }}
+            >
+              RAGBAZ Articulate StoreFront
+            </Link>
+            {process.env.NEXT_PUBLIC_BUILD_TIME && (
+              <span className="text-[10px] text-gray-400 leading-tight">
+                {t("admin.buildTime")}: {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString("sv-SE")}
+                {process.env.NEXT_PUBLIC_GIT_SHA ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})` : ""}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Right: Nav + actions */}

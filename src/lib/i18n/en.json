@@ -260,6 +260,8 @@
     "statusOpen": "Open",
     "statusWillFix": "Will fix",
     "statusResolved": "Resolved",
+    "buildTime": "Build",
+    "buildInfo": "Build info",
     "createTicket": "Create ticket",
     "addComment": "Add comment",
     "ticketCreated": "Ticket created.",

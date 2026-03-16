@@ -26,7 +26,9 @@ export async function POST(request) {
         { status: 400 },
       );
     }
-    const ticket = await createTicket({ title, description, priority, author: "admin" });
+    const buildTime = String(body?.buildTime || "").trim();
+    const gitSha = String(body?.gitSha || "").trim();
+    const ticket = await createTicket({ title, description, priority, author: "admin", buildTime, gitSha });
     const tickets = await listTickets();
     return NextResponse.json({ ok: true, ticket, tickets });
   } catch (error) {
