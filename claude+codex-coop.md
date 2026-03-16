@@ -17,3 +17,4 @@
 - WPGraphQL auth now also tries Faust secret header/Bearer; env keys FAUST_SECRET_KEY/FAUSTWP_SECRET_KEY supported.  
 - Admin advanced now shows build timestamp (from NEXT_PUBLIC_BUILD_TIME/BUILD_TIME/VERCEL_*) alongside last deploy time.  
 - Admin advanced now also shows git revision (NEXT_PUBLIC_GIT_SHA/GIT_COMMIT_SHA/VERCEL_GIT_COMMIT_SHA).  
+- S3/R2 uploads are blocked on edge runtime; UI now reports S3 as unconfigured unless running in Node (fallback to WordPress media).  

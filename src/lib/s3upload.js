@@ -10,6 +10,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { t } from "@/lib/i18n";
 
 const _clients = new Map();
+const isNodeRuntime =
+  typeof process !== "undefined" &&
+  process.versions?.node &&
+  process.env.NEXT_RUNTIME !== "edge";
 
 function resolveBackend(preferred) {
   return (preferred || process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
@@ -28,6 +32,9 @@ function resolveBackend(preferred) {
  * R2-specific env vars (CF_R2_*) are supported as fallbacks for backwards compatibility.
  */
 function getS3Client(backend = resolveBackend()) {
+  if (!isNodeRuntime) {
+    throw new Error("S3/R2 uploads are not available in edge runtime; use WordPress backend or configure a Node adapter.");
+  }
   if (_clients.has(backend)) return _clients.get(backend);
   const accessKeyId =
     process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
@@ -229,6 +236,7 @@ export function isS3Upload(preferred) {
 }
 
 export function isS3Configured(preferred) {
+  if (!isNodeRuntime) return false;
   const backend = resolveBackend(preferred);
   if (backend !== "r2" && backend !== "s3") return false;
   const accessKeyId =
