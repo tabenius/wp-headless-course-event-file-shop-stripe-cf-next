@@ -125,8 +125,8 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
 
     setUploading(true);
     try {
-      const blob = await new Promise((resolve) =>
-        canvas.toBlob(resolve, "image/jpeg", 0.9),
+      const blob = await new Promise((resolve, reject) =>
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Canvas toBlob failed"))), "image/jpeg", 0.9),
       );
       const formData = new FormData();
       const name = file?.name?.replace(/\.[^.]+$/, "") || "image";
