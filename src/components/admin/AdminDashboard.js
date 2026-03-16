@@ -677,6 +677,14 @@ export default function AdminDashboard() {
     if (activeTab === "support") {
       fetchTickets();
     }
+    if (activeTab === "advanced" && !uploadInfoDetails) {
+      fetch("/api/admin/upload-info")
+        .then((res) => res.json())
+        .then((json) => {
+          if (json?.ok) setUploadInfoDetails(json);
+        })
+        .catch(() => {});
+    }
   }, [activeTab]);
 
   // Fetch commit log when advanced tab is shown
@@ -702,6 +710,7 @@ export default function AdminDashboard() {
 
   const [uploadProgress, setUploadProgress] = useState(null);
   const [uploadingField, setUploadingField] = useState(null);
+  const [uploadInfoDetails, setUploadInfoDetails] = useState(null);
 
   async function uploadFile(index, field) {
     const input = document.createElement("input");
@@ -2153,6 +2162,58 @@ export default function AdminDashboard() {
               <p className="text-[11px] text-gray-500">
                 Configure S3/R2 credentials to enable direct uploads (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME, S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
               </p>
+            )}
+            {uploadBackend !== "wordpress" && uploadInfoDetails && (
+              <div className="mt-3 border rounded p-3 bg-gray-50 space-y-2 text-xs text-gray-700">
+                <div className="font-semibold text-gray-800 flex items-center gap-2">
+                  {t("admin.uploadClientSettings")}
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+                    {uploadBackend === "r2" ? "R2 (S3 API)" : "S3"}
+                  </span>
+                </div>
+                <p className="text-gray-600">{t("admin.uploadClientHint")}</p>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-[11px] text-gray-500">{t("admin.clientHost")}</div>
+                    <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
+                      {uploadInfoDetails.endpoint || t("common.noDetails")}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500">{t("admin.clientBucket")}</div>
+                    <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
+                      {uploadInfoDetails.bucket || t("common.noDetails")}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500">{t("admin.clientAccessKey")}</div>
+                    <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
+                      {uploadInfoDetails.accessKeyId || t("common.noDetails")}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500">{t("admin.clientRegion")}</div>
+                    <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
+                      {uploadInfoDetails.region || "auto"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500">{t("admin.clientPublicUrl")}</div>
+                    <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
+                      {uploadInfoDetails.publicUrl || t("common.noDetails")}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500">{t("admin.clientNote")}</div>
+                    <div className="text-[12px] bg-white border rounded px-2 py-1">
+                      {t("admin.clientSecretNotShown")}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  {t("admin.uploadAltLarge")}
+                </p>
+              </div>
             )}
           </div>
 
