@@ -196,6 +196,12 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
 }
 
 export default function AdminDashboard() {
+  const buildTimestamp =
+    process.env.NEXT_PUBLIC_BUILD_TIME ||
+    process.env.BUILD_TIME ||
+    process.env.VERCEL_GIT_COMMIT_TIMESTAMP ||
+    process.env.VERCEL_DEPLOYMENT_TIME ||
+    "";
   const [courses, setCourses] = useState({});
   const [users, setUsers] = useState([]);
   const [wpCourses, setWpCourses] = useState([]);
@@ -2025,6 +2031,11 @@ export default function AdminDashboard() {
           )}
           {deployMessage && (
             <p className="text-green-700 text-sm">{deployMessage}</p>
+          )}
+          {buildTimestamp && (
+            <p className="text-xs text-gray-500">
+              Build: {new Date(buildTimestamp).toLocaleString("sv-SE")}
+            </p>
           )}
           {lastDeployAt && (
             <p className="text-xs text-gray-500">
