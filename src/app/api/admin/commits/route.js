@@ -52,6 +52,7 @@ export async function GET(request) {
     const commits = data.map((c) => ({
       sha: c.sha.slice(0, 7),
       message: c.commit.message.split("\n")[0],
+      fullMessage: c.commit.message,
       date: c.commit.author.date,
       author: c.commit.author.name,
     }));

@@ -217,6 +217,8 @@
     "navAdvanced": "Avancerat",
     "recentCommits": "Senaste commits",
     "commitsLoading": "Laddar...",
+    "commitsFullMessages": "Visa hela meddelanden",
+    "commitsCompact": "Kompakt vy",
     "advancedSettings": "Avancerade inställningar",
     "storageBackend": "Lagringsbackend",
     "environment": "Miljö",

@@ -217,6 +217,8 @@
     "navAdvanced": "Advanced",
     "recentCommits": "Recent commits",
     "commitsLoading": "Loading...",
+    "commitsFullMessages": "Show full messages",
+    "commitsCompact": "Compact view",
     "advancedSettings": "Advanced settings",
     "storageBackend": "Storage backend",
     "environment": "Environment",

@@ -203,6 +203,7 @@ export default function AdminDashboard() {
   const [analyticsConfigured, setAnalyticsConfigured] = useState(false);
   const [commits, setCommits] = useState(null);
   const [commitsError, setCommitsError] = useState("");
+  const [commitsExpanded, setCommitsExpanded] = useState(false);
   const editFormRef = useRef(null);
   const [resendConfigured, setResendConfigured] = useState(false);
   const [shopVisibleTypes, setShopVisibleTypes] = useState(["product", "course", "event", "digital_file", "digital_course"]);
@@ -1817,18 +1818,46 @@ export default function AdminDashboard() {
 
           {/* Recent commits */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">{t("admin.recentCommits")}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-700">{t("admin.recentCommits")}</h3>
+              {commits && (
+                <button
+                  type="button"
+                  onClick={() => setCommitsExpanded(!commitsExpanded)}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  {commitsExpanded ? t("admin.commitsCompact") : t("admin.commitsFullMessages")}
+                </button>
+              )}
+            </div>
             {commitsError && (
               <p className="text-xs text-gray-400">{commitsError}</p>
             )}
             {commits ? (
-              <div className="bg-gray-900 text-gray-100 rounded p-4 font-mono text-xs max-h-96 overflow-auto space-y-0.5">
-                {commits.map((c) => (
-                  <div key={c.sha} className="flex gap-2">
-                    <span className="text-yellow-400 shrink-0">{c.sha}</span>
-                    <span className="truncate">{c.message}</span>
+              <div className="bg-gray-900 text-gray-100 rounded p-4 font-mono text-xs max-h-96 overflow-auto">
+                {commitsExpanded ? (
+                  <div className="space-y-3">
+                    {commits.map((c) => (
+                      <div key={c.sha}>
+                        <div className="flex gap-2 items-baseline">
+                          <span className="text-yellow-400 shrink-0">{c.sha}</span>
+                          <span className="text-gray-400 text-[10px] shrink-0">{c.date ? new Date(c.date).toLocaleDateString() : ""}</span>
+                          <span className="text-gray-500 text-[10px] truncate">{c.author}</span>
+                        </div>
+                        <pre className="whitespace-pre-wrap text-gray-200 mt-1 pl-[4.5rem] leading-relaxed">{c.fullMessage || c.message}</pre>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="space-y-0.5">
+                    {commits.map((c) => (
+                      <div key={c.sha} className="flex gap-2">
+                        <span className="text-yellow-400 shrink-0">{c.sha}</span>
+                        <span className="truncate">{c.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : !commitsError ? (
               <p className="text-xs text-gray-400">{t("admin.commitsLoading")}</p>
