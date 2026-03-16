@@ -316,7 +316,8 @@
     "setPasswordBody": "Welcome! Your account has been created. Click the link below to set your password:",
     "setPasswordLinkText": "Set my password",
     "setPasswordExpiry": "This link expires in 24 hours.",
-    "loggedInNeedPurchase": "You are signed in as {email}. To access this {contentKind}, complete the purchase below."
+    "loggedInNeedPurchase": "You are signed in as {email}. To access this {contentKind}, complete the purchase below.",
+    "priceNotConfigured": "Online purchase is not available for this item yet. Please contact us for more information."
   },
   "shop": {
     "title": "Shop",

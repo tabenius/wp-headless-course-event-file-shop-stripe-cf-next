@@ -6,7 +6,7 @@ export async function POST() {
   const cookieStore = await cookies();
   const session = cookieStore.get("admin_session");
   if (!session?.value) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const token = process.env.GITHUB_DEPLOY_TOKEN;

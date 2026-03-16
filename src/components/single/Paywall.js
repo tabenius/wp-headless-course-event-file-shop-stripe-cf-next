@@ -31,9 +31,12 @@ export default function Paywall({
       ? t("common.product").toLowerCase()
       : t("common.course").toLowerCase();
 
+  // Checkout requires a positive price configured in admin
+  const canBuy = stripeEnabled && typeof priceCents === "number" && priceCents > 0;
+
   // Show WordPress price if available, otherwise fall back to access config price
   const rawDisplayPrice = coursePriceRendered
-    || (priceCents != null ? `${(priceCents / 100).toFixed(2)} ${currency.toUpperCase()}` : "");
+    || (priceCents != null && priceCents > 0 ? `${(priceCents / 100).toFixed(2)} ${currency.toUpperCase()}` : "");
   const displayPrice = decodeEntities(rawDisplayPrice).replace(/&nbsp;/g, " ");
 
   const buyLabel = loading
@@ -122,7 +125,11 @@ export default function Paywall({
       )}
 
       <div className="text-center space-y-4 pt-4 border-t">
-        {isLoggedIn ? (
+        {!canBuy ? (
+          <p className="text-gray-500 italic">
+            {t("paywall.priceNotConfigured")}
+          </p>
+        ) : isLoggedIn ? (
           <>
             <p className="text-gray-700">
               {t("paywall.loggedInNeedPurchase", { email: userEmail, contentKind: kindLabel })}

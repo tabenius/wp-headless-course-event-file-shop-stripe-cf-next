@@ -316,7 +316,8 @@
     "setPasswordBody": "Välkommen! Ditt konto har skapats. Klicka på länken nedan för att sätta ditt lösenord:",
     "setPasswordLinkText": "Sätt mitt lösenord",
     "setPasswordExpiry": "Länken är giltig i 24 timmar.",
-    "loggedInNeedPurchase": "Du är inloggad som {email}. Genomför köpet nedan för att få åtkomst till denna {contentKind}."
+    "loggedInNeedPurchase": "Du är inloggad som {email}. Genomför köpet nedan för att få åtkomst till denna {contentKind}.",
+    "priceNotConfigured": "Köp online är inte tillgängligt för denna artikel ännu. Kontakta oss för mer information."
   },
   "shop": {
     "title": "Butik",

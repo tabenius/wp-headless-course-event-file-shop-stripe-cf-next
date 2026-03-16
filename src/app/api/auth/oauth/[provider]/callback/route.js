@@ -52,10 +52,11 @@ async function getAccessToken(provider, providerConfig, code, redirectUri) {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
   });
-  const tokenJson = await tokenResponse.json();
   if (!tokenResponse.ok) {
-    throw new Error(`Token exchange failed for ${provider}`);
+    const text = await tokenResponse.text().catch(() => "");
+    throw new Error(`Token exchange failed for ${provider}: ${tokenResponse.status} ${text.slice(0, 200)}`);
   }
+  const tokenJson = await tokenResponse.json();
   return tokenJson;
 }
 
@@ -97,6 +98,9 @@ export async function GET(request, { params: paramsPromise }) {
       const userResponse = await fetch(providerConfig.userInfoUrl, {
         headers: { Authorization: `Bearer ${tokenJson.access_token}` },
       });
+      if (!userResponse.ok) {
+        throw new Error(`UserInfo request failed for ${provider}: ${userResponse.status}`);
+      }
       const userJson = await userResponse.json();
       profile = providerProfile(provider, userJson);
     }
