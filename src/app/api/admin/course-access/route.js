@@ -110,30 +110,38 @@ export async function GET(request) {
   const auth = requireAdmin(request);
   if (auth.error) return auth.error;
 
-  const [state, users, wpCourses, wcProducts, wpEvents] = await Promise.all([
-    getCourseAccessState(),
-    listAccessUsers(),
-    fetchLearnPressCourses(),
-    fetchWooCommerceProducts(),
-    fetchEvents(),
-  ]);
-  const uploadBackend = getUploadBackend();
-  return NextResponse.json({
-    ok: true,
-    courses: state.courses,
-    users,
-    wpCourses,
-    wcProducts,
-    wpEvents,
-    storage: getCourseStorageInfo(),
-    resendConfigured: !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
-    upload: {
-      backend: uploadBackend,
-      wordpress: true,
-      s3: isS3Upload(uploadBackend) && isS3Configured(uploadBackend),
-      r2: isS3Upload("r2") && isS3Configured("r2"),
-    },
-  });
+  try {
+    const [state, users, wpCourses, wcProducts, wpEvents] = await Promise.all([
+      getCourseAccessState(),
+      listAccessUsers(),
+      fetchLearnPressCourses(),
+      fetchWooCommerceProducts(),
+      fetchEvents(),
+    ]);
+    const uploadBackend = getUploadBackend();
+    return NextResponse.json({
+      ok: true,
+      courses: state.courses,
+      users,
+      wpCourses,
+      wcProducts,
+      wpEvents,
+      storage: getCourseStorageInfo(),
+      resendConfigured: !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
+      upload: {
+        backend: uploadBackend,
+        wordpress: true,
+        s3: isS3Upload(uploadBackend) && isS3Configured(uploadBackend),
+        r2: isS3Upload("r2") && isS3Configured("r2"),
+      },
+    });
+  } catch (error) {
+    console.error("Admin course access GET failed:", error);
+    return NextResponse.json(
+      { ok: false, error: t("apiErrors.loadCourseAccessFailed") },
+      { status: 500 },
+    );
+  }
 }
 
 export async function PUT(request) {

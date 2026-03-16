@@ -49,12 +49,12 @@ export async function GET(request) {
     }
 
     const data = await response.json();
-    const commits = data.map((c) => ({
-      sha: c.sha.slice(0, 7),
-      message: c.commit.message.split("\n")[0],
-      fullMessage: c.commit.message,
-      date: c.commit.author.date,
-      author: c.commit.author.name,
+    const commits = (Array.isArray(data) ? data : []).map((c) => ({
+      sha: c?.sha?.slice(0, 7) || "",
+      message: (c?.commit?.message || "").split("\n")[0],
+      fullMessage: c?.commit?.message || "",
+      date: c?.commit?.author?.date || "",
+      author: c?.commit?.author?.name || "",
     }));
 
     return NextResponse.json({ ok: true, commits });

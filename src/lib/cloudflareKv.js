@@ -26,7 +26,12 @@ export async function readCloudflareKvJson(key) {
   }
   const text = await response.text();
   if (!text.trim()) return null;
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error(`Cloudflare KV: malformed JSON for key "${key}"`);
+    return null;
+  }
 }
 
 export async function writeCloudflareKvJson(key, value, { expirationTtl } = {}) {
