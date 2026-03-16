@@ -61,10 +61,18 @@ export default function AdminHeader({ logoUrl }) {
           <div className="flex flex-col">
             <Link
               href="/admin"
-              className="font-serif text-lg font-bold tracking-tight text-gray-900"
-              style={{ fontFamily: "var(--font-merriweather), serif" }}
+              className="text-lg font-bold tracking-tight text-gray-900 flex items-baseline gap-1"
+              aria-label="RAGBAZ Articulate StoreFront"
             >
-              RAGBAZ Articulate StoreFront
+              <span style={{ fontFamily: "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')" }}>
+                RAGBAZ
+              </span>
+              <span style={{ fontFamily: "var(--font-merriweather, 'Merriweather', serif')" }}>
+                Articulate
+              </span>
+              <span className="text-sm font-normal text-gray-700" style={{ fontFamily: "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')" }}>
+                StoreFront
+              </span>
             </Link>
             {process.env.NEXT_PUBLIC_BUILD_TIME && (
               <span className="text-[10px] text-gray-400 leading-tight">
