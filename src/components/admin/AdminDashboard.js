@@ -1163,10 +1163,10 @@ export default function AdminDashboard() {
                         }`}
                       >
                         {p.imageUrl ? (
-                          <img src={p.imageUrl} alt="" className="w-16 h-16 rounded object-cover shrink-0" />
+                          <img src={p.imageUrl} alt="" className="w-32 h-32 rounded object-cover shrink-0" />
                         ) : (
-                          <div className="w-16 h-16 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                          <div className="w-32 h-32 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8">
                               <path fillRule="evenodd" d="M1 5.25A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25v9.5A2.25 2.25 0 0116.75 17H3.25A2.25 2.25 0 011 14.75v-9.5zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75v-2.69l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L2.5 11.06zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
                             </svg>
                           </div>
