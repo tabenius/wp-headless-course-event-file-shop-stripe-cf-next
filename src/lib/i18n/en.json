@@ -249,7 +249,10 @@
     "oauthActive": "Active sign-in providers: {providers}",
     "oauthNone": "No external sign-in providers are configured.",
     "backendLabel": "Backend: {backend}",
-    "wpModeNotEnabled": "WordPress mode is not enabled."
+    "wpModeNotEnabled": "WordPress mode is not enabled.",
+    "wpSchemaOk": "WPGraphQL schema — events: {event}, courses: {course}, sample event: {sampleEvent}, sample course: {sampleCourse}.",
+    "wpSchemaFailed": "Could not read WPGraphQL schema.",
+    "wpSchemaUnknown": "WPGraphQL schema not checked."
   },
   "paywall": {
     "content": "Content",

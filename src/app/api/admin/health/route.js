@@ -46,6 +46,52 @@ async function checkWordPressGraphQL() {
   }
 }
 
+async function checkWpSchema() {
+  const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
+  const auth = getWordPressGraphqlAuth();
+  if (!url || !auth.authorization) return { ok: false, message: t("health.wpSchemaUnknown") };
+  try {
+    const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: auth.authorization,
+      },
+      body: JSON.stringify({
+        query: `
+          query SchemaCheck {
+            __schema { types { name } }
+            events: events(first: 1) { edges { node { uri } } }
+            lpCourses(first: 1) { edges { node { uri } } }
+          }
+        `,
+      }),
+      cache: "no-store",
+    });
+    const json = await response.json().catch(() => null);
+    if (!response.ok || !json?.data) return { ok: false, message: t("health.wpSchemaFailed") };
+    const types = (json.data.__schema?.types || []).map((t) => t?.name);
+    const hasEvent = types.includes("Event");
+    const hasLpCourse = types.includes("LpCourse");
+    const sampleEvent = json.data.events?.edges?.[0]?.node?.uri || null;
+    const sampleCourse = json.data.lpCourses?.edges?.[0]?.node?.uri || null;
+    return {
+      ok: hasEvent || hasLpCourse,
+      message: t("health.wpSchemaOk", {
+        event: hasEvent ? "yes" : "no",
+        course: hasLpCourse ? "yes" : "no",
+        sampleEvent: sampleEvent || "none",
+        sampleCourse: sampleCourse || "none",
+      }),
+      details: { hasEvent, hasLpCourse, sampleEvent, sampleCourse },
+    };
+  } catch (error) {
+    console.error("WP schema check failed:", error);
+    return { ok: false, message: t("health.wpSchemaFailed") };
+  }
+}
+
 async function checkStripe() {
   if (!isStripeEnabled()) {
     return { ok: false, message: t("health.stripeNotConfigured") };
@@ -84,6 +130,10 @@ export async function GET(request) {
     backend === "wordpress"
       ? await checkWordPressGraphQL()
       : { ok: true, message: t("health.wpModeNotEnabled") };
+  const wpSchemaCheck =
+    backend === "wordpress"
+      ? await checkWpSchema()
+      : { ok: true, message: t("health.wpModeNotEnabled") };
   const stripeCheck = await checkStripe();
 
   // Build the webhook URL from the request
@@ -109,6 +159,7 @@ export async function GET(request) {
           : t("health.authSecretMissing"),
       },
       wordpressGraphQL: wordpressCheck,
+      wordpressSchema: wpSchemaCheck,
       stripe: stripeCheck,
       stripeWebhook: {
         ok: stripeWebhookConfigured,

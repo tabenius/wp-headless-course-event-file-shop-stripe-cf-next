@@ -249,7 +249,10 @@
     "oauthActive": "Aktiva inloggningstjänster: {providers}",
     "oauthNone": "Inga externa inloggningstjänster är konfigurerade.",
     "backendLabel": "Backend: {backend}",
-    "wpModeNotEnabled": "WordPress-läge är inte aktiverat."
+    "wpModeNotEnabled": "WordPress-läge är inte aktiverat.",
+    "wpSchemaOk": "WPGraphQL-schema — evenemang: {event}, kurser: {course}, exempel event: {sampleEvent}, exempel kurs: {sampleCourse}.",
+    "wpSchemaFailed": "Kunde inte läsa WPGraphQL-schemat.",
+    "wpSchemaUnknown": "WPGraphQL-schema ej kontrollerat."
   },
   "paywall": {
     "content": "Innehåll",
