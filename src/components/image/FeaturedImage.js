@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 
 export function FeaturedImage({
   post,
@@ -7,9 +8,10 @@ export function FeaturedImage({
   uri = false,
   title = "",
 }) {
+  const [broken, setBroken] = useState(false);
   const imageNode = post?.featuredImage?.node;
   const imageUrl = imageNode?.sourceUrl;
-  if (!imageUrl) {
+  if (!imageUrl || broken) {
     return null;
   }
 
@@ -22,6 +24,7 @@ export function FeaturedImage({
       fill
       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
       className="object-cover"
+      onError={() => setBroken(true)}
     />
   );
 

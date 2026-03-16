@@ -18,7 +18,7 @@ export default function SingleContent({
         ? decodeEntities(safeData.title)
         : "";
   const content =
-    typeof safeData.content === "string" ? transformContent(safeData.content) : "";
+    typeof safeData.content === "string" ? transformContent(decodeEntities(safeData.content)) : "";
   const editorBlocks = Array.isArray(safeData.editorBlocks)
     ? safeData.editorBlocks
     : [];

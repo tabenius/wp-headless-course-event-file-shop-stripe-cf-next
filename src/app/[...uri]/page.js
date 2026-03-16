@@ -121,23 +121,32 @@ async function fetchRestFallback(uri) {
   const slug = uri.split("/").filter(Boolean).pop();
   if (!slug) return null;
   const auth = getWordPressGraphqlAuth();
-  const res = await fetch(`${wp}/wp-json/wp/v2/pages?slug=${encodeURIComponent(slug)}`, {
-    headers: {
-      Accept: "application/json",
-      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
-    },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  const json = await res.json().catch(() => null);
-  if (!Array.isArray(json) || json.length === 0) return null;
-  const page = json[0];
-  return {
-    __typename: "Page",
-    title: decodeEntities(page?.title?.rendered || ""),
-    content: page?.content?.rendered || "",
-    featuredImage: null,
-  };
+  const endpoints = [
+    `${wp}/wp-json/wp/v2/pages?slug=${encodeURIComponent(slug)}`,
+    `${wp}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}`,
+    `${wp}/wp-json/wp/v2/event?slug=${encodeURIComponent(slug)}`,
+    `${wp}/wp-json/wp/v2/events?slug=${encodeURIComponent(slug)}`,
+  ];
+  for (const url of endpoints) {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) continue;
+    const json = await res.json().catch(() => null);
+    if (!Array.isArray(json) || json.length === 0) continue;
+    const page = json[0];
+    return {
+      __typename: "Page",
+      title: decodeEntities(page?.title?.rendered || ""),
+      content: page?.content?.rendered || "",
+      featuredImage: null,
+    };
+  }
+  return null;
 }
 
 function makeExcerpt(content, maxLen = 160) {
