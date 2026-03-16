@@ -58,10 +58,8 @@ async function fetchWordPressGraphQL(query, variables = {}) {
       const text = await response.text().catch(() => "<unable to read body>");
       const statusTooMany = response.status === 429 || response.status === 503;
       lastError = `WordPress GraphQL response (${response.status}) ${contentType} ${firstLines(text)}`;
-      if (/varnish|too many/i.test(text) || statusTooMany) {
-        await sleep(250);
-        continue;
-      }
+      if (/varnish|too many/i.test(text) || statusTooMany) await sleep(250);
+      else await sleep(delayMs || 100);
       continue;
     }
     const json = await response.json();

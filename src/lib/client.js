@@ -109,10 +109,8 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         const varnishHit = /varnish|too many/i.test(text) || statusTooMany;
         lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${firstLines(text)}`;
         if (debugGraphQL) console.error(lastError);
-        if (varnishHit) {
-          await sleep(250);
-          continue;
-        }
+        if (varnishHit) await sleep(250);
+        else await sleep(DEFAULT_DELAY_MS || 100);
         continue;
       }
 
