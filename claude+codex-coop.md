@@ -16,3 +16,4 @@
 - Support tickets now persist to R2 (S3 API) when configured, fallback to Cloudflare KV; no local file usage.  
 - WPGraphQL auth now also tries Faust secret header/Bearer; env keys FAUST_SECRET_KEY/FAUSTWP_SECRET_KEY supported.  
 - Admin advanced now shows build timestamp (from NEXT_PUBLIC_BUILD_TIME/BUILD_TIME/VERCEL_*) alongside last deploy time.  
+- Admin advanced now also shows git revision (NEXT_PUBLIC_GIT_SHA/GIT_COMMIT_SHA/VERCEL_GIT_COMMIT_SHA).  

@@ -202,6 +202,11 @@ export default function AdminDashboard() {
     process.env.VERCEL_GIT_COMMIT_TIMESTAMP ||
     process.env.VERCEL_DEPLOYMENT_TIME ||
     "";
+  const gitRevision =
+    process.env.NEXT_PUBLIC_GIT_SHA ||
+    process.env.GIT_COMMIT_SHA ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    "";
   const [courses, setCourses] = useState({});
   const [users, setUsers] = useState([]);
   const [wpCourses, setWpCourses] = useState([]);
@@ -2035,6 +2040,11 @@ export default function AdminDashboard() {
           {buildTimestamp && (
             <p className="text-xs text-gray-500">
               Build: {new Date(buildTimestamp).toLocaleString("sv-SE")}
+            </p>
+          )}
+          {gitRevision && (
+            <p className="text-xs text-gray-500">
+              Revision: <code className="bg-gray-100 px-1 rounded">{gitRevision.slice(0, 12)}</code>
             </p>
           )}
           {lastDeployAt && (
