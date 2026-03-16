@@ -43,7 +43,9 @@
     "continueWithApple": "Fortsätt med Apple",
     "continueWithMicrosoft": "Fortsätt med Microsoft",
     "continueWithFacebook": "Fortsätt med Facebook",
-    "continueWith": "Fortsätt med {provider}"
+    "continueWith": "Fortsätt med {provider}",
+    "showPassword": "Visa lösenord",
+    "hidePassword": "Dölj lösenord"
   },
   "authErrors": {
     "invalidEmail": "Ange en giltig e-postadress.",
@@ -219,7 +221,11 @@
     "storageBackend": "Lagringsbackend",
     "environment": "Miljö",
     "userAccessOverview": "Användaråtkomst",
-    "userAccessOverviewDesc": "Hitta en användare och se vilka resurser de har tillgång till. Bocka i eller ur för att ge eller ta bort åtkomst."
+    "userAccessOverviewDesc": "Hitta en användare och se vilka resurser de har tillgång till. Bocka i eller ur för att ge eller ta bort åtkomst.",
+    "confirmRemoveProduct": "Är du säker på att du vill ta bort den här produkten? Det går inte att ångra.",
+    "shopVisibilitySaved": "Butikssynlighet sparad.",
+    "configuredBadgeTooltip": "Det här objektet har pris och åtkomstregler konfigurerade.",
+    "requiredField": "Obligatoriskt"
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",
@@ -265,7 +271,8 @@
     "setPasswordSubject": "Sätt ditt lösenord",
     "setPasswordBody": "Välkommen! Ditt konto har skapats. Klicka på länken nedan för att sätta ditt lösenord:",
     "setPasswordLinkText": "Sätt mitt lösenord",
-    "setPasswordExpiry": "Länken är giltig i 24 timmar."
+    "setPasswordExpiry": "Länken är giltig i 24 timmar.",
+    "loggedInNeedPurchase": "Du är inloggad som {email}. Genomför köpet nedan för att få åtkomst till denna {contentKind}."
   },
   "shop": {
     "title": "Butik",
@@ -290,7 +297,13 @@
     "courseAccessHint": "Gå sedan till kursens sida och öppna innehållet. Om åtkomst saknas, vänta någon minut och ladda om sidan.",
     "openCourse": "Öppna kurs",
     "paymentNotAvailable": "Betalning är inte tillgänglig ännu. Kontakta administratören.",
-    "checkoutFailed": "Det gick inte att starta betalningen."
+    "checkoutFailed": "Det gick inte att starta betalningen.",
+    "viewAndBuy": "Visa & köp",
+    "paymentVerifyFailed": "Din betalning mottogs, men vi kunde inte verifiera den automatiskt.",
+    "paymentVerifyHint": "Oroa dig inte — din åtkomst bör dyka upp inom några minuter. Kontakta support om det inte fungerar.",
+    "paymentCancelledRetry": "Du kan försöka igen när du är redo.",
+    "checkoutRetryHint": "Försök igen. Kontakta support om problemet kvarstår.",
+    "courseAccessDescSimple": "Du har nu åtkomst till kursen. Klicka på knappen nedan för att börja."
   },
   "darkMode": {
     "lightMode": "Ljust läge",

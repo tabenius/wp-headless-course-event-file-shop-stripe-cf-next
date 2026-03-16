@@ -43,7 +43,9 @@
     "continueWithApple": "Continue with Apple",
     "continueWithMicrosoft": "Continue with Microsoft",
     "continueWithFacebook": "Continue with Facebook",
-    "continueWith": "Continue with {provider}"
+    "continueWith": "Continue with {provider}",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "authErrors": {
     "invalidEmail": "Enter a valid email address.",
@@ -219,7 +221,11 @@
     "storageBackend": "Storage backend",
     "environment": "Environment",
     "userAccessOverview": "User access overview",
-    "userAccessOverviewDesc": "Find a user and see which content they can access. Check or uncheck items to grant or revoke access."
+    "userAccessOverviewDesc": "Find a user and see which content they can access. Check or uncheck items to grant or revoke access.",
+    "confirmRemoveProduct": "Are you sure you want to remove this product? This cannot be undone.",
+    "shopVisibilitySaved": "Shop visibility saved.",
+    "configuredBadgeTooltip": "This item has a price and access rules configured.",
+    "requiredField": "Required"
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",
@@ -265,7 +271,8 @@
     "setPasswordSubject": "Set your password",
     "setPasswordBody": "Welcome! Your account has been created. Click the link below to set your password:",
     "setPasswordLinkText": "Set my password",
-    "setPasswordExpiry": "This link expires in 24 hours."
+    "setPasswordExpiry": "This link expires in 24 hours.",
+    "loggedInNeedPurchase": "You are signed in as {email}. To access this {contentKind}, complete the purchase below."
   },
   "shop": {
     "title": "Shop",
@@ -290,7 +297,13 @@
     "courseAccessHint": "Then go to the course page and open the content. If access is missing, wait a minute and reload the page.",
     "openCourse": "Open course",
     "paymentNotAvailable": "Payment is not available yet. Contact the administrator.",
-    "checkoutFailed": "Could not start the payment."
+    "checkoutFailed": "Could not start the payment.",
+    "viewAndBuy": "View & buy",
+    "paymentVerifyFailed": "Your payment was received, but we couldn't verify it automatically.",
+    "paymentVerifyHint": "Don't worry — your access should appear within a few minutes. If it doesn't, contact support.",
+    "paymentCancelledRetry": "You can try again whenever you're ready.",
+    "checkoutRetryHint": "Please try again. If the problem persists, contact support.",
+    "courseAccessDescSimple": "You now have access to this course. Click the button below to start."
   },
   "darkMode": {
     "lightMode": "Light mode",
@@ -341,7 +354,8 @@
     "invalidToken": "This reset link is invalid or has expired.",
     "tokenExpired": "This reset link has expired. Please request a new one.",
     "resetFailed": "Could not reset the password right now. Please try again.",
-    "requestFailed": "Could not process the request right now."
+    "requestFailed": "Could not process the request right now.",
+    "requestNewLink": "Go back to the sign-in page and click \"Forgot password?\" to request a new link."
   },
   "metadata": {
     "adminPage": "Course access admin",

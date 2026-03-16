@@ -207,6 +207,7 @@ export default function AdminDashboard() {
   const [resendConfigured, setResendConfigured] = useState(false);
   const [shopVisibleTypes, setShopVisibleTypes] = useState(["product", "course", "event", "digital_file", "digital_course"]);
   const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
+  const [shopSettingsMessage, setShopSettingsMessage] = useState("");
 
   // Derived values for shop product selection
   const isShopSelection = selectedCourse.startsWith("__shop_");
@@ -308,6 +309,8 @@ export default function AdminDashboard() {
       console.error("Failed to save shop settings:", err);
     }
     setShopSettingsSaving(false);
+    setShopSettingsMessage(t("admin.shopVisibilitySaved"));
+    setTimeout(() => setShopSettingsMessage(""), 3000);
   }
 
   function toggleShopType(type) {
@@ -431,6 +434,7 @@ export default function AdminDashboard() {
   }
 
   function removeShopProduct(index) {
+    if (!window.confirm(t("admin.confirmRemoveProduct"))) return;
     setProducts((prev) => prev.filter((_, idx) => idx !== index));
     setSelectedCourse("");
   }
@@ -563,6 +567,7 @@ export default function AdminDashboard() {
   }, []);
 
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploadingField, setUploadingField] = useState(null);
 
   async function uploadFile(index, field) {
     const input = document.createElement("input");
@@ -585,12 +590,14 @@ export default function AdminDashboard() {
           updateProduct(index, field, url);
         } else {
           // Small file — use regular upload through Worker
+          setUploadingField(field);
           const formData = new FormData();
           formData.append("file", file);
           const res = await fetch("/api/admin/upload", {
             method: "POST",
             body: formData,
           });
+          setUploadingField(null);
           const json = await res.json();
           if (!res.ok || !json?.ok) {
             setError(json?.error || t("admin.uploadFailed"));
@@ -600,6 +607,7 @@ export default function AdminDashboard() {
         }
       } catch (err) {
         setUploadProgress(null);
+        setUploadingField(null);
         setError(err.message || t("admin.uploadFailed"));
       }
     };
@@ -963,6 +971,9 @@ export default function AdminDashboard() {
             {shopSettingsSaving && (
               <p className="text-xs text-purple-600">{t("common.saving", "Sparar...")}</p>
             )}
+            {shopSettingsMessage && (
+              <p className="text-xs text-green-700">{shopSettingsMessage}</p>
+            )}
           </div>
 
           {/* All products list */}
@@ -1015,7 +1026,7 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                         {configured && (
-                          <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
+                          <span title={t("admin.configuredBadgeTooltip")} className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
                         )}
                       </button>
                     );
@@ -1051,7 +1062,7 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                         {configured && (
-                          <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
+                          <span title={t("admin.configuredBadgeTooltip")} className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
                         )}
                       </button>
                     );
@@ -1088,7 +1099,7 @@ export default function AdminDashboard() {
                           <p className="text-xs text-gray-500 truncate">{event.uri}</p>
                         </div>
                         {configured && (
-                          <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
+                          <span title={t("admin.configuredBadgeTooltip")} className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
                         )}
                       </button>
                     );
@@ -1397,15 +1408,20 @@ export default function AdminDashboard() {
               </p>
 
               <div className="grid md:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder={t("admin.namePlaceholder")}
-                  value={selectedShopProduct.name}
-                  onChange={(e) =>
-                    updateProduct(shopIndex, "name", e.target.value)
-                  }
-                  className="border rounded px-3 py-2"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("admin.namePlaceholder")} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={t("admin.namePlaceholder")}
+                    value={selectedShopProduct.name}
+                    onChange={(e) =>
+                      updateProduct(shopIndex, "name", e.target.value)
+                    }
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
                 <div>
                   <input
                     type="text"
@@ -1487,8 +1503,9 @@ export default function AdminDashboard() {
                       onClick={() => uploadFile(shopIndex, "fileUrl")}
                       className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap"
                       title={t("admin.uploadSizeHint")}
+                      disabled={!!uploadingField}
                     >
-                      {t("admin.uploadFile")}
+                      {uploadingField === "fileUrl" ? t("common.loading") : t("admin.uploadFile")}
                     </button>
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5">
@@ -1521,9 +1538,9 @@ export default function AdminDashboard() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-gray-700">
-                    {t("admin.courseFee")}
+                    {t("admin.courseFee")} <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600">
                     {t("admin.feeHint")}
                   </p>
                   <div className="flex gap-2">
@@ -1558,7 +1575,7 @@ export default function AdminDashboard() {
                   <label className="text-sm font-medium text-gray-700">
                     {t("admin.allowedUsers")}
                   </label>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600">
                     {t("admin.allowedUsersHint")}
                   </p>
                   <input
@@ -1835,7 +1852,12 @@ export default function AdminDashboard() {
         </div>
       )}
       {message ? <p className="text-green-700">{message}</p> : null}
-      {error ? <p className="text-red-600">{error}</p> : null}
+      {error ? (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-3">
+          <p className="text-red-800 font-medium">{t("admin.saveFailed")}</p>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+        </div>
+      ) : null}
     </section>
   );
 }
