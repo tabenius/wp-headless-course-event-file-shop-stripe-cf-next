@@ -6,6 +6,9 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	"build": {
+		"uploadSourceMaps": true
+	},
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"

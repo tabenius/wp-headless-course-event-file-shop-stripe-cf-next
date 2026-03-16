@@ -9,6 +9,7 @@ const wpHostname = (() => {
 
 const nextConfig = {
   reactStrictMode: true,
+  productionBrowserSourceMaps: true,
   outputFileTracingRoot: '.',
   env: {
     NEXT_PUBLIC_BUILD_TIME:
@@ -29,6 +30,11 @@ const nextConfig = {
       type: "asset/source",
     });
     return config;
+  },
+  terserOptions: {
+    compress: {
+      drop_console: false,
+    },
   },
   async rewrites() {
     const wpBase = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
