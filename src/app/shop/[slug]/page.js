@@ -94,7 +94,7 @@ export async function generateMetadata({ params: paramsPromise }) {
       title: `${product.name} | Shop`,
       description,
       url: canonical,
-      type: "product",
+      type: "website",
       images,
     },
     twitter: {
