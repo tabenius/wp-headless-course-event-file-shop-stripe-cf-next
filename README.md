@@ -161,6 +161,9 @@ Go to `https://your-site.com/admin/login` and sign in with your admin credential
 
 Your shop (`/shop` page) can display products from several sources:
 
+![Shop sources diagram](https://mermaid.ink/img/Z3JhcGggTFIKICAgIHN1YmdyYXBoICJQcm9kdWN0IFNvdXJjZXMiCiAgICAgICAgV0NbIldvb0NvbW1lcmNlPGJyLz5Qcm9kdWN0cyJdCiAgICAgICAgTFBbIkxlYXJuUHJlc3M8YnIvPkNvdXJzZXMiXQogICAgICAgIEVWWyJFdmVudHM8YnIvPih3aXRoIHByaWNlcykiXQogICAgICAgIERQWyJEaWdpdGFsIFByb2R1Y3RzPGJyLz4oYWRtaW4gZGFzaGJvYXJkKSJdCiAgICBlbmQKCiAgICBzdWJncmFwaCAiWW91ciBTaG9wIgogICAgICAgIFNQWyIvc2hvcCBwYWdlPGJyLz48aT5BbGwgcHJvZHVjdHM8YnIvPmluIG9uZSBwbGFjZTwvaT4iXQogICAgZW5kCgogICAgV0MgLS0-IFNQCiAgICBMUCAtLT4gU1AKICAgIEVWIC0tPiBTUAogICAgRFAgLS0-IFNQCg)
+
+Mermaid source (editable):
 ```mermaid
 graph LR
     subgraph "Product Sources"
