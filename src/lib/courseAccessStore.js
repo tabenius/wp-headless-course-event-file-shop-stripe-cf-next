@@ -4,6 +4,14 @@ import {
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
+function canUseFs() {
+  return (
+    typeof process !== "undefined" &&
+    process.versions?.node &&
+    process.env.NEXT_RUNTIME !== "edge"
+  );
+}
+
 function getKvKey() { return process.env.CF_KV_KEY || "course-access"; }
 const LOCAL_ACCESS_FILE = ".data/course-access.json";
 
@@ -66,6 +74,9 @@ async function writeToCloudflare(state) {
 }
 
 async function ensureLocalStore() {
+  if (!canUseFs()) {
+    return;
+  }
   const [{ promises: fs }, path] = await Promise.all([
     import("node:fs"),
     import("node:path"),
@@ -81,6 +92,10 @@ async function ensureLocalStore() {
 }
 
 async function readFromLocal() {
+  if (!canUseFs()) {
+    console.warn("Local filesystem store unavailable in this runtime; using in-memory access store.");
+    return inMemoryAccessState;
+  }
   try {
     await ensureLocalStore();
     const [{ promises: fs }, path] = await Promise.all([
@@ -104,6 +119,10 @@ async function readFromLocal() {
 }
 
 async function writeToLocal(state) {
+  if (!canUseFs()) {
+    inMemoryAccessState = state;
+    return;
+  }
   try {
     await ensureLocalStore();
     const [{ promises: fs }, path] = await Promise.all([

@@ -9,6 +9,14 @@ const LOCAL_ACCESS_FILE = ".data/digital-access.json";
 
 let inMemoryState = { users: {} };
 
+function canUseFs() {
+  return (
+    typeof process !== "undefined" &&
+    process.versions?.node &&
+    process.env.NEXT_RUNTIME !== "edge"
+  );
+}
+
 function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
@@ -44,6 +52,7 @@ function shouldUseCloudflareBackend() {
 }
 
 async function ensureLocalStore() {
+  if (!canUseFs()) return;
   const [{ promises: fs }, path] = await Promise.all([
     import("node:fs"),
     import("node:path"),
@@ -59,6 +68,10 @@ async function ensureLocalStore() {
 }
 
 async function readLocalState() {
+  if (!canUseFs()) {
+    console.warn("Local digital access store unavailable in this runtime; using in-memory fallback.");
+    return inMemoryState;
+  }
   try {
     await ensureLocalStore();
     const [{ promises: fs }, path] = await Promise.all([
@@ -78,6 +91,10 @@ async function readLocalState() {
 }
 
 async function writeLocalState(state) {
+  if (!canUseFs()) {
+    inMemoryState = state;
+    return;
+  }
   try {
     await ensureLocalStore();
     const [{ promises: fs }, path] = await Promise.all([
