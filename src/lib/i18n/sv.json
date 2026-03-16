@@ -96,8 +96,8 @@
     "confirmCourseMismatch": "Betalningen gäller en annan kurs.",
     "confirmFailed": "Vi kunde inte bekräfta betalningen just nu. Försök igen.",
     "uploadNoFile": "Ingen fil skickades.",
-    "uploadFailed": "Uppladdning misslyckades.",
-    "uploadWpFailed": "Uppladdning till WordPress misslyckades ({status}).",
+    "uploadFailed": "Det gick inte att spara bilden. Kontrollera nätverket och försök igen.",
+    "uploadWpFailed": "Uppladdning till WordPress mediabibliotek misslyckades (HTTP {status}). Är WORDPRESS_GRAPHQL_AUTH_TOKEN giltig och mediabiblioteket öppet för uppladdning?",
     "wpUrlMissing": "WordPress URL saknas.",
     "wpAuthMissing": "WordPress-autentisering saknas."
   },

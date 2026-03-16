@@ -96,8 +96,8 @@
     "confirmCourseMismatch": "The payment is for a different course.",
     "confirmFailed": "We could not confirm the payment right now. Please try again.",
     "uploadNoFile": "No file was submitted.",
-    "uploadFailed": "Upload failed.",
-    "uploadWpFailed": "Upload to WordPress failed ({status}).",
+    "uploadFailed": "Could not save the image. Check your network and try again.",
+    "uploadWpFailed": "Upload to WordPress media library failed (HTTP {status}). Is WORDPRESS_GRAPHQL_AUTH_TOKEN valid and media uploads allowed?",
     "wpUrlMissing": "WordPress URL is missing.",
     "wpAuthMissing": "WordPress authentication is missing."
   },

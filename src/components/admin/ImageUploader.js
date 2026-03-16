@@ -140,7 +140,11 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
       if (!res.ok || !json?.ok) {
         const msg = json?.error || t("admin.uploadFailed");
         onError?.(msg);
-        alert(msg);
+        window.dispatchEvent(
+          new CustomEvent("toast", {
+            detail: { type: "error", message: msg },
+          }),
+        );
         return;
       }
       onUploaded?.(json.url);
@@ -150,7 +154,11 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
     } catch {
       const msg = t("admin.uploadFailed");
       onError?.(msg);
-      alert(msg);
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "error", message: msg },
+        }),
+      );
     } finally {
       setUploading(false);
     }
