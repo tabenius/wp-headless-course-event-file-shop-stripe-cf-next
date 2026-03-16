@@ -226,7 +226,7 @@ export default function AdminDashboard() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [healthLoading, setHealthLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("stats");
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);

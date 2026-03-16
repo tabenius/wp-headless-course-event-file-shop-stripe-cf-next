@@ -18,7 +18,7 @@ function getNavItems() {
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("stats");
 
   // Keep activeTab in sync with AdminDashboard
   useEffect(() => {
