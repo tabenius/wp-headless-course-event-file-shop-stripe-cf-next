@@ -556,6 +556,16 @@ export default function AdminDashboard() {
     }
   }
 
+  // Scroll to edit section when a product/content is selected
+  useEffect(() => {
+    if (!selectedCourse) return;
+    if (!showDetail) return;
+    const id = setTimeout(() => {
+      editFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => clearTimeout(id);
+  }, [selectedCourse, showDetail]);
+
   // Unified save: handles both shop products and content access
   async function saveUnified() {
     setError("");
