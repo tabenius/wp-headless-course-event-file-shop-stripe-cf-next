@@ -123,15 +123,16 @@ export default function Paywall({
         {isLoggedIn ? (
           <>
             <p className="text-gray-700">
-              {t("paywall.loggedInAs", { email: userEmail, contentKind: kindLabel })}
+              {t("paywall.loggedInNeedPurchase", { email: userEmail, contentKind: kindLabel })}
             </p>
             <button
               type="button"
               onClick={() => checkout()}
               disabled={loading}
-              className="px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50"
+              className="px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50 inline-flex items-center gap-2"
               style={{ color: "#fff" }}
             >
+              {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {buyLabel}
             </button>
           </>
@@ -165,9 +166,10 @@ export default function Paywall({
               type="button"
               onClick={handleGuestCheckout}
               disabled={loading}
-              className="w-full px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50 text-lg"
+              className="w-full px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50 text-lg inline-flex items-center justify-center gap-2"
               style={{ color: "#fff" }}
             >
+              {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {buyLabel}
             </button>
 

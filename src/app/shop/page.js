@@ -24,6 +24,7 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
   const checkoutProductId =
     typeof searchParams?.product_id === "string" ? searchParams.product_id : "";
 
+  let checkoutError = false;
   if (userEmail && checkoutStatus === "success" && checkoutSessionId && checkoutProductId) {
     try {
       const stripeSession = await fetchStripeCheckoutSession(checkoutSessionId);
@@ -51,6 +52,7 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
       }
     } catch (error) {
       console.error("Failed to confirm shop purchase:", error);
+      checkoutError = true;
     }
   }
 
@@ -81,6 +83,7 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
       ownedUris={ownedUris}
       stripeEnabled={isStripeEnabled()}
       checkoutStatus={checkoutStatus}
+      checkoutError={checkoutError}
     />
   );
 }

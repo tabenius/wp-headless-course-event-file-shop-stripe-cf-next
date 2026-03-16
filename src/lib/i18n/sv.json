@@ -354,7 +354,8 @@
     "invalidToken": "Återställningslänken är ogiltig eller har gått ut.",
     "tokenExpired": "Återställningslänken har gått ut. Begär en ny.",
     "resetFailed": "Det gick inte att återställa lösenordet just nu. Försök igen.",
-    "requestFailed": "Det gick inte att behandla förfrågan just nu."
+    "requestFailed": "Det gick inte att behandla förfrågan just nu.",
+    "requestNewLink": "Gå tillbaka till inloggningssidan och klicka \"Glömt lösenord?\" för att begära en ny länk."
   },
   "metadata": {
     "adminPage": "Admin för kursåtkomst",

@@ -164,8 +164,9 @@ export default function SignInClient() {
             <button
               type="submit"
               disabled={forgotLoading}
-              className="w-full bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50"
+              className="w-full bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
+              {forgotLoading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {forgotLoading ? t("common.loading") : t("resetPassword.sendLink")}
             </button>
             <button
@@ -202,8 +203,9 @@ export default function SignInClient() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50"
+              className="bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
             >
+              {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {loading ? t("auth.signingIn") : t("auth.signInWithEmail")}
             </button>
             <button

@@ -39,6 +39,7 @@ export default function ShopIndex({
   ownedUris,
   stripeEnabled,
   checkoutStatus,
+  checkoutError,
 }) {
   const [loadingId, setLoadingId] = useState("");
   const [error, setError] = useState("");
@@ -88,13 +89,27 @@ export default function ShopIndex({
         <p className="text-gray-600 mt-2">{t("shop.subtitle")}</p>
       </div>
 
-      {checkoutStatus === "success" && (
+      {checkoutStatus === "success" && checkoutError && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <p className="text-amber-800 font-medium">{t("shop.paymentVerifyFailed")}</p>
+          <p className="text-amber-700 text-sm mt-1">{t("shop.paymentVerifyHint")}</p>
+        </div>
+      )}
+      {checkoutStatus === "success" && !checkoutError && (
         <p className="text-green-700">{t("shop.paymentSuccess")}</p>
       )}
       {checkoutStatus === "cancel" && (
-        <p className="text-yellow-700">{t("shop.paymentCancelled")}</p>
+        <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+          <p className="text-yellow-800">{t("shop.paymentCancelled")}</p>
+          <p className="text-yellow-700 text-sm mt-1">{t("shop.paymentCancelledRetry")}</p>
+        </div>
       )}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4">
+          <p className="text-red-800">{error}</p>
+          <p className="text-red-600 text-sm mt-1">{t("shop.checkoutRetryHint")}</p>
+        </div>
+      )}
 
       {items.length === 0 && (
         <p className="text-gray-500">{t("shop.noProducts", "Inga produkter tillgängliga just nu.")}</p>
@@ -153,31 +168,28 @@ export default function ShopIndex({
                   )}
 
                   <div className="flex gap-2 items-center">
-                    <Link
-                      href={item.uri}
-                      className="px-3 py-2 rounded border hover:bg-gray-50 text-sm"
-                    >
-                      {t("common.view")}
-                    </Link>
                     {owned ? (
                       <span className="text-green-700 text-sm font-semibold">
                         {t("shop.purchased")}
                       </span>
                     ) : isDigital ? (
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => startDigitalCheckout(item.slug)}
-                        className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 text-sm"
-                      >
-                        {loading ? t("shop.sending") : t("common.buy")}
-                      </button>
+                      <>
+                        <Link href={item.uri} className="px-3 py-2 rounded border hover:bg-gray-50 text-sm">
+                          {t("common.view")}
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => startDigitalCheckout(item.slug)}
+                          className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 text-sm inline-flex items-center gap-2"
+                        >
+                          {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                          {loading ? t("shop.sending") : t("common.buy")}
+                        </button>
+                      </>
                     ) : (
-                      <Link
-                        href={item.uri}
-                        className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm"
-                      >
-                        {t("common.buy")}
+                      <Link href={item.uri} className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm">
+                        {t("shop.viewAndBuy")}
                       </Link>
                     )}
                   </div>

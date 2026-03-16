@@ -57,9 +57,20 @@ export default function MobileNav({ items, authLinks }) {
           {items.map((item) => (
             <div key={item.href}>
               {item.children?.length > 0 ? (
-                <span className={`${menuItemClass} text-gray-500 cursor-default`}>
-                  {item.label}
-                </span>
+                item.href && item.href !== "#" ? (
+                  <NavLink
+                    href={item.href}
+                    className={`${menuItemClass} font-semibold`}
+                    activeClassName={activeMobileClass}
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </NavLink>
+                ) : (
+                  <span className={`${menuItemClass} text-gray-700 font-semibold`}>
+                    {item.label}
+                  </span>
+                )
               ) : (
                 <NavLink
                   href={item.href}

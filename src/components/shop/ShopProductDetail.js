@@ -25,20 +25,24 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
 
     setError("");
     setLoading(true);
-    const response = await fetch("/api/digital/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productSlug: product.slug }),
-    });
-    const json = await response.json();
-    setLoading(false);
-
-    if (!response.ok || !json?.ok || !json?.url) {
-      setError(json?.error || t("shop.checkoutFailed"));
-      return;
+    try {
+      const response = await fetch("/api/digital/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productSlug: product.slug }),
+      });
+      let json;
+      try { json = await response.json(); } catch { json = {}; }
+      if (!response.ok || !json?.ok || !json?.url) {
+        setError(json?.error || t("shop.checkoutFailed"));
+        return;
+      }
+      window.location.href = json.url;
+    } catch {
+      setError(t("shop.checkoutFailed"));
+    } finally {
+      setLoading(false);
     }
-
-    window.location.href = json.url;
   }
 
   return (
@@ -68,7 +72,10 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
         <p className="text-green-700">{t("shop.paymentSuccess")}</p>
       ) : null}
       {checkoutStatus === "cancel" ? (
-        <p className="text-yellow-700">{t("shop.paymentCancelledShort")}</p>
+        <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+          <p className="text-yellow-800">{t("shop.paymentCancelledShort")}</p>
+          <p className="text-yellow-700 text-sm mt-1">{t("shop.paymentCancelledRetry")}</p>
+        </div>
       ) : null}
       {error ? <p className="text-red-600">{error}</p> : null}
 
@@ -81,21 +88,17 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
             {t("shop.downloadFile")}
           </a>
         ) : (
-          <div className="rounded border border-teal-200 bg-teal-50 p-5 space-y-3">
+          <div className="rounded-lg border border-teal-200 bg-teal-50 p-5 space-y-4">
             <h2 className="text-xl font-semibold text-teal-900">{t("shop.courseAccessTitle")}</h2>
-            <p className="text-teal-900">
-              {t("shop.courseAccessDesc")}
-            </p>
-            <p className="text-teal-900">
-              {t("shop.courseAccessHint")}
-            </p>
-            {product.courseUri ? (
-              <p>
-                <Link href={product.courseUri} className="text-teal-900 underline font-semibold">
-                  {t("shop.openCourse")}: {product.courseUri}
-                </Link>
-              </p>
-            ) : null}
+            <p className="text-teal-800">{t("shop.courseAccessDescSimple")}</p>
+            {product.courseUri && (
+              <Link
+                href={product.courseUri}
+                className="inline-block px-5 py-3 rounded bg-teal-700 text-white hover:bg-teal-600 font-semibold"
+              >
+                {t("shop.openCourse")}
+              </Link>
+            )}
           </div>
         )
       ) : (
@@ -103,8 +106,9 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
           type="button"
           onClick={startCheckout}
           disabled={loading}
-          className="px-5 py-3 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
+          className="px-5 py-3 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
         >
+          {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
           {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
         </button>
       )}
