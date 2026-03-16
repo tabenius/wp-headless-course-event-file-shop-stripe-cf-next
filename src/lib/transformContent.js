@@ -54,6 +54,12 @@ export function transformContent(html) {
     );
   }
 
+  // Auto-link bare email addresses (not already linked)
+  result = result.replace(
+    /(^|[\s>])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})($|[\s<])/gi,
+    (_, prefix, email, suffix) => `${prefix}<a href="mailto:${email}">${email}</a>${suffix}`,
+  );
+
   // Replace Contact Form 7 shortcodes with a simple contact form
   const contactEmail =
     site?.contact?.email ||
