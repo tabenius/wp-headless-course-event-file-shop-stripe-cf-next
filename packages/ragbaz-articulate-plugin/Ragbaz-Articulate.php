@@ -591,7 +591,7 @@ add_action('graphql_register_types', function () {
     'resolve' => function () {
       return [
         'version' => RAGBAZ_VERSION,
-        'hasLearnPress' => function_exists('learn_press'),
+        'hasLearnPress' => function_exists('learn_press_get_user'),
         'hasEventsPlugin' => ragbaz_detect_events_plugin(),
       ];
     },
