@@ -19,4 +19,5 @@
 - Admin advanced now also shows git revision (NEXT_PUBLIC_GIT_SHA/GIT_COMMIT_SHA/VERCEL_GIT_COMMIT_SHA).  
 - Edge-safe R2 uploads implemented: single PUT and multipart (signed) using native crypto; AWS SDK path only on Node; S3 non-R2 still Node-only.  
 - Digital products use Cloudflare KV at runtime; config/digital-products.json only seeds on first run. README updated.  
-- README shop graph now renders via mermaid.ink image plus source block for quick editing.  
+- README shop graph now renders via mermaid.ink image plus source block for quick editing.
+- Fixed GraphQL auth priority: Application Passwords (spaces, no dots) now use Basic auth first instead of failing Bearer then falling back. Prevents wasted 403 round-trip on every request from wp-graphql-headless-login rejecting non-JWT tokens. Renamed .env var from WORDPRESS_GRAPHQL_AUTH_TOKEN → WORDPRESS_GRAPHQL_APPLICATION_PASSWORD.

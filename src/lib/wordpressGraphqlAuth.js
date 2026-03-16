@@ -20,7 +20,15 @@ function getFaustSecret() {
 
 /**
  * Returns an ordered list of auth header options to try for WordPress GraphQL.
- * Preference: Bearer token first (if present), then Basic (username + app password).
+ *
+ * Priority logic:
+ * 1. If an explicit Application Password is set (WORDPRESS_GRAPHQL_APPLICATION_PASSWORD),
+ *    use Basic auth first — it's the most reliable method.
+ * 2. If WORDPRESS_GRAPHQL_AUTH_TOKEN looks like an Application Password (spaces, no dots),
+ *    prefer Basic auth over Bearer to avoid a wasted 403 from wp-graphql-headless-login.
+ * 3. If the token looks like a JWT (has dots), try Bearer first.
+ * 4. Faust secret headers are tried when configured.
+ * 5. Falls back to unauthenticated if nothing is configured.
  */
 export function getWordPressGraphqlAuthOptions() {
   const options = [];
@@ -34,7 +42,20 @@ export function getWordPressGraphqlAuthOptions() {
       process.env.WORDPRESS_GRAPHQL_APP_PASSWORD,
   );
 
-  if (bearerToken) {
+  // Determine if the token looks like an Application Password vs a JWT/Bearer token
+  const tokenIsAppPassword = bearerToken && looksLikeApplicationPassword(bearerToken);
+  const effectiveAppPassword = appPassword || (tokenIsAppPassword ? bearerToken : "");
+
+  // Basic auth first when we have a username + application password
+  if (username && effectiveAppPassword) {
+    options.push({
+      mode: "basic",
+      authorization: `Basic ${encodeBasicCredentials(username, effectiveAppPassword)}`,
+    });
+  }
+
+  // Bearer token only if it looks like a JWT (has dots, no spaces)
+  if (bearerToken && !tokenIsAppPassword) {
     options.push({
       mode: "bearer",
       authorization: `Bearer ${bearerToken}`,
@@ -50,14 +71,6 @@ export function getWordPressGraphqlAuthOptions() {
         "X-Headless-Secret": faustSecret,
         "X-Faust-Secret": faustSecret,
       },
-    });
-  }
-
-  if (username && (appPassword || looksLikeApplicationPassword(bearerToken))) {
-    const password = appPassword || bearerToken;
-    options.push({
-      mode: "basic",
-      authorization: `Basic ${encodeBasicCredentials(username, password)}`,
     });
   }
 
