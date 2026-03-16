@@ -30,3 +30,4 @@
 - Support tickets now include build info (buildTime + gitSha) as read-only metadata: shown in the ticket creation form and ticket detail view. Data flows through API → supportTickets lib → KV storage.
 - Normalized all price displays to consistent "750 SEK" format (no decimals, currency code after amount). Applies to ShopIndex, ShopProductDetail, and Paywall. WordPress-rendered prices like "kr750.00" are parsed and reformatted.
 - Shop listing now shows one button per product (View & Buy) instead of two buttons for digital products.
+- Converted repo to npm workspaces monorepo; moved Ragbaz-Articulate WPGraphQL helper into `packages/ragbaz-articulate-plugin/` with buildable zip + WordPress.org readme (EN/SV/ES). Admin health tab now logs and exposes a direct download/WP-CLI install link; plugin download served from `public/downloads/ragbaz-articulate/`. Added logging hooks in AdminDashboard/Health to aid bug hunting and wrangler tail output. 

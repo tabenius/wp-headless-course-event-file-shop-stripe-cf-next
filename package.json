@@ -2,6 +2,9 @@
   "name": "ragbaz-articulate-storefront",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "theme:css": "node scripts/generate-theme-css.mjs",
     "test:theme": "node --test scripts/generate-theme-css.test.mjs",
@@ -18,7 +21,9 @@
     "cf:preview": "opennextjs-cloudflare build && wrangler dev",
     "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
     "lint": "eslint .",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "plugin:build": "npm run build --workspace ragbaz-articulate-plugin",
+    "plugin:copy": "npm run plugin:build && mkdir -p public/downloads/ragbaz-articulate && cp packages/ragbaz-articulate-plugin/dist/Ragbaz-Articulate.zip public/downloads/ragbaz-articulate/"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1004.0",

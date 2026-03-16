@@ -7,12 +7,22 @@ export default function AdminHealthTab({
   healthChecks,
   healthLoading,
   webhookUrl,
+  ragbazDownloadUrl,
   runHealthCheck,
 }) {
   useEffect(() => {
-    console.log("[AdminHealthTab] mounted");
-    return () => console.log("[AdminHealthTab] unmounted");
+    console.info("[AdminHealthTab] mounted");
+    return () => console.info("[AdminHealthTab] unmounted");
   }, []);
+
+  useEffect(() => {
+    console.info("[AdminHealthTab] props", {
+      hasChecks: !!healthChecks,
+      webhook: !!webhookUrl,
+      ragbaz: !!ragbazDownloadUrl,
+      loading: healthLoading,
+    });
+  }, [healthChecks, webhookUrl, ragbazDownloadUrl, healthLoading]);
 
   return (
     <div className="border rounded p-4 space-y-3">

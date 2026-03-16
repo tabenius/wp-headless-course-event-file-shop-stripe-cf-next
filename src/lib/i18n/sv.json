@@ -121,6 +121,9 @@
     "stripeWebhookDashboardLink": "Stripe Dashboard → Developers → Webhooks",
     "endpointUrl": "Endpoint-URL",
     "eventsToListen": "Event att lyssna på",
+    "ragbazPlugin": "Ragbaz-Articulate-plugin",
+    "ragbazPluginDesc": "Ladda ner eller installera GraphQL-tillägget för LearnPress/event direkt från denna storefront.",
+    "downloadRagbaz": "Ladda ner Ragbaz-Articulate",
     "shopProducts": "Shop-produkter",
     "shopProductsHint": "Hantera filer och kursprodukter för /shop. Uppladdade filer sparas i WordPress mediebibliotek (max filstorlek beror på din WordPress-konfiguration, vanligtvis 2–64 MB).",
     "product": "Produkt",
@@ -297,7 +300,10 @@
     "wpModeNotEnabled": "WordPress-läge är inte aktiverat.",
     "wpSchemaOk": "WPGraphQL-schema — evenemang: {event}, kurser: {course}, exempel event: {sampleEvent}, exempel kurs: {sampleCourse}.",
     "wpSchemaFailed": "Kunde inte läsa WPGraphQL-schemat.",
-    "wpSchemaUnknown": "WPGraphQL-schema ej kontrollerat."
+    "wpSchemaUnknown": "WPGraphQL-schema ej kontrollerat.",
+    "ragbazOk": "Ragbaz-Articulate finns (v{version}; LearnPress: {learnpress}; Event-plugin: {events}).",
+    "ragbazMissing": "Ragbaz-Articulate (GraphQL-limmet) hittades inte.",
+    "ragbazUnknown": "Status för Ragbaz-Articulate är okänd."
   },
   "paywall": {
     "content": "Innehåll",

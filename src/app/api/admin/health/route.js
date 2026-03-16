@@ -92,6 +92,44 @@ async function checkWpSchema() {
   }
 }
 
+async function checkRagbazPlugin() {
+  const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
+  const auth = getWordPressGraphqlAuth();
+  if (!url || !auth.authorization) return { ok: false, message: t("health.ragbazUnknown") };
+  try {
+    const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: auth.authorization,
+      },
+      body: JSON.stringify({
+        query: `
+          query RagbazCheck {
+            ragbazInfo { version hasLearnPress hasEventsPlugin }
+            courseAccessRules { courseUri }
+          }
+        `,
+      }),
+      cache: "no-store",
+    });
+    const json = await response.json().catch(() => null);
+    if (!response.ok || !json?.data) return { ok: false, message: t("health.ragbazMissing") };
+    const info = json.data.ragbazInfo;
+    if (!info) return { ok: false, message: t("health.ragbazMissing") };
+    const msg = t("health.ragbazOk", {
+      version: info.version || "unknown",
+      learnpress: info.hasLearnPress ? "yes" : "no",
+      events: info.hasEventsPlugin ? "yes" : "no",
+    });
+    return { ok: true, message: msg };
+  } catch (error) {
+    console.error("Ragbaz health check failed:", error);
+    return { ok: false, message: t("health.ragbazMissing") };
+  }
+}
+
 async function checkStripe() {
   if (!isStripeEnabled()) {
     return { ok: false, message: t("health.stripeNotConfigured") };
@@ -117,6 +155,7 @@ export async function GET(request) {
     request.headers.get("cookie") || "",
   );
   if (!adminSession) {
+    console.warn("[health] admin session missing");
     return NextResponse.json({ ok: false, error: t("apiErrors.adminLoginRequired") }, { status: 401 });
   }
 
@@ -134,16 +173,30 @@ export async function GET(request) {
     backend === "wordpress"
       ? await checkWpSchema()
       : { ok: true, message: t("health.wpModeNotEnabled") };
+  const ragbazCheck =
+    backend === "wordpress"
+      ? await checkRagbazPlugin()
+      : { ok: true, message: t("health.wpModeNotEnabled") };
   const stripeCheck = await checkStripe();
 
   // Build the webhook URL from the request
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
   const webhookUrl = `${origin}/api/stripe/webhook`;
+  const ragbazDownloadUrl = `${origin}/downloads/ragbaz-articulate/Ragbaz-Articulate.zip`;
+
+  console.info("[health] result", {
+    backend,
+    wordpress: wordpressCheck?.ok,
+    schema: wpSchemaCheck?.ok,
+    ragbaz: ragbazCheck?.ok,
+    stripe: stripeCheck?.ok,
+  });
 
   return NextResponse.json({
     ok: true,
     webhookUrl,
+    ragbazDownloadUrl,
     checks: {
       backend: { ok: true, message: t("health.backendLabel", { backend }) },
       adminCredentials: {
@@ -160,6 +213,7 @@ export async function GET(request) {
       },
       wordpressGraphQL: wordpressCheck,
       wordpressSchema: wpSchemaCheck,
+      ragbaz: ragbazCheck,
       stripe: stripeCheck,
       stripeWebhook: {
         ok: stripeWebhookConfigured,

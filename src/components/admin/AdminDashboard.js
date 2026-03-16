@@ -6,6 +6,11 @@ import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
 
+const log = (...args) => {
+  // Console output is streamed by wrangler tail in production.
+  console.info("[AdminDashboard]", ...args);
+};
+
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
 }
@@ -224,6 +229,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [healthChecks, setHealthChecks] = useState(null);
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [ragbazDownloadUrl, setRagbazDownloadUrl] = useState("");
   const [healthLoading, setHealthLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("stats");
@@ -252,6 +258,15 @@ export default function AdminDashboard() {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [newTicket, setNewTicket] = useState({ title: "", description: "", priority: "moderate" });
   const [commentText, setCommentText] = useState("");
+
+  useEffect(() => {
+    log("mounted");
+    return () => log("unmounted");
+  }, []);
+
+  useEffect(() => {
+    log("activeTab", activeTab);
+  }, [activeTab]);
 
   /** Icon indicating whether an item is buyable (has price configured in admin). */
   function BuyableIcon({ configured: cfg }) {
@@ -323,6 +338,7 @@ export default function AdminDashboard() {
         }
       })
       .catch((fetchError) => {
+        console.error("AdminDashboard: failed to load course-access data", fetchError);
         setError(fetchError.message || t("admin.fetchAdminDataFailed"));
       });
 
@@ -341,6 +357,7 @@ export default function AdminDashboard() {
         );
       })
       .catch((fetchError) => {
+        console.error("AdminDashboard: failed to load products", fetchError);
         setError(fetchError.message || t("admin.fetchProductListFailed"));
       });
 
@@ -353,14 +370,14 @@ export default function AdminDashboard() {
           setAnalyticsConfigured(json.configured);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.error("AdminDashboard: failed to load analytics", err));
 
     fetch("/api/admin/deploy/last")
       .then(async (res) => {
         const json = await res.json().catch(() => ({}));
         if (json?.timestamp) setLastDeployAt(json.timestamp);
       })
-      .catch(() => {});
+      .catch((err) => console.error("AdminDashboard: failed to load last deploy timestamp", err));
 
     fetch("/api/admin/shop-settings")
       .then(async (res) => {
@@ -369,7 +386,7 @@ export default function AdminDashboard() {
           setShopVisibleTypes(json.settings.visibleTypes);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.error("AdminDashboard: failed to load shop settings", err));
   }, []);
 
   async function saveShopVisibility(types) {
@@ -708,7 +725,7 @@ export default function AdminDashboard() {
         .then((json) => {
           if (json?.ok) setUploadInfoDetails(json);
         })
-        .catch(() => {});
+        .catch((err) => console.error("AdminDashboard: failed to load upload info", err));
     }
   }, [activeTab]);
 
@@ -784,6 +801,7 @@ export default function AdminDashboard() {
   }
 
   async function runHealthCheck() {
+    log("healthCheck:start");
     setHealthLoading(true);
     setError("");
     try {
@@ -794,14 +812,18 @@ export default function AdminDashboard() {
       }
       setHealthChecks(json.checks || {});
       if (json.webhookUrl) setWebhookUrl(json.webhookUrl);
+      if (json.ragbazDownloadUrl) setRagbazDownloadUrl(json.ragbazDownloadUrl);
+      log("healthCheck:ok", { checks: Object.keys(json.checks || {}) });
     } catch (healthError) {
       const msg =
         healthError instanceof Error
           ? healthError.message
           : t("admin.healthCheckFailed");
       setError(msg);
+      log("healthCheck:error", msg);
     } finally {
       setHealthLoading(false);
+      log("healthCheck:done");
     }
   }
 
@@ -1071,6 +1093,51 @@ export default function AdminDashboard() {
                   checkout.session.completed
                 </code>
               </p>
+            </div>
+          )}
+
+          {ragbazDownloadUrl && (
+            <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
+              <h3 className="font-semibold">{t("admin.ragbazPlugin")}</h3>
+              <p className="text-gray-600">
+                {t("admin.ragbazPluginDesc")}
+              </p>
+              <div className="flex items-center gap-2">
+                <a
+                  className="px-3 py-2 rounded border bg-white hover:bg-gray-100 text-sm"
+                  href={ragbazDownloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t("admin.downloadRagbaz")}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(ragbazDownloadUrl)}
+                  className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
+                  title={t("common.copy")}
+                >
+                  {t("common.copy")}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-gray-500 shrink-0">
+                  WP-CLI:
+                </label>
+                <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
+                  {`wp plugin install ${ragbazDownloadUrl} --activate`}
+                </code>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigator.clipboard.writeText(`wp plugin install ${ragbazDownloadUrl} --activate`)
+                  }
+                  className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
+                  title={t("common.copy")}
+                >
+                  {t("common.copy")}
+                </button>
+              </div>
             </div>
           )}
         </div>
