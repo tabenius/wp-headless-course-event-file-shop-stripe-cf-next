@@ -138,7 +138,9 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) {
-        onError?.(json?.error || t("admin.uploadFailed"));
+        const msg = json?.error || t("admin.uploadFailed");
+        onError?.(msg);
+        alert(msg);
         return;
       }
       onUploaded?.(json.url);
@@ -146,7 +148,9 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
       setPreview(null);
       setFile(null);
     } catch {
-      onError?.(t("admin.uploadFailed"));
+      const msg = t("admin.uploadFailed");
+      onError?.(msg);
+      alert(msg);
     } finally {
       setUploading(false);
     }
@@ -255,7 +259,7 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
                 disabled={uploading}
                 className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm disabled:opacity-50"
               >
-                {uploading ? t("admin.saving") : t("admin.uploadImage")}
+                {uploading ? t("admin.saving") : t("common.save")}
               </button>
             </div>
           </div>
