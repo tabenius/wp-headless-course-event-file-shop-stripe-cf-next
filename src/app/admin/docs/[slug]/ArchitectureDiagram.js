@@ -193,7 +193,7 @@ export default function ArchitectureDiagram() {
           <ContentBlock
             title="Digital Products (Shop)"
             items={[
-              "Source: config/digital-products.json",
+              "Source: Cloudflare KV (seeded from config/digital-products.json)",
               "URI: /shop/{slug}",
               "Fields: name, price, file/course",
               "Paywall: Stripe checkout",
