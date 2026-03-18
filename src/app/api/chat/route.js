@@ -98,7 +98,7 @@ export async function POST(request) {
     const force = body?.rebuild === true;
     if (!message) return NextResponse.json({ ok: false, error: "Message required" }, { status: 400 });
 
-    const admin = force ? requireAdmin(request) : null;
+    const admin = force ? await requireAdmin(request) : null;
     if (admin?.error) return admin.error;
 
     // Lightweight intent routing for admin-only helpers
@@ -116,7 +116,7 @@ export async function POST(request) {
 
     // List products / items
     if (lower.includes("products") || lower.includes("items in shop")) {
-      const adminAuth = requireAdmin(request);
+      const adminAuth = await requireAdmin(request);
       if (adminAuth?.error) return adminAuth.error;
       const json = await fetchAdminJson("/api/admin/products");
       const rows = Array.isArray(json.products) ? json.products : [];
@@ -133,7 +133,7 @@ export async function POST(request) {
 
     // Access / price lookup for a specific URI
     if (lower.includes("access") || lower.includes("price")) {
-      const adminAuth = requireAdmin(request);
+      const adminAuth = await requireAdmin(request);
       if (adminAuth?.error) return adminAuth.error;
       const uriMatch = message.match(/\/[A-Za-z0-9\-\/]+/);
       const targetUri = uriMatch ? uriMatch[0].replace(/\/+$/, "") : "";
@@ -158,7 +158,7 @@ export async function POST(request) {
 
     // Payments / receipts
     if (lower.includes("payment") || lower.includes("receipt")) {
-      const adminAuth = requireAdmin(request);
+      const adminAuth = await requireAdmin(request);
       if (adminAuth?.error) return adminAuth.error;
       const emailMatch = message.match(/\\b[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}\\b/);
       const email = emailMatch ? emailMatch[0] : "";

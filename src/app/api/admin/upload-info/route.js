@@ -11,7 +11,7 @@ function buildR2Endpoint() {
 }
 
 export async function GET(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const backend = resolveBackend();

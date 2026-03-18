@@ -190,7 +190,7 @@ async function fetchWorkersAnalytics(token, accountId) {
 }
 
 export async function GET(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const token = process.env.CF_API_TOKEN;

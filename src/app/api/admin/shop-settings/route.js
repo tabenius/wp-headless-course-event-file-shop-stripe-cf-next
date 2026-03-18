@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/adminRoute";
 import { getShopSettings, saveShopSettings, ALL_TYPES } from "@/lib/shopSettings";
 
 export async function GET(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const settings = await getShopSettings();
@@ -11,7 +11,7 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   try {

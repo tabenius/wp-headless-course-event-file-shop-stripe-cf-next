@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 
 export async function GET(request, { params }) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const parts = Array.isArray(params?.path) ? params.path : [];

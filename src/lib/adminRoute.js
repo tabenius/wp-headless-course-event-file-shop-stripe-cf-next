@@ -14,7 +14,7 @@ export function unauthorized() {
  * Verify admin session from request cookies.
  * Returns the session object, or null if not authenticated.
  */
-export function getAdminSession(request) {
+export async function getAdminSession(request) {
   return getAdminSessionFromCookieHeader(
     request.headers.get("cookie") || "",
   );
@@ -24,8 +24,8 @@ export function getAdminSession(request) {
  * Guard an admin route handler. Returns the unauthorized response
  * if no valid session, otherwise returns null (caller proceeds).
  */
-export function requireAdmin(request) {
-  const session = getAdminSession(request);
+export async function requireAdmin(request) {
+  const session = await getAdminSession(request);
   if (!session) return { error: unauthorized() };
   return { session };
 }

@@ -39,7 +39,7 @@ async function compilePayments(email, limit) {
 }
 
 export async function GET(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   try {
@@ -58,7 +58,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
   try {
     const body = await request.json();

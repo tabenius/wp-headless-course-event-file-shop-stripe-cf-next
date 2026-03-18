@@ -29,7 +29,7 @@ export async function POST(request) {
 
     // Set session cookie directly — avoids a second KV read that may fail
     // due to eventual consistency on Cloudflare Workers.
-    const token = createSessionToken(user);
+    const token = await createSessionToken(user);
     const response = NextResponse.json({ ok: true, user }, { status: 201 });
     response.headers.append("Set-Cookie", createSessionCookie(token));
     return response;

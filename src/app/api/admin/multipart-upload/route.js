@@ -23,7 +23,7 @@ const MAX_PARTS = 10000;
  *   abort      — cancel and clean up
  */
 export async function POST(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const backend = getUploadBackend(new URL(request.url).searchParams.get("backend"));

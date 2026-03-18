@@ -36,7 +36,7 @@ async function uploadToWordPress(arrayBuffer, file) {
 }
 
 export async function POST(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   try {

@@ -4,7 +4,7 @@ import { createPresignedUpload, getUploadBackend, isS3Configured, isS3Upload } f
 import { t } from "@/lib/i18n";
 
 export async function POST(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const backend = getUploadBackend(request.nextUrl.searchParams.get("backend"));

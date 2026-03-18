@@ -4,7 +4,7 @@ import { createTicket, listTickets, updateTicket } from "@/lib/supportTickets";
 import { t } from "@/lib/i18n";
 
 export async function GET(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const tickets = await listTickets();
@@ -12,7 +12,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   try {
@@ -41,7 +41,7 @@ export async function POST(request) {
 }
 
 export async function PUT(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   try {

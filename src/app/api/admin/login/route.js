@@ -28,13 +28,13 @@ export async function POST(request) {
           : "";
     const email = emailRaw.trim().toLowerCase();
     const password = typeof body?.password === "string" ? body.password : "";
-    if (!validateAdminCredentials(email, password)) {
+    if (!(await validateAdminCredentials(email, password))) {
       return NextResponse.json(
         { ok: false, error: t("apiErrors.adminCredentialsRejected") },
         { status: 401 },
       );
     }
-    const token = createAdminSessionToken();
+    const token = await createAdminSessionToken();
     const response = NextResponse.json({ ok: true });
     response.headers.append("Set-Cookie", createAdminSessionCookie(token));
     return response;

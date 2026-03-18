@@ -3,6 +3,6 @@ import { getSessionFromCookieHeader } from "@/auth";
 
 export async function GET(request) {
   const cookieHeader = request.headers.get("cookie") || "";
-  const session = getSessionFromCookieHeader(cookieHeader);
+  const session = await getSessionFromCookieHeader(cookieHeader);
   return NextResponse.json({ authenticated: Boolean(session?.user), session });
 }

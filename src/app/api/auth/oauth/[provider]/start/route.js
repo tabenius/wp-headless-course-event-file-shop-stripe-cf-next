@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { createOAuthStateCookie } from "@/auth";
 import { getProviderConfig } from "@/lib/oauthProviders";
@@ -28,7 +27,9 @@ export async function GET(request, { params: paramsPromise }) {
   const origin = requestUrl.origin;
   const callbackUrl = safeCallbackUrl(requestUrl.searchParams.get("callbackUrl"), origin);
   const redirectUri = `${origin}/api/auth/oauth/${provider}/callback`;
-  const state = crypto.randomBytes(16).toString("hex");
+  const stateBytes = new Uint8Array(16);
+  crypto.getRandomValues(stateBytes);
+  const state = Array.from(stateBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 
   const authUrl = new URL(providerConfig.authorizationUrl);
   authUrl.searchParams.set("client_id", providerConfig.clientId);
@@ -40,7 +41,7 @@ export async function GET(request, { params: paramsPromise }) {
   const response = NextResponse.redirect(authUrl.toString());
   response.headers.append(
     "Set-Cookie",
-    createOAuthStateCookie({ state, callbackUrl, provider }),
+    await createOAuthStateCookie({ state, callbackUrl, provider }),
   );
   return response;
 }

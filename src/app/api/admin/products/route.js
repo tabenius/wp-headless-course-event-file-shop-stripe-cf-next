@@ -4,7 +4,7 @@ import { listDigitalProducts, saveDigitalProducts } from "@/lib/digitalProducts"
 import { t } from "@/lib/i18n";
 
 export async function GET(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   const products = await listDigitalProducts({ includeInactive: true });
@@ -12,7 +12,7 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
-  const auth = requireAdmin(request);
+  const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
   try {

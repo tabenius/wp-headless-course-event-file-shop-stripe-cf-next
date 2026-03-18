@@ -71,7 +71,7 @@ export async function GET(request, { params: paramsPromise }) {
   const code = requestUrl.searchParams.get("code");
   const state = requestUrl.searchParams.get("state");
   const cookieHeader = request.headers.get("cookie") || "";
-  const statePayload = getOAuthStateFromCookieHeader(cookieHeader);
+  const statePayload = await getOAuthStateFromCookieHeader(cookieHeader);
   const redirectUri = `${requestUrl.origin}/api/auth/oauth/${provider}/callback`;
 
   if (
@@ -111,7 +111,7 @@ export async function GET(request, { params: paramsPromise }) {
       provider,
       providerAccountId: profile.id,
     });
-    const sessionToken = createSessionToken(user);
+    const sessionToken = await createSessionToken(user);
     const destination =
       typeof statePayload.callbackUrl === "string" ? statePayload.callbackUrl : "/";
     const response = NextResponse.redirect(new URL(destination, request.url));
