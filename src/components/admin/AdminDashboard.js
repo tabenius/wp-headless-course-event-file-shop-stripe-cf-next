@@ -280,6 +280,42 @@ export default function AdminDashboard() {
     log("activeTab", activeTab);
   }, [activeTab]);
 
+  useEffect(() => {
+    function onKey(e) {
+      const tag = (e.target && e.target.tagName) || "";
+      const isFormField = ["INPUT", "TEXTAREA", "SELECT"].includes(tag) || e.target?.isContentEditable;
+      if (isFormField) return;
+      if (!e.altKey) return;
+      const k = e.key.toLowerCase();
+      const tabMap = {
+        "1": "stats",
+        "2": "shop",
+        "3": "access",
+        "4": "support",
+        "5": "health",
+        "6": "advanced",
+      };
+      if (tabMap[k]) {
+        e.preventDefault();
+        setActiveTab(tabMap[k]);
+        window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: tabMap[k] }));
+        return;
+      }
+      if (k === "l") {
+        e.preventDefault();
+        logoutAdmin();
+        return;
+      }
+      if (k === "/") {
+        e.preventDefault();
+        const searchInput = document.querySelector("input[type='search'], input[aria-label='search']");
+        if (searchInput) searchInput.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   /** Icon indicating whether an item is buyable (has price configured in admin). */
   function BuyableIcon({ configured: cfg }) {
     const hasPriceCents = cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0;
@@ -954,6 +990,11 @@ export default function AdminDashboard() {
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+      <div className="fixed left-4 bottom-4 text-[11px] text-gray-500 bg-white/80 backdrop-blur border rounded p-2 shadow-sm space-y-1">
+        <div className="font-semibold text-gray-700">Genvägar</div>
+        <div>Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health • Alt+6 Advanced</div>
+        <div>Alt+/ Search • Alt+L Logout</div>
+      </div>
       {/* ── Stats tab ── */}
       {activeTab === "stats" && (
         <div className="space-y-6">
@@ -963,74 +1004,74 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold text-gray-900">
                 {wcProducts.length + wpCourses.length + wpEvents.length + products.length}
               </div>
-              <div className="text-xs text-gray-500 mt-1">Total items</div>
+              <div className="text-xs text-gray-500 mt-1">{t("stats.totalItems")}</div>
             </div>
             <div className="border rounded p-4 text-center">
               <div className="text-2xl font-bold text-blue-700">{wcProducts.length}</div>
-              <div className="text-xs text-gray-500 mt-1">WooCommerce</div>
+              <div className="text-xs text-gray-500 mt-1">{t("stats.woo")}</div>
             </div>
             <div className="border rounded p-4 text-center">
               <div className="text-2xl font-bold text-green-700">
                 {wpCourses.length + wpEvents.length}
               </div>
-              <div className="text-xs text-gray-500 mt-1">Courses &amp; Events</div>
+              <div className="text-xs text-gray-500 mt-1">{t("stats.coursesEvents")}</div>
             </div>
             <div className="border rounded p-4 text-center">
               <div className="text-2xl font-bold text-purple-700">{users.length}</div>
-              <div className="text-xs text-gray-500 mt-1">Registered users</div>
+              <div className="text-xs text-gray-500 mt-1">{t("stats.users")}</div>
             </div>
           </div>
 
           {/* Traffic analytics */}
-          {analytics ? (
-            <div className="border rounded p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Traffic (last 24h)</h2>
-                <span className={`text-xs px-2 py-0.5 rounded ${
-                  analyticsMode === "zone"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-amber-100 text-amber-800"
-                }`}>
-                  {analyticsMode === "zone" ? "Zone analytics (full)" : "Workers analytics (basic)"}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-xl font-bold">{analytics.totals.requests.toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">Requests</div>
-                </div>
-                {analyticsMode === "zone" ? (
-                  <>
+              {analytics ? (
+                <div className="border rounded p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">{t("stats.trafficHeading")}</h2>
+                    <span className={`text-xs px-2 py-0.5 rounded ${
+                      analyticsMode === "zone"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}>
+                      {analyticsMode === "zone" ? t("stats.trafficZone") : t("stats.trafficWorkers")}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
                     <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">{analytics.totals.pageViews.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Page views</div>
+                      <div className="text-xl font-bold">{analytics.totals.requests.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">{t("stats.trafficRequests")}</div>
                     </div>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">{analytics.totals.uniques.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Unique visitors</div>
-                    </div>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">{(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB</div>
-                      <div className="text-xs text-gray-500">Bandwidth</div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">{(analytics.totals.subrequests || 0).toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Subrequests</div>
-                    </div>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">{(analytics.totals.errors || 0).toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Errors</div>
-                    </div>
-                    <div className="bg-gray-50 rounded p-3 opacity-40">
-                      <div className="text-xl font-bold">&mdash;</div>
-                      <div className="text-xs text-gray-500">Bandwidth</div>
-                    </div>
-                  </>
-                )}
-              </div>
+                    {analyticsMode === "zone" ? (
+                      <>
+                        <div className="bg-gray-50 rounded p-3">
+                          <div className="text-xl font-bold">{analytics.totals.pageViews.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">{t("stats.trafficPageViews")}</div>
+                        </div>
+                        <div className="bg-gray-50 rounded p-3">
+                          <div className="text-xl font-bold">{analytics.totals.uniques.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">{t("stats.trafficUniques")}</div>
+                        </div>
+                        <div className="bg-gray-50 rounded p-3">
+                          <div className="text-xl font-bold">{(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB</div>
+                          <div className="text-xs text-gray-500">{t("stats.trafficBandwidth")}</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="bg-gray-50 rounded p-3">
+                          <div className="text-xl font-bold">{(analytics.totals.subrequests || 0).toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">{t("stats.trafficSubrequests")}</div>
+                        </div>
+                        <div className="bg-gray-50 rounded p-3">
+                          <div className="text-xl font-bold">{(analytics.totals.errors || 0).toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">{t("stats.trafficErrors")}</div>
+                        </div>
+                        <div className="bg-gray-50 rounded p-3 opacity-40">
+                          <div className="text-xl font-bold">&mdash;</div>
+                          <div className="text-xs text-gray-500">{t("stats.trafficBandwidth")}</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 {/* Hourly chart */}
