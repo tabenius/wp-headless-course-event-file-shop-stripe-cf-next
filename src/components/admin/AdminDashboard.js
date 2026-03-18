@@ -201,6 +201,101 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
   );
 }
 
+const LEVEL_STYLE = {
+  error: "text-red-400",
+  warn: "text-yellow-400",
+  info: "text-blue-300",
+  log: "text-gray-300",
+};
+
+function DebugLogPanel({ clientLogs, setClientLogs }) {
+  const [serverLogs, setServerLogs] = useState([]);
+  const [serverError, setServerError] = useState("");
+  const [tab, setTab] = useState("client");
+  const [polling, setPolling] = useState(true);
+
+  // Poll server logs every 5 s while this panel is mounted and polling is on
+  useEffect(() => {
+    if (!polling) return;
+    let cancelled = false;
+    async function fetchServerLogs() {
+      try {
+        const res = await fetch("/api/admin/log-entries");
+        const json = await res.json().catch(() => ({}));
+        if (!cancelled) setServerLogs(json.logs ?? []);
+      } catch (e) {
+        if (!cancelled) setServerError(String(e));
+      }
+    }
+    fetchServerLogs();
+    const id = setInterval(fetchServerLogs, 5000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [polling]);
+
+  async function clearServer() {
+    await fetch("/api/admin/log-entries", { method: "DELETE" });
+    setServerLogs([]);
+  }
+
+  const logs = tab === "client" ? clientLogs : serverLogs;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-700">Debug logs</h3>
+        <div className="flex items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setPolling((p) => !p)}
+            className={`px-2 py-0.5 rounded border ${polling ? "border-green-400 text-green-700 bg-green-50" : "border-gray-300 text-gray-500"}`}
+          >
+            {polling ? "● live" : "○ paused"}
+          </button>
+          {tab === "client"
+            ? <button type="button" onClick={() => setClientLogs([])} className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600">clear</button>
+            : <button type="button" onClick={clearServer} className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600">clear</button>
+          }
+        </div>
+      </div>
+
+      <div className="flex gap-1 text-xs">
+        {["client", "server"].map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`px-3 py-1 rounded ${tab === t ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+          >
+            {t === "client" ? `Browser (${clientLogs.length})` : `Server (${serverLogs.length})`}
+          </button>
+        ))}
+      </div>
+
+      {serverError && tab === "server" && (
+        <p className="text-xs text-red-500">{serverError}</p>
+      )}
+
+      <div className="bg-gray-900 text-gray-200 rounded p-3 font-mono text-xs max-h-72 overflow-auto space-y-0.5">
+        {logs.length === 0
+          ? <span className="text-gray-500 italic">No entries yet.</span>
+          : logs.map((entry, i) => {
+              const ts = tab === "client"
+                ? new Date(entry.ts).toLocaleTimeString()
+                : new Date(entry.ts).toLocaleTimeString();
+              return (
+                <div key={i} className="flex gap-2 leading-snug">
+                  <span className="text-gray-500 shrink-0">{ts}</span>
+                  <span className={`shrink-0 w-10 ${LEVEL_STYLE[entry.level] ?? "text-gray-300"}`}>[{entry.level}]</span>
+                  {entry.reqId && <span className="text-purple-400 shrink-0">{entry.reqId.slice(0, 8)}</span>}
+                  <span className="break-all whitespace-pre-wrap">{entry.msg}</span>
+                </div>
+              );
+            })}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const buildTimestamp =
     process.env.NEXT_PUBLIC_BUILD_TIME ||
@@ -233,6 +328,7 @@ export default function AdminDashboard() {
   const [ragbazDownloadUrl, setRagbazDownloadUrl] = useState("");
   const [healthLoading, setHealthLoading] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
+  const [clientLogs, setClientLogs] = useState([]);
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("stats");
   const [purging, setPurging] = useState(false);
@@ -875,6 +971,32 @@ export default function AdminDashboard() {
     }
     window.addEventListener("admin:coursesUpdated", onCoursesUpdated);
     return () => window.removeEventListener("admin:coursesUpdated", onCoursesUpdated);
+  }, []);
+
+  // Intercept browser console to feed the client log panel in Advanced tab
+  useEffect(() => {
+    const orig = {
+      log: console.log.bind(console),
+      info: console.info.bind(console),
+      warn: console.warn.bind(console),
+      error: console.error.bind(console),
+    };
+    function capture(level) {
+      return (...args) => {
+        orig[level](...args);
+        const msg = args
+          .map((a) => (a && typeof a === "object" ? JSON.stringify(a) : String(a)))
+          .join(" ");
+        setClientLogs((prev) =>
+          [{ ts: Date.now(), level, msg }].concat(prev).slice(0, 50),
+        );
+      };
+    }
+    console.log = capture("log");
+    console.info = capture("info");
+    console.warn = capture("warn");
+    console.error = capture("error");
+    return () => Object.assign(console, orig);
   }, []);
 
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -2592,6 +2714,9 @@ export default function AdminDashboard() {
               <p className="text-xs text-gray-400">{t("admin.commitsLoading")}</p>
             ) : null}
           </div>
+
+          {/* ── Debug log panel ── */}
+          <DebugLogPanel clientLogs={clientLogs} setClientLogs={setClientLogs} />
         </div>
       )}
 

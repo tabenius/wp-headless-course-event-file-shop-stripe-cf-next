@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionFromCookieHeader, isAdminCredentialsConfigured } from "@/auth";
+import { appendServerLog } from "@/lib/serverLog";
 import { getEnabledProviders } from "@/lib/oauthProviders";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { isStripeEnabled } from "@/lib/stripe";
@@ -186,14 +187,17 @@ export async function GET(request) {
   const webhookUrl = `${origin}/api/stripe/webhook`;
   const ragbazDownloadUrl = buildRagbazDownloadUrl(origin);
 
-  console.info("[health] result", {
+  const reqId = request.headers.get("x-request-id") || null;
+  const summary = {
     backend,
     wordpress: wordpressCheck?.ok,
     schema: wpSchemaCheck?.ok,
     ragbaz: ragbazCheck?.ok,
     stripe: stripeCheck?.ok,
-    reqId: request.headers.get("x-request-id") || null,
-  });
+    reqId,
+  };
+  console.info("[health] result", summary);
+  await appendServerLog({ level: "info", msg: `[health] ${JSON.stringify(summary)}`, reqId });
 
   return NextResponse.json({
     ok: true,
