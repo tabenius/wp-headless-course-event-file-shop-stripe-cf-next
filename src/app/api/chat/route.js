@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { fetchGraphQL } from "@/lib/client";
 import { embedTexts, chatWithContext } from "@/lib/ai";
+import { manuals } from "@/lib/manuals";
 import { stripHtml } from "@/lib/stripHtml";
 import { requireAdmin } from "@/lib/adminRoute";
 
@@ -42,6 +43,9 @@ async function buildIndex(force = false) {
     ...(data?.events?.edges || []).map((e) => ({ ...e.node, kind: "event" })),
     ...(data?.lpCourses?.edges || []).map((e) => ({ ...e.node, kind: "course" })),
   ];
+  manuals.forEach((manual) => {
+    nodes.push({ id: manual.title, uri: "/docs", title: manual.title, content: manual.text, kind: "manual" });
+  });
 
   const chunks = [];
   for (const n of nodes) {
