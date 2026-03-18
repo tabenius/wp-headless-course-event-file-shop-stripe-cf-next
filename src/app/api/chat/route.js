@@ -1,4 +1,4 @@
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { fetchGraphQL } from "@/lib/client";
@@ -135,8 +135,8 @@ export async function POST(request) {
     if (lower.includes("access") || lower.includes("price")) {
       const adminAuth = requireAdmin(request);
       if (adminAuth?.error) return adminAuth.error;
-      const uriMatch = message.match(/\\/[A-Za-z0-9\\-\\/]+/);
-      const targetUri = uriMatch ? uriMatch[0].replace(/\\/+$/, "") : "";
+      const uriMatch = message.match(/\/[A-Za-z0-9\-\/]+/);
+      const targetUri = uriMatch ? uriMatch[0].replace(/\/+$/, "") : "";
       const json = await fetchAdminJson("/api/admin/course-access");
       const courses = json.courses || {};
       if (targetUri && courses[targetUri]) {
@@ -169,9 +169,12 @@ export async function POST(request) {
       if (!res.ok || json?.ok === false) {
         return NextResponse.json({ ok: false, error: json?.error || "Payment lookup failed" }, { status: 500 });
       }
-      const tableRows = rows.slice(0, 6).map((p) => `| ${new Date(p.created).toLocaleString(\"sv-SE\")} | ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} | ${p.status} | ${p.email || \"—\"} | ${p.receiptUrl ? `[Receipt](${p.receiptUrl})` : \"—\"} |`);
-      const table = [\"| Date | Amount | Status | Email | Receipt |\", \"| --- | --- | --- | --- | --- |\", ...tableRows].join(\"\n\");
-      return NextResponse.json({ ok: true, answer: \"Here are the latest payments: \", table, sources: [] });
+      const tableRows = rows.slice(0, 6).map((p) => {
+        const receipt = p.receiptUrl ? `[Receipt](${p.receiptUrl})` : "—";
+        return `| ${new Date(p.created).toLocaleString("sv-SE")} | ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} | ${p.status} | ${p.email || "—"} | ${receipt} |`;
+      });
+      const table = ["| Date | Amount | Status | Email | Receipt |", "| --- | --- | --- | --- | --- |", ...tableRows].join("\n");
+      return NextResponse.json({ ok: true, answer: "Here are the latest payments: ", table, sources: [] });
     }
 
     const index = await buildIndex(force);

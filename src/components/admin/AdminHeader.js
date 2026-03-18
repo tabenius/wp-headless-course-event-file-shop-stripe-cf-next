@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { t } from "@/lib/i18n";
+import { t, getLocale, setLocale } from "@/lib/i18n";
 
 function getNavItems() {
   return [
@@ -20,6 +20,7 @@ export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState("stats");
+  const [localeState, setLocaleState] = useState(getLocale);
 
   // Keep activeTab in sync with AdminDashboard
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function AdminHeader({ logoUrl }) {
             </label>
             <select
               id="admin-lang"
-              value={locale}
+              value={localeState}
               onChange={(e) => {
                 const next = e.target.value;
                 setLocale(next);
