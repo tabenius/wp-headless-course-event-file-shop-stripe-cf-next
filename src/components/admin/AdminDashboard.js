@@ -356,6 +356,9 @@ export default function AdminDashboard() {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [newTicket, setNewTicket] = useState({ title: "", description: "", priority: "moderate" });
   const [commentText, setCommentText] = useState("");
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
   const [loaded, setLoaded] = useState({
     courseAccess: false,
     products: false,
@@ -383,14 +386,15 @@ export default function AdminDashboard() {
       if (isFormField) return;
       if (!e.altKey) return;
       const k = e.key.toLowerCase();
-      const tabMap = {
-        "1": "stats",
-        "2": "shop",
-        "3": "access",
-        "4": "support",
-        "5": "health",
-        "6": "advanced",
-      };
+    const tabMap = {
+      "1": "stats",
+      "2": "shop",
+      "3": "access",
+      "4": "support",
+      "5": "health",
+      "6": "advanced",
+      "7": "chat",
+    };
       if (tabMap[k]) {
         e.preventDefault();
         setActiveTab(tabMap[k]);
@@ -635,6 +639,29 @@ export default function AdminDashboard() {
     () => tickets.find((t) => t.id === selectedTicketId) || tickets[0],
     [tickets, selectedTicketId],
   );
+
+  async function sendChat() {
+    if (!chatInput.trim()) return;
+    const message = chatInput.trim();
+    setChatInput("");
+    const history = [...chatMessages, { role: "user", content: message }];
+    setChatMessages(history);
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, history }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "Chat failed");
+      setChatMessages((prev) => [...prev, { role: "assistant", content: json.answer, sources: json.sources || [] }]);
+    } catch (err) {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: err.message || "Chat failed", sources: [] }]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
 
   async function fetchTickets() {
     setTicketsLoading(true);
@@ -1114,7 +1141,7 @@ export default function AdminDashboard() {
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
       <div className="fixed left-4 bottom-4 text-[11px] text-gray-500 bg-white/80 backdrop-blur border rounded p-2 shadow-sm space-y-1">
         <div className="font-semibold text-gray-700">Genvägar</div>
-        <div>Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health • Alt+6 Advanced</div>
+        <div>Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health • Alt+6 Advanced • Alt+7 Chat</div>
         <div>Alt+/ Search • Alt+L Logout</div>
       </div>
       {/* ── Stats tab ── */}
@@ -2717,6 +2744,63 @@ export default function AdminDashboard() {
 
           {/* ── Debug log panel ── */}
           <DebugLogPanel clientLogs={clientLogs} setClientLogs={setClientLogs} />
+        </div>
+      )}
+
+      {/* ── Chat tab ── */}
+      {activeTab === "chat" && (
+        <div className="border rounded p-4 space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
+            <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
+          </div>
+          <div className="space-y-3 max-h-[28rem] overflow-auto border rounded p-3 bg-white">
+            {chatMessages.length === 0 ? (
+              <div className="text-sm text-gray-500">{t("chat.empty")}</div>
+            ) : (
+              chatMessages.map((m, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="text-xs uppercase tracking-wide text-gray-500">{m.role === "user" ? "You" : "AI"}</div>
+                  <div className="whitespace-pre-wrap text-sm text-gray-900">{m.content}</div>
+                  {m.sources && m.sources.length > 0 ? (
+                    <div className="text-[11px] text-gray-500 flex gap-2 flex-wrap">
+                      <span className="font-semibold">{t("chat.sources")}:</span>
+                      {m.sources.map((s, i) => (
+                        <a key={i} href={s.uri} className="underline" target="_blank" rel="noreferrer">
+                          {s.title || s.uri}
+                        </a>
+                      ))}
+                    </div>
+                  ) : m.role === "assistant" ? (
+                    <div className="text-[11px] text-gray-400">{t("chat.noSources")}</div>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendChat();
+                }
+              }}
+              placeholder={t("chat.placeholder")}
+              className="flex-1 border rounded px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              onClick={sendChat}
+              disabled={chatLoading}
+              className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+            >
+              {chatLoading ? t("admin.running") : t("chat.send")}
+            </button>
+          </div>
         </div>
       )}
 

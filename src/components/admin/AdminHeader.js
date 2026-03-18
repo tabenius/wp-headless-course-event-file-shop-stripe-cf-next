@@ -9,6 +9,7 @@ function getNavItems() {
   return [
     { label: t("admin.navStats"), tab: "stats" },
     { label: t("admin.navProducts"), tab: "products" },
+    { label: t("admin.navChat"), tab: "chat" },
     { label: t("admin.navSupport"), tab: "support" },
     { label: t("admin.navAdvanced"), tab: "advanced" },
     { href: "/admin/docs", label: t("admin.documentation") },

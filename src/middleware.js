@@ -5,6 +5,7 @@ function shouldTag(request) {
   return (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/api/admin") ||
+    pathname.startsWith("/api/chat") ||
     pathname.startsWith("/__maps")
   );
 }

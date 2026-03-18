@@ -36,4 +36,5 @@
 - Admin product rows now alternate purple backgrounds for clearer visual grouping.
 - Admin header now uses full width; logo and brand text slightly larger, build stamp smaller/tighter.
 - Admin UI hotkeys added (Alt+1..6 tabs, Alt+/ search, Alt+L logout) with a small bottom-left legend.
+- Added admin Chat tab using Cloudflare Workers AI (embeddings + chat) with lightweight RAG over WordPress/LP/events; i18n strings (EN/SV), request-id logging, and protected /api/chat endpoint. Middleware now tags chat requests too.
 - Enabled source maps for client bundles and upload to Cloudflare Workers; added admin-protected `/__maps/*` proxy for maps. Request-id middleware tags admin/API requests; adminFetch helper logs durations and request IDs; health tab shows recent request log panel for debugging.
