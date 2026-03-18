@@ -59,9 +59,10 @@ Product/course editor          Chat tab
 **Runtime:** `export const runtime = "edge"` (consistent with `/api/chat`; `btoa` is available in edge runtime).
 
 **Environment variables required:**
-- `CF_ACCOUNT_ID` — used by `cfRun` / `generateImage` helper (Cloudflare account ID)
-- `CLOUDFLARE_ACCOUNT_ID` — used by `cloudflareKv.js` for KV quota reads/writes (may be the same value)
-- `CF_API_TOKEN` — Cloudflare API token with AI and KV permissions
+- `CF_ACCOUNT_ID` — used by `generateImage` helper (`cfEndpoint` in `src/lib/ai.js`)
+- `CLOUDFLARE_ACCOUNT_ID` — used by `cloudflareKv.js` (`hasCloudflareConfig()`) for KV reads/writes; may be the same value as `CF_ACCOUNT_ID`
+- `CF_KV_NAMESPACE_ID` — KV namespace ID; without this `hasCloudflareConfig()` returns `false`, all KV calls return `null`/`false`, and quota is silently bypassed (daily limit never enforced)
+- `CF_API_TOKEN` — Cloudflare API token with AI Write and KV Write permissions
 - `AI_IMAGE_DAILY_LIMIT` — integer, default `"5"`
 - `CF_IMAGE_MODEL` — model string, default `@cf/black-forest-labs/flux-1-schnell`
 
@@ -75,10 +76,21 @@ Steps:
 5. If `quota.count + count > AI_IMAGE_DAILY_LIMIT` → 429 with quota info, no generation attempted
 6. Run `count` FLUX calls in parallel via `generateImage(prompt, width, height)` helper (see `src/lib/ai.js`)
 7. Collect results. If some calls fail and some succeed, continue with the successful subset
-8. Convert successful `ArrayBuffer` results to `data:image/png;base64,...` using `btoa`
-9. Increment KV quota by the number of **successfully generated** images (not the requested count). TTL 30 h
-10. Compute `resetsAt` as midnight of the next UTC day: `new Date(Date.UTC(y, m, d + 1)).toISOString()`
+8. Convert successful `ArrayBuffer` results to `data:image/png;base64,...`. In the edge runtime `Buffer` is unavailable; use a chunked loop to avoid call stack overflow on large images:
+
+```js
+function arrayBufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return "data:image/png;base64," + btoa(binary);
+}
+```
+
+9. Increment KV quota by the number of **successfully generated** images (not the requested count). TTL 30 h. The write is a read-then-write (not atomic): the stored count is `previousCount + successCount`. Under concurrent requests the count may be understated by up to `count_max - 1`. This is the accepted write-race, consistent with the quota-check race in step 11.
+10. Compute `resetsAt` as midnight of the next UTC day: `new Date(Date.UTC(y, m, d + 1)).toISOString()`. `d + 1` beyond the end of month rolls over correctly in `Date.UTC` — this is intentional, not a bug.
 11. **Race condition policy:** Two concurrent admin requests may both pass the quota check and together generate up to `limit + count_max - 1` (≤ 7) images on a given day. This is accepted as a known non-issue given the low traffic of an admin-only tool.
+12. If zero images succeeded (all calls failed without throwing), return 502 with `{ ok: false, error: "All image generation calls failed" }`. HTTP 200 with `images: []` is not a valid response.
 12. Return:
 
 ```json
@@ -158,13 +170,15 @@ const { width, height } = SIZE_PRESETS[size] ?? SIZE_PRESETS.square;
 
 **Response type** for image intents: `{ ok: true, type: "image-generation", prompt: string }` — **no `answer` field**.
 
+**Both paths require admin authentication** (`requireAdmin`) — not just `rebuild` requests. Image intent checks must execute before the existing `if (!message) return 400` guard, because Path A requests have no `message` field.
+
 **Trigger paths:**
 
 **Path A — explicit intent (from editor panel):**
-POST body includes `{ intent: "image-prompt", description: string }`. The route checks `body.intent === "image-prompt"` **before** reading `body.message`. Skips RAG entirely; calls LLM directly with the image-prompt system prompt below.
+POST body includes `{ intent: "image-prompt", description: string }`. The route checks `body.intent === "image-prompt"` **first**, before extracting `body.message` or applying the empty-message 400 guard. Calls `requireAdmin`, then skips RAG entirely and calls LLM directly with the image-prompt system prompt below.
 
 **Path B — natural language (from chat tab):**
-The regular `body.message` path. If `lower` includes any of: `"generate image"`, `"create image"`, `"make image"`, `"skapa bild"`, `"genera imagen"` — treat as image intent. Extract description from the message itself.
+Falls through to the existing `body.message` path. After extracting `message`, if `lower` includes any of: `"generate image"`, `"create image"`, `"make image"`, `"skapa bild"`, `"genera imagen"` — call `requireAdmin` and treat as image intent. Extract description from the message itself.
 
 **LLM system prompt:**
 > *"Write a concise, vivid image generation prompt suited for FLUX (max 60 words). Return only the prompt, no explanation, no quotes. Content to base it on: [description]"*
@@ -205,7 +219,7 @@ messages.map((m, i) =>
 **States:**
 - `prompt` — editable string, initially `initialPrompt` if provided, else empty until LLM returns
 - `promptLoading` — true while LLM generates prompt
-- `count` — `2` or `3` (toggle buttons), default `2`
+- `count` — `2` or `3` (toggle buttons), default `2`. The server accepts `[1, 3]` but the UI only exposes 2 and 3 — a future "1 image" UI option would work without server changes.
 - `size` — one of the preset keys, default `"square"`
 - `generating` — true while FLUX calls run
 - `images` — `string[]` of base64 data URLs (cleared on new generation)
@@ -238,7 +252,7 @@ messages.map((m, i) =>
 
 **Size selector:** A `<select>` dropdown (or button group) showing preset labels. Each option includes a parenthetical use-case hint, e.g. `"Square — Instagram, product"`. A tooltip on the selector reads: *"Larger presets consume more Cloudflare AI neurons."*
 
-**[↺ Regenerate prompt]:** Visible in `context="editor"` only (where `description` is available). Hidden in `context="chat"` since `description=""` and there is nothing to re-generate from. Re-calls `/api/chat` with `{ intent: "image-prompt", description }` to get a new prompt variant.
+**[↺ Regenerate prompt]:** Visible in `context="editor"` only. Hidden in `context="chat"` since `description=""`. Also **disabled** (not just visible) when `description` is empty even in editor context (e.g. product with no name or description) — clicking with an empty description would produce a meaningless LLM prompt. Re-calls `/api/chat` with `{ intent: "image-prompt", description }` to get a new prompt variant.
 
 **Quota warning states:**
 - `remaining` ≥ 3: no warning
@@ -246,10 +260,11 @@ messages.map((m, i) =>
 - `remaining` 0: generate button disabled, red message "Daily limit reached. Resets at [HH:MM] UTC."
 
 **Save flow:**
-1. Convert base64 data URL to `Blob`
-2. POST to `/api/admin/upload?backend=${uploadBackend}` as multipart form data (existing endpoint)
-3. On success: call `onSave(url)` with the returned storage URL
-4. On failure: show inline error toast; image remains displayed for retry or download
+1. Convert base64 data URL to `Blob` (MIME type `image/png`)
+2. Append to `FormData` as `file` field with filename `ragbaz-ai-image.png` and MIME type `image/png`
+3. POST to `/api/admin/upload?backend=${uploadBackend}` as multipart form data (existing endpoint)
+4. On success: call `onSave(json.url)` — read the `url` field from the JSON response
+5. On failure: show inline error toast; image remains displayed for retry or download
 
 **Download flow:**
 Create `<a href={dataURL} download="ragbaz-ai-image.png">` programmatically and `.click()` it.
@@ -306,7 +321,7 @@ In the chat message renderer within `AdminDashboard.js`:
 |----------|--------------|--------------|
 | Quota exceeded | 429 + `{ ok: false, error, quota }` | Button disabled, reset time shown |
 | All FLUX calls fail | 502 + `{ ok: false, error }` | Toast error, quota unchanged |
-| Some FLUX calls fail | 200 + partial images + quota | Show available images, toast "N of M generated" |
+| Some FLUX calls fail | 200 + partial `images` array + quota | Show available images; toast "N of M generated" where N=`images.length` and M=the `count` the client sent |
 | KV read/write fails | Proceed with `count=0` / skip increment | Quota shown as unknown |
 | Save to storage fails | — (client-side) | Inline error toast, image stays for retry/download |
 | Prompt generation fails | Chat route returns error | Show empty editable textarea; user types prompt manually |
