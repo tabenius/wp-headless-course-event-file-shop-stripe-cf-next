@@ -38,4 +38,5 @@
 - Admin UI hotkeys added (Alt+1..6 tabs, Alt+/ search, Alt+L logout) with a small bottom-left legend.
 - Added admin Chat tab using Cloudflare Workers AI (embeddings + chat) with lightweight RAG over WordPress/LP/events; i18n strings (EN/SV), request-id logging, and protected /api/chat endpoint. Middleware now tags chat requests too.
 - Chat prompt now interprets common admin/debug log patterns (auth errors, WordPress/Stripe fetch failures, cache issues) and offers next-step hints.
+- Added Stripe payments panel with email filter, download-able receipts (proxied PDF), and matching chat intent summarizing charges.
 - Enabled source maps for client bundles and upload to Cloudflare Workers; added admin-protected `/__maps/*` proxy for maps. Request-id middleware tags admin/API requests; adminFetch helper logs durations and request IDs; health tab shows recent request log panel for debugging.
