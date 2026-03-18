@@ -39,3 +39,24 @@ export async function chatWithContext(systemPrompt, messages) {
   });
   return json?.result?.response || "";
 }
+
+export { arrayBufferToBase64 } from "./imageQuota.js";
+
+export async function generateImage(prompt, width = 512, height = 512) {
+  const model = process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
+  const token = process.env.CF_API_TOKEN;
+  if (!token) throw new Error("CF_API_TOKEN missing");
+  const res = await fetch(cfEndpoint(model), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prompt, width, height }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`CF AI image error ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.arrayBuffer();
+}
