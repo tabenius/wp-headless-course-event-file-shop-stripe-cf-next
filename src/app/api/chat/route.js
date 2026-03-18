@@ -81,9 +81,62 @@ export async function POST(request) {
     const force = body?.rebuild === true;
     if (!message) return NextResponse.json({ ok: false, error: "Message required" }, { status: 400 });
 
-    if (force) {
-      const admin = requireAdmin(request);
-      if (admin.error) return admin.error;
+    const admin = force ? requireAdmin(request) : null;
+    if (admin?.error) return admin.error;
+
+    // Lightweight intent routing for admin-only helpers
+    const lower = message.toLowerCase();
+    const origin = new URL(request.url).origin;
+
+    async function fetchAdminJson(path) {
+      const res = await fetch(`${origin}${path}`, {
+        headers: { Cookie: request.headers.get("cookie") || "" },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || `Failed to load ${path}`);
+      return json;
+    }
+
+    // List products / items
+    if (lower.includes("products") || lower.includes("items in shop")) {
+      const adminAuth = requireAdmin(request);
+      if (adminAuth?.error) return adminAuth.error;
+      const json = await fetchAdminJson("/api/admin/products");
+      const rows = Array.isArray(json.products) ? json.products : [];
+      const summary = rows
+        .slice(0, 10)
+        .map((p) => `${p.name || "Unnamed"} — ${p.type || ""} — ${p.priceCents ? p.priceCents / 100 + " " + (p.currency || "SEK") : "no price"}`)
+        .join("\n");
+      return NextResponse.json({
+        ok: true,
+        answer: rows.length === 0 ? "No products found." : `Top products:\n${summary}`,
+        sources: [],
+      });
+    }
+
+    // Access / price lookup for a specific URI
+    if (lower.includes("access") || lower.includes("price")) {
+      const adminAuth = requireAdmin(request);
+      if (adminAuth?.error) return adminAuth.error;
+      const uriMatch = message.match(/\\/[A-Za-z0-9\\-\\/]+/);
+      const targetUri = uriMatch ? uriMatch[0].replace(/\\/+$/, "") : "";
+      const json = await fetchAdminJson("/api/admin/course-access");
+      const courses = json.courses || {};
+      if (targetUri && courses[targetUri]) {
+        const cfg = courses[targetUri];
+        const users = Array.isArray(cfg.allowedUsers) ? cfg.allowedUsers.join(", ") : "none";
+        const price = cfg.priceCents ? `${(cfg.priceCents / 100).toFixed(2)} ${cfg.currency || "SEK"}` : "not set";
+        return NextResponse.json({
+          ok: true,
+          answer: `Access for ${targetUri}: price ${price}; allowed users: ${users}`,
+          sources: [],
+        });
+      }
+      return NextResponse.json({
+        ok: true,
+        answer: "I could not find an access rule for that URI. Use the admin Content & access tab to configure it.",
+        sources: [],
+      });
     }
 
     const index = await buildIndex(force);
