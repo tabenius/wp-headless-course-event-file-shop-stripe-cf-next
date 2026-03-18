@@ -78,6 +78,14 @@ function cosine(a, b) {
   return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-9);
 }
 
+function detectSwedish(text) {
+  const lowered = text.toLowerCase();
+  const swedishWords = ["och", "är", "inte", "det", "som", "på", "har", "från"];
+  const diacritics = /[åäöÅÄÖ]/;
+  if (diacritics.test(text)) return true;
+  return swedishWords.some((word) => lowered.includes(` ${word} `));
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -175,13 +183,8 @@ export async function POST(request) {
     const context = top
       .map((c) => `Title: ${c.title}\nURI: ${c.uri}\nText: ${c.text}`)
       .join("\n\n---\n\n");
-
-    const systemPrompt = `You are RAGBAZ assistant. Be concise. Only use the provided context and never invent URLs. If unsure, say you don't know.\n\nIf the question is about logs/debugging, explain likely meaning and next steps. Common patterns: 
-- 401/403: missing admin session or auth header to WordPress GraphQL
-- 404/500 from /api/admin/*: admin session expired, retry login or check WORDPRESS URL/auth env
-- 4xx from /api/stripe: check STRIPE_SECRET_KEY / webhook
-- Fetch failed to WordPress: verify NEXT_PUBLIC_WORDPRESS_URL and auth token/app password
-- Vary header / cache: advise purge cache endpoint\n\nContext:\n${context}`;
+    const language = detectSwedish(message) ? "Swedish" : "English";
+    const systemPrompt = `You are RAGBAZ assistant. Be concise. Only use the provided context and never invent URLs. Respond in ${language}.${language === "Swedish" ? " Use Swedish idioms if you can." : ""} If unsure, say you don't know.\n\nIf the question is about logs/debugging, explain likely meaning and next steps. Common patterns: \n- 401/403: missing admin session or auth header to WordPress GraphQL\n- 404/500 from /api/admin/*: admin session expired, retry login or check WORDPRESS URL/auth env\n- 4xx from /api/stripe: check STRIPE_SECRET_KEY / webhook\n- Fetch failed to WordPress: verify NEXT_PUBLIC_WORDPRESS_URL and auth token/app password\n- Vary header / cache: advise purge cache endpoint\n\nContext:\n${context}`;
     const history = Array.isArray(body?.history) ? body.history : [];
     const messages = [
       ...history.map((m) => ({ role: m.role, content: m.content })),
