@@ -101,7 +101,12 @@ export async function POST(request) {
       .map((c) => `Title: ${c.title}\nURI: ${c.uri}\nText: ${c.text}`)
       .join("\n\n---\n\n");
 
-    const systemPrompt = `You are RAGBAZ assistant. Answer concisely using only the provided context. If unsure, say you don't know.\n\nContext:\n${context}`;
+    const systemPrompt = `You are RAGBAZ assistant. Be concise. Only use the provided context and never invent URLs. If unsure, say you don't know.\n\nIf the question is about logs/debugging, explain likely meaning and next steps. Common patterns: 
+- 401/403: missing admin session or auth header to WordPress GraphQL
+- 404/500 from /api/admin/*: admin session expired, retry login or check WORDPRESS URL/auth env
+- 4xx from /api/stripe: check STRIPE_SECRET_KEY / webhook
+- Fetch failed to WordPress: verify NEXT_PUBLIC_WORDPRESS_URL and auth token/app password
+- Vary header / cache: advise purge cache endpoint\n\nContext:\n${context}`;
     const history = Array.isArray(body?.history) ? body.history : [];
     const messages = [
       ...history.map((m) => ({ role: m.role, content: m.content })),
