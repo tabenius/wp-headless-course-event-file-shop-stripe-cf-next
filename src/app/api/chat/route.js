@@ -78,12 +78,17 @@ function cosine(a, b) {
   return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-9);
 }
 
-function detectSwedish(text) {
+function detectLanguage(text) {
   const lowered = text.toLowerCase();
+  const spanishWords = ["y", "de", "que", "el", "la", "en", "no", "lo"];
   const swedishWords = ["och", "är", "inte", "det", "som", "på", "har", "från"];
-  const diacritics = /[åäöÅÄÖ]/;
-  if (diacritics.test(text)) return true;
-  return swedishWords.some((word) => lowered.includes(` ${word} `));
+  const swedishDiacritics = /[åäöÅÄÖ]/;
+  const spanishDiacritics = /[áéíóúñÁÉÍÓÚÑ]/;
+  if (swedishDiacritics.test(text)) return "Swedish";
+  if (spanishDiacritics.test(text)) return "Spanish";
+  if (swedishWords.some((word) => lowered.includes(` ${word} `))) return "Swedish";
+  if (spanishWords.some((word) => lowered.includes(` ${word} `))) return "Spanish";
+  return "English";
 }
 
 export async function POST(request) {
@@ -183,8 +188,8 @@ export async function POST(request) {
     const context = top
       .map((c) => `Title: ${c.title}\nURI: ${c.uri}\nText: ${c.text}`)
       .join("\n\n---\n\n");
-    const language = detectSwedish(message) ? "Swedish" : "English";
-    const systemPrompt = `You are RAGBAZ assistant. Be concise. Only use the provided context and never invent URLs. Respond in ${language}.${language === "Swedish" ? " Use Swedish idioms if you can." : ""} If unsure, say you don't know.\n\nIf the question is about logs/debugging, explain likely meaning and next steps. Common patterns: \n- 401/403: missing admin session or auth header to WordPress GraphQL\n- 404/500 from /api/admin/*: admin session expired, retry login or check WORDPRESS URL/auth env\n- 4xx from /api/stripe: check STRIPE_SECRET_KEY / webhook\n- Fetch failed to WordPress: verify NEXT_PUBLIC_WORDPRESS_URL and auth token/app password\n- Vary header / cache: advise purge cache endpoint\n\nContext:\n${context}`;
+    const language = detectLanguage(message);
+    const systemPrompt = `You are RAGBAZ assistant. Be concise. Only use the provided context and never invent URLs. Respond in ${language}.${language === "Swedish" ? " Use Swedish idioms if you can." : language === "Spanish" ? " Usa modismos si puedes." : ""} If unsure, say you don't know.\n\nIf the question is about logs/debugging, explain likely meaning and next steps. Common patterns: \n- 401/403: missing admin session or auth header to WordPress GraphQL\n- 404/500 from /api/admin/*: admin session expired, retry login or check WORDPRESS URL/auth env\n- 4xx from /api/stripe: check STRIPE_SECRET_KEY / webhook\n- Fetch failed to WordPress: verify NEXT_PUBLIC_WORDPRESS_URL and auth token/app password\n- Vary header / cache: advise purge cache endpoint\n\nContext:\n${context}`;
     const history = Array.isArray(body?.history) ? body.history : [];
     const messages = [
       ...history.map((m) => ({ role: m.role, content: m.content })),

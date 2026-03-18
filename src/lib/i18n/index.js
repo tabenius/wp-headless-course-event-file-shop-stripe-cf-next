@@ -1,7 +1,8 @@
 import sv from "./sv.json";
 import en from "./en.json";
+import es from "./es.json";
 
-const locales = { sv, en };
+const locales = { sv, en, es };
 
 /**
  * Get the active locale from site.json lang field or NEXT_PUBLIC_LOCALE env var.
