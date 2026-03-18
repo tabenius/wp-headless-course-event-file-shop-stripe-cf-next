@@ -6,14 +6,14 @@
 
 ## Overview
 
-Add AI-powered image generation to the admin UI using Cloudflare Workers AI (FLUX.1 schnell). Users can generate 2–3 fitting images from a product description or course content via a shared `ImageGenerationPanel` component that lives both inside the product/course editor and inline in the existing AI chat tab.
+Add AI-powered image generation to the admin UI using Cloudflare Workers AI (FLUX.1 schnell). Users can generate 2–3 fitting images from a product description or course content via a shared `ImageGenerationPanel` component that lives both inside the product/course editor and inline in the existing AI chat tab. Image dimensions are selected from named size presets (square, landscape banner, portrait, A6 print) so the generated image fits its intended use without manual pixel arithmetic.
 
 ---
 
 ## Goals
 
 - Generate a draft image prompt from a product/course description using the existing LLM
-- Let the user review and edit the prompt, then generate 2–3 images
+- Let the user review and edit the prompt, pick a size preset, then generate 2–3 images
 - Display images in a grid with per-image Save (to WordPress/R2/S3) and Download actions
 - Protect the free-tier neuron budget: image generation is capped at `AI_IMAGE_DAILY_LIMIT` (default 5) images per UTC day across the whole account (KV is global), tracked separately from chat usage
 - Show live quota status (used / limit / resets-at) so the user always knows where they stand
@@ -38,7 +38,7 @@ Product/course editor          Chat tab
    prompt generation   image generation
          │                │
    POST /api/chat      POST /api/admin/generate-image
-   (existing LLM,      (new — FLUX.1 schnell via cfRun)
+   (existing LLM,      (new — FLUX.1 schnell, binary response)
     new intent)               │
          │            returns base64 PNGs + quota
          │                    │
@@ -56,22 +56,31 @@ Product/course editor          Chat tab
 
 ### 1. `/api/admin/generate-image` (new route)
 
-**POST** `{ prompt: string, count: number }`
+**Runtime:** `export const runtime = "edge"` (consistent with `/api/chat`; `btoa` is available in edge runtime).
+
+**Environment variables required:**
+- `CF_ACCOUNT_ID` — used by `cfRun` / `generateImage` helper (Cloudflare account ID)
+- `CLOUDFLARE_ACCOUNT_ID` — used by `cloudflareKv.js` for KV quota reads/writes (may be the same value)
+- `CF_API_TOKEN` — Cloudflare API token with AI and KV permissions
+- `AI_IMAGE_DAILY_LIMIT` — integer, default `"5"`
+- `CF_IMAGE_MODEL` — model string, default `@cf/black-forest-labs/flux-1-schnell`
+
+**POST** `{ prompt: string, count: number, size: string }`
 
 Steps:
 1. `requireAdmin`
 2. Clamp `count` to `Math.max(1, Math.min(3, Math.floor(Number(count) || 1)))` — server enforces [1, 3] regardless of client input
-3. Read quota from KV key `ai-image-quota-{YYYY-MM-DD}` (UTC date). KV is account-global, so this is an account-wide cap
-4. If `quota.count + count > AI_IMAGE_DAILY_LIMIT` → 429 with quota info, no generation attempted
-5. Run `count` FLUX calls in parallel via `cfRun` (existing helper in `src/lib/ai.js`)
-   - Model: `@cf/black-forest-labs/flux-1-schnell` (overridable via `CF_IMAGE_MODEL`)
-   - Default output: 512×512 PNG (~200–400 KB per image; 3 images ≈ 1–1.5 MB base64 — well within CF Worker limits)
-   - Each call returns `ArrayBuffer` (PNG bytes)
-6. Collect results. If some calls fail and some succeed, continue with the successful subset
-7. Convert successful results to `data:image/png;base64,...`
-8. Increment KV quota by the number of **successfully generated** images (not the requested count). TTL 30 h
-9. **Race condition policy:** Two concurrent admin requests may both pass the quota check and together generate up to `limit + count_max - 1` (≤ 7) images on a given day. This is accepted as a known non-issue given the low traffic of an admin-only tool. It is not worth the complexity of a distributed lock.
-10. Return:
+3. Resolve `size` to pixel dimensions using the preset table below (default `"square"` if unrecognised)
+4. Read quota from KV key `ai-image-quota-{YYYY-MM-DD}` (UTC date). A `null` return (fresh day or KV unconfigured) is treated as `{ count: 0 }`. KV is account-global → account-wide cap
+5. If `quota.count + count > AI_IMAGE_DAILY_LIMIT` → 429 with quota info, no generation attempted
+6. Run `count` FLUX calls in parallel via `generateImage(prompt, width, height)` helper (see `src/lib/ai.js`)
+7. Collect results. If some calls fail and some succeed, continue with the successful subset
+8. Convert successful `ArrayBuffer` results to `data:image/png;base64,...` using `btoa`
+9. Increment KV quota by the number of **successfully generated** images (not the requested count). TTL 30 h
+10. Compute `resetsAt` as midnight of the next UTC day: `new Date(Date.UTC(y, m, d + 1)).toISOString()`
+11. **Race condition policy:** Two concurrent admin requests may both pass the quota check and together generate up to `limit + count_max - 1` (≤ 7) images on a given day. This is accepted as a known non-issue given the low traffic of an admin-only tool.
+12. Return:
+
 ```json
 {
   "ok": true,
@@ -80,28 +89,106 @@ Steps:
 }
 ```
 
-**GET** — returns current quota only (no generation). Used by the panel on mount to show status before the user generates anything.
+**GET** — returns current quota only (no generation). Response shape:
+
+```json
+{ "ok": true, "quota": { "used": 2, "limit": 5, "remaining": 3, "resetsAt": "2026-03-19T00:00:00Z" } }
+```
+
+When KV returns `null` (fresh day or unconfigured), `used` is `0` and `remaining` equals `limit`. `resetsAt` is always computed as midnight of the next UTC day regardless of KV state.
 
 **Error if all FLUX calls fail:** return 502 with `{ ok: false, error: "..." }`. Quota is not incremented.
 
-**Configuration:**
-- `AI_IMAGE_DAILY_LIMIT` — integer env var, read at request time (default `"5"`)
-- `CF_IMAGE_MODEL` — model string override (default `@cf/black-forest-labs/flux-1-schnell`)
+**Error on quota exceeded:** 429 with `{ ok: false, error: "Daily limit reached", quota: { used, limit, remaining, resetsAt } }`.
 
-### 2. Image-prompt + image-generation intent in `/api/chat` (extend existing route)
+---
 
-**Single response type** for all image-related intents: `{ ok: true, type: "image-generation", prompt: string }`.
+### `generateImage` helper in `src/lib/ai.js`
 
-Triggered by:
-- `{ intent: "image-prompt", description: string }` in POST body (from the editor — skips RAG, goes straight to LLM)
-- Natural language keywords in the message: "generate image", "create image", "make image", "skapa bild", "genera imagen" (from chat)
+```js
+export async function generateImage(prompt, width = 512, height = 512) {
+  const model = process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
+  const token = process.env.CF_API_TOKEN;
+  if (!token) throw new Error("CF_API_TOKEN missing");
+  const res = await fetch(cfEndpoint(model), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, width, height }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`CF AI image error ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.arrayBuffer();   // FLUX returns raw PNG bytes, not JSON
+}
+```
 
-LLM system prompt for prompt generation:
+This function does **not** call `cfRun` because `cfRun` always calls `res.json()`. `generateImage` reads the raw binary response directly.
+
+---
+
+### 2. Image size presets
+
+The `size` field in the POST body and the UI selector use these named presets. FLUX width/height must be multiples of 8.
+
+| Preset key | Label | Dimensions | Typical use |
+|------------|-------|-----------|------------|
+| `square` | Square (default) | 512 × 512 | Instagram post, product image, general |
+| `landscape` | Landscape / Banner | 896 × 512 | Facebook group banner, social media header, email banner |
+| `portrait` | Portrait | 512 × 768 | Instagram story, Pinterest, card front |
+| `a6-150dpi` | A6 card (150 dpi) | 624 × 880 | A6 print proof at 150 dpi (105 mm × 148 mm); for true 300 dpi output use an external tool to upscale — 300 dpi would require 1240 × 1752 px which may exceed Cloudflare free-tier neuron limits |
+
+**Neuron cost note:** Larger images consume significantly more Cloudflare free-tier neurons per generation even though the daily image count quota tracks only the number of images, not neurons directly. The `a6-150dpi` preset costs roughly 4× more neurons than `square`. This is noted in a tooltip next to each preset option.
+
+The server-side resolver:
+
+```js
+const SIZE_PRESETS = {
+  square:     { width: 512,  height: 512 },
+  landscape:  { width: 896,  height: 512 },
+  portrait:   { width: 512,  height: 768 },
+  "a6-150dpi": { width: 624, height: 880 },
+};
+const { width, height } = SIZE_PRESETS[size] ?? SIZE_PRESETS.square;
+```
+
+---
+
+### 3. Image-prompt intent in `/api/chat` (extend existing route)
+
+**Response type** for image intents: `{ ok: true, type: "image-generation", prompt: string }` — **no `answer` field**.
+
+**Trigger paths:**
+
+**Path A — explicit intent (from editor panel):**
+POST body includes `{ intent: "image-prompt", description: string }`. The route checks `body.intent === "image-prompt"` **before** reading `body.message`. Skips RAG entirely; calls LLM directly with the image-prompt system prompt below.
+
+**Path B — natural language (from chat tab):**
+The regular `body.message` path. If `lower` includes any of: `"generate image"`, `"create image"`, `"make image"`, `"skapa bild"`, `"genera imagen"` — treat as image intent. Extract description from the message itself.
+
+**LLM system prompt:**
 > *"Write a concise, vivid image generation prompt suited for FLUX (max 60 words). Return only the prompt, no explanation, no quotes. Content to base it on: [description]"*
 
-The chat message renderer checks for `type === "image-generation"` and mounts `ImageGenerationPanel` with `initialPrompt` set. All other messages render as text.
+**`sendChat` update in `AdminDashboard.js`:**
 
-### 3. `ImageGenerationPanel` (new React component)
+When the chat API returns `{ ok: true, type: "image-generation", prompt }`, the `sendChat` function appends the message as:
+```js
+{ role: "assistant", type: "image-generation", prompt: json.prompt }
+```
+(not `content: json.answer` — the `content` field is absent for image-generation messages).
+
+**Chat message renderer:**
+```jsx
+messages.map((m, i) =>
+  m.type === "image-generation"
+    ? <ImageGenerationPanel key={i} initialPrompt={m.prompt} onSave={null} context="chat" description="" uploadBackend={uploadBackend} />
+    : <div key={i}>{m.content}</div>
+)
+```
+
+---
+
+### 4. `ImageGenerationPanel` (new React component)
 
 **File:** `src/components/admin/ImageGenerationPanel.js`
 
@@ -109,37 +196,49 @@ The chat message renderer checks for `type === "image-generation"` and mounts `I
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `description` | `string` | Product/course text to seed prompt generation via LLM |
+| `description` | `string` | Product/course text to seed prompt generation via LLM. Empty string when `initialPrompt` is provided (chat context). |
 | `initialPrompt` | `string?` | Skip LLM step — pre-fill textarea directly (used from chat intent) |
-| `onSave` | `(url: string) => void \| null` | Called after image saved to storage. `null` in chat context (download-only). In editor context, calls `updateProduct(index, "imageUrl", url)` — the parent is responsible for providing this callback correctly |
+| `onSave` | `(url: string) => void \| null` | Called after image saved to storage. `null` in chat context (hides Save buttons). In editor context: `(url) => updateProduct(index, "imageUrl", url)` — the parent provides this callback. |
 | `context` | `"editor" \| "chat"` | `"editor"` shows a collapsible inline panel; `"chat"` renders as a chat bubble card |
+| `uploadBackend` | `string` | Value of `uploadBackend` state from `AdminDashboard.js`, forwarded to `/api/admin/upload?backend=` |
 
 **States:**
 - `prompt` — editable string, initially `initialPrompt` if provided, else empty until LLM returns
 - `promptLoading` — true while LLM generates prompt
-- `count` — `2` or `3` (toggle buttons)
+- `count` — `2` or `3` (toggle buttons), default `2`
+- `size` — one of the preset keys, default `"square"`
 - `generating` — true while FLUX calls run
 - `images` — `string[]` of base64 data URLs (cleared on new generation)
 - `quota` — `{ used, limit, remaining, resetsAt }`, fetched via GET on mount and updated after each generation
 - `saving` — `number | null` — index of image currently being saved to storage
 
+**On mount:**
+1. GET `/api/admin/generate-image` → populate `quota`
+2. If `description` is non-empty and `initialPrompt` is absent: POST `/api/chat` with `{ intent: "image-prompt", description }` → on success set `prompt` from `json.prompt`; on failure leave `prompt` empty (user types manually)
+
 **Layout (editor context):**
 ```
-┌─ AI Images ──────────────────────────────────────────────┐
-│ ▓▓▓░░  3 of 5 used today — resets in 6h 14m             │
-│                                                           │
-│ [Prompt textarea ← editable]              [↺ Regenerate] │
-│                                                           │
-│ Images:  [ 2 ]  [ 3 ]        [✨ Generate]               │
-│                         (disabled + message if remaining=0)│
-│                                                           │
-│ ┌──────┐ ┌──────┐ ┌──────┐                               │
-│ │ img  │ │ img  │ │ img  │                               │
-│ │[Save]│ │[Save]│ │[Save]│  ← hidden if onSave is null  │
-│ │[↓ DL]│ │[↓ DL]│ │[↓ DL]│                               │
-│ └──────┘ └──────┘ └──────┘                               │
-└──────────────────────────────────────────────────────────┘
+┌─ AI Images ──────────────────────────────────────────────────┐
+│ ▓▓▓░░  3 of 5 used today — resets in 6h 14m                 │
+│                                                               │
+│ [Prompt textarea ← editable]                [↺ Regenerate]   │
+│                                                               │
+│ Images:  [ 2 ]  [ 3 ]                                        │
+│ Size:  [Square▼]  (tooltip: "Larger sizes use more neurons") │
+│                                          [✨ Generate]        │
+│                              (disabled + message if remaining=0)│
+│                                                               │
+│ ┌──────┐ ┌──────┐ ┌──────┐                                   │
+│ │ img  │ │ img  │ │ img  │                                    │
+│ │[Save]│ │[Save]│ │[Save]│  ← hidden if onSave is null       │
+│ │[↓ DL]│ │[↓ DL]│ │[↓ DL]│                                   │
+│ └──────┘ └──────┘ └──────┘                                   │
+└──────────────────────────────────────────────────────────────┘
 ```
+
+**Size selector:** A `<select>` dropdown (or button group) showing preset labels. Each option includes a parenthetical use-case hint, e.g. `"Square — Instagram, product"`. A tooltip on the selector reads: *"Larger presets consume more Cloudflare AI neurons."*
+
+**[↺ Regenerate prompt]:** Visible in `context="editor"` only (where `description` is available). Hidden in `context="chat"` since `description=""` and there is nothing to re-generate from. Re-calls `/api/chat` with `{ intent: "image-prompt", description }` to get a new prompt variant.
 
 **Quota warning states:**
 - `remaining` ≥ 3: no warning
@@ -148,16 +247,16 @@ The chat message renderer checks for `type === "image-generation"` and mounts `I
 
 **Save flow:**
 1. Convert base64 data URL to `Blob`
-2. POST to `/api/admin/upload?backend=[uploadBackend]` as multipart form data (existing endpoint)
+2. POST to `/api/admin/upload?backend=${uploadBackend}` as multipart form data (existing endpoint)
 3. On success: call `onSave(url)` with the returned storage URL
 4. On failure: show inline error toast; image remains displayed for retry or download
 
 **Download flow:**
-Create `<a href=dataURL download="ragbaz-ai-image.png">` programmatically and `.click()` it.
+Create `<a href={dataURL} download="ragbaz-ai-image.png">` programmatically and `.click()` it.
 
-**[↺ Regenerate prompt]:** Re-calls `/api/chat` with `{ intent: "image-prompt", description }` to get a new prompt variant from the LLM.
+---
 
-### 4. Product/course editor integration
+### 5. Product/course editor integration
 
 In `AdminDashboard.js`, below the existing image URL field in the product edit form:
 
@@ -168,16 +267,20 @@ In `AdminDashboard.js`, below the existing image URL field in the product edit f
   - `description`: `product.description || product.name`
   - `onSave`: `(url) => updateProduct(index, "imageUrl", url)` — updates the product's `imageUrl` field in the existing form state
   - `context="editor"`
+  - `uploadBackend={uploadBackend}` — forwarded from `AdminDashboard.js` local state
 
-For **WP courses/events** in the access tab: description assembled from `allWpContent.find(item => item.uri === selectedCourse)?.content` stripped of HTML via the existing `stripHtml` utility.
+For **WP courses/events** in the access tab: `description` is assembled inline at the JSX call site as `stripHtml(allWpContent.find(item => item.uri === selectedCourse)?.content || "")`. This is not a new prop threaded into the component — the assembly happens at the call site, keeping `ImageGenerationPanel` decoupled.
 
-### 5. Chat tab integration
+---
+
+### 6. Chat tab integration
 
 In the chat message renderer within `AdminDashboard.js`:
 - Each message object may have `type: "image-generation"` and `prompt: string`
-- When present: render `<ImageGenerationPanel initialPrompt={msg.prompt} onSave={null} context="chat" description="" />`
+- When present: render `<ImageGenerationPanel initialPrompt={msg.prompt} onSave={null} context="chat" description="" uploadBackend={uploadBackend} />`
 - `onSave={null}` means Save buttons are hidden — download-only in chat context since there is no product in scope
 - `description=""` since `initialPrompt` bypasses the LLM prompt-generation step
+- `[↺ Regenerate prompt]` is hidden in chat context (no `description` to regenerate from)
 
 ---
 
@@ -187,11 +290,12 @@ In the chat message renderer within `AdminDashboard.js`:
 |----------|-------|
 | KV key | `ai-image-quota-{YYYY-MM-DD}` (UTC date) |
 | Value shape | `{ count: number }` |
-| TTL | 30 hours (ensures cleanup; covers midnight rollover) |
+| TTL | 30 hours (ensures cleanup even if key written near midnight) |
 | Scope | Account-wide (KV is global across all Worker instances) |
 | Limit source | `parseInt(process.env.AI_IMAGE_DAILY_LIMIT ?? "5", 10)` read at request time |
 | Increment | Number of **successfully generated** images, not the requested count |
-| KV failure | Treat quota as `{ count: 0 }` (fail open — do not lock admin out) |
+| KV null / failure | Treat as `{ count: 0 }` (fail open — do not lock admin out) |
+| `resetsAt` | `new Date(Date.UTC(y, m, d + 1)).toISOString()` — midnight of the next UTC calendar day, computed fresh on every request |
 | Race policy | Accepted overage of up to `count_max - 1` images per day (admin-only, low traffic) |
 
 ---
@@ -200,12 +304,13 @@ In the chat message renderer within `AdminDashboard.js`:
 
 | Scenario | API behaviour | UI behaviour |
 |----------|--------------|--------------|
-| Quota exceeded | 429 + quota info | Button disabled, reset time shown |
-| All FLUX calls fail | 502 + error message | Toast error, quota unchanged |
+| Quota exceeded | 429 + `{ ok: false, error, quota }` | Button disabled, reset time shown |
+| All FLUX calls fail | 502 + `{ ok: false, error }` | Toast error, quota unchanged |
 | Some FLUX calls fail | 200 + partial images + quota | Show available images, toast "N of M generated" |
-| KV read/write fails | Proceed with count=0 / skip increment | Quota shown as unknown |
+| KV read/write fails | Proceed with `count=0` / skip increment | Quota shown as unknown |
 | Save to storage fails | — (client-side) | Inline error toast, image stays for retry/download |
-| Prompt generation fails | — (chat route returns error) | Show empty editable textarea; user types prompt manually |
+| Prompt generation fails | Chat route returns error | Show empty editable textarea; user types prompt manually |
+| Unrecognised `size` key | Server falls back to `square` | — |
 
 ---
 
@@ -220,9 +325,9 @@ In the chat message renderer within `AdminDashboard.js`:
 
 | File | Change |
 |------|--------|
-| `src/lib/ai.js` | Add `generateImage(prompt)` helper returning `ArrayBuffer` |
-| `src/app/api/chat/route.js` | Add `image-prompt` intent + natural language image intent |
-| `src/components/admin/AdminDashboard.js` | Mount panel in product editor + chat message renderer |
+| `src/lib/ai.js` | Add `generateImage(prompt, width, height)` helper — reads raw `ArrayBuffer` (not JSON) |
+| `src/app/api/chat/route.js` | Add `image-prompt` intent (checked before `message`) + natural language image keywords |
+| `src/components/admin/AdminDashboard.js` | Mount panel in product editor + update `sendChat` + chat message renderer |
 
 ---
 
@@ -233,3 +338,5 @@ In the chat message renderer within `AdminDashboard.js`:
 - Inpainting, img2img, or other FLUX variants
 - Per-user quota (single shared admin quota is sufficient)
 - Distributed quota locking
+- Custom pixel dimensions (named presets only)
+- Automatic upscaling to true 300 dpi (user handles externally if needed)
