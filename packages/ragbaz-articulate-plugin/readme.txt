@@ -1,4 +1,4 @@
-=== Ragbaz-Articulate ===
+=== RAGBAZ-Articulate ===
 Contributors: ragbaz
 Tags: graphql, wpgraphql, learnpress, events, storefront, headless
 Requires at least: 6.3
@@ -14,13 +14,13 @@ Contact: ragbaz@proton.me
 == Description ==
 
 = English =
-Ragbaz-Articulate is a lightweight GraphQL helper for headless storefronts. It turns LearnPress courses and common event plugins (Event Organiser, The Events Calendar, Events Manager) into first-class WPGraphQL types with normalized fields (price, duration, curriculum, event times/venue/cost). It also ships a storefront probe (`ragbazInfo`) so frontends can auto-detect capabilities without guessing which plugins are active. No third-party code is bundled; it simply registers GraphQL fields for the plugins you already run.
+RAGBAZ-Articulate is a lightweight GraphQL helper for headless storefronts. It turns LearnPress courses and common event plugins (Event Organiser, The Events Calendar, Events Manager) into first-class WPGraphQL types with normalized fields (price, duration, curriculum, event times/venue/cost). It also ships a storefront probe (`ragbazInfo`) so frontends can auto-detect capabilities without guessing which plugins are active. No third-party code is bundled; it simply registers GraphQL fields for the plugins you already run.
 
 = Svenska =
-Ragbaz-Articulate är ett lättviktigt GraphQL-tillägg för headless-butiker. Det exponerar LearnPress-kurser och vanliga event-plugins (Event Organiser, The Events Calendar, Events Manager) som WPGraphQL-typer med normaliserade fält (pris, längd, kursplan, eventtid/plats/kostnad). Det innehåller även en “storefront probe” (`ragbazInfo`) så att frontends kan auto-detektera vilka funktioner som finns utan att gissa vilka plugins som är aktiva. Ingen tredjepartskod följer med; pluginet registrerar bara GraphQL-fält för de plugins du redan använder.
+RAGBAZ-Articulate är ett lättviktigt GraphQL-tillägg för headless-butiker. Det exponerar LearnPress-kurser och vanliga event-plugins (Event Organiser, The Events Calendar, Events Manager) som WPGraphQL-typer med normaliserade fält (pris, längd, kursplan, eventtid/plats/kostnad). Det innehåller även en “storefront probe” (`ragbazInfo`) så att frontends kan auto-detektera vilka funktioner som finns utan att gissa vilka plugins som är aktiva. Ingen tredjepartskod följer med; pluginet registrerar bara GraphQL-fält för de plugins du redan använder.
 
 = Español =
-Ragbaz-Articulate es un asistente ligero de GraphQL para tiendas headless. Convierte los cursos de LearnPress y los plugins de eventos más comunes (Event Organiser, The Events Calendar, Events Manager) en tipos WPGraphQL de primera clase con campos normalizados (precio, duración, plan de estudios, horario/lugar/coste del evento). Incluye además una sonda para el storefront (`ragbazInfo`) que permite a los frontends detectar automáticamente las capacidades sin adivinar qué plugins están activos. No incluye código de terceros; solo registra campos GraphQL para los plugins que ya usas.
+RAGBAZ-Articulate es un asistente ligero de GraphQL para tiendas headless. Convierte los cursos de LearnPress y los plugins de eventos más comunes (Event Organiser, The Events Calendar, Events Manager) en tipos WPGraphQL de primera clase con campos normalizados (precio, duración, plan de estudios, horario/lugar/coste del evento). Incluye además una sonda para el storefront (`ragbazInfo`) que permite a los frontends detectar automáticamente las capacidades sin adivinar qué plugins están activos. No incluye código de terceros; solo registra campos GraphQL para los plugins que ya usas.
 
 Other helpful GraphQL glue this plugin is ready to host:
 - WooCommerce price/stock normalization via WPGraphQL for WooCommerce
@@ -46,7 +46,7 @@ Email ragbaz@proton.me or visit https://ragbaz.xyz/products.
 
 == Changelog ==
 = 1.0.0 =
-* Initial release: LearnPress fields, event normalization, course access schema, Ragbaz storefront probe, admin linkouts.
+* Initial release: LearnPress fields, event normalization, course access schema, RAGBAZ storefront probe, admin linkouts.
 
 == License ==
 This plugin is licensed under the GPL v2 or later.

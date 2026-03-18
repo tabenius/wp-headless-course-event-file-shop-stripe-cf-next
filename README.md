@@ -357,7 +357,7 @@ All optional. The app detects them automatically — no configuration flags need
 | Plugin | What it adds | How to tell it's working |
 |--------|-------------|-------------------------|
 | [LearnPress](https://wordpress.org/plugins/learnpress/) | Course management (lessons, quizzes, curriculum) | Courses appear at `/courses` |
-| **Ragbaz-Articulate** (included) | WPGraphQL glue for LearnPress courses and events; exposes a `ragbazInfo` probe so the storefront can auto-detect capabilities | Download from Admin → Advanced, install via Plugins → Add New → Upload. Health check shows green for LearnPress and events. |
+| **RAGBAZ-Articulate** (included) | WPGraphQL glue for LearnPress courses and events; exposes a `ragbazInfo` probe so the storefront can auto-detect capabilities | Download from Admin → Advanced, install via Plugins → Add New → Upload. Health check shows green for LearnPress and events. |
 | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) | Better page rendering from the block editor | Pages look polished instead of plain HTML. Set `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`. |
 | An Event plugin | Event pages with dates/locations | Events appear at `/events` |
 | [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Smaller, faster images | Faster page loads |

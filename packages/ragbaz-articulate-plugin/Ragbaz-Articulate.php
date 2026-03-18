@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Ragbaz-Articulate
+ * Plugin Name: RAGBAZ-Articulate
  * Plugin URI: https://ragbaz.xyz/products
  * Description: GraphQL helpers for headless storefronts — exposes LearnPress courses and generic event data (Event Organiser, The Events Calendar, Events Manager) via WPGraphQL without bundling third‑party code.
- * Author: Ragbaz / Articulate
+ * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
  * Version: 1.0.0
  * Requires at least: 6.3
@@ -380,7 +380,7 @@ function ragbaz_admin_notice() {
   $url = esc_url(ragbaz_get_storefront_url());
   echo '<div class="notice notice-info is-dismissible"><p>';
   echo sprintf(
-    esc_html__('Ragbaz-Articulate is active. Pair it with the Articulate storefront: %s', 'ragbaz'),
+    esc_html__('RAGBAZ-Articulate is active. Pair it with the Articulate storefront: %s', 'ragbaz'),
     '<a href="' . $url . '" target="_blank" rel="noopener noreferrer">' . $url . '</a>'
   );
   echo '</p></div>';
@@ -577,7 +577,7 @@ add_action('graphql_register_types', function () {
     },
   ]);
 
-  // --- Ragbaz info probe (for storefront detection) ---
+  // --- RAGBAZ info probe (for storefront detection) ---
   register_graphql_object_type('RagbazInfo', [
     'fields' => [
       'version' => ['type' => 'String'],

@@ -121,9 +121,9 @@
     "stripeWebhookDashboardLink": "Stripe Dashboard → Developers → Webhooks",
     "endpointUrl": "Endpoint-URL",
     "eventsToListen": "Event att lyssna på",
-    "ragbazPlugin": "Ragbaz-Articulate-plugin",
+    "ragbazPlugin": "RAGBAZ-Articulate-plugin",
     "ragbazPluginDesc": "Ladda ner eller installera GraphQL-tillägget för LearnPress/event direkt från denna storefront.",
-    "downloadRagbaz": "Ladda ner Ragbaz-Articulate",
+    "downloadRagbaz": "Ladda ner RAGBAZ-Articulate",
     "shopProducts": "Shop-produkter",
     "shopProductsHint": "Hantera filer och kursprodukter för /shop. Uppladdade filer sparas i WordPress mediebibliotek (max filstorlek beror på din WordPress-konfiguration, vanligtvis 2–64 MB).",
     "product": "Produkt",
@@ -352,9 +352,12 @@
     "wpSchemaOk": "WPGraphQL-schema — evenemang: {event}, kurser: {course}, exempel event: {sampleEvent}, exempel kurs: {sampleCourse}.",
     "wpSchemaFailed": "Kunde inte läsa WPGraphQL-schemat.",
     "wpSchemaUnknown": "WPGraphQL-schema ej kontrollerat.",
-    "ragbazOk": "Ragbaz-Articulate finns (v{version}; LearnPress: {learnpress}; Event-plugin: {events}).",
-    "ragbazMissing": "Ragbaz-Articulate (GraphQL-limmet) hittades inte.",
-    "ragbazUnknown": "Status för Ragbaz-Articulate är okänd."
+    "ragbazOk": "RAGBAZ-Articulate finns (v{version}; LearnPress: {learnpress}; Event-plugin: {events}).",
+    "ragbazMissing": "RAGBAZ-Articulate (GraphQL-limmet) hittades inte.",
+    "ragbazUnknown": "Status för RAGBAZ-Articulate är okänd.",
+    "kvOk": "Cloudflare KV är nåbart — data sparas mellan omstarter.",
+    "kvNotConfigured": "Cloudflare KV är inte konfigurerat. Data lagras endast i minnet och förloras vid omstart. Ange CLOUDFLARE_ACCOUNT_ID, CF_API_TOKEN och CF_KV_NAMESPACE_ID för att aktivera beständig lagring.",
+    "kvFailed": "Cloudflare KV är konfigurerat men inte nåbart. Faller tillbaka till minneslagring — data förloras vid omstart."
   },
   "paywall": {
     "content": "Innehåll",

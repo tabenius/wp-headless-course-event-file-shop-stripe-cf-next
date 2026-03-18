@@ -121,9 +121,9 @@
     "stripeWebhookDashboardLink": "Stripe Dashboard → Developers → Webhooks",
     "endpointUrl": "Endpoint URL",
     "eventsToListen": "Events to listen for",
-    "ragbazPlugin": "Ragbaz-Articulate plugin",
+    "ragbazPlugin": "RAGBAZ-Articulate plugin",
     "ragbazPluginDesc": "Download or install the GraphQL helper for LearnPress/events directly from this storefront.",
-    "downloadRagbaz": "Download Ragbaz-Articulate",
+    "downloadRagbaz": "Download RAGBAZ-Articulate",
     "shopProducts": "Shop products",
     "shopProductsHint": "Manage files and course products for /shop. Uploaded files are saved to the WordPress media library (max file size depends on your WordPress configuration, typically 2–64 MB).",
     "product": "Product",
@@ -352,9 +352,12 @@
     "wpSchemaOk": "WPGraphQL schema — events: {event}, courses: {course}, sample event: {sampleEvent}, sample course: {sampleCourse}.",
     "wpSchemaFailed": "Could not read WPGraphQL schema.",
     "wpSchemaUnknown": "WPGraphQL schema not checked.",
-    "ragbazOk": "Ragbaz-Articulate present (v{version}; LearnPress: {learnpress}; Events plugin: {events}).",
-    "ragbazMissing": "Ragbaz-Articulate GraphQL glue not detected.",
-    "ragbazUnknown": "Ragbaz-Articulate status unknown."
+    "ragbazOk": "RAGBAZ-Articulate present (v{version}; LearnPress: {learnpress}; Events plugin: {events}).",
+    "ragbazMissing": "RAGBAZ-Articulate GraphQL glue not detected.",
+    "ragbazUnknown": "RAGBAZ-Articulate status unknown.",
+    "kvOk": "Cloudflare KV is reachable — data will persist across restarts.",
+    "kvNotConfigured": "Cloudflare KV is not configured. Data is stored in memory only and will be lost on restart. Set CLOUDFLARE_ACCOUNT_ID, CF_API_TOKEN and CF_KV_NAMESPACE_ID to enable persistent storage.",
+    "kvFailed": "Cloudflare KV is configured but unreachable. Falling back to in-memory storage — data will be lost on restart."
   },
   "paywall": {
     "content": "Content",

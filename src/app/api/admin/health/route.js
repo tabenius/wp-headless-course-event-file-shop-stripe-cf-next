@@ -4,6 +4,7 @@ import { appendServerLog } from "@/lib/serverLog";
 import { getEnabledProviders } from "@/lib/oauthProviders";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { isStripeEnabled } from "@/lib/stripe";
+import { isCloudflareKvConfigured, readCloudflareKvJson } from "@/lib/cloudflareKv";
 import { t } from "@/lib/i18n";
 import { buildRagbazDownloadUrl } from "./helpers";
 
@@ -127,8 +128,21 @@ async function checkRagbazPlugin() {
     });
     return { ok: true, message: msg };
   } catch (error) {
-    console.error("Ragbaz health check failed:", error);
+    console.error("RAGBAZ health check failed:", error);
     return { ok: false, message: t("health.ragbazMissing") };
+  }
+}
+
+async function checkKvStorage() {
+  if (!isCloudflareKvConfigured()) {
+    return { ok: false, message: t("health.kvNotConfigured") };
+  }
+  try {
+    await readCloudflareKvJson("support-tickets");
+    return { ok: true, message: t("health.kvOk") };
+  } catch (error) {
+    console.error("KV health check failed:", error);
+    return { ok: false, message: t("health.kvFailed") };
   }
 }
 
@@ -180,6 +194,7 @@ export async function GET(request) {
       ? await checkRagbazPlugin()
       : { ok: true, message: t("health.wpModeNotEnabled") };
   const stripeCheck = await checkStripe();
+  const kvCheck = await checkKvStorage();
 
   // Build the webhook URL from the request
   const requestUrl = new URL(request.url);
@@ -194,6 +209,7 @@ export async function GET(request) {
     schema: wpSchemaCheck?.ok,
     ragbaz: ragbazCheck?.ok,
     stripe: stripeCheck?.ok,
+    kv: kvCheck?.ok,
     reqId,
   };
   console.info("[health] result", summary);
@@ -234,6 +250,7 @@ export async function GET(request) {
             ? t("health.oauthActive", { providers: providers.join(", ") })
             : t("health.oauthNone"),
       },
+      kvStorage: kvCheck,
     },
   });
 }

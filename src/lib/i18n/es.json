@@ -121,9 +121,9 @@
     "stripeWebhookDashboardLink": "Stripe Dashboard → Developers → Webhooks",
     "endpointUrl": "URL de endpoint",
     "eventsToListen": "Eventos a escuchar",
-    "ragbazPlugin": "Plugin Ragbaz-Articulate",
+    "ragbazPlugin": "Plugin RAGBAZ-Articulate",
     "ragbazPluginDesc": "Descarga el helper GraphQL para LearnPress/eventos.",
-    "downloadRagbaz": "Descargar Ragbaz-Articulate",
+    "downloadRagbaz": "Descargar RAGBAZ-Articulate",
     "shopProducts": "Productos",
     "shopProductsHint": "Administra archivos y productos del /shop.",
     "product": "Producto",
@@ -352,9 +352,12 @@
     "wpSchemaOk": "Schema WPGraphQL — eventos: {event}, cursos: {course}, evento ejemplo: {sampleEvent}, curso ejemplo: {sampleCourse}.",
     "wpSchemaFailed": "No se pudo leer el schema.",
     "wpSchemaUnknown": "Schema no verificado.",
-    "ragbazOk": "Ragbaz-Articulate presente (v{version}; LearnPress: {learnpress}; plugin de eventos: {events}).",
-    "ragbazMissing": "No se detecta Ragbaz-Articulate.",
-    "ragbazUnknown": "Estado de Ragbaz-Articulate desconocido."
+    "ragbazOk": "RAGBAZ-Articulate presente (v{version}; LearnPress: {learnpress}; plugin de eventos: {events}).",
+    "ragbazMissing": "No se detecta RAGBAZ-Articulate.",
+    "ragbazUnknown": "Estado de RAGBAZ-Articulate desconocido.",
+    "kvOk": "Cloudflare KV accesible — los datos se conservan entre reinicios.",
+    "kvNotConfigured": "Cloudflare KV no está configurado. Los datos se almacenan solo en memoria y se perderán al reiniciar. Configure CLOUDFLARE_ACCOUNT_ID, CF_API_TOKEN y CF_KV_NAMESPACE_ID para habilitar el almacenamiento persistente.",
+    "kvFailed": "Cloudflare KV está configurado pero no es accesible. Usando almacenamiento en memoria como respaldo — los datos se perderán al reiniciar."
   },
   "paywall": {
     "content": "Contenido",

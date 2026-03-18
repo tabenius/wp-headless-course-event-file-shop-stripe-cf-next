@@ -66,7 +66,7 @@ WordPress är utmärkt för att skapa innehåll men begränsat när det gäller 
 | Plugin | Syfte | Detektion |
 |--------|-------|-----------|
 | [LearnPress](https://wordpress.org/plugins/learnpress/) | Kurshanteringssystem (LMS) — skapa kurser med lektioner, quiz och kursplaner. | Autodetekteras via GraphQL-inspektion |
-| Ragbaz-Articulate mu-plugin | GraphQL-lim för LearnPress (kurser/lektioner + price/duration/curriculum) och generiska event (Event Organiser / The Events Calendar / Events Manager) utan att bunt­a tredjepartskod. | Autodetekteras. Kopiera `packages/ragbaz-articulate-plugin/Ragbaz-Articulate.php` till `wp-content/mu-plugins/` (ta bort äldre Articulate-LearnPress-Stripe om den finns). |
+| RAGBAZ-Articulate mu-plugin | GraphQL-lim för LearnPress (kurser/lektioner + price/duration/curriculum) och generiska event (Event Organiser / The Events Calendar / Events Manager) utan att bunt­a tredjepartskod. | Autodetekteras. Kopiera `packages/ragbaz-articulate-plugin/RAGBAZ-Articulate.php` till `wp-content/mu-plugins/` (ta bort äldre Articulate-LearnPress-Stripe om den finns). |
 | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) | Ger strukturerad blockdata från Gutenberg istället för rå HTML, vilket möjliggör exakt rendering. | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1` |
 | Event CPT-plugin | Valfritt plugin som registrerar en `Event`-posttyp i WPGraphQL (t.ex. The Events Calendar + WPGraphQL-tillägg). | Autodetekteras via GraphQL-inspektion |
 | [WebP Express](https://wordpress.org/plugins/webp-express/) eller [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Konverterar bilder till moderna format (WebP/AVIF) för snabbare sidladdningar. | Alltid aktiv när det är installerat |
