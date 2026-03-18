@@ -152,15 +152,9 @@ export async function POST(request) {
       if (!res.ok || json?.ok === false) {
         return NextResponse.json({ ok: false, error: json?.error || "Payment lookup failed" }, { status: 500 });
       }
-      const rows = Array.isArray(json.payments) ? json.payments : [];
-      if (rows.length === 0) {
-        return NextResponse.json({ ok: true, answer: "No payments found.", sources: [] });
-      }
-      const summary = rows
-        .slice(0, 5)
-        .map((p) => `${new Date(p.created).toLocaleString("sv-SE")}: ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} — ${p.status} — ${p.email || "no email"}${p.receiptUrl ? ` (receipt: ${p.receiptUrl})` : ""}`)
-        .join(\"\\n\");
-      return NextResponse.json({ ok: true, answer: summary, sources: [] });
+      const tableRows = rows.slice(0, 6).map((p) => `| ${new Date(p.created).toLocaleString(\"sv-SE\")} | ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} | ${p.status} | ${p.email || \"—\"} | ${p.receiptUrl ? `[Receipt](${p.receiptUrl})` : \"—\"} |`);
+      const table = [\"| Date | Amount | Status | Email | Receipt |\", \"| --- | --- | --- | --- | --- |\", ...tableRows].join(\"\n\");
+      return NextResponse.json({ ok: true, answer: \"Here are the latest payments: \", table, sources: [] });
     }
 
     const index = await buildIndex(force);

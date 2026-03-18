@@ -373,6 +373,7 @@ export default function AdminDashboard() {
   const [payments, setPayments] = useState([]);
   const [paymentsEmail, setPaymentsEmail] = useState("");
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
     log("mounted");
@@ -687,6 +688,31 @@ export default function AdminDashboard() {
       setChatMessages((prev) => [...prev, { role: "assistant", content: err.message || "Chat failed", sources: [] }]);
     } finally {
       setChatLoading(false);
+    }
+  }
+
+  async function downloadReceipt(chargeId) {
+    setDownloading(chargeId);
+    try {
+      const res = await fetch("/api/admin/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chargeId }),
+      });
+      if (!res.ok) throw new Error("Failed to download receipt");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `receipt-${chargeId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || "Failed to download receipt");
+    } finally {
+      setDownloading(null);
     }
   }
 
@@ -2523,9 +2549,14 @@ export default function AdminDashboard() {
                         <td className="px-3 py-2">{p.email || "—"}</td>
                         <td className="px-3 py-2">
                           {p.receiptUrl ? (
-                            <a href={p.receiptUrl} className="text-purple-700 underline" target="_blank" rel="noreferrer">
-                              Receipt
-                            </a>
+                            <button
+                              type="button"
+                              onClick={() => downloadReceipt(p.id)}
+                              className="text-purple-700 underline text-left"
+                              disabled={downloading === p.id}
+                            >
+                              {downloading === p.id ? "Downloading…" : "Download"}
+                            </button>
                           ) : "—"}
                         </td>
                       </tr>
@@ -2846,6 +2877,11 @@ export default function AdminDashboard() {
                 <div key={idx} className="space-y-1">
                   <div className="text-xs uppercase tracking-wide text-gray-500">{m.role === "user" ? "You" : "AI"}</div>
                   <div className="whitespace-pre-wrap text-sm text-gray-900">{m.content}</div>
+                  {m.table && (
+                    <div className="text-[11px] text-gray-600 bg-gray-50 border rounded px-2 py-1 whitespace-pre-wrap font-mono">
+                      {m.table}
+                    </div>
+                  )}
                   {m.sources && m.sources.length > 0 ? (
                     <div className="text-[11px] text-gray-500 flex gap-2 flex-wrap">
                       <span className="font-semibold">{t("chat.sources")}:</span>
