@@ -276,7 +276,11 @@
     "noTickets": "No tickets yet. Create one to get started.",
     "commentPlaceholder": "Write a quick update...",
     "comments": "Comments",
-    "noComments": "No comments yet."
+    "noComments": "No comments yet.",
+    "payments": "Payments",
+    "paymentsFilter": "Filter by email (optional)",
+    "paymentsReload": "Reload",
+    "noPayments": "No payments found."
   },
   "stats": {
     "totalItems": "Total items",

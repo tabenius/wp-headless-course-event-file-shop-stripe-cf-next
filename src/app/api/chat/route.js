@@ -139,6 +139,30 @@ export async function POST(request) {
       });
     }
 
+    // Payments / receipts
+    if (lower.includes("payment") || lower.includes("receipt")) {
+      const adminAuth = requireAdmin(request);
+      if (adminAuth?.error) return adminAuth.error;
+      const emailMatch = message.match(/\\b[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}\\b/);
+      const email = emailMatch ? emailMatch[0] : "";
+      const url = new URL(`${origin}/api/admin/payments`);
+      if (email) url.searchParams.set("email", email);
+      const res = await fetch(url.toString(), { headers: { Cookie: request.headers.get("cookie") || "" } });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.ok === false) {
+        return NextResponse.json({ ok: false, error: json?.error || "Payment lookup failed" }, { status: 500 });
+      }
+      const rows = Array.isArray(json.payments) ? json.payments : [];
+      if (rows.length === 0) {
+        return NextResponse.json({ ok: true, answer: "No payments found.", sources: [] });
+      }
+      const summary = rows
+        .slice(0, 5)
+        .map((p) => `${new Date(p.created).toLocaleString("sv-SE")}: ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} — ${p.status} — ${p.email || "no email"}${p.receiptUrl ? ` (receipt: ${p.receiptUrl})` : ""}`)
+        .join(\"\\n\");
+      return NextResponse.json({ ok: true, answer: summary, sources: [] });
+    }
+
     const index = await buildIndex(force);
     if (index.length === 0) return NextResponse.json({ ok: false, error: "No content available" }, { status: 503 });
 

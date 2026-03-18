@@ -276,7 +276,11 @@
     "noTickets": "Inga ärenden ännu. Skapa ett för att börja.",
     "commentPlaceholder": "Skriv en kort uppdatering...",
     "comments": "Kommentarer",
-    "noComments": "Inga kommentarer än."
+    "noComments": "Inga kommentarer än.",
+    "payments": "Betalningar",
+    "paymentsFilter": "Filtrera på e-post (valfritt)",
+    "paymentsReload": "Ladda om",
+    "noPayments": "Inga betalningar hittades."
   },
   "stats": {
     "totalItems": "Antal objekt",

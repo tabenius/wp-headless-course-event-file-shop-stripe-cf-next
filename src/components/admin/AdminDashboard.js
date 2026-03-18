@@ -368,7 +368,11 @@ export default function AdminDashboard() {
     tickets: false,
     uploadInfo: false,
     commits: false,
+    payments: false,
   });
+  const [payments, setPayments] = useState([]);
+  const [paymentsEmail, setPaymentsEmail] = useState("");
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
 
   useEffect(() => {
     log("mounted");
@@ -578,6 +582,23 @@ export default function AdminDashboard() {
     }
   }, [loaded.commits]);
 
+  const loadPayments = useCallback(async (emailFilter) => {
+    setPaymentsLoading(true);
+    try {
+      const url = new URL("/api/admin/payments", window.location.origin);
+      if (emailFilter) url.searchParams.set("email", emailFilter);
+      const res = await fetch(url.toString());
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to load payments");
+      setPayments(json.payments || []);
+      setLoaded((s) => ({ ...s, payments: true }));
+    } catch (err) {
+      setError(err.message || "Failed to load payments");
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, [loaded.payments]);
+
   useEffect(() => {
     loadCourseAccess();
     loadProducts();
@@ -601,6 +622,9 @@ export default function AdminDashboard() {
     if (activeTab === "health") {
       runHealthCheck();
     }
+    if (activeTab === "support" && !loaded.payments) {
+      loadPayments(paymentsEmail);
+    }
   }, [
     activeTab,
     loadAnalytics,
@@ -609,6 +633,9 @@ export default function AdminDashboard() {
     loadTickets,
     loadUploadInfo,
     loadCommits,
+    loadPayments,
+    paymentsEmail,
+    loaded.payments,
   ]);
 
   async function saveShopVisibility(types) {
@@ -2450,6 +2477,63 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-500">{t("admin.noTickets")}</p>
               )}
             </div>
+          </div>
+
+          <div className="border rounded p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">{t("admin.payments")}</h3>
+              <div className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={paymentsEmail}
+                  onChange={(e) => setPaymentsEmail(e.target.value)}
+                  placeholder={t("admin.paymentsFilter")}
+                  className="border rounded px-2 py-1 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => loadPayments(paymentsEmail)}
+                  className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50 disabled:opacity-50"
+                  disabled={paymentsLoading}
+                >
+                  {paymentsLoading ? t("admin.running") : t("admin.paymentsReload")}
+                </button>
+              </div>
+            </div>
+            {payments.length === 0 ? (
+              <p className="text-sm text-gray-500">{t("admin.noPayments")}</p>
+            ) : (
+              <div className="max-h-80 overflow-auto border rounded">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-100 text-gray-600">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Date</th>
+                      <th className="px-3 py-2 text-left">Amount</th>
+                      <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">Email</th>
+                      <th className="px-3 py-2 text-left">Receipt</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {payments.map((p) => (
+                      <tr key={p.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-2">{new Date(p.created).toLocaleString("sv-SE")}</td>
+                        <td className="px-3 py-2">{(p.amount / 100).toFixed(2)} {p.currency?.toUpperCase()}</td>
+                        <td className="px-3 py-2 capitalize">{p.status}</td>
+                        <td className="px-3 py-2">{p.email || "—"}</td>
+                        <td className="px-3 py-2">
+                          {p.receiptUrl ? (
+                            <a href={p.receiptUrl} className="text-purple-700 underline" target="_blank" rel="noreferrer">
+                              Receipt
+                            </a>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
