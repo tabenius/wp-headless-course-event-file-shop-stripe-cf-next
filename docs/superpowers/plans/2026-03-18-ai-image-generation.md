@@ -456,7 +456,22 @@ Both return { ok: true, type: 'image-generation', prompt }."
 **Files:**
 - Modify: `src/lib/i18n/en.json`, `sv.json`, `es.json`
 
-- [ ] **Step 4.1: Add strings to `en.json`**
+> **Pre-condition:** `en.json`, `sv.json`, and `es.json` each had a missing comma after `"languageHint"` (invalid JSON) and two duplicate `"stats"` top-level keys (silently discarded by parsers). These were fixed before Task 4 began — all three files are now valid JSON with a single `"stats"` block. The new image generation keys are already added to all three files as part of that fix. **Task 4 steps are already complete — skip to Task 5.**
+
+- [ ] **Step 4.1: Verify i18n is valid and keys are present**
+
+```bash
+node -e "
+  ['en','sv','es'].forEach(l => {
+    const d = JSON.parse(require('fs').readFileSync('src/lib/i18n/' + l + '.json', 'utf8'));
+    console.log(l + ' generateImages:', d.admin.generateImages);
+  });
+"
+```
+
+Expected: prints the translated string for each locale. If missing, re-check the file.
+
+- [ ] **Step 4.2 (original): Add strings to `en.json`** *(already done — kept for reference)*
 
 In `src/lib/i18n/en.json`, add inside the `"admin"` object (after the last key in that object, before the closing `}`):
 
@@ -654,7 +669,8 @@ export default function ImageGenerationPanel({
       if (!res.ok || !json?.ok) {
         if (res.status === 429) {
           if (json?.quota) setQuota(json.quota);
-          showToast(t("admin.quotaExhausted").replace("{time}", new Date(json.quota?.resetsAt).toUTCString().slice(17, 22)));
+          const resetTime = json.quota?.resetsAt ? new Date(json.quota.resetsAt).toUTCString().slice(17, 22) : "?";
+          showToast(t("admin.quotaExhausted", { time: resetTime }));
         } else {
           showToast(json?.error || t("admin.imageGenFailed"));
         }
@@ -663,7 +679,7 @@ export default function ImageGenerationPanel({
       if (json.quota) setQuota(json.quota);
       setImages(json.images || []);
       if (json.images?.length < count) {
-        showToast(t("admin.imagePartialFail").replace("{n}", json.images.length).replace("{m}", count), "info");
+        showToast(t("admin.imagePartialFail", { n: json.images.length, m: count }), "info");
       }
     } catch (err) {
       showToast(err.message || t("admin.imageGenFailed"));
@@ -737,18 +753,15 @@ export default function ImageGenerationPanel({
               ))}
             </div>
             <span>
-              {t("admin.quotaStatus")
-                .replace("{used}", quota.used)
-                .replace("{limit}", quota.limit)
-                .replace("{time}", formatTimeUntil(quota.resetsAt))}
+              {t("admin.quotaStatus", { used: quota.used, limit: quota.limit, time: formatTimeUntil(quota.resetsAt) })}
             </span>
           </div>
           {remaining !== null && remaining <= 2 && remaining > 0 && (
-            <p className="text-xs text-amber-700">{t("admin.quotaWarning").replace("{n}", remaining)}</p>
+            <p className="text-xs text-amber-700">{t("admin.quotaWarning", { n: remaining })}</p>
           )}
           {quotaExhausted && (
             <p className="text-xs text-red-700">
-              {t("admin.quotaExhausted").replace("{time}", new Date(quota.resetsAt).toUTCString().slice(17, 22))}
+              {t("admin.quotaExhausted", { time: new Date(quota.resetsAt).toUTCString().slice(17, 22) })}
             </p>
           )}
         </div>
