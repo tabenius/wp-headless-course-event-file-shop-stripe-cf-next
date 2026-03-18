@@ -238,6 +238,8 @@
     "navAdvanced": "Avancerat",
     "navSupport": "Support",
     "navChat": "Chat",
+    "languageLabel": "Språk",
+    "languageHint": "Växla admingränssnittets språk."
     "recentCommits": "Senaste commits",
     "commitsLoading": "Laddar...",
     "commitsFullMessages": "Visa hela meddelanden",

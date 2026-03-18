@@ -3,16 +3,37 @@ import en from "./en.json";
 import es from "./es.json";
 
 const locales = { sv, en, es };
+const LOCALE_STORAGE_KEY = "ragbaz-admin-locale";
+
+function getStoredLocale() {
+  if (typeof window === "undefined") return null;
+  const stored = window?.localStorage?.getItem?.(LOCALE_STORAGE_KEY);
+  if (stored) return stored;
+  return window.__SITE_LOCALE__;
+}
 
 /**
- * Get the active locale from site.json lang field or NEXT_PUBLIC_LOCALE env var.
- * Defaults to "sv".
+ * Get the active locale from storage, site override, or env.
  */
-function getLocale() {
+export function getLocale() {
+  const stored = getStoredLocale();
+  if (stored) return stored;
   if (typeof window !== "undefined" && window.__SITE_LOCALE__) {
     return window.__SITE_LOCALE__;
   }
   return process.env.NEXT_PUBLIC_LOCALE || "sv";
+}
+
+export function setLocale(locale) {
+  if (typeof window !== "undefined") {
+    window.__SITE_LOCALE__ = locale;
+    try {
+      window.localStorage?.setItem?.(LOCALE_STORAGE_KEY, locale);
+    } catch {
+      // ignore storage failures
+    }
+  }
+  return locale;
 }
 
 /**

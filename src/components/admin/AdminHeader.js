@@ -84,7 +84,30 @@ export default function AdminHeader({ logoUrl }) {
           </div>
         </div>
 
-        {/* Right: Nav + actions */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <label htmlFor="admin-lang" className="font-semibold text-gray-700">
+              {t("admin.languageLabel")}
+            </label>
+            <select
+              id="admin-lang"
+              value={locale}
+              onChange={(e) => {
+                const next = e.target.value;
+                setLocale(next);
+                setLocaleState(next);
+                router.refresh();
+              }}
+              title={t("admin.languageHint")}
+              className="border border-gray-300 text-xs rounded px-2 py-1 bg-white"
+            >
+              <option value="sv">Svenska</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+            </select>
+          </div>
+          {/* Right: Nav + actions */}
+        </div>
         <nav className="flex items-center gap-1">
           {getNavItems().map((item) => {
             if (item.tab) {

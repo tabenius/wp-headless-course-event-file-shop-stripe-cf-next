@@ -238,6 +238,8 @@
     "navAdvanced": "Avanzado",
     "navSupport": "Soporte",
     "navChat": "Chat",
+    "languageLabel": "Idioma",
+    "languageHint": "Cambia el idioma de la interfaz."
     "recentCommits": "Commits recientes",
     "commitsLoading": "Cargando...",
     "commitsFullMessages": "Mostrar mensajes completos",

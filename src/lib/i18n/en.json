@@ -238,6 +238,8 @@
     "navAdvanced": "Advanced",
     "navSupport": "Support",
     "navChat": "Chat",
+    "languageLabel": "Language",
+    "languageHint": "Switch the admin UI language."
     "recentCommits": "Recent commits",
     "commitsLoading": "Loading...",
     "commitsFullMessages": "Show full messages",
