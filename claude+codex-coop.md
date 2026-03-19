@@ -11,6 +11,25 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 64)
+
+### Codex — torus renderer restored + Sierpinski forest background
+
+- Geometry renderer in `TorusBanner` switched back to a torus with requested modern pipeline:
+  - granularity set around 64 (`TORUS_MAJOR_SEGMENTS=64`, `TORUS_MINOR_SEGMENTS=64`),
+  - depth-sorted **quads** (not triangle strips for output),
+  - explicit backface culling using view-space normal vs camera-vector dot product,
+  - filled quads with edge stroking preserved.
+- Canvas vertical size reduced to approximately half previous height:
+  - fallback draw height `260 -> 130`,
+  - UI height classes `20/22/24rem -> 10/11/12rem`.
+- Background switched from foliage to sharp-contrast Sierpinski fractal trees:
+  - removed L-system foliage generator,
+  - added recursive Sierpinski triangle generator and per-layer forest SVG builder,
+  - layered parallax tree groups with contrasting palettes (cyan/magenta/yellow/lime, neon green/purple/orange/blue, etc.).
+- Kept side feather masks and wide overscan to avoid hard horizontal edges during pendulum movement.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 63)
 
 ### Codex — foliage density down, artifacts wider, canopy lower

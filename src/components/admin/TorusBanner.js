@@ -2,17 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-const LONGITUDE_SEGMENTS = 64;
-const LATITUDE_SEGMENTS = 36;
-const SH_BASE_RADIUS = 112;
-const SH_DEPTH_RANGE = 340;
+const TORUS_MAJOR_SEGMENTS = 64;
+const TORUS_MINOR_SEGMENTS = 64;
+const TORUS_MAJOR_RADIUS = 118;
+const TORUS_MINOR_RADIUS = 42;
+const TORUS_DEPTH_RANGE = (TORUS_MAJOR_RADIUS + TORUS_MINOR_RADIUS) * 2;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
-
-const L_SYSTEM_RULES = {
-  F: "FF-[-F+F+F]+[+F-F-F]",
-};
 
 function mulberry32(seed) {
   let value = seed >>> 0;
@@ -25,135 +22,66 @@ function mulberry32(seed) {
   };
 }
 
-function expandLSystem(axiom, rules, iterations) {
-  let output = axiom;
-  for (let i = 0; i < iterations; i += 1) {
-    let next = "";
-    for (const token of output) {
-      next += rules[token] || token;
-    }
-    output = next;
+function pushSierpinskiTriangles(tris, ax, ay, bx, by, cx, cy, depth) {
+  if (depth <= 0) {
+    tris.push([ax, ay, bx, by, cx, cy]);
+    return;
   }
-  return output;
+  const abx = (ax + bx) / 2;
+  const aby = (ay + by) / 2;
+  const bcx = (bx + cx) / 2;
+  const bcy = (by + cy) / 2;
+  const cax = (cx + ax) / 2;
+  const cay = (cy + ay) / 2;
+  pushSierpinskiTriangles(tris, ax, ay, abx, aby, cax, cay, depth - 1);
+  pushSierpinskiTriangles(tris, abx, aby, bx, by, bcx, bcy, depth - 1);
+  pushSierpinskiTriangles(tris, cax, cay, bcx, bcy, cx, cy, depth - 1);
 }
 
-function degToRad(deg) {
-  return (deg * Math.PI) / 180;
-}
-
-function traceLSystemPlant({
-  commands,
-  startX,
-  startY,
-  startAngle,
-  stepBase,
-  turnBase,
-  leafSizeBase,
-  rand,
-}) {
-  let x = startX;
-  let y = startY;
-  let angle = startAngle;
-  const stack = [];
-  let branches = "";
-  let leaves = "";
-
-  for (let i = 0; i < commands.length; i += 1) {
-    const token = commands[i];
-    if (token === "F") {
-      const len = stepBase * (0.84 + rand() * 0.34);
-      const rad = degToRad(angle);
-      const nx = x + Math.cos(rad) * len;
-      const ny = y + Math.sin(rad) * len;
-      branches += `M${x.toFixed(2)} ${y.toFixed(2)}L${nx.toFixed(2)} ${ny.toFixed(2)}`;
-
-      if (stack.length > 1 && (i % 3 === 0 || rand() > 0.74)) {
-        const leafLen = leafSizeBase * (0.72 + rand() * 0.62);
-        const leftAngle = rad + 2.34;
-        const rightAngle = rad - 2.34;
-        const lx = nx + Math.cos(leftAngle) * leafLen;
-        const ly = ny + Math.sin(leftAngle) * leafLen;
-        const rx = nx + Math.cos(rightAngle) * leafLen;
-        const ry = ny + Math.sin(rightAngle) * leafLen;
-        leaves += `M${nx.toFixed(2)} ${ny.toFixed(2)}L${lx.toFixed(2)} ${ly.toFixed(2)}M${nx.toFixed(2)} ${ny.toFixed(2)}L${rx.toFixed(2)} ${ry.toFixed(2)}`;
-      }
-
-      x = nx;
-      y = ny;
-      continue;
-    }
-
-    if (token === "+") {
-      angle += turnBase * (0.82 + rand() * 0.36);
-      continue;
-    }
-    if (token === "-") {
-      angle -= turnBase * (0.82 + rand() * 0.36);
-      continue;
-    }
-    if (token === "[") {
-      stack.push({ x, y, angle });
-      continue;
-    }
-    if (token === "]") {
-      const prev = stack.pop();
-      if (prev) {
-        x = prev.x;
-        y = prev.y;
-        angle = prev.angle;
-      }
-    }
-  }
-
-  return { branches, leaves };
-}
-
-function buildLeafBushLayerDataUri({
+function buildSierpinskiForestLayerDataUri({
   seed,
   width,
   height,
-  plantCount,
-  iterations,
-  stepBase,
-  turnBase,
-  leafSizeBase,
-  branchColor,
-  leafColor,
-  outlineColor,
-  branchWidth,
-  leafWidth,
-  branchOutlineWidth,
-  leafOutlineWidth,
-  branchOpacity,
-  leafOpacity,
-  outlineOpacity,
+  treeCount,
+  minSize,
+  maxSize,
+  minDepth,
+  maxDepth,
+  palette,
+  strokeColor,
+  strokeWidth,
+  fillOpacity,
 }) {
   const rand = mulberry32(seed);
-  const commands = expandLSystem("F", L_SYSTEM_RULES, iterations);
-  let branches = "";
-  let leaves = "";
+  const depthSpan = Math.max(1, maxDepth - minDepth + 1);
+  const polygons = [];
 
-  for (let i = 0; i < plantCount; i += 1) {
-    const progress = i / Math.max(1, plantCount - 1);
-    const jitter = (rand() - 0.5) * (width / plantCount) * 0.7;
-    const startX = progress * width + jitter;
-    const startY = height * (0.9 + rand() * 0.07);
-    const startAngle = -90 + (rand() - 0.5) * 20;
-    const traced = traceLSystemPlant({
-      commands,
-      startX,
-      startY,
-      startAngle,
-      stepBase: stepBase * (0.86 + rand() * 0.3),
-      turnBase: turnBase * (0.9 + rand() * 0.22),
-      leafSizeBase: leafSizeBase * (0.9 + rand() * 0.35),
-      rand,
-    });
-    branches += traced.branches;
-    leaves += traced.leaves;
+  for (let i = 0; i < treeCount; i += 1) {
+    const progress = (i + 0.5) / treeCount;
+    const jitter = (rand() - 0.5) * (width / treeCount) * 0.6;
+    const x = progress * width + jitter;
+    const y = height * (0.88 + rand() * 0.08);
+    const size = minSize + rand() * (maxSize - minSize);
+    const depth = minDepth + Math.floor(rand() * depthSpan);
+    const ax = x;
+    const ay = y - size;
+    const bx = x - size * 0.58;
+    const by = y;
+    const cx = x + size * 0.58;
+    const cy = y;
+    const tris = [];
+    pushSierpinskiTriangles(tris, ax, ay, bx, by, cx, cy, depth);
+
+    for (let t = 0; t < tris.length; t += 1) {
+      const tri = tris[t];
+      const color = palette[(i + t) % palette.length];
+      polygons.push(
+        `<polygon points="${tri[0].toFixed(2)},${tri[1].toFixed(2)} ${tri[2].toFixed(2)},${tri[3].toFixed(2)} ${tri[4].toFixed(2)},${tri[5].toFixed(2)}" fill="${color}" fill-opacity="${fillOpacity}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`,
+      );
+    }
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><g fill="none" stroke="${outlineColor}" stroke-width="${branchWidth + branchOutlineWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${outlineOpacity}"><path d="${branches}"/></g><g fill="none" stroke="${outlineColor}" stroke-width="${leafWidth + leafOutlineWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${outlineOpacity}"><path d="${leaves}"/></g><g fill="none" stroke="${branchColor}" stroke-width="${branchWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${branchOpacity}"><path d="${branches}"/></g><g fill="none" stroke="${leafColor}" stroke-width="${leafWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${leafOpacity}"><path d="${leaves}"/></g></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${polygons.join("")}</svg>`;
   return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
 }
 
@@ -170,107 +98,71 @@ function normalize(v) {
   return { x: v.x / len, y: v.y / len, z: v.z / len };
 }
 
-function sphericalPolynomialRadius(theta, phi) {
-  const sinPhi = Math.sin(phi);
-  const cosPhi = Math.cos(phi);
-  const x = sinPhi * Math.cos(theta);
-  const y = cosPhi;
-  const z = sinPhi * Math.sin(theta);
+const torusBasePoints = Array.from({ length: TORUS_MAJOR_SEGMENTS }, (_, i) => {
+  const majorAngle = (i / TORUS_MAJOR_SEGMENTS) * Math.PI * 2;
+  const cosMajor = Math.cos(majorAngle);
+  const sinMajor = Math.sin(majorAngle);
+  return Array.from({ length: TORUS_MINOR_SEGMENTS }, (_, j) => {
+    const minorAngle = (j / TORUS_MINOR_SEGMENTS) * Math.PI * 2;
+    const cosMinor = Math.cos(minorAngle);
+    const sinMinor = Math.sin(minorAngle);
+    const ringRadius = TORUS_MAJOR_RADIUS + TORUS_MINOR_RADIUS * cosMinor;
+    return {
+      x: ringRadius * cosMajor,
+      y: TORUS_MINOR_RADIUS * sinMinor,
+      z: ringRadius * sinMajor,
+    };
+  });
+});
 
-  // Real spherical-like polynomial blend (new shape basis).
-  const p2 = 0.5 * (3 * y * y - 1);
-  const p22 = x * x - z * z;
-  const p31 = x * y * z;
-  const p4 = x ** 4 + y ** 4 + z ** 4 - 0.6;
-
-  const mix = 0.44 * p2 + 0.31 * p22 + 0.24 * p31 + 0.2 * p4;
-  return SH_BASE_RADIUS * (1 + 0.41 * mix);
-}
-
-const sphericalHarmonicBasePoints = Array.from(
-  { length: LONGITUDE_SEGMENTS },
-  (_, i) => {
-    const theta = (i / LONGITUDE_SEGMENTS) * Math.PI * 2;
-    return Array.from({ length: LATITUDE_SEGMENTS + 1 }, (_, j) => {
-      const phi = (j / LATITUDE_SEGMENTS) * Math.PI;
-      const sinPhi = Math.sin(phi);
-      const cosPhi = Math.cos(phi);
-      const radius = sphericalPolynomialRadius(theta, phi);
-      return {
-        x: radius * sinPhi * Math.cos(theta),
-        y: radius * cosPhi,
-        z: radius * sinPhi * Math.sin(theta),
-      };
-    });
-  },
-);
-
-const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
+const FAR_TREE_LAYER_IMAGE = buildSierpinskiForestLayerDataUri({
   seed: 1407,
   width: 1600,
   height: 420,
-  plantCount: 10,
-  iterations: 2,
-  stepBase: 9.2,
-  turnBase: 23.5,
-  leafSizeBase: 3.8,
-  branchColor: "#2a5b2d",
-  leafColor: "#5f9644",
-  outlineColor: "#0a1509",
-  branchWidth: 1.9,
-  leafWidth: 1.55,
-  branchOutlineWidth: 1.25,
-  leafOutlineWidth: 1.05,
-  branchOpacity: 0.88,
-  leafOpacity: 0.82,
-  outlineOpacity: 0.78,
+  treeCount: 7,
+  minSize: 84,
+  maxSize: 160,
+  minDepth: 2,
+  maxDepth: 3,
+  palette: ["#22ffea", "#ff2cab", "#ffe300", "#5dff3a"],
+  strokeColor: "#080d1a",
+  strokeWidth: 1.05,
+  fillOpacity: 0.95,
 });
 
-const MID_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
+const MID_TREE_LAYER_IMAGE = buildSierpinskiForestLayerDataUri({
   seed: 2771,
   width: 1600,
   height: 470,
-  plantCount: 14,
-  iterations: 2,
-  stepBase: 10.0,
-  turnBase: 22.2,
-  leafSizeBase: 4.2,
-  branchColor: "#2f6a30",
-  leafColor: "#6cab4c",
-  outlineColor: "#081308",
-  branchWidth: 2.05,
-  leafWidth: 1.7,
-  branchOutlineWidth: 1.35,
-  leafOutlineWidth: 1.15,
-  branchOpacity: 0.91,
-  leafOpacity: 0.87,
-  outlineOpacity: 0.82,
+  treeCount: 9,
+  minSize: 108,
+  maxSize: 210,
+  minDepth: 3,
+  maxDepth: 3,
+  palette: ["#6dff00", "#a700ff", "#ff3d00", "#00b8ff"],
+  strokeColor: "#060812",
+  strokeWidth: 1.2,
+  fillOpacity: 0.96,
 });
 
-const NEAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
+const NEAR_TREE_LAYER_IMAGE = buildSierpinskiForestLayerDataUri({
   seed: 3901,
   width: 1600,
   height: 520,
-  plantCount: 18,
-  iterations: 2,
-  stepBase: 11.0,
-  turnBase: 21.8,
-  leafSizeBase: 4.6,
-  branchColor: "#255127",
-  leafColor: "#73b152",
-  outlineColor: "#050d05",
-  branchWidth: 2.2,
-  leafWidth: 1.85,
-  branchOutlineWidth: 1.45,
-  leafOutlineWidth: 1.25,
-  branchOpacity: 0.94,
-  leafOpacity: 0.9,
-  outlineOpacity: 0.86,
+  treeCount: 11,
+  minSize: 130,
+  maxSize: 250,
+  minDepth: 3,
+  maxDepth: 4,
+  palette: ["#00ffa6", "#ff006f", "#00a2ff", "#ffd000", "#ad00ff"],
+  strokeColor: "#03050b",
+  strokeWidth: 1.35,
+  fillOpacity: 0.97,
 });
 
-const FAR_BUSH_STYLE = { "--leafy-bush-layer": FAR_BUSH_LAYER_IMAGE };
-const MID_BUSH_STYLE = { "--leafy-bush-layer": MID_BUSH_LAYER_IMAGE };
-const NEAR_BUSH_STYLE = { "--leafy-bush-layer": NEAR_BUSH_LAYER_IMAGE };
+const FAR_TREE_STYLE = { "--fractal-tree-layer": FAR_TREE_LAYER_IMAGE };
+const MID_TREE_STYLE = { "--fractal-tree-layer": MID_TREE_LAYER_IMAGE };
+const NEAR_TREE_STYLE = { "--fractal-tree-layer": NEAR_TREE_LAYER_IMAGE };
 
 function projectPoint(point, rotationX, rotationY, rotationZ, width, height) {
   const cosX = Math.cos(rotationX);
@@ -314,7 +206,7 @@ export default function TorusBanner() {
     function draw(time) {
       if (!canvas || !ctx) return;
       const width = canvas.clientWidth || 640;
-      const height = canvas.clientHeight || 260;
+      const height = canvas.clientHeight || 130;
       const dpr = window.devicePixelRatio || 1;
       const pixelWidth = Math.round(width * dpr);
       const pixelHeight = Math.round(height * dpr);
@@ -329,50 +221,63 @@ export default function TorusBanner() {
       const rotationX = Math.sin(time * 0.00084) * 0.38 + 0.5;
       const rotationZ = Math.cos(time * 0.00068) * 0.42;
 
-      const projected = sphericalHarmonicBasePoints.map((ring) =>
+      const projected = torusBasePoints.map((ring) =>
         ring.map((point) =>
           projectPoint(point, rotationX, rotationY, rotationZ, width, height),
         ),
       );
 
       const faces = [];
-      const lightDir = normalize({ x: 0.34, y: -0.22, z: 0.91 });
+      const lightDir = normalize({ x: 0.35, y: -0.24, z: 0.9 });
 
-      function pushTriangle(v1, v2, v3) {
-        const edge1 = {
-          x: v2.vx - v1.vx,
-          y: v2.vy - v1.vy,
-          z: v2.vz - v1.vz,
-        };
-        const edge2 = {
-          x: v3.vx - v1.vx,
-          y: v3.vy - v1.vy,
-          z: v3.vz - v1.vz,
-        };
-        const normal = normalize(cross(edge1, edge2));
-        const lambert = Math.max(
-          0.08,
-          normal.x * lightDir.x +
-            normal.y * lightDir.y +
-            Math.abs(normal.z) * lightDir.z,
-        );
-        faces.push({
-          verts: [v1, v2, v3],
-          z: (v1.z + v2.z + v3.z) / 3,
-          lambert,
-        });
-      }
-
-      for (let i = 0; i < LONGITUDE_SEGMENTS; i += 1) {
-        const nextI = (i + 1) % LONGITUDE_SEGMENTS;
-        for (let j = 0; j < LATITUDE_SEGMENTS; j += 1) {
-          const nextJ = j + 1;
+      for (let i = 0; i < TORUS_MAJOR_SEGMENTS; i += 1) {
+        const nextI = (i + 1) % TORUS_MAJOR_SEGMENTS;
+        for (let j = 0; j < TORUS_MINOR_SEGMENTS; j += 1) {
+          const nextJ = (j + 1) % TORUS_MINOR_SEGMENTS;
           const a = projected[i][j];
           const b = projected[nextI][j];
           const c = projected[nextI][nextJ];
           const d = projected[i][nextJ];
-          pushTriangle(a, b, c);
-          pushTriangle(a, c, d);
+
+          const edge1 = {
+            x: b.vx - a.vx,
+            y: b.vy - a.vy,
+            z: b.vz - a.vz,
+          };
+          const edge2 = {
+            x: d.vx - a.vx,
+            y: d.vy - a.vy,
+            z: d.vz - a.vz,
+          };
+          const normal = normalize(cross(edge1, edge2));
+          const centroid = {
+            x: (a.vx + b.vx + c.vx + d.vx) / 4,
+            y: (a.vy + b.vy + c.vy + d.vy) / 4,
+            z: (a.vz + b.vz + c.vz + d.vz) / 4,
+          };
+          const toCamera = normalize({
+            x: -centroid.x,
+            y: -centroid.y,
+            z: CAMERA_DISTANCE - centroid.z,
+          });
+          const facing =
+            normal.x * toCamera.x +
+            normal.y * toCamera.y +
+            normal.z * toCamera.z;
+          if (facing <= 0) continue;
+
+          const lambert = Math.max(
+            0.12,
+            normal.x * lightDir.x +
+              normal.y * lightDir.y +
+              normal.z * lightDir.z,
+          );
+          faces.push({
+            verts: [a, b, c, d],
+            z: (a.z + b.z + c.z + d.z) / 4,
+            lambert,
+            facing,
+          });
         }
       }
 
@@ -381,10 +286,11 @@ export default function TorusBanner() {
       faces.forEach((face) => {
         const normalized = Math.max(
           0,
-          Math.min(1, (face.z + SH_DEPTH_RANGE / 2) / SH_DEPTH_RANGE),
+          Math.min(1, (face.z + TORUS_DEPTH_RANGE / 2) / TORUS_DEPTH_RANGE),
         );
         const depthBoost = 1 - normalized;
-        const brightness = 0.48 + 0.42 * face.lambert + 0.18 * depthBoost;
+        const brightness =
+          0.44 + 0.38 * face.lambert + 0.16 * depthBoost + 0.08 * face.facing;
         const r = Math.floor(BASE_COLOR.r * brightness);
         const g = Math.floor(BASE_COLOR.g * brightness);
         const b = Math.floor(BASE_COLOR.b * brightness);
@@ -397,12 +303,12 @@ export default function TorusBanner() {
           }
         });
         ctx.closePath();
-        const alpha = 0.9 + 0.08 * normalized;
+        const alpha = 0.9 + 0.07 * normalized;
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
         ctx.fill();
-        const edgeAlpha = 0.08 + 0.12 * depthBoost;
+        const edgeAlpha = 0.16 + 0.16 * depthBoost + 0.1 * face.facing;
         ctx.strokeStyle = `rgba(75, 247, 255, ${edgeAlpha})`;
-        ctx.lineWidth = 0.26;
+        ctx.lineWidth = 0.45;
         ctx.stroke();
       });
 
@@ -421,23 +327,23 @@ export default function TorusBanner() {
         <div className="torus-parallax-layer torus-parallax-sky" />
         <div
           className="torus-parallax-layer torus-parallax-far-bushes"
-          style={FAR_BUSH_STYLE}
+          style={FAR_TREE_STYLE}
         />
         <div
           className="torus-parallax-layer torus-parallax-mid-bushes"
-          style={MID_BUSH_STYLE}
+          style={MID_TREE_STYLE}
         />
         <div
           className="torus-parallax-layer torus-parallax-near-bushes"
-          style={NEAR_BUSH_STYLE}
+          style={NEAR_TREE_STYLE}
         />
       </div>
 
       <div className="relative z-[1]">
-        <div className="torus-panel-shell min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem]">
+        <div className="torus-panel-shell min-h-[10rem] sm:min-h-[11rem] md:min-h-[12rem]">
           <canvas
             ref={canvasRef}
-            className="block w-full h-full min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem]"
+            className="block w-full h-full min-h-[10rem] sm:min-h-[11rem] md:min-h-[12rem]"
             aria-hidden
           />
         </div>
@@ -482,19 +388,19 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-far-bushes {
-          top: 16%;
+          top: 22%;
           left: -20%;
           right: -20%;
           bottom: -10%;
-          opacity: 0.9;
+          opacity: 0.94;
           background-image:
             linear-gradient(
               180deg,
-              rgba(34, 90, 37, 0.02) 0%,
-              rgba(28, 90, 33, 0.24) 52%,
-              rgba(20, 69, 25, 0.42) 100%
+              rgba(12, 19, 42, 0.04) 0%,
+              rgba(18, 24, 56, 0.32) 54%,
+              rgba(14, 17, 44, 0.58) 100%
             ),
-            var(--leafy-bush-layer);
+            var(--fractal-tree-layer);
           background-size:
             100% 100%,
             170% 100%;
@@ -523,19 +429,19 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-mid-bushes {
-          top: 24%;
+          top: 29%;
           left: -20%;
           right: -20%;
           bottom: -14%;
-          opacity: 0.96;
+          opacity: 0.97;
           background-image:
             linear-gradient(
               180deg,
-              rgba(28, 90, 33, 0.01) 0%,
-              rgba(24, 84, 31, 0.28) 48%,
-              rgba(14, 54, 22, 0.58) 100%
+              rgba(16, 11, 44, 0.02) 0%,
+              rgba(19, 12, 56, 0.34) 46%,
+              rgba(9, 7, 40, 0.64) 100%
             ),
-            var(--leafy-bush-layer);
+            var(--fractal-tree-layer);
           background-size:
             100% 100%,
             180% 100%;
@@ -565,7 +471,7 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-near-bushes {
-          top: 32%;
+          top: 38%;
           left: -20%;
           right: -20%;
           bottom: -20%;
@@ -573,11 +479,11 @@ export default function TorusBanner() {
           background-image:
             linear-gradient(
               180deg,
-              rgba(22, 70, 28, 0) 0%,
-              rgba(14, 54, 22, 0.34) 43%,
-              rgba(7, 30, 14, 0.7) 100%
+              rgba(24, 12, 28, 0) 0%,
+              rgba(36, 10, 38, 0.4) 41%,
+              rgba(16, 6, 22, 0.72) 100%
             ),
-            var(--leafy-bush-layer);
+            var(--fractal-tree-layer);
           background-size:
             100% 100%,
             190% 100%;
