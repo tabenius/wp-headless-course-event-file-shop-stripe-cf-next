@@ -346,7 +346,8 @@
     "copyRaw": "Copiar texto sin formato",
     "copyRawShort": "Sin formato",
     "copyMarkdown": "Copiar markdown formateado",
-    "copyMarkdownShort": "MD"
+    "copyMarkdownShort": "MD",
+    "clear": "Borrar chat"
   },
   "health": {
     "wpNotConfigured": "WordPress no configurado.",

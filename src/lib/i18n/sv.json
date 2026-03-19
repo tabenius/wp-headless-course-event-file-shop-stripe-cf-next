@@ -346,7 +346,8 @@
     "copyRaw": "Kopiera ren text",
     "copyRawShort": "Ren",
     "copyMarkdown": "Kopiera formaterad markdown",
-    "copyMarkdownShort": "MD"
+    "copyMarkdownShort": "MD",
+    "clear": "Rensa chatt"
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",

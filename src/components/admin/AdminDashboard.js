@@ -62,9 +62,10 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
 
   // Which URIs this user has access to
   const userAccess = selectedUser
-    ? allUris.filter((uri) =>
-        Array.isArray(courses[uri]?.allowedUsers) &&
-        courses[uri].allowedUsers.includes(selectedUser.email),
+    ? allUris.filter(
+        (uri) =>
+          Array.isArray(courses[uri]?.allowedUsers) &&
+          courses[uri].allowedUsers.includes(selectedUser.email),
       )
     : [];
 
@@ -81,8 +82,14 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
     setSaving(true);
     setPanelMsg("");
     try {
-      const config = courses[uri] || { allowedUsers: [], priceCents: 0, currency: "SEK" };
-      const currentUsers = Array.isArray(config.allowedUsers) ? [...config.allowedUsers] : [];
+      const config = courses[uri] || {
+        allowedUsers: [],
+        priceCents: 0,
+        currency: "SEK",
+      };
+      const currentUsers = Array.isArray(config.allowedUsers)
+        ? [...config.allowedUsers]
+        : [];
       const nextUsers = grant
         ? [...new Set([...currentUsers, selectedUser.email])]
         : currentUsers.filter((e) => e !== selectedUser.email);
@@ -99,7 +106,9 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
       const json = await res.json();
       if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed");
       // Update courses in parent — use a custom event
-      window.dispatchEvent(new CustomEvent("admin:coursesUpdated", { detail: json.courses }));
+      window.dispatchEvent(
+        new CustomEvent("admin:coursesUpdated", { detail: json.courses }),
+      );
       setPanelMsg(grant ? "Access granted." : "Access revoked.");
     } catch (err) {
       setPanelMsg(err.message || "Failed to update access.");
@@ -151,9 +160,12 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
 
           {/* Access replication */}
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">Access backends</h3>
+            <h3 className="text-sm font-semibold text-gray-700">
+              Access backends
+            </h3>
             <p className="text-xs text-gray-500">
-              Course access is written to WordPress via GraphQL, and mirrored to Cloudflare KV if it is configured.
+              Course access is written to WordPress via GraphQL, and mirrored to
+              Cloudflare KV if it is configured.
             </p>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="px-3 py-1 rounded bg-green-50 text-green-800 border border-green-200">
@@ -170,9 +182,13 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
               )}
             </div>
           </div>
-          <div className="text-xs font-medium text-gray-600">Content access:</div>
+          <div className="text-xs font-medium text-gray-600">
+            Content access:
+          </div>
           {allUris.length === 0 ? (
-            <p className="text-xs text-gray-400">No content items configured yet.</p>
+            <p className="text-xs text-gray-400">
+              No content items configured yet.
+            </p>
           ) : (
             <div className="space-y-1 max-h-48 overflow-auto">
               {allUris.map((uri) => {
@@ -185,7 +201,9 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
                       disabled={saving}
                       onChange={() => toggleAccess(uri, !hasAccess)}
                     />
-                    <span className={hasAccess ? "text-gray-900" : "text-gray-500"}>
+                    <span
+                      className={hasAccess ? "text-gray-900" : "text-gray-500"}
+                    >
                       {uriLabel(uri)}
                     </span>
                     <span className="text-[10px] text-gray-400">{uri}</span>
@@ -229,7 +247,10 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
     }
     fetchServerLogs();
     const id = setInterval(fetchServerLogs, 5000);
-    return () => { cancelled = true; clearInterval(id); };
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [polling]);
 
   async function clearServer() {
@@ -251,10 +272,23 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
           >
             {polling ? "● live" : "○ paused"}
           </button>
-          {tab === "client"
-            ? <button type="button" onClick={() => setClientLogs([])} className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600">clear</button>
-            : <button type="button" onClick={clearServer} className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600">clear</button>
-          }
+          {tab === "client" ? (
+            <button
+              type="button"
+              onClick={() => setClientLogs([])}
+              className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600"
+            >
+              clear
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={clearServer}
+              className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600"
+            >
+              clear
+            </button>
+          )}
         </div>
       </div>
 
@@ -266,7 +300,9 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
             onClick={() => setTab(t)}
             className={`px-3 py-1 rounded ${tab === t ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
           >
-            {t === "client" ? `Browser (${clientLogs.length})` : `Server (${serverLogs.length})`}
+            {t === "client"
+              ? `Browser (${clientLogs.length})`
+              : `Server (${serverLogs.length})`}
           </button>
         ))}
       </div>
@@ -276,21 +312,34 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
       )}
 
       <div className="bg-gray-900 text-gray-200 rounded p-3 font-mono text-xs max-h-72 overflow-auto space-y-0.5">
-        {logs.length === 0
-          ? <span className="text-gray-500 italic">No entries yet.</span>
-          : logs.map((entry, i) => {
-              const ts = tab === "client"
+        {logs.length === 0 ? (
+          <span className="text-gray-500 italic">No entries yet.</span>
+        ) : (
+          logs.map((entry, i) => {
+            const ts =
+              tab === "client"
                 ? new Date(entry.ts).toLocaleTimeString()
                 : new Date(entry.ts).toLocaleTimeString();
-              return (
-                <div key={i} className="flex gap-2 leading-snug">
-                  <span className="text-gray-500 shrink-0">{ts}</span>
-                  <span className={`shrink-0 w-10 ${LEVEL_STYLE[entry.level] ?? "text-gray-300"}`}>[{entry.level}]</span>
-                  {entry.reqId && <span className="text-purple-400 shrink-0">{entry.reqId.slice(0, 8)}</span>}
-                  <span className="break-all whitespace-pre-wrap">{entry.msg}</span>
-                </div>
-              );
-            })}
+            return (
+              <div key={i} className="flex gap-2 leading-snug">
+                <span className="text-gray-500 shrink-0">{ts}</span>
+                <span
+                  className={`shrink-0 w-10 ${LEVEL_STYLE[entry.level] ?? "text-gray-300"}`}
+                >
+                  [{entry.level}]
+                </span>
+                {entry.reqId && (
+                  <span className="text-purple-400 shrink-0">
+                    {entry.reqId.slice(0, 8)}
+                  </span>
+                )}
+                <span className="break-all whitespace-pre-wrap">
+                  {entry.msg}
+                </span>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
@@ -345,16 +394,31 @@ export default function AdminDashboard() {
   const [commitsExpanded, setCommitsExpanded] = useState(false);
   const editFormRef = useRef(null);
   const [resendConfigured, setResendConfigured] = useState(false);
-  const [uploadInfo, setUploadInfo] = useState({ backend: "wordpress", wordpress: true, s3: false, r2: false });
+  const [uploadInfo, setUploadInfo] = useState({
+    backend: "wordpress",
+    wordpress: true,
+    s3: false,
+    r2: false,
+  });
   const [uploadBackend, setUploadBackend] = useState("wordpress");
-  const [shopVisibleTypes, setShopVisibleTypes] = useState(["product", "course", "event", "digital_file", "digital_course"]);
+  const [shopVisibleTypes, setShopVisibleTypes] = useState([
+    "product",
+    "course",
+    "event",
+    "digital_file",
+    "digital_course",
+  ]);
   const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
   const [shopSettingsMessage, setShopSettingsMessage] = useState("");
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [ticketsError, setTicketsError] = useState("");
   const [selectedTicketId, setSelectedTicketId] = useState(null);
-  const [newTicket, setNewTicket] = useState({ title: "", description: "", priority: "moderate" });
+  const [newTicket, setNewTicket] = useState({
+    title: "",
+    description: "",
+    priority: "moderate",
+  });
   const [commentText, setCommentText] = useState("");
   const [showImageGen, setShowImageGen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
@@ -388,24 +452,28 @@ export default function AdminDashboard() {
   useEffect(() => {
     function onKey(e) {
       const tag = (e.target && e.target.tagName) || "";
-      const isFormField = ["INPUT", "TEXTAREA", "SELECT"].includes(tag) || e.target?.isContentEditable;
+      const isFormField =
+        ["INPUT", "TEXTAREA", "SELECT"].includes(tag) ||
+        e.target?.isContentEditable;
       if (isFormField) return;
       if (!e.altKey) return;
       const k = e.key.toLowerCase();
       const tabMap = {
-        "1": "stats",
-        "2": "shop",
-        "3": "access",
-        "4": "support",
-        "5": "health",
-        "6": "advanced",
-        "7": "chat",
-        "8": "style",
+        1: "stats",
+        2: "shop",
+        3: "access",
+        4: "support",
+        5: "health",
+        6: "advanced",
+        7: "chat",
+        8: "style",
       };
       if (tabMap[k]) {
         e.preventDefault();
         setActiveTab(tabMap[k]);
-        window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: tabMap[k] }));
+        window.dispatchEvent(
+          new CustomEvent("admin:switchTab", { detail: tabMap[k] }),
+        );
         return;
       }
       if (k === "l") {
@@ -415,7 +483,9 @@ export default function AdminDashboard() {
       }
       if (k === "/") {
         e.preventDefault();
-        const searchInput = document.querySelector("input[type='search'], input[aria-label='search']");
+        const searchInput = document.querySelector(
+          "input[type='search'], input[aria-label='search']",
+        );
         if (searchInput) searchInput.focus();
       }
     }
@@ -433,9 +503,7 @@ export default function AdminDashboard() {
       ? products[shopIndex]
       : null;
   const isWpSelection =
-    selectedCourse &&
-    !selectedCourse.startsWith("__") &&
-    selectedCourse !== "";
+    selectedCourse && !selectedCourse.startsWith("__") && selectedCourse !== "";
 
   // The URI used for access config (empty if not applicable)
   const accessUri = useMemo(() => {
@@ -457,7 +525,8 @@ export default function AdminDashboard() {
     if (loaded.courseAccess) return;
     try {
       const { res, json } = await adminFetch("/api/admin/course-access");
-      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.fetchAdminDataFailed"));
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.fetchAdminDataFailed"));
       setCourses(json.courses || {});
       setUsers(Array.isArray(json.users) ? json.users : []);
       setWpCourses(Array.isArray(json.wpCourses) ? json.wpCourses : []);
@@ -471,7 +540,10 @@ export default function AdminDashboard() {
       }
       setLoaded((s) => ({ ...s, courseAccess: true, uploadInfo: true }));
     } catch (fetchError) {
-      console.error("AdminDashboard: failed to load course-access data", fetchError);
+      console.error(
+        "AdminDashboard: failed to load course-access data",
+        fetchError,
+      );
       setError(fetchError.message || t("admin.fetchAdminDataFailed"));
     }
   }, [loaded.courseAccess, t]);
@@ -480,9 +552,16 @@ export default function AdminDashboard() {
     if (loaded.products) return;
     try {
       const { res, json } = await adminFetch("/api/admin/products");
-      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.fetchProductsFailed"));
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.fetchProductsFailed"));
       const rows = Array.isArray(json.products) ? json.products : [];
-      setProducts(rows.map((product) => ({ ...emptyProduct(), ...product, slugEdited: true })));
+      setProducts(
+        rows.map((product) => ({
+          ...emptyProduct(),
+          ...product,
+          slugEdited: true,
+        })),
+      );
       setLoaded((s) => ({ ...s, products: true }));
     } catch (fetchError) {
       console.error("AdminDashboard: failed to load products", fetchError);
@@ -512,7 +591,10 @@ export default function AdminDashboard() {
       if (json?.timestamp) setLastDeployAt(json.timestamp);
       setLoaded((s) => ({ ...s, deploy: true }));
     } catch (err) {
-      console.error("AdminDashboard: failed to load last deploy timestamp", err);
+      console.error(
+        "AdminDashboard: failed to load last deploy timestamp",
+        err,
+      );
     }
   }, [loaded.deploy]);
 
@@ -564,22 +646,26 @@ export default function AdminDashboard() {
     }
   }, [loaded.commits]);
 
-  const loadPayments = useCallback(async (emailFilter) => {
-    setPaymentsLoading(true);
-    try {
-      const url = new URL("/api/admin/payments", window.location.origin);
-      if (emailFilter) url.searchParams.set("email", emailFilter);
-      const res = await fetch(url.toString());
-      const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to load payments");
-      setPayments(json.payments || []);
-      setLoaded((s) => ({ ...s, payments: true }));
-    } catch (err) {
-      setError(err.message || "Failed to load payments");
-    } finally {
-      setPaymentsLoading(false);
-    }
-  }, [loaded.payments]);
+  const loadPayments = useCallback(
+    async (emailFilter) => {
+      setPaymentsLoading(true);
+      try {
+        const url = new URL("/api/admin/payments", window.location.origin);
+        if (emailFilter) url.searchParams.set("email", emailFilter);
+        const res = await fetch(url.toString());
+        const json = await res.json();
+        if (!res.ok || !json?.ok)
+          throw new Error(json?.error || "Failed to load payments");
+        setPayments(json.payments || []);
+        setLoaded((s) => ({ ...s, payments: true }));
+      } catch (err) {
+        setError(err.message || "Failed to load payments");
+      } finally {
+        setPaymentsLoading(false);
+      }
+    },
+    [loaded.payments],
+  );
 
   useEffect(() => {
     loadCourseAccess();
@@ -665,14 +751,40 @@ export default function AdminDashboard() {
       const json = await res.json();
       if (!res.ok || !json?.ok) throw new Error(json?.error || "Chat failed");
       if (json.type === "image-generation") {
-        setChatMessages((prev) => [...prev, { role: "assistant", type: "image-generation", prompt: json.prompt }]);
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "assistant", type: "image-generation", prompt: json.prompt },
+        ]);
       } else {
-        setChatMessages((prev) => [...prev, { role: "assistant", content: json.answer, sources: json.sources || [] }]);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: json.answer,
+            sources: json.sources || [],
+          },
+        ]);
       }
     } catch (err) {
-      setChatMessages((prev) => [...prev, { role: "assistant", content: err.message || "Chat failed", sources: [] }]);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: err.message || "Chat failed",
+          sources: [],
+        },
+      ]);
     } finally {
       setChatLoading(false);
+    }
+  }
+
+  async function clearChat() {
+    setChatMessages([]);
+    try {
+      await fetch("/api/chat", { method: "DELETE" });
+    } catch (err) {
+      console.error("clearChat error", err);
     }
   }
 
@@ -707,7 +819,8 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/admin/tickets");
       const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.ticketFetchFailed"));
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.ticketFetchFailed"));
       setTickets(Array.isArray(json.tickets) ? json.tickets : []);
       if (!selectedTicketId && json.tickets?.[0]?.id) {
         setSelectedTicketId(json.tickets[0].id);
@@ -721,7 +834,11 @@ export default function AdminDashboard() {
 
   async function createSupportTicket() {
     if (!newTicket.title.trim()) {
-      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "error", message: t("admin.requiredField") } }));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "error", message: t("admin.requiredField") },
+        }),
+      );
       return;
     }
     try {
@@ -735,13 +852,25 @@ export default function AdminDashboard() {
         }),
       });
       const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.ticketUpdateFailed"));
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.ticketUpdateFailed"));
       setTickets(Array.isArray(json.tickets) ? json.tickets : []);
       setNewTicket({ title: "", description: "", priority: "moderate" });
       setSelectedTicketId(json.ticket?.id || json.tickets?.[0]?.id || null);
-      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "success", message: t("admin.ticketCreated") } }));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: t("admin.ticketCreated") },
+        }),
+      );
     } catch (err) {
-      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "error", message: err.message || t("admin.ticketUpdateFailed") } }));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: {
+            type: "error",
+            message: err.message || t("admin.ticketUpdateFailed"),
+          },
+        }),
+      );
     }
   }
 
@@ -754,12 +883,24 @@ export default function AdminDashboard() {
         body: JSON.stringify({ id: selectedTicket.id, status, comment }),
       });
       const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || t("admin.ticketUpdateFailed"));
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.ticketUpdateFailed"));
       setTickets(Array.isArray(json.tickets) ? json.tickets : []);
       if (comment) setCommentText("");
-      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "success", message: t("admin.ticketUpdated") } }));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: t("admin.ticketUpdated") },
+        }),
+      );
     } catch (err) {
-      window.dispatchEvent(new CustomEvent("toast", { detail: { type: "error", message: err.message || t("admin.ticketUpdateFailed") } }));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: {
+            type: "error",
+            message: err.message || t("admin.ticketUpdateFailed"),
+          },
+        }),
+      );
     }
   }
 
@@ -825,7 +966,13 @@ export default function AdminDashboard() {
     }
     setCurrency("SEK");
     setAllowedUsers([]);
-  }, [selectedCourse, courses, allWpContent, isShopSelection, selectedShopProduct]);
+  }, [
+    selectedCourse,
+    courses,
+    allWpContent,
+    isShopSelection,
+    selectedShopProduct,
+  ]);
 
   const knownCourses = useMemo(
     () => Object.keys(courses).sort((a, b) => a.localeCompare(b)),
@@ -848,7 +995,9 @@ export default function AdminDashboard() {
     if (!userSearch.trim()) return users;
     const q = userSearch.toLowerCase();
     return users.filter(
-      (u) => u.email.toLowerCase().includes(q) || (u.name || "").toLowerCase().includes(q),
+      (u) =>
+        u.email.toLowerCase().includes(q) ||
+        (u.name || "").toLowerCase().includes(q),
     );
   }, [users, userSearch]);
 
@@ -899,7 +1048,14 @@ export default function AdminDashboard() {
       const newProducts = [...products, emptyProduct()];
       setProducts(newProducts);
       setSelectedCourse(`__shop_${newProducts.length - 1}`);
-      setTimeout(() => editFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      setTimeout(
+        () =>
+          editFormRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          }),
+        50,
+      );
     } else {
       setSelectedCourse(value);
     }
@@ -907,15 +1063,17 @@ export default function AdminDashboard() {
 
   // Whether to show the detail panel
   const showDetail =
-    (isWpSelection || isShopSelection) &&
-    selectedCourse !== "__custom__";
+    (isWpSelection || isShopSelection) && selectedCourse !== "__custom__";
 
   // Scroll to edit section when a product/content is selected
   useEffect(() => {
     if (!selectedCourse) return;
     if (!showDetail) return;
     const id = setTimeout(() => {
-      editFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      editFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 50);
     return () => clearTimeout(id);
   }, [selectedCourse, showDetail]);
@@ -940,7 +1098,11 @@ export default function AdminDashboard() {
       if (isShopSelection && shopIndex >= 0) {
         const updated = products.map((p, i) =>
           i === shopIndex
-            ? { ...p, priceCents: toCents(price), currency: currency.toUpperCase() }
+            ? {
+                ...p,
+                priceCents: toCents(price),
+                currency: currency.toUpperCase(),
+              }
             : p,
         );
         const payload = updated.map((p) => ({
@@ -1025,7 +1187,9 @@ export default function AdminDashboard() {
         .then((json) => {
           if (json?.ok) setUploadInfoDetails(json);
         })
-        .catch((err) => console.error("AdminDashboard: failed to load upload info", err));
+        .catch((err) =>
+          console.error("AdminDashboard: failed to load upload info", err),
+        );
     }
   }, [activeTab]);
 
@@ -1047,7 +1211,8 @@ export default function AdminDashboard() {
       if (e.detail) setCourses(e.detail);
     }
     window.addEventListener("admin:coursesUpdated", onCoursesUpdated);
-    return () => window.removeEventListener("admin:coursesUpdated", onCoursesUpdated);
+    return () =>
+      window.removeEventListener("admin:coursesUpdated", onCoursesUpdated);
   }, []);
 
   // Intercept browser console to feed the client log panel in Advanced tab
@@ -1062,7 +1227,9 @@ export default function AdminDashboard() {
       return (...args) => {
         orig[level](...args);
         const msg = args
-          .map((a) => (a && typeof a === "object" ? JSON.stringify(a) : String(a)))
+          .map((a) =>
+            a && typeof a === "object" ? JSON.stringify(a) : String(a),
+          )
           .join(" ");
         setClientLogs((prev) =>
           [{ ts: Date.now(), level, msg }].concat(prev).slice(0, 50),
@@ -1105,10 +1272,13 @@ export default function AdminDashboard() {
           setUploadingField(field);
           const formData = new FormData();
           formData.append("file", file);
-          const res = await fetch(`/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`, {
-            method: "POST",
-            body: formData,
-          });
+          const res = await fetch(
+            `/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`,
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
           setUploadingField(null);
           const json = await res.json();
           if (!res.ok || !json?.ok) {
@@ -1131,9 +1301,19 @@ export default function AdminDashboard() {
     setHealthLoading(true);
     setError("");
     try {
-      const { res, json, reqId, duration } = await adminFetch("/api/admin/health");
+      const { res, json, reqId, duration } =
+        await adminFetch("/api/admin/health");
       setDebugLogs((prev) =>
-        [{ ts: Date.now(), reqId, status: res.status, duration, path: "/api/admin/health" }, ...prev].slice(0, 10),
+        [
+          {
+            ts: Date.now(),
+            reqId,
+            status: res.status,
+            duration,
+            path: "/api/admin/health",
+          },
+          ...prev,
+        ].slice(0, 10),
       );
       if (!res.ok || !json?.ok) {
         throw new Error(json?.error || t("admin.healthCheckFailed"));
@@ -1191,7 +1371,10 @@ export default function AdminDashboard() {
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
       <div className="fixed left-4 bottom-4 text-[11px] text-white bg-[#140022] border border-[#4e21a6] rounded p-2 shadow-lg space-y-1">
         <div className="font-semibold text-white">Genvägar</div>
-        <div>Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health • Alt+6 Advanced • Alt+7 Chat • Alt+8 Style</div>
+        <div>
+          Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health
+          • Alt+6 Advanced • Alt+7 Chat • Alt+8 Style
+        </div>
         <div>Alt+/ Search • Alt+L Logout</div>
       </div>
       {/* ── Stats tab ── */}
@@ -1201,97 +1384,154 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="border rounded p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">
-                {wcProducts.length + wpCourses.length + wpEvents.length + products.length}
+                {wcProducts.length +
+                  wpCourses.length +
+                  wpEvents.length +
+                  products.length}
               </div>
-              <div className="text-xs text-gray-500 mt-1">{t("stats.totalItems")}</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {t("stats.totalItems")}
+              </div>
             </div>
             <div className="border rounded p-4 text-center">
-              <div className="text-2xl font-bold text-blue-700">{wcProducts.length}</div>
+              <div className="text-2xl font-bold text-blue-700">
+                {wcProducts.length}
+              </div>
               <div className="text-xs text-gray-500 mt-1">{t("stats.woo")}</div>
             </div>
             <div className="border rounded p-4 text-center">
               <div className="text-2xl font-bold text-green-700">
                 {wpCourses.length + wpEvents.length}
               </div>
-              <div className="text-xs text-gray-500 mt-1">{t("stats.coursesEvents")}</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {t("stats.coursesEvents")}
+              </div>
             </div>
             <div className="border rounded p-4 text-center">
-              <div className="text-2xl font-bold text-purple-700">{users.length}</div>
-              <div className="text-xs text-gray-500 mt-1">{t("stats.users")}</div>
+              <div className="text-2xl font-bold text-purple-700">
+                {users.length}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {t("stats.users")}
+              </div>
             </div>
           </div>
 
           {/* Traffic analytics */}
-              {analytics ? (
-                <div className="border rounded p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">{t("stats.trafficHeading")}</h2>
-                    <span className={`text-xs px-2 py-0.5 rounded ${
-                      analyticsMode === "zone"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}>
-                      {analyticsMode === "zone" ? t("stats.trafficZone") : t("stats.trafficWorkers")}
-                    </span>
+          {analytics ? (
+            <div className="border rounded p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">
+                  {t("stats.trafficHeading")}
+                </h2>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded ${
+                    analyticsMode === "zone"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {analyticsMode === "zone"
+                    ? t("stats.trafficZone")
+                    : t("stats.trafficWorkers")}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-xl font-bold">
+                    {analytics.totals.requests.toLocaleString()}
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
+                  <div className="text-xs text-gray-500">
+                    {t("stats.trafficRequests")}
+                  </div>
+                </div>
+                {analyticsMode === "zone" ? (
+                  <>
                     <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">{analytics.totals.requests.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">{t("stats.trafficRequests")}</div>
+                      <div className="text-xl font-bold">
+                        {analytics.totals.pageViews.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {t("stats.trafficPageViews")}
+                      </div>
                     </div>
-                    {analyticsMode === "zone" ? (
-                      <>
-                        <div className="bg-gray-50 rounded p-3">
-                          <div className="text-xl font-bold">{analytics.totals.pageViews.toLocaleString()}</div>
-                          <div className="text-xs text-gray-500">{t("stats.trafficPageViews")}</div>
-                        </div>
-                        <div className="bg-gray-50 rounded p-3">
-                          <div className="text-xl font-bold">{analytics.totals.uniques.toLocaleString()}</div>
-                          <div className="text-xs text-gray-500">{t("stats.trafficUniques")}</div>
-                        </div>
-                        <div className="bg-gray-50 rounded p-3">
-                          <div className="text-xl font-bold">{(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB</div>
-                          <div className="text-xs text-gray-500">{t("stats.trafficBandwidth")}</div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="bg-gray-50 rounded p-3">
-                          <div className="text-xl font-bold">{(analytics.totals.subrequests || 0).toLocaleString()}</div>
-                          <div className="text-xs text-gray-500">{t("stats.trafficSubrequests")}</div>
-                        </div>
-                        <div className="bg-gray-50 rounded p-3">
-                          <div className="text-xl font-bold">{(analytics.totals.errors || 0).toLocaleString()}</div>
-                          <div className="text-xs text-gray-500">{t("stats.trafficErrors")}</div>
-                        </div>
-                        <div className="bg-gray-50 rounded p-3 opacity-40">
-                          <div className="text-xl font-bold">&mdash;</div>
-                          <div className="text-xs text-gray-500">{t("stats.trafficBandwidth")}</div>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">
+                        {analytics.totals.uniques.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {t("stats.trafficUniques")}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">
+                        {(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {t("stats.trafficBandwidth")}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">
+                        {(analytics.totals.subrequests || 0).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {t("stats.trafficSubrequests")}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded p-3">
+                      <div className="text-xl font-bold">
+                        {(analytics.totals.errors || 0).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {t("stats.trafficErrors")}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded p-3 opacity-40">
+                      <div className="text-xl font-bold">&mdash;</div>
+                      <div className="text-xs text-gray-500">
+                        {t("stats.trafficBandwidth")}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 {/* Hourly chart */}
                 {analytics.hourly.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-gray-700">Requests per hour</h3>
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Requests per hour
+                    </h3>
                     <div className="flex items-end gap-px h-24 bg-gray-50 rounded p-2">
                       {(() => {
-                        const maxReq = Math.max(...analytics.hourly.map((h) => h.requests), 1);
+                        const maxReq = Math.max(
+                          ...analytics.hourly.map((h) => h.requests),
+                          1,
+                        );
                         return analytics.hourly.map((h, i) => (
                           <div
                             key={i}
                             className="flex-1 bg-blue-400 rounded-t min-h-[2px]"
-                            style={{ height: `${(h.requests / maxReq) * 100}%` }}
+                            style={{
+                              height: `${(h.requests / maxReq) * 100}%`,
+                            }}
                             title={`${new Date(h.time).getHours()}:00 \u2014 ${h.requests} requests`}
                           />
                         ));
                       })()}
                     </div>
                     <div className="flex justify-between text-[10px] text-gray-400 px-2">
-                      <span>{analytics.hourly.length > 0 ? new Date(analytics.hourly[0].time).getHours() + ":00" : ""}</span>
+                      <span>
+                        {analytics.hourly.length > 0
+                          ? new Date(analytics.hourly[0].time).getHours() +
+                            ":00"
+                          : ""}
+                      </span>
                       <span>Now</span>
                     </div>
                   </div>
@@ -1300,22 +1540,34 @@ export default function AdminDashboard() {
                 {/* Top referrers (zone mode only) */}
                 {analyticsMode === "zone" && analytics.referrers.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-gray-700">Top referrers</h3>
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Top referrers
+                    </h3>
                     <div className="space-y-1">
                       {analytics.referrers.slice(0, 10).map((r, i) => {
                         const maxCount = analytics.referrers[0]?.count || 1;
                         return (
-                          <div key={i} className="flex items-center gap-2 text-xs">
-                            <div className="w-24 truncate text-gray-600" title={r.host}>
+                          <div
+                            key={i}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <div
+                              className="w-24 truncate text-gray-600"
+                              title={r.host}
+                            >
                               {r.host}
                             </div>
                             <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
                               <div
                                 className="h-full bg-green-400 rounded"
-                                style={{ width: `${(r.count / maxCount) * 100}%` }}
+                                style={{
+                                  width: `${(r.count / maxCount) * 100}%`,
+                                }}
                               />
                             </div>
-                            <span className="text-gray-500 w-12 text-right">{r.count}</span>
+                            <span className="text-gray-500 w-12 text-right">
+                              {r.count}
+                            </span>
                           </div>
                         );
                       })}
@@ -1326,8 +1578,13 @@ export default function AdminDashboard() {
                 {analyticsMode === "workers" && (
                   <div className="flex items-center text-xs text-gray-400 p-4">
                     <p>
-                      Referrers, page views, and bandwidth require zone-level analytics.
-                      Route your Worker through a custom domain and set <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> to upgrade.
+                      Referrers, page views, and bandwidth require zone-level
+                      analytics. Route your Worker through a custom domain and
+                      set{" "}
+                      <code className="bg-gray-100 px-1 rounded">
+                        CF_ZONE_ID
+                      </code>{" "}
+                      to upgrade.
                     </p>
                   </div>
                 )}
@@ -1335,10 +1592,14 @@ export default function AdminDashboard() {
             </div>
           ) : !analyticsConfigured ? (
             <div className="border rounded p-4 text-sm text-gray-500">
-              <strong>Traffic analytics:</strong> Set <code className="bg-gray-100 px-1 rounded">CF_API_TOKEN</code> and
-              {" "}<code className="bg-gray-100 px-1 rounded">CLOUDFLARE_ACCOUNT_ID</code> for basic Workers analytics,
-              or also add <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> for full zone analytics
-              (referrers, page views, unique visitors).
+              <strong>Traffic analytics:</strong> Set{" "}
+              <code className="bg-gray-100 px-1 rounded">CF_API_TOKEN</code> and{" "}
+              <code className="bg-gray-100 px-1 rounded">
+                CLOUDFLARE_ACCOUNT_ID
+              </code>{" "}
+              for basic Workers analytics, or also add{" "}
+              <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> for
+              full zone analytics (referrers, page views, unique visitors).
             </div>
           ) : null}
         </div>
@@ -1348,9 +1609,7 @@ export default function AdminDashboard() {
       {activeTab === "health" && (
         <div className="border rounded p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
-              {t("admin.healthCheck")}
-            </h2>
+            <h2 className="text-xl font-semibold">{t("admin.healthCheck")}</h2>
             <button
               type="button"
               onClick={runHealthCheck}
@@ -1428,14 +1687,21 @@ export default function AdminDashboard() {
             <div className="bg-gray-50 border rounded p-3 text-xs space-y-1">
               <div className="font-semibold">Debug logs (latest)</div>
               {debugLogs.map((logItem) => (
-                <div key={`${logItem.reqId}-${logItem.ts}`} className="flex flex-wrap gap-2">
+                <div
+                  key={`${logItem.reqId}-${logItem.ts}`}
+                  className="flex flex-wrap gap-2"
+                >
                   <span className="text-gray-500">
                     {new Date(logItem.ts).toLocaleTimeString()}
                   </span>
-                  <code className="bg-white border rounded px-1">{logItem.path}</code>
+                  <code className="bg-white border rounded px-1">
+                    {logItem.path}
+                  </code>
                   <span>Status {logItem.status}</span>
                   <span>{logItem.duration} ms</span>
-                  <code className="bg-white border rounded px-1">{logItem.reqId}</code>
+                  <code className="bg-white border rounded px-1">
+                    {logItem.reqId}
+                  </code>
                 </div>
               ))}
             </div>
@@ -1444,9 +1710,7 @@ export default function AdminDashboard() {
           {ragbazDownloadUrl && (
             <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
               <h3 className="font-semibold">{t("admin.ragbazPlugin")}</h3>
-              <p className="text-gray-600">
-                {t("admin.ragbazPluginDesc")}
-              </p>
+              <p className="text-gray-600">{t("admin.ragbazPluginDesc")}</p>
               <div className="flex items-center gap-2">
                 <a
                   className="px-3 py-2 rounded border bg-white hover:bg-gray-100 text-sm"
@@ -1458,7 +1722,9 @@ export default function AdminDashboard() {
                 </a>
                 <button
                   type="button"
-                  onClick={() => navigator.clipboard.writeText(ragbazDownloadUrl)}
+                  onClick={() =>
+                    navigator.clipboard.writeText(ragbazDownloadUrl)
+                  }
                   className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
                   title={t("common.copy")}
                 >
@@ -1466,16 +1732,16 @@ export default function AdminDashboard() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-gray-500 shrink-0">
-                  WP-CLI:
-                </label>
+                <label className="text-gray-500 shrink-0">WP-CLI:</label>
                 <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
                   {`wp plugin install ${ragbazDownloadUrl} --activate`}
                 </code>
                 <button
                   type="button"
                   onClick={() =>
-                    navigator.clipboard.writeText(`wp plugin install ${ragbazDownloadUrl} --activate`)
+                    navigator.clipboard.writeText(
+                      `wp plugin install ${ragbazDownloadUrl} --activate`,
+                    )
                   }
                   className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
                   title={t("common.copy")}
@@ -1516,18 +1782,40 @@ export default function AdminDashboard() {
           {/* Shop visibility toggles */}
           <div className="space-y-3 bg-gray-50 rounded-lg p-4 border">
             <div>
-              <p className="text-sm font-semibold text-gray-800">{t("admin.shopVisibility")}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {t("admin.shopVisibility")}
+              </p>
               <p className="text-xs text-gray-500 mt-1">
                 {t("admin.shopVisibilityDesc")}
               </p>
             </div>
             <div className="space-y-2">
               {[
-                { key: "product", label: "WooCommerce", desc: t("admin.shopTypeProductDesc") },
-                { key: "course", label: "LearnPress", desc: t("admin.shopTypeCourseDesc") },
-                { key: "event", label: "Events", desc: t("admin.shopTypeEventDesc") },
-                { key: "digital_file", label: t("admin.digitalFile"), desc: t("admin.shopTypeDigitalFileDesc") },
-                { key: "digital_course", label: t("admin.courseProduct"), desc: t("admin.shopTypeDigitalCourseDesc") },
+                {
+                  key: "product",
+                  label: "WooCommerce",
+                  desc: t("admin.shopTypeProductDesc"),
+                },
+                {
+                  key: "course",
+                  label: "LearnPress",
+                  desc: t("admin.shopTypeCourseDesc"),
+                },
+                {
+                  key: "event",
+                  label: "Events",
+                  desc: t("admin.shopTypeEventDesc"),
+                },
+                {
+                  key: "digital_file",
+                  label: t("admin.digitalFile"),
+                  desc: t("admin.shopTypeDigitalFileDesc"),
+                },
+                {
+                  key: "digital_course",
+                  label: t("admin.courseProduct"),
+                  desc: t("admin.shopTypeDigitalCourseDesc"),
+                },
               ].map(({ key, label, desc }) => (
                 <label
                   key={key}
@@ -1543,14 +1831,18 @@ export default function AdminDashboard() {
                     className="mt-0.5 accent-purple-600"
                   />
                   <div className="min-w-0">
-                    <span className="text-sm font-medium text-gray-800">{label}</span>
+                    <span className="text-sm font-medium text-gray-800">
+                      {label}
+                    </span>
                     <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                   </div>
                 </label>
               ))}
             </div>
             {shopSettingsSaving && (
-              <p className="text-xs text-purple-600">{t("common.saving", "Sparar...")}</p>
+              <p className="text-xs text-purple-600">
+                {t("common.saving", "Sparar...")}
+              </p>
             )}
             {shopSettingsMessage && (
               <p className="text-xs text-green-700">{shopSettingsMessage}</p>
@@ -1579,7 +1871,8 @@ export default function AdminDashboard() {
                 renderItem={(product, index) => {
                   const isActive = selectedCourse === product.uri;
                   const configured = courses[product.uri];
-                  const category = product.productCategories?.edges?.[0]?.node?.name;
+                  const category =
+                    product.productCategories?.edges?.[0]?.node?.name;
                   const meta = joinMeta([
                     product.price ? product.price.replace(/&nbsp;/g, " ") : "",
                     category,
@@ -1710,7 +2003,9 @@ export default function AdminDashboard() {
                     : "—";
                   const meta = joinMeta([
                     priceText,
-                    product.type === "course" ? t("admin.courseProduct") : t("admin.digitalFile"),
+                    product.type === "course"
+                      ? t("admin.courseProduct")
+                      : t("admin.digitalFile"),
                     product.slug ? `/${product.slug}` : "",
                   ]);
                   const image = product.imageUrl ? (
@@ -1721,7 +2016,12 @@ export default function AdminDashboard() {
                     />
                   ) : (
                     <div className="w-32 h-32 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-8 h-8"
+                      >
                         <path
                           fillRule="evenodd"
                           d="M1 5.25A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25v9.5A2.25 2.25 0 0116.75 17H3.25A2.25 2.25 0 011 14.75v-9.5zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75v-2.69l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L2.5 11.06zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
@@ -1733,7 +2033,9 @@ export default function AdminDashboard() {
                     <ProductRow
                       key={`shop-${index}`}
                       rowIndex={index}
-                      title={product.name || `${t("admin.product")} ${index + 1}`}
+                      title={
+                        product.name || `${t("admin.product")} ${index + 1}`
+                      }
                       meta={meta}
                       image={image}
                       active={isActive}
@@ -1809,8 +2111,7 @@ export default function AdminDashboard() {
               );
               if (!wpItem) return null;
               const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
-              const desc =
-                wpItem?.shortDescription || wpItem?.content || "";
+              const desc = wpItem?.shortDescription || wpItem?.content || "";
               const wpPrice = (
                 wpItem?.price ||
                 wpItem?.priceRendered ||
@@ -1842,21 +2143,30 @@ export default function AdminDashboard() {
                         setWpEvents((prev) =>
                           prev.map((ev) =>
                             ev.uri === selectedCourse
-                              ? { ...ev, featuredImage: { node: { sourceUrl: url } } }
+                              ? {
+                                  ...ev,
+                                  featuredImage: { node: { sourceUrl: url } },
+                                }
                               : ev,
                           ),
                         );
                         setWcProducts((prev) =>
                           prev.map((p) =>
                             p.uri === selectedCourse
-                              ? { ...p, featuredImage: { node: { sourceUrl: url } } }
+                              ? {
+                                  ...p,
+                                  featuredImage: { node: { sourceUrl: url } },
+                                }
                               : p,
                           ),
                         );
                         setWpCourses((prev) =>
                           prev.map((c) =>
                             c.uri === selectedCourse
-                              ? { ...c, featuredImage: { node: { sourceUrl: url } } }
+                              ? {
+                                  ...c,
+                                  featuredImage: { node: { sourceUrl: url } },
+                                }
                               : c,
                           ),
                         );
@@ -1877,13 +2187,27 @@ export default function AdminDashboard() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-300">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-40 h-40">
-                                <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                className="w-40 h-40"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             </div>
                           )}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
                               <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
                             </svg>
                           </div>
@@ -1919,16 +2243,32 @@ export default function AdminDashboard() {
                   </div>
                   {(() => {
                     const cfg = courses[selectedCourse];
-                    const hasPriceCents = cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0;
+                    const hasPriceCents =
+                      cfg &&
+                      typeof cfg.priceCents === "number" &&
+                      cfg.priceCents > 0;
                     if (!hasPriceCents) {
                       return (
                         <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
-                            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="w-5 h-5 shrink-0 mt-0.5"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                           <div>
-                            <p className="font-semibold">{t("admin.notBuyableTitle")}</p>
-                            <p className="text-xs mt-0.5">{t("admin.notBuyableHint")}</p>
+                            <p className="font-semibold">
+                              {t("admin.notBuyableTitle")}
+                            </p>
+                            <p className="text-xs mt-0.5">
+                              {t("admin.notBuyableHint")}
+                            </p>
                           </div>
                         </div>
                       );
@@ -1952,7 +2292,9 @@ export default function AdminDashboard() {
                 <div className="flex items-start gap-4">
                   <ImageUploader
                     value={selectedShopProduct.imageUrl}
-                    onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
+                    onUploaded={(url) =>
+                      updateProduct(shopIndex, "imageUrl", url)
+                    }
                     onError={(msg) => setError(msg)}
                     renderTrigger={(openPicker) => (
                       <button
@@ -1969,13 +2311,27 @@ export default function AdminDashboard() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-40 h-40">
-                              <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              className="w-40 h-40"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+                                clipRule="evenodd"
+                              />
                             </svg>
                           </div>
                         )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
                             <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
                           </svg>
                         </div>
@@ -2008,7 +2364,8 @@ export default function AdminDashboard() {
               <div className="grid md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("admin.namePlaceholder")} <span className="text-red-500">*</span>
+                    {t("admin.namePlaceholder")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -2047,9 +2404,7 @@ export default function AdminDashboard() {
                     <option value="digital_file">
                       {t("admin.digitalFile")}
                     </option>
-                    <option value="course">
-                      {t("admin.courseProduct")}
-                    </option>
+                    <option value="course">{t("admin.courseProduct")}</option>
                   </select>
                   <p className="text-[11px] text-gray-400 mt-0.5">
                     {t("admin.productTypeHint")}
@@ -2093,8 +2448,14 @@ export default function AdminDashboard() {
                 {showImageGen && (
                   <div className="mt-2">
                     <ImageGenerationPanel
-                      description={selectedShopProduct.description || selectedShopProduct.name || ""}
-                      onSave={(url) => updateProduct(shopIndex, "imageUrl", url)}
+                      description={
+                        selectedShopProduct.description ||
+                        selectedShopProduct.name ||
+                        ""
+                      }
+                      onSave={(url) =>
+                        updateProduct(shopIndex, "imageUrl", url)
+                      }
                       context="editor"
                       uploadBackend={uploadBackend}
                     />
@@ -2122,7 +2483,9 @@ export default function AdminDashboard() {
                       title={t("admin.uploadSizeHint")}
                       disabled={!!uploadingField}
                     >
-                      {uploadingField === "fileUrl" ? t("common.loading") : t("admin.uploadFile")}
+                      {uploadingField === "fileUrl"
+                        ? t("common.loading")
+                        : t("admin.uploadFile")}
                     </button>
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5">
@@ -2137,13 +2500,26 @@ export default function AdminDashboard() {
                           ? "Cloudflare R2 (edge-signed)"
                           : "S3/Spaces (Node SDK)"}
                     </span>
-                    . {t("admin.uploadSizeHintShort", "Direct uploads up to ~95 MB; larger files use multipart automatically.")}{" "}
+                    .{" "}
+                    {t(
+                      "admin.uploadSizeHintShort",
+                      "Direct uploads up to ~95 MB; larger files use multipart automatically.",
+                    )}{" "}
                     {runtime === "edge"
-                      ? t("admin.uploadEdgeLimit", "Edge R2 path: single PUT up to 100 MB, multipart for bigger files.")
-                      : t("admin.uploadNodeLimit", "Node path: multipart upload for large files.")}
+                      ? t(
+                          "admin.uploadEdgeLimit",
+                          "Edge R2 path: single PUT up to 100 MB, multipart for bigger files.",
+                        )
+                      : t(
+                          "admin.uploadNodeLimit",
+                          "Node path: multipart upload for large files.",
+                        )}
                   </p>
                   <p className="text-[11px] text-gray-500">
-                    {t("admin.uploadAltLarge", "For very large files (e.g. >2 GB), upload via an S3/R2 client like WinSCP or Cyberduck to your bucket and paste the public URL here.")}
+                    {t(
+                      "admin.uploadAltLarge",
+                      "For very large files (e.g. >2 GB), upload via an S3/R2 client like WinSCP or Cyberduck to your bucket and paste the public URL here.",
+                    )}
                   </p>
                 </div>
               ) : (
@@ -2172,11 +2548,10 @@ export default function AdminDashboard() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-gray-700">
-                    {t("admin.courseFee")} <span className="text-red-500">*</span>
+                    {t("admin.courseFee")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-600">
-                    {t("admin.feeHint")}
-                  </p>
+                  <p className="text-xs text-gray-600">{t("admin.feeHint")}</p>
                   <div className="flex gap-2">
                     <input
                       type="number"
@@ -2243,8 +2618,7 @@ export default function AdminDashboard() {
                         ))}
                         {allowedUsers
                           .filter(
-                            (email) =>
-                              !users.some((u) => u.email === email),
+                            (email) => !users.some((u) => u.email === email),
                           )
                           .map((email) => (
                             <label
@@ -2303,11 +2677,18 @@ export default function AdminDashboard() {
           )}
           {/* User management — reverse access view */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">{t("admin.userAccessOverview")}</h3>
+            <h3 className="text-sm font-semibold text-gray-700">
+              {t("admin.userAccessOverview")}
+            </h3>
             <p className="text-xs text-gray-500">
               {t("admin.userAccessOverviewDesc")}
             </p>
-            <UserAccessPanel users={users} courses={courses} allWpContent={allWpContent} products={products} />
+            <UserAccessPanel
+              users={users}
+              courses={courses}
+              allWpContent={allWpContent}
+              products={products}
+            />
           </div>
         </div>
       )}
@@ -2317,15 +2698,29 @@ export default function AdminDashboard() {
         <div className="border rounded p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold">{t("admin.supportTickets")}</h2>
-              <p className="text-sm text-gray-500 mt-1">{t("admin.supportIntro")}</p>
+              <h2 className="text-2xl font-semibold">
+                {t("admin.supportTickets")}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {t("admin.supportIntro")}
+              </p>
             </div>
             <div className="text-xs text-gray-500 bg-gray-50 border rounded px-3 py-2">
-              <div className="font-semibold text-gray-700 mb-1">{t("admin.storageBackend")}</div>
+              <div className="font-semibold text-gray-700 mb-1">
+                {t("admin.storageBackend")}
+              </div>
               {process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME ? (
-                <div>R2 bucket ({(process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME).slice(0, 24)}…)</div>
+                <div>
+                  R2 bucket (
+                  {(
+                    process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME
+                  ).slice(0, 24)}
+                  …)
+                </div>
               ) : process.env.CF_KV_NAMESPACE_ID ? (
-                <div>Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)</div>
+                <div>
+                  Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)
+                </div>
               ) : (
                 <div className="text-red-700">No R2/KV configured</div>
               )}
@@ -2336,12 +2731,22 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               <div className="border rounded p-3 space-y-2 bg-gray-50">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-700">Tickets</h3>
-                  {ticketsLoading && <span className="text-[11px] text-gray-500">{t("common.loading")}</span>}
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Tickets
+                  </h3>
+                  {ticketsLoading && (
+                    <span className="text-[11px] text-gray-500">
+                      {t("common.loading")}
+                    </span>
+                  )}
                 </div>
-                {ticketsError && <p className="text-xs text-red-600">{ticketsError}</p>}
+                {ticketsError && (
+                  <p className="text-xs text-red-600">{ticketsError}</p>
+                )}
                 {tickets.length === 0 && !ticketsLoading ? (
-                  <p className="text-xs text-gray-500">{t("admin.noTickets")}</p>
+                  <p className="text-xs text-gray-500">
+                    {t("admin.noTickets")}
+                  </p>
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-auto pr-1">
                     {tickets.map((ticket) => (
@@ -2356,7 +2761,9 @@ export default function AdminDashboard() {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium text-gray-800 truncate">{ticket.title}</span>
+                          <span className="font-medium text-gray-800 truncate">
+                            {ticket.title}
+                          </span>
                           <span
                             className={`text-[11px] px-2 py-0.5 rounded-full capitalize ${
                               ticket.priority === "critical"
@@ -2393,7 +2800,11 @@ export default function AdminDashboard() {
                                   : "admin.statusOpen",
                             )}
                           </span>
-                          <span>{new Date(ticket.updatedAt || ticket.createdAt).toLocaleString("sv-SE")}</span>
+                          <span>
+                            {new Date(
+                              ticket.updatedAt || ticket.createdAt,
+                            ).toLocaleString("sv-SE")}
+                          </span>
                         </div>
                       </button>
                     ))}
@@ -2402,37 +2813,66 @@ export default function AdminDashboard() {
               </div>
 
               <div className="border rounded p-3 space-y-2">
-                <h3 className="text-sm font-semibold text-gray-700">{t("admin.newTicket")}</h3>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  {t("admin.newTicket")}
+                </h3>
                 <input
                   type="text"
                   className="w-full border rounded px-3 py-2 text-sm"
                   placeholder={t("admin.ticketTitle")}
                   value={newTicket.title}
-                  onChange={(e) => setNewTicket((prev) => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) =>
+                    setNewTicket((prev) => ({ ...prev, title: e.target.value }))
+                  }
                 />
                 <textarea
                   className="w-full border rounded px-3 py-2 text-sm min-h-[100px]"
                   placeholder={t("admin.ticketDescription")}
                   value={newTicket.description}
-                  onChange={(e) => setNewTicket((prev) => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setNewTicket((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                 />
                 <div className="flex items-center gap-2 text-sm">
-                  <label className="text-gray-600">{t("admin.priority")}:</label>
+                  <label className="text-gray-600">
+                    {t("admin.priority")}:
+                  </label>
                   <select
                     value={newTicket.priority}
-                    onChange={(e) => setNewTicket((prev) => ({ ...prev, priority: e.target.value }))}
+                    onChange={(e) =>
+                      setNewTicket((prev) => ({
+                        ...prev,
+                        priority: e.target.value,
+                      }))
+                    }
                     className="border rounded px-2 py-1 text-sm"
                   >
-                    <option value="critical">{t("admin.priorityCritical")}</option>
-                    <option value="moderate">{t("admin.priorityModerate")}</option>
+                    <option value="critical">
+                      {t("admin.priorityCritical")}
+                    </option>
+                    <option value="moderate">
+                      {t("admin.priorityModerate")}
+                    </option>
                     <option value="low">{t("admin.priorityLow")}</option>
                   </select>
                 </div>
-                {(process.env.NEXT_PUBLIC_BUILD_TIME || process.env.NEXT_PUBLIC_GIT_SHA) && (
+                {(process.env.NEXT_PUBLIC_BUILD_TIME ||
+                  process.env.NEXT_PUBLIC_GIT_SHA) && (
                   <div className="text-xs text-gray-400 bg-gray-50 rounded px-2 py-1">
-                    <span className="font-medium text-gray-500">{t("admin.buildInfo")}:</span>{" "}
-                    {process.env.NEXT_PUBLIC_BUILD_TIME ? new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString("sv-SE") : ""}
-                    {process.env.NEXT_PUBLIC_GIT_SHA ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})` : ""}
+                    <span className="font-medium text-gray-500">
+                      {t("admin.buildInfo")}:
+                    </span>{" "}
+                    {process.env.NEXT_PUBLIC_BUILD_TIME
+                      ? new Date(
+                          process.env.NEXT_PUBLIC_BUILD_TIME,
+                        ).toLocaleString("sv-SE")
+                      : ""}
+                    {process.env.NEXT_PUBLIC_GIT_SHA
+                      ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})`
+                      : ""}
                   </div>
                 )}
                 <button
@@ -2450,43 +2890,76 @@ export default function AdminDashboard() {
                 <>
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{selectedTicket.title}</h3>
-                      <p className="text-xs text-gray-500">{new Date(selectedTicket.createdAt).toLocaleString("sv-SE")}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {selectedTicket.title}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {new Date(selectedTicket.createdAt).toLocaleString(
+                          "sv-SE",
+                        )}
+                      </p>
                     </div>
                     <select
                       className="border rounded px-2 py-1 text-sm"
                       value={selectedTicket.status}
-                      onChange={(e) => updateSupportTicket({ status: e.target.value })}
+                      onChange={(e) =>
+                        updateSupportTicket({ status: e.target.value })
+                      }
                     >
                       <option value="open">{t("admin.statusOpen")}</option>
-                      <option value="will-fix">{t("admin.statusWillFix")}</option>
-                      <option value="resolved">{t("admin.statusResolved")}</option>
+                      <option value="will-fix">
+                        {t("admin.statusWillFix")}
+                      </option>
+                      <option value="resolved">
+                        {t("admin.statusResolved")}
+                      </option>
                     </select>
                   </div>
                   {selectedTicket.description && (
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedTicket.description}</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {selectedTicket.description}
+                    </p>
                   )}
                   {(selectedTicket.buildTime || selectedTicket.gitSha) && (
                     <p className="text-xs text-gray-400">
-                      <span className="font-medium text-gray-500">{t("admin.buildInfo")}:</span>{" "}
-                      {selectedTicket.buildTime ? new Date(selectedTicket.buildTime).toLocaleString("sv-SE") : ""}
-                      {selectedTicket.gitSha ? ` (${selectedTicket.gitSha.slice(0, 7)})` : ""}
+                      <span className="font-medium text-gray-500">
+                        {t("admin.buildInfo")}:
+                      </span>{" "}
+                      {selectedTicket.buildTime
+                        ? new Date(selectedTicket.buildTime).toLocaleString(
+                            "sv-SE",
+                          )
+                        : ""}
+                      {selectedTicket.gitSha
+                        ? ` (${selectedTicket.gitSha.slice(0, 7)})`
+                        : ""}
                     </p>
                   )}
 
                   <div className="space-y-2">
-                    <h4 className="text-sm font-semibold text-gray-700">{t("admin.comments")}</h4>
+                    <h4 className="text-sm font-semibold text-gray-700">
+                      {t("admin.comments")}
+                    </h4>
                     <div className="space-y-2 max-h-48 overflow-auto pr-1">
                       {(selectedTicket.comments || []).length === 0 ? (
-                        <p className="text-xs text-gray-500">{t("admin.noComments")}</p>
+                        <p className="text-xs text-gray-500">
+                          {t("admin.noComments")}
+                        </p>
                       ) : (
                         selectedTicket.comments.map((c) => (
-                          <div key={c.id} className="border rounded px-3 py-2 bg-gray-50 text-sm">
+                          <div
+                            key={c.id}
+                            className="border rounded px-3 py-2 bg-gray-50 text-sm"
+                          >
                             <div className="flex items-center justify-between text-[11px] text-gray-500">
                               <span>{c.author || "admin"}</span>
-                              <span>{new Date(c.createdAt).toLocaleString("sv-SE")}</span>
+                              <span>
+                                {new Date(c.createdAt).toLocaleString("sv-SE")}
+                              </span>
                             </div>
-                            <p className="text-gray-800 text-sm whitespace-pre-wrap mt-1">{c.text}</p>
+                            <p className="text-gray-800 text-sm whitespace-pre-wrap mt-1">
+                              {c.text}
+                            </p>
                           </div>
                         ))
                       )}
@@ -2501,7 +2974,9 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => updateSupportTicket({ comment: commentText })}
+                          onClick={() =>
+                            updateSupportTicket({ comment: commentText })
+                          }
                           className="px-4 py-2 rounded bg-purple-700 text-white hover:bg-purple-800 text-sm disabled:opacity-50"
                           disabled={!commentText.trim()}
                         >
@@ -2519,7 +2994,9 @@ export default function AdminDashboard() {
 
           <div className="border rounded p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-800">{t("admin.payments")}</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                {t("admin.payments")}
+              </h3>
               <div className="flex items-center gap-2">
                 <input
                   type="email"
@@ -2534,7 +3011,9 @@ export default function AdminDashboard() {
                   className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50 disabled:opacity-50"
                   disabled={paymentsLoading}
                 >
-                  {paymentsLoading ? t("admin.running") : t("admin.paymentsReload")}
+                  {paymentsLoading
+                    ? t("admin.running")
+                    : t("admin.paymentsReload")}
                 </button>
               </div>
             </div>
@@ -2555,8 +3034,13 @@ export default function AdminDashboard() {
                   <tbody className="divide-y">
                     {payments.map((p) => (
                       <tr key={p.id} className="hover:bg-gray-50">
-                        <td className="px-3 py-2">{new Date(p.created).toLocaleString("sv-SE")}</td>
-                        <td className="px-3 py-2">{(p.amount / 100).toFixed(2)} {p.currency?.toUpperCase()}</td>
+                        <td className="px-3 py-2">
+                          {new Date(p.created).toLocaleString("sv-SE")}
+                        </td>
+                        <td className="px-3 py-2">
+                          {(p.amount / 100).toFixed(2)}{" "}
+                          {p.currency?.toUpperCase()}
+                        </td>
                         <td className="px-3 py-2 capitalize">{p.status}</td>
                         <td className="px-3 py-2">{p.email || "—"}</td>
                         <td className="px-3 py-2">
@@ -2567,9 +3051,13 @@ export default function AdminDashboard() {
                               className="text-purple-700 underline text-left"
                               disabled={downloading === p.id}
                             >
-                              {downloading === p.id ? "Downloading…" : "Download"}
+                              {downloading === p.id
+                                ? "Downloading…"
+                                : "Download"}
                             </button>
-                          ) : "—"}
+                          ) : (
+                            "—"
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -2585,26 +3073,40 @@ export default function AdminDashboard() {
       {activeTab === "style" && (
         <div className="border rounded p-5 space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">{t("admin.styleTitle")}</h2>
-            <p className="text-sm text-gray-500 mt-1">{t("admin.styleSummary")}</p>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              {t("admin.styleTitle")}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {t("admin.styleSummary")}
+            </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">{t("admin.styleTypography")}</div>
-              <p className="text-sm text-gray-600">{t("admin.styleTypographyDetail")}</p>
+              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+                {t("admin.styleTypography")}
+              </div>
+              <p className="text-sm text-gray-600">
+                {t("admin.styleTypographyDetail")}
+              </p>
             </div>
             <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">{t("admin.styleColors")}</div>
-              <p className="text-sm text-gray-600">{t("admin.styleColorsDetail")}</p>
+              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+                {t("admin.styleColors")}
+              </div>
+              <p className="text-sm text-gray-600">
+                {t("admin.styleColorsDetail")}
+              </p>
             </div>
             <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">{t("admin.styleButtons")}</div>
-              <p className="text-sm text-gray-600">{t("admin.styleButtonsDetail")}</p>
+              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+                {t("admin.styleButtons")}
+              </div>
+              <p className="text-sm text-gray-600">
+                {t("admin.styleButtonsDetail")}
+              </p>
             </div>
           </div>
-          <p className="text-xs text-gray-500">
-            {t("admin.styleNote")}
-          </p>
+          <p className="text-xs text-gray-500">{t("admin.styleNote")}</p>
         </div>
       )}
 
@@ -2612,7 +3114,9 @@ export default function AdminDashboard() {
       {activeTab === "advanced" && (
         <div className="border rounded p-5 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">{t("admin.advancedSettings")}</h2>
+            <h2 className="text-xl font-semibold">
+              {t("admin.advancedSettings")}
+            </h2>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -2647,7 +3151,10 @@ export default function AdminDashboard() {
           )}
           {gitRevision && (
             <p className="text-xs text-gray-500">
-              Revision: <code className="bg-gray-100 px-1 rounded">{gitRevision.slice(0, 12)}</code>
+              Revision:{" "}
+              <code className="bg-gray-100 px-1 rounded">
+                {gitRevision.slice(0, 12)}
+              </code>
             </p>
           )}
           {lastDeployAt && (
@@ -2658,10 +3165,16 @@ export default function AdminDashboard() {
 
           {/* Storage configuration */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">{t("admin.storageBackend")}</h3>
+            <h3 className="text-sm font-semibold text-gray-700">
+              {t("admin.storageBackend")}
+            </h3>
             <p className="text-xs text-gray-500">
-              Controls where course access rules, pricing, and user permissions are stored.
-              Set the <code className="bg-gray-100 px-1 rounded">COURSE_ACCESS_BACKEND</code> environment variable to change.
+              Controls where course access rules, pricing, and user permissions
+              are stored. Set the{" "}
+              <code className="bg-gray-100 px-1 rounded">
+                COURSE_ACCESS_BACKEND
+              </code>{" "}
+              environment variable to change.
             </p>
             <div className="grid gap-3 md:grid-cols-3">
               {[
@@ -2693,7 +3206,9 @@ export default function AdminDashboard() {
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${opt.active ? "bg-green-600" : "bg-gray-300"}`} />
+                    <span
+                      className={`w-2 h-2 rounded-full ${opt.active ? "bg-green-600" : "bg-gray-300"}`}
+                    />
                     <span className="font-medium text-sm">{opt.name}</span>
                   </div>
                   <p className="text-xs text-gray-500">{opt.desc}</p>
@@ -2709,9 +3224,12 @@ export default function AdminDashboard() {
 
           {/* Upload destination */}
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">Upload destination</h3>
+            <h3 className="text-sm font-semibold text-gray-700">
+              Upload destination
+            </h3>
             <p className="text-xs text-gray-500">
-              Choose where product files/images are stored. WordPress Media Library works without extra setup. S3/R2 requires credentials.
+              Choose where product files/images are stored. WordPress Media
+              Library works without extra setup. S3/R2 requires credentials.
             </p>
             <div className="flex flex-wrap gap-2">
               {[
@@ -2736,7 +3254,9 @@ export default function AdminDashboard() {
             </div>
             {!uploadInfo?.s3 && !uploadInfo?.r2 && (
               <p className="text-[11px] text-gray-500">
-                Configure S3/R2 credentials to enable direct uploads (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME, S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
+                Configure S3/R2 credentials to enable direct uploads
+                (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME,
+                S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
               </p>
             )}
             {uploadBackend !== "wordpress" && uploadInfoDetails && (
@@ -2750,37 +3270,49 @@ export default function AdminDashboard() {
                 <p className="text-gray-600">{t("admin.uploadClientHint")}</p>
                 <div className="grid sm:grid-cols-2 gap-2">
                   <div>
-                    <div className="text-[11px] text-gray-500">{t("admin.clientHost")}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {t("admin.clientHost")}
+                    </div>
                     <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                       {uploadInfoDetails.endpoint || t("common.noDetails")}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-500">{t("admin.clientBucket")}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {t("admin.clientBucket")}
+                    </div>
                     <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                       {uploadInfoDetails.bucket || t("common.noDetails")}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-500">{t("admin.clientAccessKey")}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {t("admin.clientAccessKey")}
+                    </div>
                     <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                       {uploadInfoDetails.accessKeyId || t("common.noDetails")}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-500">{t("admin.clientRegion")}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {t("admin.clientRegion")}
+                    </div>
                     <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                       {uploadInfoDetails.region || "auto"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-500">{t("admin.clientPublicUrl")}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {t("admin.clientPublicUrl")}
+                    </div>
                     <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                       {uploadInfoDetails.publicUrl || t("common.noDetails")}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-500">{t("admin.clientNote")}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {t("admin.clientNote")}
+                    </div>
                     <div className="text-[12px] bg-white border rounded px-2 py-1">
                       {t("admin.clientSecretNotShown")}
                     </div>
@@ -2795,7 +3327,9 @@ export default function AdminDashboard() {
 
           {/* Environment info */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">{t("admin.environment")}</h3>
+            <h3 className="text-sm font-semibold text-gray-700">
+              {t("admin.environment")}
+            </h3>
             <div className="grid md:grid-cols-2 gap-3 text-xs">
               <div className="bg-gray-50 rounded p-3 space-y-1">
                 <div className="font-medium text-gray-700">WordPress</div>
@@ -2806,7 +3340,9 @@ export default function AdminDashboard() {
               <div className="bg-gray-50 rounded p-3 space-y-1">
                 <div className="font-medium text-gray-700">Stripe mode</div>
                 <div className="text-gray-500">
-                  {process.env.NEXT_PUBLIC_STRIPE_MODE === "live" ? "Live" : "Test"}
+                  {process.env.NEXT_PUBLIC_STRIPE_MODE === "live"
+                    ? "Live"
+                    : "Test"}
                 </div>
               </div>
               <div className="bg-gray-50 rounded p-3 space-y-1">
@@ -2831,17 +3367,22 @@ export default function AdminDashboard() {
                 <div className="font-medium text-gray-700">Analytics</div>
                 <div className="text-gray-500">
                   {analyticsMode === "zone" ? (
-                    <span className="text-green-700">Zone analytics (full) &mdash; CF_ZONE_ID set</span>
+                    <span className="text-green-700">
+                      Zone analytics (full) &mdash; CF_ZONE_ID set
+                    </span>
                   ) : analyticsMode === "workers" ? (
-                    <span className="text-amber-700">Workers analytics (basic) &mdash; no CF_ZONE_ID</span>
+                    <span className="text-amber-700">
+                      Workers analytics (basic) &mdash; no CF_ZONE_ID
+                    </span>
                   ) : (
                     <span>Not configured &mdash; set CF_API_TOKEN</span>
                   )}
                 </div>
                 {analyticsMode === "workers" && (
                   <p className="text-[10px] text-gray-400 mt-1">
-                    Add a custom domain (e.g. xtas.nu) to Cloudflare, route your Worker through it,
-                    and set CF_ZONE_ID to unlock referrers, page views, unique visitors, and bandwidth.
+                    Add a custom domain (e.g. xtas.nu) to Cloudflare, route your
+                    Worker through it, and set CF_ZONE_ID to unlock referrers,
+                    page views, unique visitors, and bandwidth.
                   </p>
                 )}
               </div>
@@ -2851,14 +3392,18 @@ export default function AdminDashboard() {
           {/* Recent commits */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-700">{t("admin.recentCommits")}</h3>
+              <h3 className="text-sm font-semibold text-gray-700">
+                {t("admin.recentCommits")}
+              </h3>
               {commits && (
                 <button
                   type="button"
                   onClick={() => setCommitsExpanded(!commitsExpanded)}
                   className="text-xs text-gray-500 hover:text-gray-700 underline"
                 >
-                  {commitsExpanded ? t("admin.commitsCompact") : t("admin.commitsFullMessages")}
+                  {commitsExpanded
+                    ? t("admin.commitsCompact")
+                    : t("admin.commitsFullMessages")}
                 </button>
               )}
             </div>
@@ -2872,11 +3417,21 @@ export default function AdminDashboard() {
                     {commits.map((c) => (
                       <div key={c.sha}>
                         <div className="flex gap-2 items-baseline">
-                          <span className="text-yellow-400 shrink-0">{c.sha}</span>
-                          <span className="text-gray-400 text-[10px] shrink-0">{c.date ? new Date(c.date).toLocaleDateString() : ""}</span>
-                          <span className="text-gray-500 text-[10px] truncate">{c.author}</span>
+                          <span className="text-yellow-400 shrink-0">
+                            {c.sha}
+                          </span>
+                          <span className="text-gray-400 text-[10px] shrink-0">
+                            {c.date
+                              ? new Date(c.date).toLocaleDateString()
+                              : ""}
+                          </span>
+                          <span className="text-gray-500 text-[10px] truncate">
+                            {c.author}
+                          </span>
                         </div>
-                        <pre className="whitespace-pre-wrap text-gray-200 mt-1 pl-[4.5rem] leading-relaxed">{c.fullMessage || c.message}</pre>
+                        <pre className="whitespace-pre-wrap text-gray-200 mt-1 pl-[4.5rem] leading-relaxed">
+                          {c.fullMessage || c.message}
+                        </pre>
                       </div>
                     ))}
                   </div>
@@ -2884,7 +3439,9 @@ export default function AdminDashboard() {
                   <div className="space-y-0.5">
                     {commits.map((c) => (
                       <div key={c.sha} className="flex gap-2">
-                        <span className="text-yellow-400 shrink-0">{c.sha}</span>
+                        <span className="text-yellow-400 shrink-0">
+                          {c.sha}
+                        </span>
                         <span className="truncate">{c.message}</span>
                       </div>
                     ))}
@@ -2892,12 +3449,17 @@ export default function AdminDashboard() {
                 )}
               </div>
             ) : !commitsError ? (
-              <p className="text-xs text-gray-400">{t("admin.commitsLoading")}</p>
+              <p className="text-xs text-gray-400">
+                {t("admin.commitsLoading")}
+              </p>
             ) : null}
           </div>
 
           {/* ── Debug log panel ── */}
-          <DebugLogPanel clientLogs={clientLogs} setClientLogs={setClientLogs} />
+          <DebugLogPanel
+            clientLogs={clientLogs}
+            setClientLogs={setClientLogs}
+          />
         </div>
       )}
 
@@ -2908,6 +3470,7 @@ export default function AdminDashboard() {
           chatInput={chatInput}
           setChatInput={setChatInput}
           sendChat={sendChat}
+          clearChat={clearChat}
           chatLoading={chatLoading}
           uploadBackend={uploadBackend}
         />
@@ -2916,7 +3479,10 @@ export default function AdminDashboard() {
       {uploadProgress && (
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-gray-600">
-            <span>Uploading part {uploadProgress.currentPart} / {uploadProgress.totalParts}</span>
+            <span>
+              Uploading part {uploadProgress.currentPart} /{" "}
+              {uploadProgress.totalParts}
+            </span>
             <span>{uploadProgress.percent}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">

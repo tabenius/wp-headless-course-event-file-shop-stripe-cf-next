@@ -4,7 +4,15 @@ import { useRef, useEffect } from "react";
 import { t } from "@/lib/i18n";
 import ChatMessage from "./ChatMessage";
 
-export default function ChatPanel({ chatMessages, chatInput, setChatInput, sendChat, chatLoading, uploadBackend }) {
+export default function ChatPanel({
+  chatMessages,
+  chatInput,
+  setChatInput,
+  sendChat,
+  clearChat,
+  chatLoading,
+  uploadBackend,
+}) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -13,9 +21,21 @@ export default function ChatPanel({ chatMessages, chatInput, setChatInput, sendC
 
   return (
     <div className="border rounded p-4 space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
-        <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
+          <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
+        </div>
+        {chatMessages.length > 0 && (
+          <button
+            type="button"
+            onClick={clearChat}
+            disabled={chatLoading}
+            className="shrink-0 text-xs text-gray-400 hover:text-red-500 disabled:opacity-50 mt-1"
+          >
+            {t("chat.clear")}
+          </button>
+        )}
       </div>
       <div className="space-y-3 max-h-[28rem] overflow-auto border rounded p-3 bg-white">
         {chatMessages.length === 0 ? (
