@@ -85,6 +85,16 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - removed truncate-only heading behavior for selected WP/shop titles,
   - added wrapped full-title line (`break-words` / `break-all`) in the right panel headers.
 
+## 2026-03-19 (cont. 24)
+
+### Codex — image crop save robustness + edge upload compatibility
+
+- `ImageUploader` save flow now closes and resets the crop dialog immediately after successful upload response and before invoking parent `onUploaded`, preventing modal-stuck behavior when downstream handlers throw or stall.
+- Refactored `src/lib/s3upload.js` AWS SDK usage to lazy dynamic imports (`loadAwsSdk`) and async Node-only client initialization:
+  - removed static top-level `@aws-sdk/*` imports,
+  - updated Node-path functions to `await` SDK command classes at runtime.
+- Goal: avoid edge bundle/runtime pulling Node-only transitive modules (including `fs`) when handling admin image uploads on Cloudflare edge.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

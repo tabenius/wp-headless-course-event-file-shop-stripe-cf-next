@@ -284,10 +284,14 @@ export default function ImageUploader({
         emitError(msg);
         return;
       }
-      onUploaded?.(json.url);
       setShowEditor(false);
       setPreview(null);
       setFile(null);
+      try {
+        onUploaded?.(json.url);
+      } catch (error) {
+        console.error("ImageUploader onUploaded callback failed:", error);
+      }
     } catch {
       const msg = t("admin.uploadFailed");
       emitError(msg);

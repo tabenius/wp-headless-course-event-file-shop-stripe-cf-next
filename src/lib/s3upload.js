@@ -1,13 +1,3 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  CreateMultipartUploadCommand,
-  UploadPartCommand,
-  CompleteMultipartUploadCommand,
-  AbortMultipartUploadCommand,
-  ListObjectsV2Command,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { t } from "@/lib/i18n";
 import {
   signR2Put,
@@ -18,6 +8,7 @@ import {
 } from "@/lib/r2Edge";
 
 const _clients = new Map();
+let _awsSdkPromise = null;
 const isNodeRuntime =
   typeof process !== "undefined" &&
   process.versions?.node &&
@@ -25,6 +16,19 @@ const isNodeRuntime =
 const isEdgeRuntime =
   typeof EdgeRuntime !== "undefined" || process.env.NEXT_RUNTIME === "edge";
 export const EDGE_R2_MAX_BYTES = 100 * 1024 * 1024; // 100 MB cap for edge uploads
+
+async function loadAwsSdk() {
+  if (!_awsSdkPromise) {
+    _awsSdkPromise = Promise.all([
+      import("@aws-sdk/client-s3"),
+      import("@aws-sdk/s3-request-presigner"),
+    ]).then(([s3, presigner]) => ({
+      ...s3,
+      getSignedUrl: presigner.getSignedUrl,
+    }));
+  }
+  return _awsSdkPromise;
+}
 
 function resolveBackend(preferred) {
   return (preferred || process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
@@ -42,13 +46,14 @@ function resolveBackend(preferred) {
  *
  * R2-specific env vars (CF_R2_*) are supported as fallbacks for backwards compatibility.
  */
-function getS3Client(backend = resolveBackend()) {
+async function getS3Client(backend = resolveBackend()) {
   if (!isNodeRuntime) {
     throw new Error(
       "S3/R2 uploads via AWS SDK are not available in edge runtime; use WordPress backend or the edge R2 path.",
     );
   }
   if (_clients.has(backend)) return _clients.get(backend);
+  const { S3Client } = await loadAwsSdk();
   const accessKeyId =
     process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
   const secretAccessKey =
@@ -194,7 +199,8 @@ export async function uploadToS3(
     return uploadToR2Edge(buffer, fileName, contentType);
   }
   assertNodeS3Support(backend);
-  const client = getS3Client(backend);
+  const { PutObjectCommand } = await loadAwsSdk();
+  const client = await getS3Client(backend);
   const bucket = getBucket();
   const publicUrl = getPublicUrl();
 
@@ -228,7 +234,8 @@ export async function createPresignedUpload(
       "Presigned browser uploads to R2 are not supported on edge runtime. Use direct upload path.",
     );
   }
-  const client = getS3Client(backend);
+  const { PutObjectCommand, getSignedUrl } = await loadAwsSdk();
+  const client = await getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
 
@@ -296,7 +303,8 @@ export async function createMultipartUpload(
     if (!uploadId) throw new Error("R2 multipart create failed (no uploadId)");
     return { uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
   }
-  const client = getS3Client(backend);
+  const { CreateMultipartUploadCommand } = await loadAwsSdk();
+  const client = await getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
   const key = `uploads/${Date.now()}-${fileName}`;
@@ -350,7 +358,8 @@ export async function signMultipartParts(
     }
     return signed;
   }
-  const client = getS3Client(backend);
+  const { UploadPartCommand, getSignedUrl } = await loadAwsSdk();
+  const client = await getS3Client(backend);
   const bucket = getBucket();
 
   const signed = await Promise.all(
@@ -432,7 +441,8 @@ export async function completeMultipartUpload(
     }
     return `${publicBaseUrl}/${key}`;
   }
-  const client = getS3Client(backend);
+  const { CompleteMultipartUploadCommand } = await loadAwsSdk();
+  const client = await getS3Client(backend);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
 
@@ -486,7 +496,8 @@ export async function abortMultipartUpload(
     await fetch(url, { method: "DELETE", headers: signedHeaders });
     return;
   }
-  const client = getS3Client(backend);
+  const { AbortMultipartUploadCommand } = await loadAwsSdk();
+  const client = await getS3Client(backend);
   const bucket = getBucket();
 
   await client.send(
@@ -544,7 +555,8 @@ export async function listBucketObjects({
     throw new Error("Bucket listing is not available for the WordPress backend.");
   }
   assertNodeS3Support(backendToUse);
-  const client = getS3Client(backendToUse);
+  const { ListObjectsV2Command } = await loadAwsSdk();
+  const client = await getS3Client(backendToUse);
   const bucket = getBucket();
   const publicBaseUrl = getPublicUrl();
   const clampedLimit = Math.min(Math.max(Number(limit) || 0, 1), 100);
