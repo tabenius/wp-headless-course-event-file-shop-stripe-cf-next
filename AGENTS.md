@@ -82,6 +82,17 @@ But here are natural areas of focus:
 | `packages/ragbaz-articulate-plugin/` | WordPress plugin — independent; build with `npm run plugin:copy` |
 | `tests/` | `node:test` tests — run with `npm test` |
 
+### 🔒 Codex: leave these files alone for now (Claude has active plans for them)
+
+Do **not** touch the following until this notice is removed. Claude is planning improvements here and concurrent edits will cause conflicts:
+
+- `src/components/admin/ImageGenerationPanel.js`
+- `src/app/api/admin/generate-image/route.js`
+- `src/app/api/chat/route.js`
+- `src/lib/ai.js`
+- `src/lib/imageQuota.js`
+- `tests/generate-image.test.js`
+
 ---
 
 ## Coordination protocol
@@ -173,6 +184,38 @@ The default export is still the React component; it uses these helpers internall
 - `AdminStatsTab` renders identically to before (no visual change).
 - Commit message: `refactor: extract StatsChart component from AdminStatsTab`.
 - Append a bullet to `claude+codex-coop.md` and mark this priority done in `AGENTS.md`.
+
+---
+
+### [Claude] Upcoming: image generator polish + chat bug fixes
+
+Planned work on the image generator and chat — **Codex must not touch the locked files above while this is open.**
+
+#### Image generator (`ImageGenerationPanel.js`, `generate-image/route.js`)
+
+**A. Fix thumbnail aspect ratios** — images currently render at `160×160` regardless of preset. Display dimensions should match the preset's actual ratio:
+- square → 160×160
+- landscape (896×512) → 160×92
+- portrait (512×768) → 107×160
+- a6-150dpi (624×880) → 113×160
+
+Read `SIZE_PRESETS` from `src/lib/imageQuota.js` and compute display dimensions proportionally (scale so the longer side = 160px).
+
+**B. Add a "Copy prompt" button** — after the prompt textarea, a small "Copy" button that writes `prompt` to `navigator.clipboard`. Show a brief "Copied!" confirmation inline (no toast needed).
+
+**C. Add count = 1 option** — extend the count toggle buttons from `[2, 3]` to `[1, 2, 3]`.
+
+**D. Elapsed-time counter during generation** — while `generating === true`, show a `Xsec…` counter next to the spinner using `setInterval` / `useEffect`. Clears when generation finishes.
+
+Each item is a separate small commit. Tests in `tests/generate-image.test.js` should cover any new pure-function logic (aspect ratio math, etc.).
+
+#### Chat (`/api/chat/route.js`)
+
+**A. Fix payments intent bug (latent crash)** — `route.js:187` uses `rows` which is never defined in the payments block. It should be `json.charges` (or whatever the actual field from `/api/admin/payments`). Check the payments route response shape first: `src/app/api/admin/payments/route.js`.
+
+**B. Deduplicate `imageSystemPrompt`** — the FLUX prompt instruction is copy-pasted at lines 103-105 and 200-202. Extract to a `const IMAGE_SYSTEM_PROMPT` at the top of the file.
+
+**C. Cap conversation history** — `body.history` is forwarded with no limit. Slice to the last 10 messages before passing to `chatWithContext`: `history.slice(-10)`.
 
 ---
 
