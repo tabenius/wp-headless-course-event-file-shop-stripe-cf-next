@@ -10,7 +10,7 @@ graph TB
         RC["React 19<br/>Server + Client Components"]
     end
 
-    subgraph "Next.js 15 på Cloudflare Workers"
+    subgraph "Next.js 16 på Cloudflare Workers"
         AR["App Router"]
         MW["Middleware<br/><i>Autentisering, omdirigeringar</i>"]
         SSR["Server-Side Rendering"]
@@ -66,7 +66,7 @@ WordPress är utmärkt för att skapa innehåll men begränsat när det gäller 
 | Plugin                                                                                                                                    | Syfte                                                                                                                                                                                  | Detektion                                                                                                                                                                  |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [LearnPress](https://wordpress.org/plugins/learnpress/)                                                                                   | Kurshanteringssystem (LMS) — skapa kurser med lektioner, quiz och kursplaner.                                                                                                          | Autodetekteras via GraphQL-inspektion                                                                                                                                      |
-| RAGBAZ-Articulate mu-plugin                                                                                                               | GraphQL-lim för LearnPress (kurser/lektioner + price/duration/curriculum) och generiska event (Event Organiser / The Events Calendar / Events Manager) utan att bunt­a tredjepartskod. | Autodetekteras. Kopiera `packages/ragbaz-articulate-plugin/RAGBAZ-Articulate.php` till `wp-content/mu-plugins/` (ta bort äldre Articulate-LearnPress-Stripe om den finns). |
+| RAGBAZ-Articulate plugin                                                                                                                  | GraphQL-lim för LearnPress (kurser/lektioner + price/duration/curriculum) och generiska event (Event Organiser / The Events Calendar / Events Manager) utan att bunta tredjepartskod. | Autodetekteras. Installera via WordPress Plugins (ladda upp ZIP från `public/downloads/ragbaz-articulate/Ragbaz-Articulate.zip`) och aktivera.                          |
 | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks)                                                         | Ger strukturerad blockdata från Gutenberg istället för rå HTML, vilket möjliggör exakt rendering.                                                                                      | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`                                                                                                                                    |
 | Event CPT-plugin                                                                                                                          | Valfritt plugin som registrerar en `Event`-posttyp i WPGraphQL (t.ex. The Events Calendar + WPGraphQL-tillägg).                                                                        | Autodetekteras via GraphQL-inspektion                                                                                                                                      |
 | [WebP Express](https://wordpress.org/plugins/webp-express/) eller [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Konverterar bilder till moderna format (WebP/AVIF) för snabbare sidladdningar.                                                                                                         | Alltid aktiv när det är installerat                                                                                                                                        |
@@ -114,17 +114,18 @@ sequenceDiagram
     B->>D: Laddar ner fil / öppnar kurs
 ```
 
-### Adminflöde
+### Adminflöde (rekommenderad ordning)
 
-```mermaid
-flowchart LR
-    A["/admin/login"] --> B["Admin Dashboard"]
-    B --> C["Hälsokontroll<br/><i>WordPress, Stripe,<br/>KV-status</i>"]
-    B --> D["Shop-produkter<br/><i>Lägg till/redigera,<br/>ladda upp filer</i>"]
-    B --> E["Kursåtkomst<br/><i>Sätt priser,<br/>hantera användare</i>"]
-    B --> F["Butikssynlighet<br/><i>Välj produkttyper</i>"]
-    B --> G["Analys<br/><i>Besöksstatistik</i>"]
-```
+1. **Welcome**: öppna kontrollrummet och snabbkorten.
+2. **Health**: verifiera WordPress, Stripe och lagring först.
+3. **Storage**: kontrollera uppladdningsbackend och autentisering.
+4. **Products**: sätt pris/moms/åtkomst/synlighet för alla källor.
+5. **Sales**: verifiera betalningar och kvitton.
+6. **Support + Chat**: felsök med dead-link-scan och AI-assistent.
+
+![Admin welcome och kontrollrum](/docs/admin/welcome-control-room.svg)
+![Produkter och lagringspaneler](/docs/admin/products-storage.svg)
+![Support, betalningar och chatt](/docs/admin/support-chat.svg)
 
 ## WordPress GraphQL-autentisering
 
@@ -168,10 +169,10 @@ När `LpCourse`-typen detekteras:
 
 - `/courses` listar alla kurser med pris, varaktighet och utvald bild
 - Enskilda kurssidor använder catch-all-routen med full auth/paywall
-- Mu-pluginet exponerar: `price` (rått), `priceRendered` (formaterat), `duration` och `curriculum`
+- RAGBAZ-Articulate-pluginet exponerar: `price` (rått), `priceRendered` (formaterat), `duration` och `curriculum`
 - Kursåtkomst styrs av samma `courseAccess.js`-modul som används för allt betalt innehåll
 
-Installation: kopiera `docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.php` till `wp-content/mu-plugins/` i din WordPress-installation. Se [detaljerad guide](wordpress-learnpress-course-access.md).
+Installation: installera och aktivera WordPress-pluginet `Ragbaz-Articulate`, och verifiera GraphQL-fälten i Admin → Health. Se [detaljerad guide](wordpress-learnpress-course-access.md).
 
 ## Lagringsbackends
 
@@ -241,7 +242,7 @@ graph TB
     AGG --> SHOP
 ```
 
-Varje källa hämtas oberoende och produkter inkluderas bara om de har pris > 0. Admins kan välja vilka typer som visas via "Butikssynlighet" i admin-UI:t.
+Varje källa hämtas oberoende och produkter inkluderas bara om de har pris > 0. Admin kan styra vilka källtyper som visas i Products-inställningarna.
 
 ## Digitala produkter
 
@@ -260,7 +261,7 @@ Produkter lagras i `config/digital-products.json` (lokal dev) eller Cloudflare K
 | `courseUri`   | sträng                            | Kursens sökväg (t.ex. `/courses/min-kurs`) för `course`-produkter                                    |
 | `active`      | boolean                           | Om produkten visas i butiken                                                                         |
 
-Produkter hanteras via admin-UI:t på `/admin` (sektionen "Shop-produkter") eller genom att redigera JSON-filen direkt.
+Produkter hanteras via admin-UI:t på `/admin` (fliken Products) eller genom att redigera JSON-filen direkt.
 
 ## Stripe-webhook
 

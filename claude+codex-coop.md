@@ -7,7 +7,7 @@ DONE [P0 | Very High]: Receipt PDF validity — Stripe receipt proxy now enforce
 DONE [P1 | High]: VAT/Moms completion across all product sources — per-item VAT override persists through admin save/API/store/WordPress backend, checkout metadata now carries VAT, and sales VAT/net use tax-inclusive math with metadata/product/category VAT precedence.
 DONE [P2 | Medium]: Welcome story data realism — replaced the mock image-generator slide with live quota + latest-run snapshot state and a read-only fallback when live API state is unavailable.
 DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a href>` extraction + internal/pseudo-external/external classification + reachability checks) and surfaced it in Support with filters and source traces.
-TODO [P3 | Medium]: Documentation UX pass — add GUI images alongside key sections, reorder docs by average-user relevance, and sync wording with current tab names/flows.
+DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key sections, reordered operator instructions for average-user relevance, and synced wording with current tab names/flows.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
 ## 2026-03-19 (cont. 11)
@@ -44,6 +44,22 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
     - pseudo-external translation path hints and source references.
 - **i18n sync**:
   - Added EN/SV/ES keys for new welcome live-state text and dead-link panel UI.
+
+## 2026-03-19 (cont. 13)
+
+### Codex — documentation refresh with GUI visuals
+
+- **User-facing docs updated**:
+  - Refreshed `README.md` admin operations section to reflect current tabs (`Welcome, Sales, Stats, Storage, Products, Support, Chat, Health, Style, Info`), added a recommended operator sequence, and removed outdated “Advanced” references.
+  - Updated technical references:
+    - `docs/README.en.md`
+    - `docs/README.sv.md`
+  - Synced wording with current plugin/runtime reality (Next.js 16 references, plugin install flow, Products tab naming).
+- **Visual documentation assets added**:
+  - `public/docs/admin/welcome-control-room.svg`
+  - `public/docs/admin/products-storage.svg`
+  - `public/docs/admin/support-chat.svg`
+  - Embedded these visuals directly next to relevant admin workflow sections in README/docs.
 
 ## 2026-03-19 (cont. 10)
 

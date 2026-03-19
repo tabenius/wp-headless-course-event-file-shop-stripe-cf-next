@@ -10,7 +10,7 @@ graph TB
         RC["React 19<br/>Server + Client Components"]
     end
 
-    subgraph "Next.js 15 on Cloudflare Workers"
+    subgraph "Next.js 16 on Cloudflare Workers"
         AR["App Router"]
         MW["Middleware<br/><i>Auth checks, redirects</i>"]
         SSR["Server-Side Rendering"]
@@ -66,7 +66,7 @@ WordPress is excellent for content creation but limited for custom application l
 | Plugin                                                                                                                                 | Purpose                                                                                                                                                                                  | Detection                                                                                                                                                            |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [LearnPress](https://wordpress.org/plugins/learnpress/)                                                                                | Learning management system (LMS) — create courses with lessons, quizzes, and curricula.                                                                                                  | Auto-detected via GraphQL introspection                                                                                                                              |
-| RAGBAZ-Articulate mu-plugin                                                                                                            | GraphQL glue for LearnPress (courses/lessons + price/duration/curriculum) and generic events (Event Organiser / The Events Calendar / Events Manager) without bundling third-party code. | Auto-detected. Copy `packages/ragbaz-articulate-plugin/RAGBAZ-Articulate.php` to `wp-content/mu-plugins/` (remove the older Articulate-LearnPress-Stripe mu-plugin). |
+| RAGBAZ-Articulate plugin                                                                                                               | GraphQL glue for LearnPress (courses/lessons + price/duration/curriculum) and generic events (Event Organiser / The Events Calendar / Events Manager) without bundling third-party code. | Auto-detected. Install from WordPress Plugins (upload ZIP from `public/downloads/ragbaz-articulate/Ragbaz-Articulate.zip`) and activate.                               |
 | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks)                                                      | Provides structured Gutenberg block data instead of raw HTML, enabling pixel-perfect rendering.                                                                                          | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`                                                                                                                              |
 | Event CPT plugin                                                                                                                       | Any plugin that registers an `Event` post type in WPGraphQL (e.g., The Events Calendar + WPGraphQL extension).                                                                           | Auto-detected via GraphQL introspection                                                                                                                              |
 | [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Converts uploaded images to modern formats (WebP/AVIF) for faster page loads.                                                                                                            | Always active once installed in WordPress                                                                                                                            |
@@ -121,17 +121,18 @@ sequenceDiagram
     V->>Detail: Download file / access course
 ```
 
-### Admin flow
+### Admin flow (recommended operator order)
 
-```mermaid
-flowchart LR
-    A["/admin/login"] --> B["Admin Dashboard"]
-    B --> C["Health Check<br/><i>WordPress, Stripe,<br/>KV status</i>"]
-    B --> D["Shop Products<br/><i>Add/edit/remove,<br/>upload files</i>"]
-    B --> E["Course Access<br/><i>Set prices,<br/>manage users</i>"]
-    B --> F["Shop Visibility<br/><i>Toggle product types</i>"]
-    B --> G["Analytics<br/><i>Visitor stats</i>"]
-```
+1. **Welcome**: open the control-room cards and jump to key tasks.
+2. **Health**: verify WordPress, Stripe, and storage first.
+3. **Storage**: confirm upload backend and credentials.
+4. **Products**: set prices/VAT/access/visibility across all sources.
+5. **Sales**: verify charges and receipt availability.
+6. **Support + Chat**: diagnose issues with dead-link scan + AI assistant.
+
+![Admin welcome and control room](/docs/admin/welcome-control-room.svg)
+![Products and storage panels](/docs/admin/products-storage.svg)
+![Support, payments and chat panels](/docs/admin/support-chat.svg)
 
 ## WordPress GraphQL Authentication
 
@@ -179,10 +180,10 @@ When the `LpCourse` type is detected:
 
 - `/courses` lists all courses with price, duration, and featured image
 - Individual course pages use the catch-all route (`src/app/[...uri]/page.js`) with full auth/paywall
-- The mu-plugin exposes: `price` (raw), `priceRendered` (formatted), `duration`, and `curriculum` (lesson list)
+- The RAGBAZ-Articulate plugin exposes: `price` (raw), `priceRendered` (formatted), `duration`, and `curriculum` (lesson list)
 - Course access is controlled by the same `courseAccess.js` module used for all paid content
 
-Setup: copy `docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.php` to `wp-content/mu-plugins/` in your WordPress installation. See [detailed setup guide](wordpress-learnpress-course-access.md).
+Setup: install and activate the `Ragbaz-Articulate` WordPress plugin, then verify the GraphQL fields in Admin → Health. See [detailed setup guide](wordpress-learnpress-course-access.md).
 
 ## Storage Backends
 
@@ -248,7 +249,7 @@ Products are stored in `config/digital-products.json` (local dev) or Cloudflare 
 | `courseUri`   | string                         | Course path (e.g., `/courses/my-course`) for `course` products                                              |
 | `active`      | boolean                        | Whether the product appears in the shop                                                                     |
 
-Products can be managed via the admin UI at `/admin` (section "Shop-produkter") or by editing the JSON file directly.
+Products can be managed via the admin UI at `/admin` (Products tab) or by editing the JSON file directly.
 
 ## Unified Shop
 
@@ -277,7 +278,7 @@ graph TB
     AGG --> SHOP
 ```
 
-Each source is fetched independently and items are only included if they have a price > 0. The admin can toggle which types appear in the shop via the "Shop Visibility" settings.
+Each source is fetched independently and items are only included if they have a price > 0. The admin can toggle source visibility and VAT/category behavior in the Products tab settings.
 
 ## Stripe Webhook Setup
 

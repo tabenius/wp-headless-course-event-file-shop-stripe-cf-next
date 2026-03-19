@@ -155,19 +155,36 @@ Write and edit your content here, just like before:
 
 Go to `https://your-site.com/admin/login` and sign in with your admin credentials.
 
-**What you can do in the admin dashboard:**
+For most stores, this order gives the fastest route to “ready to sell”:
 
-| Section             | What it does                                                                                                                   |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Statistics**      | Overview of site activity and key metrics.                                                                                     |
-| **Health Check**    | Verifies that WordPress, Stripe, and storage are all connected and working. Run this after setup or if something seems wrong.  |
-| **Shop Products**   | Add and manage digital products — set names, descriptions, prices, upload images and files. These appear in your `/shop` page. |
-| **Course Access**   | Choose which courses require payment, set prices, and grant free access to specific people.                                    |
-| **Shop Visibility** | Control which types of products appear in your shop — WordPress products, courses, events, and/or digital downloads.           |
-| **Support Tickets** | Create and track internal support notes. Tickets automatically include build info to help with debugging.                      |
-| **Advanced**        | Build info, git revision, deploy trigger, cache purge, upload backend settings, and plugin downloads.                          |
+1. **Welcome**: start from the control-room overview and quick cards.
+2. **Health**: verify WordPress, Stripe, and storage are connected.
+3. **Storage**: confirm R2/S3/WordPress upload destination and credentials.
+4. **Products**: review all product sources, set prices, VAT, and visibility.
+5. **Sales**: confirm payments/receipts are arriving.
+6. **Support + Chat**: debug issues, scan dead links, and use AI assistance.
 
-The admin header shows the current build timestamp and git commit so you always know which version is running.
+![Admin welcome and control room overview](/docs/admin/welcome-control-room.svg)
+
+**Current admin sections (up to date):**
+
+| Section       | What it does                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Welcome**   | Intro story + quick navigation cards to the most-used workflows.                                                         |
+| **Sales**     | Stripe charges, receipt downloads, and revenue status.                                                                   |
+| **Stats**     | Traffic and performance analytics.                                                                                        |
+| **Storage**   | Upload backend setup (WordPress / R2 / S3), client guidance, and object visibility.                                     |
+| **Products**  | Unified product list (WooCommerce, LearnPress, events, digital), pricing, VAT, access, images/files.                   |
+| **Support**   | Tickets, payment troubleshooting, and dead-link finder with internal/pseudo-external/external classification.           |
+| **Chat**      | AI assistant for payments, access, docs, debug context, and operations Q&A (EN/SV/ES).                                 |
+| **Health**    | Environment and integration checks.                                                                                       |
+| **Style**     | Visual style reference for UI consistency.                                                                                |
+| **Info**      | Build/runtime/environment diagnostics and operational metadata.                                                           |
+
+![Products and storage workflow](/docs/admin/products-storage.svg)
+![Support, payments and chat workflow](/docs/admin/support-chat.svg)
+
+Tip: press `Ctrl+Alt+M` to open the menu drawer anywhere in admin.
 
 ### The shop explained
 
@@ -199,7 +216,7 @@ graph LR
 | **Events**               | WordPress → Events plugin, plus prices in admin dashboard | Paid workshops or webinars                    |
 | **Digital downloads**    | Admin dashboard → Shop Products                           | PDFs, videos, templates — uploaded directly   |
 
-You can enable or disable each source in the admin dashboard under "Shop Visibility". For example, if you only sell courses and digital files, turn off WooCommerce products and events.
+You can enable or disable each source in the Products settings (visible source types). For example, if you only sell courses and digital files, turn off WooCommerce products and events.
 
 ### How payments work
 
@@ -364,7 +381,7 @@ All optional. The app detects them automatically — no configuration flags need
 | Plugin                                                                                                                                 | What it adds                                                                                                                  | How to tell it's working                                                                                                    |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | [LearnPress](https://wordpress.org/plugins/learnpress/)                                                                                | Course management (lessons, quizzes, curriculum)                                                                              | Courses appear at `/courses`                                                                                                |
-| **RAGBAZ-Articulate** (included)                                                                                                       | WPGraphQL glue for LearnPress courses and events; exposes a `ragbazInfo` probe so the storefront can auto-detect capabilities | Download from Admin → Advanced, install via Plugins → Add New → Upload. Health check shows green for LearnPress and events. |
+| **RAGBAZ-Articulate** (included)                                                                                                       | WPGraphQL glue for LearnPress courses and events; exposes a `ragbazInfo` probe so the storefront can auto-detect capabilities | Download from Admin → Info, install via Plugins → Add New → Upload. Health check shows green for LearnPress and events. |
 | [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks)                                                      | Better page rendering from the block editor                                                                                   | Pages look polished instead of plain HTML. Set `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`.                                     |
 | An Event plugin                                                                                                                        | Event pages with dates/locations                                                                                              | Events appear at `/events`                                                                                                  |
 | [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Smaller, faster images                                                                                                        | Faster page loads                                                                                                           |
@@ -426,7 +443,7 @@ graph TD
 
 | Layer        | Technology                                               |
 | ------------ | -------------------------------------------------------- |
-| Frontend     | Next.js 15 (App Router), React 19, Tailwind CSS 4        |
+| Frontend     | Next.js 16 (App Router), React 19, Tailwind CSS 4        |
 | Bundler      | Turbopack (dev), webpack (production build)              |
 | Content      | WordPress + WPGraphQL (GraphQL API)                      |
 | Payments     | Stripe Checkout + Webhooks                               |
@@ -443,7 +460,7 @@ graph TB
     end
 
     subgraph "Server (Cloudflare Workers)"
-        NX["Next.js 15 App Router"]
+        NX["Next.js 16 App Router"]
         AUTH["Auth Module<br/><i>HMAC sessions, OAuth</i>"]
         API["API Routes<br/><i>/api/stripe, /api/auth,<br/>/api/admin, /api/digital</i>"]
         GQL["GraphQL Client<br/><i>Caching + introspection</i>"]
