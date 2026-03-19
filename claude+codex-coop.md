@@ -11,6 +11,18 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 65)
+
+### Codex — sun/moon hover/focus visual cleanup
+
+- Updated the theme-toggle button in `AdminHeader` so hover only affects icon foreground color:
+  - removed any potential hover/active background treatment via explicit `bg-transparent hover:bg-transparent active:bg-transparent`.
+- Removed active/focus frame visuals for both sun and moon states:
+  - disabled focus ring and visible outline (`focus:ring-0`, `focus-visible:ring-0`, `focus:outline-none`, `focus-visible:outline-none`),
+  - removed border/shadow framing (`border-0`, `shadow-none`, `rounded-none`, `appearance-none`).
+- Result: no dark hover background and no active frame, while preserving icon color hover swap.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 64)
 
 ### Codex — torus renderer restored + Sierpinski forest background

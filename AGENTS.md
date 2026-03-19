@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Updated header sun/moon theme-toggle interaction to color-only hover feedback (no background darkening) and removed active/focus framing/rings from the toggle control.
 - **2026-03-19 (Codex)**: Replaced the foliage background with high-contrast Sierpinski fractal tree groups (layered/parallax SVGs), switched geometry renderer back to torus using depth-sorted quads with backface culling, and reduced the canvas vertical footprint to roughly half height.
 - **2026-03-19 (Codex)**: Rebalanced foliage visuals by reducing generated density (`plantCount`/`iterations`), increasing branch/leaf stroke and outline widths for chunkier artifacts, and lowering canopy placement (`top: 16%/24%/32%`) for a shorter vertical profile.
 - **2026-03-19 (Codex)**: Removed Info-banner scrolling text entirely, lowered spherical volume mesh granularity (`64x36`), and swapped to a new polynomial-based radial deformation model for the spherical-harmonics renderer.
