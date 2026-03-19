@@ -109,6 +109,44 @@ But here are natural areas of focus:
 4. Before touching a file the other agent recently committed, pull first.
 5. If you discover a bug or leave something half-done, note it at the top of the coop file with `TODO:` so the other agent doesn't step on it.
 
+### Shared-doc lock protocol (AGENTS.md and claude+codex-coop.md)
+
+Both agents edit the same two files. To prevent merge conflicts, use `docs.lock.pid` as an advisory lock before editing either file.
+
+**Before editing `AGENTS.md` or `claude+codex-coop.md`:**
+
+```bash
+# 1. Check — is the lock free?
+node scripts/docs-lock.mjs check
+
+# 2. Acquire it
+node scripts/docs-lock.mjs acquire claude "AGENTS.md, claude+codex-coop.md"
+# or: acquire codex "AGENTS.md"
+
+# 3. Pull to get the latest version
+git pull
+
+# 4. Make your edits, then commit and push immediately
+git add AGENTS.md claude+codex-coop.md
+git commit -m "..."
+git push
+
+# 5. Release the lock
+node scripts/docs-lock.mjs release
+```
+
+**Rules:**
+- Acquire → pull → edit → commit+push → release. Always in that order.
+- Hold the lock for the shortest time possible. Never hold it across multiple separate tasks.
+- If the lock is held, **wait** — do not edit the files until the other agent releases.
+- If the lock looks stale (process long gone, no recent commit), delete it: `rm docs.lock.pid`
+- `docs.lock.pid` is `.gitignore`d — it never gets committed.
+
+**Lock file contents** (for reference):
+```json
+{ "pid": 12345, "agent": "claude", "files": "AGENTS.md, claude+codex-coop.md", "started": "2026-03-19T14:00:00.000Z" }
+```
+
 ---
 
 ## Environment variables (key ones)
