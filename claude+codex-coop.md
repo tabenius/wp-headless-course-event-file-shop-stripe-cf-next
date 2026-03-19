@@ -11,6 +11,22 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 53)
+
+### Codex — trefoil knot renderer (torus temporarily disabled)
+
+- Updated `TorusBanner` canvas geometry to support two mesh paths behind a toggle:
+  - existing torus mesh preserved as `torusBasePoints`,
+  - new trefoil-knot tube mesh added as `trefoilBasePoints`.
+- Enabled trefoil mode by default via:
+  - `const ENABLE_TREFOIL_KNOT = true;`
+  - active mesh selects `trefoilBasePoints` with unchanged granularity (`SEGMENTS = 24`, tube/ring mesh = `24x24`).
+- Preserved visual identity from torus renderer:
+  - same fill palette (`BASE_COLOR` orange family),
+  - same cyan edge wire (`EDGE_COLOR`),
+  - same face sorting/shading pipeline with depth range tuned for trefoil bounds.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 52)
 
 ### Codex — sine scroller temporarily disabled (code retained)

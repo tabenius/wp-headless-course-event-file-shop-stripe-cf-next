@@ -5,14 +5,32 @@ import { useEffect, useRef } from "react";
 const SEGMENTS = 24;
 const MAJOR_RADIUS = 104;
 const MINOR_RADIUS = 44;
+const TREFOIL_SCALE_XY = 36;
+const TREFOIL_SCALE_Y = 31;
+const TREFOIL_SCALE_Z = 58;
+const TREFOIL_TUBE_RADIUS = 18;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
 const SCROLLER_TEXT =
   "RAGBAZ - standing on the shoulders of giants and bending spoons since 1987";
 const ENABLE_SINE_SCROLLER = false;
+const ENABLE_TREFOIL_KNOT = true;
 
-const basePoints = Array.from({ length: SEGMENTS }, (_, i) => {
+function cross(a, b) {
+  return {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x,
+  };
+}
+
+function normalize(v) {
+  const len = Math.hypot(v.x, v.y, v.z) || 1;
+  return { x: v.x / len, y: v.y / len, z: v.z / len };
+}
+
+const torusBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
   const phi = (i / SEGMENTS) * Math.PI * 2;
   const cosPhi = Math.cos(phi);
   const sinPhi = Math.sin(phi);
@@ -27,6 +45,43 @@ const basePoints = Array.from({ length: SEGMENTS }, (_, i) => {
     };
   });
 });
+
+const trefoilBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
+  const t = (i / SEGMENTS) * Math.PI * 2;
+  const center = {
+    x: TREFOIL_SCALE_XY * (Math.sin(t) + 2 * Math.sin(2 * t)),
+    y: TREFOIL_SCALE_Y * (Math.cos(t) - 2 * Math.cos(2 * t)),
+    z: TREFOIL_SCALE_Z * -Math.sin(3 * t),
+  };
+  const tangent = normalize({
+    x: TREFOIL_SCALE_XY * (Math.cos(t) + 4 * Math.cos(2 * t)),
+    y: TREFOIL_SCALE_Y * (-Math.sin(t) + 4 * Math.sin(2 * t)),
+    z: TREFOIL_SCALE_Z * -3 * Math.cos(3 * t),
+  });
+  const helper = Math.abs(tangent.y) < 0.88 ? { x: 0, y: 1, z: 0 } : { x: 1, y: 0, z: 0 };
+  const normal = normalize(cross(tangent, helper));
+  const binormal = normalize(cross(tangent, normal));
+
+  return Array.from({ length: SEGMENTS }, (_, j) => {
+    const theta = (j / SEGMENTS) * Math.PI * 2;
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
+    return {
+      x:
+        center.x +
+        TREFOIL_TUBE_RADIUS * (normal.x * cosTheta + binormal.x * sinTheta),
+      y:
+        center.y +
+        TREFOIL_TUBE_RADIUS * (normal.y * cosTheta + binormal.y * sinTheta),
+      z:
+        center.z +
+        TREFOIL_TUBE_RADIUS * (normal.z * cosTheta + binormal.z * sinTheta),
+    };
+  });
+});
+
+const GEOMETRY_DEPTH_RANGE = ENABLE_TREFOIL_KNOT ? 220 : MAJOR_RADIUS * 2;
+const activeBasePoints = ENABLE_TREFOIL_KNOT ? trefoilBasePoints : torusBasePoints;
 
 function projectPoint(point, rotationX, rotationY, rotationZ, width, height) {
   const cosX = Math.cos(rotationX);
@@ -83,7 +138,7 @@ export default function TorusBanner() {
       const rotationX = Math.sin(time * 0.00084) * 0.38 + 0.5;
       const rotationZ = Math.cos(time * 0.00068) * 0.42;
 
-      const projected = basePoints.map((ring) =>
+      const projected = activeBasePoints.map((ring) =>
         ring.map((point) =>
           projectPoint(point, rotationX, rotationY, rotationZ, width, height),
         ),
@@ -108,7 +163,7 @@ export default function TorusBanner() {
       faces.forEach((face) => {
         const normalized = Math.max(
           0,
-          Math.min(1, (face.z + MAJOR_RADIUS) / (MAJOR_RADIUS * 2)),
+          Math.min(1, (face.z + GEOMETRY_DEPTH_RANGE / 2) / GEOMETRY_DEPTH_RANGE),
         );
         const brightness = 0.78 + 0.26 * (1 - normalized);
         const r = Math.floor(BASE_COLOR.r * brightness);
