@@ -199,6 +199,8 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Removed the trefoil-knot renderer from the Info canvas and replaced it with a spherical-harmonics volume surface (longitude/latitude mesh, harmonic radial field, depth-sorted triangle shading) while keeping the same orange/cyan visual language.
+- **2026-03-19 (Codex)**: Raised the parallax foliage canopy substantially (about 2x perceived height) by both increasing L-system growth parameters (`stepBase`/`leafSizeBase`) and moving all three bush layers upward in CSS (`far/mid/near top: 20%/26%/34%`).
 - **2026-03-19 (Codex)**: Moved the Info banner text to a bottom-mounted ticker when sine mode is disabled, reduced ticker font size, set ticker color to bright yellow, and increased horizontal scroll speed for clearer compact motion.
 - **2026-03-19 (Codex)**: Improved trefoil rope rendering to reduce self-sticking while making it thicker/smoother: raised mesh resolution to `120x30`, increased tube radius to `14`, and switched from quad fill to depth-sorted triangle shading with improved lighting plus a depth-sorted cyan rope highlight pass.
 - **2026-03-19 (Codex)**: De-fogged the L-system leafy parallax by increasing foliage stroke opacity/contrast, adding black outline strokes around branches/leaves in generated SVG layers, and reducing haze in the per-layer gradient overlays.

@@ -11,6 +11,36 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 60)
+
+### Codex — trefoil removed, spherical harmonics volume added
+
+- Removed the trefoil-knot active geometry path from `TorusBanner` and switched rendering to a spherical-harmonics volume surface.
+- Added harmonic radial field model:
+  - mesh resolution: `LONGITUDE_SEGMENTS=128`, `LATITUDE_SEGMENTS=72`
+  - radius basis: `SH_BASE_RADIUS=112`
+  - harmonic mix from multiple angular modes (`sin/cos` terms over `theta` and `phi`) for an organic volumetric form.
+- Updated render loops for spherical topology:
+  - longitude wraps, latitude strips are non-wrapping (`j -> j+1`) to avoid polar seam artifacts.
+- Kept depth-sorted triangle shading + cyan edge treatment and updated depth range normalization (`SH_DEPTH_RANGE=340`).
+- This fully replaces the previous trefoil visualization in the Info canvas while preserving existing parallax/ticker behavior.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
+## 2026-03-19 (cont. 59)
+
+### Codex — foliage canopy height increase (~2x)
+
+- Increased generated foliage growth amplitude in `TorusBanner`:
+  - far layer: `stepBase 6.4 -> 11.8`, `leafSizeBase 2.9 -> 4.2`
+  - mid layer: `stepBase 7.2 -> 13.0`, `leafSizeBase 3.5 -> 4.8`
+  - near layer: `stepBase 7.8 -> 14.2`, `leafSizeBase 3.9 -> 5.3`
+- Raised bush parallax layer placement to reach higher into the scene:
+  - far `top: 42% -> 20%`
+  - mid `top: 50% -> 26%`
+  - near `top: 58% -> 34%`
+- Outcome: foliage now occupies substantially more vertical space (roughly double perceived canopy height) while preserving parallax motion behavior.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 58)
 
 ### Codex — bottom ticker restyle (smaller, yellow, faster)

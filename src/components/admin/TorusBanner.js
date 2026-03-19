@@ -2,21 +2,16 @@
 
 import { useEffect, useRef } from "react";
 
-const CURVE_SEGMENTS = 120;
-const RING_SEGMENTS = 30;
-const MAJOR_RADIUS = 104;
-const MINOR_RADIUS = 44;
-const TREFOIL_SCALE_XY = 44;
-const TREFOIL_SCALE_Y = 38;
-const TREFOIL_SCALE_Z = 70;
-const TREFOIL_TUBE_RADIUS = 14;
+const LONGITUDE_SEGMENTS = 128;
+const LATITUDE_SEGMENTS = 72;
+const SH_BASE_RADIUS = 112;
+const SH_DEPTH_RANGE = 340;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
 const SCROLLER_TEXT =
   "RAGBAZ - standing on the shoulders of giants and bending spoons since 1987";
 const ENABLE_SINE_SCROLLER = false;
-const ENABLE_TREFOIL_KNOT = true;
 
 const L_SYSTEM_RULES = {
   F: "FF-[-F+F+F]+[+F-F-F]",
@@ -178,58 +173,32 @@ function normalize(v) {
   return { x: v.x / len, y: v.y / len, z: v.z / len };
 }
 
-const torusBasePoints = Array.from({ length: CURVE_SEGMENTS }, (_, i) => {
-  const phi = (i / CURVE_SEGMENTS) * Math.PI * 2;
-  const cosPhi = Math.cos(phi);
-  const sinPhi = Math.sin(phi);
-  return Array.from({ length: RING_SEGMENTS }, (_, j) => {
-    const theta = (j / RING_SEGMENTS) * Math.PI * 2;
-    const cosTheta = Math.cos(theta);
-    const sinTheta = Math.sin(theta);
-    return {
-      x: (MAJOR_RADIUS + MINOR_RADIUS * cosTheta) * cosPhi,
-      y: MINOR_RADIUS * sinTheta,
-      z: (MAJOR_RADIUS + MINOR_RADIUS * cosTheta) * sinPhi,
-    };
-  });
-});
+function sphericalHarmonicRadius(theta, phi) {
+  const h1 = Math.sin(3 * theta) * Math.sin(2 * phi);
+  const h2 = Math.cos(5 * theta) * Math.sin(phi) * Math.sin(phi);
+  const h3 = Math.sin(4 * phi + theta);
+  const h4 = Math.cos(6 * theta - phi);
+  const mix = 0.46 * h1 + 0.34 * h2 + 0.26 * h3 + 0.2 * h4;
+  return SH_BASE_RADIUS * (1 + 0.34 * mix);
+}
 
-const trefoilBasePoints = Array.from({ length: CURVE_SEGMENTS }, (_, i) => {
-  const t = (i / CURVE_SEGMENTS) * Math.PI * 2;
-  const center = {
-    x: TREFOIL_SCALE_XY * (Math.sin(t) + 2 * Math.sin(2 * t)),
-    y: TREFOIL_SCALE_Y * (Math.cos(t) - 2 * Math.cos(2 * t)),
-    z: TREFOIL_SCALE_Z * -Math.sin(3 * t),
-  };
-  const tangent = normalize({
-    x: TREFOIL_SCALE_XY * (Math.cos(t) + 4 * Math.cos(2 * t)),
-    y: TREFOIL_SCALE_Y * (-Math.sin(t) + 4 * Math.sin(2 * t)),
-    z: TREFOIL_SCALE_Z * -3 * Math.cos(3 * t),
-  });
-  const helper = Math.abs(tangent.y) < 0.88 ? { x: 0, y: 1, z: 0 } : { x: 1, y: 0, z: 0 };
-  const normal = normalize(cross(tangent, helper));
-  const binormal = normalize(cross(tangent, normal));
-
-  return Array.from({ length: RING_SEGMENTS }, (_, j) => {
-    const theta = (j / RING_SEGMENTS) * Math.PI * 2;
-    const cosTheta = Math.cos(theta);
-    const sinTheta = Math.sin(theta);
-    return {
-      x:
-        center.x +
-        TREFOIL_TUBE_RADIUS * (normal.x * cosTheta + binormal.x * sinTheta),
-      y:
-        center.y +
-        TREFOIL_TUBE_RADIUS * (normal.y * cosTheta + binormal.y * sinTheta),
-      z:
-        center.z +
-        TREFOIL_TUBE_RADIUS * (normal.z * cosTheta + binormal.z * sinTheta),
-    };
-  });
-});
-
-const GEOMETRY_DEPTH_RANGE = ENABLE_TREFOIL_KNOT ? 300 : MAJOR_RADIUS * 2;
-const activeBasePoints = ENABLE_TREFOIL_KNOT ? trefoilBasePoints : torusBasePoints;
+const sphericalHarmonicBasePoints = Array.from(
+  { length: LONGITUDE_SEGMENTS },
+  (_, i) => {
+    const theta = (i / LONGITUDE_SEGMENTS) * Math.PI * 2;
+    return Array.from({ length: LATITUDE_SEGMENTS + 1 }, (_, j) => {
+      const phi = (j / LATITUDE_SEGMENTS) * Math.PI;
+      const sinPhi = Math.sin(phi);
+      const cosPhi = Math.cos(phi);
+      const radius = sphericalHarmonicRadius(theta, phi);
+      return {
+        x: radius * sinPhi * Math.cos(theta),
+        y: radius * cosPhi,
+        z: radius * sinPhi * Math.sin(theta),
+      };
+    });
+  },
+);
 
 const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   seed: 1407,
@@ -237,9 +206,9 @@ const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   height: 420,
   plantCount: 16,
   iterations: 2,
-  stepBase: 6.4,
+  stepBase: 11.8,
   turnBase: 23.5,
-  leafSizeBase: 2.9,
+  leafSizeBase: 4.2,
   branchColor: "#2a5b2d",
   leafColor: "#5f9644",
   outlineColor: "#0a1509",
@@ -258,9 +227,9 @@ const MID_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   height: 470,
   plantCount: 21,
   iterations: 3,
-  stepBase: 7.2,
+  stepBase: 13.0,
   turnBase: 22.2,
-  leafSizeBase: 3.5,
+  leafSizeBase: 4.8,
   branchColor: "#2f6a30",
   leafColor: "#6cab4c",
   outlineColor: "#081308",
@@ -279,9 +248,9 @@ const NEAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   height: 520,
   plantCount: 25,
   iterations: 3,
-  stepBase: 7.8,
+  stepBase: 14.2,
   turnBase: 21.8,
-  leafSizeBase: 3.9,
+  leafSizeBase: 5.3,
   branchColor: "#255127",
   leafColor: "#73b152",
   outlineColor: "#050d05",
@@ -356,25 +325,13 @@ export default function TorusBanner() {
       const rotationX = Math.sin(time * 0.00084) * 0.38 + 0.5;
       const rotationZ = Math.cos(time * 0.00068) * 0.42;
 
-      const projected = activeBasePoints.map((ring) =>
+      const projected = sphericalHarmonicBasePoints.map((ring) =>
         ring.map((point) =>
           projectPoint(point, rotationX, rotationY, rotationZ, width, height),
         ),
       );
 
       const faces = [];
-      const centerline = projected.map((ring) => {
-        let sx = 0;
-        let sy = 0;
-        let sz = 0;
-        for (let j = 0; j < RING_SEGMENTS; j += 1) {
-          sx += ring[j].x;
-          sy += ring[j].y;
-          sz += ring[j].z;
-        }
-        const inv = 1 / RING_SEGMENTS;
-        return { x: sx * inv, y: sy * inv, z: sz * inv };
-      });
       const lightDir = normalize({ x: 0.34, y: -0.22, z: 0.91 });
 
       function pushTriangle(v1, v2, v3) {
@@ -402,10 +359,10 @@ export default function TorusBanner() {
         });
       }
 
-      for (let i = 0; i < CURVE_SEGMENTS; i += 1) {
-        const nextI = (i + 1) % CURVE_SEGMENTS;
-        for (let j = 0; j < RING_SEGMENTS; j += 1) {
-          const nextJ = (j + 1) % RING_SEGMENTS;
+      for (let i = 0; i < LONGITUDE_SEGMENTS; i += 1) {
+        const nextI = (i + 1) % LONGITUDE_SEGMENTS;
+        for (let j = 0; j < LATITUDE_SEGMENTS; j += 1) {
+          const nextJ = j + 1;
           const a = projected[i][j];
           const b = projected[nextI][j];
           const c = projected[nextI][nextJ];
@@ -416,19 +373,11 @@ export default function TorusBanner() {
       }
 
       faces.sort((a, b) => a.z - b.z);
-      const ropeSegments = [];
-      for (let i = 0; i < CURVE_SEGMENTS; i += 1) {
-        const nextI = (i + 1) % CURVE_SEGMENTS;
-        const a = centerline[i];
-        const b = centerline[nextI];
-        ropeSegments.push({ a, b, z: (a.z + b.z) / 2 });
-      }
-      ropeSegments.sort((a, b) => a.z - b.z);
 
       faces.forEach((face) => {
         const normalized = Math.max(
           0,
-          Math.min(1, (face.z + GEOMETRY_DEPTH_RANGE / 2) / GEOMETRY_DEPTH_RANGE),
+          Math.min(1, (face.z + SH_DEPTH_RANGE / 2) / SH_DEPTH_RANGE),
         );
         const depthBoost = 1 - normalized;
         const brightness = 0.48 + 0.42 * face.lambert + 0.18 * depthBoost;
@@ -450,23 +399,6 @@ export default function TorusBanner() {
         const edgeAlpha = 0.08 + 0.12 * depthBoost;
         ctx.strokeStyle = `rgba(75, 247, 255, ${edgeAlpha})`;
         ctx.lineWidth = 0.26;
-        ctx.stroke();
-      });
-
-      ropeSegments.forEach((segment) => {
-        const normalized = Math.max(
-          0,
-          Math.min(
-            1,
-            (segment.z + GEOMETRY_DEPTH_RANGE / 2) / GEOMETRY_DEPTH_RANGE,
-          ),
-        );
-        ctx.beginPath();
-        ctx.moveTo(segment.a.x, segment.a.y);
-        ctx.lineTo(segment.b.x, segment.b.y);
-        ctx.strokeStyle = `rgba(75, 247, 255, ${0.1 + normalized * 0.28})`;
-        ctx.lineWidth = 0.82 + normalized * 0.58;
-        ctx.lineCap = "round";
         ctx.stroke();
       });
 
@@ -584,7 +516,7 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-far-bushes {
-          top: 42%;
+          top: 20%;
           left: -8%;
           right: -8%;
           bottom: -10%;
@@ -611,7 +543,7 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-mid-bushes {
-          top: 50%;
+          top: 26%;
           left: -9%;
           right: -9%;
           bottom: -14%;
@@ -639,7 +571,7 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-near-bushes {
-          top: 58%;
+          top: 34%;
           left: -10%;
           right: -10%;
           bottom: -20%;
