@@ -2,14 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-const CURVE_SEGMENTS = 72;
-const RING_SEGMENTS = 24;
+const CURVE_SEGMENTS = 120;
+const RING_SEGMENTS = 30;
 const MAJOR_RADIUS = 104;
 const MINOR_RADIUS = 44;
-const TREFOIL_SCALE_XY = 42;
-const TREFOIL_SCALE_Y = 36;
-const TREFOIL_SCALE_Z = 66;
-const TREFOIL_TUBE_RADIUS = 10;
+const TREFOIL_SCALE_XY = 44;
+const TREFOIL_SCALE_Y = 38;
+const TREFOIL_SCALE_Z = 70;
+const TREFOIL_TUBE_RADIUS = 14;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
@@ -228,7 +228,7 @@ const trefoilBasePoints = Array.from({ length: CURVE_SEGMENTS }, (_, i) => {
   });
 });
 
-const GEOMETRY_DEPTH_RANGE = ENABLE_TREFOIL_KNOT ? 260 : MAJOR_RADIUS * 2;
+const GEOMETRY_DEPTH_RANGE = ENABLE_TREFOIL_KNOT ? 300 : MAJOR_RADIUS * 2;
 const activeBasePoints = ENABLE_TREFOIL_KNOT ? trefoilBasePoints : torusBasePoints;
 
 const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
@@ -322,6 +322,9 @@ function projectPoint(point, rotationX, rotationY, rotationZ, width, height) {
     x: width / 2 + x3 * perspective,
     y: height / 2 + y3 * perspective,
     z: z2,
+    vx: x3,
+    vy: y3,
+    vz: z2,
   };
 }
 
@@ -360,6 +363,45 @@ export default function TorusBanner() {
       );
 
       const faces = [];
+      const centerline = projected.map((ring) => {
+        let sx = 0;
+        let sy = 0;
+        let sz = 0;
+        for (let j = 0; j < RING_SEGMENTS; j += 1) {
+          sx += ring[j].x;
+          sy += ring[j].y;
+          sz += ring[j].z;
+        }
+        const inv = 1 / RING_SEGMENTS;
+        return { x: sx * inv, y: sy * inv, z: sz * inv };
+      });
+      const lightDir = normalize({ x: 0.34, y: -0.22, z: 0.91 });
+
+      function pushTriangle(v1, v2, v3) {
+        const edge1 = {
+          x: v2.vx - v1.vx,
+          y: v2.vy - v1.vy,
+          z: v2.vz - v1.vz,
+        };
+        const edge2 = {
+          x: v3.vx - v1.vx,
+          y: v3.vy - v1.vy,
+          z: v3.vz - v1.vz,
+        };
+        const normal = normalize(cross(edge1, edge2));
+        const lambert = Math.max(
+          0.08,
+          normal.x * lightDir.x +
+            normal.y * lightDir.y +
+            Math.abs(normal.z) * lightDir.z,
+        );
+        faces.push({
+          verts: [v1, v2, v3],
+          z: (v1.z + v2.z + v3.z) / 3,
+          lambert,
+        });
+      }
+
       for (let i = 0; i < CURVE_SEGMENTS; i += 1) {
         const nextI = (i + 1) % CURVE_SEGMENTS;
         for (let j = 0; j < RING_SEGMENTS; j += 1) {
@@ -368,19 +410,28 @@ export default function TorusBanner() {
           const b = projected[nextI][j];
           const c = projected[nextI][nextJ];
           const d = projected[i][nextJ];
-          const avgZ = (a.z + b.z + c.z + d.z) / 4;
-          faces.push({ verts: [a, b, c, d], z: avgZ });
+          pushTriangle(a, b, c);
+          pushTriangle(a, c, d);
         }
       }
 
       faces.sort((a, b) => a.z - b.z);
+      const ropeSegments = [];
+      for (let i = 0; i < CURVE_SEGMENTS; i += 1) {
+        const nextI = (i + 1) % CURVE_SEGMENTS;
+        const a = centerline[i];
+        const b = centerline[nextI];
+        ropeSegments.push({ a, b, z: (a.z + b.z) / 2 });
+      }
+      ropeSegments.sort((a, b) => a.z - b.z);
 
       faces.forEach((face) => {
         const normalized = Math.max(
           0,
           Math.min(1, (face.z + GEOMETRY_DEPTH_RANGE / 2) / GEOMETRY_DEPTH_RANGE),
         );
-        const brightness = 0.78 + 0.26 * (1 - normalized);
+        const depthBoost = 1 - normalized;
+        const brightness = 0.48 + 0.42 * face.lambert + 0.18 * depthBoost;
         const r = Math.floor(BASE_COLOR.r * brightness);
         const g = Math.floor(BASE_COLOR.g * brightness);
         const b = Math.floor(BASE_COLOR.b * brightness);
@@ -393,10 +444,29 @@ export default function TorusBanner() {
           }
         });
         ctx.closePath();
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        const alpha = 0.9 + 0.08 * normalized;
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
         ctx.fill();
-        ctx.strokeStyle = EDGE_COLOR;
-        ctx.lineWidth = 0.6;
+        const edgeAlpha = 0.08 + 0.12 * depthBoost;
+        ctx.strokeStyle = `rgba(75, 247, 255, ${edgeAlpha})`;
+        ctx.lineWidth = 0.26;
+        ctx.stroke();
+      });
+
+      ropeSegments.forEach((segment) => {
+        const normalized = Math.max(
+          0,
+          Math.min(
+            1,
+            (segment.z + GEOMETRY_DEPTH_RANGE / 2) / GEOMETRY_DEPTH_RANGE,
+          ),
+        );
+        ctx.beginPath();
+        ctx.moveTo(segment.a.x, segment.a.y);
+        ctx.lineTo(segment.b.x, segment.b.y);
+        ctx.strokeStyle = `rgba(75, 247, 255, ${0.1 + normalized * 0.28})`;
+        ctx.lineWidth = 0.82 + normalized * 0.58;
+        ctx.lineCap = "round";
         ctx.stroke();
       });
 

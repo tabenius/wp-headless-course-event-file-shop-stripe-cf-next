@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Improved trefoil rope rendering to reduce self-sticking while making it thicker/smoother: raised mesh resolution to `120x30`, increased tube radius to `14`, and switched from quad fill to depth-sorted triangle shading with improved lighting plus a depth-sorted cyan rope highlight pass.
 - **2026-03-19 (Codex)**: De-fogged the L-system leafy parallax by increasing foliage stroke opacity/contrast, adding black outline strokes around branches/leaves in generated SVG layers, and reducing haze in the per-layer gradient overlays.
 - **2026-03-19 (Codex)**: Smoothed the trefoil knot mesh by increasing longitudinal geometry resolution (`72x24`) and reduced tube thickness with adjusted knot scale (`tube radius 10`) to avoid visual self-sticking at crossings while keeping the same orange/cyan render style.
 - **2026-03-19 (Codex)**: Replaced gradient-blob bush parallax with procedural leaf drawings based on Lindenmayer-style branch grammar and line rendering, generating three deterministic SVG leaf layers (far/mid/near) reused as animated pendulum parallax backgrounds.

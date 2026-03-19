@@ -11,6 +11,22 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 57)
+
+### Codex — thicker/smoother trefoil with improved self-sticking handling
+
+- Reworked trefoil mesh density and thickness in `TorusBanner`:
+  - `CURVE_SEGMENTS: 72 -> 120`
+  - `RING_SEGMENTS: 24 -> 30`
+  - `TREFOIL_TUBE_RADIUS: 10 -> 14` (visibly thicker rope)
+  - trefoil scale slightly increased (`XY/Y/Z`: `42/36/66` -> `44/38/70`) to preserve curvature feel.
+- Improved crossing/render stability by replacing coarse quad painter pass with depth-sorted triangle rendering:
+  - each tube quad is split into two triangles,
+  - per-triangle lambert-like shading from transformed face normals + depth component,
+  - subtle cyan edge treatment retained but reduced to avoid hard sticking artifacts.
+- Added a depth-sorted centerline cyan highlight pass so rope layering reads cleaner at overlaps.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 56)
 
 ### Codex — leafy parallax clarity pass (less fog + black outlines)
