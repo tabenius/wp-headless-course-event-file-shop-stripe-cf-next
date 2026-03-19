@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Fixed admin runtime crash (`Cannot access '<minified>' before initialization`) by resolving a temporal-dead-zone bug in `AdminDashboard`: `runHealthCheck` is now declared before the effect that depends on it. Also adjusted header brand spacing so `ARTICULATE STOREFRONT` no longer overlaps `RAGBAZ`.
 - **2026-03-19 (Codex)**: Switched course-access backend defaults to Cloudflare KV (`COURSE_ACCESS_BACKEND=cloudflare-kv` in `.env.example` and `wrangler.jsonc`), made upload-info backend-aware (`/api/admin/upload-info?backend=...`), and redesigned the Storage tab to remove repeated R2/S3 credential blocks in favor of one canonical checklist with copy actions.
 - **2026-03-19 (Codex)**: Updated admin header branding to show `RAGBAZ` followed by white `ARTICULATE STOREFRONT`, replaced Welcome story image slide live endpoint usage with static mock data/preview, and enforced white `!important` story chrome text outside the slide viewport for consistent contrast.
 - **2026-03-19 (Codex)**: Simplified the menu hotkey legend by removing the Welcome-screen “Open menu / Öppna meny” chip and placing a smaller plain `Ctrl+Alt+M` hint directly under the hamburger icon in the admin header.

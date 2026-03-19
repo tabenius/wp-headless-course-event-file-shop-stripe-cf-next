@@ -885,6 +885,45 @@ export default function AdminDashboard() {
     [],
   );
 
+  const runHealthCheck = useCallback(async () => {
+    log("healthCheck:start");
+    setHealthLoading(true);
+    setError("");
+    try {
+      const { res, json, reqId, duration } =
+        await adminFetch("/api/admin/health");
+      setDebugLogs((prev) =>
+        [
+          {
+            ts: Date.now(),
+            reqId,
+            status: res.status,
+            duration,
+            path: "/api/admin/health",
+          },
+          ...prev,
+        ].slice(0, 10),
+      );
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || t("admin.healthCheckFailed"));
+      }
+      setHealthChecks(json.checks || {});
+      if (json.webhookUrl) setWebhookUrl(json.webhookUrl);
+      if (json.ragbazDownloadUrl) setRagbazDownloadUrl(json.ragbazDownloadUrl);
+      log("healthCheck:ok", { checks: Object.keys(json.checks || {}) });
+    } catch (healthError) {
+      const msg =
+        healthError instanceof Error
+          ? healthError.message
+          : t("admin.healthCheckFailed");
+      setError(msg);
+      log("healthCheck:error", msg);
+    } finally {
+      setHealthLoading(false);
+      log("healthCheck:done");
+    }
+  }, [setError]);
+
   useEffect(() => {
     loadCourseAccess();
     loadProducts();
@@ -1618,45 +1657,6 @@ export default function AdminDashboard() {
     };
     input.click();
   }
-
-  const runHealthCheck = useCallback(async () => {
-    log("healthCheck:start");
-    setHealthLoading(true);
-    setError("");
-    try {
-      const { res, json, reqId, duration } =
-        await adminFetch("/api/admin/health");
-      setDebugLogs((prev) =>
-        [
-          {
-            ts: Date.now(),
-            reqId,
-            status: res.status,
-            duration,
-            path: "/api/admin/health",
-          },
-          ...prev,
-        ].slice(0, 10),
-      );
-      if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || t("admin.healthCheckFailed"));
-      }
-      setHealthChecks(json.checks || {});
-      if (json.webhookUrl) setWebhookUrl(json.webhookUrl);
-      if (json.ragbazDownloadUrl) setRagbazDownloadUrl(json.ragbazDownloadUrl);
-      log("healthCheck:ok", { checks: Object.keys(json.checks || {}) });
-    } catch (healthError) {
-      const msg =
-        healthError instanceof Error
-          ? healthError.message
-          : t("admin.healthCheckFailed");
-      setError(msg);
-      log("healthCheck:error", msg);
-    } finally {
-      setHealthLoading(false);
-      log("healthCheck:done");
-    }
-  }, [setError]);
 
   async function purgeCache() {
     setPurging(true);

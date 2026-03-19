@@ -631,3 +631,16 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Added tab-scoped admin error-state wiring in `AdminDashboard` so global error banners can be restricted to the originating tab and no longer leak across tabs.
 - Validation:
   - `npx eslint src/components/admin/AdminStorageTab.js src/components/admin/AdminDashboard.js src/app/api/admin/upload-info/route.js`
+
+---
+
+## 2026-03-19 (cont. 19)
+
+### Codex — admin TDZ runtime crash fix + header overlap fix
+
+- Fixed runtime crash reported as minified `ReferenceError: Cannot access '<symbol>' before initialization` in admin UI.
+- Root cause: `runHealthCheck` (`const` + `useCallback`) was referenced in an effect dependency before the callback was initialized in module render order, triggering a temporal dead zone during initial render.
+- Fix: moved `runHealthCheck` callback definition above the effect that depends on it in `src/components/admin/AdminDashboard.js`.
+- Also fixed header logo text overlap by increasing brand-link gap and enforcing no-wrap for `ARTICULATE STOREFRONT` in `src/components/admin/AdminHeader.js`.
+- Validation:
+  - `npx eslint src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js`
