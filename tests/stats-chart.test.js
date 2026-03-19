@@ -18,6 +18,7 @@ test("barHeight converts value/max to percent", () => {
 });
 
 test("formatHour produces HH:00 strings", () => {
+  // Timestamps are UTC — getUTCHours() keeps the labels aligned with Cloudflare data.
   assert.equal(formatHour("2026-03-19T14:30:00Z"), "14:00");
   assert.equal(formatHour("2026-03-19T00:00:00Z"), "0:00");
 });

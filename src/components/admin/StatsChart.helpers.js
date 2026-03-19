@@ -12,5 +12,5 @@ export function barHeight(value, max) {
 export function formatHour(isoString) {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return "";
-  return `${date.getHours()}:00`;
+  return `${date.getUTCHours()}:00`;
 }
