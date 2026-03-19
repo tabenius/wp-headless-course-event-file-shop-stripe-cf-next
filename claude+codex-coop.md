@@ -70,6 +70,9 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 ### Claude
 - **Image Gen Polish**: Thumbnails scale to correct aspect ratio, added "Copy prompt" button (i18n), count toggle extended to [1, 2, 3], elapsed-second counter on generate button.
 - **Chat Fixes**: Fixed `rows` crash in payments intent, extracted `IMAGE_SYSTEM_PROMPT` as shared constant, capped `body.history` to last 10 turns.
+- **KV Health Check**: Added `checkKvStorage()` to admin health route — warns when KV is not configured or unreachable, explaining in-memory fallback and data-loss risk. New i18n keys `health.kvOk/kvNotConfigured/kvFailed` (EN/SV/ES).
+- **Brand**: Capitalized RAGBAZ in all user-visible text (i18n values, docs, PHP plugin header/notice, console strings); code identifiers, file names, GraphQL types, and package names left unchanged.
+- **Security / Next.js 16**: Fixed 4 high Dependabot CVEs (`fast-xml-parser`, `flatted`, `tar`, `undici`) via `npm audit fix`; upgraded Next.js 15→16.2.0 (clears last moderate CVE; `@opennextjs/cloudflare@1.17.1` supports `^16.1.5`); added missing `stripe` npm dependency. Fixed three latent bugs surfaced by Turbopack 16's stricter parser: broken regex literals in `chat/route.js`, `runtime="edge"` on a route importing `node:crypto` via auth, and undeclared `locale` variable in `AdminHeader` language selector.
 
 ---
 
