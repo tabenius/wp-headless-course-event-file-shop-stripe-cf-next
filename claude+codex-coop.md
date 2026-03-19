@@ -46,6 +46,13 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 
 - Added a black edge-outline treatment to the sun/moon theme icon glyphs in `AdminHeader` via multi-direction text-shadow so the symbols keep crisp separation against the textured amber header.
 
+## 2026-03-19 (cont. 40)
+
+### Codex — status control visual parity + health link confirmation
+
+- Updated the header `Status` control to use the same amber-dark button surface as the hamburger control (matching background, border, hover, and focus-ring treatment).
+- Confirmed `Status` still routes directly to the Health check tab via `switchTab("health")`, and added an explicit accessibility label using the existing `admin.healthCheck` text key.
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

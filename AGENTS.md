@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Restyled the header `Status` control to match the hamburger button surface (same amber-dark background/hover/focus treatment) and kept direct navigation to Health check on click.
 - **2026-03-19 (Codex)**: Added a black edge-outline effect to the header sun/moon theme icon glyphs so they remain legible over the textured amber menu bar.
 - **2026-03-19 (Codex)**: Updated the header hotkey hint styling so `Ctrl+Alt+M` under the hamburger icon now renders in black to match the latest menu-bar contrast preference.
 - **2026-03-19 (Codex)**: Switched the `ARTICULATE STOREFRONT` subtitle text in the admin header logo lockup to black for stronger contrast preference against the amber menu bar.

@@ -309,7 +309,8 @@ export default function AdminHeader({ logoUrl }) {
               onMouseLeave={() => setShowHealthTooltip(false)}
               onFocus={() => setShowHealthTooltip(true)}
               onBlur={() => setShowHealthTooltip(false)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 text-xs text-white"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(33_30%_29%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(33_34%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label={t("admin.healthCheck", "Control check")}
               title={healthLabelMap[healthState]}
             >
               <span>{t("admin.healthStatus", "Status")}</span>
