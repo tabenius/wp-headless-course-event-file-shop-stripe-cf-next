@@ -306,66 +306,33 @@ export default function AdminHeader({ logoUrl }) {
                 onClick={() => setMenuOpen(false)}
               />
               <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-orange-900/98 p-4 shadow-2xl">
-                <div className="mb-3 rounded-2xl border border-white/15 bg-orange-800/70 p-3 text-orange-100">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-orange-200">
-                    {t("admin.hotkeys", "Hotkeys")}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <kbd className="rounded-lg border border-white/35 bg-white/10 px-3 py-1 text-base font-semibold tracking-wide text-white">
-                      Ctrl
-                    </kbd>
-                    <span className="text-lg text-orange-200">+</span>
-                    <kbd className="rounded-lg border border-white/35 bg-white/10 px-3 py-1 text-base font-semibold tracking-wide text-white">
-                      Alt
-                    </kbd>
-                  </div>
-                  <p className="mt-2 text-[11px] text-orange-200/95">
-                    {t(
-                      "admin.hotkeyHintCompact",
-                      "Use Ctrl + Alt with the letter below.",
-                    )}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {tabItems
-                      .filter((item) => item.hotkey)
-                      .map((item) => {
-                        const keyLabel = item.hotkey
-                          .split("+")
-                          .pop()
-                          .toUpperCase();
-                        return (
-                          <span
-                            key={`legend-${item.tab}`}
-                            className="inline-flex items-center gap-1 rounded-md border border-white/25 bg-white/10 px-2 py-1 text-[11px] leading-none"
-                          >
-                            <span className="font-semibold text-white">
-                              {keyLabel}
-                            </span>
-                            <span className="text-orange-100/95">
-                              {item.label}
-                            </span>
-                          </span>
-                        );
-                      })}
-                  </div>
-                </div>
                 <div className="space-y-2">
-                  {tabItems.map((item) => (
-                    <button
-                      key={item.tab}
-                      type="button"
-                      onClick={() => switchTab(item.tab)}
-                      className={`w-full rounded-2xl px-3 py-2.5 text-sm font-medium text-white border border-white/10 transition-colors ${
-                        pathname === "/admin" && activeTab === item.tab
-                          ? "bg-white/20"
-                          : "hover:bg-white/10"
-                      }`}
-                    >
-                      <span className="flex items-center justify-between gap-2">
-                        <span>{item.label}</span>
-                      </span>
-                    </button>
-                  ))}
+                  {tabItems.map((item) => {
+                    const keyLabel = item.hotkey
+                      ? item.hotkey.split("+").pop().toUpperCase()
+                      : null;
+                    return (
+                      <button
+                        key={item.tab}
+                        type="button"
+                        onClick={() => switchTab(item.tab)}
+                        className={`w-full rounded-2xl px-3 py-2.5 text-sm font-medium text-white border border-white/10 transition-colors ${
+                          pathname === "/admin" && activeTab === item.tab
+                            ? "bg-white/20"
+                            : "hover:bg-white/10"
+                        }`}
+                      >
+                        <span className="flex items-center justify-between gap-2">
+                          <span>{item.label}</span>
+                          {keyLabel && (
+                            <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold tracking-wide text-orange-100">
+                              {keyLabel}
+                            </kbd>
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
                 {docItem && (
                   <Link

@@ -613,6 +613,31 @@ export default function AdminDashboard() {
         );
         return;
       }
+      if (isAdminActionHotkey(e, "menuNext")) {
+        e.preventDefault();
+        const current = normalizeAdminTab(activeTabRef.current) || "welcome";
+        const currentIndex = Math.max(0, ADMIN_TABS.indexOf(current));
+        const nextIndex = (currentIndex + 1) % ADMIN_TABS.length;
+        const nextTab = ADMIN_TABS[nextIndex];
+        setActiveTab(nextTab);
+        window.dispatchEvent(
+          new CustomEvent("admin:switchTab", { detail: nextTab }),
+        );
+        return;
+      }
+      if (isAdminActionHotkey(e, "menuPrev")) {
+        e.preventDefault();
+        const current = normalizeAdminTab(activeTabRef.current) || "welcome";
+        const currentIndex = Math.max(0, ADMIN_TABS.indexOf(current));
+        const prevIndex =
+          (currentIndex - 1 + ADMIN_TABS.length) % ADMIN_TABS.length;
+        const prevTab = ADMIN_TABS[prevIndex];
+        setActiveTab(prevTab);
+        window.dispatchEvent(
+          new CustomEvent("admin:switchTab", { detail: prevTab }),
+        );
+        return;
+      }
       if (isAdminActionHotkey(e, "logout")) {
         e.preventDefault();
         logoutAdmin();

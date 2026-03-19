@@ -2,17 +2,31 @@ export const ADMIN_TAB_HOTKEYS = [
   { tab: "welcome", combo: "Ctrl+Alt+0", match: { code: "Digit0", key: "0" } },
   { tab: "sales", combo: "Ctrl+Alt+1", match: { code: "Digit1", key: "1" } },
   { tab: "stats", combo: "Ctrl+Alt+2", match: { code: "Digit2", key: "2" } },
-  { tab: "products", combo: "Ctrl+Alt+3", match: { code: "Digit3", key: "3" } },
-  { tab: "support", combo: "Ctrl+Alt+4", match: { code: "Digit4", key: "4" } },
+  { tab: "storage", combo: "Ctrl+Alt+3", match: { code: "Digit3", key: "3" } },
+  { tab: "products", combo: "Ctrl+Alt+4", match: { code: "Digit4", key: "4" } },
   { tab: "chat", combo: "Ctrl+Alt+5", match: { code: "Digit5", key: "5" } },
   { tab: "health", combo: "Ctrl+Alt+6", match: { code: "Digit6", key: "6" } },
-  { tab: "info", combo: "Ctrl+Alt+7", match: { code: "Digit7", key: "7" } },
-  { tab: "style", combo: "Ctrl+Alt+8", match: { code: "Digit8", key: "8" } },
-  { tab: "storage", combo: "Ctrl+Alt+S", match: { code: "KeyS", key: "s" } },
+  { tab: "style", combo: "Ctrl+Alt+7", match: { code: "Digit7", key: "7" } },
+  { tab: "info", combo: "Ctrl+Alt+8", match: { code: "Digit8", key: "8" } },
+  { tab: "support", combo: "Ctrl+Alt+9", match: { code: "Digit9", key: "9" } },
 ];
 
 export const ADMIN_ACTION_HOTKEYS = {
   menuToggle: { combo: "Ctrl+Alt+M", match: { code: "KeyM", key: "m" } },
+  menuNext: {
+    combo: "Ctrl+Alt+Right/Down",
+    match: [
+      { code: "ArrowRight", key: "arrowright" },
+      { code: "ArrowDown", key: "arrowdown" },
+    ],
+  },
+  menuPrev: {
+    combo: "Ctrl+Alt+Left/Up",
+    match: [
+      { code: "ArrowLeft", key: "arrowleft" },
+      { code: "ArrowUp", key: "arrowup" },
+    ],
+  },
   logout: { combo: "Ctrl+Alt+L", match: { code: "KeyL", key: "l" } },
   search: { combo: "Ctrl+Alt+/", match: { code: "Slash", key: "/" } },
 };
@@ -41,7 +55,8 @@ export function resolveAdminTabHotkey(event) {
 
 export function isAdminActionHotkey(event, action) {
   const rule = ADMIN_ACTION_HOTKEYS[action];
-  return matchesChord(event, rule?.match);
+  const matchers = Array.isArray(rule?.match) ? rule.match : [rule?.match];
+  return matchers.some((matcher) => matchesChord(event, matcher));
 }
 
 export function getAdminTabHotkeyLabel(tab) {

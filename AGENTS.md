@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Reworked admin navigation hotkeys to numeric ascending order (`Welcome=0`, then `1..9` by menu order), removed the separate drawer hotkey legend, displayed per-item numeric key badges directly on menu options, and added directional cycling shortcuts (`Ctrl+Alt+Right/Down` next, `Ctrl+Alt+Left/Up` previous) with wrap-around tab navigation.
 - **2026-03-19 (Codex)**: Updated admin menu bar palette from blue to orange (`bg-orange-*`), including hamburger/theme controls and drawer shell/hotkey surfaces, for a consistent orange navigation/header appearance.
 - **2026-03-19 (Codex)**: Removed `RAGBAZ Articulate StoreFront` text from the Welcome screen content area (story + non-story variants) so branding is only shown in the menu bar as requested.
 - **2026-03-19 (Codex)**: Fine-tuned menu lockup alignment by shifting the `RAGBAZ` wordmark ~14px to the right in `AdminHeader` (`ml-[14px]`) to better align with the `ARTICULATE STOREFRONT` subtitle line.

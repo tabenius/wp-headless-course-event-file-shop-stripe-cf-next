@@ -23,13 +23,13 @@ test("admin tab hotkeys stay unique and stable", () => {
       "welcome",
       "sales",
       "stats",
+      "storage",
       "products",
-      "support",
       "chat",
       "health",
-      "info",
       "style",
-      "storage",
+      "info",
+      "support",
     ],
   );
 });
@@ -49,9 +49,37 @@ test("resolveAdminTabHotkey ignores non Ctrl+Alt chords", () => {
   assert.equal(resolveAdminTabHotkey(event), null);
 });
 
-test("action hotkeys detect menu toggle and logout", () => {
+test("action hotkeys detect menu toggle, next/prev tab, and logout", () => {
   assert.equal(
     isAdminActionHotkey(eventFor({ code: "KeyM", key: "m" }), "menuToggle"),
+    true,
+  );
+  assert.equal(
+    isAdminActionHotkey(
+      eventFor({ code: "ArrowRight", key: "ArrowRight" }),
+      "menuNext",
+    ),
+    true,
+  );
+  assert.equal(
+    isAdminActionHotkey(
+      eventFor({ code: "ArrowDown", key: "ArrowDown" }),
+      "menuNext",
+    ),
+    true,
+  );
+  assert.equal(
+    isAdminActionHotkey(
+      eventFor({ code: "ArrowLeft", key: "ArrowLeft" }),
+      "menuPrev",
+    ),
+    true,
+  );
+  assert.equal(
+    isAdminActionHotkey(
+      eventFor({ code: "ArrowUp", key: "ArrowUp" }),
+      "menuPrev",
+    ),
     true,
   );
   assert.equal(
@@ -66,6 +94,7 @@ test("action hotkeys detect menu toggle and logout", () => {
 
 test("tab labels returned by getAdminTabHotkeyLabel remain user-facing", () => {
   assert.equal(getAdminTabHotkeyLabel("welcome"), "Ctrl+Alt+0");
-  assert.equal(getAdminTabHotkeyLabel("storage"), "Ctrl+Alt+S");
+  assert.equal(getAdminTabHotkeyLabel("storage"), "Ctrl+Alt+3");
+  assert.equal(getAdminTabHotkeyLabel("support"), "Ctrl+Alt+9");
   assert.equal(ADMIN_ACTION_HOTKEYS.menuToggle.combo, "Ctrl+Alt+M");
 });

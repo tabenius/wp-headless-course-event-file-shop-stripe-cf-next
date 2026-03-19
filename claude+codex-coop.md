@@ -746,3 +746,22 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Goal: satisfy requested orange menu identity while preserving existing contrast and layout behavior.
 - Validation:
   - `npx eslint src/components/admin/AdminHeader.js`
+
+---
+
+## 2026-03-19 (cont. 27)
+
+### Codex — numeric menu hotkeys + directional tab cycling
+
+- Updated tab hotkey mapping to numeric ascending order aligned with drawer menu order:
+  - `Welcome=0`, `Sales=1`, `Stats=2`, `Storage=3`, `Products=4`, `Chat=5`, `Health=6`, `Style=7`, `Info=8`, `Support=9`.
+- Removed the dedicated drawer hotkey legend panel.
+- Added per-item key badges directly on each menu option row (numbers shown next to the option labels).
+- Added directional shortcut synonyms for navigation:
+  - Next tab: `Ctrl+Alt+Right` and `Ctrl+Alt+Down`
+  - Previous tab: `Ctrl+Alt+Left` and `Ctrl+Alt+Up`
+- Implemented wrap-around next/previous tab switching in `AdminDashboard` key handler.
+- Updated hotkey tests to verify new numeric mapping and directional action-key detection.
+- Validation:
+  - `npx eslint src/lib/adminHotkeys.js src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js tests/admin-hotkeys.test.js`
+  - `npm test -- tests/admin-hotkeys.test.js`
