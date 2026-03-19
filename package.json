@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "node scripts/patch-opennext.mjs",
     "theme:css": "node scripts/generate-theme-css.mjs",
     "test:theme": "node --test scripts/generate-theme-css.test.mjs",
     "predev": "npm run theme:css",
