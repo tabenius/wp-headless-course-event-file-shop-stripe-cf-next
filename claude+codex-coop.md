@@ -37,6 +37,7 @@
 - Admin header now uses full width; logo and brand text slightly larger, build stamp smaller/tighter.
 - Admin UI hotkeys added (Alt+1..6 tabs, Alt+/ search, Alt+L logout) with a small bottom-left legend.
 - Added admin Chat tab using Cloudflare Workers AI (embeddings + chat) with lightweight RAG over WordPress/LP/events; i18n strings (EN/SV), request-id logging, and protected /api/chat endpoint. Middleware now tags chat requests too.
+- Lock protocol reminder: before editing `claude+codex-coop.md`, update `coop.lock` with your name/timestamp and set `status: locked`; reset it to `idle` afterward.
 - Chat prompt now interprets common admin/debug log patterns (auth errors, WordPress/Stripe fetch failures, cache issues) and offers next-step hints.
 - Added Stripe payments panel with email filter, download-able receipts (proxied PDF), and matching chat intent summarizing charges.
 - Chat index now ingests documentation (README.en.md + README.sv.md) so the bot can answer questions about admin/manual content.
