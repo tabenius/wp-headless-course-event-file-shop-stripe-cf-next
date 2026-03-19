@@ -317,6 +317,230 @@ All items shipped:
 
 ---
 
+### [Codex] Chat modularisation + markdown rendering — do in priority order, one commit each
+
+Claude reviewed the chat codebase. Two tasks below. Run `npm test && npm run build` after each before pushing. Use `docs.lock.pid` when done updating AGENTS / coop.
+
+---
+
+#### Priority 1 — Extract chat route into modules (do first — makes the code testable)
+
+**Problem:** `src/app/api/chat/route.js` is 239 lines handling five unrelated concerns in one file. Hard to test any single piece.
+
+**Target file layout:**
+
+| New file | What it contains |
+|---|---|
+| `src/lib/chat/rag.js` | `INDEX_CACHE`, `CACHE_TTL_MS`, `chunkText()`, `buildIndex()`, `cosine()` |
+| `src/lib/chat/detect.js` | `detectLanguage()` |
+| `src/lib/chat/intents.js` | The four admin intent handlers (products, access, payments, image-gen) — see below |
+| `src/app/api/chat/route.js` | Only: `IMAGE_SYSTEM_PROMPT` constant, imports, thin POST handler |
+
+**`src/lib/chat/intents.js`** — export four named async functions:
+
+```js
+// Each receives: (message, lower, request, origin) and returns NextResponse | null
+// Return null means "not this intent, fall through to RAG"
+export async function handleProducts(message, lower, request, origin) { … }
+export async function handleAccess(message, lower, request, origin) { … }
+export async function handlePayments(message, lower, request, origin) { … }
+export async function handleImageGen(lower, message, request) { … }  // returns NextResponse | null
+```
+
+The thin POST handler in `route.js` calls them in order:
+
+```js
+for (const handler of [handleProducts, handleAccess, handlePayments, handleImageGen]) {
+  const res = await handler(message, lower, request, origin);
+  if (res) return res;
+}
+// …fall through to RAG
+```
+
+**`src/lib/chat/rag.js`** — export:
+```js
+export const INDEX_CACHE = { ts: 0, chunks: [] };
+export function chunkText(text, maxLen = 900) { … }
+export function cosine(a, b) { … }
+export async function buildIndex(force = false) { … }
+```
+
+**`src/lib/chat/detect.js`** — export one function:
+```js
+export function detectLanguage(text) { … }
+```
+
+**Tests to add** in `tests/chat-detect.test.js`:
+```js
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { detectLanguage } from "../src/lib/chat/detect.js";
+
+it("detects Swedish by diacritics", () => assert.equal(detectLanguage("Är det möjligt?"), "Swedish"));
+it("detects Spanish by diacritics", () => assert.equal(detectLanguage("¿Cómo estás?"), "Spanish"));
+it("defaults to English", () => assert.equal(detectLanguage("Hello world"), "English"));
+```
+
+**Add a basic test** in `tests/chat-rag.test.js`:
+```js
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { chunkText, cosine } from "../src/lib/chat/rag.js";
+
+it("chunkText returns single chunk for short text", () => {
+  assert.deepEqual(chunkText("hello"), ["hello"]);
+});
+it("chunkText splits at maxLen", () => {
+  const chunks = chunkText("ab".repeat(500), 100);
+  assert.ok(chunks.length > 1);
+  assert.ok(chunks.every((c) => c.length <= 100));
+});
+it("cosine returns 1 for identical vectors", () => {
+  const v = [1, 0, 0];
+  assert.ok(Math.abs(cosine(v, v) - 1) < 1e-6);
+});
+```
+
+Keep `IMAGE_SYSTEM_PROMPT` and `fetchAdminJson` in `route.js` for now — they're tightly coupled to the request context.
+
+**No visual change expected.** Verify: `npm test` passes (new tests green), `npm run build` clean.
+
+Commit message: `refactor(chat): split route into rag/detect/intents modules`
+
+---
+
+#### Priority 2 — ChatPanel component + ChatMarkdown renderer (do second)
+
+**Problem A:** The chat tab in `AdminDashboard.js` (lines ~2903–2975) is ~70 lines of JSX inside an already 3000-line file. Extract it.
+
+**Problem B:** AI responses contain markdown (`**bold**`, `- lists`, `` `code` ``, `| table |`) but are rendered with `whitespace-pre-wrap` only — formatting is lost. The payments intent returns a separate `table` field as a workaround, which is a data-model hack.
+
+**Step 1 — ChatMarkdown component** in `src/components/admin/ChatMarkdown.js`:
+
+A lightweight bespoke renderer (no new npm packages). Process the text line-by-line and inline-by-inline. Handle these patterns in order:
+
+1. Fenced code block ` ``` … ``` ` → `<pre className="bg-gray-900 text-gray-100 rounded p-2 text-xs overflow-x-auto font-mono my-1"><code>{…}</code></pre>`
+2. `### Heading` / `## Heading` / `# Heading` → `<h3>` / `<h2>` / `<h1>` with appropriate Tailwind weight/size
+3. `| col | col |` table rows — collect consecutive table lines and render as `<table className="text-xs border-collapse w-full my-1">` with `<th>` for header row, `<td>` for data rows, `border border-gray-300 px-2 py-0.5`
+4. `- item` or `* item` bullet lines → gather consecutive bullets into `<ul className="list-disc pl-4 text-sm space-y-0.5"><li>`
+5. Blank line → paragraph break
+6. Non-special lines → `<p className="text-sm text-gray-900">`
+
+Inline (within any text node):
+- `**text**` → `<strong>`
+- `*text*` → `<em>`
+- `` `code` `` → `<code className="bg-gray-100 px-1 rounded font-mono text-xs">`
+
+**This replaces the `m.table` field entirely** — the payments answer should embed the table in the `answer` string and the markdown renderer handles it. Update the chat intent in `intents.js` (from Priority 1):
+
+```js
+// Before
+return NextResponse.json({ ok: true, answer: "Here are the latest payments: ", table, sources: [] });
+
+// After — table is part of the answer string
+return NextResponse.json({ ok: true, answer: `Here are the latest payments:\n\n${table}`, sources: [] });
+```
+
+Remove the separate `m.table` rendering from the chat UI (`ChatPanel`).
+
+**Step 2 — ChatMessage component** in `src/components/admin/ChatMessage.js`:
+
+```js
+"use client";
+import ChatMarkdown from "./ChatMarkdown";
+import ImageGenerationPanel from "./ImageGenerationPanel";
+import { useTranslation } from "@/lib/i18n";
+
+export default function ChatMessage({ m, uploadBackend }) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-1">
+      <div className="text-xs uppercase tracking-wide text-gray-500">
+        {m.role === "user" ? "You" : "AI"}
+      </div>
+      {m.type === "image-generation" ? (
+        <ImageGenerationPanel
+          initialPrompt={m.prompt}
+          description=""
+          onSave={null}
+          context="chat"
+          uploadBackend={uploadBackend}
+        />
+      ) : (
+        <>
+          <ChatMarkdown content={m.content} />
+          {m.sources && m.sources.length > 0 ? (
+            <div className="text-[11px] text-gray-500 flex gap-2 flex-wrap">
+              <span className="font-semibold">{t("chat.sources")}:</span>
+              {m.sources.map((s, i) => (
+                <a key={i} href={s.uri} className="underline" target="_blank" rel="noreferrer">
+                  {s.title || s.uri}
+                </a>
+              ))}
+            </div>
+          ) : m.role === "assistant" ? (
+            <div className="text-[11px] text-gray-400">{t("chat.noSources")}</div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+**Step 3 — ChatPanel component** in `src/components/admin/ChatPanel.js`:
+
+Extract the chat tab div from `AdminDashboard.js` lines 2904–2975 into a new component. Props:
+
+```js
+export default function ChatPanel({ chatMessages, chatInput, setChatInput, sendChat, chatLoading, uploadBackend })
+```
+
+In `AdminDashboard.js`, replace the inline chat tab with:
+```js
+import ChatPanel from "./ChatPanel";
+// …
+{activeTab === "chat" && (
+  <ChatPanel
+    chatMessages={chatMessages}
+    chatInput={chatInput}
+    setChatInput={setChatInput}
+    sendChat={sendChat}
+    chatLoading={chatLoading}
+    uploadBackend={uploadBackend}
+  />
+)}
+```
+
+**Bonus — auto-scroll to bottom on new message** (add inside ChatPanel):
+```js
+const bottomRef = useRef(null);
+useEffect(() => {
+  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [chatMessages]);
+// …
+// Last element in the message list:
+<div ref={bottomRef} />
+```
+
+**No visual regression expected** except formatted markdown now renders properly. Verify: `npm test` and `npm run build` clean.
+
+Commit message: `feat(chat): ChatPanel + ChatMarkdown renderer, merge table into answer`
+
+---
+
+**Codex — are there things you'd like to add or suggest?** For example: a per-message "copy answer" button, a "clear chat" button, streaming responses (complex, needs CF streaming support), or any other improvement you think would be valuable. Write your suggestions below before starting, so Claude can review before you build.
+
+**Codex suggestions:** *(write here before starting)*
+
+---
+
+**After both tasks:** append bullets to `claude+codex-coop.md` and mark this section done. Use `docs.lock.pid`.
+
+**Status:** Open — not yet started.
+
+---
+
 ### Standing priorities
 
 1. Keep admin tabs, hotkeys, and translations aligned. When adding a tab: update `AdminHeader.js`, `AdminDashboard.js`, and all three i18n files.
