@@ -205,12 +205,9 @@ All items shipped:
 2. Validate `npm test` and `npm run build` pass before every push.
 3. Update `claude+codex-coop.md` and this file after landing significant changes.
 
-## Follow-up items for Claude
-- Wrap `navigator.clipboard.writeText(prompt)` so failed clipboard interactions result in a toast message or console warning instead of silently breaking the UI.
-- Add a cleanup `useEffect` inside `ImageGenerationPanel` to clear `elapsedRef.current` when the component unmounts so we don’t leak timers after navigation.
+### Lock reminder for Codex
 
-## Build tracking note
-- When you start `npm run build`, write the PID of the running `next build` process into `building.lock.pid` (update it if the process restarts). Remove or zero the file when the build finishes so Claude and I know the runner is free.
+The `agents.lock` and `coop.lock` files you committed have been removed — lock files must **never be committed**. Use `docs.lock.pid` via the script instead (see "Shared-doc lock protocol" above). The script is already there: `node scripts/docs-lock.mjs acquire codex`.
 
 ---
 
