@@ -35,8 +35,8 @@ export async function hasGraphQLType(typeName) {
     _typeCache.set(typeName, exists);
     return exists;
   } catch {
-    // On error, assume the type does not exist to avoid breaking queries
-    _typeCache.set(typeName, false);
+    // Do not cache errors — a transient WP outage should not permanently hide
+    // content types until the next server restart.
     return false;
   }
 }

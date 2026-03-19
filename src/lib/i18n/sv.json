@@ -352,7 +352,8 @@
     "copyRawShort": "Ren",
     "copyMarkdown": "Kopiera formaterad markdown",
     "copyMarkdownShort": "MD",
-    "clear": "Rensa chatt"
+    "clear": "Rensa chatt",
+    "clearConfirm": "Rensa alla chattmeddelanden? Det g\u00e5r inte att \u00e5ngra."
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",
@@ -468,6 +469,12 @@
     "endpointMissing": "S3_ENDPOINT saknas.",
     "bucketMissing": "S3_BUCKET_NAME saknas.",
     "publicUrlMissing": "S3_PUBLIC_URL saknas. Ange den offentliga URL:en för din bucket."
+  },
+  "contact": {
+    "sending": "Skickar\u2026",
+    "sent": "Tack, ditt meddelande har skickats.",
+    "failed": "Det gick inte att skicka meddelandet just nu.",
+    "networkError": "Det gick inte att skicka meddelandet. Kontrollera anslutningen och f\u00f6rs\u00f6k igen."
   },
   "footer": {
     "contact": "Kontakt",

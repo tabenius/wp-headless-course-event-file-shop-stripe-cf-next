@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { t } from "@/lib/i18n";
 
 export default function ContactFormHydrator() {
   useEffect(() => {
@@ -16,7 +17,7 @@ export default function ContactFormHydrator() {
       const submitBtn = form.querySelector('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = "Skickar...";
+        submitBtn.textContent = t("contact.sending");
       }
 
       fetch(action, {
@@ -34,9 +35,7 @@ export default function ContactFormHydrator() {
           const message =
             json?.message ||
             json?.error ||
-            (success
-              ? "Tack, ditt meddelande har skickats."
-              : "Det gick inte att skicka meddelandet just nu.");
+            (success ? t("contact.sent") : t("contact.failed"));
           const replacement = document.createElement("div");
           replacement.className = `contact-form-result rounded border px-4 py-3 ${
             success
@@ -50,8 +49,7 @@ export default function ContactFormHydrator() {
           const replacement = document.createElement("div");
           replacement.className =
             "contact-form-result rounded border px-4 py-3 bg-red-50 border-red-200 text-red-800";
-          replacement.textContent =
-            "Det gick inte att skicka meddelandet. Kontrollera anslutningen och försök igen.";
+          replacement.textContent = t("contact.networkError");
           form.replaceWith(replacement);
         });
     }

@@ -352,7 +352,8 @@
     "copyRawShort": "Raw",
     "copyMarkdown": "Copy formatted markdown",
     "copyMarkdownShort": "MD",
-    "clear": "Clear chat"
+    "clear": "Clear chat",
+    "clearConfirm": "Clear all chat messages? This cannot be undone."
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",
@@ -468,6 +469,12 @@
     "endpointMissing": "S3_ENDPOINT is missing.",
     "bucketMissing": "S3_BUCKET_NAME is missing.",
     "publicUrlMissing": "S3_PUBLIC_URL is missing. Set the public URL for your bucket."
+  },
+  "contact": {
+    "sending": "Sending\u2026",
+    "sent": "Thank you, your message has been sent.",
+    "failed": "The message could not be sent right now.",
+    "networkError": "Could not send message. Check your connection and try again."
   },
   "footer": {
     "contact": "Contact",

@@ -352,7 +352,8 @@
     "copyRawShort": "Sin formato",
     "copyMarkdown": "Copiar markdown formateado",
     "copyMarkdownShort": "MD",
-    "clear": "Borrar chat"
+    "clear": "Borrar chat",
+    "clearConfirm": "\u00bfBorrar todos los mensajes del chat? Esta acci\u00f3n no se puede deshacer."
   },
   "health": {
     "wpNotConfigured": "WordPress no configurado.",
@@ -468,6 +469,12 @@
     "endpointMissing": "Falta S3_ENDPOINT.",
     "bucketMissing": "Falta S3_BUCKET_NAME.",
     "publicUrlMissing": "Falta S3_PUBLIC_URL. Define la URL pública de tu bucket."
+  },
+  "contact": {
+    "sending": "Enviando\u2026",
+    "sent": "Gracias, tu mensaje ha sido enviado.",
+    "failed": "No se pudo enviar el mensaje en este momento.",
+    "networkError": "No se pudo enviar el mensaje. Comprueba tu conexi\u00f3n e int\u00e9ntalo de nuevo."
   },
   "footer": {
     "contact": "Contacto",

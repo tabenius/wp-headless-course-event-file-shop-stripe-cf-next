@@ -29,7 +29,9 @@ export default function ChatPanel({
         {chatMessages.length > 0 && (
           <button
             type="button"
-            onClick={clearChat}
+            onClick={() =>
+              window.confirm(t("chat.clearConfirm")) && clearChat()
+            }
             disabled={chatLoading}
             className="shrink-0 text-xs text-gray-400 hover:text-red-500 disabled:opacity-50 mt-1"
           >
