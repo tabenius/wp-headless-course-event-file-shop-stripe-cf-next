@@ -5,7 +5,9 @@ import {
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
-function getUsersKvKey() { return process.env.CF_USERS_KV_KEY || "users"; }
+function getUsersKvKey() {
+  return process.env.CF_USERS_KV_KEY || "users";
+}
 const LOCAL_USERS_FILE = ".data/users.json";
 let inMemoryUsers = [];
 
@@ -29,7 +31,10 @@ function verifyPassword(password, storedHash) {
 }
 
 function shouldUseCloudflareBackend() {
-  return process.env.USER_STORE_BACKEND === "cloudflare" || isCloudflareKvConfigured();
+  return (
+    process.env.USER_STORE_BACKEND === "cloudflare" ||
+    isCloudflareKvConfigured()
+  );
 }
 
 async function ensureLocalStore() {
@@ -100,7 +105,10 @@ async function readUsers() {
     try {
       return await readCloudflareUsers();
     } catch (error) {
-      console.error("Cloudflare KV users read failed, falling back to local users:", error);
+      console.error(
+        "Cloudflare KV users read failed, falling back to local users:",
+        error,
+      );
     }
   }
   return readLocalUsers();
@@ -112,7 +120,10 @@ async function writeUsers(users) {
       const wrote = await writeCloudflareUsers(users);
       if (wrote) return;
     } catch (error) {
-      console.error("Cloudflare KV users write failed, falling back to local users:", error);
+      console.error(
+        "Cloudflare KV users write failed, falling back to local users:",
+        error,
+      );
     }
   }
   await writeLocalUsers(users);
@@ -171,7 +182,11 @@ export async function validateUserPassword(email, password) {
 
 export async function updateUserPassword(email, newPassword) {
   const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail || typeof newPassword !== "string" || newPassword.length < 8) {
+  if (
+    !normalizedEmail ||
+    typeof newPassword !== "string" ||
+    newPassword.length < 8
+  ) {
     throw new Error("Invalid input");
   }
   const users = await readUsers();
@@ -185,7 +200,11 @@ export async function updateUserPassword(email, newPassword) {
     updatedAt: new Date().toISOString(),
   };
   await writeUsers(users);
-  return { id: users[index].id, name: users[index].name, email: users[index].email };
+  return {
+    id: users[index].id,
+    name: users[index].name,
+    email: users[index].email,
+  };
 }
 
 export async function listUsers() {

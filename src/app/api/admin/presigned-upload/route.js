@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
-import { createPresignedUpload, getUploadBackend, isS3Configured, isS3Upload } from "@/lib/s3upload";
+import {
+  createPresignedUpload,
+  getUploadBackend,
+  isS3Configured,
+  isS3Upload,
+} from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
 export async function POST(request) {
@@ -11,7 +16,10 @@ export async function POST(request) {
 
   if (!isS3Upload(backend)) {
     return NextResponse.json(
-      { ok: false, error: "Presigned uploads require UPLOAD_BACKEND=r2 or s3." },
+      {
+        ok: false,
+        error: "Presigned uploads require UPLOAD_BACKEND=r2 or s3.",
+      },
       { status: 400 },
     );
   }
@@ -25,8 +33,12 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const fileName = typeof body?.fileName === "string" ? body.fileName.trim() : "";
-    const contentType = typeof body?.contentType === "string" ? body.contentType : "application/octet-stream";
+    const fileName =
+      typeof body?.fileName === "string" ? body.fileName.trim() : "";
+    const contentType =
+      typeof body?.contentType === "string"
+        ? body.contentType
+        : "application/octet-stream";
 
     if (!fileName) {
       return NextResponse.json(
@@ -35,7 +47,12 @@ export async function POST(request) {
       );
     }
 
-    const result = await createPresignedUpload(fileName, contentType, 3600, backend);
+    const result = await createPresignedUpload(
+      fileName,
+      contentType,
+      3600,
+      backend,
+    );
 
     return NextResponse.json({
       ok: true,

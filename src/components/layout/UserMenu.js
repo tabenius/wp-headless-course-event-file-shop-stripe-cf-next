@@ -52,7 +52,11 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
             </span>
           )}
           {isLoggedIn && (
-            <Link href="/admin" className={itemClass} onClick={() => setOpen(false)}>
+            <Link
+              href="/admin"
+              className={itemClass}
+              onClick={() => setOpen(false)}
+            >
               {t("common.admin")}
             </Link>
           )}
@@ -60,10 +64,18 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
             <div onClick={() => setOpen(false)}>{signOutButton}</div>
           ) : (
             <>
-              <Link href="/auth/signin" className={itemClass} onClick={() => setOpen(false)}>
+              <Link
+                href="/auth/signin"
+                className={itemClass}
+                onClick={() => setOpen(false)}
+              >
                 {t("common.signIn")}
               </Link>
-              <Link href="/auth/register" className={itemClass} onClick={() => setOpen(false)}>
+              <Link
+                href="/auth/register"
+                className={itemClass}
+                onClick={() => setOpen(false)}
+              >
                 {t("common.register")}
               </Link>
             </>

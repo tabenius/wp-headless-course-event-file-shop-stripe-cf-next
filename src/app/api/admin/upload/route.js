@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
-import { getUploadBackend, isS3Configured, isS3Upload, uploadToS3 } from "@/lib/s3upload";
+import {
+  getUploadBackend,
+  isS3Configured,
+  isS3Upload,
+  uploadToS3,
+} from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
 async function uploadToWordPress(arrayBuffer, file) {
-  const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+  const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(
+    /\/+$/,
+    "",
+  );
   if (!wpUrl) throw new Error(t("apiErrors.wpUrlMissing"));
 
   const auth = getWordPressGraphqlAuth();
@@ -40,7 +48,9 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   try {
-    const backend = getUploadBackend(request.nextUrl.searchParams.get("backend"));
+    const backend = getUploadBackend(
+      request.nextUrl.searchParams.get("backend"),
+    );
     const formData = await request.formData();
     const file = formData.get("file");
     if (!file || typeof file === "string") {

@@ -6,7 +6,10 @@ export async function GET(request) {
     request.headers.get("cookie") || "",
   );
   if (!session) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 },
+    );
   }
 
   const token = process.env.GITHUB_DEPLOY_TOKEN;

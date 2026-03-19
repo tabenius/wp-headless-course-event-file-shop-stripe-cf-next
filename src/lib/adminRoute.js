@@ -15,9 +15,7 @@ export function unauthorized() {
  * Returns the session object, or null if not authenticated.
  */
 export async function getAdminSession(request) {
-  return getAdminSessionFromCookieHeader(
-    request.headers.get("cookie") || "",
-  );
+  return getAdminSessionFromCookieHeader(request.headers.get("cookie") || "");
 }
 
 /**

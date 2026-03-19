@@ -23,7 +23,10 @@ export function transformContent(html) {
 
   // Collect all origin variants to strip
   // (http/https, www/non-www, with/without trailing slash)
-  const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+  const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(
+    /\/+$/,
+    "",
+  );
   const siteUrl = (site.url || "").replace(/\/+$/, "");
   const origins = new Set();
   for (const url of [wpUrl, siteUrl]) {
@@ -48,16 +51,14 @@ export function transformContent(html) {
       new RegExp(`href="${escaped}(/[^"]*)"`, "g"),
       'href="$1"',
     );
-    result = result.replace(
-      new RegExp(`href="${escaped}"`, "g"),
-      'href="/"',
-    );
+    result = result.replace(new RegExp(`href="${escaped}"`, "g"), 'href="/"');
   }
 
   // Auto-link bare email addresses (not already linked)
   result = result.replace(
     /(^|[\s>])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})($|[\s<])/gi,
-    (_, prefix, email, suffix) => `${prefix}<a href="mailto:${email}">${email}</a>${suffix}`,
+    (_, prefix, email, suffix) =>
+      `${prefix}<a href="mailto:${email}">${email}</a>${suffix}`,
   );
 
   // Replace Contact Form 7 shortcodes with a simple contact form

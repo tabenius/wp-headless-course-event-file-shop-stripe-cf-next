@@ -14,18 +14,18 @@
 
 ## File Map
 
-| Action | Path | Responsibility |
-|--------|------|----------------|
-| Modify | `src/lib/ai.js` | Add `generateImage(prompt, width, height)` — raw binary fetch |
-| Create | `src/lib/imageQuota.js` | Exported pure helpers: SIZE_PRESETS, resolveSize, clampCount, computeResetsAt, arrayBufferToBase64 |
-| Create | `src/app/api/admin/generate-image/route.js` | GET quota / POST generate; quota tracking in KV |
-| Create | `tests/generate-image.test.js` | Unit tests — imports from real source files |
-| Create | `src/components/admin/ImageGenerationPanel.js` | Shared generation UI (prompt, size, images, quota) |
-| Modify | `src/lib/i18n/en.json` | Add image generation UI strings |
-| Modify | `src/lib/i18n/sv.json` | Swedish translations |
-| Modify | `src/lib/i18n/es.json` | Spanish translations |
-| Modify | `src/app/api/chat/route.js` | Add image-prompt intent before 400 guard |
-| Modify | `src/components/admin/AdminDashboard.js` | Update sendChat + chat renderer + editor panel toggle |
+| Action | Path                                           | Responsibility                                                                                     |
+| ------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Modify | `src/lib/ai.js`                                | Add `generateImage(prompt, width, height)` — raw binary fetch                                      |
+| Create | `src/lib/imageQuota.js`                        | Exported pure helpers: SIZE_PRESETS, resolveSize, clampCount, computeResetsAt, arrayBufferToBase64 |
+| Create | `src/app/api/admin/generate-image/route.js`    | GET quota / POST generate; quota tracking in KV                                                    |
+| Create | `tests/generate-image.test.js`                 | Unit tests — imports from real source files                                                        |
+| Create | `src/components/admin/ImageGenerationPanel.js` | Shared generation UI (prompt, size, images, quota)                                                 |
+| Modify | `src/lib/i18n/en.json`                         | Add image generation UI strings                                                                    |
+| Modify | `src/lib/i18n/sv.json`                         | Swedish translations                                                                               |
+| Modify | `src/lib/i18n/es.json`                         | Spanish translations                                                                               |
+| Modify | `src/app/api/chat/route.js`                    | Add image-prompt intent before 400 guard                                                           |
+| Modify | `src/components/admin/AdminDashboard.js`       | Update sendChat + chat renderer + editor panel toggle                                              |
 
 ---
 
@@ -34,6 +34,7 @@
 ### Task 1: Shared pure helpers in `src/lib/imageQuota.js` + tests
 
 **Files:**
+
 - Create: `src/lib/imageQuota.js` (pure helpers — no side effects, importable in tests)
 - Modify: `src/lib/ai.js` (add `generateImage`)
 - Create: `tests/generate-image.test.js`
@@ -44,10 +45,10 @@ Extracting pure helpers into a separate module means tests import the real imple
 
 ```js
 export const SIZE_PRESETS = {
-  square:      { width: 512,  height: 512 },
-  landscape:   { width: 896,  height: 512 },
-  portrait:    { width: 512,  height: 768 },
-  "a6-150dpi": { width: 624,  height: 880 },
+  square: { width: 512, height: 512 },
+  landscape: { width: 896, height: 512 },
+  portrait: { width: 512, height: 768 },
+  "a6-150dpi": { width: 624, height: 880 },
 };
 
 export function resolveSize(key) {
@@ -60,14 +61,17 @@ export function clampCount(raw) {
 
 export function computeResetsAt() {
   const now = new Date();
-  const y = now.getUTCFullYear(), m = now.getUTCMonth(), d = now.getUTCDate();
+  const y = now.getUTCFullYear(),
+    m = now.getUTCMonth(),
+    d = now.getUTCDate();
   return new Date(Date.UTC(y, m, d + 1)).toISOString();
 }
 
 export function arrayBufferToBase64(buf) {
   const bytes = new Uint8Array(buf);
   let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i++)
+    binary += String.fromCharCode(bytes[i]);
   return "data:image/png;base64," + btoa(binary);
 }
 ```
@@ -100,7 +104,10 @@ test("arrayBufferToBase64 round-trips through atob correctly", () => {
 });
 
 test("arrayBufferToBase64 handles empty buffer", () => {
-  assert.equal(arrayBufferToBase64(new ArrayBuffer(0)), "data:image/png;base64,");
+  assert.equal(
+    arrayBufferToBase64(new ArrayBuffer(0)),
+    "data:image/png;base64,",
+  );
 });
 
 // ── resolveSize ──────────────────────────────────────────────────────────────
@@ -140,7 +147,10 @@ test("clampCount floors 2.9 to 2", () => assert.equal(clampCount(2.9), 2));
 // ── computeResetsAt ──────────────────────────────────────────────────────────
 test("computeResetsAt returns ISO string at UTC midnight", () => {
   const result = computeResetsAt();
-  assert.ok(result.endsWith("T00:00:00.000Z"), `Expected midnight UTC, got ${result}`);
+  assert.ok(
+    result.endsWith("T00:00:00.000Z"),
+    `Expected midnight UTC, got ${result}`,
+  );
   assert.ok(new Date(result) > new Date(), "Expected future timestamp");
 });
 ```
@@ -170,7 +180,8 @@ import { arrayBufferToBase64 as _toBase64 } from "./imageQuota.js";
 export { arrayBufferToBase64 } from "./imageQuota.js";
 
 export async function generateImage(prompt, width = 512, height = 512) {
-  const model = process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
+  const model =
+    process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
   const token = process.env.CF_API_TOKEN;
   if (!token) throw new Error("CF_API_TOKEN missing");
   const res = await fetch(cfEndpoint(model), {
@@ -215,6 +226,7 @@ generateImage bypasses cfRun to read raw ArrayBuffer from FLUX (edge-safe)."
 ### Task 2: `/api/admin/generate-image` route (GET quota + POST generate)
 
 **Files:**
+
 - Create: `src/app/api/admin/generate-image/route.js`
 
 > **Note on env vars:** The route needs both `CF_ACCOUNT_ID` (for `generateImage` → `cfEndpoint`) and `CLOUDFLARE_ACCOUNT_ID` + `CF_KV_NAMESPACE_ID` (for `cloudflareKv.js`). All three plus `CF_API_TOKEN` must be set. If `CF_KV_NAMESPACE_ID` is absent, quota is silently skipped (fail-open).
@@ -229,8 +241,16 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { generateImage } from "@/lib/ai";
-import { resolveSize, clampCount, computeResetsAt, arrayBufferToBase64 } from "@/lib/imageQuota";
-import { readCloudflareKvJson, writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import {
+  resolveSize,
+  clampCount,
+  computeResetsAt,
+  arrayBufferToBase64,
+} from "@/lib/imageQuota";
+import {
+  readCloudflareKvJson,
+  writeCloudflareKvJson,
+} from "@/lib/cloudflareKv";
 
 function kvKey() {
   const now = new Date();
@@ -253,7 +273,11 @@ async function incrementQuota(currentCount, by) {
   // currentCount: the value we read before generation (avoid extra KV round-trip)
   if (by <= 0) return;
   try {
-    await writeCloudflareKvJson(kvKey(), { count: currentCount + by }, { expirationTtl: 30 * 3600 });
+    await writeCloudflareKvJson(
+      kvKey(),
+      { count: currentCount + by },
+      { expirationTtl: 30 * 3600 },
+    );
   } catch {
     // fail open — quota undercount is acceptable per spec
   }
@@ -270,7 +294,10 @@ export async function GET(request) {
 
   const limit = parseInt(process.env.AI_IMAGE_DAILY_LIMIT ?? "5", 10);
   const { count: used } = await readQuota();
-  return NextResponse.json({ ok: true, quota: buildQuotaResponse(used, limit) });
+  return NextResponse.json({
+    ok: true,
+    quota: buildQuotaResponse(used, limit),
+  });
 }
 
 export async function POST(request) {
@@ -281,11 +308,18 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON" },
+      { status: 400 },
+    );
   }
 
   const prompt = (body?.prompt || "").trim();
-  if (!prompt) return NextResponse.json({ ok: false, error: "prompt required" }, { status: 400 });
+  if (!prompt)
+    return NextResponse.json(
+      { ok: false, error: "prompt required" },
+      { status: 400 },
+    );
 
   const count = clampCount(body?.count);
   const { width, height } = resolveSize(body?.size);
@@ -294,7 +328,11 @@ export async function POST(request) {
   const { count: used } = await readQuota();
   if (used + count > limit) {
     return NextResponse.json(
-      { ok: false, error: "Daily limit reached", quota: buildQuotaResponse(used, limit) },
+      {
+        ok: false,
+        error: "Daily limit reached",
+        quota: buildQuotaResponse(used, limit),
+      },
       { status: 429 },
     );
   }
@@ -308,7 +346,9 @@ export async function POST(request) {
     .map((r) => r.value);
 
   if (buffers.length === 0) {
-    const firstError = results.find((r) => r.status === "rejected")?.reason?.message || "All FLUX calls failed";
+    const firstError =
+      results.find((r) => r.status === "rejected")?.reason?.message ||
+      "All FLUX calls failed";
     return NextResponse.json({ ok: false, error: firstError }, { status: 502 });
   }
 
@@ -351,6 +391,7 @@ Size resolved from named presets (square/landscape/portrait/a6-150dpi)."
 ### Task 3: Update `/api/chat` for image-prompt intent
 
 **Files:**
+
 - Modify: `src/app/api/chat/route.js`
 
 The intent check must happen **before** the `if (!message) return 400` guard (line 99), because `intent: "image-prompt"` requests have no `message` field.
@@ -363,48 +404,63 @@ In `src/app/api/chat/route.js`, replace lines 96–105:
 
 ```js
 // BEFORE (lines 96-105):
-    const body = await request.json();
-    const message = (body?.message || "").trim();
-    const force = body?.rebuild === true;
-    if (!message) return NextResponse.json({ ok: false, error: "Message required" }, { status: 400 });
+const body = await request.json();
+const message = (body?.message || "").trim();
+const force = body?.rebuild === true;
+if (!message)
+  return NextResponse.json(
+    { ok: false, error: "Message required" },
+    { status: 400 },
+  );
 
-    const admin = force ? requireAdmin(request) : null;
-    if (admin?.error) return admin.error;
+const admin = force ? requireAdmin(request) : null;
+if (admin?.error) return admin.error;
 
-    // Lightweight intent routing for admin-only helpers
-    const lower = message.toLowerCase();
-    const origin = new URL(request.url).origin;
+// Lightweight intent routing for admin-only helpers
+const lower = message.toLowerCase();
+const origin = new URL(request.url).origin;
 ```
 
 With:
 
 ```js
-    const body = await request.json();
+const body = await request.json();
 
-    // ── Image-prompt intent (Path A) — must come before the !message guard ──
-    if (body?.intent === "image-prompt") {
-      const adminAuth = requireAdmin(request);
-      if (adminAuth?.error) return adminAuth.error;
-      const description = (body?.description || "").trim();
-      const imageSystemPrompt =
-        `Write a concise, vivid image generation prompt suited for FLUX (max 60 words). ` +
-        `Return only the prompt, no explanation, no quotes. Content to base it on: ${description}`;
-      const prompt = await chatWithContext(imageSystemPrompt, [
-        { role: "user", content: description || "generate a compelling product image" },
-      ]);
-      return NextResponse.json({ ok: true, type: "image-generation", prompt: prompt.trim() });
-    }
+// ── Image-prompt intent (Path A) — must come before the !message guard ──
+if (body?.intent === "image-prompt") {
+  const adminAuth = requireAdmin(request);
+  if (adminAuth?.error) return adminAuth.error;
+  const description = (body?.description || "").trim();
+  const imageSystemPrompt =
+    `Write a concise, vivid image generation prompt suited for FLUX (max 60 words). ` +
+    `Return only the prompt, no explanation, no quotes. Content to base it on: ${description}`;
+  const prompt = await chatWithContext(imageSystemPrompt, [
+    {
+      role: "user",
+      content: description || "generate a compelling product image",
+    },
+  ]);
+  return NextResponse.json({
+    ok: true,
+    type: "image-generation",
+    prompt: prompt.trim(),
+  });
+}
 
-    const message = (body?.message || "").trim();
-    const force = body?.rebuild === true;
-    if (!message) return NextResponse.json({ ok: false, error: "Message required" }, { status: 400 });
+const message = (body?.message || "").trim();
+const force = body?.rebuild === true;
+if (!message)
+  return NextResponse.json(
+    { ok: false, error: "Message required" },
+    { status: 400 },
+  );
 
-    const admin = force ? requireAdmin(request) : null;
-    if (admin?.error) return admin.error;
+const admin = force ? requireAdmin(request) : null;
+if (admin?.error) return admin.error;
 
-    // Lightweight intent routing for admin-only helpers
-    const lower = message.toLowerCase();
-    const origin = new URL(request.url).origin;
+// Lightweight intent routing for admin-only helpers
+const lower = message.toLowerCase();
+const origin = new URL(request.url).origin;
 ```
 
 - [ ] **Step 3.2: Add Path B — natural language image keywords**
@@ -412,19 +468,29 @@ With:
 After the existing payments block (around line 175), before `const index = await buildIndex(force);`, insert:
 
 ```js
-    // ── Image-generation (Path B) — natural language ──
-    const imageKeywords = ["generate image", "create image", "make image", "skapa bild", "genera imagen"];
-    if (imageKeywords.some((kw) => lower.includes(kw))) {
-      const adminAuth = requireAdmin(request);
-      if (adminAuth?.error) return adminAuth.error;
-      const imageSystemPrompt =
-        `Write a concise, vivid image generation prompt suited for FLUX (max 60 words). ` +
-        `Return only the prompt, no explanation, no quotes. Content to base it on: ${message}`;
-      const prompt = await chatWithContext(imageSystemPrompt, [
-        { role: "user", content: message },
-      ]);
-      return NextResponse.json({ ok: true, type: "image-generation", prompt: prompt.trim() });
-    }
+// ── Image-generation (Path B) — natural language ──
+const imageKeywords = [
+  "generate image",
+  "create image",
+  "make image",
+  "skapa bild",
+  "genera imagen",
+];
+if (imageKeywords.some((kw) => lower.includes(kw))) {
+  const adminAuth = requireAdmin(request);
+  if (adminAuth?.error) return adminAuth.error;
+  const imageSystemPrompt =
+    `Write a concise, vivid image generation prompt suited for FLUX (max 60 words). ` +
+    `Return only the prompt, no explanation, no quotes. Content to base it on: ${message}`;
+  const prompt = await chatWithContext(imageSystemPrompt, [
+    { role: "user", content: message },
+  ]);
+  return NextResponse.json({
+    ok: true,
+    type: "image-generation",
+    prompt: prompt.trim(),
+  });
+}
 ```
 
 - [ ] **Step 3.3: Verify build**
@@ -454,6 +520,7 @@ Both return { ok: true, type: 'image-generation', prompt }."
 ### Task 4: i18n strings
 
 **Files:**
+
 - Modify: `src/lib/i18n/en.json`, `sv.json`, `es.json`
 
 > **Pre-condition:** `en.json`, `sv.json`, and `es.json` each had a missing comma after `"languageHint"` (invalid JSON) and two duplicate `"stats"` top-level keys (silently discarded by parsers). These were fixed before Task 4 began — all three files are now valid JSON with a single `"stats"` block. The new image generation keys are already added to all three files as part of that fix. **Task 4 steps are already complete — skip to Task 5.**
@@ -471,7 +538,7 @@ node -e "
 
 Expected: prints the translated string for each locale. If missing, re-check the file.
 
-- [ ] **Step 4.2 (original): Add strings to `en.json`** *(already done — kept for reference)*
+- [ ] **Step 4.2 (original): Add strings to `en.json`** _(already done — kept for reference)_
 
 In `src/lib/i18n/en.json`, add inside the `"admin"` object (after the last key in that object, before the closing `}`):
 
@@ -572,6 +639,7 @@ git commit -m "feat: add AI image generation i18n strings (EN/SV/ES)"
 ### Task 5: `ImageGenerationPanel` component
 
 **Files:**
+
 - Create: `src/components/admin/ImageGenerationPanel.js`
 
 This is a self-contained React component. It has no dependencies on `AdminDashboard` state — everything it needs comes through props.
@@ -587,10 +655,10 @@ import { useState, useEffect, useCallback } from "react";
 import { t } from "@/lib/i18n";
 
 const SIZE_PRESETS = [
-  { key: "square",     label: () => t("admin.imageSizeSquare") },
-  { key: "landscape",  label: () => t("admin.imageSizeLandscape") },
-  { key: "portrait",   label: () => t("admin.imageSizePortrait") },
-  { key: "a6-150dpi",  label: () => t("admin.imageSizeA6") },
+  { key: "square", label: () => t("admin.imageSizeSquare") },
+  { key: "landscape", label: () => t("admin.imageSizeLandscape") },
+  { key: "portrait", label: () => t("admin.imageSizePortrait") },
+  { key: "a6-150dpi", label: () => t("admin.imageSizeA6") },
 ];
 
 function formatTimeUntil(isoString) {
@@ -627,7 +695,9 @@ export default function ImageGenerationPanel({
   useEffect(() => {
     fetch("/api/admin/generate-image")
       .then((r) => r.json())
-      .then((j) => { if (j?.ok) setQuota(j.quota); })
+      .then((j) => {
+        if (j?.ok) setQuota(j.quota);
+      })
       .catch(() => {});
   }, []);
 
@@ -669,7 +739,9 @@ export default function ImageGenerationPanel({
       if (!res.ok || !json?.ok) {
         if (res.status === 429) {
           if (json?.quota) setQuota(json.quota);
-          const resetTime = json.quota?.resetsAt ? new Date(json.quota.resetsAt).toUTCString().slice(17, 22) : "?";
+          const resetTime = json.quota?.resetsAt
+            ? new Date(json.quota.resetsAt).toUTCString().slice(17, 22)
+            : "?";
           showToast(t("admin.quotaExhausted", { time: resetTime }));
         } else {
           showToast(json?.error || t("admin.imageGenFailed"));
@@ -679,7 +751,10 @@ export default function ImageGenerationPanel({
       if (json.quota) setQuota(json.quota);
       setImages(json.images || []);
       if (json.images?.length < count) {
-        showToast(t("admin.imagePartialFail", { n: json.images.length, m: count }), "info");
+        showToast(
+          t("admin.imagePartialFail", { n: json.images.length, m: count }),
+          "info",
+        );
       }
     } catch (err) {
       showToast(err.message || t("admin.imageGenFailed"));
@@ -708,11 +783,17 @@ export default function ImageGenerationPanel({
         img.src = dataUrl;
       });
       const form = new FormData();
-      form.append("file", new File([blob], "ragbaz-ai-image.png", { type: "image/png" }));
-      const res = await fetch(`/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`, {
-        method: "POST",
-        body: form,
-      });
+      form.append(
+        "file",
+        new File([blob], "ragbaz-ai-image.png", { type: "image/png" }),
+      );
+      const res = await fetch(
+        `/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`,
+        {
+          method: "POST",
+          body: form,
+        },
+      );
       const json = await res.json();
       if (!res.ok || !json?.ok) throw new Error(json?.error || "Upload failed");
       onSave(json.url);
@@ -736,9 +817,13 @@ export default function ImageGenerationPanel({
   const quotaExhausted = remaining === 0;
 
   return (
-    <div className={`border rounded p-4 space-y-3 bg-purple-50 ${context === "chat" ? "text-sm" : ""}`}>
+    <div
+      className={`border rounded p-4 space-y-3 bg-purple-50 ${context === "chat" ? "text-sm" : ""}`}
+    >
       {/* Header */}
-      <div className="text-sm font-semibold text-purple-800">{t("admin.aiImagesTitle")}</div>
+      <div className="text-sm font-semibold text-purple-800">
+        {t("admin.aiImagesTitle")}
+      </div>
 
       {/* Quota bar */}
       {quota && (
@@ -753,15 +838,23 @@ export default function ImageGenerationPanel({
               ))}
             </div>
             <span>
-              {t("admin.quotaStatus", { used: quota.used, limit: quota.limit, time: formatTimeUntil(quota.resetsAt) })}
+              {t("admin.quotaStatus", {
+                used: quota.used,
+                limit: quota.limit,
+                time: formatTimeUntil(quota.resetsAt),
+              })}
             </span>
           </div>
           {remaining !== null && remaining <= 2 && remaining > 0 && (
-            <p className="text-xs text-amber-700">{t("admin.quotaWarning", { n: remaining })}</p>
+            <p className="text-xs text-amber-700">
+              {t("admin.quotaWarning", { n: remaining })}
+            </p>
           )}
           {quotaExhausted && (
             <p className="text-xs text-red-700">
-              {t("admin.quotaExhausted", { time: new Date(quota.resetsAt).toUTCString().slice(17, 22) })}
+              {t("admin.quotaExhausted", {
+                time: new Date(quota.resetsAt).toUTCString().slice(17, 22),
+              })}
             </p>
           )}
         </div>
@@ -773,7 +866,11 @@ export default function ImageGenerationPanel({
           rows={3}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={promptLoading ? t("admin.regeneratePrompt") + "..." : t("admin.imagePromptPlaceholder")}
+          placeholder={
+            promptLoading
+              ? t("admin.regeneratePrompt") + "..."
+              : t("admin.imagePromptPlaceholder")
+          }
           disabled={promptLoading}
           className="flex-1 border rounded px-3 py-2 text-sm resize-none"
         />
@@ -801,7 +898,9 @@ export default function ImageGenerationPanel({
                 type="button"
                 onClick={() => setCount(n)}
                 className={`px-3 py-1 rounded border text-sm ${
-                  count === n ? "bg-purple-600 text-white border-purple-600" : "hover:bg-gray-50"
+                  count === n
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "hover:bg-gray-50"
                 }`}
               >
                 {n}
@@ -811,7 +910,10 @@ export default function ImageGenerationPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500" title={t("admin.imageSizeNeuronTip")}>
+          <span
+            className="text-xs text-gray-500"
+            title={t("admin.imageSizeNeuronTip")}
+          >
             {t("admin.imageSize")} ⓘ
           </span>
           <select
@@ -820,7 +922,9 @@ export default function ImageGenerationPanel({
             className="border rounded px-2 py-1 text-sm"
           >
             {SIZE_PRESETS.map((p) => (
-              <option key={p.key} value={p.key}>{p.label()}</option>
+              <option key={p.key} value={p.key}>
+                {p.label()}
+              </option>
             ))}
           </select>
         </div>
@@ -837,7 +941,9 @@ export default function ImageGenerationPanel({
 
       {/* Toast */}
       {toast && (
-        <div className={`text-xs px-3 py-2 rounded ${toast.type === "info" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}>
+        <div
+          className={`text-xs px-3 py-2 rounded ${toast.type === "info" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}
+        >
           {toast.msg}
         </div>
       )}
@@ -905,6 +1011,7 @@ editor (collapsible, save enabled) and chat (card, download-only) contexts."
 ### Task 6: Wire `ImageGenerationPanel` into `AdminDashboard.js`
 
 **Files:**
+
 - Modify: `src/components/admin/AdminDashboard.js`
 
 Three changes: (A) update `sendChat` to handle `type: "image-generation"` responses, (B) update the chat renderer to mount the panel for those messages, (C) add `showImageGen` toggle + panel below the description textarea in the shop product editor.
@@ -923,14 +1030,23 @@ Replace the `setChatMessages` line on success inside `sendChat` (around line 686
 
 ```js
 // BEFORE:
-      setChatMessages((prev) => [...prev, { role: "assistant", content: json.answer, sources: json.sources || [] }]);
+setChatMessages((prev) => [
+  ...prev,
+  { role: "assistant", content: json.answer, sources: json.sources || [] },
+]);
 
 // AFTER:
-      if (json.type === "image-generation") {
-        setChatMessages((prev) => [...prev, { role: "assistant", type: "image-generation", prompt: json.prompt }]);
-      } else {
-        setChatMessages((prev) => [...prev, { role: "assistant", content: json.answer, sources: json.sources || [] }]);
-      }
+if (json.type === "image-generation") {
+  setChatMessages((prev) => [
+    ...prev,
+    { role: "assistant", type: "image-generation", prompt: json.prompt },
+  ]);
+} else {
+  setChatMessages((prev) => [
+    ...prev,
+    { role: "assistant", content: json.answer, sources: json.sources || [] },
+  ]);
+}
 ```
 
 - [ ] **Step 6.3: Update chat message renderer to mount panel for image messages**
@@ -1001,25 +1117,27 @@ const [showImageGen, setShowImageGen] = useState(false);
 In the shop product edit section (around line 2088–2092, just after the description `<textarea>`), add:
 
 ```jsx
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setShowImageGen((v) => !v)}
-                  className="text-xs px-3 py-1 rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
-                >
-                  {t("admin.generateImages")}
-                </button>
-                {showImageGen && (
-                  <div className="mt-2">
-                    <ImageGenerationPanel
-                      description={selectedShopProduct.description || selectedShopProduct.name || ""}
-                      onSave={(url) => updateProduct(shopIndex, "imageUrl", url)}
-                      context="editor"
-                      uploadBackend={uploadBackend}
-                    />
-                  </div>
-                )}
-              </div>
+<div>
+  <button
+    type="button"
+    onClick={() => setShowImageGen((v) => !v)}
+    className="text-xs px-3 py-1 rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+  >
+    {t("admin.generateImages")}
+  </button>
+  {showImageGen && (
+    <div className="mt-2">
+      <ImageGenerationPanel
+        description={
+          selectedShopProduct.description || selectedShopProduct.name || ""
+        }
+        onSave={(url) => updateProduct(shopIndex, "imageUrl", url)}
+        context="editor"
+        uploadBackend={uploadBackend}
+      />
+    </div>
+  )}
+</div>
 ```
 
 - [ ] **Step 6.6: Verify build**
@@ -1092,11 +1210,11 @@ git push
 
 Before testing, ensure these are set in `.env.local` / Cloudflare dashboard:
 
-| Variable | Purpose | Required for |
-|----------|---------|-------------|
-| `CF_ACCOUNT_ID` | Cloudflare account — used by `cfEndpoint()` | FLUX image generation |
-| `CF_API_TOKEN` | Cloudflare API token (AI Write + KV Write) | Both generation and quota |
-| `CLOUDFLARE_ACCOUNT_ID` | Used by `cloudflareKv.js` | KV quota tracking |
-| `CF_KV_NAMESPACE_ID` | KV namespace ID | KV quota tracking (quota bypassed if absent) |
-| `AI_IMAGE_DAILY_LIMIT` | Integer, default `5` | Optional override |
-| `CF_IMAGE_MODEL` | Model override | Optional, defaults to FLUX.1 schnell |
+| Variable                | Purpose                                     | Required for                                 |
+| ----------------------- | ------------------------------------------- | -------------------------------------------- |
+| `CF_ACCOUNT_ID`         | Cloudflare account — used by `cfEndpoint()` | FLUX image generation                        |
+| `CF_API_TOKEN`          | Cloudflare API token (AI Write + KV Write)  | Both generation and quota                    |
+| `CLOUDFLARE_ACCOUNT_ID` | Used by `cloudflareKv.js`                   | KV quota tracking                            |
+| `CF_KV_NAMESPACE_ID`    | KV namespace ID                             | KV quota tracking (quota bypassed if absent) |
+| `AI_IMAGE_DAILY_LIMIT`  | Integer, default `5`                        | Optional override                            |
+| `CF_IMAGE_MODEL`        | Model override                              | Optional, defaults to FLUX.1 schnell         |

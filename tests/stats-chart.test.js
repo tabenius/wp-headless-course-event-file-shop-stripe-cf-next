@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { maxOf, barHeight, formatHour } from "../src/components/admin/StatsChart.helpers.js";
+import {
+  maxOf,
+  barHeight,
+  formatHour,
+} from "../src/components/admin/StatsChart.helpers.js";
 
 test("maxOf returns the highest numeric value", () => {
   const data = [{ r: 5 }, { r: 3 }, { r: 8 }];

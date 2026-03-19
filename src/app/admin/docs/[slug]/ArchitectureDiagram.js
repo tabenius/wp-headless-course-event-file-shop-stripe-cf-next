@@ -115,7 +115,10 @@ export default function ArchitectureDiagram() {
             <div className="mt-2 text-[11px] text-gray-500 text-center space-y-0.5">
               <p>Checkout sessions</p>
               <p>
-                Webhook &rarr; <code className="bg-gray-100 px-1 rounded">checkout.session.completed</code>
+                Webhook &rarr;{" "}
+                <code className="bg-gray-100 px-1 rounded">
+                  checkout.session.completed
+                </code>
               </p>
               <p>Grants access + sends receipt</p>
             </div>
@@ -134,7 +137,9 @@ export default function ArchitectureDiagram() {
               <p>Content access lists</p>
               <p>Digital product grants</p>
               <p>User accounts</p>
-              <p className="text-gray-400 italic">Fallback: local .data/ files</p>
+              <p className="text-gray-400 italic">
+                Fallback: local .data/ files
+              </p>
             </div>
           </div>
 
@@ -158,7 +163,9 @@ export default function ArchitectureDiagram() {
 
       {/* ---- Content types ---- */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">Content types &amp; sources</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Content types &amp; sources
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <ContentBlock
             title="WooCommerce Products"
@@ -227,7 +234,9 @@ export default function ArchitectureDiagram() {
 
       {/* ---- Payment flow ---- */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">Payment flow (all content types)</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Payment flow (all content types)
+        </h3>
         <div className="overflow-x-auto">
           <ol className="list-decimal list-inside text-sm space-y-2 text-gray-700">
             <li>
@@ -237,13 +246,13 @@ export default function ArchitectureDiagram() {
               <strong>Cloudflare KV</strong>.
             </li>
             <li>
-              If no access, a <strong>Paywall</strong> is shown with price and description.
-              Unauthenticated users are redirected to sign-in.
+              If no access, a <strong>Paywall</strong> is shown with price and
+              description. Unauthenticated users are redirected to sign-in.
             </li>
             <li>
               Authenticated user clicks <em>Pay and unlock</em> &rarr;{" "}
-              <strong>Workers</strong> creates a Stripe Checkout session (price from admin config)
-              and redirects to <strong>Stripe</strong>.
+              <strong>Workers</strong> creates a Stripe Checkout session (price
+              from admin config) and redirects to <strong>Stripe</strong>.
             </li>
             <li>
               After payment, Stripe sends a{" "}
@@ -253,8 +262,8 @@ export default function ArchitectureDiagram() {
               webhook to <strong>Workers</strong>.
             </li>
             <li>
-              Workers verifies the webhook signature, writes access grants
-              to <strong>Cloudflare KV</strong>, and sends a purchase receipt via{" "}
+              Workers verifies the webhook signature, writes access grants to{" "}
+              <strong>Cloudflare KV</strong>, and sends a purchase receipt via{" "}
               <strong>Resend</strong> (with BCC to info@xtas.nu).
             </li>
             <li>
@@ -282,7 +291,9 @@ export default function ArchitectureDiagram() {
           </div>
         </div>
         <p className="text-[11px] text-gray-500 text-center mt-2">
-          Configurable via <code className="bg-gray-100 px-1 rounded">UPLOAD_BACKEND</code> (wordpress | r2 | s3)
+          Configurable via{" "}
+          <code className="bg-gray-100 px-1 rounded">UPLOAD_BACKEND</code>{" "}
+          (wordpress | r2 | s3)
         </p>
       </div>
     </div>

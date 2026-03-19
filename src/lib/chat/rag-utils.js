@@ -10,7 +10,9 @@ export function chunkText(text, maxLen = 900) {
 }
 
 export function cosine(a, b) {
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     na += a[i] * a[i];

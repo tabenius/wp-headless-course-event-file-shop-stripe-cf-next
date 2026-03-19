@@ -141,9 +141,7 @@ export async function POST(request) {
           : "course";
 
     if (!courseUri) {
-      console.error(
-        "Stripe checkout request rejected: missing content URI",
-      );
+      console.error("Stripe checkout request rejected: missing content URI");
       logCheckoutIssue(
         "Checkout failed: missing content URI",
         `Stripe checkout was requested but no content URI was resolved. Incoming body: ${JSON.stringify(body).slice(0, 500)}.`,

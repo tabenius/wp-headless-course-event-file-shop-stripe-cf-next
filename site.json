@@ -59,11 +59,17 @@
       "title": "Kurser & sessioner",
       "links": [
         { "href": "/kurser-events", "label": "Kurser & Events" },
-        { "href": "/heartconnection-vip-24h-sanctuary", "label": "Kärleksverkstad – relationsspa" },
+        {
+          "href": "/heartconnection-vip-24h-sanctuary",
+          "label": "Kärleksverkstad – relationsspa"
+        },
         { "href": "/kursen-rora-och-berora", "label": "Röra och beröra" },
         { "href": "/behandlingar", "label": "Tantrisk massage" },
         { "href": "/bdsm-sessioner", "label": "Tantrickink" },
-        { "href": "/coachning-och-samtal-om-relationer-och-tantra", "label": "Tantric Talk & Teachings" }
+        {
+          "href": "/coachning-och-samtal-om-relationer-och-tantra",
+          "label": "Tantric Talk & Teachings"
+        }
       ]
     },
     {

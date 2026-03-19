@@ -13,7 +13,9 @@ export async function POST(request) {
     );
   }
   if (!isStripeEnabled()) {
-    console.error("Stripe confirmation unavailable: STRIPE_SECRET_KEY is not configured");
+    console.error(
+      "Stripe confirmation unavailable: STRIPE_SECRET_KEY is not configured",
+    );
     return NextResponse.json(
       { ok: false, error: t("apiErrors.confirmUnavailable") },
       { status: 400 },
@@ -30,7 +32,9 @@ export async function POST(request) {
           ? body.courseUri
           : "";
     if (!sessionId || !courseUri) {
-      console.error("Stripe confirmation rejected: missing session ID or course URI");
+      console.error(
+        "Stripe confirmation rejected: missing session ID or course URI",
+      );
       return NextResponse.json(
         { ok: false, error: t("apiErrors.confirmMissingData") },
         { status: 400 },

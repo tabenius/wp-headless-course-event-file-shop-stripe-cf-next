@@ -1,42 +1,40 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "articulate-learnpress-stripe",
-	"main": ".open-next/worker.js",
-	"compatibility_date": "2025-01-15",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"build": {
-		"uploadSourceMaps": true
-	},
-	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS"
-	},
-	"vars": {
-		"CLOUDFLARE_IMAGE_RESIZING": "1",
-		"COURSE_ACCESS_BACKEND": "wordpress",
-		"COURSE_ACCESS_STORE": "cloudflare",
-		"USER_STORE_BACKEND": "cloudflare",
-		"DIGITAL_ACCESS_STORE": "cloudflare",
-		"PRODUCT_STORE_BACKEND": "cloudflare",
-		"DEFAULT_COURSE_FEE_CURRENCY": "SEK",
-		"CF_KV_KEY": "course-access",
-		"CF_USERS_KV_KEY": "course-users",
-		"CF_DIGITAL_ACCESS_KV_KEY": "digital-access",
-		"UPLOAD_BACKEND": "r2",
-		"S3_BUCKET_NAME": "sofiacerne",
-		"S3_REGION": "auto",
-		"S3_PUBLIC_URL": "https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev",
-		"AUTH_MICROSOFT_ENTRA_ID_TENANT": "common",
-		"GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
-		"GITHUB_DEPLOY_WORKFLOW": "deploy.yml"
-	},
-	"kv_namespaces": [
-		{
-			"binding": "COURSE_ACCESS",
-			"id": "0ac8a81b4e404ebbbc23172b59154191",
-			"remote": true
-		}
-	]
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "articulate-learnpress-stripe",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-01-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "build": {
+    "uploadSourceMaps": true,
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "vars": {
+    "CLOUDFLARE_IMAGE_RESIZING": "1",
+    "COURSE_ACCESS_BACKEND": "wordpress",
+    "COURSE_ACCESS_STORE": "cloudflare",
+    "USER_STORE_BACKEND": "cloudflare",
+    "DIGITAL_ACCESS_STORE": "cloudflare",
+    "PRODUCT_STORE_BACKEND": "cloudflare",
+    "DEFAULT_COURSE_FEE_CURRENCY": "SEK",
+    "CF_KV_KEY": "course-access",
+    "CF_USERS_KV_KEY": "course-users",
+    "CF_DIGITAL_ACCESS_KV_KEY": "digital-access",
+    "UPLOAD_BACKEND": "r2",
+    "S3_BUCKET_NAME": "sofiacerne",
+    "S3_REGION": "auto",
+    "S3_PUBLIC_URL": "https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev",
+    "AUTH_MICROSOFT_ENTRA_ID_TENANT": "common",
+    "GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
+    "GITHUB_DEPLOY_WORKFLOW": "deploy.yml",
+  },
+  "kv_namespaces": [
+    {
+      "binding": "COURSE_ACCESS",
+      "id": "0ac8a81b4e404ebbbc23172b59154191",
+      "remote": true,
+    },
+  ],
 }

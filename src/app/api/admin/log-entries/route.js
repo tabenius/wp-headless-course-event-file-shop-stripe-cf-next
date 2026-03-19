@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
-import { getServerLogs, appendServerLog, clearServerLogs } from "@/lib/serverLog";
+import {
+  getServerLogs,
+  appendServerLog,
+  clearServerLogs,
+} from "@/lib/serverLog";
 
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,9 @@
 import { auth } from "@/auth";
 import ShopIndex from "@/components/shop/ShopIndex";
-import { listAccessibleDigitalProductIds, grantDigitalAccess } from "@/lib/digitalAccessStore";
+import {
+  listAccessibleDigitalProductIds,
+  grantDigitalAccess,
+} from "@/lib/digitalAccessStore";
 import { grantCourseAccess, hasCourseAccess } from "@/lib/courseAccess";
 import { listAllShopItems } from "@/lib/shopProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
@@ -25,7 +28,12 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
     typeof searchParams?.product_id === "string" ? searchParams.product_id : "";
 
   let checkoutError = false;
-  if (userEmail && checkoutStatus === "success" && checkoutSessionId && checkoutProductId) {
+  if (
+    userEmail &&
+    checkoutStatus === "success" &&
+    checkoutSessionId &&
+    checkoutProductId
+  ) {
     try {
       const stripeSession = await fetchStripeCheckoutSession(checkoutSessionId);
       const paymentStatus = stripeSession?.payment_status;
@@ -43,7 +51,10 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
         paidEmail === userEmail.toLowerCase() &&
         paidProductId === checkoutProductId
       ) {
-        if (purchaseKind === "digital_file" || purchaseKind === "course_product") {
+        if (
+          purchaseKind === "digital_file" ||
+          purchaseKind === "course_product"
+        ) {
           await grantDigitalAccess(paidProductId, userEmail);
         }
         if (purchaseKind === "course_product" && paidCourseUri) {
@@ -58,7 +69,9 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
 
   const [items, ownedProductIds] = await Promise.all([
     listAllShopItems(),
-    userEmail ? listAccessibleDigitalProductIds(userEmail) : Promise.resolve([]),
+    userEmail
+      ? listAccessibleDigitalProductIds(userEmail)
+      : Promise.resolve([]),
   ]);
 
   // Check course/event/product access for WP items the user might own

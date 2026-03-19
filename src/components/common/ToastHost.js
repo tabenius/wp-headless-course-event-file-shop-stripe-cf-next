@@ -11,7 +11,10 @@ export default function ToastHost() {
     function onToast(event) {
       const detail = event.detail || {};
       const id = ++toastCounter;
-      const message = typeof detail.message === "string" ? detail.message : "Something happened.";
+      const message =
+        typeof detail.message === "string"
+          ? detail.message
+          : "Something happened.";
       const type = detail.type || "info";
       setToasts((prev) => [...prev, { id, message, type }]);
       setTimeout(() => {

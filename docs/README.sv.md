@@ -57,19 +57,19 @@ WordPress är utmärkt för att skapa innehåll men begränsat när det gäller 
 
 ### Obligatoriska
 
-| Plugin | Syfte |
-|--------|-------|
+| Plugin                                  | Syfte                                                                                                                               |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | [WPGraphQL](https://www.wpgraphql.com/) | Exponerar WordPress-innehåll som ett GraphQL-API. Hela appen bygger på detta. Installera via Plugins → Lägg till → sök "WPGraphQL". |
 
 ### Rekommenderade
 
-| Plugin | Syfte | Detektion |
-|--------|-------|-----------|
-| [LearnPress](https://wordpress.org/plugins/learnpress/) | Kurshanteringssystem (LMS) — skapa kurser med lektioner, quiz och kursplaner. | Autodetekteras via GraphQL-inspektion |
-| RAGBAZ-Articulate mu-plugin | GraphQL-lim för LearnPress (kurser/lektioner + price/duration/curriculum) och generiska event (Event Organiser / The Events Calendar / Events Manager) utan att bunt­a tredjepartskod. | Autodetekteras. Kopiera `packages/ragbaz-articulate-plugin/RAGBAZ-Articulate.php` till `wp-content/mu-plugins/` (ta bort äldre Articulate-LearnPress-Stripe om den finns). |
-| [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks) | Ger strukturerad blockdata från Gutenberg istället för rå HTML, vilket möjliggör exakt rendering. | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1` |
-| Event CPT-plugin | Valfritt plugin som registrerar en `Event`-posttyp i WPGraphQL (t.ex. The Events Calendar + WPGraphQL-tillägg). | Autodetekteras via GraphQL-inspektion |
-| [WebP Express](https://wordpress.org/plugins/webp-express/) eller [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Konverterar bilder till moderna format (WebP/AVIF) för snabbare sidladdningar. | Alltid aktiv när det är installerat |
+| Plugin                                                                                                                                    | Syfte                                                                                                                                                                                  | Detektion                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [LearnPress](https://wordpress.org/plugins/learnpress/)                                                                                   | Kurshanteringssystem (LMS) — skapa kurser med lektioner, quiz och kursplaner.                                                                                                          | Autodetekteras via GraphQL-inspektion                                                                                                                                      |
+| RAGBAZ-Articulate mu-plugin                                                                                                               | GraphQL-lim för LearnPress (kurser/lektioner + price/duration/curriculum) och generiska event (Event Organiser / The Events Calendar / Events Manager) utan att bunt­a tredjepartskod. | Autodetekteras. Kopiera `packages/ragbaz-articulate-plugin/RAGBAZ-Articulate.php` till `wp-content/mu-plugins/` (ta bort äldre Articulate-LearnPress-Stripe om den finns). |
+| [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks)                                                         | Ger strukturerad blockdata från Gutenberg istället för rå HTML, vilket möjliggör exakt rendering.                                                                                      | `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`                                                                                                                                    |
+| Event CPT-plugin                                                                                                                          | Valfritt plugin som registrerar en `Event`-posttyp i WPGraphQL (t.ex. The Events Calendar + WPGraphQL-tillägg).                                                                        | Autodetekteras via GraphQL-inspektion                                                                                                                                      |
+| [WebP Express](https://wordpress.org/plugins/webp-express/) eller [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Konverterar bilder till moderna format (WebP/AVIF) för snabbare sidladdningar.                                                                                                         | Alltid aktiv när det är installerat                                                                                                                                        |
 
 ## Huvudflöden
 
@@ -130,10 +130,10 @@ flowchart LR
 
 Två metoder stöds. Appen väljer automatiskt rätt metod baserat på vilka miljövariabler som är satta.
 
-| Metod | Miljövariabler | HTTP-header | När du ska använda |
-|-------|----------------|-------------|-------------------|
+| Metod                    | Miljövariabler                                                          | HTTP-header                     | När du ska använda                                                                                      |
+| ------------------------ | ----------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | **Application Password** | `WORDPRESS_GRAPHQL_USERNAME` + `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | `Authorization: Basic <base64>` | Rekommenderas. Fungerar med WordPress 5.6+. Skapa under Användare → Din profil → Application Passwords. |
-| **Bearer token** | `WORDPRESS_GRAPHQL_AUTH_TOKEN` | `Authorization: Bearer <token>` | Använd med JWT-plugin (t.ex. WPGraphQL JWT Authentication). |
+| **Bearer token**         | `WORDPRESS_GRAPHQL_AUTH_TOKEN`                                          | `Authorization: Bearer <token>` | Använd med JWT-plugin (t.ex. WPGraphQL JWT Authentication).                                             |
 
 **Prioritet:** Om båda är satta vinner Application Password. Logiken finns i `src/lib/wordpressGraphqlAuth.js`.
 
@@ -143,7 +143,9 @@ Appen frågar WordPress GraphQL-schema vid uppstart för att kontrollera om viss
 
 ```graphql
 query IntrospectType($name: String!) {
-  __type(name: $name) { name }
+  __type(name: $name) {
+    name
+  }
 }
 ```
 
@@ -195,12 +197,12 @@ graph TB
     ENV -->|Lokal dev| WPM
 ```
 
-| Vad | Miljövariabel | Alternativ | Förklaring |
-|-----|---------------|------------|------------|
-| Kursåtkomstregler | `COURSE_ACCESS_STORE` | `cloudflare`, `local` | Vem som har tillgång till vilken kurs |
-| Användardata | `USER_STORE_BACKEND` | `cloudflare`, `local` | Registrerade användarkonton |
-| Digitala produktköp | `DIGITAL_ACCESS_STORE` | `cloudflare`, `local` | Vilka användare som köpt vilka produkter |
-| Filuppladdningar | `UPLOAD_BACKEND` | `wordpress`, `r2`, `s3` | Var admin-uppladdade bilder och filer sparas |
+| Vad                 | Miljövariabel          | Alternativ              | Förklaring                                   |
+| ------------------- | ---------------------- | ----------------------- | -------------------------------------------- |
+| Kursåtkomstregler   | `COURSE_ACCESS_STORE`  | `cloudflare`, `local`   | Vem som har tillgång till vilken kurs        |
+| Användardata        | `USER_STORE_BACKEND`   | `cloudflare`, `local`   | Registrerade användarkonton                  |
+| Digitala produktköp | `DIGITAL_ACCESS_STORE` | `cloudflare`, `local`   | Vilka användare som köpt vilka produkter     |
+| Filuppladdningar    | `UPLOAD_BACKEND`       | `wordpress`, `r2`, `s3` | Var admin-uppladdade bilder och filer sparas |
 
 **`local`** — sparar data som JSON-filer i `.data/`-katalogen. Bra för utveckling.
 
@@ -245,18 +247,18 @@ Varje källa hämtas oberoende och produkter inkluderas bara om de har pris > 0.
 
 Produkter lagras i `config/digital-products.json` (lokal dev) eller Cloudflare KV (produktion). Varje produkt har:
 
-| Fält | Typ | Beskrivning |
-|------|-----|-------------|
-| `name` | sträng | Namn i butiken och vid Stripe-betalning |
-| `slug` | sträng | URL-vänlig identifierare (autogenereras från namn, redigerbar) |
-| `type` | `"digital_file"` eller `"course"` | Avgör vad köparen får — en nedladdningsbar fil eller åtkomst till en kurs |
-| `description` | sträng | Visas på produktsidan |
-| `imageUrl` | sträng | Bild-URL för produkten |
-| `priceCents` | tal | Pris i minsta valutaenhet (t.ex. 4999 = 49,99 kr). **Måste anges** (kan vara 0 för gratisprodukter). |
-| `currency` | sträng | ISO 4217 valutakod, versaler (SEK, USD, EUR osv.) |
-| `fileUrl` | sträng | Nedladdnings-URL för `digital_file`-produkter |
-| `courseUri` | sträng | Kursens sökväg (t.ex. `/courses/min-kurs`) för `course`-produkter |
-| `active` | boolean | Om produkten visas i butiken |
+| Fält          | Typ                               | Beskrivning                                                                                          |
+| ------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `name`        | sträng                            | Namn i butiken och vid Stripe-betalning                                                              |
+| `slug`        | sträng                            | URL-vänlig identifierare (autogenereras från namn, redigerbar)                                       |
+| `type`        | `"digital_file"` eller `"course"` | Avgör vad köparen får — en nedladdningsbar fil eller åtkomst till en kurs                            |
+| `description` | sträng                            | Visas på produktsidan                                                                                |
+| `imageUrl`    | sträng                            | Bild-URL för produkten                                                                               |
+| `priceCents`  | tal                               | Pris i minsta valutaenhet (t.ex. 4999 = 49,99 kr). **Måste anges** (kan vara 0 för gratisprodukter). |
+| `currency`    | sträng                            | ISO 4217 valutakod, versaler (SEK, USD, EUR osv.)                                                    |
+| `fileUrl`     | sträng                            | Nedladdnings-URL för `digital_file`-produkter                                                        |
+| `courseUri`   | sträng                            | Kursens sökväg (t.ex. `/courses/min-kurs`) för `course`-produkter                                    |
+| `active`      | boolean                           | Om produkten visas i butiken                                                                         |
 
 Produkter hanteras via admin-UI:t på `/admin` (sektionen "Shop-produkter") eller genom att redigera JSON-filen direkt.
 
@@ -323,8 +325,8 @@ flowchart TD
 
 ## Felsökning
 
-| Variabel | Vad den visar |
-|----------|--------------|
+| Variabel                                | Vad den visar                                                                        |
+| --------------------------------------- | ------------------------------------------------------------------------------------ |
 | `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` | Varje GraphQL-anrop: autentiseringsläge, endpoint-URL, HTTP-status, request/response |
 
 På Cloudflare Workers: `npx wrangler tail --format pretty` strömmar produktionsloggar i realtid.

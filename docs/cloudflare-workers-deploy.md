@@ -197,6 +197,7 @@ flowchart TD
 Öppna URL:en som Wrangler rapporterar (t.ex. `https://ditt-projekt.ditt-konto.workers.dev`).
 
 Kontrollera:
+
 - Startsidan laddar och visar WordPress-innehåll
 - `/admin/login` fungerar
 - Kör hälsokontrollen i admin-dashboarden
@@ -251,15 +252,15 @@ npx wrangler tail --format pretty
 
 ### Vanliga problem
 
-| Symptom | Orsak | Lösning |
-|---------|-------|---------|
-| 500 Internal Server Error på alla sidor | Hemligheter saknas eller Next.js dynamisk rendering-problem | Kör `npx wrangler tail` för att se felet. Kontrollera att alla obligatoriska secrets är satta. |
-| Bilder laddas inte | Bildoptimering aktiverad men domänen stödjer det inte | Ta bort `CLOUDFLARE_IMAGE_RESIZING` eller sätt `CLOUDFLARE_IMAGE_RESIZING_DOMAIN` |
-| "Du behöver logga in som administratör" | Hemliga variabler ej satta | Kör `npx wrangler secret put` för `ADMIN_EMAILS` och `ADMIN_PASSWORDS` |
-| KV-data hittas inte | Namespace-ID matchar inte | Kontrollera att ID:t i `wrangler.jsonc` matchar det som skapades med `wrangler kv namespace create` |
-| Butiken visar inga produkter | KV-nycklar saknas | Kontrollera att `PRODUCT_STORE_BACKEND=cloudflare` och att produkter har skapats i admin |
-| Betalning lyckas men ingen åtkomst | Webhook ej konfigurerad | Kontrollera Stripe Dashboard → Webhooks för leveransfel |
-| E-post skickas inte | Resend-secrets saknas | Kör `npx wrangler secret put RESEND_API_KEY` och `RESEND_FROM_EMAIL` |
+| Symptom                                 | Orsak                                                       | Lösning                                                                                             |
+| --------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 500 Internal Server Error på alla sidor | Hemligheter saknas eller Next.js dynamisk rendering-problem | Kör `npx wrangler tail` för att se felet. Kontrollera att alla obligatoriska secrets är satta.      |
+| Bilder laddas inte                      | Bildoptimering aktiverad men domänen stödjer det inte       | Ta bort `CLOUDFLARE_IMAGE_RESIZING` eller sätt `CLOUDFLARE_IMAGE_RESIZING_DOMAIN`                   |
+| "Du behöver logga in som administratör" | Hemliga variabler ej satta                                  | Kör `npx wrangler secret put` för `ADMIN_EMAILS` och `ADMIN_PASSWORDS`                              |
+| KV-data hittas inte                     | Namespace-ID matchar inte                                   | Kontrollera att ID:t i `wrangler.jsonc` matchar det som skapades med `wrangler kv namespace create` |
+| Butiken visar inga produkter            | KV-nycklar saknas                                           | Kontrollera att `PRODUCT_STORE_BACKEND=cloudflare` och att produkter har skapats i admin            |
+| Betalning lyckas men ingen åtkomst      | Webhook ej konfigurerad                                     | Kontrollera Stripe Dashboard → Webhooks för leveransfel                                             |
+| E-post skickas inte                     | Resend-secrets saknas                                       | Kör `npx wrangler secret put RESEND_API_KEY` och `RESEND_FROM_EMAIL`                                |
 
 ## Egen domän
 

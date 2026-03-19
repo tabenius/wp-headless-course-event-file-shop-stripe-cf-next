@@ -17,7 +17,9 @@ export async function GET(request, { params: paramsPromise }) {
   const { provider } = await paramsPromise;
   const providerConfig = getProviderConfig(provider);
   if (!providerConfig) {
-    console.error(`OAuth start unavailable: provider ${provider} is not configured`);
+    console.error(
+      `OAuth start unavailable: provider ${provider} is not configured`,
+    );
     return NextResponse.redirect(
       new URL("/auth/signin?error=provider_unavailable", request.url),
     );
@@ -25,11 +27,16 @@ export async function GET(request, { params: paramsPromise }) {
 
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
-  const callbackUrl = safeCallbackUrl(requestUrl.searchParams.get("callbackUrl"), origin);
+  const callbackUrl = safeCallbackUrl(
+    requestUrl.searchParams.get("callbackUrl"),
+    origin,
+  );
   const redirectUri = `${origin}/api/auth/oauth/${provider}/callback`;
   const stateBytes = new Uint8Array(16);
   crypto.getRandomValues(stateBytes);
-  const state = Array.from(stateBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const state = Array.from(stateBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
   const authUrl = new URL(providerConfig.authorizationUrl);
   authUrl.searchParams.set("client_id", providerConfig.clientId);

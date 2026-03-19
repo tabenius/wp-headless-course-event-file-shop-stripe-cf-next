@@ -1,4 +1,5 @@
-const EMBEDDING_MODEL = process.env.CF_EMBED_MODEL || "@cf/baai/bge-base-en-v1.5";
+const EMBEDDING_MODEL =
+  process.env.CF_EMBED_MODEL || "@cf/baai/bge-base-en-v1.5";
 const CHAT_MODEL = process.env.CF_CHAT_MODEL || "@cf/meta/llama-2-7b-chat-int8";
 
 function cfEndpoint(model) {
@@ -28,7 +29,8 @@ async function cfRun(model, body) {
 export async function embedTexts(texts) {
   if (!Array.isArray(texts) || texts.length === 0) return [];
   const json = await cfRun(EMBEDDING_MODEL, { text: texts });
-  if (!Array.isArray(json?.result)) throw new Error("Invalid embedding response");
+  if (!Array.isArray(json?.result))
+    throw new Error("Invalid embedding response");
   return json.result;
 }
 
@@ -43,7 +45,8 @@ export async function chatWithContext(systemPrompt, messages) {
 export { arrayBufferToBase64 } from "./imageQuota.js";
 
 export async function generateImage(prompt, width = 512, height = 512) {
-  const model = process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
+  const model =
+    process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
   const token = process.env.CF_API_TOKEN;
   if (!token) throw new Error("CF_API_TOKEN missing");
   const res = await fetch(cfEndpoint(model), {

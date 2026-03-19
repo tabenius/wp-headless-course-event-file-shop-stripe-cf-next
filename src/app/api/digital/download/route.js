@@ -27,12 +27,18 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get("productId") || "";
   if (!productId) {
-    return NextResponse.json({ ok: false, error: t("apiErrors.invalidProduct") }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: t("apiErrors.invalidProduct") },
+      { status: 400 },
+    );
   }
 
   const product = await getDigitalProductById(productId);
   if (!product || !product.active) {
-    return NextResponse.json({ ok: false, error: t("apiErrors.productNotFound") }, { status: 404 });
+    return NextResponse.json(
+      { ok: false, error: t("apiErrors.productNotFound") },
+      { status: 404 },
+    );
   }
   if (product.type !== "digital_file") {
     return NextResponse.json(
@@ -59,7 +65,8 @@ export async function GET(request) {
     }
 
     const fileName = getFileName(product.fileUrl, product.id);
-    const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+    const contentType =
+      upstream.headers.get("content-type") || "application/octet-stream";
     const contentLength = upstream.headers.get("content-length");
 
     return new NextResponse(upstream.body, {

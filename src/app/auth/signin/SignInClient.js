@@ -144,7 +144,10 @@ export default function SignInClient() {
             <p className="text-green-700">{forgotMessage}</p>
             <button
               type="button"
-              onClick={() => { setForgotMode(false); setForgotMessage(""); }}
+              onClick={() => {
+                setForgotMode(false);
+                setForgotMessage("");
+              }}
               className="text-sm text-gray-600 hover:underline"
             >
               {t("resetPassword.backToSignIn")}
@@ -166,8 +169,12 @@ export default function SignInClient() {
               disabled={forgotLoading}
               className="w-full bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
-              {forgotLoading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {forgotLoading ? t("common.loading") : t("resetPassword.sendLink")}
+              {forgotLoading && (
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
+              {forgotLoading
+                ? t("common.loading")
+                : t("resetPassword.sendLink")}
             </button>
             <button
               type="button"
@@ -205,12 +212,18 @@ export default function SignInClient() {
               disabled={loading}
               className="bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
             >
-              {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {loading && (
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
               {loading ? t("auth.signingIn") : t("auth.signInWithEmail")}
             </button>
             <button
               type="button"
-              onClick={() => { setForgotMode(true); setForgotEmail(email); setError(""); }}
+              onClick={() => {
+                setForgotMode(true);
+                setForgotEmail(email);
+                setError("");
+              }}
               className="text-sm text-gray-500 hover:underline"
             >
               {t("resetPassword.forgotPassword")}
@@ -235,11 +248,16 @@ export default function SignInClient() {
         </div>
       ) : null}
 
-      {combinedError ? <p className="mt-4 text-red-600">{combinedError}</p> : null}
+      {combinedError ? (
+        <p className="mt-4 text-red-600">{combinedError}</p>
+      ) : null}
 
       <p className="mt-8 text-sm text-gray-600">
         {t("auth.noAccount")}{" "}
-        <Link href={`/auth/register${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`} className="text-orange-700 hover:underline">
+        <Link
+          href={`/auth/register${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+          className="text-orange-700 hover:underline"
+        >
           {t("auth.createOne")}
         </Link>
       </p>

@@ -6,7 +6,10 @@ import { grantCourseAccess } from "@/lib/courseAccess";
 import { getDigitalProductBySlug } from "@/lib/digitalProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 
-export default async function ShopProductPage({ params: paramsPromise, searchParams: searchParamsPromise }) {
+export default async function ShopProductPage({
+  params: paramsPromise,
+  searchParams: searchParamsPromise,
+}) {
   const params = await paramsPromise;
   const searchParams = await searchParamsPromise;
   const slug = typeof params?.slug === "string" ? params.slug : "";
@@ -39,7 +42,10 @@ export default async function ShopProductPage({ params: paramsPromise, searchPar
         paidEmail === userEmail.toLowerCase() &&
         paidProductId === product.id
       ) {
-        if (purchaseKind === "digital_file" || purchaseKind === "course_product") {
+        if (
+          purchaseKind === "digital_file" ||
+          purchaseKind === "course_product"
+        ) {
           await grantDigitalAccess(product.id, userEmail);
         }
         if (purchaseKind === "course_product" && paidCourseUri) {
@@ -51,7 +57,9 @@ export default async function ShopProductPage({ params: paramsPromise, searchPar
     }
   }
 
-  const owned = userEmail ? await hasDigitalAccess(product.id, userEmail) : false;
+  const owned = userEmail
+    ? await hasDigitalAccess(product.id, userEmail)
+    : false;
 
   return (
     <ShopProductDetail
@@ -77,7 +85,10 @@ export async function generateMetadata({ params: paramsPromise }) {
     "https://example.com";
   const canonical = `${baseUrl.replace(/\/+$/, "")}/shop/${encodeURIComponent(product.slug)}`;
   const description =
-    product.description || (product.type === "course" ? "Köp kurs och få tillgång direkt." : "Köp digital fil och ladda ner direkt.");
+    product.description ||
+    (product.type === "course"
+      ? "Köp kurs och få tillgång direkt."
+      : "Köp digital fil och ladda ner direkt.");
   const images = product.imageUrl
     ? [
         {

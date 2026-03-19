@@ -51,7 +51,9 @@ function renderSingleBlock(block, key) {
 
   const blockName = typeof block.name === "string" ? block.name : "";
   const attrs = parseAttributes(block.attributesJSON);
-  const nestedBlocks = Array.isArray(block.innerBlocks) ? block.innerBlocks : [];
+  const nestedBlocks = Array.isArray(block.innerBlocks)
+    ? block.innerBlocks
+    : [];
 
   if (blockName === "core/image") {
     const imageData = extractImageData(attrs);
@@ -72,7 +74,9 @@ function renderSingleBlock(block, key) {
         {imageData.caption.trim() !== "" ? (
           <figcaption
             className="mt-2 text-sm text-gray-600"
-            dangerouslySetInnerHTML={{ __html: transformContent(imageData.caption) }}
+            dangerouslySetInnerHTML={{
+              __html: transformContent(imageData.caption),
+            }}
           />
         ) : null}
       </figure>
@@ -102,7 +106,9 @@ function renderSingleBlock(block, key) {
               {image.caption.trim() !== "" ? (
                 <figcaption
                   className="text-sm text-gray-600"
-                  dangerouslySetInnerHTML={{ __html: transformContent(image.caption) }}
+                  dangerouslySetInnerHTML={{
+                    __html: transformContent(image.caption),
+                  }}
                 />
               ) : null}
             </figure>
@@ -151,18 +157,27 @@ function renderSingleBlock(block, key) {
             )
           ) : typeof block.renderedHtml === "string" &&
             block.renderedHtml.trim() !== "" ? (
-            <div dangerouslySetInnerHTML={{ __html: transformContent(block.renderedHtml) }} />
+            <div
+              dangerouslySetInnerHTML={{
+                __html: transformContent(block.renderedHtml),
+              }}
+            />
           ) : null}
         </div>
       </section>
     );
   }
 
-  if (typeof block.renderedHtml === "string" && block.renderedHtml.trim() !== "") {
+  if (
+    typeof block.renderedHtml === "string" &&
+    block.renderedHtml.trim() !== ""
+  ) {
     return (
       <div
         key={key}
-        dangerouslySetInnerHTML={{ __html: transformContent(block.renderedHtml) }}
+        dangerouslySetInnerHTML={{
+          __html: transformContent(block.renderedHtml),
+        }}
       />
     );
   }
@@ -188,7 +203,9 @@ export default function BlocksRenderer({ blocks }) {
 
   return (
     <>
-      {safeBlocks.map((block, index) => renderSingleBlock(block, `block-${index}`))}
+      {safeBlocks.map((block, index) =>
+        renderSingleBlock(block, `block-${index}`),
+      )}
     </>
   );
 }

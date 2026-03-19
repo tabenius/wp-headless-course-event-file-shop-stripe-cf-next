@@ -45,9 +45,7 @@ export default function AdminHeader({ logoUrl }) {
     if (pathname !== "/admin") {
       router.push("/admin");
     }
-    window.dispatchEvent(
-      new CustomEvent("admin:switchTab", { detail: tab }),
-    );
+    window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: tab }));
   }
 
   return (
@@ -67,20 +65,41 @@ export default function AdminHeader({ logoUrl }) {
               className="text-xl font-bold tracking-tight text-gray-900 flex items-baseline gap-1"
               aria-label="RAGBAZ Articulate StoreFront"
             >
-              <span style={{ fontFamily: "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')" }}>
+              <span
+                style={{
+                  fontFamily:
+                    "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')",
+                }}
+              >
                 RAGBAZ
               </span>
-              <span style={{ fontFamily: "var(--font-merriweather, 'Merriweather', serif')" }}>
+              <span
+                style={{
+                  fontFamily:
+                    "var(--font-merriweather, 'Merriweather', serif')",
+                }}
+              >
                 Articulate
               </span>
-              <span className="text-base font-normal text-gray-700" style={{ fontFamily: "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')" }}>
+              <span
+                className="text-base font-normal text-gray-700"
+                style={{
+                  fontFamily:
+                    "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')",
+                }}
+              >
                 StoreFront
               </span>
             </Link>
             {process.env.NEXT_PUBLIC_BUILD_TIME && (
               <span className="text-[9px] text-gray-400 leading-tight pt-0.5">
-                {t("admin.buildTime")}: {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString("sv-SE")}
-                {process.env.NEXT_PUBLIC_GIT_SHA ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})` : ""}
+                {t("admin.buildTime")}:{" "}
+                {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString(
+                  "sv-SE",
+                )}
+                {process.env.NEXT_PUBLIC_GIT_SHA
+                  ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})`
+                  : ""}
               </span>
             )}
           </div>

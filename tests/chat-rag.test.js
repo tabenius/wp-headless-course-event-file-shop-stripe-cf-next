@@ -14,7 +14,10 @@ it("chunkText returns empty array for falsy input", () => {
 it("chunkText splits at maxLen boundary", () => {
   const chunks = chunkText("ab".repeat(500), 100);
   assert.ok(chunks.length > 1, "should produce multiple chunks");
-  assert.ok(chunks.every((c) => c.length <= 100), "no chunk exceeds maxLen");
+  assert.ok(
+    chunks.every((c) => c.length <= 100),
+    "no chunk exceeds maxLen",
+  );
 });
 
 it("chunkText preserves all content across chunks", () => {

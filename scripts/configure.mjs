@@ -1,5 +1,12 @@
 #!/usr/bin/env node
-import { access, copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import {
+  access,
+  copyFile,
+  mkdir,
+  readFile,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import readline from "node:readline/promises";
@@ -47,7 +54,10 @@ function runCommand(rootDir, command, args = []) {
     });
     child.on("exit", (code) => {
       if (code === 0) resolve();
-      else reject(new Error(`${command} ${args.join(" ")} failed with code ${code}`));
+      else
+        reject(
+          new Error(`${command} ${args.join(" ")} failed with code ${code}`),
+        );
     });
     child.on("error", reject);
   });
@@ -90,7 +100,11 @@ async function setEnvValue(envFile, key, value) {
     return line;
   });
   if (!updated) nextLines.push(`${key}=${value}`);
-  await writeFile(envFile, `${nextLines.join("\n").replace(/\n+$/, "")}\n`, "utf8");
+  await writeFile(
+    envFile,
+    `${nextLines.join("\n").replace(/\n+$/, "")}\n`,
+    "utf8",
+  );
 }
 
 async function pause(rl) {
@@ -104,7 +118,9 @@ async function setupEnv({ rl, rootDir, envFile, shopFile, shopExampleFile }) {
     const envExample = path.join(rootDir, ".env.example");
     if (await fileExists(envExample)) {
       await copyFile(envExample, envFile);
-      output.write(`${COLORS.green}Created .env from .env.example${COLORS.reset}\n`);
+      output.write(
+        `${COLORS.green}Created .env from .env.example${COLORS.reset}\n`,
+      );
     } else {
       await writeFile(envFile, "", "utf8");
     }
@@ -118,7 +134,11 @@ async function setupEnv({ rl, rootDir, envFile, shopFile, shopExampleFile }) {
     await setEnvValue(envFile, key, value);
   };
 
-  await askValue("WordPress URL", "NEXT_PUBLIC_WORDPRESS_URL", "https://www.example.com/");
+  await askValue(
+    "WordPress URL",
+    "NEXT_PUBLIC_WORDPRESS_URL",
+    "https://www.example.com/",
+  );
   await askValue(
     "WordPress GraphQL Bearer token (optional)",
     "WORDPRESS_GRAPHQL_AUTH_TOKEN",
@@ -134,21 +154,37 @@ async function setupEnv({ rl, rootDir, envFile, shopFile, shopExampleFile }) {
     "WORDPRESS_GRAPHQL_APPLICATION_PASSWORD",
     "",
   );
-  await askValue("Admin emails (comma-separated)", "ADMIN_EMAILS", "admin@example.com");
+  await askValue(
+    "Admin emails (comma-separated)",
+    "ADMIN_EMAILS",
+    "admin@example.com",
+  );
   await askValue(
     "Admin passwords (comma-separated, same order)",
     "ADMIN_PASSWORDS",
     "change-this-password",
   );
-  await askValue("AUTH_SECRET", "AUTH_SECRET", "replace-with-a-long-random-secret");
-  await askValue("Digital access store backend (local/cloudflare)", "DIGITAL_ACCESS_STORE", "cloudflare");
+  await askValue(
+    "AUTH_SECRET",
+    "AUTH_SECRET",
+    "replace-with-a-long-random-secret",
+  );
+  await askValue(
+    "Digital access store backend (local/cloudflare)",
+    "DIGITAL_ACCESS_STORE",
+    "cloudflare",
+  );
 
   if (await fileExists(shopExampleFile)) {
-    const seed = await rl.question("Use example shop products as seed now? (y/N): ");
+    const seed = await rl.question(
+      "Use example shop products as seed now? (y/N): ",
+    );
     if (/^y/i.test(seed.trim())) {
       await mkdir(path.dirname(shopFile), { recursive: true });
       await copyFile(shopExampleFile, shopFile);
-      output.write(`${COLORS.green}Seeded shop catalog from example.${COLORS.reset}\n`);
+      output.write(
+        `${COLORS.green}Seeded shop catalog from example.${COLORS.reset}\n`,
+      );
     }
   }
 
@@ -156,7 +192,9 @@ async function setupEnv({ rl, rootDir, envFile, shopFile, shopExampleFile }) {
 }
 
 async function setupThemeDefaults({ rl, rootDir }) {
-  const answer = await rl.question(`${COLORS.bold}Write nice default theme.json?${COLORS.reset} (y/N): `);
+  const answer = await rl.question(
+    `${COLORS.bold}Write nice default theme.json?${COLORS.reset} (y/N): `,
+  );
   if (!/^y/i.test(answer.trim())) {
     output.write("Skipped.\n");
     return;
@@ -191,16 +229,26 @@ async function setupThemeDefaults({ rl, rootDir }) {
     },
   };
 
-  await writeFile(path.join(rootDir, "theme.json"), `${JSON.stringify(theme, null, 2)}\n`, "utf8");
+  await writeFile(
+    path.join(rootDir, "theme.json"),
+    `${JSON.stringify(theme, null, 2)}\n`,
+    "utf8",
+  );
   await runCommand(rootDir, "npm", ["run", "theme:css"]);
-  output.write(`${COLORS.green}theme.json written and CSS regenerated.${COLORS.reset}\n`);
+  output.write(
+    `${COLORS.green}theme.json written and CSS regenerated.${COLORS.reset}\n`,
+  );
 }
 
 async function checkCommand(name) {
   return new Promise((resolve) => {
-    const child = spawn(process.platform === "win32" ? "where" : "which", [name], {
-      stdio: "ignore",
-    });
+    const child = spawn(
+      process.platform === "win32" ? "where" : "which",
+      [name],
+      {
+        stdio: "ignore",
+      },
+    );
     child.on("exit", (code) => resolve(code === 0));
     child.on("error", () => resolve(false));
   });
@@ -230,11 +278,15 @@ async function preflight({ rootDir, envFile }) {
   if (await fileExists(envFile)) {
     output.write(`${COLORS.green}OK${COLORS.reset} .env found\n`);
   } else {
-    output.write(`${COLORS.yellow}WARN${COLORS.reset} .env missing. Run env setup first.\n`);
+    output.write(
+      `${COLORS.yellow}WARN${COLORS.reset} .env missing. Run env setup first.\n`,
+    );
   }
 
   if (failed) {
-    output.write(`${COLORS.red}Preflight failed due to missing required tools.${COLORS.reset}\n`);
+    output.write(
+      `${COLORS.red}Preflight failed due to missing required tools.${COLORS.reset}\n`,
+    );
     return;
   }
 
@@ -323,7 +375,10 @@ async function saveShopCatalog({ shopFile }, products) {
 
 async function getBaseSiteUrl(envFile) {
   const env = await readEnvMap(envFile);
-  const siteUrl = env.get("NEXT_PUBLIC_SITE_URL") || env.get("APP_BASE_URL") || "http://localhost:3000";
+  const siteUrl =
+    env.get("NEXT_PUBLIC_SITE_URL") ||
+    env.get("APP_BASE_URL") ||
+    "http://localhost:3000";
   return siteUrl.replace(/\/+$/, "");
 }
 
@@ -331,7 +386,9 @@ async function listShopProducts(ctx) {
   const products = await loadShopCatalog(ctx);
   const siteBase = await getBaseSiteUrl(ctx.envFile);
   if (products.length === 0) {
-    output.write(`${COLORS.yellow}No products found in catalog.${COLORS.reset}\n`);
+    output.write(
+      `${COLORS.yellow}No products found in catalog.${COLORS.reset}\n`,
+    );
     return;
   }
 
@@ -362,11 +419,15 @@ async function guidedAddShopProduct(ctx) {
   let slug = slugify(slugInput || generatedSlug);
   if (!slug) slug = generatedSlug;
 
-  const typeInput = (await ctx.rl.question("Type (digital_file/course) [digital_file]: ")).trim();
+  const typeInput = (
+    await ctx.rl.question("Type (digital_file/course) [digital_file]: ")
+  ).trim();
   const type = typeInput === "course" ? "course" : "digital_file";
 
   const description = (await ctx.rl.question("Description: ")).trim();
-  const imageUrl = normalizeUrl(await ctx.rl.question("Image URL (optional): "));
+  const imageUrl = normalizeUrl(
+    await ctx.rl.question("Image URL (optional): "),
+  );
   const priceInput = (await ctx.rl.question("Price in cents [0]: ")).trim();
   const priceCents = Number.parseInt(priceInput || "0", 10) || 0;
   const currencyInput = (await ctx.rl.question("Currency [sek]: ")).trim();
@@ -379,13 +440,19 @@ async function guidedAddShopProduct(ctx) {
   if (type === "digital_file") {
     fileUrl = normalizeUrl(await ctx.rl.question("File URL (https://...): "));
     if (!fileUrl) {
-      output.write(`${COLORS.red}A valid file URL is required for digital_file products.${COLORS.reset}\n`);
+      output.write(
+        `${COLORS.red}A valid file URL is required for digital_file products.${COLORS.reset}\n`,
+      );
       return;
     }
   } else {
-    courseUri = normalizeCourseUri(await ctx.rl.question("Course URI (/courses/your-course): "));
+    courseUri = normalizeCourseUri(
+      await ctx.rl.question("Course URI (/courses/your-course): "),
+    );
     if (!courseUri) {
-      output.write(`${COLORS.red}Course URI is required for course products.${COLORS.reset}\n`);
+      output.write(
+        `${COLORS.red}Course URI is required for course products.${COLORS.reset}\n`,
+      );
       return;
     }
     output.write(
@@ -411,7 +478,9 @@ async function guidedAddShopProduct(ctx) {
   output.write(`${COLORS.green}Product added.${COLORS.reset}\n`);
   output.write(`Product URL: ${siteBase}/shop/${slug}\n`);
   output.write(`Admin UI: ${siteBase}/admin\n`);
-  output.write("In Admin UI you can refine image URL, file URL, or attach to a course URI.\n");
+  output.write(
+    "In Admin UI you can refine image URL, file URL, or attach to a course URI.\n",
+  );
 }
 
 async function guidedEditShopProduct(ctx) {
@@ -422,7 +491,9 @@ async function guidedEditShopProduct(ctx) {
   }
 
   await listShopProducts(ctx);
-  const indexInput = (await ctx.rl.question("Select product number to edit: ")).trim();
+  const indexInput = (
+    await ctx.rl.question("Select product number to edit: ")
+  ).trim();
   const index = Number.parseInt(indexInput, 10) - 1;
   if (!Number.isInteger(index) || index < 0 || index >= products.length) {
     output.write(`${COLORS.red}Invalid selection.${COLORS.reset}\n`);
@@ -430,41 +501,87 @@ async function guidedEditShopProduct(ctx) {
   }
 
   const current = products[index];
-  const name = (await ctx.rl.question(`Name [${current.name || ""}]: `)).trim() || current.name || "";
+  const name =
+    (await ctx.rl.question(`Name [${current.name || ""}]: `)).trim() ||
+    current.name ||
+    "";
   const suggestedSlug = slugify(name || current.slug || "");
-  const slugAnswer = (await ctx.rl.question(`Slug [${current.slug || suggestedSlug}]: `)).trim();
+  const slugAnswer = (
+    await ctx.rl.question(`Slug [${current.slug || suggestedSlug}]: `)
+  ).trim();
   const slug = slugify(slugAnswer || current.slug || suggestedSlug);
-  const typeAnswer = (await ctx.rl.question(`Type (digital_file/course) [${current.type || "digital_file"}]: `)).trim();
-  const type = typeAnswer === "course" ? "course" : typeAnswer === "digital_file" ? "digital_file" : current.type || "digital_file";
+  const typeAnswer = (
+    await ctx.rl.question(
+      `Type (digital_file/course) [${current.type || "digital_file"}]: `,
+    )
+  ).trim();
+  const type =
+    typeAnswer === "course"
+      ? "course"
+      : typeAnswer === "digital_file"
+        ? "digital_file"
+        : current.type || "digital_file";
   const description =
-    (await ctx.rl.question(`Description [${current.description || ""}]: `)).trim() || current.description || "";
-  const imagePrompt = await ctx.rl.question(`Image URL [${current.imageUrl || ""}]: `);
-  const imageUrl = imagePrompt.trim() ? normalizeUrl(imagePrompt) : current.imageUrl || "";
-  const priceInput = (await ctx.rl.question(`Price in cents [${current.priceCents || 0}]: `)).trim();
-  const priceCents = priceInput ? Number.parseInt(priceInput, 10) || 0 : current.priceCents || 0;
+    (
+      await ctx.rl.question(`Description [${current.description || ""}]: `)
+    ).trim() ||
+    current.description ||
+    "";
+  const imagePrompt = await ctx.rl.question(
+    `Image URL [${current.imageUrl || ""}]: `,
+  );
+  const imageUrl = imagePrompt.trim()
+    ? normalizeUrl(imagePrompt)
+    : current.imageUrl || "";
+  const priceInput = (
+    await ctx.rl.question(`Price in cents [${current.priceCents || 0}]: `)
+  ).trim();
+  const priceCents = priceInput
+    ? Number.parseInt(priceInput, 10) || 0
+    : current.priceCents || 0;
   const currency =
-    (await ctx.rl.question(`Currency [${current.currency || "sek"}]: `)).trim().toLowerCase() ||
+    (await ctx.rl.question(`Currency [${current.currency || "sek"}]: `))
+      .trim()
+      .toLowerCase() ||
     current.currency ||
     "sek";
-  const activePrompt = (await ctx.rl.question(`Active product? (Y/n) [${current.active === false ? "n" : "y"}]: `)).trim();
-  const active = activePrompt ? !/^n/i.test(activePrompt) : current.active !== false;
+  const activePrompt = (
+    await ctx.rl.question(
+      `Active product? (Y/n) [${current.active === false ? "n" : "y"}]: `,
+    )
+  ).trim();
+  const active = activePrompt
+    ? !/^n/i.test(activePrompt)
+    : current.active !== false;
 
   let fileUrl = current.fileUrl || "";
   let courseUri = current.courseUri || "";
   if (type === "digital_file") {
-    const filePrompt = await ctx.rl.question(`File URL [${current.fileUrl || ""}]: `);
-    fileUrl = filePrompt.trim() ? normalizeUrl(filePrompt) : current.fileUrl || "";
+    const filePrompt = await ctx.rl.question(
+      `File URL [${current.fileUrl || ""}]: `,
+    );
+    fileUrl = filePrompt.trim()
+      ? normalizeUrl(filePrompt)
+      : current.fileUrl || "";
     courseUri = "";
     if (!fileUrl) {
-      output.write(`${COLORS.red}A valid file URL is required for digital_file products.${COLORS.reset}\n`);
+      output.write(
+        `${COLORS.red}A valid file URL is required for digital_file products.${COLORS.reset}\n`,
+      );
       return;
     }
   } else {
-    const coursePrompt = await ctx.rl.question(`Course URI [${current.courseUri || ""}]: `);
-    courseUri = coursePrompt.trim() ? normalizeCourseUri(coursePrompt) : current.courseUri || "";
+    const coursePrompt = await ctx.rl.question(
+      `Course URI [${current.courseUri || ""}]: `,
+    );
+    courseUri = coursePrompt.trim()
+      ? normalizeCourseUri(coursePrompt)
+      : current.courseUri || "";
     fileUrl = "";
     if (!courseUri) {
-      output.write(`${COLORS.red}Course URI is required for course products.${COLORS.reset}\n`);
+      output.write(
+        `${COLORS.red}Course URI is required for course products.${COLORS.reset}\n`,
+      );
       return;
     }
     output.write(
@@ -500,7 +617,9 @@ async function guidedRemoveShopProduct(ctx) {
   }
 
   await listShopProducts(ctx);
-  const indexInput = (await ctx.rl.question("Select product number to remove: ")).trim();
+  const indexInput = (
+    await ctx.rl.question("Select product number to remove: ")
+  ).trim();
   const index = Number.parseInt(indexInput, 10) - 1;
   if (!Number.isInteger(index) || index < 0 || index >= products.length) {
     output.write(`${COLORS.red}Invalid selection.${COLORS.reset}\n`);
@@ -528,7 +647,9 @@ async function seedShopCatalog({ shopFile, shopExampleFile }) {
   }
   await mkdir(path.dirname(shopFile), { recursive: true });
   await copyFile(shopExampleFile, shopFile);
-  output.write(`${COLORS.green}Shop catalog seeded from example.${COLORS.reset}\n`);
+  output.write(
+    `${COLORS.green}Shop catalog seeded from example.${COLORS.reset}\n`,
+  );
 }
 
 async function editShopCatalog({ shopFile, shopExampleFile, rootDir }) {
@@ -540,25 +661,33 @@ async function editShopCatalog({ shopFile, shopExampleFile, rootDir }) {
   if (process.env.EDITOR) {
     await runCommand(rootDir, process.env.EDITOR, [shopFile]);
   } else {
-    output.write(`${COLORS.yellow}EDITOR is not set. Edit manually:${COLORS.reset} ${shopFile}\n`);
+    output.write(
+      `${COLORS.yellow}EDITOR is not set. Edit manually:${COLORS.reset} ${shopFile}\n`,
+    );
   }
 }
 
 async function validateShopCatalog({ shopFile }) {
   if (!(await fileExists(shopFile))) {
-    output.write(`${COLORS.red}Shop catalog not found:${COLORS.reset} ${shopFile}\n`);
+    output.write(
+      `${COLORS.red}Shop catalog not found:${COLORS.reset} ${shopFile}\n`,
+    );
     return;
   }
   try {
     const raw = await readFile(shopFile, "utf8");
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
-      output.write(`${COLORS.red}Catalog must be a JSON array.${COLORS.reset}\n`);
+      output.write(
+        `${COLORS.red}Catalog must be a JSON array.${COLORS.reset}\n`,
+      );
       return;
     }
     output.write(`${COLORS.green}Shop catalog JSON is valid.${COLORS.reset}\n`);
   } catch (error) {
-    output.write(`${COLORS.red}Invalid shop catalog JSON:${COLORS.reset} ${error.message}\n`);
+    output.write(
+      `${COLORS.red}Invalid shop catalog JSON:${COLORS.reset} ${error.message}\n`,
+    );
   }
 }
 
@@ -585,7 +714,9 @@ async function shopToolsMenu(ctx) {
     else if (choice === "7") await validateShopCatalog(ctx);
     else if (choice === "8") {
       const siteBase = await getBaseSiteUrl(ctx.envFile);
-      output.write(`${COLORS.bold}Admin UI:${COLORS.reset} ${siteBase}/admin\n`);
+      output.write(
+        `${COLORS.bold}Admin UI:${COLORS.reset} ${siteBase}/admin\n`,
+      );
       output.write(
         "Use the Shop-produkter section to add image URL, file URL, or attach products to course URIs.\n",
       );
@@ -603,7 +734,9 @@ async function shopToolsMenu(ctx) {
 async function fullPipeline(ctx) {
   await preflight(ctx);
   await runCommand(ctx.rootDir, "npm", ["run", "cf:build"]);
-  const answer = await ctx.rl.question("Deploy after successful build? (y/N): ");
+  const answer = await ctx.rl.question(
+    "Deploy after successful build? (y/N): ",
+  );
   if (/^y/i.test(answer.trim())) {
     await runCommand(ctx.rootDir, "npm", ["run", "cf:deploy"]);
   }
@@ -618,7 +751,11 @@ async function main() {
       rootDir,
       envFile: path.join(rootDir, ".env"),
       shopFile: path.join(rootDir, "config", "digital-products.json"),
-      shopExampleFile: path.join(rootDir, "config", "digital-products.example.json"),
+      shopExampleFile: path.join(
+        rootDir,
+        "config",
+        "digital-products.example.json",
+      ),
     };
 
     while (true) {

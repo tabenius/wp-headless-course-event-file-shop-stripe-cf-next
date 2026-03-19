@@ -64,13 +64,19 @@ export async function POST(request) {
     const body = await request.json();
     const chargeId = body?.chargeId || body?.id;
     if (!chargeId) {
-      return NextResponse.json({ ok: false, error: "Charge ID required" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Charge ID required" },
+        { status: 400 },
+      );
     }
     const stripe = getStripe();
     const charge = await stripe.charges.retrieve(chargeId);
     const receiptUrl = charge?.receipt_url;
     if (!receiptUrl) {
-      return NextResponse.json({ ok: false, error: "Receipt URL missing" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "Receipt URL missing" },
+        { status: 404 },
+      );
     }
     const res = await fetch(receiptUrl, {
       headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },

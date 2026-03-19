@@ -9,7 +9,13 @@ function formatPrice(priceCents, currency) {
   return `${(priceCents / 100).toFixed(0)} ${String(currency || "SEK").toUpperCase()}`;
 }
 
-export default function ShopProductDetail({ user, product, owned, stripeEnabled, checkoutStatus }) {
+export default function ShopProductDetail({
+  user,
+  product,
+  owned,
+  stripeEnabled,
+  checkoutStatus,
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imageBroken, setImageBroken] = useState(false);
@@ -33,7 +39,11 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
         body: JSON.stringify({ productSlug: product.slug }),
       });
       let json;
-      try { json = await response.json(); } catch { json = {}; }
+      try {
+        json = await response.json();
+      } catch {
+        json = {};
+      }
       if (!response.ok || !json?.ok || !json?.url) {
         setError(json?.error || t("shop.checkoutFailed"));
         return;
@@ -68,7 +78,9 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
 
       <h1 className="text-3xl font-bold">{product.name}</h1>
       <p className="text-gray-600">{product.description}</p>
-      <p className="text-gray-700 font-semibold">{t("common.price")}: {formatPrice(product.priceCents, product.currency)}</p>
+      <p className="text-gray-700 font-semibold">
+        {t("common.price")}: {formatPrice(product.priceCents, product.currency)}
+      </p>
 
       {checkoutStatus === "success" ? (
         <p className="text-green-700">{t("shop.paymentSuccess")}</p>
@@ -76,7 +88,9 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
       {checkoutStatus === "cancel" ? (
         <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
           <p className="text-yellow-800">{t("shop.paymentCancelledShort")}</p>
-          <p className="text-yellow-700 text-sm mt-1">{t("shop.paymentCancelledRetry")}</p>
+          <p className="text-yellow-700 text-sm mt-1">
+            {t("shop.paymentCancelledRetry")}
+          </p>
         </div>
       ) : null}
       {error ? <p className="text-red-600">{error}</p> : null}
@@ -91,7 +105,9 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
           </a>
         ) : (
           <div className="rounded-lg border border-teal-200 bg-teal-50 p-5 space-y-4">
-            <h2 className="text-xl font-semibold text-teal-900">{t("shop.courseAccessTitle")}</h2>
+            <h2 className="text-xl font-semibold text-teal-900">
+              {t("shop.courseAccessTitle")}
+            </h2>
             <p className="text-teal-800">{t("shop.courseAccessDescSimple")}</p>
             {product.courseUri && (
               <Link
@@ -110,7 +126,9 @@ export default function ShopProductDetail({ user, product, owned, stripeEnabled,
           disabled={loading}
           className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
         >
-          {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+          {loading && (
+            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          )}
           {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
         </button>
       )}

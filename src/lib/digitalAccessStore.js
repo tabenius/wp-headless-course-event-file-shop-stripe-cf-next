@@ -4,7 +4,9 @@ import {
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
-function getKvKey() { return process.env.CF_DIGITAL_ACCESS_KV_KEY || "digital-access"; }
+function getKvKey() {
+  return process.env.CF_DIGITAL_ACCESS_KV_KEY || "digital-access";
+}
 const LOCAL_ACCESS_FILE = ".data/digital-access.json";
 
 let inMemoryState = { users: {} };
@@ -33,7 +35,11 @@ function sanitizeState(state) {
     const email = normalizeEmail(rawEmail);
     if (!email) continue;
     const productIds = Array.isArray(rawValue?.productIds)
-      ? [...new Set(rawValue.productIds.map(normalizeProductId).filter(Boolean))]
+      ? [
+          ...new Set(
+            rawValue.productIds.map(normalizeProductId).filter(Boolean),
+          ),
+        ]
       : [];
     users[email] = {
       productIds,
@@ -48,7 +54,10 @@ function sanitizeState(state) {
 }
 
 function shouldUseCloudflareBackend() {
-  return process.env.DIGITAL_ACCESS_STORE === "cloudflare" || isCloudflareKvConfigured();
+  return (
+    process.env.DIGITAL_ACCESS_STORE === "cloudflare" ||
+    isCloudflareKvConfigured()
+  );
 }
 
 async function ensureLocalStore() {
@@ -63,13 +72,19 @@ async function ensureLocalStore() {
   try {
     await fs.access(accessFile);
   } catch {
-    await fs.writeFile(accessFile, JSON.stringify({ users: {} }, null, 2), "utf8");
+    await fs.writeFile(
+      accessFile,
+      JSON.stringify({ users: {} }, null, 2),
+      "utf8",
+    );
   }
 }
 
 async function readLocalState() {
   if (!canUseFs()) {
-    console.warn("Local digital access store unavailable in this runtime; using in-memory fallback.");
+    console.warn(
+      "Local digital access store unavailable in this runtime; using in-memory fallback.",
+    );
     return inMemoryState;
   }
   try {
@@ -126,7 +141,10 @@ async function getState() {
     try {
       return await readCloudflareState();
     } catch (error) {
-      console.error("Cloudflare KV digital access read failed, using local fallback:", error);
+      console.error(
+        "Cloudflare KV digital access read failed, using local fallback:",
+        error,
+      );
     }
   }
   return readLocalState();
@@ -156,7 +174,9 @@ export async function grantDigitalAccess(productId, email) {
 
   const state = await getState();
   const existing = state.users[safeEmail] || { productIds: [], updatedAt: "" };
-  const productIds = Array.isArray(existing.productIds) ? [...existing.productIds] : [];
+  const productIds = Array.isArray(existing.productIds)
+    ? [...existing.productIds]
+    : [];
   if (!productIds.includes(safeProductId)) productIds.push(safeProductId);
 
   state.users[safeEmail] = {

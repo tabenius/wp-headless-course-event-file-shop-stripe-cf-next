@@ -3,20 +3,21 @@
 import { useEffect } from "react";
 import { t } from "@/lib/i18n";
 
-export default function AdminHealthTab({
+export default function AdminConnectorsTab({
   healthChecks,
   healthLoading,
   webhookUrl,
   ragbazDownloadUrl,
   runHealthCheck,
+  debugLogs,
 }) {
   useEffect(() => {
-    console.info("[AdminHealthTab] mounted");
-    return () => console.info("[AdminHealthTab] unmounted");
+    console.info("[AdminConnectorsTab] mounted");
+    return () => console.info("[AdminConnectorsTab] unmounted");
   }, []);
 
   useEffect(() => {
-    console.info("[AdminHealthTab] props", {
+    console.info("[AdminConnectorsTab] props", {
       hasChecks: !!healthChecks,
       webhook: !!webhookUrl,
       ragbaz: !!ragbazDownloadUrl,
@@ -27,9 +28,7 @@ export default function AdminHealthTab({
   return (
     <div className="border rounded p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">
-          {t("admin.healthCheck")}
-        </h2>
+        <h2 className="text-xl font-semibold">{t("admin.healthCheck")}</h2>
         <button
           type="button"
           onClick={runHealthCheck}
@@ -57,9 +56,31 @@ export default function AdminHealthTab({
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-gray-600">
-          {t("admin.healthCheckDesc")}
-        </p>
+        <p className="text-sm text-gray-600">{t("admin.healthCheckDesc")}</p>
+      )}
+
+      {debugLogs?.length > 0 && (
+        <div className="bg-gray-50 border rounded p-3 text-xs space-y-1">
+          <div className="font-semibold">Debug logs (latest)</div>
+          {debugLogs.map((logItem) => (
+            <div
+              key={`${logItem.reqId}-${logItem.ts}`}
+              className="flex flex-wrap gap-2"
+            >
+              <span className="text-gray-500">
+                {new Date(logItem.ts).toLocaleTimeString()}
+              </span>
+              <code className="bg-white border rounded px-1">
+                {logItem.path}
+              </code>
+              <span>Status {logItem.status}</span>
+              <span>{logItem.duration} ms</span>
+              <code className="bg-white border rounded px-1">
+                {logItem.reqId}
+              </code>
+            </div>
+          ))}
+        </div>
       )}
 
       {webhookUrl && (
@@ -100,6 +121,49 @@ export default function AdminHealthTab({
               checkout.session.completed
             </code>
           </p>
+        </div>
+      )}
+
+      {ragbazDownloadUrl && (
+        <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
+          <h3 className="font-semibold">{t("admin.ragbazPlugin")}</h3>
+          <p className="text-gray-600">{t("admin.ragbazPluginDesc")}</p>
+          <div className="flex items-center gap-2">
+            <a
+              className="px-3 py-2 rounded border bg-white hover:bg-gray-100 text-sm"
+              href={ragbazDownloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("admin.downloadRagbaz")}
+            </a>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(ragbazDownloadUrl)}
+              className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
+              title={t("common.copy")}
+            >
+              {t("common.copy")}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-gray-500 shrink-0">WP-CLI:</label>
+            <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
+              {`wp plugin install ${ragbazDownloadUrl} --activate`}
+            </code>
+            <button
+              type="button"
+              onClick={() =>
+                navigator.clipboard.writeText(
+                  `wp plugin install ${ragbazDownloadUrl} --activate`,
+                )
+              }
+              className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
+              title={t("common.copy")}
+            >
+              {t("common.copy")}
+            </button>
+          </div>
         </div>
       )}
     </div>

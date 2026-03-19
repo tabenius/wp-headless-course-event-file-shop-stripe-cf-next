@@ -24,7 +24,10 @@ export async function POST(request) {
     const email = (body?.email || "").trim();
     const message = (body?.message || "").trim();
     if (!name || !email || !message) {
-      return NextResponse.json({ ok: false, error: "Alla fält krävs." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Alla fält krävs." },
+        { status: 400 },
+      );
     }
 
     const to = getTargetEmail();
@@ -48,16 +51,23 @@ export async function POST(request) {
       if (!res.ok) {
         const errText = await res.text().catch(() => "");
         console.error("Resend error:", res.status, errText);
-        return NextResponse.json({ ok: false, error: "Kunde inte skicka e-post just nu." }, { status: 502 });
+        return NextResponse.json(
+          { ok: false, error: "Kunde inte skicka e-post just nu." },
+          { status: 502 },
+        );
       }
-      return NextResponse.json({ ok: true, message: "Tack! Vi återkommer snarast." });
+      return NextResponse.json({
+        ok: true,
+        message: "Tack! Vi återkommer snarast.",
+      });
     }
 
     // Fallback: mailto link guidance
     return NextResponse.json(
       {
         ok: false,
-        error: "E-postleverans är inte konfigurerad. Ange RESEND_API_KEY och RESEND_FROM_EMAIL.",
+        error:
+          "E-postleverans är inte konfigurerad. Ange RESEND_API_KEY och RESEND_FROM_EMAIL.",
       },
       { status: 500 },
     );

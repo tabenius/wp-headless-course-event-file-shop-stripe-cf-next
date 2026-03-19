@@ -20,7 +20,10 @@ export default function Error({ error, reset }) {
           >
             Try again
           </button>
-          <Link href="/" className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50">
+          <Link
+            href="/"
+            className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50"
+          >
             Go home
           </Link>
         </div>

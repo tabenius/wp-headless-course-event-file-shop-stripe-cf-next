@@ -3,8 +3,16 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { generateImage } from "@/lib/ai";
-import { resolveSize, clampCount, computeResetsAt, arrayBufferToBase64 } from "@/lib/imageQuota";
-import { readCloudflareKvJson, writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import {
+  resolveSize,
+  clampCount,
+  computeResetsAt,
+  arrayBufferToBase64,
+} from "@/lib/imageQuota";
+import {
+  readCloudflareKvJson,
+  writeCloudflareKvJson,
+} from "@/lib/cloudflareKv";
 
 function kvKey() {
   const now = new Date();
@@ -26,7 +34,11 @@ async function readQuota() {
 async function incrementQuota(currentCount, by) {
   if (by <= 0) return;
   try {
-    await writeCloudflareKvJson(kvKey(), { count: currentCount + by }, { expirationTtl: 30 * 3600 });
+    await writeCloudflareKvJson(
+      kvKey(),
+      { count: currentCount + by },
+      { expirationTtl: 30 * 3600 },
+    );
   } catch {
     // fail open — quota undercount is acceptable
   }
@@ -43,7 +55,10 @@ export async function GET(request) {
 
   const limit = parseInt(process.env.AI_IMAGE_DAILY_LIMIT ?? "5", 10);
   const { count: used } = await readQuota();
-  return NextResponse.json({ ok: true, quota: buildQuotaResponse(used, limit) });
+  return NextResponse.json({
+    ok: true,
+    quota: buildQuotaResponse(used, limit),
+  });
 }
 
 export async function POST(request) {
@@ -54,11 +69,18 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON" },
+      { status: 400 },
+    );
   }
 
   const prompt = (body?.prompt || "").trim();
-  if (!prompt) return NextResponse.json({ ok: false, error: "prompt required" }, { status: 400 });
+  if (!prompt)
+    return NextResponse.json(
+      { ok: false, error: "prompt required" },
+      { status: 400 },
+    );
 
   const count = clampCount(body?.count);
   const { width, height } = resolveSize(body?.size);
@@ -67,7 +89,11 @@ export async function POST(request) {
   const { count: used } = await readQuota();
   if (used + count > limit) {
     return NextResponse.json(
-      { ok: false, error: "Daily limit reached", quota: buildQuotaResponse(used, limit) },
+      {
+        ok: false,
+        error: "Daily limit reached",
+        quota: buildQuotaResponse(used, limit),
+      },
       { status: 429 },
     );
   }
@@ -80,7 +106,9 @@ export async function POST(request) {
     .map((r) => r.value);
 
   if (buffers.length === 0) {
-    const firstError = results.find((r) => r.status === "rejected")?.reason?.message || "All FLUX calls failed";
+    const firstError =
+      results.find((r) => r.status === "rejected")?.reason?.message ||
+      "All FLUX calls failed";
     return NextResponse.json({ ok: false, error: firstError }, { status: 502 });
   }
 

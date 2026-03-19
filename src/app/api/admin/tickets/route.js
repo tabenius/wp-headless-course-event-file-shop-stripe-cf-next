@@ -28,7 +28,14 @@ export async function POST(request) {
     }
     const buildTime = String(body?.buildTime || "").trim();
     const gitSha = String(body?.gitSha || "").trim();
-    const ticket = await createTicket({ title, description, priority, author: "admin", buildTime, gitSha });
+    const ticket = await createTicket({
+      title,
+      description,
+      priority,
+      author: "admin",
+      buildTime,
+      gitSha,
+    });
     const tickets = await listTickets();
     return NextResponse.json({ ok: true, ticket, tickets });
   } catch (error) {
@@ -54,15 +61,17 @@ export async function PUT(request) {
       );
     }
     const status = body?.status ? String(body.status).toLowerCase() : undefined;
-    const comment = typeof body?.comment === "string" ? body.comment : undefined;
+    const comment =
+      typeof body?.comment === "string" ? body.comment : undefined;
     await updateTicket(id, { status, comment, author: "admin" });
     const tickets = await listTickets();
     return NextResponse.json({ ok: true, tickets });
   } catch (error) {
     console.error("Update ticket failed", error);
-    const message = error?.message === "Ticket not found"
-      ? t("admin.ticketNotFound", "Ticket not found")
-      : t("admin.ticketUpdateFailed", "Could not update ticket");
+    const message =
+      error?.message === "Ticket not found"
+        ? t("admin.ticketNotFound", "Ticket not found")
+        : t("admin.ticketUpdateFailed", "Could not update ticket");
     return NextResponse.json({ ok: false, error: message }, { status: 400 });
   }
 }

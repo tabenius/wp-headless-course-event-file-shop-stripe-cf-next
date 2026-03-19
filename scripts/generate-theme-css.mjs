@@ -51,14 +51,18 @@ export function buildCss({ colors, fonts }) {
   const background = colors.find((item) => item.slug === "background");
   const foreground = colors.find((item) => item.slug === "foreground");
 
-  if (background) lines.push(`  --background: var(--color-${background.slug});`);
-  if (foreground) lines.push(`  --foreground: var(--color-${foreground.slug});`);
+  if (background)
+    lines.push(`  --background: var(--color-${background.slug});`);
+  if (foreground)
+    lines.push(`  --foreground: var(--color-${foreground.slug});`);
 
   lines.push("}");
   lines.push("");
 
   for (const color of colors) {
-    lines.push(`.has-${color.slug}-color { color: var(--color-${color.slug}); }`);
+    lines.push(
+      `.has-${color.slug}-color { color: var(--color-${color.slug}); }`,
+    );
     lines.push(
       `.has-${color.slug}-background-color { background-color: var(--color-${color.slug}); }`,
     );
@@ -91,10 +95,14 @@ export function validateTheme(theme) {
   const palette = theme?.settings?.color?.palette;
   const fontFamilies = theme?.settings?.typography?.fontFamilies;
   if (!Array.isArray(palette) || palette.length === 0) {
-    throw new Error("theme.json requires settings.color.palette with at least one color.");
+    throw new Error(
+      "theme.json requires settings.color.palette with at least one color.",
+    );
   }
   if (!Array.isArray(fontFamilies) || fontFamilies.length === 0) {
-    throw new Error("theme.json requires settings.typography.fontFamilies with at least one font.");
+    throw new Error(
+      "theme.json requires settings.typography.fontFamilies with at least one font.",
+    );
   }
 
   const { colors, fonts } = getThemeItems(theme);
@@ -102,7 +110,9 @@ export function validateTheme(theme) {
     throw new Error("No valid color entries found in settings.color.palette.");
   }
   if (fonts.length === 0) {
-    throw new Error("No valid font entries found in settings.typography.fontFamilies.");
+    throw new Error(
+      "No valid font entries found in settings.typography.fontFamilies.",
+    );
   }
 
   if (hasDuplicateSlugs(colors)) {
@@ -139,7 +149,8 @@ export async function generateThemeCss() {
 }
 
 const isDirectRun =
-  process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
 if (isDirectRun) {
   generateThemeCss().catch((error) => {

@@ -34,7 +34,10 @@ export async function createStripePaymentSession({
   payload.set("line_items[0][quantity]", "1");
   payload.set("line_items[0][price_data][currency]", currency.toLowerCase());
   payload.set("line_items[0][price_data][unit_amount]", String(priceCents));
-  payload.set("line_items[0][price_data][product_data][name]", itemName || "Digital item");
+  payload.set(
+    "line_items[0][price_data][product_data][name]",
+    itemName || "Digital item",
+  );
   payload.set("metadata[user_email]", email.toLowerCase());
   for (const [key, value] of Object.entries(metadata)) {
     payload.set(`metadata[${key}]`, String(value));
@@ -63,7 +66,9 @@ export async function createStripeCheckoutSession({
   contentKind = "course",
 }) {
   return createStripePaymentSession({
-    itemName: courseTitle || `${contentKind === "event" ? "Event" : "Course"} access: ${courseUri}`,
+    itemName:
+      courseTitle ||
+      `${contentKind === "event" ? "Event" : "Course"} access: ${courseUri}`,
     priceCents,
     currency,
     email,

@@ -107,12 +107,12 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 Let users sign in with Google, Facebook, Microsoft, or Apple accounts instead of email/password. You only need to set up the ones you want to offer.
 
-| Provider | Variables | Where to get credentials |
-|----------|----------|-------------------------|
-| Google | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → Create OAuth client ID |
-| Facebook | `AUTH_FACEBOOK_ID`, `AUTH_FACEBOOK_SECRET` | [Facebook Developers](https://developers.facebook.com/) → My Apps → Create App → Set up Facebook Login |
+| Provider  | Variables                                                                                        | Where to get credentials                                                                                                            |
+| --------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Google    | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`                                                           | [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → Create OAuth client ID                  |
+| Facebook  | `AUTH_FACEBOOK_ID`, `AUTH_FACEBOOK_SECRET`                                                       | [Facebook Developers](https://developers.facebook.com/) → My Apps → Create App → Set up Facebook Login                              |
 | Microsoft | `AUTH_MICROSOFT_ENTRA_ID_ID`, `AUTH_MICROSOFT_ENTRA_ID_SECRET`, `AUTH_MICROSOFT_ENTRA_ID_TENANT` | [Azure Portal](https://portal.azure.com/) → App registrations → New registration. Use `common` as tenant for any Microsoft account. |
-| Apple | `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET` | [Apple Developer](https://developer.apple.com/) → Certificates, Identifiers & Profiles → Services IDs |
+| Apple     | `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET`                                                             | [Apple Developer](https://developer.apple.com/) → Certificates, Identifiers & Profiles → Services IDs                               |
 
 For each provider, set the OAuth redirect URL to: `https://your-domain.com/api/auth/callback/{provider}`
 
@@ -125,6 +125,7 @@ For each provider, set the OAuth redirect URL to: `https://your-domain.com/api/a
 ### Integration Health Check
 
 Click **"Kör kontroll"** (Run check) to verify all connections are working:
+
 - WordPress GraphQL endpoint reachable
 - Authentication working
 - Stripe API key valid
@@ -151,6 +152,7 @@ The access check follows this priority:
 3. **Stripe payment** — if the user just completed a Stripe checkout for this course (verified via session metadata), access is granted automatically
 
 When a user pays via Stripe:
+
 - The checkout session includes metadata: `course_uri`, `user_email`
 - On success, Stripe sends a `checkout.session.completed` webhook
 - The app verifies: payment status is "paid", email matches, course URI matches
@@ -159,13 +161,13 @@ When a user pays via Stripe:
 
 ## Troubleshooting
 
-| Problem | Likely cause | Solution |
-|---------|-------------|---------|
+| Problem                            | Likely cause                          | Solution                                                                     |
+| ---------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
 | Courses don't appear at `/courses` | LearnPress or mu-plugin not installed | Verify the mu-plugin is in `wp-content/mu-plugins/` and LearnPress is active |
-| "Schema error" in GraphQL | Outdated mu-plugin | Re-copy the latest mu-plugin from `docs/wordpress/mu-plugins/` |
-| Payment succeeds but no access | Webhook not configured | Check Stripe Dashboard → Webhooks for delivery failures |
-| Admin can't save course settings | Insufficient WordPress permissions | Ensure the WordPress user has `manage_options` capability |
-| Health check shows errors | Missing or incorrect env vars | Verify each variable in `.env` matches the expected format |
+| "Schema error" in GraphQL          | Outdated mu-plugin                    | Re-copy the latest mu-plugin from `docs/wordpress/mu-plugins/`               |
+| Payment succeeds but no access     | Webhook not configured                | Check Stripe Dashboard → Webhooks for delivery failures                      |
+| Admin can't save course settings   | Insufficient WordPress permissions    | Ensure the WordPress user has `manage_options` capability                    |
+| Health check shows errors          | Missing or incorrect env vars         | Verify each variable in `.env` matches the expected format                   |
 
 ## Related Documentation
 

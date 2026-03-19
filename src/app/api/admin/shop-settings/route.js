@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
-import { getShopSettings, saveShopSettings, ALL_TYPES } from "@/lib/shopSettings";
+import {
+  getShopSettings,
+  saveShopSettings,
+  ALL_TYPES,
+} from "@/lib/shopSettings";
 
 export async function GET(request) {
   const auth = await requireAdmin(request);

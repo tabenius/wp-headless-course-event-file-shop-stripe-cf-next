@@ -76,11 +76,24 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href={site.url} />
         <link rel="dns-prefetch" href={site.url} />
-        <link rel="preload" href={site.logoUrl} as="image" type="image/png" fetchPriority="high" />
-        <link rel="preload" href={site.bgImageUrl} as="image" type="image/webp" />
+        <link
+          rel="preload"
+          href={site.logoUrl}
+          as="image"
+          type="image/png"
+          fetchPriority="high"
+        />
+        <link
+          rel="preload"
+          href={site.bgImageUrl}
+          as="image"
+          type="image/webp"
+        />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
         />
       </head>
       <body

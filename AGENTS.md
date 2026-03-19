@@ -8,6 +8,7 @@ Both agents MUST read this at session start and update it whenever priorities sh
 ## Project overview
 
 WordPress-headless course/shop/events platform deployed on **Cloudflare Workers** with:
+
 - **Next.js 16** (App Router, Turbopack for dev, OpenNext for CF)
 - **WordPress GraphQL** (primary content source, WPGraphQL + LearnPress + WooCommerce)
 - **Cloudflare KV** (access tokens, support tickets, AI quota, digital products)
@@ -21,15 +22,15 @@ Monorepo — `packages/ragbaz-articulate-plugin/` is the companion WordPress plu
 
 ## Key commands
 
-| Purpose | Command |
-|---------|---------|
-| Dev server | `npm run dev` |
-| Build (Node) | `npm run build` |
-| Build (CF) | `npm run cf:build` |
-| Deploy to CF | `npm run cf:deploy` |
-| Run tests | `npm test` |
-| Lint | `npm run lint` |
-| Plugin zip | `npm run plugin:copy` |
+| Purpose      | Command               |
+| ------------ | --------------------- |
+| Dev server   | `npm run dev`         |
+| Build (Node) | `npm run build`       |
+| Build (CF)   | `npm run cf:build`    |
+| Deploy to CF | `npm run cf:deploy`   |
+| Run tests    | `npm test`            |
+| Lint         | `npm run lint`        |
+| Plugin zip   | `npm run plugin:copy` |
 
 Tests use `node:test` (no Jest/Vitest). Add new test files under `tests/`.
 
@@ -53,22 +54,26 @@ The lock is created automatically by `scripts/build-with-lock.mjs` and removed o
 ## Important architectural patterns
 
 ### Edge runtime
+
 - `src/auth.js` uses **Web Crypto API** (`crypto.subtle`) — no `node:crypto` anywhere in auth or admin routes.
-- Session functions (`encodeSession`, `decodeSession`, `requireAdmin`, etc.) are **async**. 
+- Session functions (`encodeSession`, `decodeSession`, `requireAdmin`, etc.) are **async**.
 - Always `await requireAdmin(request)` in API routes.
 - Routes that import `node:` modules must set `export const runtime = "nodejs"` (not edge).
 
 ### KV storage
+
 - `src/lib/cloudflareKv.js` wraps KV access; falls back to in-memory on non-CF runtimes.
 - Fail-open on KV errors (don't crash the request, log and continue).
 
 ### i18n
+
 - Translation files: `src/lib/i18n/en.json`, `sv.json`, `es.json` — must stay in sync.
 - Placeholder syntax: `{param}` (e.g. `"used {used} of {limit}"`).
 - `t(key, params)` is the call site.
 - **Known past bug**: missing comma after `"languageHint"` key made all three files invalid JSON. Always validate JSON after editing.
 
 ### Admin UI
+
 - All admin tabs live in `src/components/admin/`.
 - `AdminDashboard.js` is the top-level shell — add new tabs there.
 - Hotkeys: **Alt+1..8** for tabs, **Alt+/** search, **Alt+L** logout. Update the legend when adding tabs.
@@ -76,6 +81,7 @@ The lock is created automatically by `scripts/build-with-lock.mjs` and removed o
 - Nav items array is in `AdminHeader.js` — add `{ label: t("admin.navX"), tab: "x" }` entry when adding a tab.
 
 ### Prices
+
 - Always render as `"750 SEK"` format (no decimals, currency after amount).
 - `normalizePrice()` in `src/lib/utils.js` handles WooCommerce raw strings like `"kr750.00"`.
 
@@ -86,16 +92,16 @@ The lock is created automatically by `scripts/build-with-lock.mjs` and removed o
 Neither agent has exclusive ownership — coordinate via the coop file and this doc.
 But here are natural areas of focus:
 
-| Area | Notes |
-|------|-------|
-| `src/auth.js`, `src/lib/adminRoute.js` | Auth — touch carefully; any change cascades to ~20 API routes |
-| `src/app/api/admin/*` | Admin API routes — edge runtime; one folder per feature |
-| `src/components/admin/*` | Admin UI components |
-| `src/lib/i18n/*.json` | Translations — always update all three languages together |
-| `src/lib/ai.js`, `src/lib/imageQuota.js` | AI helpers — pure functions, well-tested |
-| `src/lib/cloudflareKv.js`, `src/lib/digitalProducts.js` | KV/storage layer |
-| `packages/ragbaz-articulate-plugin/` | WordPress plugin — independent; build with `npm run plugin:copy` |
-| `tests/` | `node:test` tests — run with `npm test` |
+| Area                                                    | Notes                                                            |
+| ------------------------------------------------------- | ---------------------------------------------------------------- |
+| `src/auth.js`, `src/lib/adminRoute.js`                  | Auth — touch carefully; any change cascades to ~20 API routes    |
+| `src/app/api/admin/*`                                   | Admin API routes — edge runtime; one folder per feature          |
+| `src/components/admin/*`                                | Admin UI components                                              |
+| `src/lib/i18n/*.json`                                   | Translations — always update all three languages together        |
+| `src/lib/ai.js`, `src/lib/imageQuota.js`                | AI helpers — pure functions, well-tested                         |
+| `src/lib/cloudflareKv.js`, `src/lib/digitalProducts.js` | KV/storage layer                                                 |
+| `packages/ragbaz-articulate-plugin/`                    | WordPress plugin — independent; build with `npm run plugin:copy` |
+| `tests/`                                                | `node:test` tests — run with `npm test`                          |
 
 ---
 
@@ -133,6 +139,7 @@ node scripts/docs-lock.mjs release
 ```
 
 **Rules:**
+
 - Acquire → pull → edit → commit+push → release. Always in that order.
 - Hold the lock for the shortest time possible. Never hold it across multiple separate tasks.
 - If the lock is held, **wait** — do not edit the files until the other agent releases.
@@ -140,25 +147,31 @@ node scripts/docs-lock.mjs release
 - `docs.lock.pid` is `.gitignore`d — it never gets committed.
 
 **Lock file contents** (for reference):
+
 ```json
-{ "pid": 12345, "agent": "codex", "files": "AGENTS.md, claude+codex-coop.md", "started": "2026-03-19T14:00:00.000Z" }
+{
+  "pid": 12345,
+  "agent": "codex",
+  "files": "AGENTS.md, claude+codex-coop.md",
+  "started": "2026-03-19T14:00:00.000Z"
+}
 ```
 
 ---
 
 ## Environment variables (key ones)
 
-| Var | Purpose |
-|-----|---------|
-| `WORDPRESS_API_URL` | WP GraphQL endpoint |
-| `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | Basic auth for WPGraphQL |
-| `FAUST_SECRET_KEY` / `FAUSTWP_SECRET_KEY` | Faust auth fallback |
-| `CF_ACCOUNT_ID` / `CLOUDFLARE_ACCOUNT_ID` | CF account for AI + KV REST |
-| `CF_API_TOKEN` | CF API token (Workers AI, KV REST, R2) |
-| `CF_KV_NAMESPACE_ID` | KV namespace — **required** for AI quota and ticket persistence |
-| `AI_IMAGE_DAILY_LIMIT` | Max FLUX images/day (default 5) |
-| `STRIPE_SECRET_KEY` | Stripe API |
-| `ADMIN_PASSWORD` | Admin UI login |
+| Var                                       | Purpose                                                         |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| `WORDPRESS_API_URL`                       | WP GraphQL endpoint                                             |
+| `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD`  | Basic auth for WPGraphQL                                        |
+| `FAUST_SECRET_KEY` / `FAUSTWP_SECRET_KEY` | Faust auth fallback                                             |
+| `CF_ACCOUNT_ID` / `CLOUDFLARE_ACCOUNT_ID` | CF account for AI + KV REST                                     |
+| `CF_API_TOKEN`                            | CF API token (Workers AI, KV REST, R2)                          |
+| `CF_KV_NAMESPACE_ID`                      | KV namespace — **required** for AI quota and ticket persistence |
+| `AI_IMAGE_DAILY_LIMIT`                    | Max FLUX images/day (default 5)                                 |
+| `STRIPE_SECRET_KEY`                       | Stripe API                                                      |
+| `ADMIN_PASSWORD`                          | Admin UI login                                                  |
 
 Full list in `.env.example`.
 

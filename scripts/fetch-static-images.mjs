@@ -22,7 +22,9 @@ try {
 }
 
 const baseUrl = (
-  process.env.NEXT_PUBLIC_WORDPRESS_URL || site.url || ""
+  process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+  site.url ||
+  ""
 ).replace(/\/$/, "");
 
 const assets = [

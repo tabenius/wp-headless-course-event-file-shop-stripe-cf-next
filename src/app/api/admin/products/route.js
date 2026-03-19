@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
-import { listDigitalProducts, saveDigitalProducts } from "@/lib/digitalProducts";
+import {
+  listDigitalProducts,
+  saveDigitalProducts,
+} from "@/lib/digitalProducts";
 import { t } from "@/lib/i18n";
 
 export async function GET(request) {

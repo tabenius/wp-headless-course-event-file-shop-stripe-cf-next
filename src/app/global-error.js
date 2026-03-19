@@ -4,11 +4,29 @@ export default function GlobalError({ error, reset }) {
   return (
     <html lang="en">
       <body style={{ fontFamily: "system-ui, sans-serif", margin: 0 }}>
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2rem",
+          }}
+        >
           <div style={{ maxWidth: "400px", textAlign: "center" }}>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Something went wrong</h1>
+            <h1
+              style={{
+                fontSize: "1.5rem",
+                fontWeight: "bold",
+                marginBottom: "1rem",
+              }}
+            >
+              Something went wrong
+            </h1>
             <p style={{ color: "#666", marginBottom: "1.5rem" }}>
-              {error?.digest ? `Error reference: ${error.digest}` : "An unexpected error occurred."}
+              {error?.digest
+                ? `Error reference: ${error.digest}`
+                : "An unexpected error occurred."}
             </p>
             <button
               type="button"

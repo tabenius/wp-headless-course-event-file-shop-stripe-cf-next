@@ -19,7 +19,7 @@ export default function ProductRow({
 }) {
   const metaText = Array.isArray(meta)
     ? meta.filter(Boolean).join(" · ")
-    : (meta || "");
+    : meta || "";
   const buttonClasses = active
     ? "bg-purple-100 border border-purple-500"
     : `border border-gray-900 hover:bg-purple-50 ${rowBackground(rowIndex)}`;
@@ -35,9 +35,7 @@ export default function ProductRow({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{title}</p>
         {metaText && (
-          <p className="text-xs text-gray-500 truncate">
-            {metaText}
-          </p>
+          <p className="text-xs text-gray-500 truncate">{metaText}</p>
         )}
       </div>
       {badgeNode}

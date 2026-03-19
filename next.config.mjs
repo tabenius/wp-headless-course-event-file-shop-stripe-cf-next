@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const wpHostname = (() => {
   try {
-    return new URL(process.env.NEXT_PUBLIC_WORDPRESS_URL || "").hostname || "localhost";
+    return (
+      new URL(process.env.NEXT_PUBLIC_WORDPRESS_URL || "").hostname ||
+      "localhost"
+    );
   } catch {
     return "localhost";
   }
@@ -10,7 +13,7 @@ const wpHostname = (() => {
 const nextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps: true,
-  outputFileTracingRoot: '.',
+  outputFileTracingRoot: ".",
   env: {
     NEXT_PUBLIC_BUILD_TIME:
       process.env.NEXT_PUBLIC_BUILD_TIME ||
@@ -45,7 +48,10 @@ const nextConfig = {
     },
   },
   async rewrites() {
-    const wpBase = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+    const wpBase = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(
+      /\/+$/,
+      "",
+    );
     const hasWp = Boolean(wpBase);
     return hasWp
       ? [

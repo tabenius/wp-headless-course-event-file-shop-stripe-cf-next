@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
-import { getAdminSessionFromCookieHeader, isAdminCredentialsConfigured } from "@/auth";
+import {
+  getAdminSessionFromCookieHeader,
+  isAdminCredentialsConfigured,
+} from "@/auth";
 import { appendServerLog } from "@/lib/serverLog";
 import { getEnabledProviders } from "@/lib/oauthProviders";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { isStripeEnabled } from "@/lib/stripe";
-import { isCloudflareKvConfigured, readCloudflareKvJson } from "@/lib/cloudflareKv";
+import {
+  isCloudflareKvConfigured,
+  readCloudflareKvJson,
+} from "@/lib/cloudflareKv";
 import { t } from "@/lib/i18n";
 import { buildRagbazDownloadUrl } from "./helpers";
 
@@ -52,7 +58,8 @@ async function checkWordPressGraphQL() {
 async function checkWpSchema() {
   const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
   const auth = getWordPressGraphqlAuth();
-  if (!url || !auth.authorization) return { ok: false, message: t("health.wpSchemaUnknown") };
+  if (!url || !auth.authorization)
+    return { ok: false, message: t("health.wpSchemaUnknown") };
   try {
     const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
       method: "POST",
@@ -73,7 +80,8 @@ async function checkWpSchema() {
       cache: "no-store",
     });
     const json = await response.json().catch(() => null);
-    if (!response.ok || !json?.data) return { ok: false, message: t("health.wpSchemaFailed") };
+    if (!response.ok || !json?.data)
+      return { ok: false, message: t("health.wpSchemaFailed") };
     const types = (json.data.__schema?.types || []).map((t) => t?.name);
     const hasEvent = types.includes("Event");
     const hasLpCourse = types.includes("LpCourse");
@@ -98,7 +106,8 @@ async function checkWpSchema() {
 async function checkRagbazPlugin() {
   const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
   const auth = getWordPressGraphqlAuth();
-  if (!url || !auth.authorization) return { ok: false, message: t("health.ragbazUnknown") };
+  if (!url || !auth.authorization)
+    return { ok: false, message: t("health.ragbazUnknown") };
   try {
     const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
       method: "POST",
@@ -118,7 +127,8 @@ async function checkRagbazPlugin() {
       cache: "no-store",
     });
     const json = await response.json().catch(() => null);
-    if (!response.ok || !json?.data) return { ok: false, message: t("health.ragbazMissing") };
+    if (!response.ok || !json?.data)
+      return { ok: false, message: t("health.ragbazMissing") };
     const info = json.data.ragbazInfo;
     if (!info) return { ok: false, message: t("health.ragbazMissing") };
     const msg = t("health.ragbazOk", {
@@ -172,7 +182,10 @@ export async function GET(request) {
   );
   if (!adminSession) {
     console.warn("[health] admin session missing");
-    return NextResponse.json({ ok: false, error: t("apiErrors.adminLoginRequired") }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: t("apiErrors.adminLoginRequired") },
+      { status: 401 },
+    );
   }
 
   const backend = process.env.COURSE_ACCESS_BACKEND || "local";
@@ -213,7 +226,11 @@ export async function GET(request) {
     reqId,
   };
   console.info("[health] result", summary);
-  await appendServerLog({ level: "info", msg: `[health] ${JSON.stringify(summary)}`, reqId });
+  await appendServerLog({
+    level: "info",
+    msg: `[health] ${JSON.stringify(summary)}`,
+    reqId,
+  });
 
   return NextResponse.json({
     ok: true,

@@ -23,6 +23,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Failed to list digital products:", error);
-    return NextResponse.json({ ok: false, error: "Failed to load products" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Failed to load products" },
+      { status: 500 },
+    );
   }
 }

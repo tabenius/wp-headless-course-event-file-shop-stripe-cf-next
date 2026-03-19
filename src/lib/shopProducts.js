@@ -93,15 +93,21 @@ async function fetchEvents() {
  * Only items with a price > 0 are included (free items are skipped).
  */
 export async function listAllShopItems() {
-  const [wcProducts, lpCourses, events, digitalProducts, accessState, shopSettings] =
-    await Promise.all([
-      fetchWooCommerceProducts(),
-      fetchLearnPressCourses(),
-      fetchEvents(),
-      listDigitalProducts(),
-      getCourseAccessState(),
-      getShopSettings(),
-    ]);
+  const [
+    wcProducts,
+    lpCourses,
+    events,
+    digitalProducts,
+    accessState,
+    shopSettings,
+  ] = await Promise.all([
+    fetchWooCommerceProducts(),
+    fetchLearnPressCourses(),
+    fetchEvents(),
+    listDigitalProducts(),
+    getCourseAccessState(),
+    getShopSettings(),
+  ]);
 
   const visibleTypes = shopSettings.visibleTypes;
 

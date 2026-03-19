@@ -8,7 +8,10 @@ import {
 } from "@/lib/courseAccessStore";
 import { listUsers as listLocalUsers } from "@/lib/userStore";
 import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
-import { isCloudflareKvConfigured, writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import {
+  isCloudflareKvConfigured,
+  writeCloudflareKvJson,
+} from "@/lib/cloudflareKv";
 
 function isWordPressBackend() {
   return process.env.COURSE_ACCESS_BACKEND === "wordpress";
@@ -26,12 +29,15 @@ function getGraphqlEndpoint() {
 async function fetchWordPressGraphQL(query, variables = {}) {
   const endpoint = getGraphqlEndpoint();
   if (!endpoint) {
-    throw new Error("NEXT_PUBLIC_WORDPRESS_URL is required for wordpress backend");
+    throw new Error(
+      "NEXT_PUBLIC_WORDPRESS_URL is required for wordpress backend",
+    );
   }
 
   const authOptions = getWordPressGraphqlAuthOptions();
   let lastError = null;
-  const delayMs = Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
+  const delayMs =
+    Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const firstLines = (text, lines = 3) =>
     text ? text.split("\n").slice(0, lines).join("\n") : "";
@@ -93,7 +99,9 @@ async function getWordPressAdminState() {
     }
   `;
   const data = await fetchWordPressGraphQL(query);
-  const rules = Array.isArray(data?.courseAccessRules) ? data.courseAccessRules : [];
+  const rules = Array.isArray(data?.courseAccessRules)
+    ? data.courseAccessRules
+    : [];
   const courses = {};
   for (const rule of rules) {
     if (!rule?.courseUri) continue;
@@ -103,13 +111,16 @@ async function getWordPressAdminState() {
         typeof rule.priceCents === "number" && rule.priceCents >= 0
           ? rule.priceCents
           : 0,
-      currency: typeof rule.currency === "string" ? rule.currency.toUpperCase() : "SEK",
+      currency:
+        typeof rule.currency === "string" ? rule.currency.toUpperCase() : "SEK",
       updatedAt: typeof rule.updatedAt === "string" ? rule.updatedAt : "",
     };
   }
   const users = Array.isArray(data?.users?.nodes)
     ? data.users.nodes
-        .filter((node) => typeof node?.email === "string" && node.email.includes("@"))
+        .filter(
+          (node) => typeof node?.email === "string" && node.email.includes("@"),
+        )
         .map((node) => ({
           id: node?.id || "",
           name:
@@ -124,7 +135,12 @@ async function getWordPressAdminState() {
   return { courses, users };
 }
 
-async function setWordPressCourseAccess({ courseUri, allowedUsers, priceCents, currency }) {
+async function setWordPressCourseAccess({
+  courseUri,
+  allowedUsers,
+  priceCents,
+  currency,
+}) {
   const mutation = `
     mutation SetCourseAccessRule(
       $courseUri: String!
@@ -202,7 +218,8 @@ async function getWordPressCourseAccessConfig(courseUri) {
 async function replicateToCloudflare(state) {
   const key = process.env.CF_KV_KEY || "course-access";
   const shouldReplica =
-    process.env.COURSE_ACCESS_STORE === "cloudflare" || isCloudflareKvConfigured();
+    process.env.COURSE_ACCESS_STORE === "cloudflare" ||
+    isCloudflareKvConfigured();
   if (!shouldReplica) return;
   try {
     await writeCloudflareKvJson(key, state);
@@ -245,7 +262,10 @@ export async function setCourseAccess(payload) {
     }
     try {
       const result = await setWordPressCourseAccess(payload);
-      if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+      if (
+        isCloudflareKvConfigured() ||
+        process.env.COURSE_ACCESS_STORE === "cloudflare"
+      ) {
         await setLocalCourseAccess(payload);
       }
       return result;
@@ -271,7 +291,10 @@ export async function hasCourseAccess(courseUri, email) {
     try {
       const wpHas = await hasWordPressCourseAccess(courseUri, email);
       if (wpHas) return true;
-      if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+      if (
+        isCloudflareKvConfigured() ||
+        process.env.COURSE_ACCESS_STORE === "cloudflare"
+      ) {
         return hasLocalCourseAccess(courseUri, email);
       }
       return false;
@@ -296,7 +319,10 @@ export async function grantCourseAccess(courseUri, email) {
     }
     try {
       await grantWordPressCourseAccess(courseUri, email);
-      if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+      if (
+        isCloudflareKvConfigured() ||
+        process.env.COURSE_ACCESS_STORE === "cloudflare"
+      ) {
         await grantLocalCourseAccess(courseUri, email);
       }
       return;
@@ -357,7 +383,10 @@ export async function listAccessUsers() {
 export function getCourseStorageInfo() {
   if (isWordPressBackend()) {
     const replicas = [];
-    if (isCloudflareKvConfigured() || process.env.COURSE_ACCESS_STORE === "cloudflare") {
+    if (
+      isCloudflareKvConfigured() ||
+      process.env.COURSE_ACCESS_STORE === "cloudflare"
+    ) {
       replicas.push("cloudflare-kv");
     }
     return { provider: "wordpress-graphql-user-meta", replicas };

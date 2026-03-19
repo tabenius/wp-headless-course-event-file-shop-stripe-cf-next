@@ -183,7 +183,14 @@ async function fetchWorkersAnalytics(token, accountId) {
       uniques: 0,
       bytes: 0,
     }),
-    { requests: 0, subrequests: 0, errors: 0, pageViews: 0, uniques: 0, bytes: 0 },
+    {
+      requests: 0,
+      subrequests: 0,
+      errors: 0,
+      pageViews: 0,
+      uniques: 0,
+      bytes: 0,
+    },
   );
 
   return { hourly, referrers: [], totals };

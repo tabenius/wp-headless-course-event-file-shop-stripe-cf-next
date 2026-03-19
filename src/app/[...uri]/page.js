@@ -171,13 +171,16 @@ async function fetchCourseFallback(uri) {
 
   // REST fallback for LearnPress course
   if (!wp) return null;
-  const res = await fetch(`${wp}/wp-json/wp/v2/lp_course?slug=${encodeURIComponent(slug)}`, {
-    headers: {
-      Accept: "application/json",
-      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+  const res = await fetch(
+    `${wp}/wp-json/wp/v2/lp_course?slug=${encodeURIComponent(slug)}`,
+    {
+      headers: {
+        Accept: "application/json",
+        ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+      },
+      cache: "no-store",
     },
-    cache: "no-store",
-  });
+  );
   if (!res.ok) return null;
   const json = await res.json().catch(() => null);
   if (!Array.isArray(json) || json.length === 0) return null;
@@ -202,9 +205,7 @@ export async function generateMetadata({ params: paramsPromise }) {
   const params = await paramsPromise;
   const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
   const uri =
-    uriSegments.length > 0
-      ? `/${uriSegments.filter(Boolean).join("/")}`
-      : "/";
+    uriSegments.length > 0 ? `/${uriSegments.filter(Boolean).join("/")}` : "/";
   const data = await fetchContent(uri);
   const node = data?.nodeByUri;
   if (!node) return {};
@@ -305,7 +306,10 @@ function buildJsonLd(node, uri) {
   };
 }
 
-export default async function ContentPage({ params: paramsPromise, searchParams: searchParamsPromise }) {
+export default async function ContentPage({
+  params: paramsPromise,
+  searchParams: searchParamsPromise,
+}) {
   const params = await paramsPromise;
   const searchParams = await searchParamsPromise;
   const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
@@ -341,8 +345,20 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
   );
 
   // Add your own CPT templates here for single post types
-  if (contentType === "Post") return <>{ldScript}<Post data={node} /></>;
-  if (contentType === "Page") return <>{ldScript}<Page data={node} /></>;
+  if (contentType === "Post")
+    return (
+      <>
+        {ldScript}
+        <Post data={node} />
+      </>
+    );
+  if (contentType === "Page")
+    return (
+      <>
+        {ldScript}
+        <Page data={node} />
+      </>
+    );
   if (isPaidAccessType) {
     const session = await auth();
     const userEmail = session?.user?.email || "";
@@ -350,11 +366,14 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
     const checkoutStatus =
       typeof searchParams?.checkout === "string" ? searchParams.checkout : "";
     const checkoutSessionId =
-      typeof searchParams?.session_id === "string" ? searchParams.session_id : "";
+      typeof searchParams?.session_id === "string"
+        ? searchParams.session_id
+        : "";
 
     if (!canAccess && checkoutStatus === "success" && checkoutSessionId) {
       try {
-        const stripeSession = await fetchStripeCheckoutSession(checkoutSessionId);
+        const stripeSession =
+          await fetchStripeCheckoutSession(checkoutSessionId);
         const paymentStatus = stripeSession?.payment_status;
         const paidEmail = (
           stripeSession?.customer_details?.email ||
@@ -380,27 +399,55 @@ export default async function ContentPage({ params: paramsPromise, searchParams:
       const defaultPrice = process.env.DEFAULT_COURSE_FEE_CENTS
         ? Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS, 10)
         : undefined;
-      const contentKind = isEventType ? "event" : isProductType ? "product" : "course";
+      const contentKind = isEventType
+        ? "event"
+        : isProductType
+          ? "product"
+          : "course";
       return (
         <Paywall
           courseUri={uri}
           courseTitle={node?.title || node?.name || ""}
           courseContent={node?.content || node?.shortDescription || ""}
-          coursePriceRendered={node?.priceRendered || node?.priceText || node?.price || ""}
+          coursePriceRendered={
+            node?.priceRendered || node?.priceText || node?.price || ""
+          }
           courseDuration={node?.duration || ""}
           courseImage={node?.featuredImage?.node?.sourceUrl || ""}
           userEmail={userEmail}
-          priceCents={accessConfig?.priceCents ?? (Number.isFinite(defaultPrice) ? defaultPrice : undefined)}
-          currency={accessConfig?.currency || process.env.DEFAULT_COURSE_FEE_CURRENCY || site.defaultCurrency || "SEK"}
+          priceCents={
+            accessConfig?.priceCents ??
+            (Number.isFinite(defaultPrice) ? defaultPrice : undefined)
+          }
+          currency={
+            accessConfig?.currency ||
+            process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+            site.defaultCurrency ||
+            "SEK"
+          }
           stripeEnabled={isStripeEnabled()}
           contentKind={contentKind}
         />
       );
     }
-    if (isProductType) return <>{ldScript}<Product data={node} /></>;
-    return isEventType
-      ? <>{ldScript}<Event data={node} /></>
-      : <>{ldScript}<Course data={node} /></>;
+    if (isProductType)
+      return (
+        <>
+          {ldScript}
+          <Product data={node} />
+        </>
+      );
+    return isEventType ? (
+      <>
+        {ldScript}
+        <Event data={node} />
+      </>
+    ) : (
+      <>
+        {ldScript}
+        <Course data={node} />
+      </>
+    );
   }
   notFound();
 }

@@ -19,6 +19,8 @@ import ImageGenerationPanel from "./ImageGenerationPanel";
 import ChatPanel from "./ChatPanel";
 import { adminFetch } from "@/lib/adminFetch";
 
+const AdminStatsTab = lazy(() => import("./AdminStatsTab"));
+const AdminConnectorsTab = lazy(() => import("./AdminConnectorsTab"));
 const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
 const AdminSupportTab = lazy(() => import("./AdminSupportTab"));
 const AdminAdvancedTab = lazy(() => import("./AdminAdvancedTab"));
@@ -1390,383 +1392,36 @@ export default function AdminDashboard() {
         <div>Alt+/ Search • Alt+L Logout</div>
       </div>
       {/* ── Stats tab ── */}
-      {activeTab === "stats" && (
-        <div className="space-y-6">
-          {/* Quick stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="border rounded p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {wcProducts.length +
-                  wpCourses.length +
-                  wpEvents.length +
-                  products.length}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {t("stats.totalItems")}
-              </div>
-            </div>
-            <div className="border rounded p-4 text-center">
-              <div className="text-2xl font-bold text-blue-700">
-                {wcProducts.length}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">{t("stats.woo")}</div>
-            </div>
-            <div className="border rounded p-4 text-center">
-              <div className="text-2xl font-bold text-green-700">
-                {wpCourses.length + wpEvents.length}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {t("stats.coursesEvents")}
-              </div>
-            </div>
-            <div className="border rounded p-4 text-center">
-              <div className="text-2xl font-bold text-purple-700">
-                {users.length}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {t("stats.users")}
-              </div>
-            </div>
-          </div>
-
-          {/* Traffic analytics */}
-          {analytics ? (
-            <div className="border rounded p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
-                  {t("stats.trafficHeading")}
-                </h2>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded ${
-                    analyticsMode === "zone"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-amber-100 text-amber-800"
-                  }`}
-                >
-                  {analyticsMode === "zone"
-                    ? t("stats.trafficZone")
-                    : t("stats.trafficWorkers")}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-xl font-bold">
-                    {analytics.totals.requests.toLocaleString()}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {t("stats.trafficRequests")}
-                  </div>
-                </div>
-                {analyticsMode === "zone" ? (
-                  <>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">
-                        {analytics.totals.pageViews.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {t("stats.trafficPageViews")}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">
-                        {analytics.totals.uniques.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {t("stats.trafficUniques")}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">
-                        {(analytics.totals.bytes / 1024 / 1024).toFixed(1)} MB
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {t("stats.trafficBandwidth")}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">
-                        {(analytics.totals.subrequests || 0).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {t("stats.trafficSubrequests")}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 rounded p-3">
-                      <div className="text-xl font-bold">
-                        {(analytics.totals.errors || 0).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {t("stats.trafficErrors")}
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 rounded p-3 opacity-40">
-                      <div className="text-xl font-bold">&mdash;</div>
-                      <div className="text-xs text-gray-500">
-                        {t("stats.trafficBandwidth")}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* Hourly chart */}
-                {analytics.hourly.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-gray-700">
-                      Requests per hour
-                    </h3>
-                    <div className="flex items-end gap-px h-24 bg-gray-50 rounded p-2">
-                      {(() => {
-                        const maxReq = Math.max(
-                          ...analytics.hourly.map((h) => h.requests),
-                          1,
-                        );
-                        return analytics.hourly.map((h, i) => (
-                          <div
-                            key={i}
-                            className="flex-1 bg-blue-400 rounded-t min-h-[2px]"
-                            style={{
-                              height: `${(h.requests / maxReq) * 100}%`,
-                            }}
-                            title={`${new Date(h.time).getHours()}:00 \u2014 ${h.requests} requests`}
-                          />
-                        ));
-                      })()}
-                    </div>
-                    <div className="flex justify-between text-[10px] text-gray-400 px-2">
-                      <span>
-                        {analytics.hourly.length > 0
-                          ? new Date(analytics.hourly[0].time).getHours() +
-                            ":00"
-                          : ""}
-                      </span>
-                      <span>Now</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Top referrers (zone mode only) */}
-                {analyticsMode === "zone" && analytics.referrers.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-gray-700">
-                      Top referrers
-                    </h3>
-                    <div className="space-y-1">
-                      {analytics.referrers.slice(0, 10).map((r, i) => {
-                        const maxCount = analytics.referrers[0]?.count || 1;
-                        return (
-                          <div
-                            key={i}
-                            className="flex items-center gap-2 text-xs"
-                          >
-                            <div
-                              className="w-24 truncate text-gray-600"
-                              title={r.host}
-                            >
-                              {r.host}
-                            </div>
-                            <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
-                              <div
-                                className="h-full bg-green-400 rounded"
-                                style={{
-                                  width: `${(r.count / maxCount) * 100}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-gray-500 w-12 text-right">
-                              {r.count}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {analyticsMode === "workers" && (
-                  <div className="flex items-center text-xs text-gray-400 p-4">
-                    <p>
-                      Referrers, page views, and bandwidth require zone-level
-                      analytics. Route your Worker through a custom domain and
-                      set{" "}
-                      <code className="bg-gray-100 px-1 rounded">
-                        CF_ZONE_ID
-                      </code>{" "}
-                      to upgrade.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : !analyticsConfigured ? (
-            <div className="border rounded p-4 text-sm text-gray-500">
-              <strong>Traffic analytics:</strong> Set{" "}
-              <code className="bg-gray-100 px-1 rounded">CF_API_TOKEN</code> and{" "}
-              <code className="bg-gray-100 px-1 rounded">
-                CLOUDFLARE_ACCOUNT_ID
-              </code>{" "}
-              for basic Workers analytics, or also add{" "}
-              <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> for
-              full zone analytics (referrers, page views, unique visitors).
-            </div>
-          ) : null}
-        </div>
+      {activeTab === 'stats' && (
+        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}>
+          <AdminStatsTab
+            wcProducts={wcProducts}
+            wpCourses={wpCourses}
+            wpEvents={wpEvents}
+            products={products}
+            users={users}
+            analytics={analytics}
+            analyticsMode={analyticsMode}
+            analyticsConfigured={analyticsConfigured}
+          />
+        </Suspense>
       )}
 
       {/* ── Health tab ── */}
-      {activeTab === "health" && (
-        <div className="border rounded p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">{t("admin.healthCheck")}</h2>
-            <button
-              type="button"
-              onClick={runHealthCheck}
-              className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50"
-              disabled={healthLoading}
-              title={t("admin.healthCheckDesc")}
-            >
-              {healthLoading ? t("admin.running") : t("admin.runCheck")}
-            </button>
-          </div>
-          {healthChecks ? (
-            <ul className="space-y-2 text-sm">
-              {Object.entries(healthChecks).map(([key, value]) => (
-                <li key={key} className="flex items-start gap-2">
-                  <span
-                    className={`inline-block w-2 h-2 rounded-full mt-1.5 ${
-                      value?.ok ? "bg-green-600" : "bg-red-600"
-                    }`}
-                  />
-                  <span>
-                    <strong>{key}:</strong>{" "}
-                    {value?.message || t("common.noDetails")}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-600">
-              {t("admin.healthCheckDesc")}
-            </p>
-          )}
-
-          {webhookUrl && (
-            <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
-              <h3 className="font-semibold">{t("admin.stripeWebhook")}</h3>
-              <p className="text-gray-600">
-                {t("admin.stripeWebhookConfigureIn")}{" "}
-                <a
-                  href="https://dashboard.stripe.com/webhooks"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-700 underline"
-                >
-                  {t("admin.stripeWebhookDashboardLink")}
-                </a>
-              </p>
-              <div className="flex items-center gap-2">
-                <label className="text-gray-500 shrink-0">
-                  {t("admin.endpointUrl")}:
-                </label>
-                <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
-                  {webhookUrl}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(webhookUrl);
-                  }}
-                  className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
-                  title={t("common.copy")}
-                >
-                  {t("common.copy")}
-                </button>
-              </div>
-              <p className="text-gray-500">
-                {t("admin.eventsToListen")}:{" "}
-                <code className="bg-white border rounded px-1 text-xs">
-                  checkout.session.completed
-                </code>
-              </p>
-            </div>
-          )}
-
-          {debugLogs.length > 0 && (
-            <div className="bg-gray-50 border rounded p-3 text-xs space-y-1">
-              <div className="font-semibold">Debug logs (latest)</div>
-              {debugLogs.map((logItem) => (
-                <div
-                  key={`${logItem.reqId}-${logItem.ts}`}
-                  className="flex flex-wrap gap-2"
-                >
-                  <span className="text-gray-500">
-                    {new Date(logItem.ts).toLocaleTimeString()}
-                  </span>
-                  <code className="bg-white border rounded px-1">
-                    {logItem.path}
-                  </code>
-                  <span>Status {logItem.status}</span>
-                  <span>{logItem.duration} ms</span>
-                  <code className="bg-white border rounded px-1">
-                    {logItem.reqId}
-                  </code>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {ragbazDownloadUrl && (
-            <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
-              <h3 className="font-semibold">{t("admin.ragbazPlugin")}</h3>
-              <p className="text-gray-600">{t("admin.ragbazPluginDesc")}</p>
-              <div className="flex items-center gap-2">
-                <a
-                  className="px-3 py-2 rounded border bg-white hover:bg-gray-100 text-sm"
-                  href={ragbazDownloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {t("admin.downloadRagbaz")}
-                </a>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigator.clipboard.writeText(ragbazDownloadUrl)
-                  }
-                  className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
-                  title={t("common.copy")}
-                >
-                  {t("common.copy")}
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-gray-500 shrink-0">WP-CLI:</label>
-                <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
-                  {`wp plugin install ${ragbazDownloadUrl} --activate`}
-                </code>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigator.clipboard.writeText(
-                      `wp plugin install ${ragbazDownloadUrl} --activate`,
-                    )
-                  }
-                  className="px-2 py-1 rounded border hover:bg-gray-100 text-xs whitespace-nowrap"
-                  title={t("common.copy")}
-                >
-                  {t("common.copy")}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+      {activeTab === 'health' && (
+        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}>
+          <AdminConnectorsTab
+            healthChecks={healthChecks}
+            healthLoading={healthLoading}
+            webhookUrl={webhookUrl}
+            ragbazDownloadUrl={ragbazDownloadUrl}
+            runHealthCheck={runHealthCheck}
+            debugLogs={debugLogs}
+          />
+        </Suspense>
       )}
 
-      {/* ── Unified Products & Access tab ── */}
+            {/* ── Unified Products & Access tab ── */}
       {activeTab === "products" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
@@ -1827,7 +1482,9 @@ export default function AdminDashboard() {
 
       {/* ── Support tab ── */}
       {activeTab === "support" && (
-        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}>
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
           <AdminSupportTab
             tickets={tickets}
             ticketsLoading={ticketsLoading}
@@ -1850,7 +1507,6 @@ export default function AdminDashboard() {
           />
         </Suspense>
       )}
-
 
       {/* ── Style tab ── */}
       {activeTab === "style" && (
@@ -1895,7 +1551,9 @@ export default function AdminDashboard() {
 
       {/* ── Advanced tab ── */}
       {activeTab === "advanced" && (
-        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}>
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
           <AdminAdvancedTab
             buildTimestamp={buildTimestamp}
             gitRevision={gitRevision}
@@ -1923,7 +1581,6 @@ export default function AdminDashboard() {
           />
         </Suspense>
       )}
-
 
       {/* ── Chat tab ── */}
       {activeTab === "chat" && (

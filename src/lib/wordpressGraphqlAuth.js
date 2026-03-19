@@ -43,8 +43,10 @@ export function getWordPressGraphqlAuthOptions() {
   );
 
   // Determine if the token looks like an Application Password vs a JWT/Bearer token
-  const tokenIsAppPassword = bearerToken && looksLikeApplicationPassword(bearerToken);
-  const effectiveAppPassword = appPassword || (tokenIsAppPassword ? bearerToken : "");
+  const tokenIsAppPassword =
+    bearerToken && looksLikeApplicationPassword(bearerToken);
+  const effectiveAppPassword =
+    appPassword || (tokenIsAppPassword ? bearerToken : "");
 
   // Basic auth first when we have a username + application password
   if (username && effectiveAppPassword) {

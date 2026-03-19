@@ -127,7 +127,9 @@ export async function GET(request) {
       wcProducts,
       wpEvents,
       storage: getCourseStorageInfo(),
-      resendConfigured: !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
+      resendConfigured: !!(
+        process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL
+      ),
       upload: {
         backend: uploadBackend,
         wordpress: true,
@@ -151,12 +153,15 @@ export async function PUT(request) {
   try {
     const body = await request.json();
     const courseUri = typeof body?.courseUri === "string" ? body.courseUri : "";
-    const allowedUsers = Array.isArray(body?.allowedUsers) ? body.allowedUsers : [];
+    const allowedUsers = Array.isArray(body?.allowedUsers)
+      ? body.allowedUsers
+      : [];
     const priceCents =
       typeof body?.priceCents === "number"
         ? body.priceCents
         : Number.parseInt(String(body?.priceCents || "0"), 10);
-    const currency = typeof body?.currency === "string" ? body.currency.toUpperCase() : "SEK";
+    const currency =
+      typeof body?.currency === "string" ? body.currency.toUpperCase() : "SEK";
     const state = await setCourseAccess({
       courseUri,
       allowedUsers,

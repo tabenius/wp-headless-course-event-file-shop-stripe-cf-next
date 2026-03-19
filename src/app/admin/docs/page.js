@@ -4,10 +4,26 @@ import Link from "next/link";
 import { t } from "@/lib/i18n";
 
 const docs = [
-  { slug: "architecture", titleSv: "Arkitektur", titleEn: "Architecture Overview" },
-  { slug: "readme", titleSv: "Översikt & Quickstart", titleEn: "README — Overview & Quickstart" },
-  { slug: "cloudflare-workers-deploy", titleSv: "Cloudflare Workers-deploy", titleEn: "Cloudflare Workers-deploy" },
-  { slug: "wordpress-learnpress", titleSv: "WordPress + LearnPress-installation", titleEn: "WordPress + LearnPress Setup" },
+  {
+    slug: "architecture",
+    titleSv: "Arkitektur",
+    titleEn: "Architecture Overview",
+  },
+  {
+    slug: "readme",
+    titleSv: "Översikt & Quickstart",
+    titleEn: "README — Overview & Quickstart",
+  },
+  {
+    slug: "cloudflare-workers-deploy",
+    titleSv: "Cloudflare Workers-deploy",
+    titleEn: "Cloudflare Workers-deploy",
+  },
+  {
+    slug: "wordpress-learnpress",
+    titleSv: "WordPress + LearnPress-installation",
+    titleEn: "WordPress + LearnPress Setup",
+  },
 ];
 
 export const metadata = { title: "Documentation" };

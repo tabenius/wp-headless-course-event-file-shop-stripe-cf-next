@@ -5,7 +5,12 @@ const siteUrl = site.url;
 
 export default async function sitemap() {
   const entries = [
-    { url: siteUrl, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
+    {
+      url: siteUrl,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 1.0,
+    },
     { url: `${siteUrl}/blog`, changeFrequency: "daily", priority: 0.8 },
     { url: `${siteUrl}/courses`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${siteUrl}/shop`, changeFrequency: "weekly", priority: 0.7 },

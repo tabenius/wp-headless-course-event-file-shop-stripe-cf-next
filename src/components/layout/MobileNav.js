@@ -20,7 +20,9 @@ export default function MobileNav({ items, authLinks }) {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   const menuItemClass =
@@ -67,7 +69,9 @@ export default function MobileNav({ items, authLinks }) {
                     {item.label}
                   </NavLink>
                 ) : (
-                  <span className={`${menuItemClass} text-gray-700 font-semibold`}>
+                  <span
+                    className={`${menuItemClass} text-gray-700 font-semibold`}
+                  >
                     {item.label}
                   </span>
                 )
@@ -96,7 +100,9 @@ export default function MobileNav({ items, authLinks }) {
           ))}
           <div className="flex items-center gap-2 py-2">
             <DarkModeToggle />
-            <span className="text-[13px] font-[family-name:var(--font-montserrat)]">{t("darkMode.label")}</span>
+            <span className="text-[13px] font-[family-name:var(--font-montserrat)]">
+              {t("darkMode.label")}
+            </span>
           </div>
           {authLinks}
         </div>

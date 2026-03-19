@@ -26,11 +26,16 @@ export async function POST(request) {
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
-  const backend = getUploadBackend(new URL(request.url).searchParams.get("backend"));
+  const backend = getUploadBackend(
+    new URL(request.url).searchParams.get("backend"),
+  );
 
   if (!isS3Upload(backend)) {
     return NextResponse.json(
-      { ok: false, error: "Multipart upload requires UPLOAD_BACKEND=r2 or s3." },
+      {
+        ok: false,
+        error: "Multipart upload requires UPLOAD_BACKEND=r2 or s3.",
+      },
       { status: 400 },
     );
   }
@@ -48,27 +53,47 @@ export async function POST(request) {
     const body = await request.json();
 
     if (action === "create") {
-      const fileName = typeof body?.fileName === "string" ? body.fileName.trim() : "";
-      const contentType = typeof body?.contentType === "string" ? body.contentType : "application/octet-stream";
+      const fileName =
+        typeof body?.fileName === "string" ? body.fileName.trim() : "";
+      const contentType =
+        typeof body?.contentType === "string"
+          ? body.contentType
+          : "application/octet-stream";
       const fileSize = typeof body?.fileSize === "number" ? body.fileSize : 0;
 
       if (!fileName) {
-        return NextResponse.json({ ok: false, error: "fileName is required." }, { status: 400 });
+        return NextResponse.json(
+          { ok: false, error: "fileName is required." },
+          { status: 400 },
+        );
       }
 
       const totalParts = fileSize > 0 ? Math.ceil(fileSize / PART_SIZE) : 1;
       if (totalParts > MAX_PARTS) {
         return NextResponse.json(
-          { ok: false, error: `File too large. Max ${MAX_PARTS} parts of ${PART_SIZE / 1024 / 1024} MB = ${(MAX_PARTS * PART_SIZE) / (1024 * 1024 * 1024)} GB.` },
+          {
+            ok: false,
+            error: `File too large. Max ${MAX_PARTS} parts of ${PART_SIZE / 1024 / 1024} MB = ${(MAX_PARTS * PART_SIZE) / (1024 * 1024 * 1024)} GB.`,
+          },
           { status: 400 },
         );
       }
 
-      const result = await createMultipartUpload(fileName, contentType, backend);
+      const result = await createMultipartUpload(
+        fileName,
+        contentType,
+        backend,
+      );
 
       // Pre-sign all parts so the client has everything in one call
       const partNumbers = Array.from({ length: totalParts }, (_, i) => i + 1);
-      const signedParts = await signMultipartParts(result.key, result.uploadId, partNumbers, 3600, backend);
+      const signedParts = await signMultipartParts(
+        result.key,
+        result.uploadId,
+        partNumbers,
+        3600,
+        backend,
+      );
 
       return NextResponse.json({
         ok: true,
@@ -89,13 +114,27 @@ export async function POST(request) {
 
     if (action === "sign-parts") {
       const { key, uploadId, partNumbers } = body || {};
-      if (!key || !uploadId || !Array.isArray(partNumbers) || partNumbers.length === 0) {
+      if (
+        !key ||
+        !uploadId ||
+        !Array.isArray(partNumbers) ||
+        partNumbers.length === 0
+      ) {
         return NextResponse.json(
-          { ok: false, error: "key, uploadId, and partNumbers[] are required." },
+          {
+            ok: false,
+            error: "key, uploadId, and partNumbers[] are required.",
+          },
           { status: 400 },
         );
       }
-      const signed = await signMultipartParts(key, uploadId, partNumbers, 3600, backend);
+      const signed = await signMultipartParts(
+        key,
+        uploadId,
+        partNumbers,
+        3600,
+        backend,
+      );
       return NextResponse.json({ ok: true, parts: signed });
     }
 
@@ -103,11 +142,20 @@ export async function POST(request) {
       const { key, uploadId, parts } = body || {};
       if (!key || !uploadId || !Array.isArray(parts) || parts.length === 0) {
         return NextResponse.json(
-          { ok: false, error: "key, uploadId, and parts[] (with partNumber + etag) are required." },
+          {
+            ok: false,
+            error:
+              "key, uploadId, and parts[] (with partNumber + etag) are required.",
+          },
           { status: 400 },
         );
       }
-      const publicUrl = await completeMultipartUpload(key, uploadId, parts, backend);
+      const publicUrl = await completeMultipartUpload(
+        key,
+        uploadId,
+        parts,
+        backend,
+      );
       return NextResponse.json({ ok: true, publicUrl });
     }
 
@@ -124,7 +172,10 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { ok: false, error: "Unknown action. Use ?action=create|sign-parts|complete|abort" },
+      {
+        ok: false,
+        error: "Unknown action. Use ?action=create|sign-parts|complete|abort",
+      },
       { status: 400 },
     );
   } catch (error) {

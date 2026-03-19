@@ -13,5 +13,8 @@ export function slugify(value) {
 
 /** Strip HTML tags and collapse whitespace. */
 export function stripHtml(html) {
-  return (html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  return (html || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }

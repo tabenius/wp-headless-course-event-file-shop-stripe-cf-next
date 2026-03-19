@@ -1,86 +1,195 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dokumentation — RAGBAZ</title>
-  <style>
-    :root {
-      font-family: "Nunito", "Segoe UI", sans-serif;
-      background: #f5f5f4;
-      color: #1f2937;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-    }
-    body > pre.header {
-      margin: 0;
-      padding: 1rem 1.5rem;
-      background: #111827;
-      color: #f8fafc;
-      font-family: "Courier New", monospace;
-    }
-    main.content {
-      padding: 2rem;
-      max-width: 960px;
-      margin: 0 auto 4rem;
-      line-height: 1.6;
-    }
-    main.content h1,
-    main.content h2,
-    main.content h3,
-    main.content h4 {
-      margin-top: 2rem;
-      margin-bottom: 0.75rem;
-      font-weight: 700;
-    }
-    main.content p {
-      margin-bottom: 1rem;
-    }
-    main.content ul {
-      margin-left: 1.25rem;
-      margin-bottom: 1rem;
-    }
-    main.content a {
-      color: #064e3b;
-      text-decoration: underline;
-    }
-    /* Auto-generated from theme.json. Do not edit manually. */
-:root {
-  --color-background: #f5f5f4;
-  --color-foreground: #1f2937;
-  --color-primary: #0f766e;
-  --color-muted: #6b7280;
-  --font-body: var(--font-nunito), "Segoe UI", sans-serif;
-  --font-heading: var(--font-montserrat), "Helvetica Neue", sans-serif;
-  --background: var(--color-background);
-  --foreground: var(--color-foreground);
-}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dokumentation — RAGBAZ</title>
+    <style>
+      :root {
+        font-family: "Nunito", "Segoe UI", sans-serif;
+        background: #f5f5f4;
+        color: #1f2937;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body > pre.header {
+        margin: 0;
+        padding: 1rem 1.5rem;
+        background: #111827;
+        color: #f8fafc;
+        font-family: "Courier New", monospace;
+      }
+      main.content {
+        padding: 2rem;
+        max-width: 960px;
+        margin: 0 auto 4rem;
+        line-height: 1.6;
+      }
+      main.content h1,
+      main.content h2,
+      main.content h3,
+      main.content h4 {
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+        font-weight: 700;
+      }
+      main.content p {
+        margin-bottom: 1rem;
+      }
+      main.content ul {
+        margin-left: 1.25rem;
+        margin-bottom: 1rem;
+      }
+      main.content a {
+        color: #064e3b;
+        text-decoration: underline;
+      }
+      /* Auto-generated from theme.json. Do not edit manually. */
+      :root {
+        --color-background: #f5f5f4;
+        --color-foreground: #1f2937;
+        --color-primary: #0f766e;
+        --color-muted: #6b7280;
+        --font-body: var(--font-nunito), "Segoe UI", sans-serif;
+        --font-heading: var(--font-montserrat), "Helvetica Neue", sans-serif;
+        --background: var(--color-background);
+        --foreground: var(--color-foreground);
+      }
 
-.has-background-color { color: var(--color-background); }
-.has-background-background-color { background-color: var(--color-background); }
-.has-foreground-color { color: var(--color-foreground); }
-.has-foreground-background-color { background-color: var(--color-foreground); }
-.has-primary-color { color: var(--color-primary); }
-.has-primary-background-color { background-color: var(--color-primary); }
-.has-muted-color { color: var(--color-muted); }
-.has-muted-background-color { background-color: var(--color-muted); }
+      .has-background-color {
+        color: var(--color-background);
+      }
+      .has-background-background-color {
+        background-color: var(--color-background);
+      }
+      .has-foreground-color {
+        color: var(--color-foreground);
+      }
+      .has-foreground-background-color {
+        background-color: var(--color-foreground);
+      }
+      .has-primary-color {
+        color: var(--color-primary);
+      }
+      .has-primary-background-color {
+        background-color: var(--color-primary);
+      }
+      .has-muted-color {
+        color: var(--color-muted);
+      }
+      .has-muted-background-color {
+        background-color: var(--color-muted);
+      }
 
-.font-body { font-family: var(--font-body); }
-.font-heading { font-family: var(--font-heading); }
-
-  </style>
-</head>
-<body>
-  <pre class="header">██████╗  █████╗  ██████╗ ██████╗  █████╗ ███████╗
+      .font-body {
+        font-family: var(--font-body);
+      }
+      .font-heading {
+        font-family: var(--font-heading);
+      }
+    </style>
+  </head>
+  <body>
+    <pre class="header">
+██████╗  █████╗  ██████╗ ██████╗  █████╗ ███████╗
 ██╔══██╗██╔══██╗██╔════╝ ██╔══██╗██╔══██╗╚══███╔╝
 ██████╔╝███████║██║  ███╗██████╔╝███████║  ███╔╝ 
 ██╔══██╗██╔══██║██║   ██║██╔══██╗██╔══██║ ███╔╝  
 ██║  ██║██║  ██║╚██████╔╝██████╔╝██║  ██║███████╗
-╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝</pre>
-  <main class="content">
-    <h1>Dokumentation (Svenska)</h1><h2>Översikt</h2><p>Detta projekt kombinerar Next.js, WordPress/WPGraphQL och Stripe för att skydda kursinnehåll bakom inloggning och betalning.</p><h2>Huvudflöden</h2><p>1. Besökaren öppnar en kurssida. 2. Om användaren inte är inloggad visas inloggning. 3. Om användaren saknar åtkomst visas paywall. 4. Stripe Checkout genomför betalning. 5. Webhook ger kursbehörighet automatiskt. 6. Användaren kan läsa skyddat kursinnehåll.</p><h2>Viktig konfiguration</h2><ul><li><code>NEXT_PUBLIC_WORDPRESS_URL</code>: WordPress-URL för GraphQL-innehåll.</li><li><code>COURSE_ACCESS_BACKEND=wordpress</code>: använder WordPress/LearnPress-backend.</li><li><code>WORDPRESS_GRAPHQL_AUTH_TOKEN</code>: token för admin-mutationer.</li><li><code>AUTH_SECRET</code>: signerar auth/session.</li><li><code>ADMIN_EMAILS</code> och <code>ADMIN_PASSWORDS</code>: kommaseparerade admin-par för inloggning till admin-UI.</li><li><code>STRIPE_SECRET_KEY</code> och <code>STRIPE_WEBHOOK_SECRET</code>: Stripe-betalningar.</li><li><code>COURSE_ACCESS_STORE</code> och <code>USER_STORE_BACKEND</code>: lokal lagring eller Cloudflare KV.</li><li><code>DIGITAL_ACCESS_STORE</code> och <code>CF_DIGITAL_ACCESS_KV_KEY</code>: lagring av åtkomst till köpta digitala filer.</li></ul><h2>Digitala filer</h2><p>Digitala produkter konfigureras i <code>config/digital-products.json</code>:</p><ul><li><code>name</code>: produktnamn i UI/Stripe.</li><li><code>slug</code>: auto-genererad/redigerbar URL-slug.</li><li><code>description</code>: valfri text i butiken.</li><li><code>imageUrl</code>: valfri bild-URL för produkten.</li><li><code>type</code>: <code>digital_file</code> eller <code>course</code>.</li><li><code>priceCents</code> och <code>currency</code>: betalningsbelopp.</li><li><code>fileUrl</code>: nedladdnings-URL (HTTP/HTTPS) för digitala filer.</li><li><code>courseUri</code>: kursens path för kursprodukter.</li><li><code>active</code>: styr om produkten visas i butiken.</li></ul><p>Butikssida: <code>/shop</code> och produktsida: <code>/shop/[slug]</code>.</p><h2>Börja här</h2><ul><li>Projektöversikt: <code>README.md</code></li><li>WordPress/LearnPress-setup: <code>docs/wordpress-learnpress-course-access.md</code></li><li>Cloudflare-deploy: <code>docs/cloudflare-workers-deploy.md</code></li></ul><h2>Köra lokalt</h2><p><code>`</code>bash npm install cp .env.example .env npm run dev <code>`</code></p>
-  </main>
-</body>
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝</pre
+    >
+    <main class="content">
+      <h1>Dokumentation (Svenska)</h1>
+      <h2>Översikt</h2>
+      <p>
+        Detta projekt kombinerar Next.js, WordPress/WPGraphQL och Stripe för att
+        skydda kursinnehåll bakom inloggning och betalning.
+      </p>
+      <h2>Huvudflöden</h2>
+      <p>
+        1. Besökaren öppnar en kurssida. 2. Om användaren inte är inloggad visas
+        inloggning. 3. Om användaren saknar åtkomst visas paywall. 4. Stripe
+        Checkout genomför betalning. 5. Webhook ger kursbehörighet automatiskt.
+        6. Användaren kan läsa skyddat kursinnehåll.
+      </p>
+      <h2>Viktig konfiguration</h2>
+      <ul>
+        <li>
+          <code>NEXT_PUBLIC_WORDPRESS_URL</code>: WordPress-URL för
+          GraphQL-innehåll.
+        </li>
+        <li>
+          <code>COURSE_ACCESS_BACKEND=wordpress</code>: använder
+          WordPress/LearnPress-backend.
+        </li>
+        <li>
+          <code>WORDPRESS_GRAPHQL_AUTH_TOKEN</code>: token för admin-mutationer.
+        </li>
+        <li><code>AUTH_SECRET</code>: signerar auth/session.</li>
+        <li>
+          <code>ADMIN_EMAILS</code> och <code>ADMIN_PASSWORDS</code>:
+          kommaseparerade admin-par för inloggning till admin-UI.
+        </li>
+        <li>
+          <code>STRIPE_SECRET_KEY</code> och <code>STRIPE_WEBHOOK_SECRET</code>:
+          Stripe-betalningar.
+        </li>
+        <li>
+          <code>COURSE_ACCESS_STORE</code> och <code>USER_STORE_BACKEND</code>:
+          lokal lagring eller Cloudflare KV.
+        </li>
+        <li>
+          <code>DIGITAL_ACCESS_STORE</code> och
+          <code>CF_DIGITAL_ACCESS_KV_KEY</code>: lagring av åtkomst till köpta
+          digitala filer.
+        </li>
+      </ul>
+      <h2>Digitala filer</h2>
+      <p>
+        Digitala produkter konfigureras i
+        <code>config/digital-products.json</code>:
+      </p>
+      <ul>
+        <li><code>name</code>: produktnamn i UI/Stripe.</li>
+        <li><code>slug</code>: auto-genererad/redigerbar URL-slug.</li>
+        <li><code>description</code>: valfri text i butiken.</li>
+        <li><code>imageUrl</code>: valfri bild-URL för produkten.</li>
+        <li>
+          <code>type</code>: <code>digital_file</code> eller
+          <code>course</code>.
+        </li>
+        <li>
+          <code>priceCents</code> och <code>currency</code>: betalningsbelopp.
+        </li>
+        <li>
+          <code>fileUrl</code>: nedladdnings-URL (HTTP/HTTPS) för digitala
+          filer.
+        </li>
+        <li><code>courseUri</code>: kursens path för kursprodukter.</li>
+        <li><code>active</code>: styr om produkten visas i butiken.</li>
+      </ul>
+      <p>
+        Butikssida: <code>/shop</code> och produktsida:
+        <code>/shop/[slug]</code>.
+      </p>
+      <h2>Börja här</h2>
+      <ul>
+        <li>Projektöversikt: <code>README.md</code></li>
+        <li>
+          WordPress/LearnPress-setup:
+          <code>docs/wordpress-learnpress-course-access.md</code>
+        </li>
+        <li>
+          Cloudflare-deploy: <code>docs/cloudflare-workers-deploy.md</code>
+        </li>
+      </ul>
+      <h2>Köra lokalt</h2>
+      <p>
+        <code>`</code>bash npm install cp .env.example .env npm run dev
+        <code>`</code>
+      </p>
+    </main>
+  </body>
 </html>

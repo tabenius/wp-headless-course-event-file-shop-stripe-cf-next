@@ -6,7 +6,9 @@ export function detectLanguage(text) {
   const spanishDiacritics = /[áéíóúñÁÉÍÓÚÑ]/;
   if (swedishDiacritics.test(text)) return "Swedish";
   if (spanishDiacritics.test(text)) return "Spanish";
-  if (swedishWords.some((word) => lowered.includes(` ${word} `))) return "Swedish";
-  if (spanishWords.some((word) => lowered.includes(` ${word} `))) return "Spanish";
+  if (swedishWords.some((word) => lowered.includes(` ${word} `)))
+    return "Swedish";
+  if (spanishWords.some((word) => lowered.includes(` ${word} `)))
+    return "Spanish";
   return "English";
 }

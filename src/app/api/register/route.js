@@ -12,8 +12,7 @@ export async function POST(request) {
     const body = await request.json();
     const name = typeof body?.name === "string" ? body.name.trim() : "";
     const email = typeof body?.email === "string" ? body.email.trim() : "";
-    const password =
-      typeof body?.password === "string" ? body.password : "";
+    const password = typeof body?.password === "string" ? body.password : "";
 
     if (name.length < 2) {
       return badRequest(t("apiErrors.nameTooShort"));
@@ -34,13 +33,15 @@ export async function POST(request) {
     response.headers.append("Set-Cookie", createSessionCookie(token));
     return response;
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "";
+    const message = error instanceof Error ? error.message : "";
     const status = message === "Email already exists" ? 409 : 400;
     const localizedMessage =
       message === "Email already exists"
         ? t("authErrors.emailExists")
         : t("authErrors.registerError");
-    return NextResponse.json({ ok: false, error: localizedMessage }, { status });
+    return NextResponse.json(
+      { ok: false, error: localizedMessage },
+      { status },
+    );
   }
 }

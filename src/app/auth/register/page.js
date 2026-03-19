@@ -8,7 +8,13 @@ export async function generateMetadata() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<section className="max-w-md mx-auto px-6 py-16">{t("common.loading")}</section>}>
+    <Suspense
+      fallback={
+        <section className="max-w-md mx-auto px-6 py-16">
+          {t("common.loading")}
+        </section>
+      }
+    >
       <RegisterClient />
     </Suspense>
   );

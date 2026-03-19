@@ -25,7 +25,9 @@ export async function multipartUpload(file, { onProgress, backend } = {}) {
     },
   );
   let createJson;
-  try { createJson = await createRes.json(); } catch {
+  try {
+    createJson = await createRes.json();
+  } catch {
     throw new Error(`Failed to initiate upload (HTTP ${createRes.status}).`);
   }
   if (!createRes.ok || !createJson.ok) {
@@ -82,13 +84,18 @@ export async function multipartUpload(file, { onProgress, backend } = {}) {
   }
 
   // Step 3: Complete the multipart upload
-  const completeRes = await fetch(`/api/admin/multipart-upload?action=complete${backendParam}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key, uploadId, parts: completedParts }),
-  });
+  const completeRes = await fetch(
+    `/api/admin/multipart-upload?action=complete${backendParam}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, uploadId, parts: completedParts }),
+    },
+  );
   let completeJson;
-  try { completeJson = await completeRes.json(); } catch {
+  try {
+    completeJson = await completeRes.json();
+  } catch {
     throw new Error(`Failed to finalize upload (HTTP ${completeRes.status}).`);
   }
   if (!completeRes.ok || !completeJson.ok) {

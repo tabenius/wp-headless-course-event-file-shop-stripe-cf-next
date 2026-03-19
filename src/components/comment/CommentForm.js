@@ -49,7 +49,9 @@ export default function CommentForm({
 
   return (
     <fieldset className="max-w-2xl p-6 mx-auto space-y-12">
-      <h2 className="text-2xl font-semibold text-center">{t("comments.title")}</h2>
+      <h2 className="text-2xl font-semibold text-center">
+        {t("comments.title")}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"

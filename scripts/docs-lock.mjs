@@ -48,12 +48,18 @@ switch (action) {
     if (existing) {
       console.warn(`\n⚠️  docs.lock.pid already held:\n`);
       printLock(existing);
-      console.warn(`\n  Wait for the other agent to release, or delete the lock if it is stale.\n`);
+      console.warn(
+        `\n  Wait for the other agent to release, or delete the lock if it is stale.\n`,
+      );
       process.exit(1);
     }
     writeFileSync(
       LOCK,
-      JSON.stringify({ pid: process.pid, agent, files, started: new Date().toISOString() }, null, 2) + "\n",
+      JSON.stringify(
+        { pid: process.pid, agent, files, started: new Date().toISOString() },
+        null,
+        2,
+      ) + "\n",
     );
     console.log(`✅ Lock acquired by ${agent} for: ${files}`);
     break;
@@ -65,7 +71,9 @@ switch (action) {
     } else {
       const lock = readLock();
       unlinkSync(LOCK);
-      console.log(`🔓 Lock released (was held by ${lock?.agent ?? "unknown"}).`);
+      console.log(
+        `🔓 Lock released (was held by ${lock?.agent ?? "unknown"}).`,
+      );
     }
     break;
   }

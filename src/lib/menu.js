@@ -64,14 +64,19 @@ function toRelativePath(href) {
         return parsed.pathname.replace(/\/+$/, "") || "/";
       }
     }
-  } catch { /* not a URL, treat as path */ }
+  } catch {
+    /* not a URL, treat as path */
+  }
   return href.replace(/\/+$/, "") || "/";
 }
 
 function mapItem(node, { uppercase = false } = {}) {
   const rawHref = node.path || node.url || "#";
   const label = node.label || "";
-  const rewritten = PATH_REWRITES[rawHref] || PATH_REWRITES[rawHref.replace(/\/+$/, "")] || rawHref;
+  const rewritten =
+    PATH_REWRITES[rawHref] ||
+    PATH_REWRITES[rawHref.replace(/\/+$/, "")] ||
+    rawHref;
   return {
     href: toRelativePath(rewritten),
     label: uppercase ? label.toUpperCase() : label,

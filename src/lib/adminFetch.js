@@ -23,7 +23,13 @@ export async function adminFetch(url, options = {}) {
   }
   console.info("[adminFetch]", { url, status: res.status, reqId, duration });
   if (!res.ok) {
-    console.error("[adminFetch:error]", { url, status: res.status, reqId, duration, body: json });
+    console.error("[adminFetch:error]", {
+      url,
+      status: res.status,
+      reqId,
+      duration,
+      body: json,
+    });
   }
   return { res, json, reqId, duration };
 }

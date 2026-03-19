@@ -21,7 +21,8 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const productSlug = typeof body?.productSlug === "string" ? body.productSlug.trim() : "";
+    const productSlug =
+      typeof body?.productSlug === "string" ? body.productSlug.trim() : "";
     if (!productSlug) {
       return NextResponse.json(
         { ok: false, error: t("apiErrors.productNotReady") },
@@ -49,7 +50,8 @@ export async function POST(request) {
       successUrl,
       cancelUrl,
       metadata: {
-        purchase_kind: product.type === "course" ? "course_product" : "digital_file",
+        purchase_kind:
+          product.type === "course" ? "course_product" : "digital_file",
         digital_product_id: product.id,
         product_name: product.name || "",
         ...(product.courseUri ? { course_uri: product.courseUri } : {}),

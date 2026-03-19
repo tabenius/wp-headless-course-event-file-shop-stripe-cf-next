@@ -9,14 +9,21 @@ const R2_KEY = process.env.CF_TICKETS_R2_KEY || "support-tickets.json";
 let inMemoryState = { tickets: [] };
 
 function canUseNode() {
-  return typeof process !== "undefined" && process.versions?.node && process.env.NEXT_RUNTIME !== "edge";
+  return (
+    typeof process !== "undefined" &&
+    process.versions?.node &&
+    process.env.NEXT_RUNTIME !== "edge"
+  );
 }
 
 function sanitizeTicket(ticket) {
   if (!ticket || typeof ticket !== "object") return null;
   const now = new Date().toISOString();
   return {
-    id: typeof ticket.id === "string" && ticket.id ? ticket.id : crypto.randomUUID?.() || `${Date.now()}`,
+    id:
+      typeof ticket.id === "string" && ticket.id
+        ? ticket.id
+        : crypto.randomUUID?.() || `${Date.now()}`,
     title: String(ticket.title || "Untitled").slice(0, 200),
     description: String(ticket.description || "").slice(0, 5000),
     priority: ["critical", "moderate", "low"].includes(ticket.priority)
@@ -26,14 +33,20 @@ function sanitizeTicket(ticket) {
       ? ticket.status
       : "open",
     comments: Array.isArray(ticket.comments)
-      ? ticket.comments.map((c) => ({
-          id: typeof c.id === "string" && c.id ? c.id : crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-          text: String(c.text || "").slice(0, 2000),
-          author: c.author ? String(c.author).slice(0, 120) : null,
-          createdAt: c.createdAt || now,
-        })).filter((c) => c.text)
+      ? ticket.comments
+          .map((c) => ({
+            id:
+              typeof c.id === "string" && c.id
+                ? c.id
+                : crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+            text: String(c.text || "").slice(0, 2000),
+            author: c.author ? String(c.author).slice(0, 120) : null,
+            createdAt: c.createdAt || now,
+          }))
+          .filter((c) => c.text)
       : [],
-    buildTime: typeof ticket.buildTime === "string" ? ticket.buildTime.slice(0, 40) : "",
+    buildTime:
+      typeof ticket.buildTime === "string" ? ticket.buildTime.slice(0, 40) : "",
     gitSha: typeof ticket.gitSha === "string" ? ticket.gitSha.slice(0, 40) : "",
     createdAt: ticket.createdAt || now,
     updatedAt: ticket.updatedAt || now,
@@ -44,13 +57,17 @@ function sanitizeState(state) {
   const safeTickets = Array.isArray(state?.tickets)
     ? state.tickets.map(sanitizeTicket).filter(Boolean)
     : [];
-  safeTickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  safeTickets.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
   return { tickets: safeTickets };
 }
 
 function isR2Configured() {
-  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
-  const secret = process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
+  const accessKeyId =
+    process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
+  const secret =
+    process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
   const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   return Boolean(accessKeyId && secret && bucket && accountId && canUseNode());
@@ -79,7 +96,9 @@ async function getState() {
       console.error("KV support tickets read failed", error);
     }
   }
-  console.warn("No R2 or KV configured for support tickets; using in-memory only.");
+  console.warn(
+    "No R2 or KV configured for support tickets; using in-memory only.",
+  );
   return sanitizeState(inMemoryState);
 }
 
@@ -101,7 +120,14 @@ export async function listTickets() {
   return state.tickets;
 }
 
-export async function createTicket({ title, description, priority = "moderate", author = "admin", buildTime = "", gitSha = "" }) {
+export async function createTicket({
+  title,
+  description,
+  priority = "moderate",
+  author = "admin",
+  buildTime = "",
+  gitSha = "",
+}) {
   const state = await getState();
   const ticket = sanitizeTicket({
     title,

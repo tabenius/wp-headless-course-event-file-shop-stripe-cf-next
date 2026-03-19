@@ -13,10 +13,10 @@ Add a "Forgot password?" flow to the sign-in form. Users enter their email, rece
 
 ## Endpoints
 
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/api/auth/forgot-password` | POST | Accepts `{ email }`, generates token, stores in KV (TTL 24h), sends email via Resend |
-| `/api/auth/reset-password` | POST | Accepts `{ token, password }`, validates token from KV, updates password, deletes token |
+| Endpoint                    | Method | Purpose                                                                                 |
+| --------------------------- | ------ | --------------------------------------------------------------------------------------- |
+| `/api/auth/forgot-password` | POST   | Accepts `{ email }`, generates token, stores in KV (TTL 24h), sends email via Resend    |
+| `/api/auth/reset-password`  | POST   | Accepts `{ token, password }`, validates token from KV, updates password, deletes token |
 
 ## Token Storage (Cloudflare KV)
 

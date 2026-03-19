@@ -54,7 +54,9 @@ async function getAccessToken(provider, providerConfig, code, redirectUri) {
   });
   if (!tokenResponse.ok) {
     const text = await tokenResponse.text().catch(() => "");
-    throw new Error(`Token exchange failed for ${provider}: ${tokenResponse.status} ${text.slice(0, 200)}`);
+    throw new Error(
+      `Token exchange failed for ${provider}: ${tokenResponse.status} ${text.slice(0, 200)}`,
+    );
   }
   const tokenJson = await tokenResponse.json();
   return tokenJson;
@@ -64,7 +66,9 @@ export async function GET(request, { params: paramsPromise }) {
   const { provider } = await paramsPromise;
   const providerConfig = getProviderConfig(provider);
   if (!providerConfig) {
-    return NextResponse.redirect(new URL("/auth/signin?error=provider", request.url));
+    return NextResponse.redirect(
+      new URL("/auth/signin?error=provider", request.url),
+    );
   }
 
   const requestUrl = new URL(request.url);
@@ -89,7 +93,12 @@ export async function GET(request, { params: paramsPromise }) {
   }
 
   try {
-    const tokenJson = await getAccessToken(provider, providerConfig, code, redirectUri);
+    const tokenJson = await getAccessToken(
+      provider,
+      providerConfig,
+      code,
+      redirectUri,
+    );
     let profile = {};
 
     if (provider === "apple") {
@@ -99,7 +108,9 @@ export async function GET(request, { params: paramsPromise }) {
         headers: { Authorization: `Bearer ${tokenJson.access_token}` },
       });
       if (!userResponse.ok) {
-        throw new Error(`UserInfo request failed for ${provider}: ${userResponse.status}`);
+        throw new Error(
+          `UserInfo request failed for ${provider}: ${userResponse.status}`,
+        );
       }
       const userJson = await userResponse.json();
       profile = providerProfile(provider, userJson);
@@ -113,7 +124,9 @@ export async function GET(request, { params: paramsPromise }) {
     });
     const sessionToken = await createSessionToken(user);
     const destination =
-      typeof statePayload.callbackUrl === "string" ? statePayload.callbackUrl : "/";
+      typeof statePayload.callbackUrl === "string"
+        ? statePayload.callbackUrl
+        : "/";
     const response = NextResponse.redirect(new URL(destination, request.url));
     response.headers.append("Set-Cookie", createSessionCookie(sessionToken));
     response.headers.append("Set-Cookie", clearOAuthStateCookie());

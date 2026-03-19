@@ -13,7 +13,7 @@ function inlineFormat(text) {
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<a href=\"$2\">$1</a>");
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
 function renderMarkdown(markdown) {
@@ -74,7 +74,10 @@ async function main() {
   const cssPath = path.join(process.cwd(), "src", "app", "theme.generated.css");
   const outputPath = path.join(process.cwd(), "docs", "README.sv.html");
 
-  const [markdown, css] = await Promise.all([readFile(docPath, "utf8"), readFile(cssPath, "utf8")]);
+  const [markdown, css] = await Promise.all([
+    readFile(docPath, "utf8"),
+    readFile(cssPath, "utf8"),
+  ]);
   const body = renderMarkdown(markdown);
 
   const html = `<!DOCTYPE html>

@@ -39,15 +39,19 @@ export default function ContactFormHydrator() {
               : "Det gick inte att skicka meddelandet just nu.");
           const replacement = document.createElement("div");
           replacement.className = `contact-form-result rounded border px-4 py-3 ${
-            success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"
+            success
+              ? "bg-green-50 border-green-200 text-green-800"
+              : "bg-red-50 border-red-200 text-red-800"
           }`;
           replacement.textContent = message;
           form.replaceWith(replacement);
         })
         .catch(() => {
           const replacement = document.createElement("div");
-          replacement.className = "contact-form-result rounded border px-4 py-3 bg-red-50 border-red-200 text-red-800";
-          replacement.textContent = "Det gick inte att skicka meddelandet. Kontrollera anslutningen och försök igen.";
+          replacement.className =
+            "contact-form-result rounded border px-4 py-3 bg-red-50 border-red-200 text-red-800";
+          replacement.textContent =
+            "Det gick inte att skicka meddelandet. Kontrollera anslutningen och försök igen.";
           form.replaceWith(replacement);
         });
     }

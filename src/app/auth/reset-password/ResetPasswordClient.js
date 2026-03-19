@@ -50,8 +50,12 @@ export default function ResetPasswordClient() {
   if (!token) {
     return (
       <section className="max-w-md mx-auto px-6 py-16 space-y-4">
-        <p className="text-red-600 font-medium">{t("resetPassword.invalidToken")}</p>
-        <p className="text-gray-600 text-sm">{t("resetPassword.requestNewLink")}</p>
+        <p className="text-red-600 font-medium">
+          {t("resetPassword.invalidToken")}
+        </p>
+        <p className="text-gray-600 text-sm">
+          {t("resetPassword.requestNewLink")}
+        </p>
         <Link
           href="/auth/signin"
           className="inline-block px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700"
@@ -65,7 +69,9 @@ export default function ResetPasswordClient() {
   if (success) {
     return (
       <section className="max-w-md mx-auto px-6 py-16 text-center space-y-4">
-        <p className="text-green-700 font-semibold">{t("resetPassword.success")}</p>
+        <p className="text-green-700 font-semibold">
+          {t("resetPassword.success")}
+        </p>
         <Link
           href="/auth/signin"
           className="inline-block px-6 py-2 rounded bg-gray-800 text-white hover:bg-gray-700"
@@ -86,7 +92,9 @@ export default function ResetPasswordClient() {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder={t("auth.passwordMinLength", { min: MIN_PASSWORD_LENGTH })}
+          placeholder={t("auth.passwordMinLength", {
+            min: MIN_PASSWORD_LENGTH,
+          })}
           className="w-full border rounded px-3 py-2"
           minLength={MIN_PASSWORD_LENGTH}
           autoComplete="new-password"
@@ -97,7 +105,9 @@ export default function ResetPasswordClient() {
           disabled={loading}
           className="w-full bg-gray-800 text-white rounded px-4 py-2 hover:bg-gray-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
         >
-          {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+          {loading && (
+            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          )}
           {loading ? t("common.loading") : t("resetPassword.submit")}
         </button>
       </form>

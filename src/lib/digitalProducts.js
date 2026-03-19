@@ -8,7 +8,9 @@ import { slugify } from "@/lib/slugify";
 export const PRODUCT_FILE = "config/digital-products.json";
 export const PRODUCT_EXAMPLE_FILE = "config/digital-products.example.json";
 
-function getProductsKvKey() { return process.env.CF_PRODUCTS_KV_KEY || "digital-products"; }
+function getProductsKvKey() {
+  return process.env.CF_PRODUCTS_KV_KEY || "digital-products";
+}
 let inMemoryProducts = null;
 
 function normalizeCurrency(currency) {
@@ -67,14 +69,17 @@ function sanitizeProduct(product, seenSlugs) {
 
   const description =
     typeof product?.description === "string" ? product.description.trim() : "";
-  const imageUrl = typeof product?.imageUrl === "string" ? product.imageUrl.trim() : "";
+  const imageUrl =
+    typeof product?.imageUrl === "string" ? product.imageUrl.trim() : "";
   const type = normalizeType(product?.type);
   const rawPrice = product?.priceCents;
-  const priceCents = typeof rawPrice === "number" && Number.isFinite(rawPrice)
-    ? Math.max(0, Math.floor(rawPrice))
-    : Math.max(0, Number.parseInt(String(rawPrice || "0"), 10) || 0);
+  const priceCents =
+    typeof rawPrice === "number" && Number.isFinite(rawPrice)
+      ? Math.max(0, Math.floor(rawPrice))
+      : Math.max(0, Number.parseInt(String(rawPrice || "0"), 10) || 0);
 
-  const fileUrl = typeof product?.fileUrl === "string" ? product.fileUrl.trim() : "";
+  const fileUrl =
+    typeof product?.fileUrl === "string" ? product.fileUrl.trim() : "";
   const courseUri = normalizeCourseUri(product?.courseUri);
 
   if (imageUrl && !isValidHttpUrl(imageUrl)) return null;
@@ -109,7 +114,10 @@ function sanitizeProducts(input) {
 }
 
 function shouldUseCloudflareBackend() {
-  return process.env.PRODUCT_STORE_BACKEND === "cloudflare" || isCloudflareKvConfigured();
+  return (
+    process.env.PRODUCT_STORE_BACKEND === "cloudflare" ||
+    isCloudflareKvConfigured()
+  );
 }
 
 async function readFromCloudflare() {
@@ -185,7 +193,10 @@ async function writeProducts(products) {
       const wrote = await writeToCloudflare(products);
       if (wrote) return;
     } catch (error) {
-      console.error("Cloudflare KV products write failed, falling back:", error);
+      console.error(
+        "Cloudflare KV products write failed, falling back:",
+        error,
+      );
     }
   }
   await writeToLocal(products);
@@ -195,7 +206,9 @@ export async function listDigitalProducts({ includeInactive = false } = {}) {
   try {
     const rawProducts = await readProducts();
     const products = sanitizeProducts(rawProducts);
-    return includeInactive ? products : products.filter((product) => product.active);
+    return includeInactive
+      ? products
+      : products.filter((product) => product.active);
   } catch (error) {
     console.error("Failed to read product catalog:", error);
     return [];

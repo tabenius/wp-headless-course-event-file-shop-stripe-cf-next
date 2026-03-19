@@ -24,7 +24,10 @@ async function hmac(key, data) {
 }
 
 async function deriveSigningKey(secret, date, region, service) {
-  const kDate = await hmac(textEncoder.encode(`AWS4${secret}`), textEncoder.encode(date));
+  const kDate = await hmac(
+    textEncoder.encode(`AWS4${secret}`),
+    textEncoder.encode(date),
+  );
   const kRegion = await hmac(kDate, textEncoder.encode(region));
   const kService = await hmac(kRegion, textEncoder.encode(service));
   const kSigning = await hmac(kService, textEncoder.encode("aws4_request"));
@@ -54,7 +57,15 @@ function dateStamp(date = new Date()) {
  * Sign a single R2 S3-compatible request (PUT).
  * Returns headers including Authorization, x-amz-date, x-amz-content-sha256.
  */
-async function signCanonical({ method, url, headers = {}, payloadHash, accessKeyId, secretAccessKey, region = "auto" }) {
+async function signCanonical({
+  method,
+  url,
+  headers = {},
+  payloadHash,
+  accessKeyId,
+  secretAccessKey,
+  region = "auto",
+}) {
   const now = new Date();
   const amzDate = formatAmzDate(now);
   const datestamp = dateStamp(now);
@@ -91,11 +102,23 @@ async function signCanonical({ method, url, headers = {}, payloadHash, accessKey
     "AWS4-HMAC-SHA256",
     amzDate,
     credentialScope,
-    toHex(await crypto.subtle.digest("SHA-256", textEncoder.encode(canonicalRequest))),
+    toHex(
+      await crypto.subtle.digest(
+        "SHA-256",
+        textEncoder.encode(canonicalRequest),
+      ),
+    ),
   ].join("\n");
 
-  const signingKey = await deriveSigningKey(secretAccessKey, datestamp, region, "s3");
-  const signature = toHex(await hmac(signingKey, textEncoder.encode(stringToSign)));
+  const signingKey = await deriveSigningKey(
+    secretAccessKey,
+    datestamp,
+    region,
+    "s3",
+  );
+  const signature = toHex(
+    await hmac(signingKey, textEncoder.encode(stringToSign)),
+  );
 
   const authorization = [
     "AWS4-HMAC-SHA256 Credential=" + accessKeyId + "/" + credentialScope,
@@ -106,7 +129,13 @@ async function signCanonical({ method, url, headers = {}, payloadHash, accessKey
   return { authorization, amzDate, signedHeaders, signature, payloadHash };
 }
 
-export async function signR2Put({ url, body, accessKeyId, secretAccessKey, region = "auto" }) {
+export async function signR2Put({
+  url,
+  body,
+  accessKeyId,
+  secretAccessKey,
+  region = "auto",
+}) {
   const payloadHash = toHex(await crypto.subtle.digest("SHA-256", body));
   const { authorization, amzDate } = await signCanonical({
     method: "PUT",
@@ -124,7 +153,15 @@ export async function signR2Put({ url, body, accessKeyId, secretAccessKey, regio
   };
 }
 
-export async function signR2Request({ method, url, headers = {}, payloadHash, accessKeyId, secretAccessKey, region = "auto" }) {
+export async function signR2Request({
+  method,
+  url,
+  headers = {},
+  payloadHash,
+  accessKeyId,
+  secretAccessKey,
+  region = "auto",
+}) {
   const hash = payloadHash || "UNSIGNED-PAYLOAD";
   const { authorization, amzDate } = await signCanonical({
     method,
@@ -142,14 +179,24 @@ export async function signR2Request({ method, url, headers = {}, payloadHash, ac
   };
 }
 
-export async function presignR2Url({ method, url, expiresIn = 3600, accessKeyId, secretAccessKey, region = "auto" }) {
+export async function presignR2Url({
+  method,
+  url,
+  expiresIn = 3600,
+  accessKeyId,
+  secretAccessKey,
+  region = "auto",
+}) {
   const now = new Date();
   const amzDate = formatAmzDate(now);
   const datestamp = dateStamp(now);
 
   const urlObj = new URL(url);
   urlObj.searchParams.set("X-Amz-Algorithm", "AWS4-HMAC-SHA256");
-  urlObj.searchParams.set("X-Amz-Credential", `${accessKeyId}/${datestamp}/${region}/s3/aws4_request`);
+  urlObj.searchParams.set(
+    "X-Amz-Credential",
+    `${accessKeyId}/${datestamp}/${region}/s3/aws4_request`,
+  );
   urlObj.searchParams.set("X-Amz-Date", amzDate);
   urlObj.searchParams.set("X-Amz-Expires", String(expiresIn));
   urlObj.searchParams.set("X-Amz-SignedHeaders", "host");
@@ -168,11 +215,23 @@ export async function presignR2Url({ method, url, expiresIn = 3600, accessKeyId,
     "AWS4-HMAC-SHA256",
     amzDate,
     credentialScope,
-    toHex(await crypto.subtle.digest("SHA-256", textEncoder.encode(canonicalRequest))),
+    toHex(
+      await crypto.subtle.digest(
+        "SHA-256",
+        textEncoder.encode(canonicalRequest),
+      ),
+    ),
   ].join("\n");
 
-  const signingKey = await deriveSigningKey(secretAccessKey, datestamp, region, "s3");
-  const signature = toHex(await hmac(signingKey, textEncoder.encode(stringToSign)));
+  const signingKey = await deriveSigningKey(
+    secretAccessKey,
+    datestamp,
+    region,
+    "s3",
+  );
+  const signature = toHex(
+    await hmac(signingKey, textEncoder.encode(stringToSign)),
+  );
   urlObj.searchParams.set("X-Amz-Signature", signature);
   return urlObj.toString();
 }

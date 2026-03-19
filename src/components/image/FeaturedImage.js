@@ -17,7 +17,8 @@ export function FeaturedImage({
     return null;
   }
 
-  const imageAlt = imageNode?.altText || post?.title || title || "Featured image";
+  const imageAlt =
+    imageNode?.altText || post?.title || title || "Featured image";
 
   const img = (
     <Image

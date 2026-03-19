@@ -4,7 +4,9 @@ const COOKIE_NAME = "app_session";
 const OAUTH_STATE_COOKIE = "oauth_state";
 const ADMIN_COOKIE_NAME = "admin_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
-function getSecureCookie() { return process.env.NODE_ENV === "production" ? "; Secure" : ""; }
+function getSecureCookie() {
+  return process.env.NODE_ENV === "production" ? "; Secure" : "";
+}
 
 function getSecret() {
   return process.env.AUTH_SECRET || "dev-only-change-me";
@@ -31,9 +33,10 @@ function decodeBase64Url(str) {
 
 async function getHmacKey() {
   const secret = getSecret();
-  const keyData = typeof Buffer !== "undefined"
-    ? Buffer.from(secret)
-    : new TextEncoder().encode(secret);
+  const keyData =
+    typeof Buffer !== "undefined"
+      ? Buffer.from(secret)
+      : new TextEncoder().encode(secret);
   return crypto.subtle.importKey(
     "raw",
     keyData,
@@ -45,9 +48,10 @@ async function getHmacKey() {
 
 async function signValue(value) {
   const key = await getHmacKey();
-  const data = typeof Buffer !== "undefined"
-    ? Buffer.from(value)
-    : new TextEncoder().encode(value);
+  const data =
+    typeof Buffer !== "undefined"
+      ? Buffer.from(value)
+      : new TextEncoder().encode(value);
   const sig = await crypto.subtle.sign("HMAC", key, data);
   const bytes = new Uint8Array(sig);
   if (typeof Buffer !== "undefined") {
@@ -65,16 +69,22 @@ async function timingSafeEqual(a, b) {
   // Instead, we sign a constant and compare both against it via verify.
   // Simplest correct approach: verify sig b against the payload a.
   // We encode both as Uint8Array and do a manual constant-time compare.
-  const aBytes = typeof Buffer !== "undefined" ? new Uint8Array(Buffer.from(a, "base64url")) : (() => {
-    const b64 = a.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-    return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
-  })();
-  const bBytes = typeof Buffer !== "undefined" ? new Uint8Array(Buffer.from(b, "base64url")) : (() => {
-    const b64 = b.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-    return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
-  })();
+  const aBytes =
+    typeof Buffer !== "undefined"
+      ? new Uint8Array(Buffer.from(a, "base64url"))
+      : (() => {
+          const b64 = a.replace(/-/g, "+").replace(/_/g, "/");
+          const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+          return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+        })();
+  const bBytes =
+    typeof Buffer !== "undefined"
+      ? new Uint8Array(Buffer.from(b, "base64url"))
+      : (() => {
+          const b64 = b.replace(/-/g, "+").replace(/_/g, "/");
+          const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+          return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+        })();
   if (aBytes.length !== bBytes.length) return false;
   let diff = 0;
   for (let i = 0; i < aBytes.length; i++) diff |= aBytes[i] ^ bBytes[i];
@@ -186,8 +196,15 @@ function getAdminCredentialPairs() {
   const emails = parseCsvEnv(process.env.ADMIN_EMAILS);
   const passwords = parseCsvEnv(process.env.ADMIN_PASSWORDS);
 
-  if (emails.length > 0 && passwords.length > 0 && emails.length === passwords.length) {
-    return emails.map((email, index) => ({ email, password: passwords[index] }));
+  if (
+    emails.length > 0 &&
+    passwords.length > 0 &&
+    emails.length === passwords.length
+  ) {
+    return emails.map((email, index) => ({
+      email,
+      password: passwords[index],
+    }));
   }
 
   const legacyUser = process.env.ADMIN_USERNAME || "";

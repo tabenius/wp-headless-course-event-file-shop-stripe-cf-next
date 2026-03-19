@@ -16,7 +16,10 @@ function parseInline(text) {
       result.push(<em key={key++}>{token.slice(1, -1)}</em>);
     } else {
       result.push(
-        <code key={key++} className="bg-gray-100 px-1 rounded font-mono text-xs">
+        <code
+          key={key++}
+          className="bg-gray-100 px-1 rounded font-mono text-xs"
+        >
           {token.slice(1, -1)}
         </code>,
       );
@@ -43,7 +46,10 @@ function parseTable(tableLines) {
       <thead>
         <tr>
           {rows[0].map((cell, ci) => (
-            <th key={ci} className="border border-gray-300 px-2 py-0.5 bg-gray-50 text-left font-semibold">
+            <th
+              key={ci}
+              className="border border-gray-300 px-2 py-0.5 bg-gray-50 text-left font-semibold"
+            >
               {parseInline(cell)}
             </th>
           ))}
@@ -85,7 +91,10 @@ export default function ChatMarkdown({ content }) {
       }
       i++; // skip closing ```
       elements.push(
-        <pre key={key++} className="bg-gray-900 text-gray-100 rounded p-2 text-xs overflow-x-auto font-mono my-1">
+        <pre
+          key={key++}
+          className="bg-gray-900 text-gray-100 rounded p-2 text-xs overflow-x-auto font-mono my-1"
+        >
           <code>{codeLines.join("\n")}</code>
         </pre>,
       );
@@ -97,16 +106,31 @@ export default function ChatMarkdown({ content }) {
     const h2 = line.match(/^## (.+)/);
     const h1 = line.match(/^# (.+)/);
     if (h3) {
-      elements.push(<h3 key={key++} className="font-semibold text-sm mt-2 mb-0.5">{parseInline(h3[1])}</h3>);
-      i++; continue;
+      elements.push(
+        <h3 key={key++} className="font-semibold text-sm mt-2 mb-0.5">
+          {parseInline(h3[1])}
+        </h3>,
+      );
+      i++;
+      continue;
     }
     if (h2) {
-      elements.push(<h2 key={key++} className="font-semibold text-sm mt-2 mb-0.5">{parseInline(h2[1])}</h2>);
-      i++; continue;
+      elements.push(
+        <h2 key={key++} className="font-semibold text-sm mt-2 mb-0.5">
+          {parseInline(h2[1])}
+        </h2>,
+      );
+      i++;
+      continue;
     }
     if (h1) {
-      elements.push(<h1 key={key++} className="font-bold text-base mt-2 mb-0.5">{parseInline(h1[1])}</h1>);
-      i++; continue;
+      elements.push(
+        <h1 key={key++} className="font-bold text-base mt-2 mb-0.5">
+          {parseInline(h1[1])}
+        </h1>,
+      );
+      i++;
+      continue;
     }
 
     // Table
@@ -117,7 +141,12 @@ export default function ChatMarkdown({ content }) {
         i++;
       }
       const table = parseTable(tableLines);
-      if (table) elements.push(<div key={key++} className="overflow-x-auto">{table}</div>);
+      if (table)
+        elements.push(
+          <div key={key++} className="overflow-x-auto">
+            {table}
+          </div>,
+        );
       continue;
     }
 
@@ -140,7 +169,8 @@ export default function ChatMarkdown({ content }) {
 
     // Blank line — skip
     if (line.trim() === "") {
-      i++; continue;
+      i++;
+      continue;
     }
 
     // Regular text

@@ -21,7 +21,7 @@ export default function AdminError({ error, reset }) {
           </button>
           <button
             type="button"
-            onClick={() => window.location.href = "/admin"}
+            onClick={() => (window.location.href = "/admin")}
             className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50"
           >
             Reload admin

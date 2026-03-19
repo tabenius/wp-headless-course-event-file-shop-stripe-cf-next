@@ -6,9 +6,9 @@ import { SIZE_PRESETS } from "@/lib/imageQuota";
 
 const SIZE_PRESET_KEYS = ["square", "landscape", "portrait", "a6-150dpi"];
 const SIZE_LABEL_KEYS = {
-  square:      "admin.imageSizeSquare",
-  landscape:   "admin.imageSizeLandscape",
-  portrait:    "admin.imageSizePortrait",
+  square: "admin.imageSizeSquare",
+  landscape: "admin.imageSizeLandscape",
+  portrait: "admin.imageSizePortrait",
   "a6-150dpi": "admin.imageSizeA6",
 };
 
@@ -55,7 +55,9 @@ export default function ImageGenerationPanel({
   useEffect(() => {
     fetch("/api/admin/generate-image")
       .then((r) => r.json())
-      .then((j) => { if (j?.ok) setQuota(j.quota); })
+      .then((j) => {
+        if (j?.ok) setQuota(j.quota);
+      })
       .catch(() => {});
   }, []);
 
@@ -115,7 +117,10 @@ export default function ImageGenerationPanel({
       if (json.quota) setQuota(json.quota);
       setImages(json.images || []);
       if ((json.images?.length ?? 0) < count) {
-        showToast(t("admin.imagePartialFail", { n: json.images.length, m: count }), "info");
+        showToast(
+          t("admin.imagePartialFail", { n: json.images.length, m: count }),
+          "info",
+        );
       }
     } catch (err) {
       showToast(err.message || t("admin.imageGenFailed"));
@@ -132,13 +137,20 @@ export default function ImageGenerationPanel({
       const res = await fetch(dataUrl);
       const blob = await res.blob();
       const form = new FormData();
-      form.append("file", new File([blob], "ragbaz-ai-image.png", { type: "image/png" }));
-      const uploadRes = await fetch(`/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`, {
-        method: "POST",
-        body: form,
-      });
+      form.append(
+        "file",
+        new File([blob], "ragbaz-ai-image.png", { type: "image/png" }),
+      );
+      const uploadRes = await fetch(
+        `/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`,
+        {
+          method: "POST",
+          body: form,
+        },
+      );
       const json = await uploadRes.json();
-      if (!uploadRes.ok || !json?.ok) throw new Error(json?.error || "Upload failed");
+      if (!uploadRes.ok || !json?.ok)
+        throw new Error(json?.error || "Upload failed");
       onSave(json.url);
     } catch (err) {
       showToast(err.message || t("admin.imageSaveFailed"));
@@ -160,8 +172,12 @@ export default function ImageGenerationPanel({
   const quotaExhausted = remaining === 0;
 
   return (
-    <div className={`border rounded p-4 space-y-3 bg-purple-50 ${context === "chat" ? "text-sm" : ""}`}>
-      <div className="text-sm font-semibold text-purple-800">{t("admin.aiImagesTitle")}</div>
+    <div
+      className={`border rounded p-4 space-y-3 bg-purple-50 ${context === "chat" ? "text-sm" : ""}`}
+    >
+      <div className="text-sm font-semibold text-purple-800">
+        {t("admin.aiImagesTitle")}
+      </div>
 
       {quota && (
         <div className="space-y-1">
@@ -183,11 +199,15 @@ export default function ImageGenerationPanel({
             </span>
           </div>
           {remaining !== null && remaining <= 2 && remaining > 0 && (
-            <p className="text-xs text-amber-700">{t("admin.quotaWarning", { n: remaining })}</p>
+            <p className="text-xs text-amber-700">
+              {t("admin.quotaWarning", { n: remaining })}
+            </p>
           )}
           {quotaExhausted && (
             <p className="text-xs text-red-700">
-              {t("admin.quotaExhausted", { time: new Date(quota.resetsAt).toUTCString().slice(17, 22) })}
+              {t("admin.quotaExhausted", {
+                time: new Date(quota.resetsAt).toUTCString().slice(17, 22),
+              })}
             </p>
           )}
         </div>
@@ -218,7 +238,10 @@ export default function ImageGenerationPanel({
             type="button"
             onClick={() => {
               navigator.clipboard.writeText(prompt).catch((err) => {
-                console.warn("[ImageGenerationPanel] clipboard write failed:", err);
+                console.warn(
+                  "[ImageGenerationPanel] clipboard write failed:",
+                  err,
+                );
                 showToast(t("admin.copyFailed"));
               });
             }}
@@ -240,7 +263,9 @@ export default function ImageGenerationPanel({
                 type="button"
                 onClick={() => setCount(n)}
                 className={`px-3 py-1 rounded border text-sm ${
-                  count === n ? "bg-purple-600 text-white border-purple-600" : "hover:bg-gray-50"
+                  count === n
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "hover:bg-gray-50"
                 }`}
               >
                 {n}
@@ -250,7 +275,10 @@ export default function ImageGenerationPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500" title={t("admin.imageSizeNeuronTip")}>
+          <span
+            className="text-xs text-gray-500"
+            title={t("admin.imageSizeNeuronTip")}
+          >
             {t("admin.imageSize")} ⓘ
           </span>
           <select
@@ -259,7 +287,9 @@ export default function ImageGenerationPanel({
             className="border rounded px-2 py-1 text-sm"
           >
             {SIZE_PRESET_KEYS.map((key) => (
-              <option key={key} value={key}>{t(SIZE_LABEL_KEYS[key])}</option>
+              <option key={key} value={key}>
+                {t(SIZE_LABEL_KEYS[key])}
+              </option>
             ))}
           </select>
         </div>
@@ -275,7 +305,9 @@ export default function ImageGenerationPanel({
       </div>
 
       {toast && (
-        <div className={`text-xs px-3 py-2 rounded ${toast.type === "info" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}>
+        <div
+          className={`text-xs px-3 py-2 rounded ${toast.type === "info" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}
+        >
           {toast.msg}
         </div>
       )}
@@ -285,33 +317,33 @@ export default function ImageGenerationPanel({
           {images.map((img, idx) => {
             const { w, h } = thumbDims(size);
             return (
-            <div key={idx} className="flex flex-col gap-1">
-              <img
-                src={img}
-                alt={`Generated ${idx + 1}`}
-                className="rounded border object-cover"
-                style={{ width: w, height: h }}
-              />
-              <div className="flex gap-1">
-                {onSave && (
+              <div key={idx} className="flex flex-col gap-1">
+                <img
+                  src={img}
+                  alt={`Generated ${idx + 1}`}
+                  className="rounded border object-cover"
+                  style={{ width: w, height: h }}
+                />
+                <div className="flex gap-1">
+                  {onSave && (
+                    <button
+                      type="button"
+                      onClick={() => handleSave(img, idx)}
+                      disabled={saving !== null}
+                      className="flex-1 px-2 py-1 rounded border text-xs hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      {saving === idx ? "…" : t("admin.saveImage")}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => handleSave(img, idx)}
-                    disabled={saving !== null}
-                    className="flex-1 px-2 py-1 rounded border text-xs hover:bg-gray-50 disabled:opacity-50"
+                    onClick={() => handleDownload(img, idx)}
+                    className="flex-1 px-2 py-1 rounded border text-xs hover:bg-gray-50"
                   >
-                    {saving === idx ? "…" : t("admin.saveImage")}
+                    {t("admin.downloadImage")}
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleDownload(img, idx)}
-                  className="flex-1 px-2 py-1 rounded border text-xs hover:bg-gray-50"
-                >
-                  {t("admin.downloadImage")}
-                </button>
+                </div>
               </div>
-            </div>
             );
           })}
         </div>

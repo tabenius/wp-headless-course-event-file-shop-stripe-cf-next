@@ -39,7 +39,10 @@ test("validateTheme throws when required slugs are missing", () => {
     },
   };
 
-  assert.throws(() => validateTheme(theme), /Required color slug "background" is missing/);
+  assert.throws(
+    () => validateTheme(theme),
+    /Required color slug "background" is missing/,
+  );
 });
 
 test("buildCss emits CSS variables and utility classes", () => {

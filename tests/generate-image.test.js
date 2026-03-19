@@ -23,7 +23,10 @@ test("arrayBufferToBase64 round-trips through atob correctly", () => {
 });
 
 test("arrayBufferToBase64 handles empty buffer", () => {
-  assert.equal(arrayBufferToBase64(new ArrayBuffer(0)), "data:image/png;base64,");
+  assert.equal(
+    arrayBufferToBase64(new ArrayBuffer(0)),
+    "data:image/png;base64,",
+  );
 });
 
 // resolveSize
@@ -58,6 +61,9 @@ test("clampCount floors 2.9 to 2", () => assert.equal(clampCount(2.9), 2));
 // computeResetsAt
 test("computeResetsAt returns ISO string at UTC midnight", () => {
   const result = computeResetsAt();
-  assert.ok(result.endsWith("T00:00:00.000Z"), `Expected midnight UTC, got ${result}`);
+  assert.ok(
+    result.endsWith("T00:00:00.000Z"),
+    `Expected midnight UTC, got ${result}`,
+  );
   assert.ok(new Date(result) > new Date(), "Expected future timestamp");
 });

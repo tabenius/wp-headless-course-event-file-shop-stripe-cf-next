@@ -15,9 +15,15 @@ export async function GET(request) {
   if (auth.error) return auth.error;
 
   const backend = resolveBackend();
-  const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
-  const publicUrl = (process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "").replace(/\/+$/, "");
-  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
+  const bucket =
+    process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
+  const publicUrl = (
+    process.env.S3_PUBLIC_URL ||
+    process.env.CF_R2_PUBLIC_URL ||
+    ""
+  ).replace(/\/+$/, "");
+  const accessKeyId =
+    process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
 
   if (backend === "wordpress") {
     return NextResponse.json({

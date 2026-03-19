@@ -22,7 +22,8 @@ async function sendResetEmail(to, resetUrl) {
 export async function POST(request) {
   try {
     const { email } = await request.json();
-    const normalized = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const normalized =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
 
     if (!normalized || !normalized.includes("@")) {
       return NextResponse.json(
@@ -38,12 +39,17 @@ export async function POST(request) {
       const token = crypto.randomUUID();
       const kvKey = `password-reset:${token}`;
 
-      await writeCloudflareKvJson(kvKey, {
-        email: normalized,
-        createdAt: new Date().toISOString(),
-      }, { expirationTtl: RESET_TTL });
+      await writeCloudflareKvJson(
+        kvKey,
+        {
+          email: normalized,
+          createdAt: new Date().toISOString(),
+        },
+        { expirationTtl: RESET_TTL },
+      );
 
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+      const origin =
+        process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
       const resetUrl = `${origin}/auth/reset-password?token=${token}`;
 
       try {

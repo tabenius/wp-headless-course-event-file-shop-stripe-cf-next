@@ -25,14 +25,16 @@ export default function Paywall({
   const [guestEmailConfirm, setGuestEmailConfirm] = useState("");
   const [imageBroken, setImageBroken] = useState(false);
   const isLoggedIn = Boolean(userEmail);
-  const kindLabel = contentKind === "event"
-    ? t("common.event").toLowerCase()
-    : contentKind === "product"
-      ? t("common.product").toLowerCase()
-      : t("common.course").toLowerCase();
+  const kindLabel =
+    contentKind === "event"
+      ? t("common.event").toLowerCase()
+      : contentKind === "product"
+        ? t("common.product").toLowerCase()
+        : t("common.course").toLowerCase();
 
   // Checkout requires a positive price configured in admin
-  const canBuy = stripeEnabled && typeof priceCents === "number" && priceCents > 0;
+  const canBuy =
+    stripeEnabled && typeof priceCents === "number" && priceCents > 0;
 
   // Normalize all prices to "750 SEK" format
   function normalizePrice() {
@@ -40,8 +42,13 @@ export default function Paywall({
       return `${(priceCents / 100).toFixed(0)} ${(currency || "SEK").toUpperCase()}`;
     }
     if (coursePriceRendered) {
-      const decoded = decodeEntities(coursePriceRendered).replace(/&nbsp;/g, " ");
-      const num = parseFloat(decoded.replace(/[^0-9.,]/g, "").replace(",", "."));
+      const decoded = decodeEntities(coursePriceRendered).replace(
+        /&nbsp;/g,
+        " ",
+      );
+      const num = parseFloat(
+        decoded.replace(/[^0-9.,]/g, "").replace(",", "."),
+      );
       if (Number.isFinite(num) && num > 0) {
         return `${Math.round(num)} ${(currency || "SEK").toUpperCase()}`;
       }
@@ -113,18 +120,29 @@ export default function Paywall({
       {courseImage && !imageBroken && (
         <div className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={courseImage} alt={courseTitle || ""} className="max-h-64 rounded-lg shadow-md object-cover" onError={() => setImageBroken(true)} />
+          <img
+            src={courseImage}
+            alt={courseTitle || ""}
+            className="max-h-64 rounded-lg shadow-md object-cover"
+            onError={() => setImageBroken(true)}
+          />
         </div>
       )}
-      <h1 className="text-4xl font-bold text-center">{courseTitle || t("paywall.content")}</h1>
+      <h1 className="text-4xl font-bold text-center">
+        {courseTitle || t("paywall.content")}
+      </h1>
 
       {(displayPrice || courseDuration) && (
         <div className="flex justify-center gap-6 text-lg text-gray-700">
           {displayPrice && (
-            <span><strong>{t("paywall.fee")}:</strong> {displayPrice}</span>
+            <span>
+              <strong>{t("paywall.fee")}:</strong> {displayPrice}
+            </span>
           )}
           {courseDuration && !/^0\s/.test(courseDuration) && (
-            <span><strong>{t("paywall.duration")}:</strong> {courseDuration}</span>
+            <span>
+              <strong>{t("paywall.duration")}:</strong> {courseDuration}
+            </span>
           )}
         </div>
       )}
@@ -144,7 +162,10 @@ export default function Paywall({
         ) : isLoggedIn ? (
           <>
             <p className="text-gray-700">
-              {t("paywall.loggedInNeedPurchase", { email: userEmail, contentKind: kindLabel })}
+              {t("paywall.loggedInNeedPurchase", {
+                email: userEmail,
+                contentKind: kindLabel,
+              })}
             </p>
             <button
               type="button"
@@ -153,15 +174,15 @@ export default function Paywall({
               className="px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50 inline-flex items-center gap-2"
               style={{ color: "#fff" }}
             >
-              {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {loading && (
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
               {buyLabel}
             </button>
           </>
         ) : (
           <div className="max-w-md mx-auto space-y-4">
-            <p className="text-sm text-gray-500">
-              {t("paywall.guestBuyHint")}
-            </p>
+            <p className="text-sm text-gray-500">{t("paywall.guestBuyHint")}</p>
 
             <div className="space-y-3">
               <input
@@ -190,7 +211,9 @@ export default function Paywall({
               className="w-full px-8 py-3 rounded bg-[var(--color-primary)] hover:opacity-85 disabled:opacity-50 text-lg inline-flex items-center justify-center gap-2"
               style={{ color: "#fff" }}
             >
-              {loading && <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {loading && (
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
               {buyLabel}
             </button>
 

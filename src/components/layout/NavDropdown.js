@@ -5,7 +5,12 @@ import { usePathname } from "next/navigation";
 import NavLink from "./NavLink";
 import Link from "next/link";
 
-export default function NavDropdown({ item, className, activeClassName, dropdownClassName }) {
+export default function NavDropdown({
+  item,
+  className,
+  activeClassName,
+  dropdownClassName,
+}) {
   const [open, setOpen] = useState(false);
   const timeoutRef = useRef(null);
   const containerRef = useRef(null);
@@ -14,10 +19,9 @@ export default function NavDropdown({ item, className, activeClassName, dropdown
   const parentHref = item.href && item.href !== "#" ? item.href : null;
 
   // Highlight if parent or any child matches the current path
-  const isParentActive = parentHref && (
-    pathname === parentHref ||
-    pathname === parentHref.replace(/\/$/, "")
-  );
+  const isParentActive =
+    parentHref &&
+    (pathname === parentHref || pathname === parentHref.replace(/\/$/, ""));
   const isChildActive = (item.children || []).some((child) => {
     const href = child.href;
     return (
@@ -50,7 +54,12 @@ export default function NavDropdown({ item, className, activeClassName, dropdown
         stroke="currentColor"
         viewBox="0 0 24 24"
       >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M19 9l-7 7-7-7"
+        />
       </svg>
     </>
   );

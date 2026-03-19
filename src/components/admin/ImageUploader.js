@@ -12,7 +12,13 @@ import { t } from "@/lib/i18n";
  *   className     — wrapper class
  *   renderTrigger — optional (openFilePicker) => ReactNode to replace default UI
  */
-export default function ImageUploader({ value, onUploaded, onError, className = "", renderTrigger }) {
+export default function ImageUploader({
+  value,
+  onUploaded,
+  onError,
+  className = "",
+  renderTrigger,
+}) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -126,7 +132,11 @@ export default function ImageUploader({ value, onUploaded, onError, className = 
     setUploading(true);
     try {
       const blob = await new Promise((resolve, reject) =>
-        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Canvas toBlob failed"))), "image/jpeg", 0.9),
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Canvas toBlob failed"))),
+          "image/jpeg",
+          0.9,
+        ),
       );
       const formData = new FormData();
       const name = file?.name?.replace(/\.[^.]+$/, "") || "image";

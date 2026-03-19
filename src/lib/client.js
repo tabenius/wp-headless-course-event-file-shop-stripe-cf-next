@@ -1,6 +1,7 @@
 import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
 
-const DEFAULT_DELAY_MS = Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
+const DEFAULT_DELAY_MS =
+  Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
 let lastCallTs = 0;
 
 function sleep(ms) {
@@ -101,12 +102,17 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       if (debugGraphQL) {
         console.debug("[GraphQL Debug] Auth mode:", auth.mode);
         console.debug("[GraphQL Debug] Endpoint:", graphqlEndpoint);
-        console.debug("[GraphQL Debug] HTTP status:", response.status, response.statusText);
+        console.debug(
+          "[GraphQL Debug] HTTP status:",
+          response.status,
+          response.statusText,
+        );
       }
 
       if (!response.ok || !contentType.includes("application/json")) {
         const text = await response.text().catch(() => "<unable to read body>");
-        const statusTooMany = response.status === 429 || response.status === 503;
+        const statusTooMany =
+          response.status === 429 || response.status === 503;
         const varnishHit = /varnish|too many/i.test(text) || statusTooMany;
         lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${firstLines(text)}`;
         if (debugGraphQL) console.error(lastError);

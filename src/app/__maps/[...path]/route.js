@@ -7,7 +7,11 @@ export async function GET(request, { params }) {
 
   const parts = Array.isArray(params?.path) ? params.path : [];
   const suffix = parts.join("/");
-  if (!suffix) return NextResponse.json({ ok: false, error: "Missing path" }, { status: 400 });
+  if (!suffix)
+    return NextResponse.json(
+      { ok: false, error: "Missing path" },
+      { status: 400 },
+    );
 
   const target = new URL(`/_next/${suffix.replace(/^\/+/, "")}`, request.url);
   const upstream = await fetch(target.toString(), {

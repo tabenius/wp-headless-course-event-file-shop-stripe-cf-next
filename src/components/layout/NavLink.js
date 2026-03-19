@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function NavLink({ href, className, activeClassName, children, ...rest }) {
+export default function NavLink({
+  href,
+  className,
+  activeClassName,
+  children,
+  ...rest
+}) {
   const pathname = usePathname();
   const isActive =
     pathname === href ||

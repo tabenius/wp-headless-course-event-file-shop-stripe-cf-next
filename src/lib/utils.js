@@ -27,18 +27,26 @@ export async function getPosts({
   revalidate = null,
 }) {
   if (!slug) {
-    return await fetchGraphQL(query, {
-      first: pageSize,
-      after,
-    }, revalidate);
+    return await fetchGraphQL(
+      query,
+      {
+        first: pageSize,
+        after,
+      },
+      revalidate,
+    );
   }
 
   const querySlug = typeof slug === "string" ? slug : String(slug);
-  return await fetchGraphQL(query, {
-    slug: querySlug,
-    first: pageSize,
-    after,
-  }, revalidate);
+  return await fetchGraphQL(
+    query,
+    {
+      slug: querySlug,
+      first: pageSize,
+      after,
+    },
+    revalidate,
+  );
 }
 
 export function getPostsPerPage() {

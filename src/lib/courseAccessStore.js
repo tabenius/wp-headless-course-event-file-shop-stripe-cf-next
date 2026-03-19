@@ -12,7 +12,9 @@ function canUseFs() {
   );
 }
 
-function getKvKey() { return process.env.CF_KV_KEY || "course-access"; }
+function getKvKey() {
+  return process.env.CF_KV_KEY || "course-access";
+}
 const LOCAL_ACCESS_FILE = ".data/course-access.json";
 
 let inMemoryAccessState = { courses: {} };
@@ -61,7 +63,10 @@ function sanitizeState(state) {
 }
 
 function shouldUseCloudflareBackend() {
-  return process.env.COURSE_ACCESS_STORE === "cloudflare" || isCloudflareKvConfigured();
+  return (
+    process.env.COURSE_ACCESS_STORE === "cloudflare" ||
+    isCloudflareKvConfigured()
+  );
 }
 
 async function readFromCloudflare() {
@@ -87,13 +92,19 @@ async function ensureLocalStore() {
   try {
     await fs.access(accessFile);
   } catch {
-    await fs.writeFile(accessFile, JSON.stringify({ courses: {} }, null, 2), "utf8");
+    await fs.writeFile(
+      accessFile,
+      JSON.stringify({ courses: {} }, null, 2),
+      "utf8",
+    );
   }
 }
 
 async function readFromLocal() {
   if (!canUseFs()) {
-    console.warn("Local filesystem store unavailable in this runtime; using in-memory access store.");
+    console.warn(
+      "Local filesystem store unavailable in this runtime; using in-memory access store.",
+    );
     return inMemoryAccessState;
   }
   try {
@@ -146,7 +157,10 @@ export async function getCourseAccessState() {
       const cloudflareState = await readFromCloudflare();
       if (cloudflareState) return cloudflareState;
     } catch (error) {
-      console.error("Cloudflare KV unavailable, using local course access store:", error);
+      console.error(
+        "Cloudflare KV unavailable, using local course access store:",
+        error,
+      );
     }
   }
   return readFromLocal();
@@ -159,7 +173,10 @@ export async function saveCourseAccessState(nextState) {
       const wroteCloudflare = await writeToCloudflare(state);
       if (wroteCloudflare) return state;
     } catch (error) {
-      console.error("Cloudflare KV write failed, falling back to local file:", error);
+      console.error(
+        "Cloudflare KV write failed, falling back to local file:",
+        error,
+      );
     }
   }
   await writeToLocal(state);
@@ -179,7 +196,9 @@ export async function setCourseAccess({
     ? [...new Set(allowedUsers.map(normalizeEmail).filter(Boolean))]
     : [];
   const safePrice =
-    typeof priceCents === "number" && priceCents >= 0 ? Math.floor(priceCents) : 0;
+    typeof priceCents === "number" && priceCents >= 0
+      ? Math.floor(priceCents)
+      : 0;
   state.courses[uri] = {
     allowedUsers: normalizedUsers,
     priceCents: safePrice,
@@ -196,7 +215,8 @@ export async function grantCourseAccess(courseUri, email) {
   const state = await getCourseAccessState();
   const course = state.courses[uri] || {
     allowedUsers: [],
-    priceCents: Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS || "0", 10) || 0,
+    priceCents:
+      Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS || "0", 10) || 0,
     currency: normalizeCurrency(process.env.DEFAULT_COURSE_FEE_CURRENCY),
   };
   if (!course.allowedUsers.includes(normalizedEmail)) {

@@ -34,7 +34,11 @@ export async function readCloudflareKvJson(key) {
   }
 }
 
-export async function writeCloudflareKvJson(key, value, { expirationTtl } = {}) {
+export async function writeCloudflareKvJson(
+  key,
+  value,
+  { expirationTtl } = {},
+) {
   if (!hasCloudflareConfig()) return false;
   let url = getKvUrl(key);
   if (expirationTtl) url += `?expiration_ttl=${expirationTtl}`;

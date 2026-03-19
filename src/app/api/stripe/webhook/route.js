@@ -63,7 +63,11 @@ export async function POST(request) {
       ).toLowerCase();
 
       if (paymentStatus === "paid" && email) {
-        if ((purchaseKind === "digital_file" || purchaseKind === "course_product") && digitalProductId) {
+        if (
+          (purchaseKind === "digital_file" ||
+            purchaseKind === "course_product") &&
+          digitalProductId
+        ) {
           await grantDigitalAccess(digitalProductId, email);
           if (purchaseKind === "course_product" && courseUri) {
             await grantCourseAccess(courseUri, email);
@@ -74,13 +78,19 @@ export async function POST(request) {
 
         // Send purchase confirmation email
         try {
-          const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.xtas.nu";
-          const productName = session?.metadata?.product_name || session?.metadata?.course_title || session?.metadata?.course_uri || "din produkt";
+          const origin =
+            process.env.NEXT_PUBLIC_SITE_URL || "https://www.xtas.nu";
+          const productName =
+            session?.metadata?.product_name ||
+            session?.metadata?.course_title ||
+            session?.metadata?.course_uri ||
+            "din produkt";
           const amountTotal = session?.amount_total;
           const currency = (session?.currency || "sek").toUpperCase();
-          const formattedAmount = typeof amountTotal === "number"
-            ? `${(amountTotal / 100).toFixed(2)} ${currency}`
-            : "";
+          const formattedAmount =
+            typeof amountTotal === "number"
+              ? `${(amountTotal / 100).toFixed(2)} ${currency}`
+              : "";
 
           let productUrl = origin;
           if (courseUri) {

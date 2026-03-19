@@ -6,7 +6,13 @@ import {
 
 const KV_KEY = "shop-settings";
 
-const ALL_TYPES = ["product", "course", "event", "digital_file", "digital_course"];
+const ALL_TYPES = [
+  "product",
+  "course",
+  "event",
+  "digital_file",
+  "digital_course",
+];
 
 const DEFAULTS = {
   visibleTypes: [...ALL_TYPES],

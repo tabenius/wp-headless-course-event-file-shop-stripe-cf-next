@@ -55,13 +55,21 @@ export default function ChatMessage({ m, uploadBackend }) {
             <div className="text-[11px] text-gray-500 flex gap-2 flex-wrap">
               <span className="font-semibold">{t("chat.sources")}:</span>
               {m.sources.map((s, i) => (
-                <a key={i} href={s.uri} className="underline" target="_blank" rel="noreferrer">
+                <a
+                  key={i}
+                  href={s.uri}
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {s.title || s.uri}
                 </a>
               ))}
             </div>
           ) : m.role === "assistant" ? (
-            <div className="text-[11px] text-gray-400">{t("chat.noSources")}</div>
+            <div className="text-[11px] text-gray-400">
+              {t("chat.noSources")}
+            </div>
           ) : null}
         </>
       )}
