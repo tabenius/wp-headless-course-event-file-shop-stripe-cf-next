@@ -300,6 +300,8 @@ Commit message: `refactor(shop): ProductSection.renderItem returns JSX not props
 
 **After all three:** append bullets to `claude+codex-coop.md` and mark this priority section done in `AGENTS.md`. Use `docs.lock.pid` before editing either file.
 
+**Status:** Completed 2026-03-19 — `formatHour` now uses `getUTCHours`, the workers hint is fully localized, and each product section renders `ProductRow` elements directly.
+
 ---
 
 ### [Claude] Image generator polish + chat fixes (completed 2026-03-19)
