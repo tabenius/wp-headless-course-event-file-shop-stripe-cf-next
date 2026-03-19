@@ -707,3 +707,28 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Chunk-specific explanatory message shown instead of generic error copy.
 - Validation:
   - `npx eslint src/app/admin/error.js`
+
+---
+
+## 2026-03-19 (cont. 24)
+
+### Codex — menu lockup micro-alignment tweak
+
+- Applied a small visual alignment tweak in `AdminHeader`:
+  - Shifted `RAGBAZ` wordmark ~14px to the right (`className="ml-[14px]"`) while keeping `ARTICULATE STOREFRONT` on the line beneath.
+- Goal: improve perceived left-edge alignment between the oversized brand glyphs and subtitle lockup in the menu bar.
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js`
+
+---
+
+## 2026-03-19 (cont. 25)
+
+### Codex — welcome branding cleanup
+
+- Removed `RAGBAZ Articulate StoreFront` from Welcome-screen content chrome so the brand text is no longer repeated outside the menu bar.
+- Applied in both Welcome modes:
+  - Story mode (dark-blue header row above impress frame)
+  - Non-story mode (card dashboard intro header)
+- Validation:
+  - `npx eslint src/components/admin/AdminWelcomeTab.js src/components/admin/AdminHeader.js`

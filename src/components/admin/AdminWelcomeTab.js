@@ -923,9 +923,6 @@ export default function AdminWelcomeTab({
       <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-4 sm:p-6 shadow min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-widest text-indigo-700">
-              {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
-            </p>
             <h2 className="text-2xl font-semibold text-slate-900">
               {t("admin.welcomeHeadline", "Welcome to your new control room")}
             </h2>
@@ -949,12 +946,6 @@ export default function AdminWelcomeTab({
     <div className="welcome-story-shell space-y-1 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p
-            className="welcome-story-force-white text-sm font-semibold uppercase tracking-widest text-white"
-            style={{ color: "#ffffff" }}
-          >
-            {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
-          </p>
           <p
             className="welcome-story-force-white mt-1 text-xs text-white"
             style={{ color: "#ffffff" }}

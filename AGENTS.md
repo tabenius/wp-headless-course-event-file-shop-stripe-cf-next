@@ -198,6 +198,8 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Removed `RAGBAZ Articulate StoreFront` text from the Welcome screen content area (story + non-story variants) so branding is only shown in the menu bar as requested.
+- **2026-03-19 (Codex)**: Fine-tuned menu lockup alignment by shifting the `RAGBAZ` wordmark ~14px to the right in `AdminHeader` (`ml-[14px]`) to better align with the `ARTICULATE STOREFRONT` subtitle line.
 - **2026-03-19 (Codex)**: Hardened admin chunk-load failure recovery in `src/app/admin/error.js`: detect `ChunkLoadError`/`Failed to load chunk`, auto-trigger a single cache-busted reload (`/admin?reload=<ts>`), and make manual reload use the same cache-busting path to avoid stale bundle loops after deploy.
 - **2026-03-19 (Codex)**: Refined menu-bar branding layout: increased `RAGBAZ` size substantially via `RagbazLogo` scale prop and moved `ARTICULATE STOREFRONT` to a second line directly beneath it to eliminate overlap and improve visual hierarchy.
 - **2026-03-19 (Codex)**: Fixed a Storage docs-selection bug by removing server-only env checks from the client component and deriving R2/S3 documentation links from selected backend + backend response (`uploadBackend`, `uploadInfoDetails.isR2`, `uploadInfo`), preventing wrong docs from showing in browser runtime.

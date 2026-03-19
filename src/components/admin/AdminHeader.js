@@ -261,6 +261,7 @@ export default function AdminHeader({ logoUrl }) {
                 wordmarkOnly
                 noLetterSpacing
                 scale={1.75}
+                className="ml-[14px]"
               />
               <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white">
                 ARTICULATE STOREFRONT
