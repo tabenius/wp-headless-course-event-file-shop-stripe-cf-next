@@ -1577,42 +1577,189 @@ export default function AdminDashboard() {
 
       {/* ── Style tab ── */}
       {activeTab === "style" && (
-        <div className="border rounded p-5 space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              {t("admin.styleTitle")}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {t("admin.styleSummary")}
-            </p>
+        <div className="border rounded p-5 space-y-8">
+          {/* ── Main site style ── */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">
+                Main site style
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Public-facing palette, typography, and tokens (from theme.json /
+                theme.generated.css).
+              </p>
+            </div>
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+              {[
+                {
+                  label: "Background",
+                  hex: "#fff1f1",
+                  token: "--color-background",
+                },
+                {
+                  label: "Foreground",
+                  hex: "#1a1a1a",
+                  token: "--color-foreground",
+                },
+                { label: "Primary", hex: "#6d003e", token: "--color-primary" },
+                {
+                  label: "Secondary",
+                  hex: "#ffb606",
+                  token: "--color-secondary",
+                },
+                {
+                  label: "Tertiary",
+                  hex: "#442e66",
+                  token: "--color-tertiary",
+                },
+                { label: "Muted", hex: "#686868", token: "--color-muted" },
+              ].map(({ label, hex, token }) => (
+                <div
+                  key={token}
+                  className="flex items-center gap-3 border rounded p-3 bg-gray-50"
+                >
+                  <div
+                    className="w-10 h-10 rounded border border-gray-200 shrink-0"
+                    style={{ background: hex }}
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-gray-800">
+                      {label}
+                    </div>
+                    <div className="text-xs text-gray-500 font-mono">{hex}</div>
+                    <div className="text-[10px] text-gray-400 font-mono">
+                      {token}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="border rounded p-4 bg-gray-50 space-y-1">
+                <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                  Heading font
+                </div>
+                <p
+                  className="text-lg font-semibold"
+                  style={{
+                    fontFamily: "'Montserrat', 'Helvetica Neue', sans-serif",
+                  }}
+                >
+                  Montserrat — The quick brown fox
+                </p>
+                <p className="text-xs text-gray-500 font-mono">
+                  --font-heading · var(--font-montserrat)
+                </p>
+              </div>
+              <div className="border rounded p-4 bg-gray-50 space-y-1">
+                <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                  Body font
+                </div>
+                <p
+                  className="text-base"
+                  style={{ fontFamily: "'Merriweather', Georgia, serif" }}
+                >
+                  Merriweather — The quick brown fox jumps over the lazy dog.
+                </p>
+                <p className="text-xs text-gray-500 font-mono">
+                  --font-body · var(--font-merriweather)
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              <button
+                className="px-4 py-2 rounded text-white text-sm font-medium"
+                style={{ background: "#6d003e" }}
+              >
+                Primary button
+              </button>
+              <button
+                className="px-4 py-2 rounded text-white text-sm font-medium"
+                style={{ background: "#442e66" }}
+              >
+                Tertiary button
+              </button>
+              <button
+                className="px-4 py-2 rounded text-sm font-medium border"
+                style={{ color: "#6d003e", borderColor: "#6d003e" }}
+              >
+                Outline button
+              </button>
+              <span
+                className="px-3 py-1 rounded-full text-sm font-medium"
+                style={{ background: "#ffb606", color: "#1a1a1a" }}
+              >
+                Badge
+              </span>
+            </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
-                {t("admin.styleTypography")}
-              </div>
-              <p className="text-sm text-gray-600">
-                {t("admin.styleTypographyDetail")}
+
+          <hr className="border-gray-200" />
+
+          {/* ── Admin UI style ── */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">
+                {t("admin.styleTitle")}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {t("admin.styleSummary")}
               </p>
             </div>
-            <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
-                {t("admin.styleColors")}
-              </div>
-              <p className="text-sm text-gray-600">
-                {t("admin.styleColorsDetail")}
-              </p>
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+              {[
+                { label: "Background", hex: "#140022" },
+                { label: "Border / accent", hex: "#4e21a6" },
+                { label: "Purple primary", hex: "#7c3aed" },
+                { label: "Purple light", hex: "#a78bfa" },
+                { label: "Surface", hex: "#ffffff" },
+                { label: "Text muted", hex: "#6b7280" },
+              ].map(({ label, hex }) => (
+                <div
+                  key={hex}
+                  className="flex items-center gap-3 border rounded p-3 bg-gray-50"
+                >
+                  <div
+                    className="w-10 h-10 rounded border border-gray-200 shrink-0"
+                    style={{ background: hex }}
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-gray-800">
+                      {label}
+                    </div>
+                    <div className="text-xs text-gray-500 font-mono">{hex}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
-                {t("admin.styleButtons")}
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="border rounded p-4 bg-gray-50 space-y-2">
+                <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+                  {t("admin.styleTypography")}
+                </div>
+                <p className="text-sm text-gray-600">
+                  {t("admin.styleTypographyDetail")}
+                </p>
               </div>
-              <p className="text-sm text-gray-600">
-                {t("admin.styleButtonsDetail")}
-              </p>
+              <div className="border rounded p-4 bg-gray-50 space-y-2">
+                <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+                  {t("admin.styleColors")}
+                </div>
+                <p className="text-sm text-gray-600">
+                  {t("admin.styleColorsDetail")}
+                </p>
+              </div>
+              <div className="border rounded p-4 bg-gray-50 space-y-2">
+                <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+                  {t("admin.styleButtons")}
+                </div>
+                <p className="text-sm text-gray-600">
+                  {t("admin.styleButtonsDetail")}
+                </p>
+              </div>
             </div>
+            <p className="text-xs text-gray-500">{t("admin.styleNote")}</p>
           </div>
-          <p className="text-xs text-gray-500">{t("admin.styleNote")}</p>
         </div>
       )}
 
