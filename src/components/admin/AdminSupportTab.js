@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { t } from "@/lib/i18n";
 
 export default function AdminSupportTab({
@@ -8,7 +7,6 @@ export default function AdminSupportTab({
   ticketsLoading,
   ticketsError,
   selectedTicket,
-  selectedTicketId,
   setSelectedTicketId,
   newTicket,
   setNewTicket,
@@ -16,25 +14,41 @@ export default function AdminSupportTab({
   setCommentText,
   createSupportTicket,
   updateSupportTicket,
+  payments,
+  paymentsEmail,
+  setPaymentsEmail,
+  loadPayments,
+  paymentsLoading,
+  downloadReceipt,
+  downloading,
 }) {
-  useEffect(() => {
-    console.log("[AdminSupportTab] mounted");
-    return () => console.log("[AdminSupportTab] unmounted");
-  }, []);
-
   return (
     <div className="border rounded p-5 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-semibold">{t("admin.supportTickets")}</h2>
-          <p className="text-sm text-gray-500 mt-1">{t("admin.supportIntro")}</p>
+          <h2 className="text-2xl font-semibold">
+            {t("admin.supportTickets")}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("admin.supportIntro")}
+          </p>
         </div>
         <div className="text-xs text-gray-500 bg-gray-50 border rounded px-3 py-2">
-          <div className="font-semibold text-gray-700 mb-1">{t("admin.storageBackend")}</div>
+          <div className="font-semibold text-gray-700 mb-1">
+            {t("admin.storageBackend")}
+          </div>
           {process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME ? (
-            <div>R2 bucket ({(process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME).slice(0, 24)}…)</div>
+            <div>
+              R2 bucket (
+              {(
+                process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME
+              ).slice(0, 24)}
+              …)
+            </div>
           ) : process.env.CF_KV_NAMESPACE_ID ? (
-            <div>Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)</div>
+            <div>
+              Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)
+            </div>
           ) : (
             <div className="text-red-700">No R2/KV configured</div>
           )}
@@ -46,9 +60,15 @@ export default function AdminSupportTab({
           <div className="border rounded p-3 space-y-2 bg-gray-50">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-700">Tickets</h3>
-              {ticketsLoading && <span className="text-[11px] text-gray-500">{t("common.loading")}</span>}
+              {ticketsLoading && (
+                <span className="text-[11px] text-gray-500">
+                  {t("common.loading")}
+                </span>
+              )}
             </div>
-            {ticketsError && <p className="text-xs text-red-600">{ticketsError}</p>}
+            {ticketsError && (
+              <p className="text-xs text-red-600">{ticketsError}</p>
+            )}
             {tickets.length === 0 && !ticketsLoading ? (
               <p className="text-xs text-gray-500">{t("admin.noTickets")}</p>
             ) : (
@@ -65,7 +85,9 @@ export default function AdminSupportTab({
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-800 truncate">{ticket.title}</span>
+                      <span className="font-medium text-gray-800 truncate">
+                        {ticket.title}
+                      </span>
                       <span
                         className={`text-[11px] px-2 py-0.5 rounded-full capitalize ${
                           ticket.priority === "critical"
@@ -102,7 +124,11 @@ export default function AdminSupportTab({
                               : "admin.statusOpen",
                         )}
                       </span>
-                      <span>{new Date(ticket.updatedAt || ticket.createdAt).toLocaleString("sv-SE")}</span>
+                      <span>
+                        {new Date(
+                          ticket.updatedAt || ticket.createdAt,
+                        ).toLocaleString("sv-SE")}
+                      </span>
                     </div>
                   </button>
                 ))}
@@ -111,25 +137,39 @@ export default function AdminSupportTab({
           </div>
 
           <div className="border rounded p-3 space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">{t("admin.newTicket")}</h3>
+            <h3 className="text-sm font-semibold text-gray-700">
+              {t("admin.newTicket")}
+            </h3>
             <input
               type="text"
               className="w-full border rounded px-3 py-2 text-sm"
               placeholder={t("admin.ticketTitle")}
               value={newTicket.title}
-              onChange={(e) => setNewTicket((prev) => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setNewTicket((prev) => ({ ...prev, title: e.target.value }))
+              }
             />
             <textarea
               className="w-full border rounded px-3 py-2 text-sm min-h-[100px]"
               placeholder={t("admin.ticketDescription")}
               value={newTicket.description}
-              onChange={(e) => setNewTicket((prev) => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setNewTicket((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
             />
             <div className="flex items-center gap-2 text-sm">
               <label className="text-gray-600">{t("admin.priority")}:</label>
               <select
                 value={newTicket.priority}
-                onChange={(e) => setNewTicket((prev) => ({ ...prev, priority: e.target.value }))}
+                onChange={(e) =>
+                  setNewTicket((prev) => ({
+                    ...prev,
+                    priority: e.target.value,
+                  }))
+                }
                 className="border rounded px-2 py-1 text-sm"
               >
                 <option value="critical">{t("admin.priorityCritical")}</option>
@@ -137,11 +177,20 @@ export default function AdminSupportTab({
                 <option value="low">{t("admin.priorityLow")}</option>
               </select>
             </div>
-            {(process.env.NEXT_PUBLIC_BUILD_TIME || process.env.NEXT_PUBLIC_GIT_SHA) && (
+            {(process.env.NEXT_PUBLIC_BUILD_TIME ||
+              process.env.NEXT_PUBLIC_GIT_SHA) && (
               <div className="text-xs text-gray-400 bg-gray-50 rounded px-2 py-1">
-                <span className="font-medium text-gray-500">{t("admin.buildInfo")}:</span>{" "}
-                {process.env.NEXT_PUBLIC_BUILD_TIME ? new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString("sv-SE") : ""}
-                {process.env.NEXT_PUBLIC_GIT_SHA ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})` : ""}
+                <span className="font-medium text-gray-500">
+                  {t("admin.buildInfo")}:
+                </span>{" "}
+                {process.env.NEXT_PUBLIC_BUILD_TIME
+                  ? new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString(
+                      "sv-SE",
+                    )
+                  : ""}
+                {process.env.NEXT_PUBLIC_GIT_SHA
+                  ? ` (${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)})`
+                  : ""}
               </div>
             )}
             <button
@@ -159,13 +208,19 @@ export default function AdminSupportTab({
             <>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{selectedTicket.title}</h3>
-                  <p className="text-xs text-gray-500">{new Date(selectedTicket.createdAt).toLocaleString("sv-SE")}</p>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedTicket.title}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    {new Date(selectedTicket.createdAt).toLocaleString("sv-SE")}
+                  </p>
                 </div>
                 <select
                   className="border rounded px-2 py-1 text-sm"
                   value={selectedTicket.status}
-                  onChange={(e) => updateSupportTicket({ status: e.target.value })}
+                  onChange={(e) =>
+                    updateSupportTicket({ status: e.target.value })
+                  }
                 >
                   <option value="open">{t("admin.statusOpen")}</option>
                   <option value="will-fix">{t("admin.statusWillFix")}</option>
@@ -173,29 +228,48 @@ export default function AdminSupportTab({
                 </select>
               </div>
               {selectedTicket.description && (
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedTicket.description}</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {selectedTicket.description}
+                </p>
               )}
               {(selectedTicket.buildTime || selectedTicket.gitSha) && (
                 <p className="text-xs text-gray-400">
-                  <span className="font-medium text-gray-500">{t("admin.buildInfo")}:</span>{" "}
-                  {selectedTicket.buildTime ? new Date(selectedTicket.buildTime).toLocaleString("sv-SE") : ""}
-                  {selectedTicket.gitSha ? ` (${selectedTicket.gitSha.slice(0, 7)})` : ""}
+                  <span className="font-medium text-gray-500">
+                    {t("admin.buildInfo")}:
+                  </span>{" "}
+                  {selectedTicket.buildTime
+                    ? new Date(selectedTicket.buildTime).toLocaleString("sv-SE")
+                    : ""}
+                  {selectedTicket.gitSha
+                    ? ` (${selectedTicket.gitSha.slice(0, 7)})`
+                    : ""}
                 </p>
               )}
 
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-gray-700">{t("admin.comments")}</h4>
+                <h4 className="text-sm font-semibold text-gray-700">
+                  {t("admin.comments")}
+                </h4>
                 <div className="space-y-2 max-h-48 overflow-auto pr-1">
                   {(selectedTicket.comments || []).length === 0 ? (
-                    <p className="text-xs text-gray-500">{t("admin.noComments")}</p>
+                    <p className="text-xs text-gray-500">
+                      {t("admin.noComments")}
+                    </p>
                   ) : (
                     selectedTicket.comments.map((c) => (
-                      <div key={c.id} className="border rounded px-3 py-2 bg-gray-50 text-sm">
+                      <div
+                        key={c.id}
+                        className="border rounded px-3 py-2 bg-gray-50 text-sm"
+                      >
                         <div className="flex items-center justify-between text-[11px] text-gray-500">
                           <span>{c.author || "admin"}</span>
-                          <span>{new Date(c.createdAt).toLocaleString("sv-SE")}</span>
+                          <span>
+                            {new Date(c.createdAt).toLocaleString("sv-SE")}
+                          </span>
                         </div>
-                        <p className="text-gray-800 text-sm whitespace-pre-wrap mt-1">{c.text}</p>
+                        <p className="text-gray-800 text-sm whitespace-pre-wrap mt-1">
+                          {c.text}
+                        </p>
                       </div>
                     ))
                   )}
@@ -210,7 +284,9 @@ export default function AdminSupportTab({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => updateSupportTicket({ comment: commentText })}
+                      onClick={() =>
+                        updateSupportTicket({ comment: commentText })
+                      }
                       className="px-4 py-2 rounded bg-purple-700 text-white hover:bg-purple-800 text-sm disabled:opacity-50"
                       disabled={!commentText.trim()}
                     >
@@ -224,6 +300,76 @@ export default function AdminSupportTab({
             <p className="text-sm text-gray-500">{t("admin.noTickets")}</p>
           )}
         </div>
+      </div>
+
+      <div className="border rounded p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-800">
+            {t("admin.payments")}
+          </h3>
+          <div className="flex items-center gap-2">
+            <input
+              type="email"
+              value={paymentsEmail}
+              onChange={(e) => setPaymentsEmail(e.target.value)}
+              placeholder={t("admin.paymentsFilter")}
+              className="border rounded px-2 py-1 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => loadPayments(paymentsEmail)}
+              className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50 disabled:opacity-50"
+              disabled={paymentsLoading}
+            >
+              {paymentsLoading ? t("admin.running") : t("admin.paymentsReload")}
+            </button>
+          </div>
+        </div>
+        {payments.length === 0 ? (
+          <p className="text-sm text-gray-500">{t("admin.noPayments")}</p>
+        ) : (
+          <div className="max-h-80 overflow-auto border rounded">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-100 text-gray-600">
+                <tr>
+                  <th className="px-3 py-2 text-left">Date</th>
+                  <th className="px-3 py-2 text-left">Amount</th>
+                  <th className="px-3 py-2 text-left">Status</th>
+                  <th className="px-3 py-2 text-left">Email</th>
+                  <th className="px-3 py-2 text-left">Receipt</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {payments.map((p) => (
+                  <tr key={p.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2">
+                      {new Date(p.created).toLocaleString("sv-SE")}
+                    </td>
+                    <td className="px-3 py-2">
+                      {(p.amount / 100).toFixed(2)} {p.currency?.toUpperCase()}
+                    </td>
+                    <td className="px-3 py-2 capitalize">{p.status}</td>
+                    <td className="px-3 py-2">{p.email || "—"}</td>
+                    <td className="px-3 py-2">
+                      {p.receiptUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => downloadReceipt(p.id)}
+                          className="text-purple-700 underline text-left"
+                          disabled={downloading === p.id}
+                        >
+                          {downloading === p.id ? "Downloading…" : "Download"}
+                        </button>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { t } from "@/lib/i18n";
+import DebugLogPanel from "./DebugLogPanel";
 
 export default function AdminAdvancedTab({
   buildTimestamp,
@@ -25,12 +25,9 @@ export default function AdminAdvancedTab({
   setCommitsExpanded,
   purgeCache,
   triggerDeploy,
+  clientLogs,
+  setClientLogs,
 }) {
-  useEffect(() => {
-    console.log("[AdminAdvancedTab] mounted");
-    return () => console.log("[AdminAdvancedTab] unmounted");
-  }, []);
-
   return (
     <div className="border rounded p-5 space-y-6">
       <div className="flex items-center justify-between">
@@ -56,9 +53,7 @@ export default function AdminAdvancedTab({
           </button>
         </div>
       </div>
-      {purgeMessage && (
-        <p className="text-green-700 text-sm">{purgeMessage}</p>
-      )}
+      {purgeMessage && <p className="text-green-700 text-sm">{purgeMessage}</p>}
       {deployMessage && (
         <p className="text-green-700 text-sm">{deployMessage}</p>
       )}
@@ -69,7 +64,10 @@ export default function AdminAdvancedTab({
       )}
       {gitRevision && (
         <p className="text-xs text-gray-500">
-          Revision: <code className="bg-gray-100 px-1 rounded">{gitRevision.slice(0, 12)}</code>
+          Revision:{" "}
+          <code className="bg-gray-100 px-1 rounded">
+            {gitRevision.slice(0, 12)}
+          </code>
         </p>
       )}
       {lastDeployAt && (
@@ -80,10 +78,16 @@ export default function AdminAdvancedTab({
 
       {/* Storage configuration */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">{t("admin.storageBackend")}</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          {t("admin.storageBackend")}
+        </h3>
         <p className="text-xs text-gray-500">
-          Controls where course access rules, pricing, and user permissions are stored.
-          Set the <code className="bg-gray-100 px-1 rounded">COURSE_ACCESS_BACKEND</code> environment variable to change.
+          Controls where course access rules, pricing, and user permissions are
+          stored. Set the{" "}
+          <code className="bg-gray-100 px-1 rounded">
+            COURSE_ACCESS_BACKEND
+          </code>{" "}
+          environment variable to change.
         </p>
         <div className="grid gap-3 md:grid-cols-3">
           {[
@@ -115,7 +119,9 @@ export default function AdminAdvancedTab({
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${opt.active ? "bg-green-600" : "bg-gray-300"}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${opt.active ? "bg-green-600" : "bg-gray-300"}`}
+                />
                 <span className="font-medium text-sm">{opt.name}</span>
               </div>
               <p className="text-xs text-gray-500">{opt.desc}</p>
@@ -131,9 +137,12 @@ export default function AdminAdvancedTab({
 
       {/* Upload destination */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-gray-700">Upload destination</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          Upload destination
+        </h3>
         <p className="text-xs text-gray-500">
-          Choose where product files/images are stored. WordPress Media Library works without extra setup. S3/R2 requires credentials.
+          Choose where product files/images are stored. WordPress Media Library
+          works without extra setup. S3/R2 requires credentials.
         </p>
         <div className="flex flex-wrap gap-2">
           {[
@@ -158,7 +167,9 @@ export default function AdminAdvancedTab({
         </div>
         {!uploadInfo?.s3 && !uploadInfo?.r2 && (
           <p className="text-[11px] text-gray-500">
-            Configure S3/R2 credentials to enable direct uploads (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME, S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
+            Configure S3/R2 credentials to enable direct uploads
+            (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME,
+            S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
           </p>
         )}
         {uploadBackend !== "wordpress" && uploadInfoDetails && (
@@ -172,37 +183,49 @@ export default function AdminAdvancedTab({
             <p className="text-gray-600">{t("admin.uploadClientHint")}</p>
             <div className="grid sm:grid-cols-2 gap-2">
               <div>
-                <div className="text-[11px] text-gray-500">{t("admin.clientHost")}</div>
+                <div className="text-[11px] text-gray-500">
+                  {t("admin.clientHost")}
+                </div>
                 <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                   {uploadInfoDetails.endpoint || t("common.noDetails")}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-gray-500">{t("admin.clientBucket")}</div>
+                <div className="text-[11px] text-gray-500">
+                  {t("admin.clientBucket")}
+                </div>
                 <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                   {uploadInfoDetails.bucket || t("common.noDetails")}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-gray-500">{t("admin.clientAccessKey")}</div>
+                <div className="text-[11px] text-gray-500">
+                  {t("admin.clientAccessKey")}
+                </div>
                 <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                   {uploadInfoDetails.accessKeyId || t("common.noDetails")}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-gray-500">{t("admin.clientRegion")}</div>
+                <div className="text-[11px] text-gray-500">
+                  {t("admin.clientRegion")}
+                </div>
                 <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                   {uploadInfoDetails.region || "auto"}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-gray-500">{t("admin.clientPublicUrl")}</div>
+                <div className="text-[11px] text-gray-500">
+                  {t("admin.clientPublicUrl")}
+                </div>
                 <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                   {uploadInfoDetails.publicUrl || t("common.noDetails")}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-gray-500">{t("admin.clientNote")}</div>
+                <div className="text-[11px] text-gray-500">
+                  {t("admin.clientNote")}
+                </div>
                 <div className="text-[12px] bg-white border rounded px-2 py-1">
                   {t("admin.clientSecretNotShown")}
                 </div>
@@ -217,7 +240,9 @@ export default function AdminAdvancedTab({
 
       {/* Environment info */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">{t("admin.environment")}</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          {t("admin.environment")}
+        </h3>
         <div className="grid md:grid-cols-2 gap-3 text-xs">
           <div className="bg-gray-50 rounded p-3 space-y-1">
             <div className="font-medium text-gray-700">WordPress</div>
@@ -253,17 +278,22 @@ export default function AdminAdvancedTab({
             <div className="font-medium text-gray-700">Analytics</div>
             <div className="text-gray-500">
               {analyticsMode === "zone" ? (
-                <span className="text-green-700">Zone analytics (full) &mdash; CF_ZONE_ID set</span>
+                <span className="text-green-700">
+                  Zone analytics (full) &mdash; CF_ZONE_ID set
+                </span>
               ) : analyticsMode === "workers" ? (
-                <span className="text-amber-700">Workers analytics (basic) &mdash; no CF_ZONE_ID</span>
+                <span className="text-amber-700">
+                  Workers analytics (basic) &mdash; no CF_ZONE_ID
+                </span>
               ) : (
                 <span>Not configured &mdash; set CF_API_TOKEN</span>
               )}
             </div>
             {analyticsMode === "workers" && (
               <p className="text-[10px] text-gray-400 mt-1">
-                Add a custom domain (e.g. xtas.nu) to Cloudflare, route your Worker through it,
-                and set CF_ZONE_ID to unlock referrers, page views, unique visitors, and bandwidth.
+                Add a custom domain (e.g. xtas.nu) to Cloudflare, route your
+                Worker through it, and set CF_ZONE_ID to unlock referrers, page
+                views, unique visitors, and bandwidth.
               </p>
             )}
           </div>
@@ -273,14 +303,18 @@ export default function AdminAdvancedTab({
       {/* Recent commits */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">{t("admin.recentCommits")}</h3>
+          <h3 className="text-sm font-semibold text-gray-700">
+            {t("admin.recentCommits")}
+          </h3>
           {commits && (
             <button
               type="button"
               onClick={() => setCommitsExpanded(!commitsExpanded)}
               className="text-xs text-gray-500 hover:text-gray-700 underline"
             >
-              {commitsExpanded ? t("admin.commitsCompact") : t("admin.commitsFullMessages")}
+              {commitsExpanded
+                ? t("admin.commitsCompact")
+                : t("admin.commitsFullMessages")}
             </button>
           )}
         </div>
@@ -295,10 +329,16 @@ export default function AdminAdvancedTab({
                   <div key={c.sha}>
                     <div className="flex gap-2 items-baseline">
                       <span className="text-yellow-400 shrink-0">{c.sha}</span>
-                      <span className="text-gray-400 text-[10px] shrink-0">{c.date ? new Date(c.date).toLocaleDateString() : ""}</span>
-                      <span className="text-gray-500 text-[10px] truncate">{c.author}</span>
+                      <span className="text-gray-400 text-[10px] shrink-0">
+                        {c.date ? new Date(c.date).toLocaleDateString() : ""}
+                      </span>
+                      <span className="text-gray-500 text-[10px] truncate">
+                        {c.author}
+                      </span>
                     </div>
-                    <pre className="whitespace-pre-wrap text-gray-200 mt-1 pl-[4.5rem] leading-relaxed">{c.fullMessage || c.message}</pre>
+                    <pre className="whitespace-pre-wrap text-gray-200 mt-1 pl-[4.5rem] leading-relaxed">
+                      {c.fullMessage || c.message}
+                    </pre>
                   </div>
                 ))}
               </div>
@@ -317,6 +357,9 @@ export default function AdminAdvancedTab({
           <p className="text-xs text-gray-400">{t("admin.commitsLoading")}</p>
         ) : null}
       </div>
+
+      {/* ── Debug log panel ── */}
+      <DebugLogPanel clientLogs={clientLogs} setClientLogs={setClientLogs} />
     </div>
   );
 }
