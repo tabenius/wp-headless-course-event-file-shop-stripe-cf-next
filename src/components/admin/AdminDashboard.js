@@ -8,6 +8,7 @@ import ImageUploader from "./ImageUploader";
 import ProductRow from "./ProductRow";
 import ProductSection from "./ProductSection";
 import ImageGenerationPanel from "./ImageGenerationPanel";
+import ChatPanel from "./ChatPanel";
 import { adminFetch } from "@/lib/adminFetch";
 
 const log = (...args) => {
@@ -2902,76 +2903,14 @@ export default function AdminDashboard() {
 
       {/* ── Chat tab ── */}
       {activeTab === "chat" && (
-        <div className="border rounded p-4 space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
-            <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
-          </div>
-          <div className="space-y-3 max-h-[28rem] overflow-auto border rounded p-3 bg-white">
-            {chatMessages.length === 0 ? (
-              <div className="text-sm text-gray-500">{t("chat.empty")}</div>
-            ) : (
-              chatMessages.map((m, idx) => (
-                <div key={idx} className="space-y-1">
-                  <div className="text-xs uppercase tracking-wide text-gray-500">{m.role === "user" ? "You" : "AI"}</div>
-                  {m.type === "image-generation" ? (
-                    <ImageGenerationPanel
-                      initialPrompt={m.prompt}
-                      description=""
-                      onSave={null}
-                      context="chat"
-                      uploadBackend={uploadBackend}
-                    />
-                  ) : (
-                    <>
-                      <div className="whitespace-pre-wrap text-sm text-gray-900">{m.content}</div>
-                      {m.table && (
-                        <div className="text-[11px] text-gray-600 bg-gray-50 border rounded px-2 py-1 whitespace-pre-wrap font-mono">
-                          {m.table}
-                        </div>
-                      )}
-                      {m.sources && m.sources.length > 0 ? (
-                        <div className="text-[11px] text-gray-500 flex gap-2 flex-wrap">
-                          <span className="font-semibold">{t("chat.sources")}:</span>
-                          {m.sources.map((s, i) => (
-                            <a key={i} href={s.uri} className="underline" target="_blank" rel="noreferrer">
-                              {s.title || s.uri}
-                            </a>
-                          ))}
-                        </div>
-                      ) : m.role === "assistant" ? (
-                        <div className="text-[11px] text-gray-400">{t("chat.noSources")}</div>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendChat();
-                }
-              }}
-              placeholder={t("chat.placeholder")}
-              className="flex-1 border rounded px-3 py-2 text-sm"
-            />
-            <button
-              type="button"
-              onClick={sendChat}
-              disabled={chatLoading}
-              className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
-            >
-              {chatLoading ? t("admin.running") : t("chat.send")}
-            </button>
-          </div>
-        </div>
+        <ChatPanel
+          chatMessages={chatMessages}
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          sendChat={sendChat}
+          chatLoading={chatLoading}
+          uploadBackend={uploadBackend}
+        />
       )}
 
       {uploadProgress && (
