@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
+import ProductRow from "./ProductRow";
 import ProductSection from "./ProductSection";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 import { adminFetch } from "@/lib/adminFetch";
@@ -1574,7 +1575,7 @@ export default function AdminDashboard() {
               <ProductSection
                 label="WooCommerce"
                 items={wcProducts}
-                renderItem={(product) => {
+                renderItem={(product, index) => {
                   const isActive = selectedCourse === product.uri;
                   const configured = courses[product.uri];
                   const category = product.productCategories?.edges?.[0]?.node?.name;
@@ -1592,29 +1593,34 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="w-40 h-40 rounded bg-gray-100 shrink-0" />
                   );
-                  return {
-                    key: `wc-${product.uri}`,
-                    title: product.name,
-                    meta,
-                    image,
-                    onClick: () => handleSelection(product.uri),
-                    active: isActive,
-                    configured,
-                    badgeNode: configured ? (
-                      <span
-                        title={t("admin.configuredBadgeTooltip")}
-                        className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
-                      >
-                        {t("admin.configuredBadge")}
-                      </span>
-                    ) : undefined,
-                  };
+                  return (
+                    <ProductRow
+                      key={`wc-${product.uri}`}
+                      rowIndex={index}
+                      title={product.name}
+                      meta={meta}
+                      image={image}
+                      active={isActive}
+                      configured={configured}
+                      onClick={() => handleSelection(product.uri)}
+                      badgeNode={
+                        configured ? (
+                          <span
+                            title={t("admin.configuredBadgeTooltip")}
+                            className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
+                          >
+                            {t("admin.configuredBadge")}
+                          </span>
+                        ) : undefined
+                      }
+                    />
+                  );
                 }}
               />
               <ProductSection
                 label="LearnPress"
                 items={wpCourses}
-                renderItem={(course) => {
+                renderItem={(course, index) => {
                   const isActive = selectedCourse === course.uri;
                   const configured = courses[course.uri];
                   const meta = joinMeta([
@@ -1627,29 +1633,34 @@ export default function AdminDashboard() {
                       LP
                     </div>
                   );
-                  return {
-                    key: `lp-${course.uri}`,
-                    title: course.title,
-                    meta,
-                    image,
-                    onClick: () => handleSelection(course.uri),
-                    active: isActive,
-                    configured,
-                    badgeNode: configured ? (
-                      <span
-                        title={t("admin.configuredBadgeTooltip")}
-                        className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
-                      >
-                        {t("admin.configuredBadge")}
-                      </span>
-                    ) : undefined,
-                  };
+                  return (
+                    <ProductRow
+                      key={`lp-${course.uri}`}
+                      rowIndex={index}
+                      title={course.title}
+                      meta={meta}
+                      image={image}
+                      active={isActive}
+                      configured={configured}
+                      onClick={() => handleSelection(course.uri)}
+                      badgeNode={
+                        configured ? (
+                          <span
+                            title={t("admin.configuredBadgeTooltip")}
+                            className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
+                          >
+                            {t("admin.configuredBadge")}
+                          </span>
+                        ) : undefined
+                      }
+                    />
+                  );
                 }}
               />
               <ProductSection
                 label="Events"
                 items={wpEvents}
-                renderItem={(event) => {
+                renderItem={(event, index) => {
                   const isActive = selectedCourse === event.uri;
                   const configured = courses[event.uri];
                   const meta = joinMeta([event.uri]);
@@ -1664,23 +1675,28 @@ export default function AdminDashboard() {
                       EV
                     </div>
                   );
-                  return {
-                    key: `ev-${event.uri}`,
-                    title: event.title,
-                    meta,
-                    image,
-                    onClick: () => handleSelection(event.uri),
-                    active: isActive,
-                    configured,
-                    badgeNode: configured ? (
-                      <span
-                        title={t("admin.configuredBadgeTooltip")}
-                        className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
-                      >
-                        {t("admin.configuredBadge")}
-                      </span>
-                    ) : undefined,
-                  };
+                  return (
+                    <ProductRow
+                      key={`ev-${event.uri}`}
+                      rowIndex={index}
+                      title={event.title}
+                      meta={meta}
+                      image={image}
+                      active={isActive}
+                      configured={configured}
+                      onClick={() => handleSelection(event.uri)}
+                      badgeNode={
+                        configured ? (
+                          <span
+                            title={t("admin.configuredBadgeTooltip")}
+                            className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
+                          >
+                            {t("admin.configuredBadge")}
+                          </span>
+                        ) : undefined
+                      }
+                    />
+                  );
                 }}
               />
               <ProductSection
@@ -1712,39 +1728,46 @@ export default function AdminDashboard() {
                       </svg>
                     </div>
                   );
-                  return {
-                    key: `shop-${index}`,
-                    title: product.name || `${t("admin.product")} ${index + 1}`,
-                    meta,
-                    image,
-                    onClick: () => handleSelection(`__shop_${index}`),
-                    active: isActive,
-                    showBuyableIcon: false,
-                    badgeNode:
-                      product.active === false ? (
-                        <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded shrink-0">
-                          Inactive
-                        </span>
-                      ) : undefined,
-                  };
+                  return (
+                    <ProductRow
+                      key={`shop-${index}`}
+                      rowIndex={index}
+                      title={product.name || `${t("admin.product")} ${index + 1}`}
+                      meta={meta}
+                      image={image}
+                      active={isActive}
+                      onClick={() => handleSelection(`__shop_${index}`)}
+                      showBuyableIcon={false}
+                      badgeNode={
+                        product.active === false ? (
+                          <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded shrink-0">
+                            Inactive
+                          </span>
+                        ) : undefined
+                      }
+                    />
+                  );
                 }}
               />
               <ProductSection
                 label="Other"
                 items={otherCourseUris}
-                renderItem={(courseUri) => ({
-                  key: courseUri,
-                  title: courseUri,
-                  meta: "",
-                  image: (
-                    <div className="w-40 h-40 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-base font-bold">
-                      URI
-                    </div>
-                  ),
-                  onClick: () => handleSelection(courseUri),
-                  active: selectedCourse === courseUri,
-                  showBuyableIcon: false,
-                })}
+                renderItem={(courseUri, index) => (
+                  <ProductRow
+                    key={courseUri}
+                    rowIndex={index}
+                    title={courseUri}
+                    meta=""
+                    image={
+                      <div className="w-40 h-40 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-base font-bold">
+                        URI
+                      </div>
+                    }
+                    active={selectedCourse === courseUri}
+                    showBuyableIcon={false}
+                    onClick={() => handleSelection(courseUri)}
+                  />
+                )}
               />
               {/* Manual entry */}
               <div className="pt-2 flex gap-2">
