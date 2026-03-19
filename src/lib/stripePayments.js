@@ -65,10 +65,19 @@ async function stripeRequest(path, params = {}) {
 }
 
 function normaliseCharge(charge, fallbackEmail) {
+  const configuredCurrency = String(
+    process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+  ).toLowerCase();
+  const description =
+    charge.description ||
+    charge.metadata?.product_name ||
+    charge.metadata?.course_title ||
+    charge.metadata?.course_uri ||
+    "";
   return {
     id: charge.id,
     amount: charge.amount,
-    currency: charge.currency,
+    currency: configuredCurrency,
     status: charge.status,
     created: charge.created * 1000, // ms
     email:
@@ -80,7 +89,7 @@ function normaliseCharge(charge, fallbackEmail) {
     receiptId: charge.id, // always the charge ID, needed for receipt download
     paymentIntentId:
       typeof charge.payment_intent === "string" ? charge.payment_intent : null,
-    description: charge.description || "",
+    description,
   };
 }
 

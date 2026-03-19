@@ -222,6 +222,7 @@ The following features have been implemented for the chat feature:
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Improved Stripe purchase clarity by sending explicit payment-intent/line-item descriptions and mirrored metadata (`product_name`, `course_title`, etc.) during checkout, then updating admin payment normalization to use configured currency (default `SEK`) and metadata-backed description fallback when charge descriptions are empty.
 - **2026-03-19 (Codex)**: Product/Stripe reliability pass: normalized admin tab event payloads, blocked AltGraph from triggering Ctrl+Alt admin hotkeys, and tightened `/api/admin/payments` query parsing (`email` trim/lowercase, safe `limit` clamp, safe `from` parse).
 - **2026-03-19 (Codex)**: Fixed payments error UX regressions by adding missing `admin.paymentsLoadFailed`/`admin.paymentsRetryHint` and Stripe-specific error keys in EN/SV/ES; mapped backend Stripe error classes to explicit codes/messages so users no longer see raw `stripe_lookup_failed`.
 - **2026-03-19 (Codex)**: Hardened product visibility/access consistency: canonical URI normalization (strip trailing slash) in course access store + WordPress backend integration, fallback-compatible GraphQL handling for plugin versions lacking `active`, and storefront/paywall/checkout guards to hide or block inactive configured WP items.

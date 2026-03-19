@@ -13,6 +13,12 @@ export function isStripeEnabled() {
   return hasStripeConfig();
 }
 
+function labelForKind(kind) {
+  if (kind === "event") return "Event";
+  if (kind === "product") return "Product";
+  return "Course";
+}
+
 export async function createStripePaymentSession({
   itemName,
   priceCents,
@@ -20,6 +26,7 @@ export async function createStripePaymentSession({
   email,
   successUrl,
   cancelUrl,
+  description,
   metadata = {},
 }) {
   if (!hasStripeConfig()) {
@@ -38,9 +45,22 @@ export async function createStripePaymentSession({
     "line_items[0][price_data][product_data][name]",
     itemName || "Digital item",
   );
+  const paymentDescription = String(
+    description || itemName || "Digital item",
+  )
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 500);
+  payload.set("payment_intent_data[description]", paymentDescription);
+  payload.set(
+    "line_items[0][price_data][product_data][description]",
+    paymentDescription,
+  );
   payload.set("metadata[user_email]", email.toLowerCase());
+  payload.set("payment_intent_data[metadata][user_email]", email.toLowerCase());
   for (const [key, value] of Object.entries(metadata)) {
     payload.set(`metadata[${key}]`, String(value));
+    payload.set(`payment_intent_data[metadata][${key}]`, String(value));
   }
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -65,10 +85,11 @@ export async function createStripeCheckoutSession({
   cancelUrl,
   contentKind = "course",
 }) {
+  const kindLabel = labelForKind(contentKind);
+  const fallbackName = `${kindLabel} access: ${courseUri}`;
   return createStripePaymentSession({
-    itemName:
-      courseTitle ||
-      `${contentKind === "event" ? "Event" : "Course"} access: ${courseUri}`,
+    itemName: courseTitle || fallbackName,
+    description: courseTitle || fallbackName,
     priceCents,
     currency,
     email,
@@ -78,6 +99,7 @@ export async function createStripeCheckoutSession({
       purchase_kind: contentKind,
       course_uri: courseUri,
       course_title: courseTitle || "",
+      product_name: courseTitle || "",
     },
   });
 }

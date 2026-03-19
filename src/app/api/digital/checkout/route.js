@@ -44,6 +44,7 @@ export async function POST(request) {
 
     const checkout = await createStripePaymentSession({
       itemName: product.name,
+      description: `Digital product: ${product.name || product.id}`,
       priceCents: product.priceCents,
       currency: product.currency,
       email: session.user.email,

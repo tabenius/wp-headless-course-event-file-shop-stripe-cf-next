@@ -121,10 +121,13 @@ describe("compilePayments — output shape", () => {
    * object, mirroring exactly what compilePayments does in the .map() step.
    */
   function normalise(charge, fallbackEmail) {
+    const configuredCurrency = String(
+      process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+    ).toLowerCase();
     return {
       id: charge.payment_intent || charge.id,
       amount: charge.amount,
-      currency: charge.currency,
+      currency: configuredCurrency,
       status: charge.status,
       created: charge.created * 1000,
       email:
@@ -134,7 +137,12 @@ describe("compilePayments — output shape", () => {
         null,
       receiptUrl: charge.receipt_url || null,
       receiptId: charge.id,
-      description: charge.description || "",
+      description:
+        charge.description ||
+        charge.metadata?.product_name ||
+        charge.metadata?.course_title ||
+        charge.metadata?.course_uri ||
+        "",
     };
   }
 
@@ -198,6 +206,14 @@ describe("compilePayments — output shape", () => {
     assert.equal(normalise(charge).description, "");
   });
 
+  it("description falls back to metadata product_name", () => {
+    const charge = makeCharge({
+      description: null,
+      metadata: { product_name: "AI i praktiken" },
+    });
+    assert.equal(normalise(charge).description, "AI i praktiken");
+  });
+
   it("normalised output has exactly the expected keys", () => {
     const result = normalise(makeCharge());
     const keys = Object.keys(result).sort();
@@ -218,7 +234,7 @@ describe("compilePayments — output shape", () => {
     const charge = makeCharge({ amount: 12350, currency: "usd" });
     const out = normalise(charge);
     assert.equal(out.amount, 12350);
-    assert.equal(out.currency, "usd");
+    assert.equal(out.currency, "sek");
   });
 });
 
@@ -343,16 +359,24 @@ describe("compilePayments — edge cases", () => {
 
   it("handles charges with different currencies in a single list", () => {
     function normalise(charge) {
+      const configuredCurrency = String(
+        process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+      ).toLowerCase();
       return {
         id: charge.payment_intent || charge.id,
         amount: charge.amount,
-        currency: charge.currency,
+        currency: configuredCurrency,
         status: charge.status,
         created: charge.created * 1000,
         email: charge.receipt_email || charge.billing_details?.email || null,
         receiptUrl: charge.receipt_url || null,
         receiptId: charge.id,
-        description: charge.description || "",
+        description:
+          charge.description ||
+          charge.metadata?.product_name ||
+          charge.metadata?.course_title ||
+          charge.metadata?.course_uri ||
+          "",
       };
     }
     const charges = [
@@ -362,15 +386,18 @@ describe("compilePayments — edge cases", () => {
     ];
     const result = charges.map((c) => normalise(c));
     const currencies = result.map((r) => r.currency);
-    assert.deepEqual(currencies, ["usd", "sek", "eur"]);
+    assert.deepEqual(currencies, ["sek", "sek", "sek"]);
   });
 
   it("normalises a charge with all nullable fields without throwing", () => {
     function normalise(charge, fallbackEmail) {
+      const configuredCurrency = String(
+        process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+      ).toLowerCase();
       return {
         id: charge.payment_intent || charge.id,
         amount: charge.amount,
-        currency: charge.currency,
+        currency: configuredCurrency,
         status: charge.status,
         created: charge.created * 1000,
         email:
@@ -380,7 +407,12 @@ describe("compilePayments — edge cases", () => {
           null,
         receiptUrl: charge.receipt_url || null,
         receiptId: charge.id,
-        description: charge.description || "",
+        description:
+          charge.description ||
+          charge.metadata?.product_name ||
+          charge.metadata?.course_title ||
+          charge.metadata?.course_uri ||
+          "",
       };
     }
     const bare = {

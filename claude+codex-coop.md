@@ -410,3 +410,23 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `npx eslint src/lib/stripePayments.js src/app/api/admin/payments/route.js` passes.
   - `npm test` passes: 14/14.
   - Live worker still shows old error until deploy of this commit.
+
+---
+
+## 2026-03-19 (cont. 13)
+
+### Codex — Stripe receipt/product clarity + configured-currency display
+
+- **Checkout description wiring**:
+  - Updated Stripe checkout session creation to set `payment_intent_data[description]` and `line_items[0][price_data][product_data][description]` so Stripe receipts/charges carry a clear purchased-item label.
+  - Mirrored metadata onto payment intent metadata (`payment_intent_data[metadata][*]`) in addition to session metadata for stronger downstream traceability.
+  - Added `product_name` metadata for course/event checkout, and explicit description for digital product checkout (`Digital product: ...`).
+- **Payments normalization update**:
+  - Admin payments now always report configured currency (`DEFAULT_COURSE_FEE_CURRENCY`, fallback `SEK`) instead of raw per-charge Stripe currency values.
+  - Payment description now falls back to Stripe metadata fields (`product_name`, `course_title`, `course_uri`) when `charge.description` is empty.
+- **Tests**:
+  - Updated `tests/stripe-payments.test.js` to match configured-currency behavior and metadata-description fallback.
+  - Added assertion for metadata-driven description fallback.
+- **Validation**:
+  - `npx eslint src/lib/stripe.js src/lib/stripePayments.js src/app/api/digital/checkout/route.js tests/stripe-payments.test.js` passes.
+  - `npm test -- tests/stripe-payments.test.js` passes (full suite still green at 14/14).
