@@ -88,6 +88,17 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 
 - Shifted `ARTICULATE STOREFRONT` back by `0.25rem` in `AdminHeader` (`marginLeft: 1.5rem -> 1.25rem`) to refine visual balance under `RAGBAZ`.
 
+## 2026-03-19 (cont. 44)
+
+### Codex — measured subtitle alignment against RAGBAZ edges
+
+- Reworked `AdminHeader` logo lockup so subtitle alignment is no longer static-offset-only:
+  - wrapped `RAGBAZ` wordmark and subtitle with refs,
+  - added width-measure effect on mount/resize/locale change,
+  - computes `subtitleScaleX` from `RAGBAZ` width ÷ subtitle base width and applies bounded `scaleX` transform.
+- Kept subtitle left edge aligned with `RAGBAZ` left offset (`1.5rem`) and made subtitle base text slightly larger (`9.5px`) for a closer edge-to-edge fit.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

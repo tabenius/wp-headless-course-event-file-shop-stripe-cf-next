@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Upgraded header logo subtitle alignment logic: `ARTICULATE STOREFRONT` now left-aligns to `RAGBAZ` baseline offset and auto-scales on mount/resize (via measured width ratio) so subtitle width tracks both left and right edges of the wordmark more precisely.
 - **2026-03-19 (Codex)**: Fine-tuned header subtitle alignment by shifting `ARTICULATE STOREFRONT` back `0.25rem` (from `1.5rem` to `1.25rem` left offset) for tighter logo lockup balance.
 - **2026-03-19 (Codex)**: Continued product-image uploader hardening: made image pickers visually explicit/clickable (stronger frame, visible upload label, focus ring), and wired image uploads to respect the selected `uploadBackend` (WordPress/R2/S3) by passing backend through `ImagePickerButton` → `ImageUploader` → `/api/admin/upload`.
 - **2026-03-19 (Codex)**: Header/Products micro-polish pass: changed sun/moon icon outline from pure black to dark gray for softer contrast, shifted `ARTICULATE STOREFRONT` subtitle another `0.5rem` right, and fixed a non-localized Products empty-state string by moving it to i18n keys in EN/SV/ES.

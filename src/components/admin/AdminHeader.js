@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { t, getLocale, setLocale } from "@/lib/i18n";
@@ -115,6 +115,9 @@ export default function AdminHeader({ logoUrl }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [healthState, setHealthState] = useState("amber");
   const [showHealthTooltip, setShowHealthTooltip] = useState(false);
+  const ragbazWordmarkRef = useRef(null);
+  const subtitleRef = useRef(null);
+  const [subtitleScaleX, setSubtitleScaleX] = useState(1);
   const log = (...args) => console.info("[AdminHeader]", ...args);
   const toggleTheme = useCallback(() => {
     const next = adminTheme === "gruvbox" ? "light" : "gruvbox";
@@ -204,6 +207,32 @@ export default function AdminHeader({ logoUrl }) {
     return () => window.removeEventListener("keydown", onGlobalHotkey);
   }, [toggleTheme]);
 
+  useEffect(() => {
+    function alignSubtitleWidth() {
+      const wordmark = ragbazWordmarkRef.current;
+      const subtitle = subtitleRef.current;
+      if (!wordmark || !subtitle) return;
+      const targetWidth = wordmark.getBoundingClientRect().width;
+      const baseWidth =
+        subtitle.scrollWidth || subtitle.getBoundingClientRect().width;
+      if (!targetWidth || !baseWidth) return;
+      const nextScale = Math.max(0.88, Math.min(1.35, targetWidth / baseWidth));
+      setSubtitleScaleX((prev) =>
+        Math.abs(prev - nextScale) < 0.005 ? prev : nextScale,
+      );
+    }
+
+    alignSubtitleWidth();
+    const raf = window.requestAnimationFrame(alignSubtitleWidth);
+    const timeoutId = window.setTimeout(alignSubtitleWidth, 120);
+    window.addEventListener("resize", alignSubtitleWidth);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("resize", alignSubtitleWidth);
+    };
+  }, [localeState]);
+
   if (pathname === "/admin/login") return null;
 
   async function logoutAdmin() {
@@ -263,18 +292,26 @@ export default function AdminHeader({ logoUrl }) {
               className="flex flex-col items-start justify-center gap-0.5 text-white/95 hover:text-white transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
-              <RagbazLogo
-                wordmarkOnly
-                noLetterSpacing
-                scale={1.75}
-                color="#3ecbff"
-                outlineColor="#000000"
-                outlineWidth={1}
-                className="ml-6"
-              />
+              <span ref={ragbazWordmarkRef} className="ml-6 inline-flex">
+                <RagbazLogo
+                  wordmarkOnly
+                  noLetterSpacing
+                  scale={1.75}
+                  color="#3ecbff"
+                  outlineColor="#000000"
+                  outlineWidth={1}
+                />
+              </span>
               <span
-                className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-black"
-                style={{ marginLeft: "1.25rem", marginTop: "2px" }}
+                ref={subtitleRef}
+                className="whitespace-nowrap font-semibold uppercase tracking-[0.11em] leading-none text-black"
+                style={{
+                  marginLeft: "1.5rem",
+                  marginTop: "2px",
+                  fontSize: "9.5px",
+                  transform: `scaleX(${subtitleScaleX})`,
+                  transformOrigin: "left center",
+                }}
               >
                 ARTICULATE STOREFRONT
               </span>
