@@ -21,10 +21,15 @@ export async function buildIndex(force = false) {
 
   const data = await fetchGraphQL(
     `query RagbazIndex {
-      posts(first: 10) { edges { node { id uri title content } } }
-      pages(first: 10) { edges { node { id uri title content } } }
-      events(first: 10) { edges { node { id uri title content } } }
-      lpCourses(first: 10) { edges { node { id uri title content } } }
+      posts(first: 20) { edges { node { id uri title excerpt content } } }
+      pages(first: 20) { edges { node { id uri title excerpt content } } }
+      events(first: 20) { edges { node { id uri title excerpt content } } }
+      lpCourses(first: 20) { edges { node { id uri title excerpt content } } }
+      products(first: 20, where: { status: "publish" }) { edges { node {
+        ... on SimpleProduct   { id: databaseId uri: slug name shortDescription content: description }
+        ... on VariableProduct { id: databaseId uri: slug name shortDescription content: description }
+        ... on ExternalProduct { id: databaseId uri: slug name shortDescription content: description }
+      } } }
     }`,
     {},
     120,
@@ -38,6 +43,17 @@ export async function buildIndex(force = false) {
       ...e.node,
       kind: "course",
     })),
+    ...(data?.products?.edges || [])
+      .map((e) => e.node)
+      .filter((n) => n?.name)
+      .map((n) => ({
+        id: String(n.id),
+        uri: n.uri ? `/product/${n.uri}` : "/shop",
+        title: n.name,
+        excerpt: n.shortDescription || "",
+        content: n.content || n.shortDescription || "",
+        kind: "product",
+      })),
   ];
   manuals.forEach((manual) => {
     nodes.push({
@@ -51,10 +67,16 @@ export async function buildIndex(force = false) {
 
   const chunks = [];
   for (const n of nodes) {
-    const text = stripHtml(n.content || "")
+    const excerpt = stripHtml(n.excerpt || n.shortDescription || "")
       .replace(/\s+/g, " ")
       .trim();
-    const base = `${n.title || ""}\n\n${text}`;
+    const body = stripHtml(n.content || "")
+      .replace(/\s+/g, " ")
+      .trim();
+    // Lead with excerpt/short description so it appears in every chunk;
+    // append full body for deep retrieval.
+    const combined = [excerpt, body].filter(Boolean).join("\n\n");
+    const base = `${n.title || ""}\n\n${combined}`;
     for (const chunk of chunkText(base)) {
       chunks.push({
         id: `${n.id}-${chunks.length}`,
