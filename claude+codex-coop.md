@@ -11,6 +11,14 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 49)
+
+### Codex — theme icon saturation pass (sun/moon)
+
+- Updated `AdminHeader` theme-toggle glyph color to fully saturated yellow (`#ffff00`) for both sun/moon states.
+- Kept explicit black hover color (`hover:text-black`) to provide a clear contrast flip on pointer hover.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 35)
 
 ### Codex — logo alignment and theme-icon visibility tweak

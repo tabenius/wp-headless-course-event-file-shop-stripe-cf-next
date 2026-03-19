@@ -322,7 +322,7 @@ export default function AdminHeader({ logoUrl }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="px-1 text-[1.35rem] leading-none text-[#ffd100] hover:text-[#fff27a] focus:outline-none focus:ring-2 focus:ring-white/80"
+              className="px-1 text-[1.35rem] leading-none text-[#ffff00] hover:!text-black transition-colors focus:outline-none focus:ring-2 focus:ring-white/80"
               aria-label={
                 adminTheme === "gruvbox"
                   ? t("admin.themeLight", "Switch to light theme")
