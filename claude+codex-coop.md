@@ -644,3 +644,19 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Also fixed header logo text overlap by increasing brand-link gap and enforcing no-wrap for `ARTICULATE STOREFRONT` in `src/components/admin/AdminHeader.js`.
 - Validation:
   - `npx eslint src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js`
+
+---
+
+## 2026-03-19 (cont. 20)
+
+### Codex — additional TDZ sweep and fix
+
+- Ran targeted TDZ sweep on admin code and broad source sweep with:
+  - `npx eslint src/components/admin/*.js --rule 'no-use-before-define:[...,variables:true]'`
+  - `npx eslint "src/**/*.js" --ignore-pattern "src/.next/**" --rule 'no-use-before-define:[...,variables:true]'`
+- Found one additional real TDZ-use in source:
+  - `setUploadInfoDetails` used in `loadUploadInfo` before the state hook declaration in `AdminDashboard`.
+- Fix applied:
+  - Moved `const [uploadInfoDetails, setUploadInfoDetails] = useState(null);` up into the primary state-hook block before `loadUploadInfo` callback definition.
+- Result:
+  - No remaining source-level TDZ errors under the strict `no-use-before-define` check (excluding `.next` compiled artifacts).

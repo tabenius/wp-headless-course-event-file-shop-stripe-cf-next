@@ -524,6 +524,7 @@ export default function AdminDashboard() {
     s3: false,
     r2: false,
   });
+  const [uploadInfoDetails, setUploadInfoDetails] = useState(null);
   const [uploadBackend, setUploadBackend] = useState("wordpress");
   const [shopVisibleTypes, setShopVisibleTypes] = useState([
     "product",
@@ -1601,7 +1602,6 @@ export default function AdminDashboard() {
 
   const [uploadProgress, setUploadProgress] = useState(null);
   const [uploadingField, setUploadingField] = useState(null);
-  const [uploadInfoDetails, setUploadInfoDetails] = useState(null);
 
   async function uploadFile(index, field) {
     const input = document.createElement("input");
