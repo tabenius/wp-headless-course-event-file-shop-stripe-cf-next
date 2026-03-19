@@ -5,6 +5,7 @@ export default function RagbazLogo({
   includeStoreFront = true,
   color = "#39b6f2",
   size = "normal",
+  scale = 1,
   wordmarkOnly = false,
   noLetterSpacing = false,
 }) {
@@ -16,6 +17,11 @@ export default function RagbazLogo({
     : isDouble
       ? "21.6ch"
       : "10.8ch";
+
+  const sizeScale =
+    typeof scale === "number" && Number.isFinite(scale) && scale > 0
+      ? scale
+      : 1;
 
   const fontSize = isDouble
     ? {
@@ -29,6 +35,10 @@ export default function RagbazLogo({
         storefront: "0.67rem",
       };
 
+  const ragbazSize = `${Number.parseFloat(fontSize.ragbaz) * sizeScale}rem`;
+  const articulateSize = `${Number.parseFloat(fontSize.articulate) * sizeScale}rem`;
+  const storefrontSize = `${Number.parseFloat(fontSize.storefront) * sizeScale}rem`;
+
   const ragbazLetterSpacing = noLetterSpacing ? "0" : "0.24em";
   const articulateLetterSpacing = noLetterSpacing ? "0" : "0.135em";
   const storefrontLetterSpacing = noLetterSpacing ? "0" : "0.34em";
@@ -38,8 +48,8 @@ export default function RagbazLogo({
       <div className={`inline-flex items-center leading-[0.92] ${className}`}>
         <span
           className="block uppercase font-black"
-          style={{
-            fontSize: fontSize.ragbaz,
+        style={{
+            fontSize: ragbazSize,
             textAlign: "center",
             letterSpacing: ragbazLetterSpacing,
             transform: "scaleX(1.12)",
@@ -61,7 +71,7 @@ export default function RagbazLogo({
         className="block uppercase font-black"
         style={{
           width: lineWidth,
-          fontSize: fontSize.ragbaz,
+          fontSize: ragbazSize,
           textAlign: "center",
           letterSpacing: ragbazLetterSpacing,
           transform: "scaleX(1.12)",
@@ -77,7 +87,7 @@ export default function RagbazLogo({
         className="block -mt-[0.12rem] font-medium"
         style={{
           width: lineWidth,
-          fontSize: fontSize.articulate,
+          fontSize: articulateSize,
           textAlign: "center",
           letterSpacing: articulateLetterSpacing,
           transform: "scaleX(1.2)",
@@ -94,7 +104,7 @@ export default function RagbazLogo({
           className="block -mt-[0.06rem] font-semibold"
           style={{
             width: lineWidth,
-            fontSize: fontSize.storefront,
+            fontSize: storefrontSize,
             textAlign: "center",
             letterSpacing: storefrontLetterSpacing,
             transform: "scaleX(1.26)",

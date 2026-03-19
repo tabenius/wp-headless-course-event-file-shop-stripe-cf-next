@@ -677,3 +677,17 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `showR2Docs` / `showS3Docs` now map strictly to resolved backend mode.
 - Validation:
   - `npx eslint src/components/admin/AdminStorageTab.js`
+
+---
+
+## 2026-03-19 (cont. 22)
+
+### Codex — menu logo stack redesign
+
+- Updated header brand block to remove persistent overlap concerns:
+  - Increased `RAGBAZ` size via `RagbazLogo` `scale` prop (`1.75`).
+  - Changed layout from horizontal lockup to vertical stack.
+  - Positioned `ARTICULATE STOREFRONT` directly below `RAGBAZ` in white, tighter subtitle sizing for visual balance inside the menu bar.
+- Added generic `scale` support to `RagbazLogo` so size increases affect actual layout width/height rather than relying on CSS transform scaling in the header.
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js src/components/admin/RagbazLogo.js`

@@ -254,15 +254,15 @@ export default function AdminHeader({ logoUrl }) {
             </div>
             <Link
               href="/admin#/welcome"
-              className="flex items-center gap-4 text-white/95 hover:text-white transition-colors"
+              className="flex flex-col items-start justify-center gap-0.5 text-white/95 hover:text-white transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
               <RagbazLogo
                 wordmarkOnly
                 noLetterSpacing
-                className="origin-left scale-[1.25]"
+                scale={1.75}
               />
-              <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-white">
+              <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white">
                 ARTICULATE STOREFRONT
               </span>
             </Link>
