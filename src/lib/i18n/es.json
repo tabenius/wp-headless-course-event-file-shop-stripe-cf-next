@@ -327,7 +327,10 @@
     "trafficUniques": "Visitantes únicos",
     "trafficBandwidth": "Ancho de banda",
     "trafficSubrequests": "Subsolicitudes",
-    "trafficErrors": "Errores"
+    "trafficErrors": "Errores",
+    "requestsPerHour": "Solicitudes por hora",
+    "now": "Ahora",
+    "topReferrers": "Principales referencias"
   },
   "chat": {
     "title": "Chat",

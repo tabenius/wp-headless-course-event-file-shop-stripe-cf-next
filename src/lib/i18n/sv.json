@@ -327,7 +327,10 @@
     "trafficUniques": "Unika besökare",
     "trafficBandwidth": "Bandbredd",
     "trafficSubrequests": "Underförfrågningar",
-    "trafficErrors": "Fel"
+    "trafficErrors": "Fel",
+    "requestsPerHour": "Förfrågningar per timme",
+    "now": "Nu",
+    "topReferrers": "Topp-hänvisningar"
   },
   "chat": {
     "title": "Chat",

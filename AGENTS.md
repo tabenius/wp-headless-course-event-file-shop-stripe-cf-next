@@ -125,65 +125,9 @@ Full list in `.env.example`.
 
 ## Current priorities (update as needed)
 
-### [Codex] Refactor AdminStatsTab — extract chart rendering into StatsChart
+### [Codex] Refactor AdminStatsTab — extract chart rendering into StatsChart (completed)
 
-**Goal:** Pull the two chart blocks out of `AdminStatsTab.js` into a focused `StatsChart.js` component. `AdminStatsTab` becomes a thin shell that passes data down; all rendering logic lives in `StatsChart`.
-
-**Files to touch:**
-- Create: `src/components/admin/StatsChart.js`
-- Modify: `src/components/admin/AdminStatsTab.js`
-- Create: `tests/stats-chart.test.js`
-
-**What to extract into `StatsChart.js`:**
-The component at `AdminStatsTab.js:98-157` renders two charts inside `<div className="grid md:grid-cols-2 gap-4">`:
-1. **Hourly bar chart** (lines 100-121): CSS bar chart of `analytics.hourly[]`, uses `h.requests`, colours bars blue, shows hour labels below.
-2. **Top referrers bar chart** (lines 123-147): horizontal bars for `analytics.referrers[]`, green bars, truncated host label, count on the right. Only shown in `analyticsMode === "zone"`.
-3. **Workers-mode upgrade hint** (lines 149-156): plain text shown when `analyticsMode === "workers"`.
-
-**Proposed `StatsChart` props:**
-```js
-// analytics  — the analytics object from AdminStatsTab (has .hourly[], .referrers[], .totals)
-// analyticsMode — "zone" | "workers"
-export default function StatsChart({ analytics, analyticsMode }) { ... }
-```
-
-**`AdminStatsTab` after refactor:**
-- Keep the quick-stats grid (lines 24-45) unchanged.
-- Keep the analytics totals grid (lines 60-96) unchanged.
-- Replace lines 98-157 with `<StatsChart analytics={analytics} analyticsMode={analyticsMode} />`.
-- Add `import StatsChart from "./StatsChart"` at the top.
-- The outer analytics/not-configured guards (lines 48-166) stay in `AdminStatsTab`.
-
-**Tests (`tests/stats-chart.test.js`):**
-Use `node:test` and `node:assert/strict` (no Jest/Vitest). Since `StatsChart` is a React component, test the **pure data-transformation logic** extracted from it, not the JSX. Specifically:
-- `maxOf(arr, key)` — returns `Math.max(...arr.map(x => x[key]), 1)`; returns 1 for empty array.
-- `barHeight(value, max)` — returns `(value / max) * 100` as a percentage number.
-- `formatHour(isoString)` — returns `"HH:00"` string from an ISO timestamp.
-
-Extract these three helpers as **named exports** from `StatsChart.js` so the test file can import them:
-```js
-export function maxOf(arr, key) { ... }
-export function barHeight(value, max) { ... }
-export function formatHour(isoString) { ... }
-```
-
-The default export is still the React component; it uses these helpers internally.
-
-**Test cases to cover:**
-- `maxOf([{r:5},{r:3},{r:8}], "r")` → `8`
-- `maxOf([], "r")` → `1`
-- `barHeight(50, 100)` → `50`
-- `barHeight(0, 100)` → `0`
-- `barHeight(5, 5)` → `100`
-- `formatHour("2026-03-19T14:30:00Z")` → `"14:00"`
-- `formatHour("2026-03-19T00:00:00Z")` → `"0:00"`
-
-**Acceptance criteria:**
-- `npm test` passes (all existing + new tests green).
-- `npm run build` exits 0.
-- `AdminStatsTab` renders identically to before (no visual change).
-- Commit message: `refactor: extract StatsChart component from AdminStatsTab`.
-- Append a bullet to `claude+codex-coop.md` and mark this priority done in `AGENTS.md`.
+- Completed 2026-03-19: `AdminStatsTab` now renders a new `StatsChart` component; the helper math (maxOf, barHeight, formatHour) lives in `StatsChart.helpers.js`, and dedicated `tests/stats-chart.test.js` verifies their behavior.
 
 ---
 
