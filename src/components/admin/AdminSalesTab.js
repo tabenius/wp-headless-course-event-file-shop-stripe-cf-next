@@ -87,6 +87,7 @@ export default function AdminSalesTab({
   loadPayments,
   paymentsLoading,
   paymentsError,
+  paymentsErrorCode,
   paymentsStripeConfigured,
   paymentsEmptyReason,
   downloadReceipt,
@@ -217,7 +218,7 @@ export default function AdminSalesTab({
       </div>
 
       {/* ── Error banner ── */}
-      {paymentsError && (
+      {paymentsError && !isLoading && (
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -231,7 +232,14 @@ export default function AdminSalesTab({
               clipRule="evenodd"
             />
           </svg>
-          <span>{paymentsError}</span>
+          <span>
+            {paymentsError}
+            {paymentsErrorCode ? (
+              <span className="ml-2 text-xs text-red-500">
+                ({paymentsErrorCode})
+              </span>
+            ) : null}
+          </span>
         </div>
       )}
 
@@ -290,6 +298,34 @@ export default function AdminSalesTab({
             />
           </svg>
           {t("admin.running", "Loading…")}
+        </div>
+      ) : paymentsError ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-8 h-8 text-red-400"
+            >
+              <path
+                fillRule="evenodd"
+                d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zM12 7.5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0112 7.5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-700">
+              {t("admin.paymentsLoadFailed", "Could not load payments.")}
+            </p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">
+              {t(
+                "admin.paymentsRetryHint",
+                "Try reloading. If this persists, verify Stripe credentials and API access.",
+              )}
+            </p>
+          </div>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">

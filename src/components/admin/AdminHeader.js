@@ -11,14 +11,27 @@ import {
 } from "@/lib/adminHotkeys";
 import RagbazLogo from "./RagbazLogo";
 
+const ADMIN_TAB_SET = new Set([
+  "welcome",
+  "sales",
+  "stats",
+  "storage",
+  "products",
+  "chat",
+  "health",
+  "style",
+  "info",
+  "support",
+]);
+
 function parseTabHash(hashValue) {
   const normalized = String(hashValue || "")
     .replace(/^#\/?/, "")
     .split(/[/?&]/)[0]
     .trim()
     .toLowerCase();
-  if (normalized === "sandbox") return "info";
-  return normalized;
+  const tab = normalized === "sandbox" ? "info" : normalized;
+  return ADMIN_TAB_SET.has(tab) ? tab : null;
 }
 
 function getNavItems() {
@@ -226,18 +239,6 @@ export default function AdminHeader({ logoUrl }) {
                 <span className="block h-0.5 w-4 bg-white" />
               </span>
             </button>
-            <Link
-              href="/admin#/welcome"
-              className="flex items-center gap-3 text-white text-sm"
-              aria-label={t("admin.headerAria", "Goto admin home")}
-            >
-              <RagbazLogo includeStoreFront className="shrink-0" />
-              {logoUrl && (
-                <span className="text-sm text-indigo-100 font-light">
-                  {t("admin.headerSub", "Control room")}
-                </span>
-              )}
-            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -392,6 +393,15 @@ export default function AdminHeader({ logoUrl }) {
           )}
         </div>
       </div>
+      {pathname !== "/admin/login" && (
+        <Link
+          href="/admin#/welcome"
+          className="fixed left-[2em] top-[calc(3.5rem+2em)] z-30 text-white/95 hover:text-white transition-colors"
+          aria-label={t("admin.headerAria", "Goto admin home")}
+        >
+          <RagbazLogo includeStoreFront size="2x" />
+        </Link>
+      )}
     </header>
   );
 }

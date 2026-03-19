@@ -437,6 +437,7 @@ export default function AdminDashboard() {
   const [wpEvents, setWpEvents] = useState([]);
   const [storage, setStorage] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedCourseActive, setSelectedCourseActive] = useState(true);
   const [price, setPrice] = useState("0.00");
   const [currency, setCurrency] = useState("SEK");
   const [allowedUsers, setAllowedUsers] = useState([]);
@@ -458,6 +459,7 @@ export default function AdminDashboard() {
     if (typeof window === "undefined") return "welcome";
     return parseTabFromHash(window.location.hash) || "welcome";
   });
+  const activeTabRef = useRef(activeTab);
   const [welcomeStoryVisible, setWelcomeStoryVisible] = useState(true);
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
@@ -518,6 +520,7 @@ export default function AdminDashboard() {
   const [paymentsEmail, setPaymentsEmail] = useState("");
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState("");
+  const [paymentsErrorCode, setPaymentsErrorCode] = useState("");
   const [paymentsStripeConfigured, setPaymentsStripeConfigured] = useState(true);
   const [paymentsEmptyReason, setPaymentsEmptyReason] = useState(null);
   const [downloading, setDownloading] = useState(null);
@@ -529,6 +532,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     log("activeTab", activeTab);
+    activeTabRef.current = activeTab;
   }, [activeTab]);
 
   useEffect(() => {
@@ -585,7 +589,17 @@ export default function AdminDashboard() {
     if (typeof window === "undefined") return undefined;
     function onHashChange() {
       const tab = parseTabFromHash(window.location.hash);
-      if (!tab) return;
+      if (!tab) {
+        const fallback = ADMIN_TAB_SET.has(activeTabRef.current)
+          ? activeTabRef.current
+          : "welcome";
+        const expected = `#/${fallback}`;
+        if (window.location.hash !== expected) {
+          const nextUrl = `${window.location.pathname}${window.location.search}${expected}`;
+          window.history.replaceState(null, "", nextUrl);
+        }
+        return;
+      }
       setActiveTab(tab);
       window.dispatchEvent(
         new CustomEvent("admin:switchTab", { detail: tab }),
@@ -793,6 +807,9 @@ export default function AdminDashboard() {
   const loadPayments = useCallback(
     async (emailFilter) => {
       setPaymentsLoading(true);
+      setPaymentsError("");
+      setPaymentsErrorCode("");
+      setPaymentsEmptyReason(null);
       try {
         const url = new URL("/api/admin/payments", window.location.origin);
         if (emailFilter) url.searchParams.set("email", emailFilter);
@@ -800,13 +817,16 @@ export default function AdminDashboard() {
         const json = await res.json();
         setPaymentsStripeConfigured(json?.stripeConfigured !== false);
         setPaymentsEmptyReason(json?.emptyReason || null);
-        if (!res.ok || !json?.ok)
-          throw new Error(json?.error || "Failed to load payments");
+        if (!res.ok || !json?.ok) {
+          const err = new Error(json?.error || "Failed to load payments");
+          err.code = json?.code || `http_${res.status}`;
+          throw err;
+        }
         setPayments(json.payments || []);
-        setPaymentsError("");
         setLoaded((s) => ({ ...s, payments: true }));
       } catch (err) {
         setPaymentsError(err.message || "Failed to load payments");
+        setPaymentsErrorCode(err.code || "payments_load_failed");
       } finally {
         setPaymentsLoading(false);
       }
@@ -824,7 +844,7 @@ export default function AdminDashboard() {
       loadAnalytics();
       loadDeploy();
     }
-    if (activeTab === "shop") {
+    if (activeTab === "products") {
       loadShopSettings();
     }
     if (activeTab === "support") {
@@ -1101,6 +1121,7 @@ export default function AdminDashboard() {
     if (isShopSelection && selectedShopProduct) {
       setPrice(toCurrencyUnits(selectedShopProduct.priceCents ?? 0));
       setCurrency((selectedShopProduct.currency || "SEK").toUpperCase());
+      setSelectedCourseActive(true);
       const uri =
         selectedShopProduct.type === "course"
           ? selectedShopProduct.courseUri
@@ -1122,6 +1143,7 @@ export default function AdminDashboard() {
     if (config) {
       setPrice(toCurrencyUnits(config.priceCents ?? 0));
       setCurrency((config.currency || "SEK").toUpperCase());
+      setSelectedCourseActive(config.active !== false);
       setAllowedUsers(
         Array.isArray(config.allowedUsers) ? config.allowedUsers : [],
       );
@@ -1144,6 +1166,7 @@ export default function AdminDashboard() {
     } else {
       setPrice("");
     }
+    setSelectedCourseActive(true);
     setCurrency("SEK");
     setAllowedUsers([]);
   }, [
@@ -1318,6 +1341,7 @@ export default function AdminDashboard() {
       // Save access config if there's a content URI
       const uri = accessUri;
       if (uri) {
+        const nextActive = isShopSelection ? undefined : selectedCourseActive;
         const res = await fetch("/api/admin/course-access", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -1326,6 +1350,7 @@ export default function AdminDashboard() {
             allowedUsers,
             priceCents: toCents(price),
             currency,
+            ...(typeof nextActive === "boolean" ? { active: nextActive } : {}),
           }),
         });
         const json = await res.json();
@@ -1624,6 +1649,8 @@ export default function AdminDashboard() {
             userSearch={userSearch}
             setUserSearch={setUserSearch}
             users={users}
+            selectedCourseActive={selectedCourseActive}
+            setSelectedCourseActive={setSelectedCourseActive}
             allowedUsers={allowedUsers}
             filteredUsers={filteredUsers}
             toggleUser={toggleUser}
@@ -1680,6 +1707,7 @@ export default function AdminDashboard() {
             loadPayments={loadPayments}
             paymentsLoading={paymentsLoading}
             paymentsError={paymentsError}
+            paymentsErrorCode={paymentsErrorCode}
             paymentsStripeConfigured={paymentsStripeConfigured}
             paymentsEmptyReason={paymentsEmptyReason}
             downloadReceipt={downloadReceipt}

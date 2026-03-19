@@ -9,9 +9,10 @@ import { useState } from "react";
  */
 export default function SafeImage({ fallback = null, ...props }) {
   const [broken, setBroken] = useState(false);
+  const { alt = "", ...imageProps } = props;
 
   if (broken) return fallback;
-  if (!props.src) return fallback;
+  if (!imageProps.src) return fallback;
 
-  return <Image {...props} onError={() => setBroken(true)} />;
+  return <Image {...imageProps} alt={alt} onError={() => setBroken(true)} />;
 }

@@ -2,7 +2,7 @@ import { fetchGraphQL } from "@/lib/client";
 import { appendServerLog } from "@/lib/serverLog";
 import { getCourseAccessState } from "@/lib/courseAccess";
 import { listDigitalProducts } from "@/lib/digitalProducts";
-import { getShopSettings } from "@/lib/shopSettings";
+import { ALL_TYPES, getShopSettings } from "@/lib/shopSettings";
 import { stripHtml } from "@/lib/slugify";
 import { decodeEntities } from "@/lib/decodeEntities";
 import { parsePriceCents } from "@/lib/parsePrice";
@@ -123,7 +123,15 @@ export async function listAllShopItems() {
     getShopSettings(),
   ]);
 
-  const visibleTypes = shopSettings.visibleTypes;
+  const visibleTypes = Array.isArray(shopSettings?.visibleTypes)
+    ? shopSettings.visibleTypes
+    : ALL_TYPES;
+  const hasAtLeastOneCoreType = ["product", "course", "event"].some((type) =>
+    visibleTypes.includes(type),
+  );
+  // Guardrail: if all core source types are hidden, storefront appears broken
+  // and only digital items remain visible. Fall back to all types.
+  const safeVisibleTypes = hasAtLeastOneCoreType ? visibleTypes : ALL_TYPES;
 
   const courseConfigs = accessState?.courses || {};
   const items = [];
@@ -145,6 +153,7 @@ export async function listAllShopItems() {
       type: "product",
       source: "woocommerce",
       uri,
+      active: config?.active !== false,
     });
   }
 
@@ -166,6 +175,7 @@ export async function listAllShopItems() {
       type: "course",
       source: "learnpress",
       uri,
+      active: config?.active !== false,
       duration: c.duration || "",
     });
   }
@@ -188,6 +198,7 @@ export async function listAllShopItems() {
       type: "event",
       source: "wordpress",
       uri,
+      active: config?.active !== false,
     });
   }
 
@@ -208,10 +219,17 @@ export async function listAllShopItems() {
     });
   }
 
-  // Filter by admin-configured visible types and require a price
+  // Filter by visible type.
+  // Core WordPress-backed items (WooCommerce/LearnPress/Events) should still
+  // be listable even if their parsed price is missing, otherwise the storefront
+  // looks empty except for digital products.
   return items.filter(
-    (item) =>
-      visibleTypes.includes(item.type) &&
-      (item.priceCents > 0 || (item.price && item.price !== "0")),
+    (item) => {
+      if (!safeVisibleTypes.includes(item.type)) return false;
+      if (item.active === false) return false;
+      const hasPrice = item.priceCents > 0 || (item.price && item.price !== "0");
+      if (item.source === "digital") return hasPrice;
+      return true;
+    },
   );
 }

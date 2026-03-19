@@ -162,11 +162,14 @@ export async function PUT(request) {
         : Number.parseInt(String(body?.priceCents || "0"), 10);
     const currency =
       typeof body?.currency === "string" ? body.currency.toUpperCase() : "SEK";
+    const active =
+      typeof body?.active === "boolean" ? body.active : undefined;
     const state = await setCourseAccess({
       courseUri,
       allowedUsers,
       priceCents: Number.isFinite(priceCents) ? priceCents : 0,
       currency,
+      active,
     });
     return NextResponse.json({ ok: true, courses: state.courses });
   } catch (error) {

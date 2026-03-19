@@ -263,3 +263,31 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Stats/Analysis appears before Support.
   - Welcome card ordering was adjusted to match the requested section flow.
 - **Validation**: `npm test -- --runInBand` remains green (14/14).
+
+---
+
+## 2026-03-19 (cont. 8)
+
+### Codex — bug-hunt stabilization pass (hash/impress, products/access, chat typing)
+
+- **Impress/hash ghost switching hardening**:
+  - `AdminHeader.parseTabHash` now accepts only known admin tabs (plus `sandbox -> info` alias), so slideshow step hashes cannot pollute active-nav state.
+  - `AdminDashboard` hashchange handler now normalizes unknown hashes back to the current active tab instead of leaving URL drift.
+  - `AdminWelcomeTab` got extra cleanup/stability: stronger `tearImpress()` fallback path, a hashchange stabilizer while story mode is active, and `data-hash="false"` along with existing `data-hash-changes="false"`.
+- **Chat textbox spacebar fix**:
+  - Added `e.stopPropagation()` in `ChatPanel` input `onKeyDown` so global handlers (including lingering impress/hotkey listeners) do not hijack typing; Enter-to-send behavior remains intact.
+- **Products/access bugs fixed**:
+  - Fixed stale loader condition in `AdminDashboard` (`activeTab === "shop"` -> `activeTab === "products"`), so products-tab shop settings now load correctly.
+  - Reworked manual URI entry in `AdminProductsTab` Access tab: added dedicated draft input state and explicit apply action, preventing the one-keystroke self-collapse bug.
+  - Added active-state wiring for WP/manual course-access entries:
+    - UI toggle in Access detail panel.
+    - save payload now includes `active` for non-shop selections.
+    - `/api/admin/course-access` now accepts and persists `active`.
+    - Access list now displays `Off` status for WC/LP/Event/manual rows when disabled in course config.
+  - Storefront aggregation now respects `active === false` on WP-backed items (`shopProducts.js`) so disabled entries are hidden publicly.
+- **Operator clarity improvements included in same pass**:
+  - Distinct payments error code propagation/state (Dashboard/Sales/Support) so “error loading” is no longer conflated with “no sales yet”.
+  - Broken product image fallback icon replaces browser broken-image glyph in admin product listings/editors.
+- **Validation**:
+  - `npx eslint` on all touched files: 0 errors (existing `<img>` perf warnings only).
+  - `npm test -- --runInBand`: 14/14 passing.

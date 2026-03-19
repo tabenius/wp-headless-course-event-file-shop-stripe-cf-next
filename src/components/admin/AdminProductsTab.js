@@ -34,12 +34,61 @@ function formatIsoDate(iso) {
   }
 }
 
+function BrokenImageIcon({ className = "" }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path
+        fillRule="evenodd"
+        d="M1.5 6A2.5 2.5 0 014 3.5h16A2.5 2.5 0 0122.5 6v12a2.5 2.5 0 01-2.5 2.5H4A2.5 2.5 0 011.5 18V6zm2.75 0a.75.75 0 00-.75.75v8.88l4.17-4.17a1.5 1.5 0 012.12 0l2.11 2.11 2.65-2.65a1.5 1.5 0 012.12 0l2.83 2.83V6.75a.75.75 0 00-.75-.75h-16zm16 12a.75.75 0 00.75-.75v-.38l-3.89-3.89-2.65 2.65a1.5 1.5 0 01-2.12 0l-2.11-2.11-4.73 4.73h14.75z"
+        clipRule="evenodd"
+      />
+      <path d="m18.53 3.47 2 2-15.06 15.06-2-2L18.53 3.47z" />
+    </svg>
+  );
+}
+
+function SafeProductImage({ src, alt = "", className, fallbackClassName }) {
+  const [isBroken, setIsBroken] = useState(false);
+
+  useEffect(() => {
+    setIsBroken(false);
+  }, [src]);
+
+  if (!src || isBroken) {
+    return (
+      <div
+        className={
+          fallbackClassName ||
+          "w-full h-full flex items-center justify-center rounded bg-rose-50 text-rose-400"
+        }
+      >
+        <BrokenImageIcon className="w-5 h-5" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setIsBroken(true)}
+    />
+  );
+}
+
 // ── Inner tab nav ────────────────────────────────────────────────────────────
 
 function InnerTabs({ active, onChange }) {
   const tabs = [
-    { key: "products", label: "Shop Products" },
-    { key: "access", label: "Access & Pricing" },
+    { key: "access", label: "All Products" },
+    { key: "products", label: "Digital Products" },
     { key: "settings", label: "Settings" },
   ];
   return (
@@ -78,7 +127,12 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
           title={t("admin.uploadImage")}
         >
           {imgUrl ? (
-            <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+            <SafeProductImage
+              src={imgUrl}
+              alt=""
+              className="w-full h-full object-cover"
+              fallbackClassName="w-full h-full flex items-center justify-center bg-rose-50 text-rose-400"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300">
               <svg
@@ -398,10 +452,11 @@ function ProductsTab({
                   }`}
                 >
                   {product.imageUrl ? (
-                    <img
+                    <SafeProductImage
                       src={product.imageUrl}
                       alt=""
                       className="w-9 h-9 rounded object-cover shrink-0"
+                      fallbackClassName="w-9 h-9 rounded bg-rose-50 shrink-0 flex items-center justify-center text-rose-400"
                     />
                   ) : (
                     <div className="w-9 h-9 rounded bg-amber-100 shrink-0 flex items-center justify-center">
@@ -822,6 +877,8 @@ function AccessTab({
   userSearch,
   setUserSearch,
   users,
+  selectedCourseActive,
+  setSelectedCourseActive,
   allowedUsers,
   filteredUsers,
   toggleUser,
@@ -837,6 +894,7 @@ function AccessTab({
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortField, setSortField] = useState("name");
   const [sortDir, setSortDir] = useState("asc");
+  const [manualUriInput, setManualUriInput] = useState("");
   // Incrementing this triggers PriceAccessForm to auto-save after price state settles
   const [autoSaveTrigger, setAutoSaveTrigger] = useState(0);
 
@@ -890,6 +948,14 @@ function AccessTab({
     if (typeFilter === "shop") return source === "shop";
     return true; // "all"
   };
+
+  function applyManualUri() {
+    const trimmed = manualUriInput.trim();
+    if (!trimmed) return;
+    const normalized = `/${trimmed.replace(/^\/+/, "").replace(/\/+$/, "")}`;
+    setSelectedCourse(normalized);
+    setManualUriInput("");
+  }
 
   return (
     <div
@@ -1008,16 +1074,19 @@ function AccessTab({
                 uri: p.uri,
                 name: p.name,
                 source: "wc",
+                active: courses[p.uri]?.active,
               })),
               ...wpCourses.map((c) => ({
                 uri: c.uri,
                 name: c.title,
                 source: "lp",
+                active: courses[c.uri]?.active,
               })),
               ...wpEvents.map((e) => ({
                 uri: e.uri,
                 name: e.title,
                 source: "ev",
+                active: courses[e.uri]?.active,
               })),
               ...products.map((p, i) => ({
                 uri: `__shop_${i}`,
@@ -1029,6 +1098,7 @@ function AccessTab({
                 uri,
                 name: uri,
                 source: "other",
+                active: courses[uri]?.active,
               })),
             ];
 
@@ -1105,20 +1175,37 @@ function AccessTab({
         <div className="border-t p-2 bg-gray-50">
           <button
             type="button"
-            onClick={() => setSelectedCourse("__custom__")}
+            onClick={() => {
+              setSelectedCourse("__custom__");
+              setManualUriInput("");
+            }}
             className="text-xs text-gray-500 hover:text-gray-700"
           >
             + Enter URI manually
           </button>
           {selectedCourse === "__custom__" && (
-            <input
-              type="text"
-              value=""
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              placeholder={t("admin.courseUriInputPlaceholder")}
-              className="mt-1 w-full border rounded px-2 py-1.5 text-xs"
-              autoFocus
-            />
+            <div className="mt-1 flex gap-1.5">
+              <input
+                type="text"
+                value={manualUriInput}
+                onChange={(e) => setManualUriInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  applyManualUri();
+                }}
+                placeholder={t("admin.courseUriInputPlaceholder")}
+                className="w-full border rounded px-2 py-1.5 text-xs"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={applyManualUri}
+                className="px-2 py-1.5 text-[11px] rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {t("common.use", "Use")}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -1271,10 +1358,11 @@ function AccessTab({
             {isShopSelection && selectedShopProduct && (
               <div className="flex items-center gap-3 mb-2">
                 {selectedShopProduct.imageUrl ? (
-                  <img
+                  <SafeProductImage
                     src={selectedShopProduct.imageUrl}
                     alt=""
                     className="w-10 h-10 rounded object-cover"
+                    fallbackClassName="w-10 h-10 rounded bg-rose-50 flex items-center justify-center text-rose-400"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded bg-amber-50 flex items-center justify-center">
@@ -1302,6 +1390,18 @@ function AccessTab({
                 </div>
                 <hr className="mt-2" />
               </div>
+            )}
+
+            {!isShopSelection && (
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={selectedCourseActive !== false}
+                  onChange={(e) => setSelectedCourseActive(e.target.checked)}
+                  className="accent-purple-600"
+                />
+                <span>{t("admin.activeProduct", "Active product")}</span>
+              </label>
             )}
 
             <PriceAccessForm
@@ -1421,7 +1521,7 @@ function SettingsTab({
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export default function AdminProductsTab(props) {
-  const [innerTab, setInnerTab] = useState("products");
+  const [innerTab, setInnerTab] = useState("access");
 
   const {
     shopVisibleTypes,
@@ -1463,6 +1563,8 @@ export default function AdminProductsTab(props) {
     userSearch,
     setUserSearch,
     users,
+    selectedCourseActive,
+    setSelectedCourseActive,
     allowedUsers,
     filteredUsers,
     toggleUser,
@@ -1565,6 +1667,8 @@ export default function AdminProductsTab(props) {
             userSearch={userSearch}
             setUserSearch={setUserSearch}
             users={users}
+            selectedCourseActive={selectedCourseActive}
+            setSelectedCourseActive={setSelectedCourseActive}
             allowedUsers={allowedUsers}
             filteredUsers={filteredUsers}
             toggleUser={toggleUser}

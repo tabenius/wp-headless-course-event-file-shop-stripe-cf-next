@@ -338,7 +338,7 @@ export default function AdminSupportTab({
             )}
           </p>
         )}
-        {payments.length === 0 ? (
+        {!paymentsError && payments.length === 0 ? (
           <p className="text-sm text-gray-500">
             {paymentsStripeConfigured
               ? t(
@@ -347,7 +347,7 @@ export default function AdminSupportTab({
                 )
               : t("admin.noPayments")}
           </p>
-        ) : (
+        ) : !paymentsError ? (
           <div className="max-h-80 overflow-auto border rounded">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-100 text-gray-600">
@@ -391,7 +391,7 @@ export default function AdminSupportTab({
               </tbody>
             </table>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

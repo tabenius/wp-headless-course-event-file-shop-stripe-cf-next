@@ -4,17 +4,39 @@ export default function RagbazLogo({
   className = "",
   includeStoreFront = true,
   color = "#39b6f2",
+  size = "normal",
 }) {
-  const lineWidth = includeStoreFront ? "11.2ch" : "10.7ch";
+  const isDouble = size === "2x";
+  const lineWidth = includeStoreFront
+    ? isDouble
+      ? "22.8ch"
+      : "11.4ch"
+    : isDouble
+      ? "21.6ch"
+      : "10.8ch";
+
+  const fontSize = isDouble
+    ? {
+        ragbaz: "2.08rem",
+        articulate: "2.02rem",
+        storefront: "1.34rem",
+      }
+    : {
+        ragbaz: "1.04rem",
+        articulate: "1.01rem",
+        storefront: "0.67rem",
+      };
+
   return (
     <div className={`inline-flex flex-col items-center leading-[0.92] ${className}`}>
       <span
-        className="block uppercase font-black text-[1.02rem] sm:text-[1.08rem]"
+        className="block uppercase font-black"
         style={{
           width: lineWidth,
+          fontSize: fontSize.ragbaz,
           textAlign: "center",
           letterSpacing: "0.24em",
-          transform: "scaleX(1.1)",
+          transform: "scaleX(1.12)",
           transformOrigin: "center",
           fontFamily:
             "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",
@@ -24,12 +46,13 @@ export default function RagbazLogo({
         RAGBAZ
       </span>
       <span
-        className="block -mt-[0.10rem] text-[0.99rem] sm:text-[1.03rem] font-medium"
+        className="block -mt-[0.12rem] font-medium"
         style={{
           width: lineWidth,
+          fontSize: fontSize.articulate,
           textAlign: "center",
-          letterSpacing: "0.055em",
-          transform: "scaleX(1.03)",
+          letterSpacing: "0.135em",
+          transform: "scaleX(1.2)",
           transformOrigin: "center",
           fontFamily:
             "var(--font-serif, 'Merriweather', 'Times New Roman', serif)",
@@ -40,12 +63,13 @@ export default function RagbazLogo({
       </span>
       {includeStoreFront && (
         <span
-          className="block -mt-[0.02rem] text-[0.65rem] sm:text-[0.69rem] font-semibold"
+          className="block -mt-[0.06rem] font-semibold"
           style={{
             width: lineWidth,
+            fontSize: fontSize.storefront,
             textAlign: "center",
-            letterSpacing: "0.2em",
-            transform: "scaleX(1.1)",
+            letterSpacing: "0.34em",
+            transform: "scaleX(1.26)",
             transformOrigin: "center",
             fontFamily:
               "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",

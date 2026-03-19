@@ -53,6 +53,7 @@ function sanitizeState(state) {
       allowedUsers: [...new Set(allowedUsers)],
       priceCents,
       currency: normalizeCurrency(rawValue?.currency),
+      active: rawValue?.active !== false,
       updatedAt:
         typeof rawValue?.updatedAt === "string"
           ? rawValue.updatedAt
@@ -188,10 +189,12 @@ export async function setCourseAccess({
   allowedUsers,
   priceCents,
   currency,
+  active,
 }) {
   const uri = normalizeCourseUri(courseUri);
   if (!uri) throw new Error("Invalid course URI");
   const state = await getCourseAccessState();
+  const previous = state.courses[uri];
   const normalizedUsers = Array.isArray(allowedUsers)
     ? [...new Set(allowedUsers.map(normalizeEmail).filter(Boolean))]
     : [];
@@ -203,6 +206,7 @@ export async function setCourseAccess({
     allowedUsers: normalizedUsers,
     priceCents: safePrice,
     currency: normalizeCurrency(currency),
+    active: typeof active === "boolean" ? active : previous?.active !== false,
     updatedAt: new Date().toISOString(),
   };
   return saveCourseAccessState(state);
@@ -218,6 +222,7 @@ export async function grantCourseAccess(courseUri, email) {
     priceCents:
       Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS || "0", 10) || 0,
     currency: normalizeCurrency(process.env.DEFAULT_COURSE_FEE_CURRENCY),
+    active: true,
   };
   if (!course.allowedUsers.includes(normalizedEmail)) {
     course.allowedUsers.push(normalizedEmail);

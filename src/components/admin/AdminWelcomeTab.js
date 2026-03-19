@@ -55,6 +55,20 @@ function resetImpressViewportState() {
   body.style.removeProperty("touch-action");
 }
 
+function tearImpress() {
+  if (typeof window === "undefined") return;
+  try {
+    window.impress?.("welcome-impress")?.tear?.();
+  } catch (_error) {
+    // best effort cleanup only
+  }
+  try {
+    window.impress?.()?.tear?.();
+  } catch (_error) {
+    // best effort cleanup only
+  }
+}
+
 function MenuShortcutHint() {
   return (
     <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-100/70 px-3 py-1 text-[11px] font-medium text-indigo-900">
@@ -474,7 +488,7 @@ export default function AdminWelcomeTab({
         content: <ArchitectureOverview />,
       },
       {
-        id: "sales",
+        id: "story-sales",
         title: "Zoom to sales",
         subtitle: "Live payment visibility and receipts where operators actually work.",
         x: 1300,
@@ -485,7 +499,7 @@ export default function AdminWelcomeTab({
         content: <SalesMockScreen />,
       },
       {
-        id: "products",
+        id: "story-products",
         title: "Then products",
         subtitle: "Catalog curation, pricing, and delivery links from one studio.",
         x: 2800,
@@ -496,7 +510,7 @@ export default function AdminWelcomeTab({
         content: <ProductsMockScreen />,
       },
       {
-        id: "chat",
+        id: "story-chat",
         title: "Finally AI operations",
         subtitle: "Reasoning over logs, receipts, access, and manuals in one multilingual panel.",
         x: 4300,
@@ -573,11 +587,7 @@ export default function AdminWelcomeTab({
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     if (showStory) return undefined;
-    try {
-      window.impress?.("welcome-impress")?.tear?.();
-    } catch (_error) {
-      // best effort cleanup only
-    }
+    tearImpress();
     resetImpressViewportState();
     return undefined;
   }, [showStory]);
@@ -585,11 +595,7 @@ export default function AdminWelcomeTab({
   useEffect(
     () => () => {
       if (typeof window === "undefined") return;
-      try {
-        window.impress?.("welcome-impress")?.tear?.();
-      } catch (_error) {
-        // best effort cleanup only
-      }
+      tearImpress();
       resetImpressViewportState();
     },
     [],
@@ -611,6 +617,15 @@ export default function AdminWelcomeTab({
     if (!showStory) return;
     keepWelcomeHashStable();
   }, [showStory, keepWelcomeHashStable]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !showStory) return undefined;
+    function onHashChange() {
+      keepWelcomeHashStable();
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [keepWelcomeHashStable, showStory]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showStory) return undefined;
@@ -705,6 +720,7 @@ export default function AdminWelcomeTab({
         <div
           id="welcome-impress"
           className="impress h-full w-full"
+          data-hash="false"
           data-hash-changes="false"
           style={{ position: "relative" }}
         >

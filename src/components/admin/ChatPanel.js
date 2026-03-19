@@ -67,6 +67,8 @@ export default function ChatPanel({
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           onKeyDown={(e) => {
+            // Keep global admin/impress key handlers from hijacking typing.
+            e.stopPropagation();
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               sendChat();
