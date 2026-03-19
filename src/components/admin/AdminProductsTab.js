@@ -271,7 +271,10 @@ export default function AdminProductsTab({
             renderItem={(event, index) => {
               const isActive = selectedCourse === event.uri;
               const configured = courses[event.uri];
-              const meta = joinMeta([event.uri]);
+              const dateStr = event.startDate
+                ? new Date(event.startDate).toLocaleDateString("sv-SE")
+                : null;
+              const meta = joinMeta([dateStr, event.uri]);
               const image = event.featuredImage?.node?.sourceUrl ? (
                 <img
                   src={event.featuredImage.node.sourceUrl}

@@ -92,7 +92,7 @@ async function fetchWooCommerceProducts() {
 async function fetchEvents() {
   try {
     const data = await fetchGraphQL(
-      `{ events(first: 100) { edges { node { databaseId uri title slug featuredImage { node { sourceUrl } } } } } }`,
+      `{ events(first: 100, where: { orderby: { field: DATE, order: ASC } }) { edges { node { databaseId uri title slug startDate endDate featuredImage { node { sourceUrl } } } } } }`,
       {},
       300,
     );
