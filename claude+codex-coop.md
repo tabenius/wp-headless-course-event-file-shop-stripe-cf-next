@@ -691,3 +691,19 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Added generic `scale` support to `RagbazLogo` so size increases affect actual layout width/height rather than relying on CSS transform scaling in the header.
 - Validation:
   - `npx eslint src/components/admin/AdminHeader.js src/components/admin/RagbazLogo.js`
+
+---
+
+## 2026-03-19 (cont. 23)
+
+### Codex — admin chunk-load self-recovery
+
+- Addressed recurring runtime failure: `Failed to load chunk ...` in admin after deploys.
+- Updated `src/app/admin/error.js` to:
+  - Detect chunk-load signatures (`ChunkLoadError`, `Loading chunk`, `Failed to load chunk`).
+  - Auto-attempt one guarded recovery reload using cache-busting query param (`/admin?reload=<timestamp>`), tracked with sessionStorage guard.
+  - Keep manual “Reload admin” button but make it perform the same cache-busted reload path and clear guard before retry.
+- UX improvement:
+  - Chunk-specific explanatory message shown instead of generic error copy.
+- Validation:
+  - `npx eslint src/app/admin/error.js`
