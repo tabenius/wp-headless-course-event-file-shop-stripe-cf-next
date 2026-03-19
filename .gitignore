@@ -1,5 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Build lock (created by scripts/build-with-lock.mjs, removed on completion)
+building.lock.pid
+
 # dependencies
 /node_modules
 /.pnp

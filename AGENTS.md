@@ -33,6 +33,21 @@ Monorepo — `packages/ragbaz-articulate-plugin/` is the companion WordPress plu
 
 Tests use `node:test` (no Jest/Vitest). Add new test files under `tests/`.
 
+### Build lock
+
+**Before running any build, check for `building.lock.pid` in the repo root.**
+If it exists, another build is already in progress — wait or investigate before starting another.
+
+```
+# check
+cat building.lock.pid        # shows pid, started timestamp, command
+
+# if it's stale (process no longer running), delete it manually:
+rm building.lock.pid
+```
+
+The lock is created automatically by `scripts/build-with-lock.mjs` and removed on success, failure, or Ctrl+C. It is `.gitignore`d and never committed.
+
 ---
 
 ## Important architectural patterns
