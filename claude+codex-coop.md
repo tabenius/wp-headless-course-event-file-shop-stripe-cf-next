@@ -106,6 +106,16 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - strengthened main `ImagePickerButton` border (`border-2 border-gray-700`),
   - added gray border rings to empty thumbnail placeholders in list/detail mini-cards.
 
+## 2026-03-19 (cont. 26)
+
+### Codex — product image picker interaction hardening
+
+- Reworked `ImageUploader` file-open strategy from ad-hoc `document.createElement("input")` to a persistent hidden `<input type="file">` with `ref`, improving reliability across browsers and preserving direct user-gesture semantics.
+- Updated product image overlay in `AdminProductsTab`:
+  - overlay layer is now `pointer-events-none` so it cannot block click/tap,
+  - added an always-visible pen badge in the top-right corner to signal replace action,
+  - retained hover darkening + center pen affordance for desktop.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

@@ -95,6 +95,7 @@ export default function ImageUploader({
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const [aspectKey, setAspectKey] = useState(DEFAULT_ASPECT_KEY);
+  const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const selectedSize = resolveAspectSize(aspectKey);
@@ -122,11 +123,9 @@ export default function ImageUploader({
     [preview],
   );
 
-  const openFilePicker = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = () => {
+  const handleFileChange = useCallback(
+    (event) => {
+      const input = event.currentTarget;
       const picked = input.files?.[0];
       if (!picked) return;
       if (!picked.type || !picked.type.startsWith("image/")) {
@@ -145,9 +144,16 @@ export default function ImageUploader({
       const url = URL.createObjectURL(picked);
       setPreview(url);
       setShowEditor(true);
-    };
+    },
+    [emitError],
+  );
+
+  const openFilePicker = useCallback(() => {
+    const input = fileInputRef.current;
+    if (!input) return;
+    input.value = "";
     input.click();
-  }, [emitError]);
+  }, []);
 
   // Draw image on canvas whenever crop controls change.
   useEffect(() => {
@@ -308,6 +314,14 @@ export default function ImageUploader({
 
   return (
     <div className={className}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+        aria-hidden="true"
+      />
       {/* Trigger area — custom or default */}
       {renderTrigger ? (
         renderTrigger(openFilePicker)

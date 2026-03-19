@@ -136,7 +136,7 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
         <button
           type="button"
           onClick={openPicker}
-          className="relative w-28 h-28 rounded-lg border-2 border-gray-700 shrink-0 overflow-hidden group bg-gray-100"
+          className="relative w-28 h-28 rounded-lg border-2 border-gray-700 shrink-0 overflow-hidden group bg-gray-100 cursor-pointer"
           title={t("admin.uploadImage")}
         >
           {imgUrl ? (
@@ -162,7 +162,7 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
               </svg>
             </div>
           )}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+          <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
@@ -172,6 +172,17 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
               <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
             </svg>
           </div>
+          <span className="pointer-events-none absolute top-1 right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-black/65 text-white shadow-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="h-3.5 w-3.5"
+              aria-hidden
+            >
+              <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+            </svg>
+          </span>
         </button>
       )}
     />
@@ -1608,7 +1619,10 @@ function AccessTab({
                     {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                   </p>
                   <p className="text-xs text-gray-400">
-                    Shop product — edit details in the Shop Products tab
+                    {t(
+                      "admin.shopProductInlineHint",
+                      "Shop product — edit details below in this panel.",
+                    )}
                   </p>
                   {selectedShopCategories.length > 0 && (
                     <p className="text-xs text-gray-500 mt-1">
