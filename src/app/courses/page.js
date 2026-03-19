@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
 import { FeaturedImage } from "@/components/image/FeaturedImage";
+import { t } from "@/lib/i18n";
 import site from "@/lib/site";
 
 export const metadata = {
@@ -43,10 +44,8 @@ export default async function CoursesPage() {
   if (!hasLpCourse) {
     return (
       <main className="max-w-4xl mx-auto px-6 py-24">
-        <h1 className="text-4xl font-bold mb-6">Onlinekurser</h1>
-        <p className="text-gray-600">
-          Kurssidan kräver LearnPress med WPGraphQL-stöd.
-        </p>
+        <h1 className="text-4xl font-bold mb-6">{t("courses.title")}</h1>
+        <p className="text-gray-600">{t("courses.requiresLearnPress")}</p>
       </main>
     );
   }
@@ -56,9 +55,9 @@ export default async function CoursesPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-24">
-      <h1 className="text-4xl font-bold mb-10">Onlinekurser</h1>
+      <h1 className="text-4xl font-bold mb-10">{t("courses.title")}</h1>
       {courses.length === 0 ? (
-        <p className="text-gray-600">Inga kurser tillgangliga just nu.</p>
+        <p className="text-gray-600">{t("courses.empty")}</p>
       ) : (
         <div className="grid gap-8 md:grid-cols-2">
           {courses.map((course) => (

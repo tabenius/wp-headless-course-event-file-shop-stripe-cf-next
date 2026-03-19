@@ -6,6 +6,8 @@ import { t } from "@/lib/i18n";
 import { transformContent } from "@/lib/transformContent";
 import { decodeEntities } from "@/lib/decodeEntities";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Paywall({
   courseUri,
   courseTitle,
@@ -104,7 +106,7 @@ export default function Paywall({
     const email = guestEmail.trim().toLowerCase();
     const confirm = guestEmailConfirm.trim().toLowerCase();
 
-    if (!email || !email.includes("@")) {
+    if (!email || !EMAIL_REGEX.test(email)) {
       setError(t("paywall.emailRequired"));
       return;
     }

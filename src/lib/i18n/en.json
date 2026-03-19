@@ -99,7 +99,16 @@
     "uploadFailed": "Could not save the image. Check your network and try again.",
     "uploadWpFailed": "Upload to WordPress media library failed (HTTP {status}). Is WORDPRESS_GRAPHQL_AUTH_TOKEN valid and media uploads allowed?",
     "wpUrlMissing": "WordPress URL is missing.",
-    "wpAuthMissing": "WordPress authentication is missing."
+    "wpAuthMissing": "WordPress authentication is missing.",
+    "rateLimited": "Too many requests. Please wait a while before trying again."
+  },
+  "contactApi": {
+    "requiredFields": "All fields are required.",
+    "emailSendFailed": "Could not send the email right now.",
+    "notConfigured": "Email delivery is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    "sendError": "Could not send the message right now.",
+    "sent": "Thank you! We\u2019ll get back to you shortly.",
+    "subject": "Contact form: {name}"
   },
   "adminLogin": {
     "title": "Admin login",
@@ -469,6 +478,11 @@
     "endpointMissing": "S3_ENDPOINT is missing.",
     "bucketMissing": "S3_BUCKET_NAME is missing.",
     "publicUrlMissing": "S3_PUBLIC_URL is missing. Set the public URL for your bucket."
+  },
+  "courses": {
+    "title": "Online Courses",
+    "requiresLearnPress": "The courses page requires LearnPress with WPGraphQL support.",
+    "empty": "No courses available right now."
   },
   "contact": {
     "sending": "Sending\u2026",

@@ -21,11 +21,11 @@ function parseWpPrice(priceStr) {
 function typeLabel(item) {
   switch (item.type) {
     case "product":
-      return t("shop.typeProduct", "Produkt");
+      return t("shop.typeProduct");
     case "course":
       return t("shop.typeCourse");
     case "event":
-      return t("shop.typeEvent", "Event");
+      return t("shop.typeEvent");
     case "digital_file":
       return t("shop.typeDigitalFile");
     case "digital_course":
@@ -141,9 +141,7 @@ export default function ShopIndex({
       )}
 
       {items.length === 0 && (
-        <p className="text-gray-500">
-          {t("shop.noProducts", "Inga produkter tillgängliga just nu.")}
-        </p>
+        <p className="text-gray-500">{t("shop.noProducts")}</p>
       )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

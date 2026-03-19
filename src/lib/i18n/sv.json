@@ -479,6 +479,11 @@
     "bucketMissing": "S3_BUCKET_NAME saknas.",
     "publicUrlMissing": "S3_PUBLIC_URL saknas. Ange den offentliga URL:en för din bucket."
   },
+  "courses": {
+    "title": "Onlinekurser",
+    "requiresLearnPress": "Kurssidan kräver LearnPress med WPGraphQL-stöd.",
+    "empty": "Inga kurser tillgängliga just nu."
+  },
   "contact": {
     "sending": "Skickar\u2026",
     "sent": "Tack, ditt meddelande har skickats.",

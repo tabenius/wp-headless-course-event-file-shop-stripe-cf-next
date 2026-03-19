@@ -479,6 +479,11 @@
     "bucketMissing": "Falta S3_BUCKET_NAME.",
     "publicUrlMissing": "Falta S3_PUBLIC_URL. Define la URL pública de tu bucket."
   },
+  "courses": {
+    "title": "Cursos en línea",
+    "requiresLearnPress": "La página de cursos requiere LearnPress con soporte WPGraphQL.",
+    "empty": "No hay cursos disponibles ahora mismo."
+  },
   "contact": {
     "sending": "Enviando\u2026",
     "sent": "Gracias, tu mensaje ha sido enviado.",

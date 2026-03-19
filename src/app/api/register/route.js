@@ -1,28 +1,25 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createUser } from "@/lib/userStore";
 import { createSessionCookie, createSessionToken } from "@/auth";
 import { t } from "@/lib/i18n";
 
-function badRequest(message) {
-  return NextResponse.json({ ok: false, error: message }, { status: 400 });
-}
+const RegisterSchema = z.object({
+  name: z.string().trim().min(2, t("apiErrors.nameTooShort")),
+  email: z.string().trim().email(t("apiErrors.invalidEmail")),
+  password: z.string().min(8, t("apiErrors.passwordTooShort")),
+});
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const name = typeof body?.name === "string" ? body.name.trim() : "";
-    const email = typeof body?.email === "string" ? body.email.trim() : "";
-    const password = typeof body?.password === "string" ? body.password : "";
-
-    if (name.length < 2) {
-      return badRequest(t("apiErrors.nameTooShort"));
+    const body = await request.json().catch(() => ({}));
+    const parsed = RegisterSchema.safeParse(body);
+    if (!parsed.success) {
+      const error =
+        parsed.error.errors[0]?.message || t("authErrors.registerFailed");
+      return NextResponse.json({ ok: false, error }, { status: 400 });
     }
-    if (!email.includes("@")) {
-      return badRequest(t("apiErrors.invalidEmail"));
-    }
-    if (password.length < 8) {
-      return badRequest(t("apiErrors.passwordTooShort"));
-    }
+    const { name, email, password } = parsed.data;
 
     const user = await createUser({ name, email, password });
 
