@@ -456,10 +456,13 @@ describe("Stripe connectivity — live smoke test (skipped when key absent)", ()
       const { getStripe } = await import("../src/lib/stripePayments.js");
       const stripe = getStripe();
       assert.ok(stripe, "expected a Stripe instance");
-      // Stripe stores the version in its config
-      assert.equal(
-        stripe._api?.version ?? stripe.getApiField?.("version") ?? "2024-12-18",
-        "2024-12-18",
+      // Verify the SDK's built-in API version is set (format: YYYY-MM-DD.codename)
+      const version =
+        stripe.getApiField?.("version") ?? stripe._api?.version ?? "";
+      assert.match(
+        version,
+        /^\d{4}-\d{2}-\d{2}/,
+        `expected date-prefixed version, got: ${version}`,
       );
     },
   );

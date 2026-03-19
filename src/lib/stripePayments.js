@@ -1,11 +1,10 @@
 import Stripe from "stripe";
 
-const STRIPE_API_VERSION = "2024-12-18";
-
 export function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY missing");
-  return new Stripe(key, { apiVersion: STRIPE_API_VERSION });
+  // No apiVersion specified — uses the SDK's built-in default (currently 2026-02-25.clover)
+  return new Stripe(key);
 }
 
 /**
