@@ -152,6 +152,14 @@ export default function ImageUploader({
     const input = fileInputRef.current;
     if (!input) return;
     input.value = "";
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+        return;
+      } catch (_err) {
+        // Fallback for browsers rejecting showPicker in some contexts.
+      }
+    }
     input.click();
   }, []);
 
@@ -319,8 +327,7 @@ export default function ImageUploader({
         type="file"
         accept="image/*"
         onChange={handleFileChange}
-        className="hidden"
-        aria-hidden="true"
+        className="absolute -left-[10000px] top-auto h-px w-px opacity-0"
       />
       {/* Trigger area — custom or default */}
       {renderTrigger ? (

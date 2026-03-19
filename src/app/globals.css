@@ -382,9 +382,25 @@ body:has(.admin-layout)::before {
 }
 
 /* Text colors */
+.admin-gruvbox h1,
+.admin-gruvbox h2,
+.admin-gruvbox h3,
+.admin-gruvbox h4,
+.admin-gruvbox h5,
+.admin-gruvbox h6 {
+  color: #fff !important;
+}
 .admin-gruvbox .text-gray-900,
 .admin-gruvbox .text-gray-800 {
   color: var(--grv-fg) !important;
+}
+.admin-gruvbox .text-slate-900,
+.admin-gruvbox .text-slate-800 {
+  color: #fff !important;
+}
+.admin-gruvbox .text-slate-700,
+.admin-gruvbox .text-slate-600 {
+  color: var(--grv-fg1) !important;
 }
 .admin-gruvbox .text-gray-700,
 .admin-gruvbox .text-gray-600 {

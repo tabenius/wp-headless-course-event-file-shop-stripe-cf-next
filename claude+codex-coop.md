@@ -140,6 +140,27 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Shifted only the `RAGBAZ` wordmark to the right by `1.5rem` (`ml-6`) in `AdminHeader`.
 - Left `ARTICULATE STOREFRONT` positioning unchanged, as requested.
 
+## 2026-03-19 (cont. 29)
+
+### Codex — image picker robustness follow-up
+
+- Improved browser compatibility for opening the image file chooser in `ImageUploader`:
+  - use `input.showPicker()` when available,
+  - fallback to `input.click()`,
+  - switched hidden file input to off-screen positioning (instead of `display:none`) to avoid picker restrictions in stricter environments.
+- Reinforced visual affordances on product image tiles in `AdminProductsTab`:
+  - added explicit full-tile ring overlay (`ring-2 ring-gray-700/95`) so the frame remains visible,
+  - kept pen badge always visible and above content (`z` layering + white border).
+
+## 2026-03-19 (cont. 30)
+
+### Codex — dark-theme heading contrast fix
+
+- Fixed low-contrast admin titles in gruvbox/dark theme by updating `src/app/globals.css`:
+  - force heading elements (`.admin-gruvbox h1..h6`) to white,
+  - force Tailwind slate heading utilities (`.text-slate-900`, `.text-slate-800`) to white,
+  - keep secondary slate text (`.text-slate-700`, `.text-slate-600`) at lighter foreground tone for hierarchy.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
