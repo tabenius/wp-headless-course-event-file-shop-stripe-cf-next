@@ -79,6 +79,22 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Moved the `Ctrl+Alt+M` hotkey hint inline next to the `RAGBAZ Articulate StoreFront` label in both welcome states.
 - Tightened top spacing/padding in story mode and adjusted dark-theme chip/keycap colors to maintain high contrast on the blue background (no black text on dark blue).
 
+## 2026-03-19 (cont. 16)
+
+### Codex — fix for Workers AI context loader runtime error
+
+- Resolved runtime noise/failure around `/api/admin/generate-image` where Worker logs showed:
+  - `TypeError: Cannot read properties of undefined (reading 'default')`
+- Root cause: static top-level import of `@opennextjs/cloudflare` in `src/lib/ai.js` could fail under runtime/module interop scenarios, even when route paths did not need image generation yet.
+- Fix implemented:
+  - Removed static import.
+  - Added guarded lazy loader (`getWorkersAiBinding`) using dynamic `import("@opennextjs/cloudflare")`.
+  - Added export-shape fallbacks (`module.getCloudflareContext`, `module.default`, `module.default.getCloudflareContext`).
+  - If loader is unavailable, logs a single warning and safely falls back to REST-based Workers AI calls.
+- Verification:
+  - Targeted lint on `src/lib/ai.js` passes.
+  - Tests pass (17/17).
+
 ## 2026-03-19 (cont. 10)
 
 ### Codex — category extraction + VAT map + digital file heuristics

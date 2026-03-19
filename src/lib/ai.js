@@ -1,8 +1,40 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-
 const EMBEDDING_MODEL =
   process.env.CF_EMBED_MODEL || "@cf/baai/bge-base-en-v1.5";
 const CHAT_MODEL = process.env.CF_CHAT_MODEL || "@cf/meta/llama-2-7b-chat-int8";
+let cloudflareContextLoaderWarned = false;
+
+function resolveCloudflareContextLoader(moduleNamespace) {
+  if (!moduleNamespace || typeof moduleNamespace !== "object") return null;
+  if (typeof moduleNamespace.getCloudflareContext === "function") {
+    return moduleNamespace.getCloudflareContext;
+  }
+  if (typeof moduleNamespace.default === "function") {
+    return moduleNamespace.default;
+  }
+  if (typeof moduleNamespace.default?.getCloudflareContext === "function") {
+    return moduleNamespace.default.getCloudflareContext;
+  }
+  return null;
+}
+
+async function getWorkersAiBinding() {
+  try {
+    const moduleNamespace = await import("@opennextjs/cloudflare");
+    const loadContext = resolveCloudflareContextLoader(moduleNamespace);
+    if (!loadContext) return null;
+    const context = await loadContext({ async: true });
+    return context?.env?.AI ?? null;
+  } catch (error) {
+    if (!cloudflareContextLoaderWarned) {
+      cloudflareContextLoaderWarned = true;
+      console.warn(
+        "[ai] Cloudflare context loader unavailable, falling back to REST:",
+        error?.message || error,
+      );
+    }
+    return null;
+  }
+}
 
 function aiError(code, message, meta = {}) {
   const error = new Error(message);
@@ -17,23 +49,19 @@ function aiError(code, message, meta = {}) {
  */
 async function cfRun(model, body) {
   // Try native AI binding first (no token needed, available on Workers).
-  try {
-    const ctx = await getCloudflareContext({ async: true });
-    if (ctx?.env?.AI) {
-      let result;
-      try {
-        result = await ctx.env.AI.run(model, body);
-      } catch (error) {
-        throw aiError(
-          "ai_binding_run_failed",
-          error?.message || "Workers AI binding invocation failed",
-          { model },
-        );
-      }
-      return { result };
+  const aiBinding = await getWorkersAiBinding();
+  if (aiBinding) {
+    let result;
+    try {
+      result = await aiBinding.run(model, body);
+    } catch (error) {
+      throw aiError(
+        "ai_binding_run_failed",
+        error?.message || "Workers AI binding invocation failed",
+        { model },
+      );
     }
-  } catch {
-    // Not running on Workers — fall through to REST API.
+    return { result };
   }
 
   // REST API fallback for local dev.
@@ -115,33 +143,29 @@ export async function generateImage(prompt, width = 512, height = 512) {
     process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
 
   // Try native AI binding first.
-  try {
-    const ctx = await getCloudflareContext({ async: true });
-    if (ctx?.env?.AI) {
-      let buf;
-      try {
-        buf = await ctx.env.AI.run(model, { prompt, width, height });
-      } catch (error) {
-        throw aiError(
-          "ai_image_binding_failed",
-          error?.message || "Workers AI image generation failed",
-          { model, width, height },
-        );
-      }
-      try {
-        return buf instanceof ArrayBuffer
-          ? buf
-          : await new Response(buf).arrayBuffer();
-      } catch {
-        throw aiError(
-          "ai_image_binding_decode_failed",
-          "Workers AI image response could not be decoded",
-          { model, width, height },
-        );
-      }
+  const aiBinding = await getWorkersAiBinding();
+  if (aiBinding) {
+    let buf;
+    try {
+      buf = await aiBinding.run(model, { prompt, width, height });
+    } catch (error) {
+      throw aiError(
+        "ai_image_binding_failed",
+        error?.message || "Workers AI image generation failed",
+        { model, width, height },
+      );
     }
-  } catch {
-    // Not running on Workers — fall through to REST API.
+    try {
+      return buf instanceof ArrayBuffer
+        ? buf
+        : await new Response(buf).arrayBuffer();
+    } catch {
+      throw aiError(
+        "ai_image_binding_decode_failed",
+        "Workers AI image response could not be decoded",
+        { model, width, height },
+      );
+    }
   }
 
   // REST API fallback.
