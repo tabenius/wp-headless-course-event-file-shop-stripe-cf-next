@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createSessionCookie, createSessionToken } from "@/auth";
 import { validateUserPassword } from "@/lib/userStore";
 import { t } from "@/lib/i18n";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+
+const LoginSchema = z.object({
+  email: z.string().trim().email(t("authErrors.invalidEmail")),
+  password: z.string().min(1, t("authErrors.passwordRequired")),
+});
 
 export async function POST(request) {
   try {
@@ -15,9 +21,14 @@ export async function POST(request) {
       );
     }
 
-    const body = await request.json();
-    const email = typeof body?.email === "string" ? body.email : "";
-    const password = typeof body?.password === "string" ? body.password : "";
+    const body = await request.json().catch(() => ({}));
+    const parsed = LoginSchema.safeParse(body);
+    if (!parsed.success) {
+      const error =
+        parsed.error.errors[0]?.message || t("authErrors.loginFailed");
+      return NextResponse.json({ ok: false, error }, { status: 400 });
+    }
+    const { email, password } = parsed.data;
     const user = await validateUserPassword(email, password);
     if (!user) {
       return NextResponse.json(

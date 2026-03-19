@@ -6,9 +6,28 @@ import { createStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { findUserByEmail, createUser } from "@/lib/userStore";
 import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
 import { sendEmail } from "@/lib/email";
+import { z } from "zod";
 import { t } from "@/lib/i18n";
 import { createTicket } from "@/lib/supportTickets";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+
+const CheckoutSchema = z
+  .object({
+    contentUri: z.string().trim().min(1).optional(),
+    courseUri: z.string().trim().min(1).optional(),
+    contentTitle: z.string().trim().optional(),
+    courseTitle: z.string().trim().optional(),
+    contentKind: z.enum(["course", "event", "product"]).optional(),
+    guestEmail: z
+      .string()
+      .trim()
+      .email(t("authErrors.invalidEmail"))
+      .optional()
+      .or(z.literal("")),
+  })
+  .refine((d) => d.contentUri || d.courseUri, {
+    message: t("apiErrors.contentNotReady"),
+  });
 
 const SETUP_TTL = 86400; // 24 hours
 
@@ -58,21 +77,25 @@ export async function POST(request) {
   const session = await auth();
   let userEmail = session?.user?.email || "";
 
-  // Support guest checkout: accept guestEmail when not logged in
-  let body;
+  // Parse and validate request body
+  let rawBody;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json(
       { ok: false, error: t("apiErrors.contentNotReady") },
       { status: 400 },
     );
   }
+  const parsed = CheckoutSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const error =
+      parsed.error.errors[0]?.message || t("apiErrors.contentNotReady");
+    return NextResponse.json({ ok: false, error }, { status: 400 });
+  }
+  const body = parsed.data;
 
-  const guestEmail =
-    typeof body?.guestEmail === "string"
-      ? body.guestEmail.trim().toLowerCase()
-      : "";
+  const guestEmail = (body.guestEmail || "").toLowerCase();
 
   if (!userEmail && guestEmail && guestEmail.includes("@")) {
     // Guest checkout: find or create account
@@ -130,25 +153,9 @@ export async function POST(request) {
   }
 
   try {
-    const courseUri =
-      typeof body?.contentUri === "string"
-        ? body.contentUri
-        : typeof body?.courseUri === "string"
-          ? body.courseUri
-          : "";
-    const courseTitle =
-      typeof body?.contentTitle === "string"
-        ? body.contentTitle
-        : typeof body?.courseTitle === "string"
-          ? body.courseTitle
-          : "";
-    const rawKind = body?.contentKind;
-    const contentKind =
-      rawKind === "event"
-        ? "event"
-        : rawKind === "product"
-          ? "product"
-          : "course";
+    const courseUri = body.contentUri || body.courseUri || "";
+    const courseTitle = body.contentTitle || body.courseTitle || "";
+    const contentKind = body.contentKind ?? "course";
 
     if (!courseUri) {
       console.error("Stripe checkout request rejected: missing content URI");

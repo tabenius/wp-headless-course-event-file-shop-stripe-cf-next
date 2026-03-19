@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import site from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+
+const ContactSchema = z.object({
+  name: z.string().trim().min(2, t("authErrors.nameTooShort")),
+  email: z.string().trim().email(t("authErrors.invalidEmail")),
+  message: z.string().trim().min(10),
+});
 
 function getTargetEmail() {
   return (
@@ -24,22 +31,21 @@ export async function POST(request) {
     }
 
     const contentType = request.headers.get("content-type") || "";
-    let body;
+    let rawBody;
     if (contentType.includes("application/json")) {
-      body = await request.json();
+      rawBody = await request.json();
     } else {
       const form = await request.formData();
-      body = Object.fromEntries(form.entries());
+      rawBody = Object.fromEntries(form.entries());
     }
-    const name = (body?.name || "").trim();
-    const email = (body?.email || "").trim();
-    const message = (body?.message || "").trim();
-    if (!name || !email || !message) {
-      return NextResponse.json(
-        { ok: false, error: t("contactApi.requiredFields") },
-        { status: 400 },
-      );
+
+    const parsed = ContactSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      const error =
+        parsed.error.errors[0]?.message || t("contactApi.requiredFields");
+      return NextResponse.json({ ok: false, error }, { status: 400 });
     }
+    const { name, email, message } = parsed.data;
 
     const to = getTargetEmail();
 
