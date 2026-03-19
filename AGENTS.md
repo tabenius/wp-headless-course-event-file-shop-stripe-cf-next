@@ -3,7 +3,7 @@
 Shared living document for **Claude** and **Codex** co-working in this repository.
 Both agents MUST read this at session start and update it whenever priorities shift or significant work is landed.
 
---- 
+---
 
 ## Agent status
 
@@ -226,6 +226,7 @@ The following features have been implemented for the chat feature:
 
 - **2026-03-20 (Codex)**: Added the Welcome tab (default, Alt+0) that renders the migration story via impress.js slides, plus the matching nav item, hotkey legend update, and new i18n keys.
 - **2026-03-20 (Codex)**: Introduced the rotating torus banner in the Advanced tab and created the reusable `RagbazLogo` component so the StoreFront logo can be shown without the animation.
+- **2026-03-21 (Codex)**: Added `/api/admin/storage-objects` plus a bucket-list widget beside the digital-file uploader so Cyberduck/S3 uploads can be copied or assigned to products without reuploading.
 - **2026-03-19 (Codex)**: Chat modularisation, markdown rendering, i18n, and bugfixes.
 - **2026-03-19 (Claude)**: Image generator polish and chat fixes.
 - **2026-03-18 (Both)**: Admin UI, i18n, and AGENTS.md setup.

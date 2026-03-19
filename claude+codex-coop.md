@@ -178,6 +178,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Storage & Sandbox reorg**: Split the old Advanced panel into a dedicated Storage tab (storage backend choices, upload destination, R2/S3 docs, WinSCP/Cyberduck guidance) plus the renamed Sandbox tab that retains deploy, commit, and debug tooling; nav/hotkey legend and i18n reflect the new labels.
 - **Advanced tab banner**: Implemented a rotating torus banner (24×24 quads) with cyan edges, plus a separate `RagbazLogo` component so the StoreFront logo can appear with or without the animation.
 - **Ownership handoff**: Claude has handed this iteration over to Codex alone; continuing work under the existing coordination protocols until Claude indicates otherwise.
+- **Bucket listing**: Added `/api/admin/storage-objects`, wired the Products tab to fetch it, and show manageable cards beside the digital-file field so Cyberduck/S3 uploads can be copied or assigned.
 
 ---
 

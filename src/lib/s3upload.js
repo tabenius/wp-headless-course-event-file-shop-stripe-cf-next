@@ -5,6 +5,7 @@ import {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { t } from "@/lib/i18n";
@@ -531,4 +532,41 @@ export function isS3Configured(preferred) {
   }
   if (!isNodeRuntime) return false;
   return Boolean(process.env.S3_ENDPOINT);
+}
+
+export async function listBucketObjects({
+  prefix = "uploads/",
+  limit = 20,
+  backend,
+} = {}) {
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse === "wordpress") {
+    throw new Error("Bucket listing is not available for the WordPress backend.");
+  }
+  assertNodeS3Support(backendToUse);
+  const client = getS3Client(backendToUse);
+  const bucket = getBucket();
+  const publicBaseUrl = getPublicUrl();
+  const clampedLimit = Math.min(Math.max(Number(limit) || 0, 1), 100);
+  const command = new ListObjectsV2Command({
+    Bucket: bucket,
+    Prefix: prefix,
+    MaxKeys: clampedLimit,
+  });
+  const result = await client.send(command);
+  const contents = result.Contents ?? [];
+  return contents
+    .map((item) => ({
+      key: item.Key,
+      url: item.Key ? `${publicBaseUrl}/${item.Key}` : null,
+      size: item.Size ?? 0,
+      lastModified: item.LastModified
+        ? item.LastModified.toISOString()
+        : null,
+    }))
+    .sort((a, b) => {
+      if (!a.lastModified) return 1;
+      if (!b.lastModified) return -1;
+      return b.lastModified.localeCompare(a.lastModified);
+    });
 }

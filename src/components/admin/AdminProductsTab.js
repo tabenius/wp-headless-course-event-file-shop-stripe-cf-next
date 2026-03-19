@@ -13,6 +13,27 @@ function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
 }
 
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = bytes;
+  let index = 0;
+  while (value >= 1024 && index < units.length - 1) {
+    value /= 1024;
+    index += 1;
+  }
+  return `${value.toFixed(1)} ${units[index]}`;
+}
+
+function formatIsoDate(iso) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString();
+  } catch (_err) {
+    return iso;
+  }
+}
+
 // ── Inner tab nav ────────────────────────────────────────────────────────────
 
 function InnerTabs({ active, onChange }) {
@@ -269,6 +290,56 @@ function ProductsTab({
   loading,
   editFormRef,
 }) {
+  const [bucketObjects, setBucketObjects] = useState([]);
+  const [bucketLoading, setBucketLoading] = useState(false);
+  const [bucketError, setBucketError] = useState("");
+  const [bucketRefresh, setBucketRefresh] = useState(0);
+  const supportsBucketListing = uploadBackend !== "wordpress";
+
+  useEffect(() => {
+    if (!supportsBucketListing) {
+      setBucketObjects([]);
+      setBucketError("");
+      setBucketLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    async function fetchObjects() {
+      setBucketLoading(true);
+      setBucketError("");
+      try {
+        const res = await fetch("/api/admin/storage-objects?limit=25");
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || "Failed to list bucket objects");
+        }
+        setBucketObjects(json.objects || []);
+      } catch (error) {
+        if (!cancelled) {
+          setBucketError(error.message || "Failed to list bucket objects");
+        }
+      } finally {
+        if (!cancelled) {
+          setBucketLoading(false);
+        }
+      }
+    }
+    fetchObjects();
+    return () => {
+      cancelled = true;
+    };
+  }, [supportsBucketListing, bucketRefresh]);
+
+  const handleCopyUrl = (url) => {
+    if (!url || typeof navigator === "undefined") return;
+    navigator.clipboard?.writeText(url).catch(() => {});
+  };
+
+  const handleUseUrl = (url) => {
+    if (!url) return;
+    updateProduct(shopIndex, "fileUrl", url);
+  };
   return (
     <div
       className="grid grid-cols-[240px_1fr] gap-4"
@@ -525,7 +596,8 @@ function ProductsTab({
                   : "Course URI"}
               </p>
               {selectedShopProduct.type === "digital_file" ? (
-                <div className="space-y-1.5">
+                <>
+                  <div className="space-y-1.5">
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -570,7 +642,88 @@ function ProductsTab({
                           "Multipart upload for large files.",
                         )}
                   </p>
-                </div>
+                  </div>
+                  {supportsBucketListing && (
+                  <div className="mt-4 border rounded-lg bg-white/90 p-3 space-y-3 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          {t("admin.bucketContents")}
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-1">
+                          {t("admin.bucketContentsHint")}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setBucketRefresh((prev) => prev + 1)}
+                        disabled={bucketLoading}
+                        className="text-xs font-medium text-purple-700 hover:underline disabled:text-gray-400"
+                      >
+                        {bucketLoading
+                          ? t("common.loading")
+                          : t("admin.bucketRefresh")}
+                      </button>
+                    </div>
+                    {bucketLoading ? (
+                      <p className="text-xs text-gray-500">{t("common.loading")}</p>
+                    ) : bucketError ? (
+                      <p className="text-xs text-red-500">
+                        {t("admin.bucketListError", { error: bucketError })}
+                      </p>
+                    ) : bucketObjects.length === 0 ? (
+                      <p className="text-xs text-gray-500">
+                        {t("admin.bucketListEmpty")}
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-auto">
+                        {bucketObjects.map((obj, idx) => {
+                          const title = obj.key || `object-${idx}`;
+                          const hasUrl = Boolean(obj.url);
+                          return (
+                            <div
+                              key={title}
+                              className="border rounded-lg bg-gray-50 p-3 space-y-1"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-sm font-medium text-gray-800 truncate">
+                                  {title}
+                                </p>
+                                <div className="flex gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyUrl(obj.url)}
+                                    disabled={!hasUrl}
+                                    className="px-2 py-0.5 rounded text-[11px] text-purple-600 border border-purple-200 hover:bg-purple-50 disabled:text-gray-400 disabled:border-gray-200"
+                                  >
+                                    {t("admin.bucketCopyUrl")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUseUrl(obj.url)}
+                                    disabled={!hasUrl}
+                                    className="px-2 py-0.5 rounded text-[11px] bg-purple-700 text-white hover:bg-purple-800 disabled:bg-gray-200"
+                                  >
+                                    {t("admin.bucketUseUrl")}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-3 text-[11px] text-gray-500">
+                                <span>
+                                  {t("admin.bucketLastModified")} {formatIsoDate(obj.lastModified)}
+                                </span>
+                                <span>
+                                  {t("admin.bucketSize")} {formatBytes(obj.size)}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+                </>
               ) : (
                 <div>
                   <input

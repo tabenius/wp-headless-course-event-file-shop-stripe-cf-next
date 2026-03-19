@@ -53,7 +53,12 @@ export default function AdminStorageTab({
             {t("admin.storageBackend")}
           </h2>
           <p className="text-sm text-gray-500">
-            Controls where course access rules, pricing, and permissions are stored. Adjust the <code className="bg-gray-100 px-1 rounded">COURSE_ACCESS_BACKEND</code> environment variable to switch providers.
+            Controls where course access rules, pricing, and permissions are
+            stored. Adjust the{" "}
+            <code className="bg-gray-100 px-1 rounded">
+              COURSE_ACCESS_BACKEND
+            </code>{" "}
+            environment variable to switch providers.
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             {storageOptions.map((opt) => (
@@ -83,9 +88,12 @@ export default function AdminStorageTab({
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">Upload destination</h3>
+          <h3 className="text-sm font-semibold text-gray-700">
+            Upload destination
+          </h3>
           <p className="text-xs text-gray-500">
-            Choose where product files and images are stored. WordPress media works out of the box, while R2/S3 requires credentials.
+            Choose where product files and images are stored. WordPress media
+            works out of the box, while R2/S3 requires credentials.
           </p>
           <div className="flex flex-wrap gap-2">
             {uploadTargets.map((opt) => (
@@ -106,7 +114,9 @@ export default function AdminStorageTab({
           </div>
           {!uploadInfo?.s3 && !uploadInfo?.r2 && (
             <p className="text-[11px] text-gray-500">
-              Configure S3/R2 credentials (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME, S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID) to unlock uplinks.
+              Configure S3/R2 credentials (S3_ACCESS_KEY_ID,
+              S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME, S3_PUBLIC_URL, plus
+              S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID) to unlock uplinks.
             </p>
           )}
           <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-gray-400">
@@ -120,7 +130,12 @@ export default function AdminStorageTab({
                 <span className="w-4 h-4">
                   <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
                     <circle cx="12" cy="12" r="10" fill="#fbbf24" />
-                    <path d="M12 4v16M4 12h16" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
+                    <path
+                      d="M12 4v16M4 12h16"
+                      stroke="#0f172a"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </span>
                 <span>Cloudflare R2 docs</span>
@@ -135,8 +150,21 @@ export default function AdminStorageTab({
               >
                 <span className="w-4 h-4">
                   <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-                    <rect x="3" y="7" width="18" height="10" rx="2" fill="#f5af19" />
-                    <path d="M6 16 4 9h4l2 7h4l2-7h4l-2 7" stroke="#1f2937" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect
+                      x="3"
+                      y="7"
+                      width="18"
+                      height="10"
+                      rx="2"
+                      fill="#f5af19"
+                    />
+                    <path
+                      d="M6 16 4 9h4l2 7h4l2-7h4l-2 7"
+                      stroke="#1f2937"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
                 <span>AWS S3 docs</span>
@@ -154,31 +182,41 @@ export default function AdminStorageTab({
               <p className="text-gray-600">{t("admin.uploadClientHint")}</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 <div>
-                  <div className="text-[11px] text-gray-500">{t("admin.clientHost")}</div>
+                  <div className="text-[11px] text-gray-500">
+                    {t("admin.clientHost")}
+                  </div>
                   <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                     {uploadInfoDetails.endpoint || t("common.noDetails")}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-500">{t("admin.clientBucket")}</div>
+                  <div className="text-[11px] text-gray-500">
+                    {t("admin.clientBucket")}
+                  </div>
                   <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                     {uploadInfoDetails.bucket || t("common.noDetails")}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-500">{t("admin.clientAccessKey")}</div>
+                  <div className="text-[11px] text-gray-500">
+                    {t("admin.clientAccessKey")}
+                  </div>
                   <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                     {uploadInfoDetails.accessKeyId || t("common.noDetails")}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-500">{t("admin.clientRegion")}</div>
+                  <div className="text-[11px] text-gray-500">
+                    {t("admin.clientRegion")}
+                  </div>
                   <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                     {uploadInfoDetails.region || "auto"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-500">{t("admin.clientPublicUrl")}</div>
+                  <div className="text-[11px] text-gray-500">
+                    {t("admin.clientPublicUrl")}
+                  </div>
                   <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
                     {uploadInfoDetails.publicUrl || t("common.noDetails")}
                   </div>
@@ -202,7 +240,9 @@ export default function AdminStorageTab({
                     </div>
                   ) : (
                     <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 flex items-center gap-2">
-                      <span className="flex-1 text-gray-300 tracking-widest">••••••••••••••••</span>
+                      <span className="flex-1 text-gray-300 tracking-widest">
+                        ••••••••••••••••
+                      </span>
                       <button
                         type="button"
                         onClick={() => setShowSecret(true)}
@@ -214,7 +254,9 @@ export default function AdminStorageTab({
                   )}
                 </div>
               </div>
-              <p className="text-[11px] text-gray-500">{t("admin.uploadAltLarge")}</p>
+              <p className="text-[11px] text-gray-500">
+                {t("admin.uploadAltLarge")}
+              </p>
             </div>
           )}
         </div>
@@ -229,14 +271,25 @@ export default function AdminStorageTab({
         >
           <svg viewBox="0 0 32 32" className="h-7 w-7 flex-shrink-0">
             <rect x="2" y="7" width="28" height="18" rx="4" fill="#1c3f94" />
-            <path d="M8 12h16" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-            <path d="M8 18h12" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+            <path
+              d="M8 12h16"
+              stroke="#fff"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M8 18h12"
+              stroke="#fff"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
             <circle cx="24" cy="23" r="2" fill="#fcd34d" />
           </svg>
           <div>
             <p className="font-semibold text-gray-900">WinSCP</p>
             <p className="text-[11px] text-gray-500">
-              Use the free WinSCP SFTP client to drag files straight into R2 or S3 uploads.
+              Use the free WinSCP SFTP client to drag files straight into R2 or
+              S3 uploads.
             </p>
           </div>
         </a>
@@ -247,13 +300,17 @@ export default function AdminStorageTab({
           className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white/80 px-3 py-3 shadow-sm transition hover:border-gray-400"
         >
           <svg viewBox="0 0 32 32" className="h-7 w-7 flex-shrink-0">
-            <path d="M4 18c0-6 6-10 12-10s12 4 12 10c0 5-6 10-12 10S4 23 4 18" fill="#f59e0b" />
+            <path
+              d="M4 18c0-6 6-10 12-10s12 4 12 10c0 5-6 10-12 10S4 23 4 18"
+              fill="#f59e0b"
+            />
             <path d="M10 16c0-2 2-4 5-4s5 2 5 4-2 4-5 4-5-2-5-4z" fill="#fff" />
           </svg>
           <div>
             <p className="font-semibold text-gray-900">Cyberduck</p>
             <p className="text-[11px] text-gray-500">
-              Map your R2/S3 bucket as a remote and sync manuals/document uploads in seconds.
+              Map your R2/S3 bucket as a remote and sync manuals/document
+              uploads in seconds.
             </p>
           </div>
         </a>
