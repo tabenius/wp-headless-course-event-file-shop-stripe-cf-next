@@ -11,6 +11,20 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 58)
+
+### Codex — bottom ticker restyle (smaller, yellow, faster)
+
+- Updated `TorusBanner` non-sine text presentation:
+  - removed the static right-panel text block when `ENABLE_SINE_SCROLLER` is false,
+  - added a dedicated bottom ticker shell spanning the banner width.
+- Implemented compact/faster ticker styling:
+  - smaller font (`clamp(0.62rem, 1.2vw, 0.9rem)`),
+  - bright yellow text (`#ffe100`),
+  - faster horizontal motion (`torus-bottom-scroll` in `11s` linear loop).
+- Kept sine-scroller code path fully intact behind the existing flag.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 57)
 
 ### Codex — thicker/smoother trefoil with improved self-sticking handling

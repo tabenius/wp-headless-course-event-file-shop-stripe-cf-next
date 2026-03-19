@@ -528,11 +528,22 @@ export default function TorusBanner() {
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="torus-scroller-muted">{SCROLLER_TEXT}</div>
-          )}
+          ) : null}
         </div>
       </div>
+      {!ENABLE_SINE_SCROLLER && (
+        <div className="torus-bottom-ticker-shell" aria-hidden>
+          <div className="torus-bottom-ticker-viewport">
+            <div className="torus-bottom-ticker-track">
+              {[0, 1, 2, 3].map((segment) => (
+                <span key={`bottom-${segment}`} className="torus-bottom-ticker-segment">
+                  {SCROLLER_TEXT}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <style jsx>{`
         .torus-parallax-scene {
           position: absolute;
@@ -718,6 +729,46 @@ export default function TorusBanner() {
             0 1px 0 rgba(0, 0, 0, 0.55);
         }
 
+        .torus-bottom-ticker-shell {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 2;
+          pointer-events: none;
+          padding: 0 0.35rem 0.2rem;
+          background: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 0.26) 100%
+          );
+        }
+
+        .torus-bottom-ticker-viewport {
+          width: 100%;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+
+        .torus-bottom-ticker-track {
+          display: inline-flex;
+          min-width: max-content;
+          animation: torus-bottom-scroll 11s linear infinite;
+        }
+
+        .torus-bottom-ticker-segment {
+          display: inline-flex;
+          margin-right: 2.2rem;
+          color: #ffe100;
+          font-size: clamp(0.62rem, 1.2vw, 0.9rem);
+          font-weight: 700;
+          letter-spacing: 0.065em;
+          text-transform: uppercase;
+          text-shadow:
+            0 1px 0 rgba(0, 0, 0, 0.8),
+            0 0 6px rgba(0, 0, 0, 0.42);
+        }
+
         @keyframes torus-scroll {
           from {
             transform: translateX(0%);
@@ -737,6 +788,15 @@ export default function TorusBanner() {
           }
           75% {
             transform: translateY(8px);
+          }
+        }
+
+        @keyframes torus-bottom-scroll {
+          from {
+            transform: translateX(0%);
+          }
+          to {
+            transform: translateX(-25%);
           }
         }
       `}</style>
