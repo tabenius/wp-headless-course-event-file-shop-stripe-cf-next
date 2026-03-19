@@ -15,7 +15,10 @@ function initImpress() {
   }
 }
 
-export default function AdminWelcomeTab() {
+export default function AdminWelcomeTab({
+  onSeenRevision,
+  showRevisionBadge,
+}) {
   const slideData = [
     {
       id: "starting-point",
@@ -81,6 +84,11 @@ export default function AdminWelcomeTab() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !onSeenRevision) return;
+    onSeenRevision();
+  }, [onSeenRevision]);
+
   return (
     <div className="border rounded-lg p-6 bg-gradient-to-br from-purple-950 to-purple-900 text-white shadow-lg relative overflow-hidden">
       <div className="mb-4 space-y-1">
@@ -120,7 +128,15 @@ export default function AdminWelcomeTab() {
           "Use the arrows or scroll to navigate the story.",
         )}
       </p>
-      <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+      {showRevisionBadge && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-amber-100">
+          <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-amber-950">
+            {t("admin.welcomeBadgeNew", "New")}
+          </span>
+          <span>{t("admin.welcomeBadge", "Updated story — check what changed")}</span>
+        </div>
+      )}
+      <div className="mt-3 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
         {[
           {
             tab: "sales",
@@ -240,6 +256,6 @@ export default function AdminWelcomeTab() {
           </button>
         ))}
       </div>
-   </div>
+    </div>
   );
 }

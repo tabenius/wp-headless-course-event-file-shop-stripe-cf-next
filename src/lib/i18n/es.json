@@ -274,6 +274,8 @@
     "cardChat": "Asistente AI",
     "cardChatBody": "Pregunta sobre pagos, accesos, docs y logs con IA multilingüe.",
     "welcomeCardGoto": "Ir a",
+    "welcomeBadge": "Historia actualizada – mira qué cambió",
+    "welcomeBadgeNew": "Nuevo",
     "styleTitle": "Guía de estilo",
     "styleSummary": "Tipografías, tamaños, colores y comportamientos clave de la interfaz admin de RAGBAZ Articulate.",
     "styleTypography": "Tipografía",

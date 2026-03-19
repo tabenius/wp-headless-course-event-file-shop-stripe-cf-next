@@ -19,6 +19,12 @@ import ImageGenerationPanel from "./ImageGenerationPanel";
 import ChatPanel from "./ChatPanel";
 import { adminFetch } from "@/lib/adminFetch";
 
+const WELCOME_REVISION =
+  process.env.NEXT_PUBLIC_WELCOME_REVISION ||
+  process.env.NEXT_PUBLIC_GIT_SHA ||
+  "";
+const WELCOME_SEEN_KEY = "ragbaz-admin-welcome-revision";
+
 const AdminStatsTab = lazy(() => import("./AdminStatsTab"));
 const AdminConnectorsTab = lazy(() => import("./AdminConnectorsTab"));
 const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
@@ -394,6 +400,9 @@ export default function AdminDashboard() {
   const [healthLoading, setHealthLoading] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
   const [clientLogs, setClientLogs] = useState([]);
+  const [shouldShowWelcomeBadge, setShouldShowWelcomeBadge] = useState(
+    Boolean(WELCOME_REVISION),
+  );
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("welcome");
   const [purging, setPurging] = useState(false);
@@ -467,6 +476,22 @@ export default function AdminDashboard() {
   }, [activeTab]);
 
   useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !WELCOME_REVISION ||
+      window.localStorage === undefined
+    ) {
+      return;
+    }
+    const stored = window.localStorage.getItem(WELCOME_SEEN_KEY);
+    const hasSeen = stored === WELCOME_REVISION;
+    setShouldShowWelcomeBadge(!hasSeen);
+    if (hasSeen) {
+      setActiveTab("stats");
+    }
+  }, []);
+
+  useEffect(() => {
     function onKey(e) {
       const tag = (e.target && e.target.tagName) || "";
       const isFormField =
@@ -513,6 +538,12 @@ export default function AdminDashboard() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const handleWelcomeSeen = useCallback(() => {
+    if (typeof window === "undefined" || !WELCOME_REVISION) return;
+    window.localStorage.setItem(WELCOME_SEEN_KEY, WELCOME_REVISION);
+    setShouldShowWelcomeBadge(false);
   }, []);
 
   // Derived values for shop product selection
@@ -1470,7 +1501,10 @@ export default function AdminDashboard() {
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
         >
-          <AdminWelcomeTab />
+          <AdminWelcomeTab
+            onSeenRevision={handleWelcomeSeen}
+            showRevisionBadge={shouldShowWelcomeBadge}
+          />
         </Suspense>
       )}
       {/* ── Stats tab ── */}

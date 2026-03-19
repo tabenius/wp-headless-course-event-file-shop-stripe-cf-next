@@ -274,6 +274,8 @@
     "cardChat": "AI Assist",
     "cardChatBody": "Ask about payments, access, docs, and logs with multilingual intelligence.",
     "welcomeCardGoto": "Go to",
+    "welcomeBadge": "Updated story — check what changed",
+    "welcomeBadgeNew": "New",
     "languageLabel": "Language",
     "languageHint": "Switch the admin UI language.",
     "styleTitle": "Style guide",
