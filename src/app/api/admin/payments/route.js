@@ -12,7 +12,8 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email") || undefined;
-    const limit = Math.min(Number(searchParams.get("limit") || 20), 100);
+    const limitRaw = Number(searchParams.get("limit"));
+    const limit = Math.min(limitRaw > 0 ? limitRaw : 20, 100);
     const fromTs = searchParams.get("from")
       ? Number(searchParams.get("from"))
       : undefined;
