@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 import DebugLogPanel from "./DebugLogPanel";
+import TorusBanner from "./TorusBanner";
 
 export default function AdminAdvancedTab({
   buildTimestamp,
@@ -32,9 +33,11 @@ export default function AdminAdvancedTab({
 }) {
   const [showSecret, setShowSecret] = useState(false);
   return (
-    <div className="border rounded p-5 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">{t("admin.advancedSettings")}</h2>
+    <div className="space-y-6">
+      <TorusBanner />
+      <div className="border rounded p-5 space-y-6 bg-white">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">{t("admin.advancedSettings")}</h2>
         <div className="flex gap-2">
           <button
             type="button"
@@ -419,5 +422,6 @@ export default function AdminAdvancedTab({
       {/* ── Debug log panel ── */}
       <DebugLogPanel clientLogs={clientLogs} setClientLogs={setClientLogs} />
     </div>
-  );
+  </div>
+);
 }
