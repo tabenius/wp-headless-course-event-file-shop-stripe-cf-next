@@ -267,9 +267,7 @@ export default function AdminProductsTab({
             }}
           />
           <p className="text-xs text-gray-400 px-1">
-            WooCommerce and LearnPress prices are imported automatically from
-            WordPress. Use the &ldquo;Use WP price&rdquo; button to lock in a
-            price, or type a different value.
+            {t("admin.priceHintWcLp")}
           </p>
           <ProductSection
             label="Events"
@@ -317,8 +315,7 @@ export default function AdminProductsTab({
             }}
           />
           <p className="text-xs text-gray-400 px-1">
-            Event Organiser has no built-in price field &mdash; price must be
-            set manually in the config panel below.
+            {t("admin.priceHintEvents")}
           </p>
           <ProductSection
             label={t("admin.shopProducts")}
@@ -378,8 +375,7 @@ export default function AdminProductsTab({
             }}
           />
           <p className="text-xs text-gray-400 px-1">
-            Digital file and course products have no WordPress source &mdash;
-            price is set here and stored locally.
+            {t("admin.priceHintDigital")}
           </p>
           <ProductSection
             label="Other"
@@ -605,7 +601,8 @@ export default function AdminProductsTab({
                       {wpPrice && wpParsedCents > 0 && (
                         <div className="flex items-center gap-3 pt-1 border-t border-amber-200">
                           <span className="text-xs">
-                            WordPress price: <strong>{wpPrice}</strong>
+                            {t("admin.notBuyableWpPrice")}{" "}
+                            <strong>{wpPrice}</strong>
                           </span>
                           <button
                             type="button"
@@ -614,7 +611,7 @@ export default function AdminProductsTab({
                             }}
                             className="px-2 py-0.5 rounded border border-amber-400 bg-white text-amber-800 text-xs hover:bg-amber-100 shrink-0"
                           >
-                            Use WP price
+                            {t("admin.notBuyableUseWpPrice")}
                           </button>
                         </div>
                       )}
