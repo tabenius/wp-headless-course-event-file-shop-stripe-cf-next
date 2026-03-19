@@ -332,7 +332,8 @@
     "trafficErrors": "Errores",
     "requestsPerHour": "Solicitudes por hora",
     "now": "Ahora",
-    "topReferrers": "Principales referencias"
+    "topReferrers": "Principales referencias",
+    "workersHint": "Los referrers, vistas de página y ancho de banda requieren análisis a nivel de zona. Enruta tu Worker a través de un dominio personalizado y define CF_ZONE_ID para actualizar."
   },
   "chat": {
     "title": "Chat",

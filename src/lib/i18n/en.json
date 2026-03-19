@@ -332,7 +332,8 @@
     "trafficErrors": "Errors",
     "requestsPerHour": "Requests per hour",
     "now": "Now",
-    "topReferrers": "Top referrers"
+    "topReferrers": "Top referrers",
+    "workersHint": "Referrers, page views, and bandwidth require zone-level analytics. Route your Worker through a custom domain and set CF_ZONE_ID to upgrade."
   },
   "chat": {
     "title": "Chat",

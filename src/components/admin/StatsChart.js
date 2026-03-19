@@ -53,10 +53,7 @@ export default function StatsChart({ analytics, analyticsMode }) {
 
       {analyticsMode === "workers" && (
         <div className="flex items-center text-xs text-gray-400 p-4">
-          <p>
-            Referrers, page views, and bandwidth require zone-level analytics.
-            Route your Worker through a custom domain and set <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> to upgrade.
-          </p>
+          <p>{t("stats.workersHint")}</p>
         </div>
       )}
     </div>

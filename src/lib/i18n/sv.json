@@ -332,7 +332,8 @@
     "trafficErrors": "Fel",
     "requestsPerHour": "Förfrågningar per timme",
     "now": "Nu",
-    "topReferrers": "Topp-hänvisningar"
+    "topReferrers": "Topp-hänvisningar",
+    "workersHint": "Referrers, sidvisningar och bandbredd kräver zon-nivå-analys. Dirigera din Worker via en anpassad domän och ange CF_ZONE_ID för att uppgradera."
   },
   "chat": {
     "title": "Chat",
