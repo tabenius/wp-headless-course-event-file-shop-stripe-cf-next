@@ -171,6 +171,15 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - ES: `Descargas digitales`
 - Applied via `admin.productsTabDigital` translations in `en.json`, `sv.json`, and `es.json`.
 
+## 2026-03-19 (cont. 32)
+
+### Codex — Products empty-state color tweak in dark mode
+
+- Updated the “Select an item to configure access” hint in `AdminProductsTab` to use a dedicated class (`admin-soft-yellow`).
+- Added gruvbox override in `globals.css`:
+  - `.admin-gruvbox .admin-soft-yellow { color: #f5e7b8 !important; }`
+- Result: soft-yellow hint on dark theme (better contrast), neutral gray retained in light theme.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

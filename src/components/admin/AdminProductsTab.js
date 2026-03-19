@@ -1807,7 +1807,9 @@ function AccessTab({
                 clipRule="evenodd"
               />
             </svg>
-            <p className="text-sm">Select an item to configure access</p>
+            <p className="text-sm text-gray-500 admin-soft-yellow">
+              Select an item to configure access
+            </p>
           </div>
         )}
       </div>

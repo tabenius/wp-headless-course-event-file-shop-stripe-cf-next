@@ -410,6 +410,9 @@ body:has(.admin-layout)::before {
 .admin-gruvbox .text-gray-400 {
   color: var(--grv-fg2) !important;
 }
+.admin-gruvbox .admin-soft-yellow {
+  color: #f5e7b8 !important;
+}
 
 /* Interactive elements */
 .admin-gruvbox input,
