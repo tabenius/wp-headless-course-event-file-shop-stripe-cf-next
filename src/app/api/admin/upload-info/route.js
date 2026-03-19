@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 
-function resolveBackend() {
-  return (process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
+const ALLOWED_BACKENDS = new Set(["wordpress", "r2", "s3"]);
+
+function resolveBackend(request) {
+  const url = new URL(request.url);
+  const requested = (url.searchParams.get("backend") || "").toLowerCase();
+  if (ALLOWED_BACKENDS.has(requested)) return requested;
+  const envBackend = (process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
+  return ALLOWED_BACKENDS.has(envBackend) ? envBackend : "wordpress";
 }
 
 function buildR2Endpoint() {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
+  const accountId =
+    process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || "";
   return accountId ? `${accountId}.r2.cloudflarestorage.com` : "";
 }
 
@@ -14,7 +21,7 @@ export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
-  const backend = resolveBackend();
+  const backend = resolveBackend(request);
   const bucket =
     process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
   const publicUrl = (

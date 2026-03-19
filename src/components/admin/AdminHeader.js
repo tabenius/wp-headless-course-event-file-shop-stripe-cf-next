@@ -257,7 +257,11 @@ export default function AdminHeader({ logoUrl }) {
               className="flex items-center gap-2 text-white/95 hover:text-white transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
-              <RagbazLogo wordmarkOnly noLetterSpacing />
+              <RagbazLogo
+                wordmarkOnly
+                noLetterSpacing
+                className="origin-left scale-[1.25]"
+              />
               <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white">
                 ARTICULATE STOREFRONT
               </span>

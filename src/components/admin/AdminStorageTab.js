@@ -306,95 +306,6 @@ export default function AdminStorageTab({
                   })}
                 </div>
               </div>
-
-              <div className="border rounded p-3 bg-gray-50 space-y-2 text-xs text-gray-700">
-              <div className="font-semibold text-gray-800 flex items-center gap-2">
-                {t("admin.uploadClientSettings")}
-                <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 text-purple-800">
-                  {uploadBackend === "r2"
-                    ? t("admin.uploadClientModeR2")
-                    : t("admin.uploadClientModeS3")}
-                </span>
-              </div>
-              <p className="text-gray-600">{t("admin.uploadClientHint")}</p>
-              <div className="grid sm:grid-cols-2 gap-2">
-                <div>
-                  <div className="text-[11px] text-gray-500">
-                    {t("admin.clientHost")}
-                  </div>
-                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
-                    {clientDetails.endpoint || t("common.noDetails")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] text-gray-500">
-                    {t("admin.clientBucket")}
-                  </div>
-                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
-                    {clientDetails.bucket || t("common.noDetails")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] text-gray-500">
-                    {t("admin.clientAccessKey")}
-                  </div>
-                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
-                    {clientDetails.accessKeyId || t("common.noDetails")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] text-gray-500">
-                    {t("admin.clientRegion")}
-                  </div>
-                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
-                    {clientDetails.region || t("admin.clientRegionAuto")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] text-gray-500">
-                    {t("admin.clientPublicUrl")}
-                  </div>
-                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
-                    {clientDetails.publicUrl || t("common.noDetails")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] text-gray-500">
-                    {t("admin.clientSecretKey")}
-                  </div>
-                  {showSecret ? (
-                    <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all flex gap-1 items-start">
-                      <span className="flex-1">
-                        {clientDetails.secretKey || "—"}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowSecret(false)}
-                        className="text-gray-400 hover:text-gray-600 shrink-0 text-[11px] mt-0.5"
-                      >
-                        {t("admin.hideSecret")}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 flex items-center gap-2">
-                      <span className="flex-1 text-gray-300 tracking-widest">
-                        ••••••••••••••••
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowSecret(true)}
-                        className="text-purple-600 hover:underline text-[11px] shrink-0"
-                      >
-                        {t("admin.showSecret")}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <p className="text-[11px] text-gray-500">
-                {t("admin.uploadAltLarge")}
-              </p>
-            </div>
             </div>
           )}
         </div>
@@ -405,6 +316,9 @@ export default function AdminStorageTab({
           {t("admin.manualClientsTitle")}
         </h3>
         <p className="text-xs text-gray-500">{t("admin.manualClientsHint")}</p>
+        <p className="text-[11px] text-gray-500">
+          {t("admin.clientChecklistHint")}
+        </p>
 
         <details className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-indigo-300 open:bg-indigo-50/30">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
@@ -447,86 +361,6 @@ export default function AdminStorageTab({
             </a>
           </summary>
           <div className="mt-3 space-y-2 text-[12px] text-gray-600">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientProtocol")}
-                </div>
-                <div className="font-mono text-[12px]">S3</div>
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientHost")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.endpoint || t("common.noDetails")}
-                </div>
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientAccessKey")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.accessKeyId || t("common.noDetails")}
-                </div>
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientSecretKey")}
-                </div>
-                {showSecret ? (
-                  <div className="font-mono text-[12px] break-all flex gap-2">
-                    <span className="flex-1">{clientDetails.secretKey || "—"}</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowSecret(false)}
-                      className="text-gray-400 hover:text-gray-600 shrink-0 text-[11px]"
-                    >
-                      {t("admin.hideSecret")}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="font-mono text-[12px] flex items-center gap-2">
-                    <span className="flex-1 text-gray-300 tracking-widest">
-                      ••••••••••••••••
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowSecret(true)}
-                      className="text-purple-600 hover:underline text-[11px] shrink-0"
-                    >
-                      {t("admin.showSecret")}
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientBucket")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.bucket || t("common.noDetails")}
-                </div>
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientRegion")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.region || t("admin.clientRegionAuto")}
-                </div>
-              </div>
-              <div className="rounded border bg-white p-2 sm:col-span-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientRemotePath")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.bucket
-                    ? `/${clientDetails.bucket}`
-                    : t("common.noDetails")}
-                </div>
-              </div>
-            </div>
             <p>{t("admin.winscpStepProtocol")}</p>
             <p>{t("admin.winscpStepHost")}</p>
             <p>{t("admin.winscpStepAuth")}</p>
@@ -569,46 +403,6 @@ export default function AdminStorageTab({
             </a>
           </summary>
           <div className="mt-3 space-y-2 text-[12px] text-gray-600">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientProtocol")}
-                </div>
-                <div className="font-mono text-[12px]">S3</div>
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientHost")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.endpoint || t("common.noDetails")}
-                </div>
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientAccessKey")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.accessKeyId || t("common.noDetails")}
-                </div>
-              </div>
-              <div className="rounded border bg-white p-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientBucket")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.bucket || t("common.noDetails")}
-                </div>
-              </div>
-              <div className="rounded border bg-white p-2 sm:col-span-2">
-                <div className="text-[11px] text-gray-500">
-                  {t("admin.clientPublicUrl")}
-                </div>
-                <div className="font-mono text-[12px] break-all">
-                  {clientDetails.publicUrl || t("common.noDetails")}
-                </div>
-              </div>
-            </div>
             <p>{t("admin.cyberduckStepProtocol")}</p>
             <p>{t("admin.cyberduckStepServer")}</p>
             <p>{t("admin.cyberduckStepAuth")}</p>

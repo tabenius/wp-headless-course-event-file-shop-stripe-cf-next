@@ -613,3 +613,21 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminWelcomeTab.js`
   - `npm test -- tests/i18n-admin-parity.test.js`
+
+---
+
+## 2026-03-19 (cont. 18)
+
+### Codex — storage/R2 UX dedup + backend defaults + error scoping groundwork
+
+- Changed course-access backend defaults from WordPress to Cloudflare KV in deploy/example config:
+  - `.env.example`: `COURSE_ACCESS_BACKEND=cloudflare-kv`
+  - `wrangler.jsonc`: `vars.COURSE_ACCESS_BACKEND = "cloudflare-kv"`
+- Made `/api/admin/upload-info` backend-aware (`?backend=wordpress|r2|s3`) and added `CF_ACCOUNT_ID` fallback when deriving R2 endpoint host.
+- Updated dashboard upload-info loading to request backend-specific details based on the selected storage backend so R2 fields populate correctly instead of stale WordPress-mode values.
+- Redesigned `AdminStorageTab` to remove duplicated R2/S3 credential sections:
+  - Keeps one canonical “Client checklist” block with copy controls and secret toggle.
+  - WinSCP/Cyberduck accordions now focus on client-specific steps and refer to the checklist values instead of repeating the same host/key/bucket fields.
+- Added tab-scoped admin error-state wiring in `AdminDashboard` so global error banners can be restricted to the originating tab and no longer leak across tabs.
+- Validation:
+  - `npx eslint src/components/admin/AdminStorageTab.js src/components/admin/AdminDashboard.js src/app/api/admin/upload-info/route.js`

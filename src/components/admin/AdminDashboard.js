@@ -468,7 +468,7 @@ export default function AdminDashboard() {
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [manualEmail, setManualEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [errorState, setErrorState] = useState({ message: "", tab: null });
   const [loading, setLoading] = useState(false);
   const [healthChecks, setHealthChecks] = useState(null);
   const [webhookUrl, setWebhookUrl] = useState("");
@@ -485,6 +485,24 @@ export default function AdminDashboard() {
     return parseTabFromHash(window.location.hash) || "welcome";
   });
   const activeTabRef = useRef(activeTab);
+  const error = errorState.message;
+  const showErrorBanner =
+    Boolean(error) &&
+    (errorState.tab === null ||
+      errorState.tab === "global" ||
+      errorState.tab === activeTab);
+  const setError = useCallback(
+    (nextMessage, tabOverride) => {
+      const message = String(nextMessage || "");
+      if (!message) {
+        setErrorState({ message: "", tab: null });
+        return;
+      }
+      const scopedTab = normalizeAdminTab(tabOverride || activeTab) || "global";
+      setErrorState({ message, tab: scopedTab });
+    },
+    [activeTab],
+  );
   const [welcomeStoryVisible, setWelcomeStoryVisible] = useState(true);
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
@@ -715,7 +733,7 @@ export default function AdminDashboard() {
       );
       setError(fetchError.message || t("admin.fetchAdminDataFailed"));
     }
-  }, [loaded.courseAccess]);
+  }, [loaded.courseAccess, setError]);
 
   const loadProducts = useCallback(async () => {
     if (loaded.products) return;
@@ -736,7 +754,7 @@ export default function AdminDashboard() {
       console.error("AdminDashboard: failed to load products", fetchError);
       setError(fetchError.message || t("admin.fetchProductListFailed"));
     }
-  }, [loaded.products]);
+  }, [loaded.products, setError]);
 
   const loadAnalytics = useCallback(async () => {
     if (loaded.analytics) return;
@@ -805,9 +823,10 @@ export default function AdminDashboard() {
   }, [loaded.tickets, selectedTicketId]);
 
   const loadUploadInfo = useCallback(async () => {
-    if (loaded.uploadInfo) return;
     try {
-      const res = await fetch("/api/admin/upload-info");
+      const res = await fetch(
+        `/api/admin/upload-info?backend=${encodeURIComponent(uploadBackend)}`,
+      );
       const json = await res.json().catch(() => ({}));
       if (json?.upload) {
         setUploadInfo(json.upload);
@@ -820,7 +839,7 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("AdminDashboard: failed to load upload info", err);
     }
-  }, [loaded.uploadInfo]);
+  }, [uploadBackend]);
 
   const loadCommits = useCallback(async () => {
     if (loaded.commits) return;
@@ -906,6 +925,7 @@ export default function AdminDashboard() {
     loadUploadInfo,
     loadCommits,
     loadPayments,
+    runHealthCheck,
     paymentsEmail,
     loaded.payments,
   ]);
@@ -1599,7 +1619,7 @@ export default function AdminDashboard() {
     input.click();
   }
 
-  async function runHealthCheck() {
+  const runHealthCheck = useCallback(async () => {
     log("healthCheck:start");
     setHealthLoading(true);
     setError("");
@@ -1636,7 +1656,7 @@ export default function AdminDashboard() {
       setHealthLoading(false);
       log("healthCheck:done");
     }
-  }
+  }, [setError]);
 
   async function purgeCache() {
     setPurging(true);
