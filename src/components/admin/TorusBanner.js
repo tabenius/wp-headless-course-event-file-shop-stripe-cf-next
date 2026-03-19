@@ -10,6 +10,7 @@ const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
 const SCROLLER_TEXT =
   "RAGBAZ - standing on the shoulders of giants and bending spoons since 1987";
+const ENABLE_SINE_SCROLLER = false;
 
 const basePoints = Array.from({ length: SEGMENTS }, (_, i) => {
   const phi = (i / SEGMENTS) * Math.PI * 2;
@@ -156,23 +157,31 @@ export default function TorusBanner() {
           />
         </div>
         <div className="min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem] flex items-center overflow-hidden px-3 sm:px-5">
-          <div className="torus-scroller-viewport">
-            <div className="torus-scroller-track">
-              {[0, 1, 2].map((segment) => (
-                <span key={segment} className="torus-scroller-segment" aria-hidden>
-                  {scrollerChars.map((char, index) => (
-                    <span
-                      key={`${segment}-${index}`}
-                      className="torus-wave-char"
-                      style={{ animationDelay: `${(index % 28) * 0.055}s` }}
-                    >
-                      {char === " " ? "\u00A0" : char}
-                    </span>
-                  ))}
-                </span>
-              ))}
+          {ENABLE_SINE_SCROLLER ? (
+            <div className="torus-scroller-viewport">
+              <div className="torus-scroller-track">
+                {[0, 1, 2].map((segment) => (
+                  <span
+                    key={segment}
+                    className="torus-scroller-segment"
+                    aria-hidden
+                  >
+                    {scrollerChars.map((char, index) => (
+                      <span
+                        key={`${segment}-${index}`}
+                        className="torus-wave-char"
+                        style={{ animationDelay: `${(index % 28) * 0.055}s` }}
+                      >
+                        {char === " " ? "\u00A0" : char}
+                      </span>
+                    ))}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="torus-scroller-muted">{SCROLLER_TEXT}</div>
+          )}
         </div>
       </div>
       <style jsx>{`
@@ -408,6 +417,16 @@ export default function TorusBanner() {
           display: inline-block;
           animation: torus-wave 1.75s ease-in-out infinite;
           will-change: transform;
+        }
+
+        .torus-scroller-muted {
+          color: var(--admin-torus-scroller-color, #111827);
+          font-size: clamp(0.95rem, 2.1vw, 1.45rem);
+          font-weight: 700;
+          letter-spacing: 0.03em;
+          text-shadow:
+            0 0 8px rgba(0, 0, 0, 0.25),
+            0 1px 0 rgba(0, 0, 0, 0.55);
         }
 
         @keyframes torus-scroll {

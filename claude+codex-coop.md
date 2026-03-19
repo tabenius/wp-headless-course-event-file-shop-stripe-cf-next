@@ -11,6 +11,16 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 52)
+
+### Codex — sine scroller temporarily disabled (code retained)
+
+- Added a local toggle in `TorusBanner`:
+  - `const ENABLE_SINE_SCROLLER = false;`
+- Wrapped the animated scroller markup in this feature gate so the full sine/scroll implementation remains in code and can be re-enabled instantly by flipping the flag.
+- Added a non-animated fallback text line (`torus-scroller-muted`) while disabled to avoid an empty right panel.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 51)
 
 ### Codex — torus parallax environment (4 layers, pendulum motion)

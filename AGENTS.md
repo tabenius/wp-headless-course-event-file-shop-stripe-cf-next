@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Temporarily disabled the Info-tab sine scroller via an explicit `ENABLE_SINE_SCROLLER` toggle in `TorusBanner`, preserving all scroller animation code paths and rendering a non-animated fallback line while disabled.
 - **2026-03-19 (Codex)**: Added a four-layer animated parallax environment to the Info torus banner (red sunset horizon + multi-depth green bushes) with slow pendulum-style left/right drift, while keeping the torus canvas transparent so the scene remains visible behind 3D geometry.
 - **2026-03-19 (Codex)**: Expanded the Info-tab torus banner to full-bleed left and taller vertical sizing, and removed residual frame styling by dropping rounded frame shells and forcing transparent/no-shadow panel chrome.
 - **2026-03-19 (Codex)**: Retuned admin header theme-toggle glyph palette to a fully saturated yellow (`#ffff00`) for both sun/moon states, with explicit black hover color for stronger visual contrast.
