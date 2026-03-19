@@ -1,9 +1,11 @@
 # Claude + Codex Co-Working Log
 
 ## 2026-03-19
+
 ### Mistral — chat history + copy buttons (code review by Claude)
 
 **What landed well:**
+
 - Copy buttons on assistant messages (`ChatMessage.js`) — good UX, clean hover reveal with `group-hover:opacity-100`, i18n done correctly across all three language files with sensible keys (`chat.copyRaw`, `chat.copyMarkdown`, `chat.copyRawShort`, `chat.copyMarkdownShort`).
 - The idea of `saveChatHistory`/`getChatHistory` in `cloudflareKv.js` is correct — KV is the right place for this.
 
@@ -12,12 +14,15 @@
 **1. `cloudflareKv.js` — complete rewrite broke 20+ callers (critical)**
 
 You replaced the existing REST API implementation with a `KV` Worker binding global:
+
 ```js
-const isCloudflare = typeof caches !== 'undefined' && typeof KV !== 'undefined';
+const isCloudflare = typeof caches !== "undefined" && typeof KV !== "undefined";
 await KV.put(key, JSON.stringify(value));
 ```
+
 This is wrong for two reasons:
-- `KV` is a Cloudflare Worker *binding*, not a global. It only exists when the runtime is a deployed Worker with the binding configured in `wrangler.toml`. It does not exist during local dev (`npm run dev`) or in the Node.js build process.
+
+- `KV` is a Cloudflare Worker _binding_, not a global. It only exists when the runtime is a deployed Worker with the binding configured in `wrangler.toml`. It does not exist during local dev (`npm run dev`) or in the Node.js build process.
 - You removed four exports — `isCloudflareKvConfigured`, `readCloudflareKvJson`, `writeCloudflareKvJson`, `deleteCloudflareKv` — that are used by `courseAccess.js`, `supportTickets.js`, `digitalProducts.js`, `userStore.js`, and several API routes. The build failed with 48 errors.
 
 **Rule to apply going forward:** Before modifying `cloudflareKv.js`, read how it is imported elsewhere (`grep -r "from.*cloudflareKv"`) and never remove exported symbols. This project uses the Cloudflare REST API (not Worker bindings) so that KV works identically in local dev and production. See `AGENTS.md` "KV storage" section.
@@ -29,9 +34,11 @@ This is wrong for two reasons:
 const { adminUserId } = await requireAdmin(request);
 getChatHistory(adminUserId); // → getChatHistory(undefined)
 ```
+
 This silently wrote all chat history to KV key `chat_history:undefined`. Always read a function's return contract before destructuring. `requireAdmin` is defined in `src/lib/adminRoute.js` — two lines to check.
 
 Also: you called `requireAdmin` at the top without checking for the error response. If the user is not authenticated the request would fall through instead of returning 401. The guard pattern in this codebase is:
+
 ```js
 const auth = await requireAdmin(request);
 if (auth?.error) return auth.error;
@@ -48,6 +55,7 @@ You sent `{ message: "", history: [] }` to `/api/chat` to load history on mount.
 **5. `ChatMessage.js` — unhandled clipboard rejection (minor)**
 
 `navigator.clipboard.writeText()` returns a Promise that rejects in non-HTTPS contexts or when permission is denied. Always add `.catch()`:
+
 ```js
 navigator.clipboard.writeText(text).catch((err) => {
   console.warn("[ChatMessage] clipboard write failed:", err);
@@ -60,6 +68,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 ## 2026-03-19
 
 ### Codex
+
 - **Chat Modularisation**: Split `route.js` into `src/lib/chat/{rag,detect,intents}.js`. Added 12 new tests for `chunkText`, `cosine`, `detectLanguage`, and intent routing. Route trimmed to ~55 lines.
 - **Chat UI Refactor**: Extracted `ChatPanel`, `ChatMessage`, and `ChatMarkdown` components. Markdown rendering now supports tables, lists, code blocks, and inline formatting. Eliminated `m.table` hack.
 - **Auto-scroll**: Added smooth auto-scroll to bottom on new messages.
@@ -68,6 +77,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Refactor**: `ProductSection.renderItem` now returns JSX directly.
 
 ### Claude
+
 - **Image Gen Polish**: Thumbnails scale to correct aspect ratio, added "Copy prompt" button (i18n), count toggle extended to [1, 2, 3], elapsed-second counter on generate button.
 - **Chat Fixes**: Fixed `rows` crash in payments intent, extracted `IMAGE_SYSTEM_PROMPT` as shared constant, capped `body.history` to last 10 turns.
 - **KV Health Check**: Added `checkKvStorage()` to admin health route — warns when KV is not configured or unreachable, explaining in-memory fallback and data-loss risk. New i18n keys `health.kvOk/kvNotConfigured/kvFailed` (EN/SV/ES).
@@ -79,11 +89,13 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 ## 2026-03-18
 
 ### Codex
+
 - **StatsChart**: Extracted from `AdminStatsTab` with `maxOf`, `barHeight`, `formatHour` helpers. Added unit tests.
 - **Style Tab**: Added (Alt+8), updated legend, EN/SV/ES translations.
 - **AGENTS.md**: Created initial version with project overview, key commands, and coordination protocol.
 
 ### Claude
+
 - **AI Image Generation**: Implemented `src/lib/imageQuota.js`, `src/lib/ai.js` `generateImage`, `/api/admin/generate-image`, `ImageGenerationPanel`, wired into `AdminDashboard` (shop editor + chat). Refactored auth to Web Crypto API for edge compat. Added 19 unit tests.
 
 ---
@@ -91,10 +103,12 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 ## 2026-03-17
 
 ### Codex
+
 - **Admin UI**: Added hotkeys (Alt+1..8 for tabs, Alt+/ search, Alt+L logout). Updated legend in `AdminHeader.js`.
 - **i18n**: Added missing keys for new tabs and hotkeys.
 
 ### Claude
+
 - **Stripe Integration**: Completed payments flow with receipts and KV persistence.
 - **KV Layer**: Added `cloudflareKv.js` with in-memory fallback for non-CF runtimes.
 
@@ -103,13 +117,29 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 ## 2026-03-16
 
 ### Both
+
 - **Monorepo Setup**: Initialized with `packages/ragbaz-articulate-plugin/` for WordPress companion plugin.
 - **Build System**: Added `npm run plugin:copy`, `cf:build`, `cf:deploy` scripts.
 - **Tests**: Configured `node:test` in `tests/`.
 
 ---
 
+## 2026-03-19 (cont.)
+
+### Claude — i18n sync + unit tests
+
+- **i18n drift fixed**: 69 keys synced — 66 ES translations across shop/darkMode/comments/s3/footer/nav/resetPassword/metadata, plus 3 missing EN+SV shop keys (`shop.viewCart`, `shop.emptyShop`, `shop.shopHint`).
+- **New test suites** (71 tests total, all green):
+  - `tests/imageQuota.test.js` — `resolveSize`, `clampCount` (edge cases: NaN, floats, out-of-range, unknown keys)
+  - `tests/slugify.test.js` — `slugify` (Unicode/diacritics, punctuation, falsy) + basic `stripHtml`
+  - `tests/decodeEntities.test.js` — `decodeEntities` (named, decimal, hex entities, unknowns, non-strings)
+  - `tests/stripHtml.test.js` — `stripHtml` (HTML tags, shortcodes, falsy, self-closing)
+- **Bug found via tests**: `stripHtml.js` shortcode regex used `\\[` (matching literal backslash + bracket) instead of `\[` — shortcodes like `[gallery ids="1,2"]` were never stripped. Fixed.
+
+---
+
 ## Open Questions
+
 - Should we add a "Clear Chat" button to the ChatPanel?
 - Should we implement streaming responses for the chat feature? (Requires Cloudflare streaming support.)
 - Should we add a "Copy Answer" button for individual chat messages?
