@@ -198,6 +198,9 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Expanded Welcome control-room cards to mirror all admin menu destinations (Welcome, Sales, Stats, Storage, Products, Chat, Health, Style, Info, Support, Docs), switched to a denser row-first responsive grid, and reduced card typography for compact fit.
+- **2026-03-19 (Codex)**: Added missing EN/SV/ES i18n copy for the new Welcome control-room cards (`cardWelcomeBody`, `cardHealthBody`, `cardStyleBody`, `cardInfoBody`, `cardDocsBody`).
+- **2026-03-19 (Codex)**: Refined header lockup alignment by shifting the subtitle line left to a compact `0.5rem` offset and kept the moon theme glyph as `🌙`.
 - **2026-03-19 (Codex)**: Restored the previous moon glyph (`🌙`) for the theme toggle while keeping the button unframed (no circular background) per current admin header style.
 - **2026-03-19 (Codex)**: Tuned admin header palette toward a yellower, lower-saturation amber and aligned the `ARTICULATE STOREFRONT` subtitle with explicit `2em` horizontal offset beneath `RAGBAZ` for steadier cross-font rendering.
 - **2026-03-19 (Codex)**: Shifted Welcome screen story background from vivid indigo/blue to a lower-saturation steel gray-blue gradient to improve visual calm while preserving high-contrast white text.

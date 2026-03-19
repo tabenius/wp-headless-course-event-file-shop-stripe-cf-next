@@ -266,7 +266,7 @@ export default function AdminHeader({ logoUrl }) {
               <RagbazLogo wordmarkOnly noLetterSpacing scale={1.75} />
               <span
                 className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white"
-                style={{ marginLeft: "2em", marginTop: "1px" }}
+                style={{ marginLeft: "0.5rem", marginTop: "2px" }}
               >
                 ARTICULATE STOREFRONT
               </span>

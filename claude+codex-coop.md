@@ -26,6 +26,22 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Restored the previous moon glyph (`🌙`) for the light-mode state in the theme toggle.
 - Kept the current styling constraints intact: no circular frame/background and no separate icon chip treatment.
 
+## 2026-03-19 (cont. 19)
+
+### Codex — control-room cards parity + compact layout
+
+- Updated `WelcomeCards` to cover all admin menu destinations, including Docs:
+  - `welcome`, `sales`, `stats`, `storage`, `products`, `chat`, `health`, `style`, `info`, `support`, and `/admin/docs`.
+- Switched card layout to a denser row-first responsive grid (`2xl` fits in a single row) and reduced card text size/spacing for better compactness.
+- Added new card body i18n keys in EN/SV/ES:
+  - `admin.cardWelcomeBody`
+  - `admin.cardHealthBody`
+  - `admin.cardStyleBody`
+  - `admin.cardInfoBody`
+  - `admin.cardDocsBody`
+- Refined header brand lockup by shifting the subtitle left to `0.5rem` offset for cleaner alignment under `RAGBAZ`.
+- Kept theme toggle moon glyph as `🌙` (no circle/background styling).
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

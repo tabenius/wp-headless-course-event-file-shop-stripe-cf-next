@@ -581,6 +581,15 @@ function ChatMockScreen() {
 function WelcomeCards({ showRevisionBadge }) {
   const cards = [
     {
+      tab: "welcome",
+      title: t("admin.navWelcome", "Welcome"),
+      body: t(
+        "admin.cardWelcomeBody",
+        "Overview, onboarding story, and quick links to each control section.",
+      ),
+      tone: "from-slate-500/20 via-slate-200/10 to-gray-200/10",
+    },
+    {
       tab: "sales",
       title: t("admin.cardSales", "Sales & receipts"),
       body: t(
@@ -626,6 +635,33 @@ function WelcomeCards({ showRevisionBadge }) {
       tone: "from-emerald-500/20 via-emerald-200/10 to-cyan-200/10",
     },
     {
+      tab: "health",
+      title: t("admin.healthStatus", "Health"),
+      body: t(
+        "admin.cardHealthBody",
+        "Run integration checks and inspect connector readiness.",
+      ),
+      tone: "from-lime-500/20 via-lime-200/10 to-emerald-200/10",
+    },
+    {
+      tab: "style",
+      title: t("admin.navStyle", "Style"),
+      body: t(
+        "admin.cardStyleBody",
+        "Review active type, color, and button system tokens.",
+      ),
+      tone: "from-fuchsia-500/20 via-fuchsia-200/10 to-violet-200/10",
+    },
+    {
+      tab: "info",
+      title: t("admin.navSandbox", "Info"),
+      body: t(
+        "admin.cardInfoBody",
+        "Check runtime and environment details for this storefront.",
+      ),
+      tone: "from-cyan-500/20 via-cyan-200/10 to-sky-200/10",
+    },
+    {
       tab: "support",
       title: t("admin.navSupport", "Support"),
       body: t(
@@ -633,6 +669,15 @@ function WelcomeCards({ showRevisionBadge }) {
         "Track issues, tickets, and updates in one place.",
       ),
       tone: "from-rose-500/20 via-pink-200/10 to-fuchsia-200/10",
+    },
+    {
+      href: "/admin/docs",
+      title: t("admin.documentation", "Documentation"),
+      body: t(
+        "admin.cardDocsBody",
+        "Open setup guides, architecture notes, and operator instructions.",
+      ),
+      tone: "from-amber-500/20 via-amber-200/10 to-yellow-200/10",
     },
   ];
 
@@ -646,27 +691,33 @@ function WelcomeCards({ showRevisionBadge }) {
           <span>{t("admin.welcomeBadge", "Updated story — check what changed")}</span>
         </div>
       )}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-11">
         {cards.map((card) => (
           <button
-            key={card.tab}
+            key={card.tab || card.href}
             type="button"
             onClick={() => {
               if (typeof window === "undefined") return;
+              if (card.href) {
+                window.location.assign(card.href);
+                return;
+              }
               window.dispatchEvent(
                 new CustomEvent("admin:switchTab", { detail: card.tab }),
               );
             }}
-            className={`group rounded-2xl border border-slate-200 bg-gradient-to-br ${card.tone} p-4 text-left shadow-sm transition hover:shadow-md hover:border-slate-300`}
+            className={`group min-w-0 rounded-xl border border-slate-200 bg-gradient-to-br ${card.tone} p-3 text-left shadow-sm transition hover:shadow-md hover:border-slate-300`}
           >
             <div className="flex items-center justify-between">
-              <div className="text-xs uppercase tracking-widest text-slate-600">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-slate-600">
                 {t("admin.welcomeCardGoto", "Go to")}
               </div>
-              <div className="text-xl text-slate-700">↗</div>
+              <div className="text-sm text-slate-700">↗</div>
             </div>
-            <p className="mt-2 text-lg font-semibold text-slate-900">{card.title}</p>
-            <p className="mt-1 text-sm text-slate-700">{card.body}</p>
+            <p className="mt-1 text-sm font-semibold leading-tight text-slate-900">
+              {card.title}
+            </p>
+            <p className="mt-1 text-xs leading-[1.3] text-slate-700">{card.body}</p>
           </button>
         ))}
       </div>
