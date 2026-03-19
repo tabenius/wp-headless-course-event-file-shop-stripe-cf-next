@@ -10,6 +10,8 @@ const TORUS_DEPTH_RANGE = (TORUS_MAJOR_RADIUS + TORUS_MINOR_RADIUS) * 2;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
+const ENABLE_SIERPINSKI_LAYERS = false;
+const ENABLE_PENDULUM_MOVEMENT = false;
 
 function mulberry32(seed) {
   let value = seed >>> 0;
@@ -440,18 +442,22 @@ export default function TorusBanner() {
     <div className="-mx-3 sm:-mx-4 lg:-mx-6 relative bg-transparent overflow-hidden">
       <div className="torus-parallax-scene" aria-hidden>
         <div className="torus-parallax-layer torus-parallax-sky" />
-        <div
-          className="torus-parallax-layer torus-parallax-far-bushes"
-          style={FAR_TREE_STYLE}
-        />
-        <div
-          className="torus-parallax-layer torus-parallax-mid-bushes"
-          style={MID_TREE_STYLE}
-        />
-        <div
-          className="torus-parallax-layer torus-parallax-near-bushes"
-          style={NEAR_TREE_STYLE}
-        />
+        {ENABLE_SIERPINSKI_LAYERS && (
+          <>
+            <div
+              className="torus-parallax-layer torus-parallax-far-bushes"
+              style={FAR_TREE_STYLE}
+            />
+            <div
+              className="torus-parallax-layer torus-parallax-mid-bushes"
+              style={MID_TREE_STYLE}
+            />
+            <div
+              className="torus-parallax-layer torus-parallax-near-bushes"
+              style={NEAR_TREE_STYLE}
+            />
+          </>
+        )}
       </div>
 
       <div className="relative z-[1]">
@@ -476,7 +482,7 @@ export default function TorusBanner() {
           position: absolute;
           inset: -18%;
           transform-origin: 50% 100%;
-          animation-name: pendulum-sway;
+          animation-name: ${ENABLE_PENDULUM_MOVEMENT ? "pendulum-sway" : "none"};
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
         }

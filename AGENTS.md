@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Temporarily disabled Info-banner Sierpinski background layers and pendulum motion via explicit feature flags in `TorusBanner` (`ENABLE_SIERPINSKI_LAYERS=false`, `ENABLE_PENDULUM_MOVEMENT=false`) while keeping all rendering code intact for quick re-enable.
 - **2026-03-19 (Codex)**: Retuned admin header contrast/saturation (more saturated amber bar and brighter/saturated `RAGBAZ` cyan), changed sun/moon hover behavior to outline-only emphasis (fill remains yellow, outline expands on hover), and set Info torus to `24x24` granularity with a fixed `20vh` canvas banner height.
 - **2026-03-19 (Codex)**: Completed software z-buffer rendering for the Info-tab torus (per-pixel depth-tested triangle rasterization + depth-tested cyan edge lines) and removed backface culling so hidden-surface resolution comes from depth buffering only.
 - **2026-03-19 (Codex)**: Halved the torus canvas height again (`10/11/12rem -> 5/5.5/6rem`, draw fallback `130 -> 65`) and increased Sierpinski tree recursion depth for all parallax layers (far `3-4`, mid `4-5`, near `4-6`).

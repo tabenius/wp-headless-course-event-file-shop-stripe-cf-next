@@ -11,6 +11,19 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 69)
+
+### Codex — temporary disable for Sierpinski layers and pendulum motion
+
+- Added explicit Info-banner feature flags in `TorusBanner`:
+  - `ENABLE_SIERPINSKI_LAYERS = false`
+  - `ENABLE_PENDULUM_MOVEMENT = false`
+- Applied flags without removing implementation:
+  - Sierpinski far/mid/near parallax layer nodes are conditionally skipped when disabled.
+  - Parallax base layer animation uses `animation-name: none` when pendulum is disabled.
+- Result: background fractal layers and pendulum movement are both off, while code remains intact for fast rollback.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 68)
 
 ### Codex — header color + theme icon hover + torus granularity/height tuning
