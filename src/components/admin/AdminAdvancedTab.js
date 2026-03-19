@@ -161,10 +161,10 @@ export default function AdminAdvancedTab({
             Choose where product files/images are stored. WordPress Media
             Library works without extra setup. S3/R2 requires credentials.
           </p>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id: "wordpress", label: "WordPress media", enabled: true },
-            { id: "r2", label: "Cloudflare R2", enabled: uploadInfo?.r2 },
+      <div className="flex flex-wrap gap-2">
+        {[
+          { id: "wordpress", label: "WordPress media", enabled: true },
+          { id: "r2", label: "Cloudflare R2", enabled: uploadInfo?.r2 },
             { id: "s3", label: "S3 / Spaces", enabled: uploadInfo?.s3 },
           ].map((opt) => (
             <button
@@ -250,15 +250,15 @@ export default function AdminAdvancedTab({
                 </span>
               </div>
               <p className="text-gray-600">{t("admin.uploadClientHint")}</p>
-              <div className="grid sm:grid-cols-2 gap-2">
-                <div>
-                  <div className="text-[11px] text-gray-500">
-                    {t("admin.clientHost")}
-                  </div>
-                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
-                    {uploadInfoDetails.endpoint || t("common.noDetails")}
-                  </div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <div>
+                <div className="text-[11px] text-gray-500">
+                  {t("admin.clientHost")}
                 </div>
+                <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all">
+                  {uploadInfoDetails.endpoint || t("common.noDetails")}
+                </div>
+              </div>
                 <div>
                   <div className="text-[11px] text-gray-500">
                     {t("admin.clientBucket")}
@@ -322,14 +322,52 @@ export default function AdminAdvancedTab({
                       </button>
                     </div>
                   )}
-                </div>
               </div>
-              <p className="text-[11px] text-gray-500">
-                {t("admin.uploadAltLarge")}
-              </p>
             </div>
-          )}
-        </div>
+            <p className="text-[11px] text-gray-500">
+              {t("admin.uploadAltLarge")}
+            </p>
+          </div>
+        )}
+      <div className="mt-4 grid gap-3 md:grid-cols-2 text-[12px] text-gray-500">
+        <a
+          href="https://winscp.net/eng/docs/start"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white/80 px-3 py-3 shadow-sm transition hover:border-gray-400"
+        >
+          <svg viewBox="0 0 32 32" className="h-7 w-7 flex-shrink-0">
+            <rect x="2" y="7" width="28" height="18" rx="4" fill="#1c3f94" />
+            <path d="M8 12h16" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+            <path d="M8 18h12" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+            <circle cx="24" cy="23" r="2" fill="#fcd34d" />
+          </svg>
+          <div>
+            <p className="font-semibold text-gray-900">WinSCP</p>
+            <p className="text-[11px] text-gray-500">
+              Use the free WinSCP SFTP client to drag files straight into R2 or S3 uploads.
+            </p>
+          </div>
+        </a>
+        <a
+          href="https://cyberduck.io"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white/80 px-3 py-3 shadow-sm transition hover:border-gray-400"
+        >
+          <svg viewBox="0 0 32 32" className="h-7 w-7 flex-shrink-0">
+            <path d="M4 18c0-6 6-10 12-10s12 4 12 10c0 5-6 10-12 10S4 23 4 18" fill="#f59e0b" />
+            <path d="M10 16c0-2 2-4 5-4s5 2 5 4-2 4-5 4-5-2-5-4z" fill="#fff" />
+          </svg>
+          <div>
+            <p className="font-semibold text-gray-900">Cyberduck</p>
+            <p className="text-[11px] text-gray-500">
+              Map your R2/S3 bucket as a remote and sync manual documents in seconds.
+            </p>
+          </div>
+        </a>
+      </div>
+    </div>
 
         {/* Environment info */}
         <div className="space-y-3">
