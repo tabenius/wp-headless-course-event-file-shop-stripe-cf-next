@@ -1383,13 +1383,27 @@ export default function AdminDashboard() {
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
-      <div className="fixed left-4 bottom-4 text-[11px] text-white bg-[#140022] border border-[#4e21a6] rounded p-2 shadow-lg space-y-1">
-        <div className="font-semibold text-white">Genvägar</div>
-        <div>
-          Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health
-          • Alt+6 Advanced • Alt+7 Chat • Alt+8 Style
+      <div className="fixed left-4 bottom-4 text-[11px] text-white bg-[#140022] border border-[#4e21a6] rounded p-2 shadow-lg">
+        <div className="font-semibold text-white mb-1">Genvägar</div>
+        <div className="space-y-0.5">
+          {[
+            ["Alt+1", "Stats"],
+            ["Alt+2", "Shop"],
+            ["Alt+3", "Access"],
+            ["Alt+4", "Support"],
+            ["Alt+5", "Health"],
+            ["Alt+6", "Advanced"],
+            ["Alt+7", "Chat"],
+            ["Alt+8", "Style"],
+            ["Alt+/", "Search"],
+            ["Alt+L", "Logout"],
+          ].map(([key, label]) => (
+            <div key={key} className="flex gap-2">
+              <span className="text-purple-300 w-12 shrink-0">{key}</span>
+              <span>{label}</span>
+            </div>
+          ))}
         </div>
-        <div>Alt+/ Search • Alt+L Logout</div>
       </div>
       {/* ── Stats tab ── */}
       {activeTab === "stats" && (
