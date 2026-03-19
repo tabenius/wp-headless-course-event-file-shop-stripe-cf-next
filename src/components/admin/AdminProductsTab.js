@@ -100,9 +100,12 @@ function SafeProductImage({ src, alt = "", className, fallbackClassName }) {
 
 function InnerTabs({ active, onChange }) {
   const tabs = [
-    { key: "access", label: "All Products" },
-    { key: "products", label: "Digital Products" },
-    { key: "settings", label: "Settings" },
+    { key: "access", label: t("admin.productsTabAll", "All products") },
+    {
+      key: "products",
+      label: t("admin.productsTabDigital", "Digital products"),
+    },
+    { key: "settings", label: t("admin.visibleTypesTab", "Visible types") },
   ];
   return (
     <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1 min-w-0">

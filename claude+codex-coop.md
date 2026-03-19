@@ -116,6 +116,19 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - added an always-visible pen badge in the top-right corner to signal replace action,
   - retained hover darkening + center pen affordance for desktop.
 
+## 2026-03-19 (cont. 27)
+
+### Codex — localized inner Products tabs
+
+- Replaced hardcoded inner tab labels in `AdminProductsTab` with i18n keys:
+  - `admin.productsTabAll`
+  - `admin.productsTabDigital`
+  - `admin.visibleTypesTab`
+- Added EN/SV/ES translations:
+  - EN: `All products`, `Digital products`, `Visible types`
+  - SV: `Alla produkter`, `Digitala produkter`, `Synliga typer`
+  - ES: `Todos los productos`, `Productos digitales`, `Tipos visibles`
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
