@@ -94,6 +94,21 @@ function detectLanguage(text) {
 export async function POST(request) {
   try {
     const body = await request.json();
+
+    // ── Path A: explicit image-prompt intent (no message field required) ──
+    if (body?.intent === "image-prompt") {
+      const adminAuth = await requireAdmin(request);
+      if (adminAuth?.error) return adminAuth.error;
+      const description = (body?.description || "").trim();
+      const imageSystemPrompt =
+        "Write a concise, vivid image generation prompt suited for FLUX (max 60 words). " +
+        "Return only the prompt, no explanation, no quotes. Content to base it on: " + description;
+      const prompt = await chatWithContext(imageSystemPrompt, [
+        { role: "user", content: description || "generate a compelling product image" },
+      ]);
+      return NextResponse.json({ ok: true, type: "image-generation", prompt: prompt.trim() });
+    }
+
     const message = (body?.message || "").trim();
     const force = body?.rebuild === true;
     if (!message) return NextResponse.json({ ok: false, error: "Message required" }, { status: 400 });
@@ -175,6 +190,20 @@ export async function POST(request) {
       });
       const table = ["| Date | Amount | Status | Email | Receipt |", "| --- | --- | --- | --- | --- |", ...tableRows].join("\n");
       return NextResponse.json({ ok: true, answer: "Here are the latest payments: ", table, sources: [] });
+    }
+
+    // ── Path B: natural language image keywords ──
+    const imageKeywords = ["generate image", "create image", "make image", "skapa bild", "genera imagen"];
+    if (imageKeywords.some((kw) => lower.includes(kw))) {
+      const adminAuth = await requireAdmin(request);
+      if (adminAuth?.error) return adminAuth.error;
+      const imageSystemPrompt =
+        "Write a concise, vivid image generation prompt suited for FLUX (max 60 words). " +
+        "Return only the prompt, no explanation, no quotes. Content to base it on: " + message;
+      const prompt = await chatWithContext(imageSystemPrompt, [
+        { role: "user", content: message },
+      ]);
+      return NextResponse.json({ ok: true, type: "image-generation", prompt: prompt.trim() });
     }
 
     const index = await buildIndex(force);
