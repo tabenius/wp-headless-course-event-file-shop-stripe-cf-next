@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Refined header branding/texture visuals: shifted only the `RAGBAZ` wordmark `1.5rem` right (subtitle untouched) and increased menu-bar concrete microtexture density/detail using higher-frequency turbulence layers.
 - **2026-03-19 (Codex)**: Localized inner Products editor tabs by i18n keys: `All products`, `Digital products`, and `Visible types` now translate in EN/SV/ES (`productsTabAll`, `productsTabDigital`, `visibleTypesTab`).
 - **2026-03-19 (Codex)**: Restored robust product-image replacement click flow by changing `ImageUploader` to use a persistent hidden file input (`ref + click`) and making image pen overlays non-blocking (`pointer-events-none`) with an always-visible pen badge.
 - **2026-03-19 (Codex)**: Fixed duplicate selected-title rendering in Products detail panes (single title line only) and added dark-gray framing for empty image placeholders/pickers to improve visual affordance.

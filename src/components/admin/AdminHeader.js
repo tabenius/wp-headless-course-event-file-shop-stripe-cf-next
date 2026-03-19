@@ -269,6 +269,7 @@ export default function AdminHeader({ logoUrl }) {
                 scale={1.75}
                 outlineColor="#000000"
                 outlineWidth={1}
+                className="ml-6"
               />
               <span
                 className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white"

@@ -129,6 +129,17 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - SV: `Alla produkter`, `Digitala produkter`, `Synliga typer`
   - ES: `Todos los productos`, `Productos digitales`, `Tipos visibles`
 
+## 2026-03-19 (cont. 28)
+
+### Codex — finer concrete texture + selective logo offset
+
+- Increased menu-bar concrete texture detail by retuning `.admin-header-concrete` turbulence layers in `globals.css`:
+  - higher base frequencies and octaves for finer grain,
+  - smaller background tiling for denser texture,
+  - contrast/brightness rebalance to keep roughness visible but controlled.
+- Shifted only the `RAGBAZ` wordmark to the right by `1.5rem` (`ml-6`) in `AdminHeader`.
+- Left `ARTICULATE STOREFRONT` positioning unchanged, as requested.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
