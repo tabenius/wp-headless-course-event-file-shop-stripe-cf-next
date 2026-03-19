@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { t } from "@/lib/i18n";
 import ChatMessage from "./ChatMessage";
 
-export default function ChatPanel({ chatMessages, chatInput, setChatInput, sendChat, chatLoading, uploadBackend }) {
+export default function ChatPanel({ chatMessages, chatInput, setChatInput, sendChat, chatLoading, uploadBackend, onClearChat, onFeedback }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -13,16 +13,29 @@ export default function ChatPanel({ chatMessages, chatInput, setChatInput, sendC
 
   return (
     <div className="border rounded p-4 space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
-        <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
+          <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
+        </div>
+        {chatMessages.length > 0 && onClearChat && (
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(t("chat.clearChatConfirm"))) onClearChat();
+            }}
+            className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded hover:bg-red-50"
+          >
+            {t("chat.clearChat")}
+          </button>
+        )}
       </div>
       <div className="space-y-3 max-h-[28rem] overflow-auto border rounded p-3 bg-white">
         {chatMessages.length === 0 ? (
           <div className="text-sm text-gray-500">{t("chat.empty")}</div>
         ) : (
           chatMessages.map((m, idx) => (
-            <ChatMessage key={idx} m={m} uploadBackend={uploadBackend} />
+            <ChatMessage key={idx} m={m} uploadBackend={uploadBackend} onFeedback={(value) => onFeedback && onFeedback(idx, value)} />
           ))
         )}
         <div ref={bottomRef} />

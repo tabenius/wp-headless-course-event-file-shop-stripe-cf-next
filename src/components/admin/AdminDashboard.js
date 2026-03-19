@@ -676,6 +676,21 @@ export default function AdminDashboard() {
     }
   }
 
+  async function clearChat() {
+    setChatMessages([]);
+    try {
+      await fetch("/api/chat", { method: "DELETE" });
+    } catch {
+      // Best-effort — local state is already cleared
+    }
+  }
+
+  function handleChatFeedback(messageIndex, value) {
+    setChatMessages((prev) =>
+      prev.map((m, i) => (i === messageIndex ? { ...m, feedback: value } : m)),
+    );
+  }
+
   async function downloadReceipt(chargeId) {
     setDownloading(chargeId);
     try {
@@ -2910,6 +2925,8 @@ export default function AdminDashboard() {
           sendChat={sendChat}
           chatLoading={chatLoading}
           uploadBackend={uploadBackend}
+          onClearChat={clearChat}
+          onFeedback={handleChatFeedback}
         />
       )}
 

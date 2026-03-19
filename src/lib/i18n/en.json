@@ -346,7 +346,13 @@
       "copyRaw": "Copy raw text",
       "copyRawShort": "Raw",
       "copyMarkdown": "Copy formatted markdown",
-      "copyMarkdownShort": "MD"
+      "copyMarkdownShort": "MD",
+      "clearChat": "Clear chat",
+      "clearChatConfirm": "Clear all messages? This cannot be undone.",
+      "chatCleared": "Chat cleared.",
+      "feedbackThanks": "Thanks for the feedback!",
+      "thumbsUp": "Helpful",
+      "thumbsDown": "Not helpful"
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",

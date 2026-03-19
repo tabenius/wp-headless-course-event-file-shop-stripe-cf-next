@@ -346,7 +346,13 @@
       "copyRaw": "Copiar texto sin formato",
       "copyRawShort": "Sin formato",
       "copyMarkdown": "Copiar markdown formateado",
-      "copyMarkdownShort": "MD"
+      "copyMarkdownShort": "MD",
+      "clearChat": "Borrar chat",
+      "clearChatConfirm": "¿Borrar todos los mensajes? Esto no se puede deshacer.",
+      "chatCleared": "Chat borrado.",
+      "feedbackThanks": "¡Gracias por tu opinión!",
+      "thumbsUp": "Útil",
+      "thumbsDown": "No útil"
   },
   "health": {
     "wpNotConfigured": "WordPress no configurado.",

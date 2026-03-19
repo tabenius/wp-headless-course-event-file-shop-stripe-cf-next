@@ -1,10 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { t } from "@/lib/i18n";
 import ChatMarkdown from "./ChatMarkdown";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 
-export default function ChatMessage({ m, uploadBackend }) {
+export default function ChatMessage({ m, uploadBackend, onFeedback }) {
+  const [feedback, setFeedback] = useState(m.feedback || null);
+
+  const handleFeedback = (value) => {
+    setFeedback(value);
+    if (onFeedback) onFeedback(value);
+  };
+
   const handleCopy = (format) => {
     let textToCopy = "";
     if (format === "markdown" && m.role === "assistant") {
@@ -63,6 +71,30 @@ export default function ChatMessage({ m, uploadBackend }) {
           ) : m.role === "assistant" ? (
             <div className="text-[11px] text-gray-400">{t("chat.noSources")}</div>
           ) : null}
+          {m.role === "assistant" && (
+            <div className="flex gap-1 mt-1">
+              {feedback ? (
+                <span className="text-[11px] text-gray-400">{t("chat.feedbackThanks")}</span>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleFeedback("up")}
+                    className="text-[11px] px-1.5 py-0.5 rounded hover:bg-green-100 text-gray-400 hover:text-green-600"
+                    title={t("chat.thumbsUp")}
+                  >
+                    &#x1F44D;
+                  </button>
+                  <button
+                    onClick={() => handleFeedback("down")}
+                    className="text-[11px] px-1.5 py-0.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-600"
+                    title={t("chat.thumbsDown")}
+                  >
+                    &#x1F44E;
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

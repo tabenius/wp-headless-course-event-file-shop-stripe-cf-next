@@ -5,7 +5,7 @@ import { embedTexts, chatWithContext } from "@/lib/ai";
 import { requireAdmin } from "@/lib/adminRoute";
 import { buildIndex, cosine } from "@/lib/chat/rag";
 import { detectLanguage } from "@/lib/chat/detect";
-import { saveChatHistory, getChatHistory } from "@/lib/cloudflareKv";
+import { saveChatHistory, getChatHistory, deleteCloudflareKv } from "@/lib/cloudflareKv";
 import {
   IMAGE_SYSTEM_PROMPT,
   handleProducts,
@@ -97,5 +97,17 @@ export async function POST(request) {
   } catch (error) {
     console.error("chat error", error);
     return NextResponse.json({ ok: false, error: error.message || "Chat failed" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const auth = await requireAdmin(request);
+    if (auth?.error) return auth.error;
+    await deleteCloudflareKv("chat_history:admin");
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("chat delete error", error);
+    return NextResponse.json({ ok: false, error: error.message || "Clear failed" }, { status: 500 });
   }
 }

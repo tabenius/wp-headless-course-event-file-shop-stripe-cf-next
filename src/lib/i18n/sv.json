@@ -346,7 +346,13 @@
       "copyRaw": "Kopiera ren text",
       "copyRawShort": "Ren",
       "copyMarkdown": "Kopiera formaterad markdown",
-      "copyMarkdownShort": "MD"
+      "copyMarkdownShort": "MD",
+      "clearChat": "Rensa chatten",
+      "clearChatConfirm": "Rensa alla meddelanden? Detta kan inte ångras.",
+      "chatCleared": "Chatten rensad.",
+      "feedbackThanks": "Tack för feedbacken!",
+      "thumbsUp": "Hjälpsamt",
+      "thumbsDown": "Inte hjälpsamt"
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",
