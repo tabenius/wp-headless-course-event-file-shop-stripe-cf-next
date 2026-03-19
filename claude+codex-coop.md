@@ -8,6 +8,7 @@ DONE [P1 | High]: VAT/Moms completion across all product sources — per-item VA
 DONE [P2 | Medium]: Welcome story data realism — replaced the mock image-generator slide with live quota + latest-run snapshot state and a read-only fallback when live API state is unavailable.
 DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a href>` extraction + internal/pseudo-external/external classification + reachability checks) and surfaced it in Support with filters and source traces.
 DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key sections, reordered operator instructions for average-user relevance, and synced wording with current tab names/flows.
+TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
 ## 2026-03-19 (cont. 35)

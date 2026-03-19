@@ -185,8 +185,9 @@ Full list in `.env.example`.
 
 ### Ranked backlog (see coop file for full detail)
 
-1. **P3 / Medium** — Full code review pass focused on code quality, maintainability, and admin UI usability improvements.
-2. **Follow-up / Monitoring** — Watch new P0/P1/P2/P3 changes (image diagnostics, receipt fallback trace, VAT propagation, dead-link scanner, doc refresh) for regressions.
+1. **P2 / Medium** — Add an admin-header scrolling stats ticker (revenue, users, bought products, sales/user %, weekly average hits/day) backed by one aggregated admin endpoint with resilient fallbacks.
+2. **P3 / Medium** — Full code review pass focused on code quality, maintainability, and admin UI usability improvements.
+3. **Follow-up / Monitoring** — Watch new P0/P1/P2/P3 changes (image diagnostics, receipt fallback trace, VAT propagation, dead-link scanner, doc refresh) for regressions.
 
 ### Working rules for this backlog
 
