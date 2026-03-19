@@ -11,6 +11,16 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 70)
+
+### Codex — menu bar shifted to stronger saturated red-orange
+
+- Retuned `AdminHeader` menu palette to a more saturated red-orange direction:
+  - primary bar hue/saturation/brightness moved from `hsl(33 40% 37%)` to `hsl(22 62% 42%)`,
+  - border, control surfaces, hover states, drawer/tooltip, and language-select background were adjusted to matching `hsl(22 ...)` values with higher chroma.
+- Goal: visibly warmer red-orange bar with stronger saturation while keeping readability/contrast intact.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 69)
 
 ### Codex — temporary disable for Sierpinski layers and pendulum motion

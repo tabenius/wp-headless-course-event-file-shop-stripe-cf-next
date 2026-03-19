@@ -281,7 +281,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
 
   return (
-    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(33_40%_37%)] border-b border-[hsl(33_35%_29%)]">
+    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(22_62%_42%)] border-b border-[hsl(22_56%_31%)]">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -289,7 +289,7 @@ export default function AdminHeader({ logoUrl }) {
               <button
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="p-2 rounded-lg bg-[hsl(33_35%_29%/0.9)] border border-white/30 text-white hover:bg-[hsl(33_40%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
+                className="p-2 rounded-lg bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
@@ -365,7 +365,7 @@ export default function AdminHeader({ logoUrl }) {
               onMouseLeave={() => setShowHealthTooltip(false)}
               onFocus={() => setShowHealthTooltip(true)}
               onBlur={() => setShowHealthTooltip(false)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(33_35%_29%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(33_40%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
               aria-label={t("admin.healthCheck", "Control check")}
               title={healthLabelMap[healthState]}
             >
@@ -376,7 +376,7 @@ export default function AdminHeader({ logoUrl }) {
               />
             </button>
             {showHealthTooltip && (
-              <div className="absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(33_42%_19%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
+              <div className="absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(22_52%_20%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
                 <p className="font-semibold text-white">
                   {healthLabelMap[healthState]}
                 </p>
@@ -405,7 +405,7 @@ export default function AdminHeader({ logoUrl }) {
                 className="fixed inset-0 top-14 z-40 bg-slate-950/55 backdrop-blur-[1px]"
                 onClick={() => setMenuOpen(false)}
               />
-              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(33_42%_19%/0.98)] p-4 shadow-2xl">
+              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(22_52%_20%/0.98)] p-4 shadow-2xl">
                 <div className="space-y-2">
                   {tabItems.map((item) => {
                     const keyLabel = item.hotkey
@@ -455,7 +455,7 @@ export default function AdminHeader({ logoUrl }) {
                         router.refresh();
                         setMenuOpen(false);
                       }}
-                      className="rounded border border-white/20 bg-[hsl(33_50%_34%)] px-2 py-1 text-xs text-white"
+                      className="rounded border border-white/20 bg-[hsl(22_66%_36%)] px-2 py-1 text-xs text-white"
                     >
                       <option value="sv">Svenska</option>
                       <option value="en">English</option>
