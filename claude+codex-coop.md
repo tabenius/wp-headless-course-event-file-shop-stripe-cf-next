@@ -11,6 +11,21 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 62)
+
+### Codex — removed scrolling text, coarser spherical volume, new polynomial
+
+- Removed Info-banner scrolling text output completely:
+  - deleted right-panel sine-scroller markup path,
+  - deleted bottom ticker markup and related animation styles.
+- Reduced spherical volume mesh granularity for a coarser render:
+  - `LONGITUDE_SEGMENTS: 128 -> 64`
+  - `LATITUDE_SEGMENTS: 72 -> 36`
+- Replaced the previous trigonometric harmonic mix with a new polynomial basis in `sphericalPolynomialRadius(theta, phi)`:
+  - uses directional components (`x,y,z`) and polynomial terms (`p2`, `p22`, `p31`, `p4`) for radial deformation.
+- Simplified layout to a single full-width canvas region (no text column).
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 61)
 
 ### Codex — higher foliage + seamless horizontal fog edges

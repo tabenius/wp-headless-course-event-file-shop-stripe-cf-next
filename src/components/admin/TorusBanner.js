@@ -2,16 +2,13 @@
 
 import { useEffect, useRef } from "react";
 
-const LONGITUDE_SEGMENTS = 128;
-const LATITUDE_SEGMENTS = 72;
+const LONGITUDE_SEGMENTS = 64;
+const LATITUDE_SEGMENTS = 36;
 const SH_BASE_RADIUS = 112;
 const SH_DEPTH_RANGE = 340;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
-const SCROLLER_TEXT =
-  "RAGBAZ - standing on the shoulders of giants and bending spoons since 1987";
-const ENABLE_SINE_SCROLLER = false;
 
 const L_SYSTEM_RULES = {
   F: "FF-[-F+F+F]+[+F-F-F]",
@@ -173,13 +170,21 @@ function normalize(v) {
   return { x: v.x / len, y: v.y / len, z: v.z / len };
 }
 
-function sphericalHarmonicRadius(theta, phi) {
-  const h1 = Math.sin(3 * theta) * Math.sin(2 * phi);
-  const h2 = Math.cos(5 * theta) * Math.sin(phi) * Math.sin(phi);
-  const h3 = Math.sin(4 * phi + theta);
-  const h4 = Math.cos(6 * theta - phi);
-  const mix = 0.46 * h1 + 0.34 * h2 + 0.26 * h3 + 0.2 * h4;
-  return SH_BASE_RADIUS * (1 + 0.34 * mix);
+function sphericalPolynomialRadius(theta, phi) {
+  const sinPhi = Math.sin(phi);
+  const cosPhi = Math.cos(phi);
+  const x = sinPhi * Math.cos(theta);
+  const y = cosPhi;
+  const z = sinPhi * Math.sin(theta);
+
+  // Real spherical-like polynomial blend (new shape basis).
+  const p2 = 0.5 * (3 * y * y - 1);
+  const p22 = x * x - z * z;
+  const p31 = x * y * z;
+  const p4 = x ** 4 + y ** 4 + z ** 4 - 0.6;
+
+  const mix = 0.44 * p2 + 0.31 * p22 + 0.24 * p31 + 0.2 * p4;
+  return SH_BASE_RADIUS * (1 + 0.41 * mix);
 }
 
 const sphericalHarmonicBasePoints = Array.from(
@@ -190,7 +195,7 @@ const sphericalHarmonicBasePoints = Array.from(
       const phi = (j / LATITUDE_SEGMENTS) * Math.PI;
       const sinPhi = Math.sin(phi);
       const cosPhi = Math.cos(phi);
-      const radius = sphericalHarmonicRadius(theta, phi);
+      const radius = sphericalPolynomialRadius(theta, phi);
       return {
         x: radius * sinPhi * Math.cos(theta),
         y: radius * cosPhi,
@@ -299,7 +304,6 @@ function projectPoint(point, rotationX, rotationY, rotationZ, width, height) {
 
 export default function TorusBanner() {
   const canvasRef = useRef(null);
-  const scrollerChars = Array.from(`${SCROLLER_TEXT}     `);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -429,7 +433,7 @@ export default function TorusBanner() {
         />
       </div>
 
-      <div className="relative z-[1] grid items-stretch gap-0 md:grid-cols-[minmax(360px,1.05fr)_1fr]">
+      <div className="relative z-[1]">
         <div className="torus-panel-shell min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem]">
           <canvas
             ref={canvasRef}
@@ -437,45 +441,7 @@ export default function TorusBanner() {
             aria-hidden
           />
         </div>
-        <div className="min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem] flex items-center overflow-hidden px-3 sm:px-5">
-          {ENABLE_SINE_SCROLLER ? (
-            <div className="torus-scroller-viewport">
-              <div className="torus-scroller-track">
-                {[0, 1, 2].map((segment) => (
-                  <span
-                    key={segment}
-                    className="torus-scroller-segment"
-                    aria-hidden
-                  >
-                    {scrollerChars.map((char, index) => (
-                      <span
-                        key={`${segment}-${index}`}
-                        className="torus-wave-char"
-                        style={{ animationDelay: `${(index % 28) * 0.055}s` }}
-                      >
-                        {char === " " ? "\u00A0" : char}
-                      </span>
-                    ))}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </div>
       </div>
-      {!ENABLE_SINE_SCROLLER && (
-        <div className="torus-bottom-ticker-shell" aria-hidden>
-          <div className="torus-bottom-ticker-viewport">
-            <div className="torus-bottom-ticker-track">
-              {[0, 1, 2, 3].map((segment) => (
-                <span key={`bottom-${segment}`} className="torus-bottom-ticker-segment">
-                  {SCROLLER_TEXT}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
       <style jsx>{`
         .torus-parallax-scene {
           position: absolute;
@@ -661,117 +627,6 @@ export default function TorusBanner() {
 
         .torus-panel-shell canvas {
           background: transparent !important;
-        }
-
-        .torus-scroller-viewport {
-          width: 100%;
-          overflow: hidden;
-          white-space: nowrap;
-        }
-
-        .torus-scroller-track {
-          display: inline-flex;
-          min-width: max-content;
-          animation: torus-scroll 22s linear infinite;
-        }
-
-        .torus-scroller-segment {
-          display: inline-flex;
-          margin-right: 2.4rem;
-          font-size: clamp(0.95rem, 2.2vw, 1.6rem);
-          font-weight: 700;
-          letter-spacing: 0.03em;
-          color: var(--admin-torus-scroller-color, #111827);
-          text-shadow:
-            0 0 8px rgba(0, 0, 0, 0.25),
-            0 1px 0 rgba(0, 0, 0, 0.55);
-        }
-
-        .torus-wave-char {
-          display: inline-block;
-          animation: torus-wave 1.75s ease-in-out infinite;
-          will-change: transform;
-        }
-
-        .torus-scroller-muted {
-          color: var(--admin-torus-scroller-color, #111827);
-          font-size: clamp(0.95rem, 2.1vw, 1.45rem);
-          font-weight: 700;
-          letter-spacing: 0.03em;
-          text-shadow:
-            0 0 8px rgba(0, 0, 0, 0.25),
-            0 1px 0 rgba(0, 0, 0, 0.55);
-        }
-
-        .torus-bottom-ticker-shell {
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 2;
-          pointer-events: none;
-          padding: 0 0.35rem 0.2rem;
-          background: linear-gradient(
-            180deg,
-            rgba(0, 0, 0, 0) 0%,
-            rgba(0, 0, 0, 0.26) 100%
-          );
-        }
-
-        .torus-bottom-ticker-viewport {
-          width: 100%;
-          overflow: hidden;
-          white-space: nowrap;
-        }
-
-        .torus-bottom-ticker-track {
-          display: inline-flex;
-          min-width: max-content;
-          animation: torus-bottom-scroll 11s linear infinite;
-        }
-
-        .torus-bottom-ticker-segment {
-          display: inline-flex;
-          margin-right: 2.2rem;
-          color: #ffe100;
-          font-size: clamp(0.62rem, 1.2vw, 0.9rem);
-          font-weight: 700;
-          letter-spacing: 0.065em;
-          text-transform: uppercase;
-          text-shadow:
-            0 1px 0 rgba(0, 0, 0, 0.8),
-            0 0 6px rgba(0, 0, 0, 0.42);
-        }
-
-        @keyframes torus-scroll {
-          from {
-            transform: translateX(0%);
-          }
-          to {
-            transform: translateX(-33.333%);
-          }
-        }
-
-        @keyframes torus-wave {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-          25% {
-            transform: translateY(-8px);
-          }
-          75% {
-            transform: translateY(8px);
-          }
-        }
-
-        @keyframes torus-bottom-scroll {
-          from {
-            transform: translateX(0%);
-          }
-          to {
-            transform: translateX(-25%);
-          }
         }
       `}</style>
     </div>
