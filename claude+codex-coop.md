@@ -28,6 +28,12 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - header border from `hsl(33 42% 33%)` to `hsl(33 30% 29%)`
   - hamburger surface/hover adjusted to matching lower-chroma/darker tones.
 
+## 2026-03-19 (cont. 37)
+
+### Codex — subtitle contrast preference update
+
+- Changed the `ARTICULATE STOREFRONT` subtitle text in the admin header lockup from white to black to match the requested contrast style on the amber bar.
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

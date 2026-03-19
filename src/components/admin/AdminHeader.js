@@ -273,7 +273,7 @@ export default function AdminHeader({ logoUrl }) {
                 className="ml-6"
               />
               <span
-                className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white"
+                className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-black"
                 style={{ marginLeft: "1rem", marginTop: "2px" }}
               >
                 ARTICULATE STOREFRONT
