@@ -248,16 +248,19 @@ export default function AdminHeader({ logoUrl }) {
                   <span className="block h-0.5 w-4 bg-white" />
                 </span>
               </button>
-              <span className="mt-0.5 text-[9px] font-medium tracking-wide text-indigo-200">
+              <span className="mt-1 text-[9px] font-medium tracking-wide text-indigo-200">
                 Ctrl+Alt+M
               </span>
             </div>
             <Link
               href="/admin#/welcome"
-              className="text-white/95 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-white/95 hover:text-white transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
               <RagbazLogo wordmarkOnly noLetterSpacing />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white">
+                ARTICULATE STOREFRONT
+              </span>
             </Link>
           </div>
 

@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
-import { readImageGenerationSnapshot } from "@/lib/adminImageGenerationState";
 
 const IMPRESS_SCRIPT_ID = "impress-js-1.1.0";
 const BASE_SLIDE_WIDTH = 940;
 const BASE_SLIDE_HEIGHT = 560;
-const IMPRESS_CONTENT_SCALE = 0.9;
+const BASE_SLIDE_ASPECT = BASE_SLIDE_WIDTH / BASE_SLIDE_HEIGHT;
+const IMPRESS_CONTENT_SCALE = 0.86;
+const ADMIN_HEADER_BUDGET = 72;
+const STORY_CHROME_BUDGET_DESKTOP = 250;
+const STORY_CHROME_BUDGET_COMPACT = 284;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -15,16 +18,28 @@ function clamp(value, min, max) {
 
 function computeSlideLayout() {
   if (typeof window === "undefined") {
-    return { slideWidth: 860, slideHeight: 500, frameHeight: 518 };
+    return { slideWidth: 820, slideHeight: 488, frameHeight: 504 };
   }
-  const compact = window.innerWidth < 1024;
+  const viewportWidth = window.visualViewport?.width || window.innerWidth;
+  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+  const compact = viewportWidth < 1024;
   const horizontalPadding = compact ? 16 : 72;
-  const availableWidth = window.innerWidth - horizontalPadding;
-  const slideWidth = clamp(availableWidth, 420, 1100);
-  const scaledHeight = Math.round((slideWidth / BASE_SLIDE_WIDTH) * BASE_SLIDE_HEIGHT);
-  const availableHeight = window.innerHeight - (compact ? 140 : 104);
-  const slideHeight = clamp(Math.min(scaledHeight, availableHeight), 320, 640);
-  const frameHeight = slideHeight + (compact ? 14 : 18);
+  const availableWidth = Math.max(340, viewportWidth - horizontalPadding);
+  const storyChromeBudget = compact
+    ? STORY_CHROME_BUDGET_COMPACT
+    : STORY_CHROME_BUDGET_DESKTOP;
+  const availableHeight = Math.max(
+    240,
+    viewportHeight - ADMIN_HEADER_BUDGET - storyChromeBudget,
+  );
+  const heightByWidth = Math.round(availableWidth / BASE_SLIDE_ASPECT);
+  const slideHeight = clamp(
+    Math.min(heightByWidth, availableHeight),
+    260,
+    compact ? 520 : 600,
+  );
+  const slideWidth = clamp(Math.round(slideHeight * BASE_SLIDE_ASPECT), 430, 1040);
+  const frameHeight = slideHeight + (compact ? 12 : 16);
   return { slideWidth, slideHeight, frameHeight };
 }
 
@@ -69,13 +84,6 @@ function tearImpress() {
   } catch (_error) {
     // best effort cleanup only
   }
-}
-
-function formatSnapshotTime(isoString) {
-  if (!isoString) return "—";
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("sv-SE");
 }
 
 function loadImpressScript(onReady) {
@@ -423,69 +431,14 @@ function ProductsMockScreen() {
   );
 }
 
-function ImagePromptLiveScreen() {
-  const [quota, setQuota] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [snapshot, setSnapshot] = useState(null);
-
-  const refreshSnapshot = useCallback(() => {
-    if (typeof window === "undefined") return;
-    setSnapshot(readImageGenerationSnapshot(window.localStorage));
-  }, []);
-
-  useEffect(() => {
-    refreshSnapshot();
-    if (typeof window === "undefined") return undefined;
-    function onSnapshotUpdate() {
-      refreshSnapshot();
-    }
-    window.addEventListener("admin:imageSnapshotUpdated", onSnapshotUpdate);
-    window.addEventListener("storage", onSnapshotUpdate);
-    return () => {
-      window.removeEventListener("admin:imageSnapshotUpdated", onSnapshotUpdate);
-      window.removeEventListener("storage", onSnapshotUpdate);
-    };
-  }, [refreshSnapshot]);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadQuota() {
-      setLoading(true);
-      setLoadError("");
-      try {
-        const res = await fetch("/api/admin/generate-image");
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || !json?.ok) {
-          throw new Error(json?.error || "image_state_unavailable");
-        }
-        if (!cancelled) {
-          setQuota(json.quota || null);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setLoadError(String(error?.message || "image_state_unavailable"));
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-    loadQuota();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const fallbackMode = !loading && (Boolean(loadError) || !quota);
-  const used = Number.isFinite(quota?.used) ? quota.used : 0;
-  const limit = Number.isFinite(quota?.limit) ? quota.limit : 0;
-  const remaining = Number.isFinite(quota?.remaining) ? quota.remaining : 0;
-  const progressPercent = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-  const promptPreview = snapshot?.prompt
-    ? snapshot.prompt.slice(0, 220)
-    : "";
+function ImagePromptMockScreen() {
+  const mockQuota = { used: 3, limit: 12, remaining: 9 };
+  const mockPrompt =
+    "Nordic study desk by a window, tactile paper notebook, soft morning light, 4:5 portrait, editorial style, warm muted palette.";
+  const progressPercent = Math.min(
+    100,
+    Math.round((mockQuota.used / mockQuota.limit) * 100),
+  );
 
   return (
     <div className="h-full rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-pink-100 p-5 shadow-xl">
@@ -495,27 +448,14 @@ function ImagePromptLiveScreen() {
             {t("admin.welcomeImageLiveTitle", "AI image generator status")}
           </h3>
           <p className="text-xs text-gray-700">
-            {fallbackMode
-              ? t(
-                  "admin.welcomeImageReadOnlyHint",
-                  "Read-only fallback is active. Open Products to generate images.",
-                )
-              : t(
-                  "admin.welcomeImageLiveHint",
-                  "Live state from the admin image generator quota and latest run snapshot.",
-                )}
+            {t(
+              "admin.welcomeImageMockHint",
+              "Mocked image-generator state for onboarding. Open Products for live generation.",
+            )}
           </p>
         </div>
-        <span
-          className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-            fallbackMode
-              ? "border-amber-300 bg-amber-100 text-amber-900"
-              : "border-emerald-300 bg-emerald-100 text-emerald-900"
-          }`}
-        >
-          {fallbackMode
-            ? t("admin.welcomeImageReadOnlyBadge", "read-only fallback")
-            : t("admin.welcomeImageLiveBadge", "live")}
+        <span className="rounded-full border border-fuchsia-300 bg-fuchsia-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-900">
+          {t("admin.welcomeImageMockBadge", "mock")}
         </span>
       </div>
       <div className="mt-4 grid h-[255px] grid-cols-12 gap-3">
@@ -523,78 +463,69 @@ function ImagePromptLiveScreen() {
           <p className="text-[11px] font-semibold uppercase tracking-wider text-fuchsia-800">
             {t("admin.welcomeImageQuotaTitle", "Quota")}
           </p>
-          {loading ? (
-            <div className="mt-3 space-y-2">
-              <div className="h-3 w-full animate-pulse rounded bg-fuchsia-100" />
-              <div className="h-3 w-4/5 animate-pulse rounded bg-fuchsia-100" />
+          <div className="mt-2 space-y-2 text-xs text-gray-700">
+            <div className="flex items-center justify-between gap-2">
+              <span>{t("admin.welcomeImageQuotaUsed", "Used today")}</span>
+              <span className="font-semibold">
+                {mockQuota.used} / {mockQuota.limit}
+              </span>
             </div>
-          ) : (
-            <div className="mt-2 space-y-2 text-xs text-gray-700">
-              <div className="flex items-center justify-between gap-2">
-                <span>{t("admin.welcomeImageQuotaUsed", "Used today")}</span>
-                <span className="font-semibold">
-                  {used} / {limit || "?"}
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-fuchsia-100">
-                <div
-                  className="h-full bg-fuchsia-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span>{t("admin.welcomeImageQuotaRemaining", "Remaining")}</span>
-                <span className="font-semibold">{remaining}</span>
-              </div>
-              <div className="rounded border border-fuchsia-100 bg-fuchsia-50 px-2 py-1">
-                {t("admin.welcomeImageQuotaReset", "Resets")}:
-                {" "}
-                {quota?.resetsAt
-                  ? new Date(quota.resetsAt).toLocaleString("sv-SE")
-                  : "—"}
-              </div>
+            <div className="h-2 overflow-hidden rounded-full bg-fuchsia-100">
+              <div
+                className="h-full bg-fuchsia-500"
+                style={{ width: `${progressPercent}%` }}
+              />
             </div>
-          )}
-          <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-slate-800">
-            <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
-              {t("admin.welcomeImageSettingSize", "Size")}: {snapshot?.size || "portrait-4-5"}
+            <div className="flex items-center justify-between gap-2">
+              <span>{t("admin.welcomeImageQuotaRemaining", "Remaining")}</span>
+              <span className="font-semibold">{mockQuota.remaining}</span>
             </div>
-            <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
-              {t("admin.welcomeImageSettingCount", "Count")}: {snapshot?.count ?? 1}
-            </div>
-            <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
-              {t("admin.welcomeImageSettingStatus", "Status")}: {snapshot?.status || "idle"}
+            <div className="rounded border border-fuchsia-100 bg-fuchsia-50 px-2 py-1">
+              {t("admin.welcomeImageQuotaReset", "Resets")}: 00:00
             </div>
           </div>
-          {fallbackMode && (
-            <div className="mt-3 rounded border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
-              {t(
-                "admin.welcomeImageFallbackHint",
-                "Could not read live quota from the API. This snapshot stays read-only until the endpoint responds again.",
-              )}
+          <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-slate-800">
+            <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
+              {t("admin.welcomeImageSettingSize", "Size")}: portrait-4-5
             </div>
-          )}
+            <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
+              {t("admin.welcomeImageSettingCount", "Count")}: 2
+            </div>
+            <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
+              {t("admin.welcomeImageSettingStatus", "Status")}: completed
+            </div>
+          </div>
           <div className="mt-2 text-[11px] text-gray-500">
-            {t("admin.welcomeImageLastRun", "Last run")}:
-            {" "}
-            {formatSnapshotTime(snapshot?.updatedAt)}
+            {t("admin.welcomeImageLastRun", "Last run")}: 2026-03-19 18:45
           </div>
         </div>
         <div className="col-span-5 rounded-xl border border-fuchsia-200 bg-white p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-fuchsia-800">
-            {t("admin.welcomeImagePromptTitle", "Latest prompt")}
+            {t("admin.welcomeImagePreviewTitle", "Mock image result")}
           </p>
-          <div className="mt-2 h-[188px] overflow-auto rounded-lg border border-dashed border-fuchsia-300 bg-gradient-to-br from-fuchsia-100 to-rose-100 p-3 text-xs text-fuchsia-950">
-            {promptPreview ||
-              t(
-                "admin.welcomeImageNoPrompt",
-                "No prompt has been generated yet. Open Products and run the image generator to populate this snapshot.",
-              )}
+          <div className="mt-2 h-[130px] overflow-hidden rounded-lg border border-fuchsia-200 bg-gradient-to-br from-fuchsia-100 via-rose-100 to-amber-100 p-2">
+            <svg viewBox="0 0 320 180" className="h-full w-full rounded-md border border-white/60 bg-white/60">
+              <defs>
+                <linearGradient id="mock-image-gradient" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#fef3c7" />
+                  <stop offset="55%" stopColor="#fbcfe8" />
+                  <stop offset="100%" stopColor="#ddd6fe" />
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" width="320" height="180" fill="url(#mock-image-gradient)" />
+              <circle cx="58" cy="48" r="18" fill="#f59e0b" opacity="0.75" />
+              <rect x="24" y="102" width="272" height="56" rx="12" fill="#312e81" opacity="0.22" />
+              <text x="24" y="34" fontSize="13" fill="#701a75" fontWeight="700">AI MOCK OUTPUT</text>
+              <text x="24" y="127" fontSize="11" fill="#1f2937">4:5 portrait • editorial lighting</text>
+            </svg>
+          </div>
+          <div className="mt-2 max-h-[56px] overflow-hidden rounded-lg border border-dashed border-fuchsia-300 bg-gradient-to-br from-fuchsia-100 to-rose-100 p-2 text-[11px] leading-relaxed text-fuchsia-950">
+            {mockPrompt}
           </div>
           <div className="mt-2 text-[11px] text-gray-500">
             {t("admin.welcomeImageGeneratedCount", "Images generated in last run")}:
             {" "}
-            {snapshot?.generatedCount ?? 0}
+            2
           </div>
         </div>
       </div>
@@ -824,7 +755,7 @@ export default function AdminWelcomeTab({
         z: -440,
         scale: scaledStep(1.16),
         rotate: -5,
-        content: <ImagePromptLiveScreen />,
+        content: <ImagePromptMockScreen />,
       },
       {
         id: "story-chat",
@@ -849,10 +780,13 @@ export default function AdminWelcomeTab({
         content: (
           <div className="h-full rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-6 shadow-xl">
             <h3 className="text-xl font-semibold text-slate-900">
-              Welcome is complete
+              {t("admin.welcomeLandingHeadline", "Control room unlocked")}
             </h3>
             <p className="mt-2 text-sm text-slate-600">
-              You can replay the presentation later and jump to cards now.
+              {t(
+                "admin.welcomeLandingBody",
+                "Replay the tour any time and jump straight into your admin cards.",
+              )}
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <button
@@ -1012,13 +946,19 @@ export default function AdminWelcomeTab({
   }
 
   return (
-    <div className="space-y-1 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]">
+    <div className="welcome-story-shell space-y-1 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-widest text-white">
+          <p
+            className="welcome-story-force-white text-sm font-semibold uppercase tracking-widest text-white"
+            style={{ color: "#ffffff" }}
+          >
             {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
           </p>
-          <p className="mt-1 text-xs text-sky-100">
+          <p
+            className="welcome-story-force-white mt-1 text-xs text-white"
+            style={{ color: "#ffffff" }}
+          >
             {slides[currentStep]?.title} - {slides[currentStep]?.subtitle}
           </p>
         </div>
@@ -1029,7 +969,8 @@ export default function AdminWelcomeTab({
               if (onSeenRevision) onSeenRevision();
               if (onHideStory) onHideStory();
             }}
-            className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
+            className="welcome-story-force-white rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+            style={{ color: "#ffffff" }}
           >
             {t("admin.welcomeSkip", "Skip to dashboard")}
           </button>
@@ -1037,7 +978,7 @@ export default function AdminWelcomeTab({
       </div>
 
       <div
-        className="relative overflow-hidden rounded-xl border border-sky-200/35 bg-slate-900/45 p-1.5"
+        className="relative overflow-hidden rounded-xl border border-white/35 bg-slate-900/45 p-1.5"
         style={{ height: `${slideLayout.frameHeight}px` }}
       >
         <div
@@ -1087,8 +1028,8 @@ export default function AdminWelcomeTab({
               onClick={() => goToStep(index)}
               className={`h-2.5 rounded-full transition-all ${
                 currentStep === index
-                  ? "w-8 bg-amber-300"
-                  : "w-2.5 bg-sky-200/65 hover:bg-sky-100"
+                  ? "w-8 bg-white"
+                  : "w-2.5 bg-white/55 hover:bg-white/85"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -1098,20 +1039,25 @@ export default function AdminWelcomeTab({
           <button
             type="button"
             onClick={() => goToStep(currentStep - 1)}
-            className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
+            className="welcome-story-force-white rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+            style={{ color: "#ffffff" }}
           >
             {t("admin.welcomePrev", "Prev")}
           </button>
           <button
             type="button"
             onClick={() => goToStep(currentStep + 1)}
-            className="rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
+            className="welcome-story-force-white rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+            style={{ color: "#ffffff" }}
           >
             {t("admin.welcomeNext", "Next")}
           </button>
         </div>
       </div>
-      <p className="text-xs text-sky-100">
+      <p
+        className="welcome-story-force-white text-xs text-white"
+        style={{ color: "#ffffff" }}
+      >
         {t("admin.welcomeEscHint", "Press Esc to exit the story at any time")}
       </p>
     </div>

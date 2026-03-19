@@ -273,6 +273,10 @@ body:has(.admin-layout)::before {
   display: none;
 }
 
+.welcome-story-force-white {
+  color: #fff !important;
+}
+
 /* ── Admin Gruvbox Dark theme ────────────────────────────────────────────────
    Applied by adding class="admin-gruvbox" to the admin-layout wrapper.
    Palette based on Gruvbox dark hard with Solarized-inspired blue accents.

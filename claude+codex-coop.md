@@ -595,3 +595,21 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - ES: `Panel de control`
 - Validation:
   - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminWelcomeTab.js`
+
+---
+
+## 2026-03-19 (cont. 17)
+
+### Codex — welcome story contrast + mock image slide + header branding
+
+- Replaced the Welcome impress image-generator slide’s live API/snapshot behavior with static mock quota, mock prompt, and a mock SVG preview card so onboarding no longer depends on `/api/admin/generate-image`.
+- Updated landing slide sign-off copy from “Welcome is complete” to localized stronger sign-off text:
+  - EN: `Control room unlocked`
+  - SV: `Kontrollpanelen är upplåst`
+  - ES: `Panel de control desbloqueado`
+- Enforced story chrome text color outside the slide viewport via `welcome-story-force-white` + `color: #fff !important` so slide title/subtitle row and control labels stay white on dark-blue background.
+- Updated menu bar branding to display `RAGBAZ` + white `ARTICULATE STOREFRONT` inline.
+- Nudged the `Ctrl+Alt+M` hint slightly lower under the hamburger icon for spacing.
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminWelcomeTab.js`
+  - `npm test -- tests/i18n-admin-parity.test.js`
