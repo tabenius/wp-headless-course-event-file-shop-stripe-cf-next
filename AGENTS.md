@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Completed VAT panel dark-theme polish: removed white surfaces via dedicated `admin-vat-panel`/`admin-vat-surface` gruvbox styles and set VAT heading/hint emphasis to requested contrast (`vatMapTitle` white, `vatMapHint` soft yellow).
 - **2026-03-19 (Codex)**: Tuned the Products empty-state hint (“Select an item to configure access”) to soft yellow in gruvbox/dark mode via `.admin-soft-yellow` while keeping neutral gray in light mode.
 - **2026-03-19 (Codex)**: Renamed inner tab copy from “Digital products” to “Digital downloads” (SV: “Digitala nedladdningar”, ES: “Descargas digitales”) for clearer operator wording.
 - **2026-03-19 (Codex)**: Fixed low-contrast dark-theme heading text in admin by overriding gruvbox heading/title colors (`h1..h6`, `text-slate-900/800`) to white.

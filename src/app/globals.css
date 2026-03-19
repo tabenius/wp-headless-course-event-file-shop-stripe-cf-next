@@ -410,8 +410,25 @@ body:has(.admin-layout)::before {
 .admin-gruvbox .text-gray-400 {
   color: var(--grv-fg2) !important;
 }
+.admin-gruvbox .admin-product-title {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
 .admin-gruvbox .admin-soft-yellow {
   color: #f5e7b8 !important;
+}
+.admin-gruvbox .admin-vat-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(60, 56, 54, 0.95),
+    rgba(40, 40, 40, 0.94)
+  ) !important;
+  border-color: var(--grv-bg4) !important;
+}
+.admin-gruvbox .admin-vat-surface {
+  background-color: var(--grv-bg1) !important;
+  border-color: var(--grv-bg4) !important;
+  color: var(--grv-fg) !important;
 }
 
 /* Interactive elements */

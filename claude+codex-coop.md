@@ -180,6 +180,17 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - `.admin-gruvbox .admin-soft-yellow { color: #f5e7b8 !important; }`
 - Result: soft-yellow hint on dark theme (better contrast), neutral gray retained in light theme.
 
+## 2026-03-19 (cont. 33)
+
+### Codex — VAT/Moms panel contrast and surface cleanup
+
+- Eliminated white-looking VAT surfaces in gruvbox by adding dedicated dark-theme classes:
+  - `admin-vat-panel` for the container background/border
+  - `admin-vat-surface` for chips and row cards
+- Updated VAT heading/hint emphasis per request:
+  - `Moms per kategori` uses `admin-product-title` (white/bold in dark theme),
+  - VAT hint text uses `admin-soft-yellow` (soft yellow in dark theme).
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

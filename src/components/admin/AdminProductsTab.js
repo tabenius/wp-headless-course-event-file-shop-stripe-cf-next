@@ -538,7 +538,7 @@ function ProductsTab({
                   )}
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`text-sm font-medium truncate ${
+                      className={`admin-product-title text-sm font-medium truncate ${
                         isActive ? "text-white" : "text-gray-800"
                       }`}
                       title={productName}
@@ -581,7 +581,7 @@ function ProductsTab({
                   onError={setError}
                 />
                 <div className="space-y-1">
-                  <h3 className="text-lg font-semibold break-words">
+                  <h3 className="admin-product-title text-lg font-bold break-words">
                     {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                   </h3>
                   <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs">
@@ -1353,7 +1353,7 @@ function AccessTab({
                   </span>
                   <div className="flex-1 min-w-0">
                     <span
-                      className={`block text-sm truncate ${
+                      className={`admin-product-title block text-sm truncate ${
                         isActive ? "text-white" : "text-gray-800"
                       }`}
                       title={item.name || item.uri}
@@ -1503,7 +1503,7 @@ function AccessTab({
                         onError={setError}
                       />
                       <div className="flex-1 min-w-0 space-y-1.5">
-                        <h3 className="text-base font-semibold break-words">
+                        <h3 className="admin-product-title text-base font-bold break-words">
                           {wpItem?.title || wpItem?.name || selectedCourse}
                         </h3>
                         <div className="flex flex-wrap gap-1.5 text-xs">
@@ -1619,7 +1619,7 @@ function AccessTab({
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-semibold break-words">
+                  <p className="admin-product-title text-sm font-bold break-words">
                     {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                   </p>
                   <p className="text-xs text-gray-400">
@@ -1672,13 +1672,13 @@ function AccessTab({
               autoSaveTrigger={autoSaveTrigger}
             />
 
-            <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-indigo-50 p-4 space-y-3">
+            <div className="admin-vat-panel rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-indigo-50 p-4 space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-purple-900">
+                  <p className="admin-product-title text-sm font-semibold text-purple-900">
                     {t("admin.vatMapTitle")}
                   </p>
-                  <p className="text-xs text-purple-700/90 mt-1">
+                  <p className="admin-soft-yellow text-xs text-purple-700/90 mt-1">
                     {t("admin.vatMapHint")}
                   </p>
                 </div>
@@ -1705,7 +1705,7 @@ function AccessTab({
                     return (
                       <span
                         key={`${category}-${slug}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-2.5 py-1 text-[11px] text-purple-800"
+                        className="admin-vat-surface inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-2.5 py-1 text-[11px] text-purple-800"
                         title={slug ? `${category} (${slug})` : category}
                       >
                         <span className="font-medium">{category}</span>
@@ -1735,7 +1735,7 @@ function AccessTab({
                     vatRows.map((row) => (
                       <div
                         key={row.slug}
-                        className="grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 items-center rounded-lg border border-purple-100 bg-white px-2 py-1.5"
+                        className="admin-vat-surface grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 items-center rounded-lg border border-purple-100 bg-white px-2 py-1.5"
                       >
                         <span className="text-sm text-gray-700 truncate" title={row.slug}>
                           {row.name}
