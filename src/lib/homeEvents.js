@@ -1,7 +1,12 @@
 import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
 
-const EVENTS_WITH_DATES_QUERY = `
-  query HomeEventsWithDates {
+/**
+ * Ragbaz-Articulate registers startDate and endDate on the Event type via
+ * register_graphql_field. When the plugin is active these fields are always
+ * present, so we query them directly.
+ */
+const HOME_EVENTS_QUERY = `
+  query HomeEvents {
     events(first: 50, where: { orderby: { field: DATE, order: ASC } }) {
       edges {
         node {
@@ -16,57 +21,32 @@ const EVENTS_WITH_DATES_QUERY = `
   }
 `;
 
-const EVENTS_BASIC_QUERY = `
-  query HomeEventsBasic {
-    events(first: 20) {
-      edges {
-        node {
-          id
-          title
-          uri
-        }
-      }
-    }
-  }
-`;
-
 /**
  * Fetch upcoming events for the home page.
- * Returns { events, hasDates } where events is an array of event objects
- * and hasDates indicates whether startDate/endDate were available.
+ * Returns { events, hasDates }.
  *
- * Falls back gracefully if the Event type or date fields don't exist.
+ * - If Event type is not registered (plugin absent), returns empty immediately.
+ * - startDate/endDate come from the ragbaz-articulate plugin; if somehow absent
+ *   (older plugin version) we fall back gracefully without crashing.
  */
 export async function fetchHomeEvents() {
   try {
     const hasEvent = await hasGraphQLType("Event");
     if (!hasEvent) return { events: [], hasDates: false };
 
-    // Try the richer query with date fields first
-    try {
-      const data = await fetchGraphQL(EVENTS_WITH_DATES_QUERY, {}, 1800);
-      const raw = data?.events?.edges?.map((e) => e.node).filter(Boolean) ?? [];
-      // If at least one event has a startDate the schema supports it
-      if (raw.some((e) => e.startDate)) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const upcoming = raw.filter((e) => {
-          if (!e.startDate) return true; // include dateless events
-          return new Date(e.startDate) >= today;
-        });
-        return { events: upcoming, hasDates: true };
-      }
-      // Dates came back null — fall through to basic query
-      if (raw.length > 0) return { events: raw, hasDates: false };
-    } catch {
-      // startDate/endDate not in schema — fall through
-    }
+    const data = await fetchGraphQL(HOME_EVENTS_QUERY, {}, 1800);
+    const raw = data?.events?.edges?.map((e) => e.node).filter(Boolean) ?? [];
 
-    // Basic query without date fields
-    const data = await fetchGraphQL(EVENTS_BASIC_QUERY, {}, 1800);
-    const events =
-      data?.events?.edges?.map((e) => e.node).filter(Boolean) ?? [];
-    return { events, hasDates: false };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcoming = raw.filter((e) => {
+      if (!e.startDate) return true; // include if date field missing
+      return new Date(e.startDate) >= today;
+    });
+
+    const hasDates = upcoming.some((e) => e.startDate);
+    return { events: upcoming, hasDates };
   } catch {
     return { events: [], hasDates: false };
   }
