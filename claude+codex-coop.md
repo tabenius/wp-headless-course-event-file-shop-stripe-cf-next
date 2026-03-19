@@ -113,6 +113,22 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Added/translated all required keys in EN/SV/ES (`styleSite*`, site/admin color labels, font labels/samples/tokens, button/badge labels).
 - Verification: JSON parse checks for all locales pass; `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
 
+## 2026-03-19 (cont. 46)
+
+### Codex — Info torus layout + sine scroller redesign
+
+- Reworked `TorusBanner` structure for the Info tab:
+  - moved torus canvas to a dedicated left column,
+  - removed logo, Info label, descriptive paragraph, and the former dark gradient overlays/panels,
+  - expanded vertical torus area (`h-64` / `sm:h-72`) and removed extra dark-area chrome outside the torus panel.
+- Updated torus geometry to narrow the center hole:
+  - `MAJOR_RADIUS: 110 -> 104`
+  - `MINOR_RADIUS: 36 -> 44`
+- Added right-side sine scroller animation with exact requested text:
+  - `RAGBAZ - standing on the shoulders of giants and bending spoons since 1987`
+  - implemented as a repeated scrolling track plus per-character wave animation in component-scoped CSS keyframes.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

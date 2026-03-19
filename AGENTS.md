@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Refactored the Info-tab torus banner layout: torus moved to the left with increased canvas height, donut hole narrowed by geometry update (`MINOR_RADIUS` increase), removed prior logo/info/dark overlay layers, and added a right-side animated sine scroller text line (`RAGBAZ - standing on the shoulders of giants and bending spoons since 1987`).
 - **2026-03-19 (Codex)**: Completed postponed Style-tab localization and clarity pass: translated all Style-tab UI copy to EN/SV/ES, renamed the site section heading to child-theme style guide wording (SV: `Stilguide, barntema`), clarified admin style heading as admin-only, and made heading/body font preview cards use dynamic site theme tokens (`--color-background`/`--color-foreground`/etc.) with explicit padded surfaces.
 - **2026-03-19 (Codex)**: Upgraded header logo subtitle alignment logic: `ARTICULATE STOREFRONT` now left-aligns to `RAGBAZ` baseline offset and auto-scales on mount/resize (via measured width ratio) so subtitle width tracks both left and right edges of the wordmark more precisely.
 - **2026-03-19 (Codex)**: Fine-tuned header subtitle alignment by shifting `ARTICULATE STOREFRONT` back `0.25rem` (from `1.5rem` to `1.25rem` left offset) for tighter logo lockup balance.

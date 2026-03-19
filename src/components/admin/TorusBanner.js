@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import RagbazLogo from "./RagbazLogo";
 
 const SEGMENTS = 24;
-const MAJOR_RADIUS = 110;
-const MINOR_RADIUS = 36;
+const MAJOR_RADIUS = 104;
+const MINOR_RADIUS = 44;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const FALLBACK_BACKGROUND = "#1b1f52";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
+const SCROLLER_TEXT =
+  "RAGBAZ - standing on the shoulders of giants and bending spoons since 1987";
 
 const basePoints = Array.from({ length: SEGMENTS }, (_, i) => {
   const phi = (i / SEGMENTS) * Math.PI * 2;
@@ -56,6 +57,7 @@ function projectPoint(point, rotationX, rotationY, rotationZ, width, height) {
 
 export default function TorusBanner() {
   const canvasRef = useRef(null);
+  const scrollerChars = Array.from(`${SCROLLER_TEXT}     `);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -144,26 +146,85 @@ export default function TorusBanner() {
   }, []);
 
   return (
-    <div className="relative rounded-2xl border border-cyan-400/40 bg-[var(--admin-torus-bg)] shadow-2xl overflow-hidden">
-      <canvas
-        ref={canvasRef}
-        className="w-full h-48 sm:h-52 block opacity-90 mix-blend-screen"
-        aria-hidden
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-[#050b17]/40 via-[#050d1d]/30 to-[#040712]/80" />
-      <div className="relative z-20 px-6 py-4 space-y-1 text-white">
-        <div className="flex items-center justify-between">
-          <RagbazLogo includeStoreFront color="#f7fbff" className="scale-[1.02]" />
-          <span className="text-xs uppercase tracking-[0.3em] text-cyan-200">
-            Info
-          </span>
+    <div className="rounded-2xl border border-cyan-400/35 bg-transparent overflow-hidden">
+      <div className="grid items-center gap-4 p-3 sm:p-4 md:grid-cols-[minmax(300px,420px)_1fr]">
+        <div className="rounded-xl border border-cyan-400/45 bg-[var(--admin-torus-bg)] shadow-[inset_0_0_0_1px_rgba(75,247,255,0.2)]">
+          <canvas
+            ref={canvasRef}
+            className="block w-full h-64 sm:h-72 opacity-95"
+            aria-hidden
+          />
         </div>
-        <p className="text-sm text-white/80 max-w-2xl">
-          The rotating torus visualizes the tight, engineered geometry of the
-          RAGBAZ Articulate StoreFront experience—precise, angular, and with
-          cyan edges that trace the workflow depth.
-        </p>
+        <div className="min-h-[15rem] flex items-center overflow-hidden px-1 sm:px-2">
+          <div className="torus-scroller-viewport">
+            <div className="torus-scroller-track">
+              {[0, 1, 2].map((segment) => (
+                <span key={segment} className="torus-scroller-segment" aria-hidden>
+                  {scrollerChars.map((char, index) => (
+                    <span
+                      key={`${segment}-${index}`}
+                      className="torus-wave-char"
+                      style={{ animationDelay: `${(index % 28) * 0.055}s` }}
+                    >
+                      {char === " " ? "\u00A0" : char}
+                    </span>
+                  ))}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
+      <style jsx>{`
+        .torus-scroller-viewport {
+          width: 100%;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+
+        .torus-scroller-track {
+          display: inline-flex;
+          min-width: max-content;
+          animation: torus-scroll 22s linear infinite;
+        }
+
+        .torus-scroller-segment {
+          display: inline-flex;
+          margin-right: 2.4rem;
+          font-size: clamp(0.95rem, 2.2vw, 1.6rem);
+          font-weight: 700;
+          letter-spacing: 0.03em;
+          color: #111827;
+        }
+
+        .torus-wave-char {
+          display: inline-block;
+          animation: torus-wave 1.75s ease-in-out infinite;
+          will-change: transform;
+        }
+
+        @keyframes torus-scroll {
+          from {
+            transform: translateX(0%);
+          }
+          to {
+            transform: translateX(-33.333%);
+          }
+        }
+
+        @keyframes torus-wave {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          25% {
+            transform: translateY(-8px);
+          }
+          75% {
+            transform: translateY(8px);
+          }
+        }
+      `}</style>
     </div>
   );
 }
