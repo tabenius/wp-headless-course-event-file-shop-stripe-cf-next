@@ -15,7 +15,8 @@ function getNavItems() {
     { label: t("admin.navStyle"), tab: "style" },
     { label: t("admin.navChat"), tab: "chat" },
     { label: t("admin.navSupport"), tab: "support" },
-    { label: t("admin.navAdvanced"), tab: "advanced" },
+    { label: t("admin.navStorage"), tab: "storage" },
+    { label: t("admin.navSandbox"), tab: "sandbox" },
     { href: "/admin/docs", label: t("admin.documentation") },
   ];
 }

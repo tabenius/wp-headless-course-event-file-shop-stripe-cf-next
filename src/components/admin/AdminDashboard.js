@@ -29,7 +29,8 @@ const AdminStatsTab = lazy(() => import("./AdminStatsTab"));
 const AdminConnectorsTab = lazy(() => import("./AdminConnectorsTab"));
 const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
 const AdminSupportTab = lazy(() => import("./AdminSupportTab"));
-const AdminAdvancedTab = lazy(() => import("./AdminAdvancedTab"));
+const AdminStorageTab = lazy(() => import("./AdminStorageTab"));
+const AdminSandboxTab = lazy(() => import("./AdminSandboxTab"));
 const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
 const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
 
@@ -510,7 +511,7 @@ export default function AdminDashboard() {
         4: "access",
         5: "support",
         6: "health",
-        7: "advanced",
+        7: "sandbox",
         8: "chat",
         9: "style",
       };
@@ -519,6 +520,14 @@ export default function AdminDashboard() {
         setActiveTab(tabMap[digit]);
         window.dispatchEvent(
           new CustomEvent("admin:switchTab", { detail: tabMap[digit] }),
+        );
+        return;
+      }
+      if (e.code === "KeyS") {
+        e.preventDefault();
+        setActiveTab("storage");
+        window.dispatchEvent(
+          new CustomEvent("admin:switchTab", { detail: "storage" }),
         );
         return;
       }
@@ -737,8 +746,10 @@ export default function AdminDashboard() {
     if (activeTab === "support") {
       loadTickets();
     }
-    if (activeTab === "advanced") {
+    if (activeTab === "storage") {
       loadUploadInfo();
+    }
+    if (activeTab === "sandbox") {
       loadCommits();
     }
     if (activeTab === "health") {
@@ -1285,7 +1296,7 @@ export default function AdminDashboard() {
     if (activeTab === "support") {
       fetchTickets();
     }
-    if (activeTab === "advanced" && !uploadInfoDetails) {
+    if (activeTab === "storage" && !uploadInfoDetails) {
       fetch("/api/admin/upload-info")
         .then((res) => res.json())
         .then((json) => {
@@ -1299,7 +1310,7 @@ export default function AdminDashboard() {
 
   // Fetch commit log when advanced tab is shown
   useEffect(() => {
-    if (activeTab !== "advanced" || commits) return;
+    if (activeTab !== "sandbox" || commits) return;
     fetch("/api/admin/commits")
       .then(async (res) => {
         const json = await res.json();
@@ -1319,7 +1330,7 @@ export default function AdminDashboard() {
       window.removeEventListener("admin:coursesUpdated", onCoursesUpdated);
   }, []);
 
-  // Intercept browser console to feed the client log panel in Advanced tab
+  // Intercept browser console to feed the client log panel in Sandbox tab
   useEffect(() => {
     const orig = {
       log: console.log.bind(console),
@@ -1484,7 +1495,8 @@ export default function AdminDashboard() {
             ["^⌥4", "Access"],
             ["^⌥5", "Support"],
             ["^⌥6", "Health"],
-            ["^⌥7", "Advanced"],
+            ["^⌥S", "Storage"],
+            ["^⌥7", "Sandbox"],
             ["^⌥8", "Chat"],
             ["^⌥9", "Style"],
             ["^⌥/", "Search"],
@@ -1833,20 +1845,30 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Advanced tab ── */}
-      {activeTab === "advanced" && (
+      {/* ── Storage tab ── */}
+      {activeTab === "storage" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
         >
-          <AdminAdvancedTab
-            buildTimestamp={buildTimestamp}
-            gitRevision={gitRevision}
-            runtime={runtime}
+          <AdminStorageTab
             storage={storage}
             uploadInfo={uploadInfo}
             uploadBackend={uploadBackend}
             setUploadBackend={setUploadBackend}
             uploadInfoDetails={uploadInfoDetails}
+          />
+        </Suspense>
+      )}
+
+      {/* ── Sandbox tab ── */}
+      {activeTab === "sandbox" && (
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
+          <AdminSandboxTab
+            buildTimestamp={buildTimestamp}
+            gitRevision={gitRevision}
+            uploadBackend={uploadBackend}
             resendConfigured={resendConfigured}
             analyticsMode={analyticsMode}
             purging={purging}
