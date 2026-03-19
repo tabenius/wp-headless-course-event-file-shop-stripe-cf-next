@@ -36,7 +36,11 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "stripe": "^20.4.1"
+    "stripe": "^20.4.1",
+    "zod": "^4.3.6"
+  },
+  "overrides": {
+    "tar": ">=7.5.11"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
