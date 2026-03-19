@@ -129,6 +129,14 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - implemented as a repeated scrolling track plus per-character wave animation in component-scoped CSS keyframes.
 - Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
 
+## 2026-03-19 (cont. 47)
+
+### Codex — very-yellow theme glyphs
+
+- Updated the theme-toggle icon color in `AdminHeader` to a strong yellow (`#ffd100`) with lighter yellow hover (`#fff27a`) for both sun and moon glyph states.
+- Kept the existing dark-gray icon edge-outline (`textShadow`) unchanged for legibility on the textured amber bar.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements
