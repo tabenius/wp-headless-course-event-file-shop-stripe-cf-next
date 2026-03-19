@@ -154,37 +154,78 @@ export default function AdminAdvancedTab({
             Choose where product files/images are stored. WordPress Media
             Library works without extra setup. S3/R2 requires credentials.
           </p>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { id: "wordpress", label: "WordPress media", enabled: true },
-              { id: "r2", label: "Cloudflare R2", enabled: uploadInfo?.r2 },
-              { id: "s3", label: "S3 / Spaces", enabled: uploadInfo?.s3 },
-            ].map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                disabled={!opt.enabled}
-                onClick={() => setUploadBackend(opt.id)}
-                className={`px-3 py-1.5 rounded border text-sm ${
-                  uploadBackend === opt.id
-                    ? "border-green-500 text-green-800 bg-green-50"
-                    : "border-gray-200 text-gray-700"
-                } ${!opt.enabled ? "opacity-40 cursor-not-allowed" : ""}`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          {!uploadInfo?.s3 && !uploadInfo?.r2 && (
-            <p className="text-[11px] text-gray-500">
-              Configure S3/R2 credentials to enable direct uploads
-              (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME,
-              S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
-            </p>
-          )}
-          {uploadBackend !== "wordpress" && uploadInfoDetails && (
-            <div className="mt-3 border rounded p-3 bg-gray-50 space-y-2 text-xs text-gray-700">
-              <div className="font-semibold text-gray-800 flex items-center gap-2">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "wordpress", label: "WordPress media", enabled: true },
+            { id: "r2", label: "Cloudflare R2", enabled: uploadInfo?.r2 },
+            { id: "s3", label: "S3 / Spaces", enabled: uploadInfo?.s3 },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              disabled={!opt.enabled}
+              onClick={() => setUploadBackend(opt.id)}
+              className={`px-3 py-1.5 rounded border text-sm ${
+                uploadBackend === opt.id
+                  ? "border-green-500 text-green-800 bg-green-50"
+                  : "border-gray-200 text-gray-700"
+              } ${!opt.enabled ? "opacity-40 cursor-not-allowed" : ""}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {!uploadInfo?.s3 && !uploadInfo?.r2 && (
+          <p className="text-[11px] text-gray-500">
+            Configure S3/R2 credentials to enable direct uploads
+            (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME,
+            S3_PUBLIC_URL, plus S3_ENDPOINT or CLOUDFLARE_ACCOUNT_ID).
+          </p>
+        )}
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-gray-400">
+          <a
+            href="https://developers.cloudflare.com/r2/"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 rounded-full border border-gray-700/60 px-3 py-1 transition hover:border-gray-400"
+          >
+            <span className="w-4 h-4">
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
+                <circle cx="12" cy="12" r="10" fill="#fbbf24" />
+                <path
+                  d="M12 4v16M4 12h16"
+                  stroke="#0f172a"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+            <span>Cloudflare R2 docs</span>
+          </a>
+          <a
+            href="https://aws.amazon.com/s3/"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 rounded-full border border-gray-700/60 px-3 py-1 transition hover:border-gray-400"
+          >
+            <span className="w-4 h-4">
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
+                <rect x="3" y="7" width="18" height="10" rx="2" fill="#f5af19" />
+                <path
+                  d="M6 16 4 9h4l2 7h4l2-7h4l-2 7"
+                  stroke="#1f2937"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span>AWS S3 docs</span>
+          </a>
+        </div>
+        {uploadBackend !== "wordpress" && uploadInfoDetails && (
+          <div className="mt-3 border rounded p-3 bg-gray-50 space-y-2 text-xs text-gray-700">
+            <div className="font-semibold text-gray-800 flex items-center gap-2">
                 {t("admin.uploadClientSettings")}
                 <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 text-purple-800">
                   {uploadBackend === "r2" ? "R2 (S3 API)" : "S3"}
