@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { SinglePageFragment } from "@/lib/fragments/SinglePageFragment";
 import Page from "@/components/single/Page";
+import EventCalendar from "@/components/home/EventCalendar";
 import { fetchGraphQL } from "@/lib/client";
+import { fetchHomeEvents } from "@/lib/homeEvents";
 
 const GET_CONTENT_QUERY = `
 ${SinglePageFragment}
@@ -14,13 +16,10 @@ query GetNodeByUri($uri: String!) {
 `;
 
 export default async function HomePage() {
-  const data = await fetchGraphQL(
-    GET_CONTENT_QUERY,
-    {
-      uri: "/",
-    },
-    1800,
-  );
+  const [data, { events, hasDates }] = await Promise.all([
+    fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800),
+    fetchHomeEvents(),
+  ]);
 
   if (!data?.nodeByUri) {
     console.warn("No nodeByUri data found, returning 404");
@@ -28,7 +27,16 @@ export default async function HomePage() {
   }
 
   const contentType = data?.nodeByUri?.__typename;
-  if (contentType === "Page") return <Page data={data.nodeByUri} />;
+  if (contentType === "Page") {
+    return (
+      <>
+        {events.length > 0 && (
+          <EventCalendar events={events} hasDates={hasDates} />
+        )}
+        <Page data={data.nodeByUri} />
+      </>
+    );
+  }
   notFound();
 }
 
