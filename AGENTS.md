@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Improved Products tab selection UX: selected rows now use inverse dark/light contrast, left list panes widened to `340px`, and right detail panes now show full product/content titles with wrapping (no truncation-only headers).
 - **2026-03-19 (Codex)**: Fixed status tooltip overlap/clipping in admin header by switching header container from `overflow-hidden` to `overflow-visible` and raising tooltip stacking (`z-[80]`).
 - **2026-03-19 (Codex)**: Added configurable letter-outline support to `RagbazLogo` (`outlineColor`, `outlineWidth`) and enabled a black 1px outline for the admin header `RAGBAZ` wordmark.
 - **2026-03-19 (Codex)**: Replaced menu-bar dot texture with a stronger Perlin-style concrete effect using dual SVG `feTurbulence` (coarse + fine) overlay layers in `globals.css`, with blend/contrast tuning for visible grain.

@@ -72,6 +72,19 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - increased tooltip layer to `z-[80]`.
 - This keeps the tooltip fully visible below the sticky menu bar while preserving header texture overlays.
 
+## 2026-03-19 (cont. 23)
+
+### Codex — products list/detail readability pass
+
+- Updated both product-related split panes in `AdminProductsTab` to use wider list columns:
+  - `lg:grid-cols-[340px_minmax(0,1fr)]` (was `280px` / `300px`).
+- Inverted selected-row visuals in both left lists for clearer focus:
+  - selected rows now use dark background + light text (`bg-slate-900 text-white`).
+  - tuned subtext/badges/status dot colors for selected-state contrast.
+- Ensured full selected title is visible in right detail panes:
+  - removed truncate-only heading behavior for selected WP/shop titles,
+  - added wrapped full-title line (`break-words` / `break-all`) in the right panel headers.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

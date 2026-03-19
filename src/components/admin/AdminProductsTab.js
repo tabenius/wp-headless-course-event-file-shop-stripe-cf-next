@@ -441,7 +441,7 @@ function ProductsTab({
   };
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:min-h-[520px]"
+      className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:min-h-[520px]"
     >
       {/* ── Left: product list ── */}
       <div className="border rounded flex flex-col overflow-hidden min-w-0">
@@ -494,7 +494,7 @@ function ProductsTab({
                   title={productName}
                   className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-colors ${
                     isActive
-                      ? "bg-purple-50 border-l-2 border-purple-500"
+                      ? "bg-slate-900 text-white border-l-2 border-slate-300"
                       : "hover:bg-gray-50 border-l-2 border-transparent"
                   }`}
                 >
@@ -523,12 +523,19 @@ function ProductsTab({
                   )}
                   <div className="min-w-0 flex-1">
                     <p
-                      className="text-sm font-medium truncate text-gray-800"
+                      className={`text-sm font-medium truncate ${
+                        isActive ? "text-white" : "text-gray-800"
+                      }`}
                       title={productName}
                     >
                       {productName}
                     </p>
-                    <p className="text-xs text-gray-400 truncate" title={priceText}>
+                    <p
+                      className={`text-xs truncate ${
+                        isActive ? "text-white/80" : "text-gray-400"
+                      }`}
+                      title={priceText}
+                    >
                       {priceText}
                     </p>
                   </div>
@@ -559,9 +566,12 @@ function ProductsTab({
                   onError={setError}
                 />
                 <div className="space-y-1">
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="text-lg font-semibold break-words">
                     {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                   </h3>
+                  <p className="text-xs text-gray-500 break-all">
+                    {selectedShopProduct.name || `Product ${shopIndex + 1}`}
+                  </p>
                   <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs">
                     {t("admin.shopProducts")}
                   </span>
@@ -1123,7 +1133,7 @@ function AccessTab({
 
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:min-h-[520px]"
+      className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:min-h-[520px]"
     >
       {/* ── Left: content list ── */}
       <div className="border rounded flex flex-col overflow-hidden min-w-0">
@@ -1318,7 +1328,11 @@ function AccessTab({
                   type="button"
                   onClick={() => handleSelection(item.uri)}
                   title={titleText}
-                  className={`w-full text-left px-2 py-2 flex items-center gap-1.5 border-b last:border-b-0 transition-colors ${isActive ? "bg-purple-50 border-l-2 border-l-purple-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"}`}
+                  className={`w-full text-left px-2 py-2 flex items-center gap-1.5 border-b last:border-b-0 transition-colors ${
+                    isActive
+                      ? "bg-slate-900 text-white border-l-2 border-l-slate-300"
+                      : "hover:bg-gray-50 border-l-2 border-l-transparent"
+                  }`}
                 >
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 w-9 text-center ${TYPE_COLOR[item.source]}`}
@@ -1327,24 +1341,44 @@ function AccessTab({
                   </span>
                   <div className="flex-1 min-w-0">
                     <span
-                      className="block text-sm truncate text-gray-800"
+                      className={`block text-sm truncate ${
+                        isActive ? "text-white" : "text-gray-800"
+                      }`}
                       title={item.name || item.uri}
                     >
                       {item.name}
                     </span>
                     {categoriesPreview && (
-                      <span className="block text-[10px] text-gray-400 truncate">
+                      <span
+                        className={`block text-[10px] truncate ${
+                          isActive ? "text-white/75" : "text-gray-400"
+                        }`}
+                      >
                         {categoriesPreview}
                       </span>
                     )}
                   </div>
                   {item.active === false && (
-                    <span className="text-[9px] bg-red-50 text-red-500 px-1 rounded shrink-0">
+                    <span
+                      className={`text-[9px] px-1 rounded shrink-0 ${
+                        isActive
+                          ? "bg-red-200 text-red-800"
+                          : "bg-red-50 text-red-500"
+                      }`}
+                    >
                       Off
                     </span>
                   )}
                   <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${configured ? "bg-purple-500" : "bg-amber-300"}`}
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      configured
+                        ? isActive
+                          ? "bg-white"
+                          : "bg-purple-500"
+                        : isActive
+                          ? "bg-amber-200"
+                          : "bg-amber-300"
+                    }`}
                     title={
                       configured
                         ? t("admin.configuredBadge")
@@ -1457,9 +1491,12 @@ function AccessTab({
                         onError={setError}
                       />
                       <div className="flex-1 min-w-0 space-y-1.5">
-                        <h3 className="text-base font-semibold truncate">
+                        <h3 className="text-base font-semibold break-words">
                           {wpItem?.title || wpItem?.name || selectedCourse}
                         </h3>
+                        <p className="text-xs text-gray-500 break-all">
+                          {wpItem?.title || wpItem?.name || selectedCourse}
+                        </p>
                         <div className="flex flex-wrap gap-1.5 text-xs">
                           <span
                             className={`px-2 py-0.5 rounded ${sourceColor}`}
@@ -1573,7 +1610,10 @@ function AccessTab({
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-semibold">
+                  <p className="text-sm font-semibold break-words">
+                    {selectedShopProduct.name || `Product ${shopIndex + 1}`}
+                  </p>
+                  <p className="text-xs text-gray-500 break-all">
                     {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                   </p>
                   <p className="text-xs text-gray-400">
