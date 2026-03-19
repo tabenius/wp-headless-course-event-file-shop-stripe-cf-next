@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
+import ImageGenerationPanel from "./ImageGenerationPanel";
 import { adminFetch } from "@/lib/adminFetch";
 
 const log = (...args) => {
@@ -356,6 +357,7 @@ export default function AdminDashboard() {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [newTicket, setNewTicket] = useState({ title: "", description: "", priority: "moderate" });
   const [commentText, setCommentText] = useState("");
+  const [showImageGen, setShowImageGen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -391,15 +393,16 @@ export default function AdminDashboard() {
       if (isFormField) return;
       if (!e.altKey) return;
       const k = e.key.toLowerCase();
-    const tabMap = {
-      "1": "stats",
-      "2": "shop",
-      "3": "access",
-      "4": "support",
-      "5": "health",
-      "6": "advanced",
-      "7": "chat",
-    };
+      const tabMap = {
+        "1": "stats",
+        "2": "shop",
+        "3": "access",
+        "4": "support",
+        "5": "health",
+        "6": "advanced",
+        "7": "chat",
+        "8": "style",
+      };
       if (tabMap[k]) {
         e.preventDefault();
         setActiveTab(tabMap[k]);
@@ -683,7 +686,11 @@ export default function AdminDashboard() {
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) throw new Error(json?.error || "Chat failed");
-      setChatMessages((prev) => [...prev, { role: "assistant", content: json.answer, sources: json.sources || [] }]);
+      if (json.type === "image-generation") {
+        setChatMessages((prev) => [...prev, { role: "assistant", type: "image-generation", prompt: json.prompt }]);
+      } else {
+        setChatMessages((prev) => [...prev, { role: "assistant", content: json.answer, sources: json.sources || [] }]);
+      }
     } catch (err) {
       setChatMessages((prev) => [...prev, { role: "assistant", content: err.message || "Chat failed", sources: [] }]);
     } finally {
@@ -1192,9 +1199,9 @@ export default function AdminDashboard() {
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
-      <div className="fixed left-4 bottom-4 text-[11px] text-gray-500 bg-white/80 backdrop-blur border rounded p-2 shadow-sm space-y-1">
-        <div className="font-semibold text-gray-700">Genvägar</div>
-        <div>Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health • Alt+6 Advanced • Alt+7 Chat</div>
+      <div className="fixed left-4 bottom-4 text-[11px] text-white bg-[#140022] border border-[#4e21a6] rounded p-2 shadow-lg space-y-1">
+        <div className="font-semibold text-white">Genvägar</div>
+        <div>Alt+1 Stats • Alt+2 Shop • Alt+3 Access • Alt+4 Support • Alt+5 Health • Alt+6 Advanced • Alt+7 Chat • Alt+8 Style</div>
         <div>Alt+/ Search • Alt+L Logout</div>
       </div>
       {/* ── Stats tab ── */}
@@ -2089,6 +2096,25 @@ export default function AdminDashboard() {
                 }
                 className="w-full border rounded px-3 py-2"
               />
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowImageGen((v) => !v)}
+                  className="text-xs px-3 py-1 rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+                >
+                  {t("admin.generateImages")}
+                </button>
+                {showImageGen && (
+                  <div className="mt-2">
+                    <ImageGenerationPanel
+                      description={selectedShopProduct.description || selectedShopProduct.name || ""}
+                      onSave={(url) => updateProduct(shopIndex, "imageUrl", url)}
+                      context="editor"
+                      uploadBackend={uploadBackend}
+                    />
+                  </div>
+                )}
+              </div>
 
               {selectedShopProduct.type === "digital_file" ? (
                 <div>
@@ -2569,6 +2595,33 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* ── Style tab ── */}
+      {activeTab === "style" && (
+        <div className="border rounded p-5 space-y-6">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">{t("admin.styleTitle")}</h2>
+            <p className="text-sm text-gray-500 mt-1">{t("admin.styleSummary")}</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="border rounded p-4 bg-gray-50 space-y-2">
+              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">{t("admin.styleTypography")}</div>
+              <p className="text-sm text-gray-600">{t("admin.styleTypographyDetail")}</p>
+            </div>
+            <div className="border rounded p-4 bg-gray-50 space-y-2">
+              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">{t("admin.styleColors")}</div>
+              <p className="text-sm text-gray-600">{t("admin.styleColorsDetail")}</p>
+            </div>
+            <div className="border rounded p-4 bg-gray-50 space-y-2">
+              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">{t("admin.styleButtons")}</div>
+              <p className="text-sm text-gray-600">{t("admin.styleButtonsDetail")}</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            {t("admin.styleNote")}
+          </p>
+        </div>
+      )}
+
       {/* ── Advanced tab ── */}
       {activeTab === "advanced" && (
         <div className="border rounded p-5 space-y-6">
@@ -2876,24 +2929,36 @@ export default function AdminDashboard() {
               chatMessages.map((m, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="text-xs uppercase tracking-wide text-gray-500">{m.role === "user" ? "You" : "AI"}</div>
-                  <div className="whitespace-pre-wrap text-sm text-gray-900">{m.content}</div>
-                  {m.table && (
-                    <div className="text-[11px] text-gray-600 bg-gray-50 border rounded px-2 py-1 whitespace-pre-wrap font-mono">
-                      {m.table}
-                    </div>
+                  {m.type === "image-generation" ? (
+                    <ImageGenerationPanel
+                      initialPrompt={m.prompt}
+                      description=""
+                      onSave={null}
+                      context="chat"
+                      uploadBackend={uploadBackend}
+                    />
+                  ) : (
+                    <>
+                      <div className="whitespace-pre-wrap text-sm text-gray-900">{m.content}</div>
+                      {m.table && (
+                        <div className="text-[11px] text-gray-600 bg-gray-50 border rounded px-2 py-1 whitespace-pre-wrap font-mono">
+                          {m.table}
+                        </div>
+                      )}
+                      {m.sources && m.sources.length > 0 ? (
+                        <div className="text-[11px] text-gray-500 flex gap-2 flex-wrap">
+                          <span className="font-semibold">{t("chat.sources")}:</span>
+                          {m.sources.map((s, i) => (
+                            <a key={i} href={s.uri} className="underline" target="_blank" rel="noreferrer">
+                              {s.title || s.uri}
+                            </a>
+                          ))}
+                        </div>
+                      ) : m.role === "assistant" ? (
+                        <div className="text-[11px] text-gray-400">{t("chat.noSources")}</div>
+                      ) : null}
+                    </>
                   )}
-                  {m.sources && m.sources.length > 0 ? (
-                    <div className="text-[11px] text-gray-500 flex gap-2 flex-wrap">
-                      <span className="font-semibold">{t("chat.sources")}:</span>
-                      {m.sources.map((s, i) => (
-                        <a key={i} href={s.uri} className="underline" target="_blank" rel="noreferrer">
-                          {s.title || s.uri}
-                        </a>
-                      ))}
-                    </div>
-                  ) : m.role === "assistant" ? (
-                    <div className="text-[11px] text-gray-400">{t("chat.noSources")}</div>
-                  ) : null}
                 </div>
               ))
             )}
