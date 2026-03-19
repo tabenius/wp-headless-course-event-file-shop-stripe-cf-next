@@ -113,7 +113,16 @@ export async function handleSales(message, lower, request, origin) {
   if (email) url += `&email=${encodeURIComponent(email)}`;
   if (fromTs) url += `&from=${fromTs}`;
 
-  const json = await fetchAdminJson(url);
+  let json;
+  try {
+    json = await fetchAdminJson(url);
+  } catch (err) {
+    return NextResponse.json({
+      ok: true,
+      answer: `Could not load payment data: ${err.message}. Check that STRIPE_SECRET_KEY is configured in your environment.`,
+      sources: [],
+    });
+  }
   const payments = (json.payments || []).filter(
     (p) => p.status === "succeeded",
   );
@@ -390,7 +399,16 @@ export async function handleTopProducts(message, lower, request, origin) {
   if (!RE_TOP_PRODUCTS.test(message)) return null;
   const fetchAdminJson = makeFetch(request, origin);
 
-  const json = await fetchAdminJson("/api/admin/payments?limit=100");
+  let json;
+  try {
+    json = await fetchAdminJson("/api/admin/payments?limit=100");
+  } catch (err) {
+    return NextResponse.json({
+      ok: true,
+      answer: `Could not load payment data: ${err.message}.`,
+      sources: [],
+    });
+  }
   const payments = (json.payments || []).filter(
     (p) => p.status === "succeeded",
   );
@@ -434,7 +452,16 @@ export async function handleRevenueTotal(message, lower, request, origin) {
   if (!RE_REVENUE_TOTAL.test(message)) return null;
   const fetchAdminJson = makeFetch(request, origin);
 
-  const json = await fetchAdminJson("/api/admin/payments?limit=100");
+  let json;
+  try {
+    json = await fetchAdminJson("/api/admin/payments?limit=100");
+  } catch (err) {
+    return NextResponse.json({
+      ok: true,
+      answer: `Could not load payment data: ${err.message}.`,
+      sources: [],
+    });
+  }
   const payments = (json.payments || []).filter(
     (p) => p.status === "succeeded",
   );
@@ -521,7 +548,16 @@ export async function handlePayments(message, lower, request, origin) {
   const url = email
     ? `/api/admin/payments?email=${encodeURIComponent(email)}&limit=10`
     : `/api/admin/payments?limit=6`;
-  const json = await fetchAdminJson(url);
+  let json;
+  try {
+    json = await fetchAdminJson(url);
+  } catch (err) {
+    return NextResponse.json({
+      ok: true,
+      answer: `Could not load payments: ${err.message}.`,
+      sources: [],
+    });
+  }
   const tableRows = (json.payments || []).slice(0, 6).map((p) => {
     const receipt = p.receiptUrl ? `[Receipt](${p.receiptUrl})` : "—";
     return `| ${new Date(p.created).toLocaleString("sv-SE")} | ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} | ${p.status} | ${p.email || "—"} | ${receipt} |`;
