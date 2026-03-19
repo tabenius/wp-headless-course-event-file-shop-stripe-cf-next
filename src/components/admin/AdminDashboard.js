@@ -471,7 +471,9 @@ export default function AdminDashboard() {
         e.target?.isContentEditable;
       if (isFormField) return;
       if (!e.altKey) return;
-      const k = e.key.toLowerCase();
+      // Use e.code (e.g. "Digit2") rather than e.key — on macOS Alt+number
+      // produces special characters (™, £…) so e.key is unreliable for digits.
+      const digit = e.code?.startsWith("Digit") ? e.code.slice(5) : null;
       const tabMap = {
         1: "stats",
         2: "shop",
@@ -482,20 +484,21 @@ export default function AdminDashboard() {
         7: "chat",
         8: "style",
       };
-      if (tabMap[k]) {
+      if (digit && tabMap[digit]) {
         e.preventDefault();
-        setActiveTab(tabMap[k]);
+        setActiveTab(tabMap[digit]);
         window.dispatchEvent(
-          new CustomEvent("admin:switchTab", { detail: tabMap[k] }),
+          new CustomEvent("admin:switchTab", { detail: tabMap[digit] }),
         );
         return;
       }
-      if (k === "l") {
+      const k = e.key.toLowerCase();
+      if (k === "l" || e.code === "KeyL") {
         e.preventDefault();
         logoutAdmin();
         return;
       }
-      if (k === "/") {
+      if (k === "/" || e.code === "Slash") {
         e.preventDefault();
         const searchInput = document.querySelector(
           "input[type='search'], input[aria-label='search']",
