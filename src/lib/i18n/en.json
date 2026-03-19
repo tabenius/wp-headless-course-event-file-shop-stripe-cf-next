@@ -342,7 +342,11 @@
     "send": "Send",
     "sources": "Sources",
     "noSources": "No sources",
-    "empty": "No messages yet. Ask something to get started."
+    "empty": "No messages yet. Ask something to get started.",
+      "copyRaw": "Copy raw text",
+      "copyRawShort": "Raw",
+      "copyMarkdown": "Copy formatted markdown",
+      "copyMarkdownShort": "MD"
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",

@@ -342,7 +342,11 @@
     "send": "Enviar",
     "sources": "Fuentes",
     "noSources": "Sin fuentes",
-    "empty": "Sin mensajes. Haz una pregunta para comenzar."
+    "empty": "Sin mensajes. Haz una pregunta para comenzar.",
+      "copyRaw": "Copiar texto sin formato",
+      "copyRawShort": "Sin formato",
+      "copyMarkdown": "Copiar markdown formateado",
+      "copyMarkdownShort": "MD"
   },
   "health": {
     "wpNotConfigured": "WordPress no configurado.",

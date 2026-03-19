@@ -342,7 +342,11 @@
     "send": "Skicka",
     "sources": "Källor",
     "noSources": "Inga källor",
-    "empty": "Inga meddelanden ännu. Ställ en fråga för att börja."
+    "empty": "Inga meddelanden ännu. Ställ en fråga för att börja.",
+      "copyRaw": "Kopiera ren text",
+      "copyRawShort": "Ren",
+      "copyMarkdown": "Kopiera formaterad markdown",
+      "copyMarkdownShort": "MD"
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",
