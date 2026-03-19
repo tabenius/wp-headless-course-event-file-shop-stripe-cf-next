@@ -146,16 +146,16 @@ export default function TorusBanner() {
   }, []);
 
   return (
-    <div className="rounded-2xl bg-transparent overflow-hidden">
-      <div className="grid items-center gap-4 p-3 sm:p-4 md:grid-cols-[minmax(300px,420px)_1fr]">
-        <div className="rounded-xl bg-[var(--admin-torus-bg)]">
+    <div className="-mx-3 sm:-mx-4 lg:-mx-6 bg-transparent overflow-visible">
+      <div className="grid items-stretch gap-0 md:grid-cols-[minmax(360px,1.05fr)_1fr]">
+        <div className="torus-panel-shell min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem]">
           <canvas
             ref={canvasRef}
-            className="block w-full h-64 sm:h-72 opacity-95"
+            className="block w-full h-full min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem]"
             aria-hidden
           />
         </div>
-        <div className="min-h-[15rem] flex items-center overflow-hidden px-1 sm:px-2">
+        <div className="min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem] flex items-center overflow-hidden px-3 sm:px-5">
           <div className="torus-scroller-viewport">
             <div className="torus-scroller-track">
               {[0, 1, 2].map((segment) => (
@@ -176,6 +176,18 @@ export default function TorusBanner() {
         </div>
       </div>
       <style jsx>{`
+        .torus-panel-shell {
+          border: 0 !important;
+          border-radius: 0 !important;
+          background: var(--admin-torus-bg) !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+
+        .torus-panel-shell canvas {
+          background: transparent !important;
+        }
+
         .torus-scroller-viewport {
           width: 100%;
           overflow: hidden;

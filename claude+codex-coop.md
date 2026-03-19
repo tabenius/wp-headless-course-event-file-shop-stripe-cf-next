@@ -11,6 +11,19 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 50)
+
+### Codex — torus area expansion + frame removal hardening
+
+- Refactored `TorusBanner` layout to expand left and vertical footprint:
+  - full-bleed horizontal alignment to the left using negative section margins (`-mx-3 sm:-mx-4 lg:-mx-6`),
+  - increased minimum heights to `20rem/22rem/24rem` across breakpoints for both torus and scroller zones,
+  - switched grid alignment to `items-stretch` and removed inner spacing/gaps to maximize canvas area.
+- Removed residual black-frame artifacts by eliminating rounded frame shells and force-disabling panel chrome:
+  - removed `rounded-*` wrappers around the torus canvas area,
+  - added `.torus-panel-shell` style with `border: 0`, `border-radius: 0`, `box-shadow: none`, and transparent canvas background.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 49)
 
 ### Codex — theme icon saturation pass (sun/moon)
