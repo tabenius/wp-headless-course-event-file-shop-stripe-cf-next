@@ -169,20 +169,126 @@ Full list in `.env.example`.
 
 ## Current priorities (update as needed)
 
-### [Codex] StatsChart + Product list refactor — 3 follow-up fixes needed
+### [Codex] Three follow-up fixes — do in priority order, one commit each
 
-Both refactors landed 2026-03-19 and were reviewed by Claude. Good work overall — the follow-ups below are required before these are fully closed.
+Claude code-reviewed your StatsChart and ProductSection work. Three fixes required — do them in the order listed below. Each is a separate commit. Run `npm test && npm run build` after each before pushing.
 
-**StatsChart fix A — `formatHour` must use UTC** (`StatsChart.helpers.js:12`)
-`date.getHours()` returns local time; Cloudflare timestamps are UTC. Change to `date.getUTCHours()`. The test passes today only because the server runs in UTC; it fails in any other timezone. Update the implementation and add a comment to the test noting it is UTC-based.
+---
 
-**StatsChart fix B — Workers-mode hint text must be i18n'd** (`StatsChart.js:55-60`)
-The paragraph *"Referrers, page views, and bandwidth require zone-level analytics…"* is hardcoded English. Add `stats.workersHint` key to `en.json`, `sv.json`, and `es.json` and use `t("stats.workersHint")` in the JSX.
+#### Priority 1 — Fix `formatHour` timezone bug (do this first — it's a real data bug)
 
-**ProductSection fix — `renderItem` should return JSX, not a props object** (`ProductSection.js`)
-Currently `renderItem` must return a plain object with a `key` field that gets spread onto `<ProductRow>`. This is non-standard and fragile (missing `key` silently drops reconciliation). Change `renderItem(item, rowIndex)` to return a full `<ProductRow key={…} rowIndex={rowIndex} … />` element; `ProductSection` then simply renders `items.map(renderItem)`. Update all five call sites in `AdminDashboard.js` accordingly.
+**File:** `src/components/admin/StatsChart.helpers.js:15`
+**Test:** `tests/stats-chart.test.js`
 
-**Coordination note for future self-initiated refactors:** Before starting an unassigned structural change, drop a `TODO (planning):` line in `claude+codex-coop.md` so Claude can pull and won't conflict mid-work. A one-line heads-up is enough.
+`date.getHours()` returns the server/browser's **local** hour. Cloudflare analytics timestamps are **UTC**. On any machine not in UTC the chart will show wrong hour labels. Change line 15:
+
+```js
+// before
+return `${date.getHours()}:00`;
+
+// after
+return `${date.getUTCHours()}:00`;
+```
+
+Also add a one-line comment to the test so future readers know the assertion is UTC-based:
+
+```js
+// timestamps are UTC — getUTCHours() is required
+assert.equal(formatHour("2026-03-19T14:30:00Z"), "14:00");
+```
+
+Commit message: `fix(stats): formatHour must use getUTCHours for Cloudflare UTC timestamps`
+
+---
+
+#### Priority 2 — i18n the workers-mode hint paragraph (do second — quick, zero risk)
+
+**Files:** `src/components/admin/StatsChart.js:54-61`, `src/lib/i18n/en.json`, `sv.json`, `es.json`
+
+The paragraph starting *"Referrers, page views, and bandwidth require zone-level analytics…"* is hardcoded English. All the chart labels around it were correctly i18n'd — this one was missed.
+
+Add this key to all three language files (after the existing `stats.*` keys):
+
+```json
+// en.json
+"workersHint": "Referrers, page views, and bandwidth require zone-level analytics. Route your Worker through a custom domain and set CF_ZONE_ID to upgrade."
+
+// sv.json
+"workersHint": "Referrers, sidvisningar och bandbredd kräver zon-nivå-analys. Dirigera din Worker via en anpassad domän och ange CF_ZONE_ID för att uppgradera."
+
+// es.json
+"workersHint": "Los referrers, vistas de página y ancho de banda requieren análisis a nivel de zona. Enruta tu Worker a través de un dominio personalizado y define CF_ZONE_ID para actualizar."
+```
+
+Replace the hardcoded paragraph in `StatsChart.js`:
+
+```js
+// before
+<p>
+  Referrers, page views, and bandwidth require zone-level analytics.
+  Route your Worker through a custom domain and set <code ...>CF_ZONE_ID</code> to upgrade.
+</p>
+
+// after — note: keep the <code> tag for CF_ZONE_ID inline
+<p>{t("stats.workersHint")}</p>
+```
+
+Wait — `CF_ZONE_ID` is currently wrapped in a `<code>` tag for styling. Split the translation into two keys to keep that: `stats.workersHintPre` (text before the code tag) and `stats.workersHintPost` (text after), or just inline the whole sentence as one string and accept that `CF_ZONE_ID` won't be styled. The unstyled single-string approach is simpler — use that.
+
+Commit message: `fix(stats): i18n workers-mode hint paragraph in StatsChart`
+
+---
+
+#### Priority 3 — Fix `ProductSection.renderItem` to return JSX (do last — touches AdminDashboard)
+
+**Files:** `src/components/admin/ProductSection.js`, `src/components/admin/AdminDashboard.js`
+
+Currently `renderItem` is expected to return a **plain props object** (with a `key` field) that `ProductSection` spreads onto `<ProductRow>`. This is non-standard React and fragile — if any call site forgets `key` there's no warning.
+
+Change `ProductSection` so `renderItem(item, rowIndex)` returns a full JSX element, and the section just renders the array:
+
+```js
+// ProductSection.js — new implementation
+export default function ProductSection({ label, items, renderItem }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <>
+      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2 pb-1">
+        {label}
+      </p>
+      {items.map((item, index) => renderItem(item, index))}
+    </>
+  );
+}
+```
+
+Then update every `renderItem` call site in `AdminDashboard.js` (there are 5 — search for `renderItem={(`) to return `<ProductRow key={...} rowIndex={index} ... />` directly. The `rowIndex` prop is already supported by `ProductRow` for the alternating background. Example for the WooCommerce section:
+
+```js
+// before
+renderItem={(product) => {
+  ...
+  return { key: product.id, title: ..., ... };
+}}
+
+// after
+renderItem={(product, index) => (
+  <ProductRow
+    key={product.id}
+    rowIndex={index}
+    title={...}
+    ...
+  />
+)}
+```
+
+Apply the same pattern to all 5 sections. No visual change expected — verify by running `npm run build` (no errors) and visually checking the Shop tab renders the same list.
+
+Commit message: `refactor(shop): ProductSection.renderItem returns JSX not props object`
+
+---
+
+**After all three:** append bullets to `claude+codex-coop.md` and mark this priority section done in `AGENTS.md`. Use `docs.lock.pid` before editing either file.
 
 ---
 
