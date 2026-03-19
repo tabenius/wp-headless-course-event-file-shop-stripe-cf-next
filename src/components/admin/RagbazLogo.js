@@ -8,6 +8,8 @@ export default function RagbazLogo({
   scale = 1,
   wordmarkOnly = false,
   noLetterSpacing = false,
+  outlineColor = "",
+  outlineWidth = 0,
 }) {
   const isDouble = size === "2x";
   const lineWidth = includeStoreFront
@@ -38,6 +40,23 @@ export default function RagbazLogo({
   const ragbazSize = `${Number.parseFloat(fontSize.ragbaz) * sizeScale}rem`;
   const articulateSize = `${Number.parseFloat(fontSize.articulate) * sizeScale}rem`;
   const storefrontSize = `${Number.parseFloat(fontSize.storefront) * sizeScale}rem`;
+  const hasOutline = Boolean(outlineColor) && Number(outlineWidth) > 0;
+  const strokeWidth =
+    typeof outlineWidth === "number" ? `${outlineWidth}px` : String(outlineWidth);
+  const outlineShadow = hasOutline
+    ? [
+        "0 1px 0",
+        "1px 0 0",
+        "0 -1px 0",
+        "-1px 0 0",
+        "1px 1px 0",
+        "-1px 1px 0",
+        "1px -1px 0",
+        "-1px -1px 0",
+      ]
+        .map((offset) => `${offset} ${outlineColor}`)
+        .join(", ")
+    : undefined;
 
   const ragbazLetterSpacing = noLetterSpacing ? "0" : "0.24em";
   const articulateLetterSpacing = noLetterSpacing ? "0" : "0.135em";
@@ -57,6 +76,11 @@ export default function RagbazLogo({
             fontFamily:
               "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",
             color,
+            WebkitTextStroke: hasOutline
+              ? `${strokeWidth} ${outlineColor}`
+              : undefined,
+            paintOrder: hasOutline ? "stroke fill" : undefined,
+            textShadow: outlineShadow,
           }}
         >
           RAGBAZ
@@ -79,6 +103,11 @@ export default function RagbazLogo({
           fontFamily:
             "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",
           color,
+          WebkitTextStroke: hasOutline
+            ? `${strokeWidth} ${outlineColor}`
+            : undefined,
+          paintOrder: hasOutline ? "stroke fill" : undefined,
+          textShadow: outlineShadow,
         }}
       >
         RAGBAZ

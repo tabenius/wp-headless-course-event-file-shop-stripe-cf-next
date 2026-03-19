@@ -263,7 +263,13 @@ export default function AdminHeader({ logoUrl }) {
               className="flex flex-col items-start justify-center gap-0.5 text-white/95 hover:text-white transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
-              <RagbazLogo wordmarkOnly noLetterSpacing scale={1.75} />
+              <RagbazLogo
+                wordmarkOnly
+                noLetterSpacing
+                scale={1.75}
+                outlineColor="#000000"
+                outlineWidth={1}
+              />
               <span
                 className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white"
                 style={{ marginLeft: "0.5rem", marginTop: "2px" }}

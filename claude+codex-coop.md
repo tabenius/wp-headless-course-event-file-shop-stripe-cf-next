@@ -53,6 +53,16 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - overlay + soft-light composition,
   - higher contrast and slightly darker brightness for a rough concrete feel.
 
+## 2026-03-19 (cont. 21)
+
+### Codex — outlined RAGBAZ wordmark
+
+- Extended `RagbazLogo` with optional outline props:
+  - `outlineColor`
+  - `outlineWidth`
+- Applied outline rendering on the `RAGBAZ` text using `WebkitTextStroke` + fallback `text-shadow`.
+- Enabled a black 1px outline in `AdminHeader` for the menu-bar `RAGBAZ` wordmark while leaving the rest of the header typography unchanged.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
