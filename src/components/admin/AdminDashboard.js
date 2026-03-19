@@ -1720,6 +1720,29 @@ export default function AdminDashboard() {
       ? "w-full min-w-0 px-0 py-0"
       : "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10 space-y-6 sm:space-y-8";
 
+  const siteStyleTokens = (() => {
+    const fallback = {
+      background: "#ffffff",
+      foreground: "#1a1a1a",
+      primary: "#6d003e",
+      secondary: "#ffb606",
+      tertiary: "#442e66",
+      muted: "#686868",
+    };
+    if (typeof window === "undefined") return fallback;
+    const styles = getComputedStyle(document.documentElement);
+    const read = (name, fallbackValue) =>
+      styles.getPropertyValue(name).trim() || fallbackValue;
+    return {
+      background: read("--color-background", fallback.background),
+      foreground: read("--color-foreground", fallback.foreground),
+      primary: read("--color-primary", fallback.primary),
+      secondary: read("--color-secondary", fallback.secondary),
+      tertiary: read("--color-tertiary", fallback.tertiary),
+      muted: read("--color-muted", fallback.muted),
+    };
+  })();
+
   return (
     <section className={dashboardSectionClass}>
       {activeTab === "welcome" && (
@@ -1891,37 +1914,44 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-semibold text-gray-900">
-                Main site style
+                {t("admin.styleSiteTitle")}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Public-facing palette, typography, and tokens (from theme.json /
-                theme.generated.css).
+                {t("admin.styleSiteSummary")}
               </p>
             </div>
             <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
               {[
                 {
-                  label: "Background",
-                  hex: "#fff1f1",
+                  label: t("admin.styleColorBackground"),
+                  hex: siteStyleTokens.background,
                   token: "--color-background",
                 },
                 {
-                  label: "Foreground",
-                  hex: "#1a1a1a",
+                  label: t("admin.styleColorForeground"),
+                  hex: siteStyleTokens.foreground,
                   token: "--color-foreground",
                 },
-                { label: "Primary", hex: "#6d003e", token: "--color-primary" },
                 {
-                  label: "Secondary",
-                  hex: "#ffb606",
+                  label: t("admin.styleColorPrimary"),
+                  hex: siteStyleTokens.primary,
+                  token: "--color-primary",
+                },
+                {
+                  label: t("admin.styleColorSecondary"),
+                  hex: siteStyleTokens.secondary,
                   token: "--color-secondary",
                 },
                 {
-                  label: "Tertiary",
-                  hex: "#442e66",
+                  label: t("admin.styleColorTertiary"),
+                  hex: siteStyleTokens.tertiary,
                   token: "--color-tertiary",
                 },
-                { label: "Muted", hex: "#686868", token: "--color-muted" },
+                {
+                  label: t("admin.styleColorMuted"),
+                  hex: siteStyleTokens.muted,
+                  token: "--color-muted",
+                },
               ].map(({ label, hex, token }) => (
                 <div
                   key={token}
@@ -1944,9 +1974,18 @@ export default function AdminDashboard() {
               ))}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="border rounded p-4 bg-gray-50 space-y-1">
-                <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
-                  Heading font
+              <div
+                className="border rounded p-5 space-y-1"
+                style={{
+                  background: siteStyleTokens.background,
+                  color: siteStyleTokens.foreground,
+                }}
+              >
+                <div
+                  className="text-xs uppercase tracking-wide font-semibold"
+                  style={{ color: siteStyleTokens.muted }}
+                >
+                  {t("admin.styleHeadingFontLabel")}
                 </div>
                 <p
                   className="text-lg font-semibold"
@@ -1954,51 +1993,72 @@ export default function AdminDashboard() {
                     fontFamily: "'Montserrat', 'Helvetica Neue', sans-serif",
                   }}
                 >
-                  Montserrat — The quick brown fox
+                  {t("admin.styleHeadingFontSample")}
                 </p>
-                <p className="text-xs text-gray-500 font-mono">
-                  --font-heading · var(--font-montserrat)
+                <p
+                  className="text-xs font-mono"
+                  style={{ color: siteStyleTokens.muted }}
+                >
+                  {t("admin.styleHeadingFontToken")}
                 </p>
               </div>
-              <div className="border rounded p-4 bg-gray-50 space-y-1">
-                <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
-                  Body font
+              <div
+                className="border rounded p-5 space-y-1"
+                style={{
+                  background: siteStyleTokens.background,
+                  color: siteStyleTokens.foreground,
+                }}
+              >
+                <div
+                  className="text-xs uppercase tracking-wide font-semibold"
+                  style={{ color: siteStyleTokens.muted }}
+                >
+                  {t("admin.styleBodyFontLabel")}
                 </div>
                 <p
                   className="text-base"
                   style={{ fontFamily: "'Merriweather', Georgia, serif" }}
                 >
-                  Merriweather — The quick brown fox jumps over the lazy dog.
+                  {t("admin.styleBodyFontSample")}
                 </p>
-                <p className="text-xs text-gray-500 font-mono">
-                  --font-body · var(--font-merriweather)
+                <p
+                  className="text-xs font-mono"
+                  style={{ color: siteStyleTokens.muted }}
+                >
+                  {t("admin.styleBodyFontToken")}
                 </p>
               </div>
             </div>
             <div className="flex gap-3 flex-wrap">
               <button
                 className="px-4 py-2 rounded text-white text-sm font-medium"
-                style={{ background: "#6d003e" }}
+                style={{ background: siteStyleTokens.primary }}
               >
-                Primary button
+                {t("admin.stylePrimaryButton")}
               </button>
               <button
                 className="px-4 py-2 rounded text-white text-sm font-medium"
-                style={{ background: "#442e66" }}
+                style={{ background: siteStyleTokens.tertiary }}
               >
-                Tertiary button
+                {t("admin.styleTertiaryButton")}
               </button>
               <button
                 className="px-4 py-2 rounded text-sm font-medium border"
-                style={{ color: "#6d003e", borderColor: "#6d003e" }}
+                style={{
+                  color: siteStyleTokens.primary,
+                  borderColor: siteStyleTokens.primary,
+                }}
               >
-                Outline button
+                {t("admin.styleOutlineButton")}
               </button>
               <span
                 className="px-3 py-1 rounded-full text-sm font-medium"
-                style={{ background: "#ffb606", color: "#1a1a1a" }}
+                style={{
+                  background: siteStyleTokens.secondary,
+                  color: siteStyleTokens.foreground,
+                }}
               >
-                Badge
+                {t("admin.styleBadge")}
               </span>
             </div>
           </div>
@@ -2017,12 +2077,12 @@ export default function AdminDashboard() {
             </div>
             <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
               {[
-                { label: "Background", hex: "#140022" },
-                { label: "Border / accent", hex: "#4e21a6" },
-                { label: "Purple primary", hex: "#7c3aed" },
-                { label: "Purple light", hex: "#a78bfa" },
-                { label: "Surface", hex: "#ffffff" },
-                { label: "Text muted", hex: "#6b7280" },
+                { label: t("admin.styleAdminColorBackground"), hex: "#140022" },
+                { label: t("admin.styleAdminColorBorderAccent"), hex: "#4e21a6" },
+                { label: t("admin.styleAdminColorPurplePrimary"), hex: "#7c3aed" },
+                { label: t("admin.styleAdminColorPurpleLight"), hex: "#a78bfa" },
+                { label: t("admin.styleAdminColorSurface"), hex: "#ffffff" },
+                { label: t("admin.styleAdminColorTextMuted"), hex: "#6b7280" },
               ].map(({ label, hex }) => (
                 <div
                   key={hex}

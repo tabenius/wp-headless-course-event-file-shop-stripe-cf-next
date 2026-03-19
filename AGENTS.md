@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Completed postponed Style-tab localization and clarity pass: translated all Style-tab UI copy to EN/SV/ES, renamed the site section heading to child-theme style guide wording (SV: `Stilguide, barntema`), clarified admin style heading as admin-only, and made heading/body font preview cards use dynamic site theme tokens (`--color-background`/`--color-foreground`/etc.) with explicit padded surfaces.
 - **2026-03-19 (Codex)**: Upgraded header logo subtitle alignment logic: `ARTICULATE STOREFRONT` now left-aligns to `RAGBAZ` baseline offset and auto-scales on mount/resize (via measured width ratio) so subtitle width tracks both left and right edges of the wordmark more precisely.
 - **2026-03-19 (Codex)**: Fine-tuned header subtitle alignment by shifting `ARTICULATE STOREFRONT` back `0.25rem` (from `1.5rem` to `1.25rem` left offset) for tighter logo lockup balance.
 - **2026-03-19 (Codex)**: Continued product-image uploader hardening: made image pickers visually explicit/clickable (stronger frame, visible upload label, focus ring), and wired image uploads to respect the selected `uploadBackend` (WordPress/R2/S3) by passing backend through `ImagePickerButton` → `ImageUploader` → `/api/admin/upload`.

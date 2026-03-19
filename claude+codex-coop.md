@@ -99,6 +99,20 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Kept subtitle left edge aligned with `RAGBAZ` left offset (`1.5rem`) and made subtitle base text slightly larger (`9.5px`) for a closer edge-to-edge fit.
 - Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
 
+## 2026-03-19 (cont. 45)
+
+### Codex — Style tab localization + dynamic site preview background
+
+- Finished the postponed Style-tab work in `AdminDashboard`:
+  - replaced hardcoded section copy/labels/buttons with i18n keys across the full tab,
+  - updated site section heading to child-theme wording (`styleSiteTitle`; SV: `Stilguide, barntema`),
+  - clarified admin section heading as admin-only (`styleTitle` now explicitly says admin UI only).
+- Made site-style color and font preview dynamic against live theme tokens:
+  - reads CSS vars (`--color-background`, `--color-foreground`, `--color-primary`, etc.),
+  - uses the actual site background/foreground in heading/body font cards with explicit extra padding.
+- Added/translated all required keys in EN/SV/ES (`styleSite*`, site/admin color labels, font labels/samples/tokens, button/badge labels).
+- Verification: JSON parse checks for all locales pass; `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements
