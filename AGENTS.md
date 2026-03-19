@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Added a four-layer animated parallax environment to the Info torus banner (red sunset horizon + multi-depth green bushes) with slow pendulum-style left/right drift, while keeping the torus canvas transparent so the scene remains visible behind 3D geometry.
 - **2026-03-19 (Codex)**: Expanded the Info-tab torus banner to full-bleed left and taller vertical sizing, and removed residual frame styling by dropping rounded frame shells and forcing transparent/no-shadow panel chrome.
 - **2026-03-19 (Codex)**: Retuned admin header theme-toggle glyph palette to a fully saturated yellow (`#ffff00`) for both sun/moon states, with explicit black hover color for stronger visual contrast.
 - **2026-03-19 (Codex)**: Removed visible frame treatment around the Info-tab torus area (no outer/inner borders or inset frame) and made torus scroller text color theme-aware via `--admin-torus-scroller-color` (set to white in gruvbox theme).

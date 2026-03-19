@@ -11,6 +11,20 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 51)
+
+### Codex — torus parallax environment (4 layers, pendulum motion)
+
+- Added a four-layer parallax background scene inside `TorusBanner`:
+  - far sky layer with a red sunset horizon glow,
+  - distant green bushes,
+  - mid-depth leafy bushes,
+  - near dense leafy bushes.
+- Implemented slow pendulum-style back-and-forth motion (`pendulum-sway`) with staggered durations and directions per layer for depth.
+- Switched torus canvas clearing to transparent rendering (`clearRect`) so the animated environment is visible behind the torus geometry.
+- Kept torus/scroller content above scene (`z-index`) and added light text shadow for scroller readability against the richer background.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 50)
 
 ### Codex — torus area expansion + frame removal hardening

@@ -7,7 +7,6 @@ const MAJOR_RADIUS = 104;
 const MINOR_RADIUS = 44;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
-const FALLBACK_BACKGROUND = "#1b1f52";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
 const SCROLLER_TEXT =
   "RAGBAZ - standing on the shoulders of giants and bending spoons since 1987";
@@ -77,13 +76,7 @@ export default function TorusBanner() {
         canvas.height = pixelHeight;
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const root = canvas.closest(".admin-layout");
-      const torusBackground =
-        getComputedStyle(root || document.documentElement)
-          .getPropertyValue("--admin-torus-bg")
-          .trim() || FALLBACK_BACKGROUND;
-      ctx.fillStyle = torusBackground;
-      ctx.fillRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
 
       const rotationY = time * 0.00052;
       const rotationX = Math.sin(time * 0.00084) * 0.38 + 0.5;
@@ -146,8 +139,15 @@ export default function TorusBanner() {
   }, []);
 
   return (
-    <div className="-mx-3 sm:-mx-4 lg:-mx-6 bg-transparent overflow-visible">
-      <div className="grid items-stretch gap-0 md:grid-cols-[minmax(360px,1.05fr)_1fr]">
+    <div className="-mx-3 sm:-mx-4 lg:-mx-6 relative bg-transparent overflow-hidden">
+      <div className="torus-parallax-scene" aria-hidden>
+        <div className="torus-parallax-layer torus-parallax-sky" />
+        <div className="torus-parallax-layer torus-parallax-far-bushes" />
+        <div className="torus-parallax-layer torus-parallax-mid-bushes" />
+        <div className="torus-parallax-layer torus-parallax-near-bushes" />
+      </div>
+
+      <div className="relative z-[1] grid items-stretch gap-0 md:grid-cols-[minmax(360px,1.05fr)_1fr]">
         <div className="torus-panel-shell min-h-[20rem] sm:min-h-[22rem] md:min-h-[24rem]">
           <canvas
             ref={canvasRef}
@@ -176,10 +176,202 @@ export default function TorusBanner() {
         </div>
       </div>
       <style jsx>{`
+        .torus-parallax-scene {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .torus-parallax-layer {
+          position: absolute;
+          inset: -5%;
+          transform-origin: 50% 100%;
+          animation-name: pendulum-sway;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
+
+        .torus-parallax-sky {
+          inset: 0;
+          background:
+            radial-gradient(
+              46% 40% at 74% 86%,
+              rgba(255, 52, 34, 0.88) 0%,
+              rgba(255, 84, 36, 0.64) 34%,
+              rgba(230, 36, 28, 0.26) 56%,
+              transparent 72%
+            ),
+            linear-gradient(
+              180deg,
+              rgba(31, 41, 68, 0.7) 0%,
+              rgba(73, 52, 76, 0.56) 34%,
+              rgba(175, 68, 45, 0.43) 64%,
+              rgba(196, 74, 43, 0.5) 74%,
+              rgba(95, 86, 63, 0.36) 100%
+            );
+          animation-duration: 68s;
+        }
+
+        .torus-parallax-far-bushes {
+          top: 42%;
+          left: -8%;
+          right: -8%;
+          bottom: -10%;
+          opacity: 0.72;
+          background:
+            radial-gradient(
+              24% 18% at 10% 28%,
+              rgba(94, 151, 58, 0.6) 0%,
+              transparent 82%
+            ),
+            radial-gradient(
+              20% 16% at 30% 36%,
+              rgba(104, 158, 52, 0.58) 0%,
+              transparent 85%
+            ),
+            radial-gradient(
+              22% 18% at 56% 30%,
+              rgba(99, 147, 48, 0.64) 0%,
+              transparent 83%
+            ),
+            radial-gradient(
+              24% 18% at 80% 36%,
+              rgba(93, 141, 43, 0.58) 0%,
+              transparent 84%
+            ),
+            radial-gradient(
+              22% 18% at 94% 34%,
+              rgba(81, 132, 40, 0.56) 0%,
+              transparent 84%
+            ),
+            linear-gradient(
+              180deg,
+              rgba(42, 93, 44, 0) 0%,
+              rgba(36, 96, 38, 0.44) 48%,
+              rgba(28, 84, 34, 0.66) 100%
+            );
+          animation-duration: 56s;
+          transform: translateX(-2.4%);
+        }
+
+        .torus-parallax-mid-bushes {
+          top: 50%;
+          left: -9%;
+          right: -9%;
+          bottom: -14%;
+          opacity: 0.84;
+          background:
+            radial-gradient(
+              16% 22% at 8% 24%,
+              rgba(78, 138, 47, 0.9) 0%,
+              transparent 76%
+            ),
+            radial-gradient(
+              14% 22% at 22% 30%,
+              rgba(63, 126, 41, 0.84) 0%,
+              transparent 75%
+            ),
+            radial-gradient(
+              16% 24% at 38% 26%,
+              rgba(82, 145, 45, 0.88) 0%,
+              transparent 74%
+            ),
+            radial-gradient(
+              14% 20% at 56% 30%,
+              rgba(70, 130, 43, 0.9) 0%,
+              transparent 74%
+            ),
+            radial-gradient(
+              18% 24% at 74% 26%,
+              rgba(84, 147, 44, 0.9) 0%,
+              transparent 75%
+            ),
+            radial-gradient(
+              14% 20% at 88% 30%,
+              rgba(66, 124, 39, 0.88) 0%,
+              transparent 74%
+            ),
+            linear-gradient(
+              180deg,
+              rgba(26, 83, 34, 0) 0%,
+              rgba(26, 86, 33, 0.58) 46%,
+              rgba(19, 64, 29, 0.78) 100%
+            );
+          animation-duration: 44s;
+          animation-direction: reverse;
+          transform: translateX(2.8%);
+        }
+
+        .torus-parallax-near-bushes {
+          top: 58%;
+          left: -10%;
+          right: -10%;
+          bottom: -20%;
+          opacity: 0.96;
+          background:
+            radial-gradient(
+              18% 28% at 7% 20%,
+              rgba(76, 126, 44, 0.96) 0%,
+              transparent 74%
+            ),
+            radial-gradient(
+              20% 30% at 21% 24%,
+              rgba(62, 112, 38, 0.95) 0%,
+              transparent 73%
+            ),
+            radial-gradient(
+              18% 30% at 36% 18%,
+              rgba(82, 134, 48, 0.95) 0%,
+              transparent 73%
+            ),
+            radial-gradient(
+              20% 30% at 54% 24%,
+              rgba(58, 104, 35, 0.95) 0%,
+              transparent 73%
+            ),
+            radial-gradient(
+              18% 28% at 70% 20%,
+              rgba(74, 126, 44, 0.95) 0%,
+              transparent 73%
+            ),
+            radial-gradient(
+              20% 32% at 85% 24%,
+              rgba(54, 100, 33, 0.95) 0%,
+              transparent 74%
+            ),
+            radial-gradient(
+              18% 30% at 97% 20%,
+              rgba(70, 120, 39, 0.95) 0%,
+              transparent 74%
+            ),
+            linear-gradient(
+              180deg,
+              rgba(20, 62, 28, 0) 0%,
+              rgba(17, 60, 24, 0.76) 44%,
+              rgba(10, 44, 18, 0.92) 100%
+            );
+          animation-duration: 34s;
+          transform: translateX(-3.6%);
+        }
+
+        @keyframes pendulum-sway {
+          0% {
+            transform: translateX(-2.4%) rotate(-0.7deg);
+          }
+          50% {
+            transform: translateX(2.4%) rotate(0.7deg);
+          }
+          100% {
+            transform: translateX(-2.4%) rotate(-0.7deg);
+          }
+        }
+
         .torus-panel-shell {
           border: 0 !important;
           border-radius: 0 !important;
-          background: var(--admin-torus-bg) !important;
+          background: transparent !important;
           box-shadow: none !important;
           outline: none !important;
         }
@@ -207,6 +399,9 @@ export default function TorusBanner() {
           font-weight: 700;
           letter-spacing: 0.03em;
           color: var(--admin-torus-scroller-color, #111827);
+          text-shadow:
+            0 0 8px rgba(0, 0, 0, 0.25),
+            0 1px 0 rgba(0, 0, 0, 0.55);
         }
 
         .torus-wave-char {
