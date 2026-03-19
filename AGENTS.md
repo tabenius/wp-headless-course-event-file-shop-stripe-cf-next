@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Replaced menu-bar dot texture with a stronger Perlin-style concrete effect using dual SVG `feTurbulence` (coarse + fine) overlay layers in `globals.css`, with blend/contrast tuning for visible grain.
 - **2026-03-19 (Codex)**: Expanded Welcome control-room cards to mirror all admin menu destinations (Welcome, Sales, Stats, Storage, Products, Chat, Health, Style, Info, Support, Docs), switched to a denser row-first responsive grid, and reduced card typography for compact fit.
 - **2026-03-19 (Codex)**: Added missing EN/SV/ES i18n copy for the new Welcome control-room cards (`cardWelcomeBody`, `cardHealthBody`, `cardStyleBody`, `cardInfoBody`, `cardDocsBody`).
 - **2026-03-19 (Codex)**: Refined header lockup alignment by shifting the subtitle line left to a compact `0.5rem` offset and kept the moon theme glyph as `🌙`.

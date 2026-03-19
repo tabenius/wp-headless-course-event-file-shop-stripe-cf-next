@@ -42,6 +42,17 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Refined header brand lockup by shifting the subtitle left to `0.5rem` offset for cleaner alignment under `RAGBAZ`.
 - Kept theme toggle moon glyph as `🌙` (no circle/background styling).
 
+## 2026-03-19 (cont. 20)
+
+### Codex — stronger concrete texture (Perlin-style)
+
+- Reworked `.admin-header-concrete` texture in `src/app/globals.css` from dot/radial grain to dual SVG turbulence layers:
+  - `::before`: coarse fractal noise (`feTurbulence`, baseFrequency `0.52`, 4 octaves)
+  - `::after`: fine fractal noise (`feTurbulence`, baseFrequency `1.25`, 2 octaves)
+- Increased grain visibility with tuned blend and post-filters:
+  - overlay + soft-light composition,
+  - higher contrast and slightly darker brightness for a rough concrete feel.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

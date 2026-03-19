@@ -287,40 +287,29 @@ body:has(.admin-layout)::before {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.3;
+  opacity: 0.6;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.52' numOctaves='4' seed='17' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.95'/%3E%3C/svg%3E");
+  background-size: 210px 210px;
+  filter: contrast(180%) brightness(90%);
+}
+
+.admin-header-concrete::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.42;
   mix-blend-mode: soft-light;
-  background-image:
-    radial-gradient(
-      circle at 14% 18%,
-      rgb(255 255 255 / 0.22) 0 0.85px,
-      transparent 1.2px
-    ),
-    radial-gradient(
-      circle at 72% 64%,
-      rgb(0 0 0 / 0.22) 0 0.95px,
-      transparent 1.35px
-    ),
-    radial-gradient(
-      circle at 36% 82%,
-      rgb(255 255 255 / 0.16) 0 0.75px,
-      transparent 1.1px
-    ),
-    repeating-radial-gradient(
-      circle at center,
-      rgb(255 255 255 / 0.08) 0 1px,
-      rgb(0 0 0 / 0.06) 1px 2px,
-      transparent 2px 4px
-    );
-  background-size:
-    92px 92px,
-    78px 78px,
-    104px 104px,
-    15px 15px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='2' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.9'/%3E%3C/svg%3E");
+  background-size: 88px 88px;
+  filter: contrast(220%) brightness(92%);
 }
 
 .admin-header-concrete > * {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* ── Admin Gruvbox Dark theme ────────────────────────────────────────────────
