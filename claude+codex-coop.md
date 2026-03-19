@@ -360,3 +360,31 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Validation**:
   - `npx eslint src/components/admin/AdminHeader.js src/components/admin/RagbazLogo.js src/components/admin/AdminProductsTab.js src/components/admin/AdminDashboard.js src/app/api/stripe/checkout/route.js src/app/[...uri]/page.js` passes (only existing non-blocking `<img>` warning in `AdminProductsTab`).
   - `npm test` passes: 14/14.
+
+---
+
+## 2026-03-19 (cont. 11)
+
+### Codex — Stripe payments bug-hunt follow-up (test-mode visibility)
+
+- **Root-cause class addressed**:
+  - `compilePayments()` previously took an email-filter branch through `customers.list(...)` and then `charges.list({ customer })`. This could miss guest/test-mode charges where Stripe has `receipt_email` but no linked customer object.
+  - Row keys were based on `payment_intent || charge.id`; repeated attempts on one intent can collapse/overwrite rows in React tables.
+- **Payments fetch robustness** (`src/lib/stripePayments.js`):
+  - Reworked to page through `stripe.charges.list(...)` directly (up to 20 pages), then filter by `receipt_email`/`billing_details.email` when email filter is set.
+  - Keeps sorting by newest first and applies `limit` after filtering.
+  - Uses `charge.id` as stable row `id` and adds `paymentIntentId` as a separate field.
+- **Checkout fallback robustness** (`src/app/api/stripe/checkout/route.js`):
+  - WP price fallback now paginates WooCommerce/LearnPress lookups (not first 100 only), so larger catalogs no longer silently miss prices.
+  - Fallback lookup now follows `contentKind` to avoid unnecessary source queries.
+  - Currency fallback now uses `DEFAULT_COURSE_FEE_CURRENCY` / `site.defaultCurrency` before hardcoded SEK.
+- **Admin save edge-case fix** (`src/components/admin/AdminDashboard.js`):
+  - Preserves currency overrides for WP-backed items even when price equals WP default, avoiding skipped persistence in that case.
+- **Admin header i18n bug** (`src/components/admin/AdminHeader.js`):
+  - Removed stale memoization path so health tooltip text tracks current language after locale changes.
+- **Direct verification against Stripe test data** (local env key):
+  - `compilePayments(undefined, 20)` returns 3 rows.
+  - `compilePayments("tobias@survivors.se", 20)` returns 2 rows.
+- **Validation**:
+  - `npx eslint` on touched files passes.
+  - `npm test` passes: 14/14.

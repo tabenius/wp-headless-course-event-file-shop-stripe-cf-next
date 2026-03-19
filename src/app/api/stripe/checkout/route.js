@@ -12,6 +12,7 @@ import { z } from "zod";
 import { t } from "@/lib/i18n";
 import { createTicket } from "@/lib/supportTickets";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import site from "@/lib/site";
 
 const CheckoutSchema = z
   .object({
@@ -45,60 +46,90 @@ function uriMatches(a, b) {
 }
 
 async function resolveWooPriceCentsByUri(courseUri) {
-  try {
-    const data = await fetchGraphQL(
-      `{
-        products(first: 100, where: { status: "publish" }) {
-          edges {
-            node {
-              ... on SimpleProduct { uri price regularPrice }
-              ... on VariableProduct { uri price regularPrice }
-              ... on ExternalProduct { uri price regularPrice }
+  let after = null;
+  for (let page = 0; page < 20; page += 1) {
+    try {
+      const data = await fetchGraphQL(
+        `query WooProductsByUri($after: String) {
+          products(first: 100, after: $after, where: { status: "publish" }) {
+            edges {
+              node {
+                ... on SimpleProduct { uri price regularPrice }
+                ... on VariableProduct { uri price regularPrice }
+                ... on ExternalProduct { uri price regularPrice }
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
             }
           }
-        }
-      }`,
-      {},
-      300,
-    );
-    const rows = (data?.products?.edges || []).map((edge) => edge.node);
-    const match = rows.find((product) => uriMatches(product?.uri, courseUri));
-    if (!match) return 0;
-    return parsePriceCents(match.price || match.regularPrice || "");
-  } catch {
-    return 0;
+        }`,
+        { after },
+        300,
+      );
+      const rows = (data?.products?.edges || []).map((edge) => edge.node);
+      const match = rows.find((product) => uriMatches(product?.uri, courseUri));
+      if (match) return parsePriceCents(match.price || match.regularPrice || "");
+
+      const pageInfo = data?.products?.pageInfo;
+      if (!pageInfo?.hasNextPage) return 0;
+      after = pageInfo.endCursor || null;
+      if (!after) return 0;
+    } catch {
+      return 0;
+    }
   }
+  return 0;
 }
 
 async function resolveLpPriceCentsByUri(courseUri) {
-  try {
-    const data = await fetchGraphQL(
-      `{
-        lpCourses(first: 100) {
-          edges {
-            node {
-              uri
-              price
-              priceRendered
+  let after = null;
+  for (let page = 0; page < 20; page += 1) {
+    try {
+      const data = await fetchGraphQL(
+        `query LpCoursesByUri($after: String) {
+          lpCourses(first: 100, after: $after) {
+            edges {
+              node {
+                uri
+                price
+                priceRendered
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
             }
           }
-        }
-      }`,
-      {},
-      300,
-    );
-    const rows = (data?.lpCourses?.edges || []).map((edge) => edge.node);
-    const match = rows.find((course) => uriMatches(course?.uri, courseUri));
-    if (!match) return 0;
-    return parsePriceCents(match.priceRendered || match.price || "");
-  } catch {
-    return 0;
+        }`,
+        { after },
+        300,
+      );
+      const rows = (data?.lpCourses?.edges || []).map((edge) => edge.node);
+      const match = rows.find((course) => uriMatches(course?.uri, courseUri));
+      if (match) return parsePriceCents(match.priceRendered || match.price || "");
+
+      const pageInfo = data?.lpCourses?.pageInfo;
+      if (!pageInfo?.hasNextPage) return 0;
+      after = pageInfo.endCursor || null;
+      if (!after) return 0;
+    } catch {
+      return 0;
+    }
   }
+  return 0;
 }
 
-async function resolveWordPressPriceCents(courseUri) {
+async function resolveWordPressPriceCents(courseUri, contentKind) {
   const normalized = normalizeUri(courseUri);
   if (!normalized) return 0;
+  if (contentKind === "product") {
+    return await resolveWooPriceCentsByUri(normalized);
+  }
+  if (contentKind === "course") {
+    return await resolveLpPriceCentsByUri(normalized);
+  }
   const wooPrice = await resolveWooPriceCentsByUri(normalized);
   if (wooPrice > 0) return wooPrice;
   const lpPrice = await resolveLpPriceCentsByUri(normalized);
@@ -256,9 +287,14 @@ export async function POST(request) {
     const fallbackWordPressPriceCents =
       configuredPriceCents > 0
         ? 0
-        : await resolveWordPressPriceCents(courseUri);
+        : await resolveWordPressPriceCents(courseUri, contentKind);
     const priceCents = Math.max(configuredPriceCents, fallbackWordPressPriceCents);
-    const currency = (config?.currency || "SEK").toUpperCase();
+    const currency = (
+      config?.currency ||
+      process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+      site.defaultCurrency ||
+      "SEK"
+    ).toUpperCase();
 
     if (priceCents <= 0) {
       console.error(

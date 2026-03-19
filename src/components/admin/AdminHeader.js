@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { t, getLocale, setLocale } from "@/lib/i18n";
@@ -115,14 +115,11 @@ export default function AdminHeader({ logoUrl }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [healthState, setHealthState] = useState("amber");
   const log = (...args) => console.info("[AdminHeader]", ...args);
-  const healthLabelMap = useMemo(
-    () => ({
-      green: t("admin.healthStatusGreen", "All systems operational"),
-      amber: t("admin.healthStatusAmber", "Partial connectivity"),
-      red: t("admin.healthStatusRed", "Critical issues"),
-    }),
-    [],
-  );
+  const healthLabelMap = {
+    green: t("admin.healthStatusGreen", "All systems operational"),
+    amber: t("admin.healthStatusAmber", "Partial connectivity"),
+    red: t("admin.healthStatusRed", "Critical issues"),
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("ragbaz-admin-theme");

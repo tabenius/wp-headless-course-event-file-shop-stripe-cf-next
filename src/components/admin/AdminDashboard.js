@@ -1284,6 +1284,7 @@ export default function AdminDashboard() {
 
     const uri = accessUri;
     const nextPriceCents = toCents(price);
+    const normalizedCurrency = (currency || "SEK").toUpperCase();
     const wpMatch = isWpSelection
       ? allWpContent.find((item) => item.uri === uri)
       : null;
@@ -1356,9 +1357,14 @@ export default function AdminDashboard() {
       if (uri) {
         const nextActive = isShopSelection ? undefined : selectedCourseActive;
         const currentConfig = courses[uri];
-        const hasManualUsers = Array.isArray(allowedUsers) && allowedUsers.length > 0;
+        const hasManualUsers =
+          Array.isArray(allowedUsers) && allowedUsers.length > 0;
         const hasInactiveOverride =
-          !isShopSelection && typeof nextActive === "boolean" && nextActive === false;
+          !isShopSelection &&
+          typeof nextActive === "boolean" &&
+          nextActive === false;
+        const hasCurrencyOverride =
+          !currentConfig && isWpSelection && normalizedCurrency !== "SEK";
         const needsManualPrice =
           !isWpSelection ||
           nextPriceCents !== wpFallbackPriceCents ||
@@ -1368,6 +1374,7 @@ export default function AdminDashboard() {
           Boolean(currentConfig) ||
           hasManualUsers ||
           hasInactiveOverride ||
+          hasCurrencyOverride ||
           needsManualPrice;
 
         if (shouldPersistAccess) {
@@ -1378,7 +1385,7 @@ export default function AdminDashboard() {
               courseUri: uri,
               allowedUsers,
               priceCents: nextPriceCents,
-              currency,
+              currency: normalizedCurrency,
               ...(typeof nextActive === "boolean" ? { active: nextActive } : {}),
             }),
           });
