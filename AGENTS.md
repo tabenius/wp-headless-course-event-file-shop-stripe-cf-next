@@ -222,6 +222,8 @@ The following features have been implemented for the chat feature:
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Rebuilt the Welcome presentation with richer mock slides (architecture -> sales -> products -> AI chat), wired skip/replay visibility state in `AdminDashboard`, and fixed all known `react-hooks/exhaustive-deps` warnings in touched admin files.
+- **2026-03-19 (Codex)**: Continued header/menu restructuring by converting the hamburger panel into a drawer with fixed backdrop, Escape-to-close, and route-change close behavior; moved the hotkey legend from a floating panel into per-item hints inside the hamburger menu.
 - **2026-03-20 (Codex)**: Reorganized the admin tabs so storage/configuration now lives in its own Storage tab (with S3/R2 docs, SFTP recommendations, and env info), while the renamed Sandbox tab keeps deploy, explore, commit, and debug tooling.
 
 - **2026-03-20 (Codex)**: Added the Welcome tab (default, Alt+0) that renders the migration story via impress.js slides, plus the matching nav item, hotkey legend update, and new i18n keys.

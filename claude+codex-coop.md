@@ -199,3 +199,16 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - **Streaming chat**: Good UX improvement (token-by-token rendering). Deferred — client wants a robust shop shipped first. Architecture: `ReadableStream` on CF Workers + Mistral `stream: true`, defer `saveChatHistory` until stream end.
 - **Dead-link finder**: Scan `<a href>` anchors, classify (internal/anchor/external), HEAD-check externals with per-domain concurrency cap + 3s timeout, present in a new admin panel. Parked for later.
+
+---
+
+## 2026-03-19 (cont. 5)
+
+### Codex — Welcome narrative mocks + hook cleanup + hamburger drawer pass
+
+- **Welcome presentation rebuilt**: `AdminWelcomeTab` now renders a stronger impress.js narrative with a big-picture architecture slide that zooms into three concrete mock screens: Sales (metrics + payment table), Products (catalog cards), and AI Chat (debug/payments/manuals style conversation). Added final landing slide CTA and richer navigation dots/prev/next controls.
+- **Welcome escape flow fixed**: `AdminDashboard` now tracks `welcomeStoryVisible` and supports skip/escape/replay. Seen-revision persistence remains tied to `WELCOME_SEEN_KEY`, while the card grid remains available after skipping.
+- **Hook warnings resolved**: Cleared all previously reported `react-hooks/exhaustive-deps` warnings in `AdminDashboard` by tightening callback dependencies, removing a redundant support/storage effect, and folding upload-info details into the existing loader path.
+- **Hamburger menu restructuring**: `AdminHeader` now uses a proper drawer-style menu with fixed overlay, route-change close, and Escape-to-close behavior. Health label mapping was moved inside the component lifecycle to keep language switching safe.
+- **Hotkey legend relocation**: Removed the fixed bottom-left legend from `AdminDashboard`; shortcuts are now displayed inline next to each hamburger menu entry (plus health/logout utility actions) so navigation hints live where users actually choose tabs.
+- **Verification**: `npx eslint src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js src/components/admin/AdminWelcomeTab.js` now returns clean (0 warnings, 0 errors).

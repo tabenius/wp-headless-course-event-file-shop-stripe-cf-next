@@ -66,6 +66,23 @@ function emptyProduct() {
   };
 }
 
+function deriveHealthStatus(checks) {
+  if (!checks) return "red";
+  const entries = Object.values(checks).filter(Boolean);
+  if (entries.length === 0) return "red";
+  const failing = entries.filter((check) => check.ok === false).length;
+  if (failing === 0) return "green";
+  if (failing <= 2) return "amber";
+  return "red";
+}
+
+function emitHealthStatus(status) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("admin:healthStatus", { detail: { status } }),
+  );
+}
+
 function UserAccessPanel({ users, courses, allWpContent, products }) {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -406,6 +423,7 @@ export default function AdminDashboard() {
   );
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("welcome");
+  const [welcomeStoryVisible, setWelcomeStoryVisible] = useState(true);
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);
@@ -487,9 +505,7 @@ export default function AdminDashboard() {
     const stored = window.localStorage.getItem(WELCOME_SEEN_KEY);
     const hasSeen = stored === WELCOME_REVISION;
     setShouldShowWelcomeBadge(!hasSeen);
-    if (hasSeen) {
-      setActiveTab("stats");
-    }
+    setWelcomeStoryVisible(!hasSeen);
   }, []);
 
   useEffect(() => {
@@ -507,13 +523,12 @@ export default function AdminDashboard() {
         0: "welcome",
         1: "sales",
         2: "stats",
-        3: "shop",
-        4: "access",
-        5: "support",
+        3: "products",
+        4: "support",
+        5: "chat",
         6: "health",
         7: "sandbox",
-        8: "chat",
-        9: "style",
+        8: "style",
       };
       if (digit && tabMap[digit]) {
         e.preventDefault();
@@ -553,6 +568,15 @@ export default function AdminDashboard() {
     if (typeof window === "undefined" || !WELCOME_REVISION) return;
     window.localStorage.setItem(WELCOME_SEEN_KEY, WELCOME_REVISION);
     setShouldShowWelcomeBadge(false);
+  }, []);
+
+  const hideWelcomeStory = useCallback(() => {
+    setWelcomeStoryVisible(false);
+    handleWelcomeSeen();
+  }, [handleWelcomeSeen]);
+
+  const replayWelcomeStory = useCallback(() => {
+    setWelcomeStoryVisible(true);
   }, []);
 
   // Derived values for shop product selection
@@ -608,7 +632,7 @@ export default function AdminDashboard() {
       );
       setError(fetchError.message || t("admin.fetchAdminDataFailed"));
     }
-  }, [loaded.courseAccess, t]);
+  }, [loaded.courseAccess]);
 
   const loadProducts = useCallback(async () => {
     if (loaded.products) return;
@@ -629,7 +653,7 @@ export default function AdminDashboard() {
       console.error("AdminDashboard: failed to load products", fetchError);
       setError(fetchError.message || t("admin.fetchProductListFailed"));
     }
-  }, [loaded.products, t]);
+  }, [loaded.products]);
 
   const loadAnalytics = useCallback(async () => {
     if (loaded.analytics) return;
@@ -675,9 +699,24 @@ export default function AdminDashboard() {
 
   const loadTickets = useCallback(async () => {
     if (loaded.tickets) return;
-    await fetchTickets();
-    setLoaded((s) => ({ ...s, tickets: true }));
-  }, [loaded.tickets]);
+    setTicketsLoading(true);
+    setTicketsError("");
+    try {
+      const res = await fetch("/api/admin/tickets");
+      const json = await res.json();
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || t("admin.ticketFetchFailed"));
+      setTickets(Array.isArray(json.tickets) ? json.tickets : []);
+      if (!selectedTicketId && json.tickets?.[0]?.id) {
+        setSelectedTicketId(json.tickets[0].id);
+      }
+      setLoaded((s) => ({ ...s, tickets: true }));
+    } catch (err) {
+      setTicketsError(err.message || t("admin.ticketFetchFailed"));
+    } finally {
+      setTicketsLoading(false);
+    }
+  }, [loaded.tickets, selectedTicketId]);
 
   const loadUploadInfo = useCallback(async () => {
     if (loaded.uploadInfo) return;
@@ -687,6 +726,9 @@ export default function AdminDashboard() {
       if (json?.upload) {
         setUploadInfo(json.upload);
         setUploadBackend(json.upload.backend || "wordpress");
+      }
+      if (json?.ok) {
+        setUploadInfoDetails(json);
       }
       setLoaded((s) => ({ ...s, uploadInfo: true }));
     } catch (err) {
@@ -727,7 +769,7 @@ export default function AdminDashboard() {
         setPaymentsLoading(false);
       }
     },
-    [loaded.payments],
+    [],
   );
 
   useEffect(() => {
@@ -925,25 +967,6 @@ export default function AdminDashboard() {
       setError(err.message || "Failed to download receipt");
     } finally {
       setDownloading(null);
-    }
-  }
-
-  async function fetchTickets() {
-    setTicketsLoading(true);
-    setTicketsError("");
-    try {
-      const res = await fetch("/api/admin/tickets");
-      const json = await res.json();
-      if (!res.ok || !json?.ok)
-        throw new Error(json?.error || t("admin.ticketFetchFailed"));
-      setTickets(Array.isArray(json.tickets) ? json.tickets : []);
-      if (!selectedTicketId && json.tickets?.[0]?.id) {
-        setSelectedTicketId(json.tickets[0].id);
-      }
-    } catch (err) {
-      setTicketsError(err.message || t("admin.ticketFetchFailed"));
-    } finally {
-      setTicketsLoading(false);
     }
   }
 
@@ -1292,22 +1315,6 @@ export default function AdminDashboard() {
     };
   }, [showHealthTab]);
 
-  useEffect(() => {
-    if (activeTab === "support") {
-      fetchTickets();
-    }
-    if (activeTab === "storage" && !uploadInfoDetails) {
-      fetch("/api/admin/upload-info")
-        .then((res) => res.json())
-        .then((json) => {
-          if (json?.ok) setUploadInfoDetails(json);
-        })
-        .catch((err) =>
-          console.error("AdminDashboard: failed to load upload info", err),
-        );
-    }
-  }, [activeTab]);
-
   // Fetch commit log when advanced tab is shown
   useEffect(() => {
     if (activeTab !== "sandbox" || commits) return;
@@ -1484,31 +1491,6 @@ export default function AdminDashboard() {
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
-      <div className="fixed left-4 bottom-4 text-[11px] text-white bg-[#140022] border border-[#4e21a6] rounded p-2 shadow-lg">
-        <div className="font-semibold text-white mb-1">Genvägar</div>
-        <div className="space-y-0.5">
-          {[
-            ["^⌥0", "Welcome"],
-            ["^⌥1", "Sales"],
-            ["^⌥2", "Stats"],
-            ["^⌥3", "Shop"],
-            ["^⌥4", "Access"],
-            ["^⌥5", "Support"],
-            ["^⌥6", "Health"],
-            ["^⌥S", "Storage"],
-            ["^⌥7", "Sandbox"],
-            ["^⌥8", "Chat"],
-            ["^⌥9", "Style"],
-            ["^⌥/", "Search"],
-            ["^⌥L", "Logout"],
-          ].map(([key, label]) => (
-            <div key={key} className="flex gap-2">
-              <span className="text-purple-300 w-12 shrink-0">{key}</span>
-              <span>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
       {activeTab === "welcome" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
@@ -1516,6 +1498,9 @@ export default function AdminDashboard() {
           <AdminWelcomeTab
             onSeenRevision={handleWelcomeSeen}
             showRevisionBadge={shouldShowWelcomeBadge}
+            showStory={welcomeStoryVisible}
+            onHideStory={hideWelcomeStory}
+            onReplayStory={replayWelcomeStory}
           />
         </Suspense>
       )}
