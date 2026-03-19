@@ -63,6 +63,15 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Applied outline rendering on the `RAGBAZ` text using `WebkitTextStroke` + fallback `text-shadow`.
 - Enabled a black 1px outline in `AdminHeader` for the menu-bar `RAGBAZ` wordmark while leaving the rest of the header typography unchanged.
 
+## 2026-03-19 (cont. 22)
+
+### Codex — status tooltip layering/clipping fix
+
+- Fixed admin header status tooltip being partially hidden under page content:
+  - changed header container to `overflow-visible` (was `overflow-hidden`),
+  - increased tooltip layer to `z-[80]`.
+- This keeps the tooltip fully visible below the sticky menu bar while preserving header texture overlays.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

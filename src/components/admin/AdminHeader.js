@@ -237,7 +237,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
 
   return (
-    <header className="admin-header-concrete relative overflow-hidden w-full sticky top-0 z-40 bg-[hsl(33_48%_44%)] border-b border-[hsl(33_42%_33%)]">
+    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(33_48%_44%)] border-b border-[hsl(33_42%_33%)]">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -310,7 +310,7 @@ export default function AdminHeader({ logoUrl }) {
               />
             </button>
             {showHealthTooltip && (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(33_36%_19%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
+              <div className="absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(33_36%_19%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
                 <p className="font-semibold text-white">
                   {healthLabelMap[healthState]}
                 </p>
