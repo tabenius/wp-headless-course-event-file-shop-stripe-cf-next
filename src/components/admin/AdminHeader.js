@@ -4,20 +4,65 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { t, getLocale, setLocale } from "@/lib/i18n";
+import {
+  ADMIN_ACTION_HOTKEYS,
+  getAdminTabHotkeyLabel,
+  isAdminActionHotkey,
+} from "@/lib/adminHotkeys";
 import RagbazLogo from "./RagbazLogo";
 
 function getNavItems() {
   return [
-    { label: t("admin.navWelcome", "Welcome"), tab: "welcome", hotkey: "Ctrl+Alt+0" },
-    { label: t("admin.navSales", "Sales"), tab: "sales", hotkey: "Ctrl+Alt+1" },
-    { label: t("admin.navStats"), tab: "stats", hotkey: "Ctrl+Alt+2" },
-    { label: t("admin.navProducts"), tab: "products", hotkey: "Ctrl+Alt+3" },
-    { label: t("admin.navSupport"), tab: "support", hotkey: "Ctrl+Alt+4" },
-    { label: t("admin.navChat"), tab: "chat", hotkey: "Ctrl+Alt+5" },
-    { label: t("admin.healthStatus", "Health"), tab: "health", hotkey: "Ctrl+Alt+6" },
-    { label: t("admin.navSandbox"), tab: "sandbox", hotkey: "Ctrl+Alt+7" },
-    { label: t("admin.navStyle"), tab: "style", hotkey: "Ctrl+Alt+8" },
-    { label: t("admin.navStorage"), tab: "storage", hotkey: "Ctrl+Alt+S" },
+    {
+      label: t("admin.navWelcome", "Welcome"),
+      tab: "welcome",
+      hotkey: getAdminTabHotkeyLabel("welcome"),
+    },
+    {
+      label: t("admin.navSales", "Sales"),
+      tab: "sales",
+      hotkey: getAdminTabHotkeyLabel("sales"),
+    },
+    {
+      label: t("admin.navStats"),
+      tab: "stats",
+      hotkey: getAdminTabHotkeyLabel("stats"),
+    },
+    {
+      label: t("admin.navProducts"),
+      tab: "products",
+      hotkey: getAdminTabHotkeyLabel("products"),
+    },
+    {
+      label: t("admin.navSupport"),
+      tab: "support",
+      hotkey: getAdminTabHotkeyLabel("support"),
+    },
+    {
+      label: t("admin.navChat"),
+      tab: "chat",
+      hotkey: getAdminTabHotkeyLabel("chat"),
+    },
+    {
+      label: t("admin.healthStatus", "Health"),
+      tab: "health",
+      hotkey: getAdminTabHotkeyLabel("health"),
+    },
+    {
+      label: t("admin.navSandbox"),
+      tab: "sandbox",
+      hotkey: getAdminTabHotkeyLabel("sandbox"),
+    },
+    {
+      label: t("admin.navStyle"),
+      tab: "style",
+      hotkey: getAdminTabHotkeyLabel("style"),
+    },
+    {
+      label: t("admin.navStorage"),
+      tab: "storage",
+      hotkey: getAdminTabHotkeyLabel("storage"),
+    },
     { href: "/admin/docs", label: t("admin.documentation") },
   ];
 }
@@ -94,6 +139,16 @@ export default function AdminHeader({ logoUrl }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
+
+  useEffect(() => {
+    function onGlobalHotkey(event) {
+      if (!isAdminActionHotkey(event, "menuToggle")) return;
+      event.preventDefault();
+      setMenuOpen((prev) => !prev);
+    }
+    window.addEventListener("keydown", onGlobalHotkey);
+    return () => window.removeEventListener("keydown", onGlobalHotkey);
+  }, []);
 
   if (pathname === "/admin/login") return null;
 
@@ -251,7 +306,7 @@ export default function AdminHeader({ logoUrl }) {
                   >
                     <span>{t("admin.healthCheck")}</span>
                     <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-100">
-                      Ctrl+Alt+6
+                      {getAdminTabHotkeyLabel("health")}
                     </kbd>
                   </button>
                   <button
@@ -261,7 +316,7 @@ export default function AdminHeader({ logoUrl }) {
                   >
                     <span>{t("admin.logout", "Logout")}</span>
                     <kbd className="rounded border border-rose-200/40 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-rose-100">
-                      Ctrl+Alt+L
+                      {ADMIN_ACTION_HOTKEYS.logout.combo}
                     </kbd>
                   </button>
                 </div>

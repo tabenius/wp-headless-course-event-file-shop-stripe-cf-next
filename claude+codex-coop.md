@@ -212,3 +212,13 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Hamburger menu restructuring**: `AdminHeader` now uses a proper drawer-style menu with fixed overlay, route-change close, and Escape-to-close behavior. Health label mapping was moved inside the component lifecycle to keep language switching safe.
 - **Hotkey legend relocation**: Removed the fixed bottom-left legend from `AdminDashboard`; shortcuts are now displayed inline next to each hamburger menu entry (plus health/logout utility actions) so navigation hints live where users actually choose tabs.
 - **Verification**: `npx eslint src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js src/components/admin/AdminWelcomeTab.js` now returns clean (0 warnings, 0 errors).
+
+### Codex — Hotkey contract + i18n parity tests (points 1 and 5)
+
+- **Shared hotkey source of truth**: Added `src/lib/adminHotkeys.js` with tab hotkeys, action hotkeys (`menuToggle`, `logout`, `search`), and resolver helpers.
+- **Runtime wiring**: `AdminDashboard` now resolves tab/search/logout shortcuts through `adminHotkeys` helpers; `AdminHeader` hotkey labels now read from the same module and `Ctrl+Alt+M` toggle uses `isAdminActionHotkey`.
+- **New tests**:
+  - `tests/admin-hotkeys.test.js` verifies tab combo uniqueness/order and event-to-tab/action mappings.
+  - `tests/i18n-admin-parity.test.js` verifies that `sv` and `es` include all `admin.*` keys from `en`.
+- **Locale sync for parity**: Added missing Spanish Welcome admin keys (skip/prev-next/enter-dashboard plus split slide tag/sub/paragraph keys) so parity checks pass.
+- **Verification**: `npm test` now runs 13 passing suites including the two new tests; targeted ESLint on touched files is clean.

@@ -275,6 +275,7 @@
     "themeDark": "Switch to Gruvbox theme",
     "welcomeSubtitle": "RAGBAZ Articulate story",
     "welcomeHeadline": "Welcome to your new control room",
+    "welcomeMenuHint": "Open menu",
     "welcomeSkip": "Skip to dashboard",
     "welcomeSkipHint": "Press Escape to skip at any time",
     "welcomeEscHint": "Press Esc to exit the story at any time",

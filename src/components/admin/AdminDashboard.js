@@ -18,6 +18,10 @@ import ProductSection from "./ProductSection";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 import ChatPanel from "./ChatPanel";
 import { adminFetch } from "@/lib/adminFetch";
+import {
+  isAdminActionHotkey,
+  resolveAdminTabHotkey,
+} from "@/lib/adminHotkeys";
 
 const WELCOME_REVISION =
   process.env.NEXT_PUBLIC_WELCOME_REVISION ||
@@ -515,44 +519,21 @@ export default function AdminDashboard() {
         ["INPUT", "TEXTAREA", "SELECT"].includes(tag) ||
         e.target?.isContentEditable;
       if (isFormField) return;
-      if (!e.altKey || !e.ctrlKey) return;
-      // Use e.code (e.g. "Digit2") rather than e.key — on macOS Alt+number
-      // produces special characters (™, £…) so e.key is unreliable for digits.
-      const digit = e.code?.startsWith("Digit") ? e.code.slice(5) : null;
-      const tabMap = {
-        0: "welcome",
-        1: "sales",
-        2: "stats",
-        3: "products",
-        4: "support",
-        5: "chat",
-        6: "health",
-        7: "sandbox",
-        8: "style",
-      };
-      if (digit && tabMap[digit]) {
+      const tab = resolveAdminTabHotkey(e);
+      if (tab) {
         e.preventDefault();
-        setActiveTab(tabMap[digit]);
+        setActiveTab(tab);
         window.dispatchEvent(
-          new CustomEvent("admin:switchTab", { detail: tabMap[digit] }),
+          new CustomEvent("admin:switchTab", { detail: tab }),
         );
         return;
       }
-      if (e.code === "KeyS") {
-        e.preventDefault();
-        setActiveTab("storage");
-        window.dispatchEvent(
-          new CustomEvent("admin:switchTab", { detail: "storage" }),
-        );
-        return;
-      }
-      const k = e.key.toLowerCase();
-      if (k === "l" || e.code === "KeyL") {
+      if (isAdminActionHotkey(e, "logout")) {
         e.preventDefault();
         logoutAdmin();
         return;
       }
-      if (k === "/" || e.code === "Slash") {
+      if (isAdminActionHotkey(e, "search")) {
         e.preventDefault();
         const searchInput = document.querySelector(
           "input[type='search'], input[aria-label='search']",
