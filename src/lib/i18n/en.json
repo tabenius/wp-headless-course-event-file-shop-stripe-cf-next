@@ -328,7 +328,16 @@
     "imageSizeNeuronTip": "Larger presets consume more Cloudflare AI neurons",
     "imagePartialFail": "{n} of {m} images generated",
     "imageSaveFailed": "Could not save image — try again or download instead",
-    "imageGenFailed": "Image generation failed"
+    "imageGenFailed": "Image generation failed",
+    "filterAll": "All",
+    "filterNeedsConfig": "Needs config",
+    "filterConfigured": "Configured",
+    "colType": "Type",
+    "colName": "Name",
+    "colStatus": "Status",
+    "clientSecretKey": "Secret Key",
+    "showSecret": "Show",
+    "hideSecret": "Hide"
   },
   "stats": {
     "totalItems": "Total items",

@@ -24,6 +24,10 @@ export async function GET(request) {
   ).replace(/\/+$/, "");
   const accessKeyId =
     process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
+  const secretKey =
+    process.env.S3_SECRET_ACCESS_KEY ||
+    process.env.CF_R2_SECRET_ACCESS_KEY ||
+    "";
 
   if (backend === "wordpress") {
     return NextResponse.json({
@@ -46,8 +50,8 @@ export async function GET(request) {
     bucket: bucket || null,
     region: isR2 ? "auto" : process.env.S3_REGION || "us-east-1",
     accessKeyId: accessKeyId || null,
+    secretKey: secretKey || null,
     publicUrl: publicUrl || null,
     pathStyle: process.env.S3_FORCE_PATH_STYLE === "1",
-    note: "Secret/access key not exposed here. Use .env values.",
   });
 }

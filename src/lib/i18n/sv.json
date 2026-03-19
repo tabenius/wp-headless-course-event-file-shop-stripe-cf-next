@@ -328,7 +328,16 @@
     "imageSizeNeuronTip": "Större format förbrukar fler Cloudflare AI-neuroner",
     "imagePartialFail": "{n} av {m} bilder genererade",
     "imageSaveFailed": "Kunde inte spara bilden — försök igen eller ladda ner",
-    "imageGenFailed": "Bildgenerering misslyckades"
+    "imageGenFailed": "Bildgenerering misslyckades",
+    "filterAll": "Alla",
+    "filterNeedsConfig": "Behöver konfigureras",
+    "filterConfigured": "Konfigurerade",
+    "colType": "Typ",
+    "colName": "Namn",
+    "colStatus": "Status",
+    "clientSecretKey": "Hemlig nyckel",
+    "showSecret": "Visa",
+    "hideSecret": "Dölj"
   },
   "stats": {
     "totalItems": "Antal objekt",

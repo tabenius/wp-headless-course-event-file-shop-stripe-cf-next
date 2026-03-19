@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { t } from "@/lib/i18n";
 import DebugLogPanel from "./DebugLogPanel";
 
@@ -29,6 +30,7 @@ export default function AdminAdvancedTab({
   setClientLogs,
   debugLogs,
 }) {
+  const [showSecret, setShowSecret] = useState(false);
   return (
     <div className="border rounded p-5 space-y-6">
       <div className="flex items-center justify-between">
@@ -225,11 +227,35 @@ export default function AdminAdvancedTab({
               </div>
               <div>
                 <div className="text-[11px] text-gray-500">
-                  {t("admin.clientNote")}
+                  {t("admin.clientSecretKey", "Secret Key")}
                 </div>
-                <div className="text-[12px] bg-white border rounded px-2 py-1">
-                  {t("admin.clientSecretNotShown")}
-                </div>
+                {showSecret ? (
+                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 break-all flex gap-1 items-start">
+                    <span className="flex-1">
+                      {uploadInfoDetails.secretKey || "—"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret(false)}
+                      className="text-gray-400 hover:text-gray-600 shrink-0 text-[11px] mt-0.5"
+                    >
+                      {t("admin.hideSecret", "Hide")}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="font-mono text-[12px] bg-white border rounded px-2 py-1 flex items-center gap-2">
+                    <span className="flex-1 text-gray-300 tracking-widest">
+                      ••••••••••••••••
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret(true)}
+                      className="text-purple-600 hover:underline text-[11px] shrink-0"
+                    >
+                      {t("admin.showSecret", "Show")}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <p className="text-[11px] text-gray-500">

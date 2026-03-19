@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
 import { parsePriceCents } from "@/lib/parsePrice";
 import ImageUploader from "./ImageUploader";
@@ -108,7 +108,14 @@ function PriceAccessForm({
   addManualEmail,
   saveUnified,
   loading,
+  // Incrementing this counter triggers an auto-save after price state settles
+  autoSaveTrigger,
 }) {
+  useEffect(() => {
+    if (autoSaveTrigger) saveUnified();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSaveTrigger]);
+
   return (
     <div className="space-y-5">
       {/* Price row */}
@@ -220,7 +227,7 @@ function PriceAccessForm({
         disabled={loading}
         className="w-full py-2 rounded bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 disabled:opacity-50 transition-colors"
       >
-        {loading ? t("admin.saving") : t("admin.saveCourseAccess")}
+        {loading ? t("admin.saving") : t("common.save", "Save")}
       </button>
     </div>
   );
@@ -676,6 +683,31 @@ function AccessTab({
   editFormRef,
 }) {
   const [typeFilter, setTypeFilter] = useState("all");
+  const [sortField, setSortField] = useState("name");
+  const [sortDir, setSortDir] = useState("asc");
+  // Incrementing this triggers PriceAccessForm to auto-save after price state settles
+  const [autoSaveTrigger, setAutoSaveTrigger] = useState(0);
+
+  const toggleSort = (field) => {
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+  const SortArrow = ({ field }) =>
+    sortField === field ? (
+      <span className="ml-0.5">{sortDir === "asc" ? "↑" : "↓"}</span>
+    ) : null;
+
+  const TYPE_LABEL = { wc: "WC", lp: "LP", ev: "EV", shop: "SH", other: "URI" };
+  const TYPE_COLOR = {
+    wc: "bg-blue-100 text-blue-800",
+    lp: "bg-indigo-100 text-indigo-800",
+    ev: "bg-amber-100 text-amber-800",
+    shop: "bg-green-100 text-green-800",
+    other: "bg-gray-100 text-gray-600",
+  };
 
   const allItemsCount =
     wcProducts.length +
@@ -683,6 +715,29 @@ function AccessTab({
     wpEvents.length +
     products.length +
     otherCourseUris.length;
+
+  // "Needs config" = no priceCents set yet
+  const isConfigured = (uri) => {
+    const cfg = courses[uri];
+    return cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0;
+  };
+  const needsConfigCount = [
+    ...wcProducts.map((p) => p.uri),
+    ...wpCourses.map((c) => c.uri),
+    ...wpEvents.map((e) => e.uri),
+    ...products.map((_, i) => `__shop_${i}`),
+    ...otherCourseUris,
+  ].filter((uri) => !isConfigured(uri)).length;
+
+  const showItem = (uri, source) => {
+    if (typeFilter === "needs-config") return !isConfigured(uri);
+    if (typeFilter === "configured") return isConfigured(uri);
+    if (typeFilter === "wc") return source === "wc";
+    if (typeFilter === "lp") return source === "lp";
+    if (typeFilter === "ev") return source === "ev";
+    if (typeFilter === "shop") return source === "shop";
+    return true; // "all"
+  };
 
   return (
     <div
@@ -692,10 +747,45 @@ function AccessTab({
       {/* ── Left: content list ── */}
       <div className="border rounded flex flex-col overflow-hidden">
         {/* Filter pills */}
-        <div className="p-2 border-b bg-gray-50 space-y-2">
+        <div className="p-2 border-b bg-gray-50 space-y-1.5">
           <div className="flex flex-wrap gap-1">
             {[
-              { key: "all", label: `All (${allItemsCount})` },
+              {
+                key: "all",
+                label: `${t("admin.filterAll", "All")} (${allItemsCount})`,
+              },
+              needsConfigCount > 0 && {
+                key: "needs-config",
+                label: `${t("admin.filterNeedsConfig", "Needs config")} (${needsConfigCount})`,
+                urgent: true,
+              },
+              allItemsCount - needsConfigCount > 0 && {
+                key: "configured",
+                label: `${t("admin.filterConfigured", "Configured")} (${allItemsCount - needsConfigCount})`,
+              },
+            ]
+              .filter(Boolean)
+              .map(({ key, label, urgent }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTypeFilter(key)}
+                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                    typeFilter === key
+                      ? urgent
+                        ? "bg-amber-500 text-white border-amber-500"
+                        : "bg-purple-600 text-white border-purple-600"
+                      : urgent
+                        ? "text-amber-600 border-amber-300 hover:border-amber-500"
+                        : "text-gray-500 border-gray-300 hover:border-purple-400"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {[
               wcProducts.length > 0 && {
                 key: "wc",
                 label: `WC (${wcProducts.length})`,
@@ -731,235 +821,133 @@ function AccessTab({
           </div>
         </div>
 
+        {/* Sortable column header */}
+        <div className="flex items-center px-2 py-1 border-b bg-gray-50 text-[10px] font-semibold text-gray-500 gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => toggleSort("source")}
+            className="w-9 shrink-0 text-left hover:text-gray-800"
+          >
+            {t("admin.colType", "Type")}
+            <SortArrow field="source" />
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleSort("name")}
+            className="flex-1 text-left hover:text-gray-800"
+          >
+            {t("admin.colName", "Name")}
+            <SortArrow field="name" />
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleSort("status")}
+            className="w-5 text-right hover:text-gray-800"
+            title={t("admin.colStatus", "Status")}
+          >
+            <SortArrow field="status" />●
+          </button>
+        </div>
+
         <div className="flex-1 overflow-auto">
-          {/* WooCommerce */}
-          {(typeFilter === "all" || typeFilter === "wc") &&
-            wcProducts.length > 0 && (
-              <div>
-                <div className="px-3 py-1.5 bg-gray-50 border-b border-t">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    WooCommerce
-                  </span>
-                </div>
-                {wcProducts.map((product) => {
-                  const isActive = selectedCourse === product.uri;
-                  const configured = courses[product.uri];
-                  return (
-                    <button
-                      key={`wc-${product.uri}`}
-                      type="button"
-                      onClick={() => handleSelection(product.uri)}
-                      className={`w-full text-left px-3 py-2 flex items-center gap-2.5 border-b last:border-b-0 transition-colors ${
-                        isActive
-                          ? "bg-purple-50 border-l-2 border-l-purple-500"
-                          : "hover:bg-gray-50 border-l-2 border-l-transparent"
-                      }`}
-                    >
-                      {product.featuredImage?.node?.sourceUrl ? (
-                        <img
-                          src={product.featuredImage.node.sourceUrl}
-                          alt=""
-                          className="w-7 h-7 rounded object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="w-7 h-7 rounded bg-gray-100 shrink-0" />
-                      )}
-                      <span className="text-sm truncate flex-1 text-gray-800">
-                        {product.name}
-                      </span>
-                      {configured && (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"
-                          title="Configured"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          {(() => {
+            // Build flat list from all sources
+            const flat = [
+              ...wcProducts.map((p) => ({
+                uri: p.uri,
+                name: p.name,
+                source: "wc",
+              })),
+              ...wpCourses.map((c) => ({
+                uri: c.uri,
+                name: c.title,
+                source: "lp",
+              })),
+              ...wpEvents.map((e) => ({
+                uri: e.uri,
+                name: e.title,
+                source: "ev",
+              })),
+              ...products.map((p, i) => ({
+                uri: `__shop_${i}`,
+                name: p.name || `Product ${i + 1}`,
+                source: "shop",
+                active: p.active,
+              })),
+              ...otherCourseUris.map((uri) => ({
+                uri,
+                name: uri,
+                source: "other",
+              })),
+            ];
 
-          {/* LearnPress */}
-          {(typeFilter === "all" || typeFilter === "lp") &&
-            wpCourses.length > 0 && (
-              <div>
-                <div className="px-3 py-1.5 bg-gray-50 border-b border-t">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    LearnPress
-                  </span>
-                </div>
-                {wpCourses.map((course) => {
-                  const isActive = selectedCourse === course.uri;
-                  const configured = courses[course.uri];
-                  return (
-                    <button
-                      key={`lp-${course.uri}`}
-                      type="button"
-                      onClick={() => handleSelection(course.uri)}
-                      className={`w-full text-left px-3 py-2 flex items-center gap-2.5 border-b last:border-b-0 transition-colors ${
-                        isActive
-                          ? "bg-purple-50 border-l-2 border-l-purple-500"
-                          : "hover:bg-gray-50 border-l-2 border-l-transparent"
-                      }`}
-                    >
-                      <div className="w-7 h-7 rounded bg-blue-50 shrink-0 flex items-center justify-center text-blue-400 text-[10px] font-bold">
-                        LP
-                      </div>
-                      <span className="text-sm truncate flex-1 text-gray-800">
-                        {course.title}
-                      </span>
-                      {configured && (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"
-                          title="Configured"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            // Apply filter
+            const filtered = flat.filter((item) =>
+              showItem(item.uri, item.source),
+            );
 
-          {/* Events */}
-          {(typeFilter === "all" || typeFilter === "ev") &&
-            wpEvents.length > 0 && (
-              <div>
-                <div className="px-3 py-1.5 bg-gray-50 border-b border-t">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Events
-                  </span>
-                </div>
-                {wpEvents.map((event) => {
-                  const isActive = selectedCourse === event.uri;
-                  const configured = courses[event.uri];
-                  const dateStr = event.startDate
-                    ? new Date(event.startDate).toLocaleDateString("sv-SE")
-                    : null;
-                  return (
-                    <button
-                      key={`ev-${event.uri}`}
-                      type="button"
-                      onClick={() => handleSelection(event.uri)}
-                      className={`w-full text-left px-3 py-2 flex items-center gap-2.5 border-b last:border-b-0 transition-colors ${
-                        isActive
-                          ? "bg-purple-50 border-l-2 border-l-purple-500"
-                          : "hover:bg-gray-50 border-l-2 border-l-transparent"
-                      }`}
-                    >
-                      <div className="w-7 h-7 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-400 text-[10px] font-bold">
-                        EV
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm truncate text-gray-800">
-                          {event.title}
-                        </p>
-                        {dateStr && (
-                          <p className="text-[10px] text-gray-400">{dateStr}</p>
-                        )}
-                      </div>
-                      {configured && (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"
-                          title="Configured"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            // Sort
+            const sorted = [...filtered].sort((a, b) => {
+              let va, vb;
+              if (sortField === "source") {
+                va = a.source;
+                vb = b.source;
+              } else if (sortField === "status") {
+                va = isConfigured(a.uri) ? 1 : 0;
+                vb = isConfigured(b.uri) ? 1 : 0;
+              } else {
+                va = (a.name || "").toLowerCase();
+                vb = (b.name || "").toLowerCase();
+              }
+              if (va < vb) return sortDir === "asc" ? -1 : 1;
+              if (va > vb) return sortDir === "asc" ? 1 : -1;
+              return 0;
+            });
 
-          {/* Shop products */}
-          {(typeFilter === "all" || typeFilter === "shop") &&
-            products.length > 0 && (
-              <div>
-                <div className="px-3 py-1.5 bg-gray-50 border-b border-t">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Shop
-                  </span>
-                </div>
-                {products.map((product, index) => {
-                  const isActive = selectedCourse === `__shop_${index}`;
-                  return (
-                    <button
-                      key={`shop-${index}`}
-                      type="button"
-                      onClick={() => handleSelection(`__shop_${index}`)}
-                      className={`w-full text-left px-3 py-2 flex items-center gap-2.5 border-b last:border-b-0 transition-colors ${
-                        isActive
-                          ? "bg-purple-50 border-l-2 border-l-purple-500"
-                          : "hover:bg-gray-50 border-l-2 border-l-transparent"
-                      }`}
-                    >
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt=""
-                          className="w-7 h-7 rounded object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="w-7 h-7 rounded bg-amber-50 shrink-0 flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className="w-4 h-4 text-amber-300"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M1 5.25A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25v9.5A2.25 2.25 0 0116.75 17H3.25A2.25 2.25 0 011 14.75v-9.5zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75v-2.69l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L2.5 11.06zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                      <span className="text-sm truncate flex-1 text-gray-800">
-                        {product.name || `Product ${index + 1}`}
-                      </span>
-                      {product.active === false && (
-                        <span className="text-[10px] bg-red-50 text-red-500 px-1 rounded shrink-0">
-                          Off
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            if (sorted.length === 0)
+              return (
+                <p className="text-xs text-gray-400 p-4 text-center">
+                  {allItemsCount === 0
+                    ? "No content found."
+                    : "No items match the current filter."}
+                </p>
+              );
 
-          {/* Other manual URIs */}
-          {typeFilter === "all" && otherCourseUris.length > 0 && (
-            <div>
-              <div className="px-3 py-1.5 bg-gray-50 border-b border-t">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  Other
-                </span>
-              </div>
-              {otherCourseUris.map((uri) => (
+            return sorted.map((item) => {
+              const isActive = selectedCourse === item.uri;
+              const configured = isConfigured(item.uri);
+              return (
                 <button
-                  key={uri}
+                  key={item.uri}
                   type="button"
-                  onClick={() => handleSelection(uri)}
-                  className={`w-full text-left px-3 py-2 flex items-center gap-2.5 border-b last:border-b-0 text-sm text-gray-700 transition-colors ${
-                    selectedCourse === uri
-                      ? "bg-purple-50 border-l-2 border-l-purple-500"
-                      : "hover:bg-gray-50 border-l-2 border-l-transparent"
-                  }`}
+                  onClick={() => handleSelection(item.uri)}
+                  className={`w-full text-left px-2 py-2 flex items-center gap-1.5 border-b last:border-b-0 transition-colors ${isActive ? "bg-purple-50 border-l-2 border-l-purple-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"}`}
                 >
-                  <div className="w-7 h-7 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-[9px] font-bold">
-                    URI
-                  </div>
-                  <span className="truncate">{uri}</span>
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 w-9 text-center ${TYPE_COLOR[item.source]}`}
+                  >
+                    {TYPE_LABEL[item.source]}
+                  </span>
+                  <span className="text-sm truncate flex-1 text-gray-800">
+                    {item.name}
+                  </span>
+                  {item.active === false && (
+                    <span className="text-[9px] bg-red-50 text-red-500 px-1 rounded shrink-0">
+                      Off
+                    </span>
+                  )}
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${configured ? "bg-purple-500" : "bg-amber-300"}`}
+                    title={
+                      configured
+                        ? t("admin.configuredBadge")
+                        : t("admin.filterNeedsConfig", "Needs config")
+                    }
+                  />
                 </button>
-              ))}
-            </div>
-          )}
-
-          {allItemsCount === 0 && (
-            <p className="text-xs text-gray-400 p-4 text-center">
-              No content found.
-            </p>
-          )}
+              );
+            });
+          })()}
         </div>
 
         {/* Manual entry */}
@@ -1109,9 +1097,10 @@ function AccessTab({
                               </span>
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setPrice((wpParsedCents / 100).toFixed(2))
-                                }
+                                onClick={() => {
+                                  setPrice((wpParsedCents / 100).toFixed(2));
+                                  setAutoSaveTrigger((n) => n + 1);
+                                }}
                                 className="px-2 py-0.5 rounded border border-amber-400 bg-white text-amber-800 text-xs hover:bg-amber-100"
                               >
                                 {t("admin.notBuyableUseWpPrice")}
@@ -1180,6 +1169,7 @@ function AccessTab({
               addManualEmail={addManualEmail}
               saveUnified={saveUnified}
               loading={loading}
+              autoSaveTrigger={autoSaveTrigger}
             />
           </div>
         ) : (
