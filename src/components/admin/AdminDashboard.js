@@ -789,7 +789,12 @@ export default function AdminDashboard() {
   async function sendChat() {
     if (!chatInput.trim()) return;
     const message = chatInput.trim();
-    const isRebuild = /^rebuild\s+index$/i.test(message);
+    const isRebuild =
+      /^rebuild\s+index$/i.test(message) ||
+      /^(indexera|bygg\s+om\s+index|återbygg\s+index)$/i.test(message) ||
+      /^(reindexar|reconstruir\s+[ií]ndice|regenerar\s+[ií]ndice)$/i.test(
+        message,
+      );
     setChatInput("");
     if (isRebuild) {
       await rebuildIndex();
