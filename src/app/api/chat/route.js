@@ -7,6 +7,10 @@ import { manuals } from "@/lib/manuals";
 import { stripHtml } from "@/lib/stripHtml";
 import { requireAdmin } from "@/lib/adminRoute";
 
+const IMAGE_SYSTEM_PROMPT =
+  "Write a concise, vivid image generation prompt suited for FLUX (max 60 words). " +
+  "Return only the prompt, no explanation, no quotes. Content to base it on: ";
+
 const INDEX_CACHE = { ts: 0, chunks: [] };
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -100,10 +104,7 @@ export async function POST(request) {
       const adminAuth = await requireAdmin(request);
       if (adminAuth?.error) return adminAuth.error;
       const description = (body?.description || "").trim();
-      const imageSystemPrompt =
-        "Write a concise, vivid image generation prompt suited for FLUX (max 60 words). " +
-        "Return only the prompt, no explanation, no quotes. Content to base it on: " + description;
-      const prompt = await chatWithContext(imageSystemPrompt, [
+      const prompt = await chatWithContext(IMAGE_SYSTEM_PROMPT + description, [
         { role: "user", content: description || "generate a compelling product image" },
       ]);
       return NextResponse.json({ ok: true, type: "image-generation", prompt: prompt.trim() });
@@ -184,7 +185,7 @@ export async function POST(request) {
       if (!res.ok || json?.ok === false) {
         return NextResponse.json({ ok: false, error: json?.error || "Payment lookup failed" }, { status: 500 });
       }
-      const tableRows = rows.slice(0, 6).map((p) => {
+      const tableRows = (json.payments || []).slice(0, 6).map((p) => {
         const receipt = p.receiptUrl ? `[Receipt](${p.receiptUrl})` : "—";
         return `| ${new Date(p.created).toLocaleString("sv-SE")} | ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} | ${p.status} | ${p.email || "—"} | ${receipt} |`;
       });
@@ -197,10 +198,7 @@ export async function POST(request) {
     if (imageKeywords.some((kw) => lower.includes(kw))) {
       const adminAuth = await requireAdmin(request);
       if (adminAuth?.error) return adminAuth.error;
-      const imageSystemPrompt =
-        "Write a concise, vivid image generation prompt suited for FLUX (max 60 words). " +
-        "Return only the prompt, no explanation, no quotes. Content to base it on: " + message;
-      const prompt = await chatWithContext(imageSystemPrompt, [
+      const prompt = await chatWithContext(IMAGE_SYSTEM_PROMPT + message, [
         { role: "user", content: message },
       ]);
       return NextResponse.json({ ok: true, type: "image-generation", prompt: prompt.trim() });
@@ -222,7 +220,7 @@ export async function POST(request) {
       .join("\n\n---\n\n");
     const language = detectLanguage(message);
     const systemPrompt = `You are RAGBAZ assistant. Be concise. Only use the provided context and never invent URLs. Respond in ${language}.${language === "Swedish" ? " Use Swedish idioms if you can." : language === "Spanish" ? " Usa modismos si puedes." : ""} If unsure, say you don't know.\n\nIf the question is about logs/debugging, explain likely meaning and next steps. Common patterns: \n- 401/403: missing admin session or auth header to WordPress GraphQL\n- 404/500 from /api/admin/*: admin session expired, retry login or check WORDPRESS URL/auth env\n- 4xx from /api/stripe: check STRIPE_SECRET_KEY / webhook\n- Fetch failed to WordPress: verify NEXT_PUBLIC_WORDPRESS_URL and auth token/app password\n- Vary header / cache: advise purge cache endpoint\n\nContext:\n${context}`;
-    const history = Array.isArray(body?.history) ? body.history : [];
+    const history = Array.isArray(body?.history) ? body.history.slice(-10) : [];
     const messages = [
       ...history.map((m) => ({ role: m.role, content: m.content })),
       { role: "user", content: message },
