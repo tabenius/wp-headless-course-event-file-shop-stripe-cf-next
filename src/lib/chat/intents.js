@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/adminRoute";
 import { chatWithContext } from "@/lib/ai";
 
 export const IMAGE_SYSTEM_PROMPT =
@@ -17,10 +16,11 @@ function makeFetch(request, origin) {
   };
 }
 
+// Auth is checked by route.js before calling any handler.
+// Return null to fall through to the next handler or RAG.
+
 export async function handleProducts(message, lower, request, origin) {
   if (!lower.includes("products") && !lower.includes("items in shop")) return null;
-  const adminAuth = await requireAdmin(request);
-  if (adminAuth?.error) return adminAuth.error;
   const fetchAdminJson = makeFetch(request, origin);
   const json = await fetchAdminJson("/api/admin/products");
   const rows = Array.isArray(json.products) ? json.products : [];
@@ -37,8 +37,6 @@ export async function handleProducts(message, lower, request, origin) {
 
 export async function handleAccess(message, lower, request, origin) {
   if (!lower.includes("access") && !lower.includes("price")) return null;
-  const adminAuth = await requireAdmin(request);
-  if (adminAuth?.error) return adminAuth.error;
   const fetchAdminJson = makeFetch(request, origin);
   const uriMatch = message.match(/\/[A-Za-z0-9\-\/]+/);
   const targetUri = uriMatch ? uriMatch[0].replace(/\/+$/, "") : "";
@@ -63,8 +61,6 @@ export async function handleAccess(message, lower, request, origin) {
 
 export async function handlePayments(message, lower, request, origin) {
   if (!lower.includes("payment") && !lower.includes("receipt")) return null;
-  const adminAuth = await requireAdmin(request);
-  if (adminAuth?.error) return adminAuth.error;
   const emailMatch = message.match(/\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/);
   const email = emailMatch ? emailMatch[0] : "";
   const url = new URL(`${origin}/api/admin/payments`);
@@ -85,8 +81,6 @@ export async function handlePayments(message, lower, request, origin) {
 export async function handleImageGen(message, lower, request, origin) {
   const imageKeywords = ["generate image", "create image", "make image", "skapa bild", "genera imagen"];
   if (!imageKeywords.some((kw) => lower.includes(kw))) return null;
-  const adminAuth = await requireAdmin(request);
-  if (adminAuth?.error) return adminAuth.error;
   const prompt = await chatWithContext(IMAGE_SYSTEM_PROMPT + message, [
     { role: "user", content: message },
   ]);

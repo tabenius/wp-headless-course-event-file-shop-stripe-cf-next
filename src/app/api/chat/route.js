@@ -32,11 +32,11 @@ export async function POST(request) {
         { role: "user", content: description || "generate a compelling product image" },
       ]);
       
-      // Update chat history
-      const updatedHistory = [...chatHistory, 
+      // Update chat history — cap at 40 entries (20 turns) to avoid unbounded KV growth
+      const updatedHistory = [...chatHistory,
         { role: "user", content: `Image prompt: ${description}` },
-        { role: "assistant", content: prompt.trim() }
-      ];
+        { role: "assistant", content: prompt.trim() },
+      ].slice(-40);
       await saveChatHistory(historyKey, updatedHistory);
       
       return NextResponse.json({
@@ -81,11 +81,11 @@ export async function POST(request) {
     ];
     const answer = await chatWithContext(systemPrompt, messages);
     
-    // Update chat history
-    const updatedHistory = [...chatHistory, 
+    // Update chat history — cap at 40 entries (20 turns) to avoid unbounded KV growth
+    const updatedHistory = [...chatHistory,
       { role: "user", content: message },
-      { role: "assistant", content: answer }
-    ];
+      { role: "assistant", content: answer },
+    ].slice(-40);
     await saveChatHistory(historyKey, updatedHistory);
 
     return NextResponse.json({
