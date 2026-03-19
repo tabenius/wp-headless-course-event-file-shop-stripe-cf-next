@@ -266,6 +266,11 @@ export default function AdminProductsTab({
               );
             }}
           />
+          <p className="text-xs text-gray-400 px-1">
+            WooCommerce and LearnPress prices are imported automatically from
+            WordPress. Use the &ldquo;Use WP price&rdquo; button to lock in a
+            price, or type a different value.
+          </p>
           <ProductSection
             label="Events"
             items={wpEvents}
@@ -311,6 +316,10 @@ export default function AdminProductsTab({
               );
             }}
           />
+          <p className="text-xs text-gray-400 px-1">
+            Event Organiser has no built-in price field &mdash; price must be
+            set manually in the config panel below.
+          </p>
           <ProductSection
             label={t("admin.shopProducts")}
             items={products}
@@ -368,6 +377,10 @@ export default function AdminProductsTab({
               );
             }}
           />
+          <p className="text-xs text-gray-400 px-1">
+            Digital file and course products have no WordPress source &mdash;
+            price is set here and stored locally.
+          </p>
           <ProductSection
             label="Other"
             items={otherCourseUris}
