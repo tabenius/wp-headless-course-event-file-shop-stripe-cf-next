@@ -237,7 +237,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
 
   return (
-    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(33_48%_44%)] border-b border-[hsl(33_42%_33%)]">
+    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(33_34%_37%)] border-b border-[hsl(33_30%_29%)]">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -245,7 +245,7 @@ export default function AdminHeader({ logoUrl }) {
               <button
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="p-2 rounded-lg bg-[hsl(33_44%_34%/0.9)] border border-white/30 text-white hover:bg-[hsl(33_48%_42%)] focus:outline-none focus:ring-2 focus:ring-white"
+                className="p-2 rounded-lg bg-[hsl(33_30%_29%/0.9)] border border-white/30 text-white hover:bg-[hsl(33_34%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
@@ -267,7 +267,7 @@ export default function AdminHeader({ logoUrl }) {
                 wordmarkOnly
                 noLetterSpacing
                 scale={1.75}
-                color="#2f9cc8"
+                color="#3ecbff"
                 outlineColor="#000000"
                 outlineWidth={1}
                 className="ml-6"

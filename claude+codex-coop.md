@@ -18,6 +18,16 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Lowered wordmark saturation/brightness by setting `RagbazLogo` color to a calmer blue (`#2f9cc8`) in the header.
 - Increased theme toggle icon size for both sun/moon states via larger icon font sizing to improve visibility while preserving the no-background/no-circle style.
 
+## 2026-03-19 (cont. 36)
+
+### Codex — header palette correction (brand vs bar)
+
+- Reversed the prior logo dimming: increased `RAGBAZ` wordmark cyan intensity to `#3ecbff` for a clearer, brighter brand tone.
+- Lowered menu bar/background saturation + brightness instead:
+  - header bg from `hsl(33 48% 44%)` to `hsl(33 34% 37%)`
+  - header border from `hsl(33 42% 33%)` to `hsl(33 30% 29%)`
+  - hamburger surface/hover adjusted to matching lower-chroma/darker tones.
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements
