@@ -120,6 +120,126 @@ export default function AdminWelcomeTab() {
           "Use the arrows or scroll to navigate the story.",
         )}
       </p>
-    </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+        {[
+          {
+            tab: "sales",
+            title: t("admin.cardSales", "Sales & receipts"),
+            body: t(
+              "admin.cardSalesBody",
+              "Monitor payments, download Stripe receipts, and keep refunds close.",
+            ),
+            icon: (
+              <svg viewBox="0 0 36 36" className="w-10 h-10">
+                <rect x="4" y="18" width="6" height="10" fill="#fed7aa" />
+                <rect x="14" y="12" width="6" height="16" fill="#fb923c" />
+                <rect x="24" y="8" width="6" height="20" fill="#f97316" />
+                <path
+                  d="M6 26l8-5 8 3 8-8"
+                  fill="none"
+                  stroke="#93c5fd"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ),
+          },
+          {
+            tab: "stats",
+            title: t("admin.cardStats", "Analytics"),
+            body: t(
+              "admin.cardStatsBody",
+              "Understand traffic, conversions, and Lighthouse lifts since the rebuild.",
+            ),
+            icon: (
+              <svg viewBox="0 0 36 36" className="w-10 h-10">
+                <circle cx="8" cy="24" r="4" fill="#ef4444" />
+                <circle cx="18" cy="18" r="4" fill="#f97316" />
+                <circle cx="28" cy="12" r="4" fill="#22d3ee" />
+                <path
+                  d="M6 18 Q18 6 30 18"
+                  fill="none"
+                  stroke="#a78bfa"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ),
+          },
+          {
+            tab: "products",
+            title: t("admin.cardShop", "Shop & catalog"),
+            body: t(
+              "admin.cardShopBody",
+              "Curate WooCommerce/LearnPress products, metadata, and prices.",
+            ),
+            icon: (
+              <svg viewBox="0 0 36 36" className="w-10 h-10">
+                <rect x="5" y="12" width="26" height="18" rx="3" fill="#312e81" />
+                <path
+                  d="M5 12l4-6h18l4 6"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M10 16h16m-16 6h12m-12 6h8"
+                  stroke="#fcd34d"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ),
+          },
+          {
+            tab: "chat",
+            title: t("admin.cardChat", "AI Assist"),
+            body: t(
+              "admin.cardChatBody",
+              "Ask about payments, access, docs, and logs with multilingual intelligence.",
+            ),
+            icon: (
+              <svg viewBox="0 0 36 36" className="w-10 h-10">
+                <path
+                  d="M4 10h28v14H12l-8 8V10z"
+                  fill="#0ea5e9"
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+                <circle cx="12" cy="18" r="2" fill="#fff" />
+                <circle cx="18" cy="18" r="2" fill="#fff" />
+                <circle cx="24" cy="18" r="2" fill="#fff" />
+              </svg>
+            ),
+          },
+        ].map((card) => (
+          <button
+            key={card.tab}
+            type="button"
+            onClick={() => {
+              if (typeof window === "undefined") return;
+              window.dispatchEvent(
+                new CustomEvent("admin:switchTab", { detail: card.tab }),
+              );
+            }}
+            className="group flex flex-col gap-3 rounded-2xl border border-white/30 bg-white/5 p-4 text-left transition hover:border-white hover:bg-white/20"
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-xs uppercase tracking-widest text-white/70">
+                {t("admin.welcomeCardGoto", "Go to")}
+              </div>
+              <div className="text-2xl text-white/70">↗</div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-white/10 p-2">{card.icon}</div>
+              <div>
+                <p className="text-lg font-semibold">{card.title}</p>
+                <p className="text-sm text-white/70">{card.body}</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+   </div>
   );
 }
