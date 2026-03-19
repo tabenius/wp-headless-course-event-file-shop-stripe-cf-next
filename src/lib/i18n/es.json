@@ -99,7 +99,16 @@
     "uploadFailed": "No se pudo guardar la imagen.",
     "uploadWpFailed": "Falló la subida a la biblioteca de WordPress.",
     "wpUrlMissing": "Falta la URL de WordPress.",
-    "wpAuthMissing": "Falta autenticación de WordPress."
+    "wpAuthMissing": "Falta autenticación de WordPress.",
+    "rateLimited": "Demasiadas solicitudes. Espera un momento antes de intentarlo de nuevo."
+  },
+  "contactApi": {
+    "requiredFields": "Todos los campos son obligatorios.",
+    "emailSendFailed": "No se pudo enviar el correo en este momento.",
+    "notConfigured": "El envío de correo no está configurado. Define RESEND_API_KEY y RESEND_FROM_EMAIL.",
+    "sendError": "No se pudo enviar el mensaje en este momento.",
+    "sent": "¡Gracias! Te responderemos pronto.",
+    "subject": "Formulario de contacto: {name}"
   },
   "adminLogin": {
     "title": "Inicio admin",

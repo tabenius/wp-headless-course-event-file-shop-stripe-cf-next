@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import site from "@/lib/site";
+import { t } from "@/lib/i18n";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 function getTargetEmail() {
   return (
@@ -12,6 +14,15 @@ function getTargetEmail() {
 
 export async function POST(request) {
   try {
+    const ip = getClientIp(request);
+    const rl = await checkRateLimit("contact", ip, 5);
+    if (rl.limited) {
+      return NextResponse.json(
+        { ok: false, error: t("apiErrors.rateLimited") },
+        { status: 429 },
+      );
+    }
+
     const contentType = request.headers.get("content-type") || "";
     let body;
     if (contentType.includes("application/json")) {
@@ -25,7 +36,7 @@ export async function POST(request) {
     const message = (body?.message || "").trim();
     if (!name || !email || !message) {
       return NextResponse.json(
-        { ok: false, error: "Alla fält krävs." },
+        { ok: false, error: t("contactApi.requiredFields") },
         { status: 400 },
       );
     }
@@ -36,9 +47,9 @@ export async function POST(request) {
       const payload = {
         from: process.env.RESEND_FROM_EMAIL,
         to: [to],
-        subject: `Kontaktformulär: ${name}`,
+        subject: t("contactApi.subject").replace("{name}", name),
         reply_to: email,
-        text: `Namn: ${name}\nE-post: ${email}\n\n${message}`,
+        text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
       };
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -52,29 +63,22 @@ export async function POST(request) {
         const errText = await res.text().catch(() => "");
         console.error("Resend error:", res.status, errText);
         return NextResponse.json(
-          { ok: false, error: "Kunde inte skicka e-post just nu." },
+          { ok: false, error: t("contactApi.emailSendFailed") },
           { status: 502 },
         );
       }
-      return NextResponse.json({
-        ok: true,
-        message: "Tack! Vi återkommer snarast.",
-      });
+      return NextResponse.json({ ok: true, message: t("contactApi.sent") });
     }
 
-    // Fallback: mailto link guidance
+    // Fallback: email not configured
     return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "E-postleverans är inte konfigurerad. Ange RESEND_API_KEY och RESEND_FROM_EMAIL.",
-      },
+      { ok: false, error: t("contactApi.notConfigured") },
       { status: 500 },
     );
   } catch (error) {
     console.error("Contact form error:", error);
     return NextResponse.json(
-      { ok: false, error: "Kunde inte skicka meddelandet just nu." },
+      { ok: false, error: t("contactApi.sendError") },
       { status: 500 },
     );
   }

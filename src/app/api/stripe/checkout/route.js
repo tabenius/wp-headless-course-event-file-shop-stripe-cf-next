@@ -8,6 +8,7 @@ import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
 import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
 import { createTicket } from "@/lib/supportTickets";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const SETUP_TTL = 86400; // 24 hours
 
@@ -45,6 +46,15 @@ async function sendSetPasswordEmail(email, origin) {
 }
 
 export async function POST(request) {
+  const ip = getClientIp(request);
+  const rl = await checkRateLimit("checkout", ip, 10);
+  if (rl.limited) {
+    return NextResponse.json(
+      { ok: false, error: t("apiErrors.rateLimited") },
+      { status: 429 },
+    );
+  }
+
   const session = await auth();
   let userEmail = session?.user?.email || "";
 
