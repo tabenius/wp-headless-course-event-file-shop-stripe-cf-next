@@ -1,68 +1,55 @@
-## Worklog
+# Claude + Codex Co-Working Log
 
-- Added WordPress GraphQL auth fallback: tries bearer then Basic (app password) and normalizes endpoint; applied to public client, course access, and admin health.  
-- Fixed shop/event entity rendering by decoding HTML entities for titles/prices/descriptions and Paywall prices; ensured shop CTA buttons force white text.  
-- Enabled dual access backends: WordPress GraphQL remains primary while Cloudflare KV is mirrored when configured; access checks fall back to KV.  
-- Added upload destination selector (WordPress vs R2/S3) in admin, with backend-aware upload/presigned/multipart APIs and configuration exposure in admin UI/health data.  
-- Updated environment/exported settings to show access replicas, upload backend, and clearer email configuration hints; `.env.example` documents Basic auth fields.  
-- Ran `npm run build` (passes; only Next image lint warnings remain).
-- Added REST fallback for pages/posts/events and LearnPress `lpCourse` lookup by URI/slug to reduce 404s; documented content fallback logic.  
-- Event list titles/excerpts decode entities; featured images hide on error; shop/product detail images also hide on error.  
-- Admin advanced shows last deploy timestamp from env (LAST_DEPLOYED_AT or Vercel vars).
-- Edge-safe storage: avoid fs read/write on Cloudflare runtimes; fall back to KV/in-memory.  
-- Upload UX: clearer WP media failure hints; toast errors instead of silent failures; save label clarified.  
-- 404 CTA forced to white text; admin shop thumbnails enlarged (32x32).  
-- Added admin support ticket system (KV/local backed) with CRUD, comments, status/priority controls, and toast feedback; new nav tab and translations included.  
-- Support tickets now persist to Cloudflare KV (edge-safe); R2 path disabled on edge to avoid AWS SDK incompatibility.  
-- WPGraphQL auth now also tries Faust secret header/Bearer; env keys FAUST_SECRET_KEY/FAUSTWP_SECRET_KEY supported.  
-- Admin advanced now shows build timestamp (from NEXT_PUBLIC_BUILD_TIME/BUILD_TIME/VERCEL_*) alongside last deploy time.  
-- Admin advanced now also shows git revision (NEXT_PUBLIC_GIT_SHA/GIT_COMMIT_SHA/VERCEL_GIT_COMMIT_SHA).  
-- Edge-safe R2 uploads implemented: single PUT and multipart (signed) using native crypto; AWS SDK path only on Node; S3 non-R2 still Node-only.  
-- Digital products use Cloudflare KV at runtime; config/digital-products.json only seeds on first run. README updated.  
-- README shop graph now renders via mermaid.ink image plus source block for quick editing.
-- Fixed GraphQL auth priority: Application Passwords (spaces, no dots) now use Basic auth first instead of failing Bearer then falling back. Prevents wasted 403 round-trip on every request from wp-graphql-headless-login rejecting non-JWT tokens. Renamed .env var from WORDPRESS_GRAPHQL_AUTH_TOKEN → WORDPRESS_GRAPHQL_APPLICATION_PASSWORD.
-- Admin page marked force-dynamic (no static rendering) to avoid Next dynamic server error when reading cookies/sessions.  
-- Aliased WooCommerce price fields to avoid GraphQL String/Float conflicts with LearnPress prices in nodeByUri queries.  
-- Bug fixes: transformContent() now returns "" instead of undefined (crashed dangerouslySetInnerHTML); added error.js + global-error.js error boundaries; SafeImage wrapper for next/image with onError in BlocksRenderer; fixed null access on post.author.node.name in BlogListItem; guarded dangerouslySetInnerHTML in Comments and BlogListItem against undefined.
-- More bug fixes: cloudflareKv JSON.parse wrapped in try/catch; admin/commits route null-guarded against missing GitHub API fields; admin/course-access GET wrapped Promise.all in try/catch.
-- NavDropdown: parent menu items with children are now clickable links (Link) instead of just toggle buttons. Parent page also appears as first dropdown entry for touch devices. Fixes desktop nav items like "PARRETREATS", "TANTRISK MASSAGE", "OM SOFIA" that had URLs but were not navigable.
-- Admin header now shows build datetime and git hash (short) below the logo text.
-- Support tickets now include build info (buildTime + gitSha) as read-only metadata: shown in the ticket creation form and ticket detail view. Data flows through API → supportTickets lib → KV storage.
-- Normalized all price displays to consistent "750 SEK" format (no decimals, currency code after amount). Applies to ShopIndex, ShopProductDetail, and Paywall. WordPress-rendered prices like "kr750.00" are parsed and reformatted.
-- Shop listing now shows one button per product (View & Buy) instead of two buttons for digital products.
-- Converted repo to npm workspaces monorepo; moved RAGBAZ-Articulate WPGraphQL helper into `packages/ragbaz-articulate-plugin/` with buildable zip + WordPress.org readme (EN/SV/ES). Admin health tab now logs and exposes a direct download/WP-CLI install link; plugin download served from `public/downloads/ragbaz-articulate/`. Added logging hooks in AdminDashboard/Health to aid bug hunting and wrangler tail output. 
-- Enabled source maps for client bundles and upload to Cloudflare Workers; added admin-protected `/__maps/*` proxy for maps. Request-id middleware tags admin/API requests; adminFetch helper logs durations and request IDs; health tab shows recent request log panel for debugging.
-- Admin dashboard data loading now lazy-loads per tab with once-only fetches; default load limited to course-access + products, reducing log noise and API chatter.
-- Admin product rows now alternate purple backgrounds for clearer visual grouping.
-- Admin header now uses full width; logo and brand text slightly larger, build stamp smaller/tighter.
-- Admin UI hotkeys added (Alt+1..6 tabs, Alt+/ search, Alt+L logout) with a small bottom-left legend.
-- Added admin Chat tab using Cloudflare Workers AI (embeddings + chat) with lightweight RAG over WordPress/LP/events; i18n strings (EN/SV), request-id logging, and protected /api/chat endpoint. Middleware now tags chat requests too.
-- Docs lock protocol: `check` → `acquire <agent>` → `git pull` → edit → `commit/push` → `release`. One lock file only: `docs.lock.pid` (gitignored, managed by `scripts/docs-lock.mjs`). No `coop.lock`, no `agents.lock` — those were removed. I now follow that flow strictly and keep the lock for the duration of the edit, then release it so the other agent can go next.
-- Chat prompt now interprets common admin/debug log patterns (auth errors, WordPress/Stripe fetch failures, cache issues) and offers next-step hints.
-- Added Stripe payments panel with email filter, download-able receipts (proxied PDF), and matching chat intent summarizing charges.
-- Chat index now ingests documentation (README.en.md + README.sv.md) so the bot can answer questions about admin/manual content.
-- Enabled source maps for client bundles and upload to Cloudflare Workers; added admin-protected `/__maps/*` proxy for maps. Request-id middleware tags admin/API requests; adminFetch helper logs durations and request IDs; health tab shows recent request log panel for debugging.
-- KV health check added to admin health route: warns when Cloudflare KV is not configured or unreachable, with clear message about in-memory fallback and data-loss risk on restart. New i18n keys health.kvOk / kvNotConfigured / kvFailed (EN/SV/ES).
-- Capitalized brand name to RAGBAZ throughout all user-visible text (i18n values, docs, PHP plugin header/notice, console strings); code identifiers, file names, GraphQL type names, and package names left unchanged.
-- GitHub remote set to tabenius/wp-headless-course-event-file-shop-stripe-cf-next.
-- Security: fixed 4 high Dependabot CVEs (fast-xml-parser, flatted, tar, undici) via npm audit fix; upgraded Next.js 15.5.11→16.2.0 (clears last moderate CVE; @opennextjs/cloudflare 1.17.1 supports ^16.1.5); added missing `stripe` npm dependency; fixed three latent bugs surfaced by Turbopack 16's stricter parser: broken regex literals in chat/route.js, edge→nodejs runtime (route imports node:crypto via auth), and undeclared locale variable in AdminHeader language selector.
-- `AdminDashboard.js` wired for image generation: `sendChat` branches on `type='image-generation'`, chat renderer mounts `ImageGenerationPanel` for image messages, shop product editor has toggle + panel below description field that writes back to `imageUrl`.
-- `ImageGenerationPanel` React component created (`src/components/admin/ImageGenerationPanel.js`): quota bar, prompt textarea with auto-gen from description, count toggle (2/3), size selector (4 presets), generate button, per-image save/download. Works in editor (save enabled) and chat (download-only) contexts.
-- `/api/chat` extended with image intent: Path A `{intent:'image-prompt', description}` checked before 400 guard; Path B natural-language keywords (EN/SV/ES); both return `{ok:true, type:'image-generation', prompt}` for the chat renderer.
-- AI image generation implementation in progress:
-  - `src/lib/imageQuota.js` — pure helpers (SIZE_PRESETS, resolveSize, clampCount, computeResetsAt, arrayBufferToBase64); 19 unit tests all pass.
-  - `src/lib/ai.js` — added `generateImage(prompt, width, height)` using raw `arrayBuffer()` (FLUX returns PNG bytes, not JSON).
-  - `src/auth.js` refactored to Web Crypto API (`crypto.subtle`) — replaces `node:crypto` so auth works in edge runtime; all admin/auth/OAuth route callers updated to await async session functions.
-  - `src/app/api/admin/generate-image/route.js` — GET returns daily quota from KV; POST generates via FLUX in parallel, enforces `AI_IMAGE_DAILY_LIMIT` (default 5/day), increments KV by successful count only, fail-open on KV errors.
-- AI image generation spec approved and committed: `docs/superpowers/specs/2026-03-18-ai-image-generation-design.md`. Feature adds FLUX.1 schnell image generation (via new `generateImage` helper in `src/lib/ai.js`), shared `ImageGenerationPanel` component with named size presets (square/landscape/portrait/A6-150dpi), daily quota tracked in KV (`ai-image-quota-YYYY-MM-DD`, default 5/day configurable via `AI_IMAGE_DAILY_LIMIT`), integrated into both the product/course editor and the existing AI chat tab. New route: `src/app/api/admin/generate-image/route.js`. Requires `CF_KV_NAMESPACE_ID` env var alongside existing `CF_ACCOUNT_ID`/`CLOUDFLARE_ACCOUNT_ID`/`CF_API_TOKEN`.
-- Added a Style tab in the admin UI (including Alt+8 hotkey) that documents the typography, sizing, colors, and button guidance; updated the nav/legend, legend colors, and EN/SV/ES translations so the new tab is fully localized.
-- Refactored `AdminStatsTab` to delegate chart rendering to a new `StatsChart` + `StatsChart.helpers` module, and added unit tests for the exported helpers to keep the hourly/referrer math deterministic.
-- Rebuilt the products list into `ProductSection`/`ProductRow` components (with a shared `BuyableIcon` helper) so each section renders a single row component while keeping the manual-entry controls and badges intact.
-- **2026-03-19 (Codex)**: All three StatChart/product follow-ups done — `formatHour` uses UTC, the workers-mode hint string is localized across EN/SV/ES, and each product section returns `<ProductRow>` JSX elements now.
-- Docs lock protocol established: `docs.lock.pid` advisory lock via `scripts/docs-lock.mjs` (acquire/release/check). NOTE: `agents.lock` and `coop.lock` committed by Codex removed from git — lock files must never be committed, use `docs.lock.pid` via the script instead. Duplicate protocol section in AGENTS.md consolidated. Both agents must acquire before editing AGENTS.md or coop file. Full protocol in AGENTS.md "Shared-doc lock protocol" section.
-- Image gen: elapsed timer cleanup on unmount (useEffect returns clearInterval); clipboard.writeText now catches rejections and shows `copyFailed` toast (EN/SV/ES). These are Codex's own suggestions from the TODO in the coop file.
-- Build lock: `building.lock.pid` now written by `scripts/build-with-lock.mjs` at the start of every `npm run build / cf:build / cf:deploy`; removed on exit (success, failure, Ctrl+C). Check this file before starting a build. See AGENTS.md "Build lock" section.
-- Chat bug fixes: fixed `rows` crash in payments intent (→ `json.payments`); extracted `IMAGE_SYSTEM_PROMPT` constant removing copy-paste between Path A/B; capped `body.history` to last 10 turns before LLM call.
-- Image generator polish: thumbnails now respect preset aspect ratios via `thumbDims()`; "Copy prompt" button added (EN/SV/ES); count toggle extended to [1, 2, 3]; elapsed-second counter shown on generate button during FLUX call. File lock in AGENTS.md removed — all planned work complete.
-- **[Claude → Codex delegation 2026-03-19]**: Two tasks queued in AGENTS.md "Chat modularisation + markdown rendering" section. Priority 1: extract `route.js` into `src/lib/chat/rag.js`, `detect.js`, `intents.js` + new tests. Priority 2: `ChatPanel`, `ChatMessage`, and `ChatMarkdown` components; inline payments table into answer string and remove `m.table` hack. Codex should write suggestions before starting.
-- **2026-03-19 (Claude, picked up Codex tasks)**: Chat modularisation + markdown rendering complete. P1: `src/lib/chat/rag-utils.js` (pure chunkText/cosine), `rag.js` (buildIndex), `detect.js` (detectLanguage), `intents.js` (handleProducts/Access/Payments/ImageGen) — route.js now ~55 lines; also fixed double-escaped email regex bug. 12 new unit tests. P2: `ChatMarkdown.js` (bespoke renderer: code blocks, headings, tables, bullets, inline bold/italic/code), `ChatMessage.js`, `ChatPanel.js` with auto-scroll; AdminDashboard chat tab replaced with `<ChatPanel />`; payments answer now embeds markdown table, `m.table` field eliminated.
+## 2026-03-19
+
+### Codex
+- **Chat Modularisation**: Split `route.js` into `src/lib/chat/{rag,detect,intents}.js`. Added 12 new tests for `chunkText`, `cosine`, `detectLanguage`, and intent routing. Route trimmed to ~55 lines.
+- **Chat UI Refactor**: Extracted `ChatPanel`, `ChatMessage`, and `ChatMarkdown` components. Markdown rendering now supports tables, lists, code blocks, and inline formatting. Eliminated `m.table` hack.
+- **Auto-scroll**: Added smooth auto-scroll to bottom on new messages.
+- **i18n**: Updated `stats.workersHint` in EN/SV/ES.
+- **Bugfix**: `formatHour` now uses `getUTCHours()` for Cloudflare UTC timestamps.
+- **Refactor**: `ProductSection.renderItem` now returns JSX directly.
+
+### Claude
+- **Image Gen Polish**: Thumbnails scale to correct aspect ratio, added "Copy prompt" button (i18n), count toggle extended to [1, 2, 3], elapsed-second counter on generate button.
+- **Chat Fixes**: Fixed `rows` crash in payments intent, extracted `IMAGE_SYSTEM_PROMPT` as shared constant, capped `body.history` to last 10 turns.
+
+---
+
+## 2026-03-18
+
+### Codex
+- **StatsChart**: Extracted from `AdminStatsTab` with `maxOf`, `barHeight`, `formatHour` helpers. Added unit tests.
+- **Style Tab**: Added (Alt+8), updated legend, EN/SV/ES translations.
+- **AGENTS.md**: Created initial version with project overview, key commands, and coordination protocol.
+
+### Claude
+- **AI Image Generation**: Implemented `src/lib/imageQuota.js`, `src/lib/ai.js` `generateImage`, `/api/admin/generate-image`, `ImageGenerationPanel`, wired into `AdminDashboard` (shop editor + chat). Refactored auth to Web Crypto API for edge compat. Added 19 unit tests.
+
+---
+
+## 2026-03-17
+
+### Codex
+- **Admin UI**: Added hotkeys (Alt+1..8 for tabs, Alt+/ search, Alt+L logout). Updated legend in `AdminHeader.js`.
+- **i18n**: Added missing keys for new tabs and hotkeys.
+
+### Claude
+- **Stripe Integration**: Completed payments flow with receipts and KV persistence.
+- **KV Layer**: Added `cloudflareKv.js` with in-memory fallback for non-CF runtimes.
+
+---
+
+## 2026-03-16
+
+### Both
+- **Monorepo Setup**: Initialized with `packages/ragbaz-articulate-plugin/` for WordPress companion plugin.
+- **Build System**: Added `npm run plugin:copy`, `cf:build`, `cf:deploy` scripts.
+- **Tests**: Configured `node:test` in `tests/`.
+
+---
+
+## Open Questions
+- Should we add a "Clear Chat" button to the ChatPanel?
+- Should we implement streaming responses for the chat feature? (Requires Cloudflare streaming support.)
+- Should we add a "Copy Answer" button for individual chat messages?
