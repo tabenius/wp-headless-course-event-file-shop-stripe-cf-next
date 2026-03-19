@@ -3,8 +3,8 @@ const EMBEDDING_MODEL =
 const CHAT_MODEL = process.env.CF_CHAT_MODEL || "@cf/meta/llama-2-7b-chat-int8";
 
 function cfEndpoint(model) {
-  const accountId = process.env.CF_ACCOUNT_ID;
-  if (!accountId) throw new Error("CF_ACCOUNT_ID missing");
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  if (!accountId) throw new Error("CLOUDFLARE_ACCOUNT_ID missing");
   return `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
 }
 
