@@ -352,6 +352,15 @@ function WelcomeCards({ showRevisionBadge }) {
       tone: "from-sky-500/20 via-cyan-200/10 to-blue-200/10",
     },
     {
+      tab: "storage",
+      title: t("admin.navStorage", "Storage"),
+      body: t(
+        "admin.cardStorageBody",
+        "Inspect bucket files and upload paths before attaching digital products.",
+      ),
+      tone: "from-slate-500/20 via-slate-200/10 to-gray-200/10",
+    },
+    {
       tab: "products",
       title: t("admin.cardShop", "Shop & catalog"),
       body: t(
@@ -370,15 +379,12 @@ function WelcomeCards({ showRevisionBadge }) {
       tone: "from-emerald-500/20 via-emerald-200/10 to-cyan-200/10",
     },
     {
-      tab: "storage",
-      title: t("admin.navStorage", "Storage"),
-      body: "Inspect bucket files and upload paths before attaching digital products.",
-      tone: "from-slate-500/20 via-slate-200/10 to-gray-200/10",
-    },
-    {
       tab: "support",
       title: t("admin.navSupport", "Support"),
-      body: "Track issues, tickets, and updates in one place.",
+      body: t(
+        "admin.cardSupportBody",
+        "Track issues, tickets, and updates in one place.",
+      ),
       tone: "from-rose-500/20 via-pink-200/10 to-fuchsia-200/10",
     },
   ];
@@ -639,7 +645,7 @@ export default function AdminWelcomeTab({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-widest text-indigo-700">
-              {t("admin.welcomeSubtitle", "RAGBAZ Articulate story")}
+              {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
             </p>
             <h2 className="text-2xl font-semibold text-slate-900">
               {t("admin.welcomeHeadline", "Welcome to your new control room")}
@@ -666,7 +672,7 @@ export default function AdminWelcomeTab({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-indigo-200">
-            {t("admin.welcomeSubtitle", "RAGBAZ Articulate story")}
+            {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
           </p>
           <h2 className="text-2xl font-semibold">
             {t("admin.welcomeHeadline", "Welcome to your new control room")}

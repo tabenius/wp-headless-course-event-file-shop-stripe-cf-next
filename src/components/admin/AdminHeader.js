@@ -39,19 +39,14 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("stats"),
     },
     {
-      label: t("admin.navProducts"),
-      tab: "products",
-      hotkey: getAdminTabHotkeyLabel("products"),
-    },
-    {
       label: t("admin.navStorage"),
       tab: "storage",
       hotkey: getAdminTabHotkeyLabel("storage"),
     },
     {
-      label: t("admin.navSupport"),
-      tab: "support",
-      hotkey: getAdminTabHotkeyLabel("support"),
+      label: t("admin.navProducts"),
+      tab: "products",
+      hotkey: getAdminTabHotkeyLabel("products"),
     },
     {
       label: t("admin.navChat"),
@@ -72,6 +67,11 @@ function getNavItems() {
       label: t("admin.navSandbox"),
       tab: "info",
       hotkey: getAdminTabHotkeyLabel("info"),
+    },
+    {
+      label: t("admin.navSupport"),
+      tab: "support",
+      hotkey: getAdminTabHotkeyLabel("support"),
     },
     { href: "/admin/docs", label: t("admin.documentation") },
   ];
@@ -227,7 +227,7 @@ export default function AdminHeader({ logoUrl }) {
               </span>
             </button>
             <Link
-              href="/admin"
+              href="/admin#/welcome"
               className="flex items-center gap-3 text-white text-sm"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >

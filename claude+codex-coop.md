@@ -244,3 +244,22 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Sandbox → Info**: Renamed the tab label to Info in EN/SV/ES, remapped hotkey tab ID to `info` (`Ctrl+Alt+7`), and kept Info as the last tab in order.
 - **Torus banner updates**: Increased rotation speed, brightened torus orange, reduced canvas height, changed cyan tag text to `Info`, explicitly uses the new `RagbazLogo`, and made banner background theme-matched via `--admin-torus-bg` (light/admin and gruvbox variants).
 - **Validation**: `npm test -- --runInBand` passed (14/14). `npm run lint` passes with existing `img` optimization warnings only (no errors).
+
+---
+
+## 2026-03-19 (cont. 7)
+
+### Codex — control-room routing, StoreFront naming, card i18n, and order alignment
+
+- **Control-room shortcut target**: Updated the header link so clicking the logo/control-room area always lands in the control panel entry point (`/admin#/welcome`) instead of generic `/admin`.
+- **Welcome subtitle naming**: Replaced the “story/berättelse/historia” subtitle label with `RAGBAZ Articulate StoreFront` in EN/SV/ES.
+- **Welcome card translations completed**: Removed hardcoded English text for Storage/Support card bodies and added locale keys across all three languages:
+  - `admin.cardStorageBody`
+  - `admin.cardSupportBody`
+- **Ordering requested by user applied**:
+  - Drawer/main tab order now uses: `Welcome → Sales → Stats (analysis) → Storage → Products → Chat → Health → Style → Info → Support`
+  - Support is last.
+  - Storage is before Products.
+  - Stats/Analysis appears before Support.
+  - Welcome card ordering was adjusted to match the requested section flow.
+- **Validation**: `npm test -- --runInBand` remains green (14/14).

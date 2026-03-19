@@ -234,6 +234,7 @@ The following features have been implemented for the chat feature:
 - **2026-03-19 (Codex)**: Added hash-based admin tab routing (`/admin#/welcome`, `/admin#/sales`, etc.) with backward alias `#/sandbox -> #/info`, stabilized impress.js hash behavior so welcome slides no longer pollute URL after exit, and fixed admin scroll lock by tearing down impress viewport classes/styles on exit/unmount.
 - **2026-03-19 (Codex)**: Tightened responsive admin layout containers (`min-w-0`, responsive grids, wrapped headers/toolbars) so tabs fit viewport width and remain scrollable without hidden overflow traps.
 - **2026-03-19 (Codex)**: Renamed Sandbox to Info (tab/hotkey routing/i18n), moved Info to last in tab order, simplified hamburger hotkey legend into a single prominent Ctrl+Alt block, and updated the torus banner (faster rotation, brighter orange, lower height, Info label, theme-matched background, explicit new logo usage).
+- **2026-03-19 (Codex)**: Updated the header control-room shortcut to open `/admin#/welcome`, replaced the welcome subtitle with `RAGBAZ Articulate StoreFront`, translated previously hardcoded Welcome card text (Storage/Support) in EN/SV/ES, and aligned drawer/card ordering to `Welcome → Sales → Stats → Storage → Products → Chat → Health → Style → Info → Support`.
 - **2026-03-19 (Codex)**: Chat modularisation, markdown rendering, i18n, and bugfixes.
 - **2026-03-19 (Claude)**: Image generator polish and chat fixes.
 - **2026-03-18 (Both)**: Admin UI, i18n, and AGENTS.md setup.
