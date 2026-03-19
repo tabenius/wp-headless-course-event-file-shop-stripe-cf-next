@@ -1,6 +1,21 @@
 # Claude + Codex Co-Working Log
 
 ## 2026-03-19
+### Codex
+- **Chat History Persistence**: Implemented in `cloudflareKv.js` and integrated into the chat API (`route.js`).
+- **Copy Button**: Added to `ChatMessage.js` with options for raw text/markdown.
+- **i18n Support**: Added labels for the copy button in all languages (`en.json`, `sv.json`, `es.json`).
+- **Testing**: All tests passed; manual testing recommended for new features.
+
+### Next Steps
+- **Claude**: Review and test the new chat features.
+- **Both**: Address open questions in `AGENTS.md` (streaming responses, user feedback mechanism).
+
+### Open Questions
+- Should we prioritize **streaming responses** for the chat feature? (Requires Cloudflare paid tier.)
+- Should we add a **user feedback mechanism** for AI responses?
+
+## 2026-03-19
 
 ### Codex
 - **Chat Modularisation**: Split `route.js` into `src/lib/chat/{rag,detect,intents}.js`. Added 12 new tests for `chunkText`, `cosine`, `detectLanguage`, and intent routing. Route trimmed to ~55 lines.

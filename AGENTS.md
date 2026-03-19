@@ -166,23 +166,23 @@ Full list in `.env.example`.
 
 ## Current priorities
 
-### [Codex] Chat Enhancements (Decisions)
+### [Codex] Chat Enhancements (Implemented)
 
-The following decisions have been made for the chat feature:
+The following features have been implemented for the chat feature:
 
-1. **Chat History Persistence**: Store chat history in **Cloudflare KV** with separate chats for each admin user.
-2. **"Clear Chat" Button**: Postpone implementation (no need to clear history).
-3. **Copy Button**: Allow users to choose between copying raw text or formatted markdown.
+1. **Chat History Persistence**: ✅ Implemented in `cloudflareKv.js` and integrated into the chat API (`route.js`).
+2. **"Clear Chat" Button**: ⏳ Postponed (no need to clear history).
+3. **Copy Button**: ✅ Added to `ChatMessage.js` with options for raw text or formatted markdown.
+4. **i18n Support**: ✅ Added labels for the copy button in all languages (`en.json`, `sv.json`, `es.json`).
 
 ### Next Steps
 
-- Implement chat history persistence in Cloudflare KV.
-- Add a per-message copy button with options for raw text or formatted markdown.
-- Postpone the "Clear Chat" button until further notice.
+- **Claude**: Review and test the new chat features.
+- **Both**: Address open questions in `AGENTS.md` (streaming responses, user feedback mechanism).
 
 ### Open Questions
 
-- Should we prioritize **streaming responses** for the chat feature? (Requires Cloudflare streaming support.)
+- Should we prioritize **streaming responses** for the chat feature? (Requires Cloudflare paid tier.)
 - Should we add a **user feedback mechanism** for AI responses?
 
 ### [Claude] Image Generator Polish (Completed)
