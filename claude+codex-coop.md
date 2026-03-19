@@ -732,3 +732,17 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Non-story mode (card dashboard intro header)
 - Validation:
   - `npx eslint src/components/admin/AdminWelcomeTab.js src/components/admin/AdminHeader.js`
+
+---
+
+## 2026-03-19 (cont. 26)
+
+### Codex — orange header/menu palette
+
+- Re-themed admin header/menu bar from blue to orange:
+  - Top bar background/border moved to `bg-orange-700` / `border-orange-800`.
+  - Hamburger and theme buttons moved to orange variants.
+  - Drawer shell + hotkey card + legend text + language select panel switched from indigo tokens to orange tokens for consistent chroma.
+- Goal: satisfy requested orange menu identity while preserving existing contrast and layout behavior.
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js`

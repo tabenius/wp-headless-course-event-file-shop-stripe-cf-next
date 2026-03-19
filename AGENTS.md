@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Updated admin menu bar palette from blue to orange (`bg-orange-*`), including hamburger/theme controls and drawer shell/hotkey surfaces, for a consistent orange navigation/header appearance.
 - **2026-03-19 (Codex)**: Removed `RAGBAZ Articulate StoreFront` text from the Welcome screen content area (story + non-story variants) so branding is only shown in the menu bar as requested.
 - **2026-03-19 (Codex)**: Fine-tuned menu lockup alignment by shifting the `RAGBAZ` wordmark ~14px to the right in `AdminHeader` (`ml-[14px]`) to better align with the `ARTICULATE STOREFRONT` subtitle line.
 - **2026-03-19 (Codex)**: Hardened admin chunk-load failure recovery in `src/app/admin/error.js`: detect `ChunkLoadError`/`Failed to load chunk`, auto-trigger a single cache-busted reload (`/admin?reload=<ts>`), and make manual reload use the same cache-busting path to avoid stale bundle loops after deploy.

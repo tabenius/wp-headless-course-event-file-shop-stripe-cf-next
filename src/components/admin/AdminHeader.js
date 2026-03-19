@@ -231,7 +231,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
 
   return (
-    <header className="w-full sticky top-0 z-40 bg-indigo-950 border-b border-indigo-900">
+    <header className="w-full sticky top-0 z-40 bg-orange-700 border-b border-orange-800">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -239,7 +239,7 @@ export default function AdminHeader({ logoUrl }) {
               <button
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="p-2 rounded-lg bg-indigo-900/90 border border-white/30 text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-white"
+                className="p-2 rounded-lg bg-orange-800/90 border border-white/30 text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
@@ -248,7 +248,7 @@ export default function AdminHeader({ logoUrl }) {
                   <span className="block h-0.5 w-4 bg-white" />
                 </span>
               </button>
-              <span className="mt-1 text-[9px] font-medium tracking-wide text-indigo-200">
+              <span className="mt-1 text-[9px] font-medium tracking-wide text-orange-100">
                 Ctrl+Alt+M
               </span>
             </div>
@@ -273,7 +273,7 @@ export default function AdminHeader({ logoUrl }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-full bg-indigo-900/70 border border-white/30 text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-white"
+              className="p-2 rounded-full bg-orange-800/70 border border-white/30 text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-white"
               aria-label={
                 adminTheme === "gruvbox"
                   ? t("admin.themeLight", "Switch to light theme")
@@ -305,21 +305,21 @@ export default function AdminHeader({ logoUrl }) {
                 className="fixed inset-0 top-14 z-40 bg-slate-950/55 backdrop-blur-[1px]"
                 onClick={() => setMenuOpen(false)}
               />
-              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-indigo-950/98 p-4 shadow-2xl">
-                <div className="mb-3 rounded-2xl border border-white/15 bg-indigo-900/70 p-3 text-indigo-100">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-indigo-200">
+              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-orange-900/98 p-4 shadow-2xl">
+                <div className="mb-3 rounded-2xl border border-white/15 bg-orange-800/70 p-3 text-orange-100">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-orange-200">
                     {t("admin.hotkeys", "Hotkeys")}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     <kbd className="rounded-lg border border-white/35 bg-white/10 px-3 py-1 text-base font-semibold tracking-wide text-white">
                       Ctrl
                     </kbd>
-                    <span className="text-lg text-indigo-200">+</span>
+                    <span className="text-lg text-orange-200">+</span>
                     <kbd className="rounded-lg border border-white/35 bg-white/10 px-3 py-1 text-base font-semibold tracking-wide text-white">
                       Alt
                     </kbd>
                   </div>
-                  <p className="mt-2 text-[11px] text-indigo-200/95">
+                  <p className="mt-2 text-[11px] text-orange-200/95">
                     {t(
                       "admin.hotkeyHintCompact",
                       "Use Ctrl + Alt with the letter below.",
@@ -341,7 +341,7 @@ export default function AdminHeader({ logoUrl }) {
                             <span className="font-semibold text-white">
                               {keyLabel}
                             </span>
-                            <span className="text-indigo-100/95">
+                            <span className="text-orange-100/95">
                               {item.label}
                             </span>
                           </span>
@@ -376,7 +376,7 @@ export default function AdminHeader({ logoUrl }) {
                     {docItem.label}
                   </Link>
                 )}
-                <div className="mt-4 space-y-2 text-xs text-indigo-100">
+                <div className="mt-4 space-y-2 text-xs text-orange-100">
                   <div className="flex items-center gap-2">
                     <label className="font-semibold">{t("admin.languageLabel")}</label>
                     <select
@@ -388,7 +388,7 @@ export default function AdminHeader({ logoUrl }) {
                         router.refresh();
                         setMenuOpen(false);
                       }}
-                      className="rounded border border-white/20 bg-indigo-900 px-2 py-1 text-xs text-white"
+                      className="rounded border border-white/20 bg-orange-800 px-2 py-1 text-xs text-white"
                     >
                       <option value="sv">Svenska</option>
                       <option value="en">English</option>
@@ -401,7 +401,7 @@ export default function AdminHeader({ logoUrl }) {
                     className="flex items-center justify-between w-full text-white"
                   >
                     <span>{t("admin.healthCheck")}</span>
-                    <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-indigo-100">
+                    <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-orange-100">
                       {healthHotkey}
                     </kbd>
                   </button>
