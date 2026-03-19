@@ -479,10 +479,10 @@ export default function AdminDashboard() {
       const digit = e.code?.startsWith("Digit") ? e.code.slice(5) : null;
       const tabMap = {
         0: "welcome",
-        1: "stats",
-        2: "shop",
-        3: "access",
-        4: "sales",
+        1: "sales",
+        2: "stats",
+        3: "shop",
+        4: "access",
         5: "support",
         6: "health",
         7: "advanced",
@@ -1447,10 +1447,10 @@ export default function AdminDashboard() {
         <div className="space-y-0.5">
           {[
             ["^⌥0", "Welcome"],
-            ["^⌥1", "Stats"],
-            ["^⌥2", "Shop"],
-            ["^⌥3", "Access"],
-            ["^⌥4", "Sales"],
+            ["^⌥1", "Sales"],
+            ["^⌥2", "Stats"],
+            ["^⌥3", "Shop"],
+            ["^⌥4", "Access"],
             ["^⌥5", "Support"],
             ["^⌥6", "Health"],
             ["^⌥7", "Advanced"],

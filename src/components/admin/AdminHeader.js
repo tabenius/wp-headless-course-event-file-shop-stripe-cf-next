@@ -8,9 +8,9 @@ import { t, getLocale, setLocale } from "@/lib/i18n";
 function getNavItems() {
   return [
     { label: t("admin.navWelcome", "Welcome"), tab: "welcome" },
+    { label: t("admin.navSales", "Sales"), tab: "sales" },
     { label: t("admin.navStats"), tab: "stats" },
     { label: t("admin.navProducts"), tab: "products" },
-    { label: t("admin.navSales", "Sales"), tab: "sales" },
     { label: t("admin.navStyle"), tab: "style" },
     { label: t("admin.navChat"), tab: "chat" },
     { label: t("admin.navSupport"), tab: "support" },
