@@ -45,9 +45,18 @@ async function cfRun(model, body) {
 export async function embedTexts(texts) {
   if (!Array.isArray(texts) || texts.length === 0) return [];
   const json = await cfRun(EMBEDDING_MODEL, { text: texts });
-  if (!Array.isArray(json?.result))
-    throw new Error("Invalid embedding response");
-  return json.result;
+  // BGE model returns { shape: [...], data: [[...vector...], ...] }
+  // Some API wrappers may return a plain array — handle both.
+  const vectors = Array.isArray(json?.result?.data)
+    ? json.result.data
+    : Array.isArray(json?.result)
+      ? json.result
+      : null;
+  if (!vectors)
+    throw new Error(
+      `Embedding model returned an unexpected format. Check CF_EMBED_MODEL and the Workers AI binding.`,
+    );
+  return vectors;
 }
 
 export async function chatWithContext(systemPrompt, messages) {
