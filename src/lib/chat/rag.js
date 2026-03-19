@@ -19,42 +19,58 @@ export async function buildIndex(force = false) {
     return INDEX_CACHE.chunks;
   }
 
-  const data = await fetchGraphQL(
-    `query RagbazIndex {
-      posts(first: 20) { edges { node { id uri title excerpt content } } }
-      pages(first: 20) { edges { node { id uri title excerpt content } } }
-      events(first: 20) { edges { node { id uri title excerpt content } } }
-      lpCourses(first: 20) { edges { node { id uri title excerpt content } } }
-      products(first: 20, where: { status: "publish" }) { edges { node {
+  // Run each content type as a separate query so a missing CPT (events,
+  // lpCourses, WooCommerce) doesn't silently kill the entire fetch.
+  async function tryFetch(query, extract) {
+    try {
+      const data = await fetchGraphQL(query, {}, 120);
+      return extract(data) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  const [posts, pages, events, courses, products] = await Promise.all([
+    tryFetch(
+      `{ posts(first: 20) { edges { node { id uri title excerpt content } } } }`,
+      (d) => (d?.posts?.edges || []).map((e) => ({ ...e.node, kind: "post" })),
+    ),
+    tryFetch(
+      `{ pages(first: 20) { edges { node { id uri title excerpt content } } } }`,
+      (d) => (d?.pages?.edges || []).map((e) => ({ ...e.node, kind: "page" })),
+    ),
+    tryFetch(
+      `{ events(first: 20) { edges { node { id uri title excerpt content } } } }`,
+      (d) =>
+        (d?.events?.edges || []).map((e) => ({ ...e.node, kind: "event" })),
+    ),
+    tryFetch(
+      `{ lpCourses(first: 20) { edges { node { id uri title excerpt content } } } }`,
+      (d) =>
+        (d?.lpCourses?.edges || []).map((e) => ({ ...e.node, kind: "course" })),
+    ),
+    tryFetch(
+      `{ products(first: 20, where: { status: "publish" }) { edges { node {
         ... on SimpleProduct   { id: databaseId uri: slug name shortDescription content: description }
         ... on VariableProduct { id: databaseId uri: slug name shortDescription content: description }
         ... on ExternalProduct { id: databaseId uri: slug name shortDescription content: description }
-      } } }
-    }`,
-    {},
-    120,
-  );
+      } } } }`,
+      (d) =>
+        (d?.products?.edges || [])
+          .map((e) => e.node)
+          .filter((n) => n?.name)
+          .map((n) => ({
+            id: String(n.id),
+            uri: n.uri ? `/product/${n.uri}` : "/shop",
+            title: n.name,
+            excerpt: n.shortDescription || "",
+            content: n.content || n.shortDescription || "",
+            kind: "product",
+          })),
+    ),
+  ]);
 
-  const nodes = [
-    ...(data?.posts?.edges || []).map((e) => ({ ...e.node, kind: "post" })),
-    ...(data?.pages?.edges || []).map((e) => ({ ...e.node, kind: "page" })),
-    ...(data?.events?.edges || []).map((e) => ({ ...e.node, kind: "event" })),
-    ...(data?.lpCourses?.edges || []).map((e) => ({
-      ...e.node,
-      kind: "course",
-    })),
-    ...(data?.products?.edges || [])
-      .map((e) => e.node)
-      .filter((n) => n?.name)
-      .map((n) => ({
-        id: String(n.id),
-        uri: n.uri ? `/product/${n.uri}` : "/shop",
-        title: n.name,
-        excerpt: n.shortDescription || "",
-        content: n.content || n.shortDescription || "",
-        kind: "product",
-      })),
-  ];
+  const nodes = [...posts, ...pages, ...events, ...courses, ...products];
   manuals.forEach((manual) => {
     nodes.push({
       id: manual.title,
