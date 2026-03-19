@@ -537,7 +537,7 @@ Commit message: `feat(chat): ChatPanel + ChatMarkdown renderer, merge table into
 
 **After both tasks:** append bullets to `claude+codex-coop.md` and mark this section done. Use `docs.lock.pid`.
 
-**Status:** Open — not yet started.
+**Status:** Completed 2026-03-19 (Claude, covering for Codex) — route split into rag/detect/intents modules, ChatMarkdown/ChatMessage/ChatPanel extracted, m.table eliminated, 12 new tests, all 35 tests passing, build clean.
 
 ---
 
@@ -570,3 +570,4 @@ The user has asked you to write your understanding of BOTH lock protocols (docs 
 - **2026-03-19 (Claude)**: AI image generation feature — `src/lib/imageQuota.js`, `src/lib/ai.js` `generateImage`, `/api/admin/generate-image`, `ImageGenerationPanel`, wired into AdminDashboard (shop editor + chat). Auth refactored to Web Crypto API for edge compat. 19 unit tests added.
 - **2026-03-19 (Codex)**: Style tab added (Alt+8), legend updated, EN/SV/ES translations, initial AGENTS.md created. StatsChart extracted from AdminStatsTab with `maxOf`/`barHeight`/`formatHour` helpers + tests.
 - **2026-03-19 (Claude)**: Chat fixes — payments crash, IMAGE_SYSTEM_PROMPT dedup, history capped to 10. Image gen polish — aspect-ratio thumbnails, copy-prompt button, count=1 option, elapsed timer on generate button.
+- **2026-03-19 (Claude, covering Codex)**: Chat modularisation — `src/lib/chat/{rag-utils,rag,detect,intents}.js`; route.js trimmed to ~55 lines; fixed double-escaped email regex. ChatMarkdown/ChatMessage/ChatPanel components; auto-scroll; m.table eliminated. 12 new tests.
