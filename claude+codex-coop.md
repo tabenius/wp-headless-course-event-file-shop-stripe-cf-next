@@ -69,6 +69,19 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
     - ES: `Selecciona un elemento para configurar el acceso`
 - Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
 
+## 2026-03-19 (cont. 42)
+
+### Codex — product image uploader clickable/frame + backend wiring
+
+- Hardened product image picker affordance in `AdminProductsTab`:
+  - stronger persistent frame, explicit bottom upload label, improved placeholder contrast, and visible focus ring for keyboard users.
+  - applied in both shop-product edit and WP-content access detail cards.
+- Fixed backend mismatch for image uploads:
+  - added `uploadBackend` prop flow from `AdminProductsTab` to `ImagePickerButton` to `ImageUploader`,
+  - `ImageUploader` now posts to `/api/admin/upload?kind=image&backend=<selected>` when backend is selected.
+- Outcome: image uploads now follow the active storage target (WordPress/R2/S3) and the clickable image area is always visually obvious.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

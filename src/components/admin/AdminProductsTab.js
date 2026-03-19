@@ -129,18 +129,25 @@ function InnerTabs({ active, onChange }) {
 
 // ── Shared: image upload button ───────────────────────────────────────────────
 
-function ImagePickerButton({ imgUrl, onUploaded, onError }) {
+function ImagePickerButton({
+  imgUrl,
+  onUploaded,
+  onError,
+  uploadBackend = "wordpress",
+}) {
   return (
     <ImageUploader
       value={imgUrl || ""}
       onUploaded={onUploaded}
       onError={onError}
+      uploadBackend={uploadBackend}
       renderTrigger={(openPicker) => (
         <button
           type="button"
           onClick={openPicker}
-          className="relative w-28 h-28 rounded-lg border-2 border-gray-700 shrink-0 overflow-hidden group bg-gray-100 cursor-pointer"
+          className="group relative z-10 flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 shadow-[inset_0_0_0_2px_rgba(17,24,39,0.35),0_1px_2px_rgba(0,0,0,0.18)] transition-colors hover:border-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
           title={t("admin.uploadImage")}
+          aria-label={t("admin.uploadImage")}
         >
           {imgUrl ? (
             <SafeProductImage
@@ -155,7 +162,7 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
-                className="w-10 h-10"
+                className="w-10 h-10 text-gray-500"
               >
                 <path
                   fillRule="evenodd"
@@ -175,7 +182,7 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
               <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
             </svg>
           </div>
-          <span className="pointer-events-none absolute inset-0 z-[1] ring-2 ring-gray-700/95" />
+          <span className="pointer-events-none absolute inset-[2px] z-[1] rounded-md border border-gray-800/80" />
           <span className="pointer-events-none absolute top-1 right-1 z-[2] inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/60 bg-black/70 text-white shadow-sm">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -186,6 +193,9 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
             >
               <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
             </svg>
+          </span>
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-black/65 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+            {t("admin.uploadImage")}
           </span>
         </button>
       )}
@@ -598,6 +608,7 @@ function ProductsTab({
               <div className="flex items-center gap-4">
                 <ImagePickerButton
                   imgUrl={selectedShopProduct.imageUrl}
+                  uploadBackend={uploadBackend}
                   onUploaded={(url) =>
                     updateProduct(shopIndex, "imageUrl", url)
                   }
@@ -963,6 +974,7 @@ function AccessTab({
   selectedShopProduct,
   shopIndex,
   showDetail,
+  uploadBackend,
   setWpEvents,
   setWcProducts,
   setWpCourses,
@@ -1505,6 +1517,7 @@ function AccessTab({
                     <div className="flex gap-4 mb-4">
                       <ImagePickerButton
                         imgUrl={imgUrl}
+                        uploadBackend={uploadBackend}
                         onUploaded={(url) => {
                           const upd = (setter) =>
                             setter((prev) =>
@@ -2056,6 +2069,7 @@ export default function AdminProductsTab(props) {
             selectedShopProduct={selectedShopProduct}
             shopIndex={shopIndex}
             showDetail={showDetail}
+            uploadBackend={uploadBackend}
             setWpEvents={setWpEvents}
             setWcProducts={setWcProducts}
             setWpCourses={setWpCourses}

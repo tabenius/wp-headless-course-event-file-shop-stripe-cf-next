@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Continued product-image uploader hardening: made image pickers visually explicit/clickable (stronger frame, visible upload label, focus ring), and wired image uploads to respect the selected `uploadBackend` (WordPress/R2/S3) by passing backend through `ImagePickerButton` → `ImageUploader` → `/api/admin/upload`.
 - **2026-03-19 (Codex)**: Header/Products micro-polish pass: changed sun/moon icon outline from pure black to dark gray for softer contrast, shifted `ARTICULATE STOREFRONT` subtitle another `0.5rem` right, and fixed a non-localized Products empty-state string by moving it to i18n keys in EN/SV/ES.
 - **2026-03-19 (Codex)**: Restyled the header `Status` control to match the hamburger button surface (same amber-dark background/hover/focus treatment) and kept direct navigation to Health check on click.
 - **2026-03-19 (Codex)**: Added a black edge-outline effect to the header sun/moon theme icon glyphs so they remain legible over the textured amber menu bar.

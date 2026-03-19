@@ -86,6 +86,7 @@ export default function ImageUploader({
   onError,
   className = "",
   renderTrigger,
+  uploadBackend = "",
 }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -288,7 +289,11 @@ export default function ImageUploader({
       const name = file?.name?.replace(/\.[^.]+$/, "") || "image";
       formData.append("file", blob, `${name}.jpg`);
 
-      const res = await fetch("/api/admin/upload?kind=image", {
+      const query = new URLSearchParams({ kind: "image" });
+      if (uploadBackend) {
+        query.set("backend", uploadBackend);
+      }
+      const res = await fetch(`/api/admin/upload?${query.toString()}`, {
         method: "POST",
         body: formData,
       });
