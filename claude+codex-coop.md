@@ -765,3 +765,39 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npx eslint src/lib/adminHotkeys.js src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js tests/admin-hotkeys.test.js`
   - `npm test -- tests/admin-hotkeys.test.js`
+
+---
+
+## 2026-03-19 (cont. 28)
+
+### Codex — extra menu navigation chords + theme toggle hotkey
+
+- Added additional admin action hotkeys in shared contract:
+  - `Ctrl+Alt+Right` and `Ctrl+Alt+Down` => next tab
+  - `Ctrl+Alt+Left` and `Ctrl+Alt+Up` => previous tab
+  - `Ctrl+Alt+T` => theme toggle
+- Implemented wrap-around next/prev navigation in `AdminDashboard` key handler.
+- Updated `isAdminActionHotkey` to support multi-matcher actions (`match: [...]`) so synonyms can map to one action.
+- Updated tests to cover `menuNext` synonyms, `menuPrev` synonyms, and `themeToggle`.
+- Theme switcher visual tweak in header:
+  - Removed circular background/border styling and switched moon icon to `☾` (plain glyph) to avoid circular look.
+  - Kept keyboard focus ring for accessibility.
+- Validation:
+  - `npx eslint src/lib/adminHotkeys.js src/components/admin/AdminHeader.js src/components/admin/AdminDashboard.js tests/admin-hotkeys.test.js`
+  - `npm test -- tests/admin-hotkeys.test.js`
+
+---
+
+## 2026-03-19 (cont. 29)
+
+### Codex — header status indicator + tooltip behavior
+
+- Updated header status control presentation:
+  - Moved colored health dot to the right of the status label.
+  - Kept button clickable to Health tab.
+- Added contextual status tooltip (hover/focus):
+  - Shows current health summary text (`green/amber/red` mapping).
+  - Includes explanatory hint text for what health status represents.
+  - Adds direct “Control check” action button that navigates to Health tab.
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js`

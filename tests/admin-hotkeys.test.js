@@ -55,6 +55,10 @@ test("action hotkeys detect menu toggle, next/prev tab, and logout", () => {
     true,
   );
   assert.equal(
+    isAdminActionHotkey(eventFor({ code: "KeyT", key: "t" }), "themeToggle"),
+    true,
+  );
+  assert.equal(
     isAdminActionHotkey(
       eventFor({ code: "ArrowRight", key: "ArrowRight" }),
       "menuNext",

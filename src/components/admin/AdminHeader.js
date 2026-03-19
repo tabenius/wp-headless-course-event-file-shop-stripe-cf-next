@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { t, getLocale, setLocale } from "@/lib/i18n";
@@ -114,7 +114,13 @@ export default function AdminHeader({ logoUrl }) {
   const [adminTheme, setAdminTheme] = useState("light");
   const [menuOpen, setMenuOpen] = useState(false);
   const [healthState, setHealthState] = useState("amber");
+  const [showHealthTooltip, setShowHealthTooltip] = useState(false);
   const log = (...args) => console.info("[AdminHeader]", ...args);
+  const toggleTheme = useCallback(() => {
+    const next = adminTheme === "gruvbox" ? "light" : "gruvbox";
+    setAdminTheme(next);
+    window.dispatchEvent(new CustomEvent("admin:setTheme", { detail: next }));
+  }, [adminTheme]);
   const healthLabelMap = {
     green: t("admin.healthStatusGreen", "All systems operational"),
     amber: t("admin.healthStatusAmber", "Partial connectivity"),
@@ -184,13 +190,19 @@ export default function AdminHeader({ logoUrl }) {
 
   useEffect(() => {
     function onGlobalHotkey(event) {
-      if (!isAdminActionHotkey(event, "menuToggle")) return;
-      event.preventDefault();
-      setMenuOpen((prev) => !prev);
+      if (isAdminActionHotkey(event, "menuToggle")) {
+        event.preventDefault();
+        setMenuOpen((prev) => !prev);
+        return;
+      }
+      if (isAdminActionHotkey(event, "themeToggle")) {
+        event.preventDefault();
+        toggleTheme();
+      }
     }
     window.addEventListener("keydown", onGlobalHotkey);
     return () => window.removeEventListener("keydown", onGlobalHotkey);
-  }, []);
+  }, [toggleTheme]);
 
   if (pathname === "/admin/login") return null;
 
@@ -198,12 +210,6 @@ export default function AdminHeader({ logoUrl }) {
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin/login");
     router.refresh();
-  }
-
-  function toggleTheme() {
-    const next = adminTheme === "gruvbox" ? "light" : "gruvbox";
-    setAdminTheme(next);
-    window.dispatchEvent(new CustomEvent("admin:setTheme", { detail: next }));
   }
 
   function switchTab(tab) {
@@ -269,32 +275,56 @@ export default function AdminHeader({ logoUrl }) {
             </Link>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-3">
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-full bg-orange-800/70 border border-white/30 text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-white"
+              className="px-1 text-white hover:text-orange-100 focus:outline-none focus:ring-2 focus:ring-white/80"
               aria-label={
                 adminTheme === "gruvbox"
                   ? t("admin.themeLight", "Switch to light theme")
                   : t("admin.themeDark", "Switch to gruvbox theme")
               }
             >
-              {adminTheme === "gruvbox" ? "☀" : "🌙"}
+              {adminTheme === "gruvbox" ? "☀" : "☾"}
             </button>
 
             <button
               type="button"
               onClick={() => switchTab("health")}
+              onMouseEnter={() => setShowHealthTooltip(true)}
+              onMouseLeave={() => setShowHealthTooltip(false)}
+              onFocus={() => setShowHealthTooltip(true)}
+              onBlur={() => setShowHealthTooltip(false)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 text-xs text-white"
               title={healthLabelMap[healthState]}
             >
+              <span>{t("admin.healthStatus", "Status")}</span>
               <span
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: healthDotColor[healthState] }}
               />
-              <span>{t("admin.healthStatus", "Health")}</span>
             </button>
+            {showHealthTooltip && (
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-white/20 bg-orange-900/95 p-3 text-xs text-orange-100 shadow-xl">
+                <p className="font-semibold text-white">
+                  {healthLabelMap[healthState]}
+                </p>
+                <p className="mt-1 text-orange-100/90">
+                  {t(
+                    "admin.healthTooltipHint",
+                    "System checks summarize connector status and environment readiness.",
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => switchTab("health")}
+                  className="mt-2 inline-flex items-center rounded border border-white/30 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/10"
+                >
+                  {t("admin.healthCheck", "Control check")}
+                </button>
+              </div>
+            )}
           </div>
 
           {menuOpen && (

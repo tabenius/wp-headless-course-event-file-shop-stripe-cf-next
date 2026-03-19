@@ -13,6 +13,7 @@ export const ADMIN_TAB_HOTKEYS = [
 
 export const ADMIN_ACTION_HOTKEYS = {
   menuToggle: { combo: "Ctrl+Alt+M", match: { code: "KeyM", key: "m" } },
+  themeToggle: { combo: "Ctrl+Alt+T", match: { code: "KeyT", key: "t" } },
   menuNext: {
     combo: "Ctrl+Alt+Right/Down",
     match: [

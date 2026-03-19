@@ -198,6 +198,8 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Enhanced header status control UX: moved colored status dot to the right of the status label, added hover/focus tooltip explaining current health state, and added direct “Control check” action link in tooltip to open Health tab.
+- **2026-03-19 (Codex)**: Added admin navigation action hotkeys: `Ctrl+Alt+Right/Down` for next menu tab and `Ctrl+Alt+Left/Up` for previous tab (with wrap-around), plus `Ctrl+Alt+T` as a theme-toggle shortcut. Also simplified theme toggle button visuals to remove circular framing/background and use a plain moon glyph.
 - **2026-03-19 (Codex)**: Reworked admin navigation hotkeys to numeric ascending order (`Welcome=0`, then `1..9` by menu order), removed the separate drawer hotkey legend, displayed per-item numeric key badges directly on menu options, and added directional cycling shortcuts (`Ctrl+Alt+Right/Down` next, `Ctrl+Alt+Left/Up` previous) with wrap-around tab navigation.
 - **2026-03-19 (Codex)**: Updated admin menu bar palette from blue to orange (`bg-orange-*`), including hamburger/theme controls and drawer shell/hotkey surfaces, for a consistent orange navigation/header appearance.
 - **2026-03-19 (Codex)**: Removed `RAGBAZ Articulate StoreFront` text from the Welcome screen content area (story + non-story variants) so branding is only shown in the menu bar as requested.
