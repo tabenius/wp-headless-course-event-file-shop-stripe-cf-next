@@ -176,6 +176,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - **Welcome tab**: Added the default welcome tab (Alt+0) powered by impress.js, refreshed the nav + hotkey legend, and translated the story into EN/SV/ES.
 - **Advanced tab banner**: Implemented a rotating torus banner (24×24 quads) with cyan edges, plus a separate `RagbazLogo` component so the StoreFront logo can appear with or without the animation.
+- **Ownership handoff**: Claude has handed this iteration over to Codex alone; continuing work under the existing coordination protocols until Claude indicates otherwise.
 
 ---
 

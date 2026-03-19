@@ -19,10 +19,7 @@ export default function AdminWelcomeTab() {
   const slideData = [
     {
       id: "starting-point",
-      title: t(
-        "admin.welcomeSlide1Title",
-        "From the old WordPress limits",
-      ),
+      title: t("admin.welcomeSlide1Title", "From the old WordPress limits"),
       body: t(
         "admin.welcomeSlide1Body",
         "You had a pure WordPress site with no WooCommerce or LearnPress checkout, a cluttered admin, and Lighthouse scores stuck around 50 while pages took 5-6 seconds to load.",
@@ -32,10 +29,7 @@ export default function AdminWelcomeTab() {
     },
     {
       id: "flow",
-      title: t(
-        "admin.welcomeSlide2Title",
-        "We introduced clarity",
-      ),
+      title: t("admin.welcomeSlide2Title", "We introduced clarity"),
       body: t(
         "admin.welcomeSlide2Body",
         "RAGBAZ Articulate brings a clean GraphQL admin, hotkey-driven menu, live legend, and a multilingual chat that understands logs, payments, and manuals.",
@@ -45,10 +39,7 @@ export default function AdminWelcomeTab() {
     },
     {
       id: "stripe",
-      title: t(
-        "admin.welcomeSlide3Title",
-        "Sales and Stripe in one place",
-      ),
+      title: t("admin.welcomeSlide3Title", "Sales and Stripe in one place"),
       body: t(
         "admin.welcomeSlide3Body",
         "Payments, refunds, and PDF receipts now live in the admin. Downloadable Stripe receipts, analytics, and a responsive sales panel keep critical data close at hand.",
@@ -58,10 +49,7 @@ export default function AdminWelcomeTab() {
     },
     {
       id: "storefront",
-      title: t(
-        "admin.welcomeSlide4Title",
-        "A performant storefront",
-      ),
+      title: t("admin.welcomeSlide4Title", "A performant storefront"),
       body: t(
         "admin.welcomeSlide4Body",
         "The storefront is now on Cloudflare Workers with source maps, Wrangler logs, and impressively fast 2s loads plus 90+ Lighthouse scores.",

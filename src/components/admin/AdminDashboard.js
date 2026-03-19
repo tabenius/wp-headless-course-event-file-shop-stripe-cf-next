@@ -1466,6 +1466,13 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+      {activeTab === "welcome" && (
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
+          <AdminWelcomeTab />
+        </Suspense>
+      )}
       {/* ── Stats tab ── */}
       {activeTab === "stats" && (
         <Suspense
@@ -1658,16 +1665,9 @@ export default function AdminDashboard() {
                     <div className="text-xs text-gray-500 font-mono">{hex}</div>
                     <div className="text-[10px] text-gray-400 font-mono">
                       {token}
-          </div>
-        </div>
-      </div>
-      {activeTab === "welcome" && (
-        <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
-        >
-          <AdminWelcomeTab />
-        </Suspense>
-      )}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
             <div className="grid gap-3 md:grid-cols-2">

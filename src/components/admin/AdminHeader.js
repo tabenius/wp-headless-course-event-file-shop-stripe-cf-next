@@ -156,7 +156,7 @@ export default function AdminHeader({ logoUrl }) {
                 : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
             }`}
           >
-            {adminTheme === "gruvbox" ? "☀ light" : "● gruvbox"}
+            {adminTheme === "gruvbox" ? "☀ light" : "☾ gruvbox"}
           </button>
           {/* Right: Nav + actions */}
         </div>

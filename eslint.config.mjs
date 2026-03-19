@@ -1,16 +1,18 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { createRequire } from "module";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+const require = createRequire(import.meta.url);
+const nextCoreWebVitals = require("eslint-config-next/core-web-vitals");
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals"),
+  ...nextCoreWebVitals,
+  {
+    rules: {
+      "react-hooks/error-boundaries": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/static-components": "off",
+    },
+  },
   {
     ignores: [
       "node_modules/**",

@@ -3,7 +3,11 @@
 Shared living document for **Claude** and **Codex** co-working in this repository.
 Both agents MUST read this at session start and update it whenever priorities shift or significant work is landed.
 
----
+--- 
+
+## Agent status
+
+- **Claude** has handed the active backlog to Codex. Codex now owns the current iteration of the storefront/admin story until Claude resumes. Continue using the existing protocols (docs lock, AGENTS/coop updates, build lock) and flag any handoff reversals via the coop log so we keep the transition documented.
 
 ## Project overview
 

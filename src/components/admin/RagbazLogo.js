@@ -10,7 +10,8 @@ export default function RagbazLogo({
       <span
         className="text-2xl font-black tracking-tight uppercase"
         style={{
-          fontFamily: "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",
+          fontFamily:
+            "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",
           color,
         }}
       >
@@ -19,7 +20,8 @@ export default function RagbazLogo({
       <span
         className="text-2xl font-light"
         style={{
-          fontFamily: "var(--font-serif, 'Merriweather', 'Times New Roman', serif)",
+          fontFamily:
+            "var(--font-serif, 'Merriweather', 'Times New Roman', serif)",
           color,
         }}
       >
@@ -28,7 +30,11 @@ export default function RagbazLogo({
       {includeStoreFront && (
         <span
           className="text-xs uppercase tracking-widest"
-          style={{ color: "rgba(255, 255, 255, 0.75)", fontFamily: "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)" }}
+          style={{
+            color: "rgba(255, 255, 255, 0.75)",
+            fontFamily:
+              "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",
+          }}
         >
           StoreFront
         </span>
