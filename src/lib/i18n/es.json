@@ -196,6 +196,7 @@
     "priceSavedLocally": "El precio se guarda.",
     "selectCourseDefault": "-- Selecciona un curso --",
     "selectContentDefault": "-- Selecciona producto/curso --",
+    "selectItemToConfigureAccess": "Selecciona un elemento para configurar el acceso",
     "courseUriInputPlaceholder": "/courses/mi-curso",
     "selectExistingCourse": "Seleccionar curso existente",
     "courseFee": "Cuota del curso (requerido)",

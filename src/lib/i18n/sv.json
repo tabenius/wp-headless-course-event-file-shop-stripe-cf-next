@@ -196,6 +196,7 @@
     "priceSavedLocally": "Priset sparas.",
     "selectCourseDefault": "-- Välj en kurs --",
     "selectContentDefault": "-- Välj produkt / kurs / event --",
+    "selectItemToConfigureAccess": "Välj ett objekt för att konfigurera åtkomst",
     "courseUriInputPlaceholder": "/courses/my-course",
     "selectExistingCourse": "Välj befintlig kurs",
     "courseFee": "Kursavgift (obligatoriskt, kan vara 0)",

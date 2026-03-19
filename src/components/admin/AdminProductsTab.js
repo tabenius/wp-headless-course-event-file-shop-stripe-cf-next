@@ -1831,7 +1831,7 @@ function AccessTab({
               />
             </svg>
             <p className="text-sm text-gray-500 admin-soft-yellow">
-              Select an item to configure access
+              {t("admin.selectItemToConfigureAccess")}
             </p>
           </div>
         )}

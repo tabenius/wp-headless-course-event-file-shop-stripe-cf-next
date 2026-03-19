@@ -274,7 +274,7 @@ export default function AdminHeader({ logoUrl }) {
               />
               <span
                 className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-black"
-                style={{ marginLeft: "1rem", marginTop: "2px" }}
+                style={{ marginLeft: "1.5rem", marginTop: "2px" }}
               >
                 ARTICULATE STOREFRONT
               </span>
@@ -295,7 +295,7 @@ export default function AdminHeader({ logoUrl }) {
               <span
                 style={{
                   textShadow:
-                    "0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000",
+                    "0 1px 0 #2f2f2f, 1px 0 0 #2f2f2f, 0 -1px 0 #2f2f2f, -1px 0 0 #2f2f2f, 1px 1px 0 #2f2f2f, -1px 1px 0 #2f2f2f, 1px -1px 0 #2f2f2f, -1px -1px 0 #2f2f2f",
                 }}
               >
                 {adminTheme === "gruvbox" ? "☀" : "🌙"}

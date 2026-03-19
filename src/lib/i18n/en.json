@@ -196,6 +196,7 @@
     "priceSavedLocally": "Price is saved.",
     "selectCourseDefault": "-- Select a course --",
     "selectContentDefault": "-- Select product / course / event --",
+    "selectItemToConfigureAccess": "Select an item to configure access",
     "courseUriInputPlaceholder": "/courses/my-course",
     "selectExistingCourse": "Select existing course",
     "courseFee": "Course fee (required, can be 0)",

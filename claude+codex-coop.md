@@ -53,6 +53,21 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Updated the header `Status` control to use the same amber-dark button surface as the hamburger control (matching background, border, hover, and focus-ring treatment).
 - Confirmed `Status` still routes directly to the Health check tab via `switchTab("health")`, and added an explicit accessibility label using the existing `admin.healthCheck` text key.
 
+## 2026-03-19 (cont. 41)
+
+### Codex — header/icon and products i18n cleanup
+
+- Updated `AdminHeader` logo lockup:
+  - shifted `ARTICULATE STOREFRONT` subtitle from `1rem` to `1.5rem` left offset (additional `+0.5rem` right move),
+  - softened theme icon edge outline from black to dark gray (`#2f2f2f`) for sun/moon glyphs.
+- Fixed non-translated Products empty-state copy:
+  - replaced hardcoded `"Select an item to configure access"` with `t("admin.selectItemToConfigureAccess")`,
+  - added the new key in all locales:
+    - EN: `Select an item to configure access`
+    - SV: `Välj ett objekt för att konfigurera åtkomst`
+    - ES: `Selecciona un elemento para configurar el acceso`
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements
