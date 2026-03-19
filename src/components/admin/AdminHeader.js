@@ -237,7 +237,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
 
   return (
-    <header className="w-full sticky top-0 z-40 bg-orange-700 border-b border-orange-800">
+    <header className="admin-header-concrete relative overflow-hidden w-full sticky top-0 z-40 bg-[hsl(33_48%_44%)] border-b border-[hsl(33_42%_33%)]">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -245,7 +245,7 @@ export default function AdminHeader({ logoUrl }) {
               <button
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="p-2 rounded-lg bg-orange-800/90 border border-white/30 text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-white"
+                className="p-2 rounded-lg bg-[hsl(33_44%_34%/0.9)] border border-white/30 text-white hover:bg-[hsl(33_48%_42%)] focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
@@ -254,7 +254,7 @@ export default function AdminHeader({ logoUrl }) {
                   <span className="block h-0.5 w-4 bg-white" />
                 </span>
               </button>
-              <span className="mt-1 text-[9px] font-medium tracking-wide text-orange-100">
+              <span className="mt-1 text-[9px] font-medium tracking-wide text-[hsl(39_62%_93%)]">
                 Ctrl+Alt+M
               </span>
             </div>
@@ -263,13 +263,11 @@ export default function AdminHeader({ logoUrl }) {
               className="flex flex-col items-start justify-center gap-0.5 text-white/95 hover:text-white transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
-              <RagbazLogo
-                wordmarkOnly
-                noLetterSpacing
-                scale={1.75}
-                className="ml-[14px]"
-              />
-              <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white">
+              <RagbazLogo wordmarkOnly noLetterSpacing scale={1.75} />
+              <span
+                className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white"
+                style={{ marginLeft: "2em", marginTop: "1px" }}
+              >
                 ARTICULATE STOREFRONT
               </span>
             </Link>
@@ -279,7 +277,7 @@ export default function AdminHeader({ logoUrl }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="px-1 text-white hover:text-orange-100 focus:outline-none focus:ring-2 focus:ring-white/80"
+              className="px-1 text-white hover:text-[hsl(39_62%_93%)] focus:outline-none focus:ring-2 focus:ring-white/80"
               aria-label={
                 adminTheme === "gruvbox"
                   ? t("admin.themeLight", "Switch to light theme")
@@ -306,11 +304,11 @@ export default function AdminHeader({ logoUrl }) {
               />
             </button>
             {showHealthTooltip && (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-white/20 bg-orange-900/95 p-3 text-xs text-orange-100 shadow-xl">
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(33_36%_19%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
                 <p className="font-semibold text-white">
                   {healthLabelMap[healthState]}
                 </p>
-                <p className="mt-1 text-orange-100/90">
+                <p className="mt-1 text-[hsl(39_62%_93%)]">
                   {t(
                     "admin.healthTooltipHint",
                     "System checks summarize connector status and environment readiness.",
@@ -335,7 +333,7 @@ export default function AdminHeader({ logoUrl }) {
                 className="fixed inset-0 top-14 z-40 bg-slate-950/55 backdrop-blur-[1px]"
                 onClick={() => setMenuOpen(false)}
               />
-              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-orange-900/98 p-4 shadow-2xl">
+              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(33_36%_19%/0.98)] p-4 shadow-2xl">
                 <div className="space-y-2">
                   {tabItems.map((item) => {
                     const keyLabel = item.hotkey
@@ -355,7 +353,7 @@ export default function AdminHeader({ logoUrl }) {
                         <span className="flex items-center justify-between gap-2">
                           <span>{item.label}</span>
                           {keyLabel && (
-                            <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold tracking-wide text-orange-100">
+                            <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold tracking-wide text-[hsl(39_62%_93%)]">
                               {keyLabel}
                             </kbd>
                           )}
@@ -373,7 +371,7 @@ export default function AdminHeader({ logoUrl }) {
                     {docItem.label}
                   </Link>
                 )}
-                <div className="mt-4 space-y-2 text-xs text-orange-100">
+                <div className="mt-4 space-y-2 text-xs text-[hsl(39_62%_93%)]">
                   <div className="flex items-center gap-2">
                     <label className="font-semibold">{t("admin.languageLabel")}</label>
                     <select
@@ -385,7 +383,7 @@ export default function AdminHeader({ logoUrl }) {
                         router.refresh();
                         setMenuOpen(false);
                       }}
-                      className="rounded border border-white/20 bg-orange-800 px-2 py-1 text-xs text-white"
+                      className="rounded border border-white/20 bg-[hsl(33_44%_34%)] px-2 py-1 text-xs text-white"
                     >
                       <option value="sv">Svenska</option>
                       <option value="en">English</option>
@@ -398,7 +396,7 @@ export default function AdminHeader({ logoUrl }) {
                     className="flex items-center justify-between w-full text-white"
                   >
                     <span>{t("admin.healthCheck")}</span>
-                    <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-orange-100">
+                    <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[hsl(39_62%_93%)]">
                       {healthHotkey}
                     </kbd>
                   </button>

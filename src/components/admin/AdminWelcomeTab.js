@@ -920,7 +920,7 @@ export default function AdminWelcomeTab({
 
   if (!showStory) {
     return (
-      <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-4 sm:p-6 shadow min-w-0">
+      <div className="space-y-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-200 p-4 sm:p-6 shadow min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">
@@ -932,7 +932,7 @@ export default function AdminWelcomeTab({
             onClick={() => {
               if (onReplayStory) onReplayStory();
             }}
-            className="rounded-xl border border-indigo-300 bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
           >
             Replay story
           </button>
@@ -943,7 +943,7 @@ export default function AdminWelcomeTab({
   }
 
   return (
-    <div className="welcome-story-shell space-y-1 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]">
+    <div className="welcome-story-shell space-y-1 bg-gradient-to-br from-[hsl(210_18%_36%)] via-[hsl(211_16%_29%)] to-[hsl(214_18%_20%)] p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p

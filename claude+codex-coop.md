@@ -10,6 +10,15 @@ DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a 
 DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key sections, reordered operator instructions for average-user relevance, and synced wording with current tab names/flows.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 17)
+
+### Codex — admin header + welcome tone refinements
+
+- Retuned admin header palette from saturated orange to a slightly yellower, lower-saturation amber using explicit HSL values in `AdminHeader`.
+- Fixed brand lockup alignment by setting `ARTICULATE STOREFRONT` subtitle offset to `2em` under `RAGBAZ` and removing conflicting left-shift on the wordmark.
+- Shifted Welcome story shell from vivid indigo/blue to muted steel gray-blue gradient for a calmer look with preserved white contrast text.
+- Added a subtle concrete-like microtexture to the menu bar via new `admin-header-concrete` class in `globals.css` (layered radial/repeating gradients, soft-light blend, non-interactive overlay).
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification

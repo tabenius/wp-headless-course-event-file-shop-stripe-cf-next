@@ -198,6 +198,9 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Tuned admin header palette toward a yellower, lower-saturation amber and aligned the `ARTICULATE STOREFRONT` subtitle with explicit `2em` horizontal offset beneath `RAGBAZ` for steadier cross-font rendering.
+- **2026-03-19 (Codex)**: Shifted Welcome screen story background from vivid indigo/blue to a lower-saturation steel gray-blue gradient to improve visual calm while preserving high-contrast white text.
+- **2026-03-19 (Codex)**: Added a subtle concrete/noise microtexture overlay on the menu bar (`admin-header-concrete`) using layered radial/repeating gradients with soft-light blending.
 - **2026-03-19 (Codex)**: Enhanced header status control UX: moved colored status dot to the right of the status label, added hover/focus tooltip explaining current health state, and added direct “Control check” action link in tooltip to open Health tab.
 - **2026-03-19 (Codex)**: Added admin navigation action hotkeys: `Ctrl+Alt+Right/Down` for next menu tab and `Ctrl+Alt+Left/Up` for previous tab (with wrap-around), plus `Ctrl+Alt+T` as a theme-toggle shortcut. Also simplified theme toggle button visuals to remove circular framing/background and use a plain moon glyph.
 - **2026-03-19 (Codex)**: Reworked admin navigation hotkeys to numeric ascending order (`Welcome=0`, then `1..9` by menu order), removed the separate drawer hotkey legend, displayed per-item numeric key badges directly on menu options, and added directional cycling shortcuts (`Ctrl+Alt+Right/Down` next, `Ctrl+Alt+Left/Up` previous) with wrap-around tab navigation.

@@ -277,6 +277,52 @@ body:has(.admin-layout)::before {
   color: #fff !important;
 }
 
+.admin-header-concrete {
+  isolation: isolate;
+}
+
+.admin-header-concrete::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.3;
+  mix-blend-mode: soft-light;
+  background-image:
+    radial-gradient(
+      circle at 14% 18%,
+      rgb(255 255 255 / 0.22) 0 0.85px,
+      transparent 1.2px
+    ),
+    radial-gradient(
+      circle at 72% 64%,
+      rgb(0 0 0 / 0.22) 0 0.95px,
+      transparent 1.35px
+    ),
+    radial-gradient(
+      circle at 36% 82%,
+      rgb(255 255 255 / 0.16) 0 0.75px,
+      transparent 1.1px
+    ),
+    repeating-radial-gradient(
+      circle at center,
+      rgb(255 255 255 / 0.08) 0 1px,
+      rgb(0 0 0 / 0.06) 1px 2px,
+      transparent 2px 4px
+    );
+  background-size:
+    92px 92px,
+    78px 78px,
+    104px 104px,
+    15px 15px;
+}
+
+.admin-header-concrete > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* ── Admin Gruvbox Dark theme ────────────────────────────────────────────────
    Applied by adding class="admin-gruvbox" to the admin-layout wrapper.
    Palette based on Gruvbox dark hard with Solarized-inspired blue accents.
