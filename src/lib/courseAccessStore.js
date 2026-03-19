@@ -38,6 +38,18 @@ function normalizeCurrency(currency) {
     : "SEK";
 }
 
+function normalizeVatPercent(vatPercent) {
+  if (vatPercent === "" || vatPercent === null || vatPercent === undefined) {
+    return null;
+  }
+  const parsed =
+    typeof vatPercent === "number"
+      ? vatPercent
+      : Number.parseFloat(String(vatPercent).replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return null;
+  return Math.round(parsed * 100) / 100;
+}
+
 function sanitizeState(state) {
   const courses = {};
   const inputCourses = state && typeof state === "object" ? state.courses : {};
@@ -55,6 +67,7 @@ function sanitizeState(state) {
       allowedUsers: [...new Set(allowedUsers)],
       priceCents,
       currency: normalizeCurrency(rawValue?.currency),
+      vatPercent: normalizeVatPercent(rawValue?.vatPercent),
       active: rawValue?.active !== false,
       updatedAt:
         typeof rawValue?.updatedAt === "string"
@@ -192,6 +205,7 @@ export async function setCourseAccess({
   priceCents,
   currency,
   active,
+  vatPercent,
 }) {
   const uri = normalizeCourseUri(courseUri);
   if (!uri) throw new Error("Invalid course URI");
@@ -204,10 +218,16 @@ export async function setCourseAccess({
     typeof priceCents === "number" && priceCents >= 0
       ? Math.floor(priceCents)
       : 0;
+  const safeVatPercent = normalizeVatPercent(vatPercent);
+  const resolvedVatPercent =
+    vatPercent === undefined
+      ? normalizeVatPercent(previous?.vatPercent)
+      : safeVatPercent;
   state.courses[uri] = {
     allowedUsers: normalizedUsers,
     priceCents: safePrice,
     currency: normalizeCurrency(currency),
+    vatPercent: resolvedVatPercent,
     active: typeof active === "boolean" ? active : previous?.active !== false,
     updatedAt: new Date().toISOString(),
   };
@@ -224,6 +244,7 @@ export async function grantCourseAccess(courseUri, email) {
     priceCents:
       Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS || "0", 10) || 0,
     currency: normalizeCurrency(process.env.DEFAULT_COURSE_FEE_CURRENCY),
+    vatPercent: null,
     active: true,
   };
   if (!course.allowedUsers.includes(normalizedEmail)) {

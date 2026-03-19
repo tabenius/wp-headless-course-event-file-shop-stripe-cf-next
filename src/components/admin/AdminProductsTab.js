@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
 import { parsePriceCents } from "@/lib/parsePrice";
+import {
+  deriveDigitalProductCategories,
+  extractCategoryNames,
+  toCategorySlugs,
+} from "@/lib/contentCategories";
 import ImageUploader from "./ImageUploader";
-import ProductRow from "./ProductRow";
-import ProductSection from "./ProductSection";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 import UserAccessPanel from "./UserAccessPanel";
 
@@ -32,6 +35,16 @@ function formatIsoDate(iso) {
   } catch (_err) {
     return iso;
   }
+}
+
+function slugFromCategoryName(name) {
+  return toCategorySlugs([name])[0] || "";
+}
+
+function parseVatPercent(value) {
+  const numeric = Number.parseFloat(String(value || "").replace(",", "."));
+  if (!Number.isFinite(numeric)) return null;
+  return Math.max(0, Math.min(100, Math.round(numeric * 100) / 100));
 }
 
 function BrokenImageIcon({ className = "" }) {
@@ -172,6 +185,8 @@ function PriceAccessForm({
   setPrice,
   currency,
   setCurrency,
+  vatPercent,
+  setVatPercent,
   userSearch,
   setUserSearch,
   users,
@@ -219,6 +234,34 @@ function PriceAccessForm({
           />
         </div>
         <p className="text-xs text-gray-400">{t("admin.priceSavedLocally")}</p>
+      </div>
+
+      {/* VAT override */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-gray-700">
+          {t("admin.vatOverrideLabel")}
+        </label>
+        <p className="text-xs text-gray-500">{t("admin.vatOverrideHint")}</p>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            value={vatPercent}
+            onChange={(e) => setVatPercent(e.target.value)}
+            min="0"
+            max="100"
+            step="0.1"
+            placeholder={t("admin.vatOverridePlaceholder")}
+            className="w-36 border rounded px-3 py-2 text-sm"
+          />
+          <span className="text-sm text-gray-500">%</span>
+          <button
+            type="button"
+            onClick={() => setVatPercent("")}
+            className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+          >
+            {t("admin.vatClearOverride")}
+          </button>
+        </div>
       </div>
 
       {/* User access */}
@@ -331,6 +374,8 @@ function ProductsTab({
   setPrice,
   currency,
   setCurrency,
+  vatPercent,
+  setVatPercent,
   userSearch,
   setUserSearch,
   users,
@@ -814,6 +859,8 @@ function ProductsTab({
                 setPrice={setPrice}
                 currency={currency}
                 setCurrency={setCurrency}
+                vatPercent={vatPercent}
+                setVatPercent={setVatPercent}
                 userSearch={userSearch}
                 setUserSearch={setUserSearch}
                 users={users}
@@ -879,6 +926,8 @@ function AccessTab({
   setPrice,
   currency,
   setCurrency,
+  vatPercent,
+  setVatPercent,
   userSearch,
   setUserSearch,
   users,
@@ -891,9 +940,11 @@ function AccessTab({
   setManualEmail,
   addManualEmail,
   saveUnified,
+  shopVatByCategory,
+  updateShopVatByCategory,
+  shopSettingsSaving,
+  shopSettingsMessage,
   loading,
-  joinMeta,
-  storage,
   editFormRef,
 }) {
   const [typeFilter, setTypeFilter] = useState("all");
@@ -902,6 +953,50 @@ function AccessTab({
   const [manualUriInput, setManualUriInput] = useState("");
   // Incrementing this triggers PriceAccessForm to auto-save after price state settles
   const [autoSaveTrigger, setAutoSaveTrigger] = useState(0);
+  const [vatDraft, setVatDraft] = useState({});
+  const [vatCategoryDraft, setVatCategoryDraft] = useState("");
+  const [vatRateDraft, setVatRateDraft] = useState("");
+
+  useEffect(() => {
+    setVatDraft(
+      shopVatByCategory && typeof shopVatByCategory === "object"
+        ? shopVatByCategory
+        : {},
+    );
+  }, [shopVatByCategory]);
+
+  const knownCategoryNames = useMemo(
+    () =>
+      extractCategoryNames(
+        ...wcProducts.map((item) => item.categories),
+        ...wpCourses.map((item) => item.categories),
+        ...wpEvents.map((item) => item.categories),
+        ...products.map(
+          (product) => deriveDigitalProductCategories(product).categories,
+        ),
+      ),
+    [wcProducts, wpCourses, wpEvents, products],
+  );
+
+  const vatRows = useMemo(() => {
+    const rows = knownCategoryNames
+      .map((name) => ({
+        name,
+        slug: slugFromCategoryName(name),
+      }))
+      .filter((row) => row.slug);
+    const seen = new Set(rows.map((row) => row.slug));
+    for (const slug of Object.keys(vatDraft || {})) {
+      if (seen.has(slug)) continue;
+      rows.push({
+        name: slug.replace(/-/g, " "),
+        slug,
+      });
+      seen.add(slug);
+    }
+    rows.sort((a, b) => a.name.localeCompare(b.name));
+    return rows;
+  }, [knownCategoryNames, vatDraft]);
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -976,6 +1071,54 @@ function AccessTab({
     const normalized = `/${trimmed.replace(/^\/+/, "").replace(/\/+$/, "")}`;
     setSelectedCourse(normalized);
     setManualUriInput("");
+  }
+
+  const selectedWpItem = isWpSelection
+    ? allWpContent.find((item) => item.uri === selectedCourse)
+    : null;
+  const selectedShopCategories =
+    isShopSelection && selectedShopProduct
+      ? deriveDigitalProductCategories(selectedShopProduct).categories
+      : [];
+  const selectedCategories = extractCategoryNames(
+    selectedWpItem?.categories,
+    selectedShopCategories,
+  );
+
+  function setVatRateForSlug(slug, rawValue) {
+    setVatDraft((prev) => {
+      const next = { ...prev };
+      if (rawValue === "") {
+        delete next[slug];
+        return next;
+      }
+      const parsed = parseVatPercent(rawValue);
+      if (parsed === null) return prev;
+      next[slug] = parsed;
+      return next;
+    });
+  }
+
+  function removeVatCategory(slug) {
+    setVatDraft((prev) => {
+      const next = { ...prev };
+      delete next[slug];
+      return next;
+    });
+  }
+
+  function addVatCategoryRow() {
+    const name = vatCategoryDraft.trim();
+    const slug = slugFromCategoryName(name);
+    if (!slug) return;
+    const parsed = parseVatPercent(vatRateDraft);
+    if (parsed === null) {
+      setError(t("admin.vatInvalidRate"));
+      return;
+    }
+    setVatDraft((prev) => ({ ...prev, [slug]: parsed }));
+    setVatCategoryDraft("");
+    setVatRateDraft("");
   }
 
   return (
@@ -1096,30 +1239,35 @@ function AccessTab({
                 name: p.name,
                 source: "wc",
                 active: courses[p.uri]?.active,
+                categories: p.categories,
               })),
               ...wpCourses.map((c) => ({
                 uri: c.uri,
                 name: c.title,
                 source: "lp",
                 active: courses[c.uri]?.active,
+                categories: c.categories,
               })),
               ...wpEvents.map((e) => ({
                 uri: e.uri,
                 name: e.title,
                 source: "ev",
                 active: courses[e.uri]?.active,
+                categories: e.categories,
               })),
               ...products.map((p, i) => ({
                 uri: `__shop_${i}`,
                 name: p.name || `Product ${i + 1}`,
                 source: "shop",
                 active: p.active,
+                categories: deriveDigitalProductCategories(p).categories,
               })),
               ...otherCourseUris.map((uri) => ({
                 uri,
                 name: uri,
                 source: "other",
                 active: courses[uri]?.active,
+                categories: [],
               })),
             ];
 
@@ -1158,12 +1306,18 @@ function AccessTab({
             return sorted.map((item) => {
               const isActive = selectedCourse === item.uri;
               const configured = isConfigured(item.uri);
+              const categoriesPreview = extractCategoryNames(item.categories)
+                .slice(0, 2)
+                .join(", ");
+              const titleText = categoriesPreview
+                ? `${item.name || item.uri} · ${categoriesPreview}`
+                : item.name || item.uri;
               return (
                 <button
                   key={item.uri}
                   type="button"
                   onClick={() => handleSelection(item.uri)}
-                  title={item.name || item.uri}
+                  title={titleText}
                   className={`w-full text-left px-2 py-2 flex items-center gap-1.5 border-b last:border-b-0 transition-colors ${isActive ? "bg-purple-50 border-l-2 border-l-purple-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"}`}
                 >
                   <span
@@ -1171,12 +1325,19 @@ function AccessTab({
                   >
                     {TYPE_LABEL[item.source]}
                   </span>
-                  <span
-                    className="text-sm truncate flex-1 text-gray-800"
-                    title={item.name || item.uri}
-                  >
-                    {item.name}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className="block text-sm truncate text-gray-800"
+                      title={item.name || item.uri}
+                    >
+                      {item.name}
+                    </span>
+                    {categoriesPreview && (
+                      <span className="block text-[10px] text-gray-400 truncate">
+                        {categoriesPreview}
+                      </span>
+                    )}
+                  </div>
                   {item.active === false && (
                     <span className="text-[9px] bg-red-50 text-red-500 px-1 rounded shrink-0">
                       Off
@@ -1253,6 +1414,7 @@ function AccessTab({
                   ""
                 ).replace(/&nbsp;/g, " ");
                 const wpParsedCents = parsePriceCents(wpPrice);
+                const wpCategories = extractCategoryNames(wpItem?.categories);
                 const sourceLabel =
                   wpItem?._source === "woocommerce"
                     ? "WooCommerce"
@@ -1318,6 +1480,11 @@ function AccessTab({
                         <p className="text-xs text-gray-400 truncate">
                           {selectedCourse}
                         </p>
+                        {wpCategories.length > 0 && (
+                          <p className="text-xs text-gray-500 truncate">
+                            {t("admin.categoryLabel")}: {wpCategories.join(", ")}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -1412,6 +1579,12 @@ function AccessTab({
                   <p className="text-xs text-gray-400">
                     Shop product — edit details in the Shop Products tab
                   </p>
+                  {selectedShopCategories.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t("admin.categoryLabel")}:{" "}
+                      {selectedShopCategories.join(", ")}
+                    </p>
+                  )}
                 </div>
                 <hr className="mt-2" />
               </div>
@@ -1434,6 +1607,8 @@ function AccessTab({
               setPrice={setPrice}
               currency={currency}
               setCurrency={setCurrency}
+              vatPercent={vatPercent}
+              setVatPercent={setVatPercent}
               userSearch={userSearch}
               setUserSearch={setUserSearch}
               users={users}
@@ -1447,6 +1622,127 @@ function AccessTab({
               loading={loading}
               autoSaveTrigger={autoSaveTrigger}
             />
+
+            <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-indigo-50 p-4 space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-purple-900">
+                    {t("admin.vatMapTitle")}
+                  </p>
+                  <p className="text-xs text-purple-700/90 mt-1">
+                    {t("admin.vatMapHint")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateShopVatByCategory(vatDraft)}
+                  disabled={shopSettingsSaving}
+                  className="px-3 py-1.5 rounded-md bg-purple-700 text-white text-xs font-medium hover:bg-purple-800 disabled:opacity-50"
+                >
+                  {shopSettingsSaving
+                    ? t("common.saving", "Saving…")
+                    : t("admin.vatMapSave")}
+                </button>
+              </div>
+              {shopSettingsMessage && (
+                <p className="text-xs text-green-700">{shopSettingsMessage}</p>
+              )}
+
+              {selectedCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedCategories.map((category) => {
+                    const slug = slugFromCategoryName(category);
+                    const mappedVat = slug ? vatDraft?.[slug] : undefined;
+                    return (
+                      <span
+                        key={`${category}-${slug}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-2.5 py-1 text-[11px] text-purple-800"
+                        title={slug ? `${category} (${slug})` : category}
+                      >
+                        <span className="font-medium">{category}</span>
+                        <span className="text-purple-500">
+                          {Number.isFinite(mappedVat)
+                            ? `${mappedVat}%`
+                            : t("admin.vatNotSet")}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <div className="grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 px-1">
+                  <span>{t("admin.categoryLabel")}</span>
+                  <span>{t("admin.vatPercent")}</span>
+                  <span>{t("admin.actionsLabel")}</span>
+                </div>
+                <div className="space-y-1 max-h-44 overflow-auto pr-1">
+                  {vatRows.length === 0 ? (
+                    <p className="text-xs text-gray-500 px-1 py-2">
+                      {t("admin.vatMapEmpty")}
+                    </p>
+                  ) : (
+                    vatRows.map((row) => (
+                      <div
+                        key={row.slug}
+                        className="grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 items-center rounded-lg border border-purple-100 bg-white px-2 py-1.5"
+                      >
+                        <span className="text-sm text-gray-700 truncate" title={row.slug}>
+                          {row.name}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={vatDraft?.[row.slug] ?? ""}
+                          onChange={(e) =>
+                            setVatRateForSlug(row.slug, e.target.value)
+                          }
+                          className="w-full border rounded px-2 py-1 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeVatCategory(row.slug)}
+                          className="text-xs text-red-600 hover:underline"
+                          title={t("admin.vatRemoveCategory")}
+                        >
+                          {t("common.remove")}
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-[minmax(0,1fr)_90px_auto] gap-2">
+                <input
+                  type="text"
+                  value={vatCategoryDraft}
+                  onChange={(e) => setVatCategoryDraft(e.target.value)}
+                  placeholder={t("admin.vatNewCategoryPlaceholder")}
+                  className="border rounded px-3 py-2 text-sm"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={vatRateDraft}
+                  onChange={(e) => setVatRateDraft(e.target.value)}
+                  placeholder="25"
+                  className="border rounded px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={addVatCategoryRow}
+                  className="px-3 py-2 rounded border border-purple-300 text-purple-700 text-sm hover:bg-purple-50"
+                >
+                  {t("common.add")}
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300 p-8">
@@ -1551,6 +1847,8 @@ export default function AdminProductsTab(props) {
   const {
     shopVisibleTypes,
     toggleShopType,
+    shopVatByCategory,
+    updateShopVatByCategory,
     shopSettingsSaving,
     shopSettingsMessage,
     wcProducts,
@@ -1585,6 +1883,8 @@ export default function AdminProductsTab(props) {
     setPrice,
     currency,
     setCurrency,
+    vatPercent,
+    setVatPercent,
     userSearch,
     setUserSearch,
     users,
@@ -1598,7 +1898,6 @@ export default function AdminProductsTab(props) {
     addManualEmail,
     saveUnified,
     loading,
-    joinMeta,
     storage,
   } = props;
 
@@ -1648,6 +1947,8 @@ export default function AdminProductsTab(props) {
           setPrice={setPrice}
           currency={currency}
           setCurrency={setCurrency}
+          vatPercent={vatPercent}
+          setVatPercent={setVatPercent}
           userSearch={userSearch}
           setUserSearch={setUserSearch}
           users={users}
@@ -1689,6 +1990,8 @@ export default function AdminProductsTab(props) {
             setPrice={setPrice}
             currency={currency}
             setCurrency={setCurrency}
+            vatPercent={vatPercent}
+            setVatPercent={setVatPercent}
             userSearch={userSearch}
             setUserSearch={setUserSearch}
             users={users}
@@ -1701,9 +2004,11 @@ export default function AdminProductsTab(props) {
             setManualEmail={setManualEmail}
             addManualEmail={addManualEmail}
             saveUnified={saveUnified}
+            shopVatByCategory={shopVatByCategory}
+            updateShopVatByCategory={updateShopVatByCategory}
+            shopSettingsSaving={shopSettingsSaving}
+            shopSettingsMessage={shopSettingsMessage}
             loading={loading}
-            joinMeta={joinMeta}
-            storage={storage}
             editFormRef={editFormRef}
           />
 

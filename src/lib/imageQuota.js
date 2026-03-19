@@ -2,6 +2,10 @@ export const SIZE_PRESETS = {
   square: { width: 512, height: 512 },
   landscape: { width: 896, height: 512 },
   portrait: { width: 512, height: 768 },
+  "portrait-4-5": { width: 640, height: 800 },
+  "portrait-3-4": { width: 768, height: 1024 },
+  "landscape-16-9": { width: 1024, height: 576 },
+  "story-9-16": { width: 576, height: 1024 },
   "a6-150dpi": { width: 624, height: 880 },
 };
 

@@ -4,11 +4,20 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { t } from "@/lib/i18n";
 import { SIZE_PRESETS } from "@/lib/imageQuota";
 
-const SIZE_PRESET_KEYS = ["square", "landscape", "portrait", "a6-150dpi"];
+const SIZE_PRESET_KEYS = [
+  "portrait-4-5",
+  "square",
+  "portrait-3-4",
+  "landscape-16-9",
+  "story-9-16",
+  "a6-150dpi",
+];
 const SIZE_LABEL_KEYS = {
+  "portrait-4-5": "admin.imageSizePortrait45",
   square: "admin.imageSizeSquare",
-  landscape: "admin.imageSizeLandscape",
-  portrait: "admin.imageSizePortrait",
+  "portrait-3-4": "admin.imageSizePortrait34",
+  "landscape-16-9": "admin.imageSizeLandscape169",
+  "story-9-16": "admin.imageSizeStory916",
   "a6-150dpi": "admin.imageSizeA6",
 };
 
@@ -38,7 +47,7 @@ export default function ImageGenerationPanel({
   const [prompt, setPrompt] = useState(initialPrompt ?? "");
   const [promptLoading, setPromptLoading] = useState(false);
   const [count, setCount] = useState(2);
-  const [size, setSize] = useState("square");
+  const [size, setSize] = useState("portrait-4-5");
   const [generating, setGenerating] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const elapsedRef = useRef(null);
@@ -110,12 +119,25 @@ export default function ImageGenerationPanel({
             : "?";
           showToast(t("admin.quotaExhausted", { time: resetTime }));
         } else {
-          showToast(json?.error || t("admin.imageGenFailed"));
+          const requestRef = json?.requestId
+            ? t("admin.imageErrorRef", { id: json.requestId.slice(0, 8) })
+            : "";
+          const hint = json?.hint || "";
+          const msgParts = [json?.error || t("admin.imageGenFailed"), hint, requestRef]
+            .filter(Boolean)
+            .join(" ");
+          showToast(msgParts);
         }
         return;
       }
       if (json.quota) setQuota(json.quota);
       setImages(json.images || []);
+      if (Array.isArray(json.warnings) && json.warnings.length > 0) {
+        showToast(
+          t("admin.imagePartialWarning", { n: json.warnings.length }),
+          "info",
+        );
+      }
       if ((json.images?.length ?? 0) < count) {
         showToast(
           t("admin.imagePartialFail", { n: json.images.length, m: count }),
@@ -142,7 +164,7 @@ export default function ImageGenerationPanel({
         new File([blob], "ragbaz-ai-image.png", { type: "image/png" }),
       );
       const uploadRes = await fetch(
-        `/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}`,
+        `/api/admin/upload?backend=${encodeURIComponent(uploadBackend)}&kind=image`,
         {
           method: "POST",
           body: form,

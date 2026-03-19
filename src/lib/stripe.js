@@ -84,9 +84,14 @@ export async function createStripeCheckoutSession({
   successUrl,
   cancelUrl,
   contentKind = "course",
+  vatPercent,
 }) {
   const kindLabel = labelForKind(contentKind);
   const fallbackName = `${kindLabel} access: ${courseUri}`;
+  const safeVatPercent =
+    typeof vatPercent === "number" && Number.isFinite(vatPercent)
+      ? Math.round(Math.max(0, Math.min(100, vatPercent)) * 100) / 100
+      : null;
   return createStripePaymentSession({
     itemName: courseTitle || fallbackName,
     description: courseTitle || fallbackName,
@@ -100,6 +105,9 @@ export async function createStripeCheckoutSession({
       course_uri: courseUri,
       course_title: courseTitle || "",
       product_name: courseTitle || "",
+      ...(safeVatPercent !== null
+        ? { vat_percent: String(safeVatPercent) }
+        : {}),
     },
   });
 }

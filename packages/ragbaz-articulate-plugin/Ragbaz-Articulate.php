@@ -52,6 +52,14 @@ function ragbaz_normalize_iso_datetime($value) {
   return gmdate('c', $ts);
 }
 
+function ragbaz_normalize_vat_percent($value) {
+  if ($value === '' || is_null($value)) return null;
+  if (!is_numeric($value)) return null;
+  $numeric = floatval($value);
+  if ($numeric < 0 || $numeric > 100) return null;
+  return round($numeric, 2);
+}
+
 // ---------------------------------------------------------------------------
 // Course access rules (same behaviour as legacy Articulate-LearnPress-Stripe)
 // ---------------------------------------------------------------------------
@@ -72,6 +80,7 @@ function ragbaz_get_rules() {
       'allowedUsers' => $emails,
       'priceCents' => max(0, intval(isset($rule['priceCents']) ? $rule['priceCents'] : 0)),
       'currency' => $currency,
+      'vatPercent' => ragbaz_normalize_vat_percent(isset($rule['vatPercent']) ? $rule['vatPercent'] : null),
       'active' => !array_key_exists('active', $rule) || (bool) $rule['active'],
       'updatedAt' => isset($rule['updatedAt']) ? (string) $rule['updatedAt'] : gmdate('c'),
     ];
@@ -90,7 +99,7 @@ function ragbaz_get_rule($course_uri) {
   return isset($rules[$course_uri]) && is_array($rules[$course_uri]) ? $rules[$course_uri] : null;
 }
 
-function ragbaz_set_rule($course_uri, $allowed_users, $price_cents, $currency, $active = null) {
+function ragbaz_set_rule($course_uri, $allowed_users, $price_cents, $currency, $active = null, $vat_percent = null) {
   $course_uri = ragbaz_normalize_uri($course_uri);
   if ($course_uri === '') return null;
 
@@ -104,12 +113,16 @@ function ragbaz_set_rule($course_uri, $allowed_users, $price_cents, $currency, $
   $resolved_active = is_null($active)
     ? (!isset($existing['active']) || (bool) $existing['active'])
     : ($active !== false);
+  $resolved_vat = is_null($vat_percent)
+    ? (isset($existing['vatPercent']) ? ragbaz_normalize_vat_percent($existing['vatPercent']) : null)
+    : ragbaz_normalize_vat_percent($vat_percent);
 
   $rules[$course_uri] = [
     'courseUri' => $course_uri,
     'allowedUsers' => $emails,
     'priceCents' => $price_cents,
     'currency' => $currency,
+    'vatPercent' => $resolved_vat,
     'active' => $resolved_active,
     'updatedAt' => gmdate('c'),
   ];
@@ -129,6 +142,7 @@ function ragbaz_grant_user_access($course_uri, $email) {
       'allowedUsers' => [],
       'priceCents' => 0,
       'currency' => 'usd',
+      'vatPercent' => null,
       'active' => true,
       'updatedAt' => gmdate('c'),
     ];
@@ -143,7 +157,8 @@ function ragbaz_grant_user_access($course_uri, $email) {
     $rule['allowedUsers'],
     isset($rule['priceCents']) ? intval($rule['priceCents']) : 0,
     isset($rule['currency']) ? $rule['currency'] : 'usd',
-    !isset($rule['active']) || (bool) $rule['active']
+    !isset($rule['active']) || (bool) $rule['active'],
+    isset($rule['vatPercent']) ? $rule['vatPercent'] : null
   );
 
   $user = get_user_by('email', $email);
@@ -490,6 +505,7 @@ add_action('graphql_register_types', function () {
       'allowedUsers' => ['type' => ['list_of' => 'String']],
       'priceCents' => ['type' => 'Int'],
       'currency' => ['type' => 'String'],
+      'vatPercent' => ['type' => 'Float'],
       'active' => ['type' => 'Boolean'],
       'updatedAt' => ['type' => 'String'],
     ],
@@ -507,6 +523,7 @@ add_action('graphql_register_types', function () {
       'allowedUsers' => ['type' => ['list_of' => 'String']],
       'priceCents' => ['type' => 'Int'],
       'currency' => ['type' => 'String'],
+      'vatPercent' => ['type' => 'Float'],
       'active' => ['type' => 'Boolean'],
     ],
   ]);
@@ -570,6 +587,7 @@ add_action('graphql_register_types', function () {
       'allowedUsers' => ['type' => ['list_of' => 'String']],
       'priceCents' => ['type' => 'Int'],
       'currency' => ['type' => 'String'],
+      'vatPercent' => ['type' => 'Float'],
       'active' => ['type' => 'Boolean'],
     ],
     'outputFields' => [
@@ -584,7 +602,8 @@ add_action('graphql_register_types', function () {
         isset($input['allowedUsers']) ? $input['allowedUsers'] : [],
         isset($input['priceCents']) ? intval($input['priceCents']) : 0,
         isset($input['currency']) ? $input['currency'] : 'usd',
-        array_key_exists('active', $input) ? (bool) $input['active'] : null
+        array_key_exists('active', $input) ? (bool) $input['active'] : null,
+        array_key_exists('vatPercent', $input) ? $input['vatPercent'] : null
       );
       return ['rule' => $rule];
     },

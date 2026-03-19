@@ -39,6 +39,18 @@ test("resolveSize returns landscape dimensions", () => {
 test("resolveSize returns portrait dimensions", () => {
   assert.deepEqual(resolveSize("portrait"), { width: 512, height: 768 });
 });
+test("resolveSize returns 4:5 portrait dimensions", () => {
+  assert.deepEqual(resolveSize("portrait-4-5"), { width: 640, height: 800 });
+});
+test("resolveSize returns 3:4 portrait dimensions", () => {
+  assert.deepEqual(resolveSize("portrait-3-4"), { width: 768, height: 1024 });
+});
+test("resolveSize returns 16:9 landscape dimensions", () => {
+  assert.deepEqual(resolveSize("landscape-16-9"), { width: 1024, height: 576 });
+});
+test("resolveSize returns 9:16 story dimensions", () => {
+  assert.deepEqual(resolveSize("story-9-16"), { width: 576, height: 1024 });
+});
 test("resolveSize returns a6-150dpi dimensions", () => {
   assert.deepEqual(resolveSize("a6-150dpi"), { width: 624, height: 880 });
 });

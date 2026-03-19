@@ -68,11 +68,24 @@ function normaliseCharge(charge, fallbackEmail) {
   const configuredCurrency = String(
     process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
   ).toLowerCase();
+  const rawMetadata =
+    charge && typeof charge.metadata === "object" && charge.metadata
+      ? charge.metadata
+      : {};
+  const metadata = Object.fromEntries(
+    Object.entries(rawMetadata).filter(
+      ([key, value]) =>
+        typeof key === "string" &&
+        key.trim() &&
+        typeof value === "string" &&
+        value.trim(),
+    ),
+  );
   const description =
     charge.description ||
-    charge.metadata?.product_name ||
-    charge.metadata?.course_title ||
-    charge.metadata?.course_uri ||
+    metadata.product_name ||
+    metadata.course_title ||
+    metadata.course_uri ||
     "";
   return {
     id: charge.id,
@@ -90,6 +103,7 @@ function normaliseCharge(charge, fallbackEmail) {
     paymentIntentId:
       typeof charge.payment_intent === "string" ? charge.payment_intent : null,
     description,
+    metadata,
   };
 }
 

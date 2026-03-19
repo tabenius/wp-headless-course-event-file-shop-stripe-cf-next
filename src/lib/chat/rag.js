@@ -175,7 +175,7 @@ async function _doRebuild() {
   manuals.forEach((manual) => {
     nodes.push({
       id: manual.title,
-      uri: "/docs",
+      uri: "/admin/docs",
       title: manual.title,
       content: manual.text,
       kind: "manual",

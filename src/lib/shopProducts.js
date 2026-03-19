@@ -6,6 +6,10 @@ import { ALL_TYPES, getShopSettings } from "@/lib/shopSettings";
 import { stripHtml } from "@/lib/slugify";
 import { decodeEntities } from "@/lib/decodeEntities";
 import { parsePriceCents } from "@/lib/parsePrice";
+import {
+  deriveCategories,
+  deriveDigitalProductCategories,
+} from "@/lib/contentCategories";
 import site from "@/lib/site";
 
 /**
@@ -19,6 +23,28 @@ import site from "@/lib/site";
  */
 
 const defaultCurrency = site.defaultCurrency || "SEK";
+const graphqlFieldSupportCache = new Map();
+
+async function hasGraphQLField(typeName, fieldName) {
+  const cacheKey = `${typeName}:${fieldName}`;
+  if (graphqlFieldSupportCache.has(cacheKey)) {
+    return graphqlFieldSupportCache.get(cacheKey);
+  }
+  const data = await fetchGraphQL(
+    `query IntrospectField($name: String!) {
+      __type(name: $name) {
+        fields { name }
+      }
+    }`,
+    { name: typeName },
+    1800,
+  );
+  const exists = (data?.__type?.fields || []).some(
+    (field) => field?.name === fieldName,
+  );
+  graphqlFieldSupportCache.set(cacheKey, exists);
+  return exists;
+}
 
 async function fetchWooCommerceProducts() {
   try {
@@ -32,16 +58,19 @@ async function fetchWooCommerceProducts() {
                 databaseId name slug uri price regularPrice
                 shortDescription
                 featuredImage { node { sourceUrl } }
+                productCategories { edges { node { name slug } } }
               }
               ... on VariableProduct {
                 databaseId name slug uri price regularPrice
                 shortDescription
                 featuredImage { node { sourceUrl } }
+                productCategories { edges { node { name slug } } }
               }
               ... on ExternalProduct {
                 databaseId name slug uri price regularPrice
                 shortDescription
                 featuredImage { node { sourceUrl } }
+                productCategories { edges { node { name slug } } }
               }
             }
           }
@@ -64,10 +93,18 @@ async function fetchWooCommerceProducts() {
 
 async function fetchLearnPressCourses() {
   try {
+    const hasCourseCategories = await hasGraphQLField(
+      "LpCourse",
+      "lpCourseCategory",
+    );
+    const categoryFragment = hasCourseCategories
+      ? "lpCourseCategory { nodes { name slug } }"
+      : "";
     const data = await fetchGraphQL(
       `{ lpCourses(first: 100) { edges { node {
         databaseId uri title price priceRendered duration
         featuredImage { node { sourceUrl } }
+        ${categoryFragment}
       } } } }`,
       {},
       300,
@@ -84,10 +121,15 @@ async function fetchLearnPressCourses() {
 
 async function fetchEvents() {
   try {
+    const hasEventCategories = await hasGraphQLField("Event", "eventCategories");
+    const categoryFragment = hasEventCategories
+      ? "eventCategories { nodes { name slug } }"
+      : "";
     const data = await fetchGraphQL(
       `{ events(first: 100) { edges { node {
         databaseId uri title slug
         featuredImage { node { sourceUrl } }
+        ${categoryFragment}
       } } } }`,
       {},
       300,
@@ -140,6 +182,10 @@ export async function listAllShopItems() {
   for (const p of wcProducts) {
     const uri = p.uri?.replace(/\/+$/, "") || `/product/${p.slug}`;
     const config = courseConfigs[uri];
+    const wcCategories = deriveCategories({
+      explicit: p.productCategories,
+      implied: ["Product", "WooCommerce"],
+    });
     items.push({
       id: `wc-${p.databaseId}`,
       slug: p.slug,
@@ -153,7 +199,12 @@ export async function listAllShopItems() {
       type: "product",
       source: "woocommerce",
       uri,
+      vatPercent:
+        typeof config?.vatPercent === "number" && Number.isFinite(config.vatPercent)
+          ? config.vatPercent
+          : null,
       active: config?.active !== false,
+      ...wcCategories,
     });
   }
 
@@ -162,6 +213,10 @@ export async function listAllShopItems() {
     const uri = c.uri?.replace(/\/+$/, "") || "";
     if (!uri) continue;
     const config = courseConfigs[uri];
+    const lpCategories = deriveCategories({
+      explicit: c.lpCourseCategory,
+      implied: ["Course", "LearnPress"],
+    });
     items.push({
       id: `lp-${c.databaseId}`,
       slug: uri.replace(/^\//, ""),
@@ -175,8 +230,13 @@ export async function listAllShopItems() {
       type: "course",
       source: "learnpress",
       uri,
+      vatPercent:
+        typeof config?.vatPercent === "number" && Number.isFinite(config.vatPercent)
+          ? config.vatPercent
+          : null,
       active: config?.active !== false,
       duration: c.duration || "",
+      ...lpCategories,
     });
   }
 
@@ -186,6 +246,10 @@ export async function listAllShopItems() {
     if (!uri) continue;
     const config = courseConfigs[uri];
     if (!config || !config.priceCents) continue; // skip free / unconfigured events
+    const eventCategories = deriveCategories({
+      explicit: e.eventCategories,
+      implied: ["Event", "WordPress"],
+    });
     items.push({
       id: `ev-${e.databaseId}`,
       slug: e.slug || uri.replace(/^\//, ""),
@@ -198,12 +262,22 @@ export async function listAllShopItems() {
       type: "event",
       source: "wordpress",
       uri,
+      vatPercent:
+        typeof config?.vatPercent === "number" && Number.isFinite(config.vatPercent)
+          ? config.vatPercent
+          : null,
       active: config?.active !== false,
+      ...eventCategories,
     });
   }
 
   // Digital products (from admin / KV)
   for (const d of digitalProducts) {
+    const normalizedType = d.type === "course" ? "digital_course" : "digital_file";
+    const digitalCategories = deriveDigitalProductCategories({
+      ...d,
+      type: normalizedType,
+    });
     items.push({
       id: d.id,
       slug: d.slug,
@@ -213,9 +287,14 @@ export async function listAllShopItems() {
       price: "",
       priceCents: d.priceCents || 0,
       currency: d.currency || defaultCurrency,
-      type: d.type === "course" ? "digital_course" : "digital_file",
+      type: normalizedType,
       source: "digital",
       uri: `/shop/${d.slug}`,
+      vatPercent:
+        typeof d.vatPercent === "number" && Number.isFinite(d.vatPercent)
+          ? d.vatPercent
+          : null,
+      ...digitalCategories,
     });
   }
 

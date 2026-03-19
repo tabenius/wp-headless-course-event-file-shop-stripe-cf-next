@@ -19,6 +19,22 @@ describe("resolveSize", () => {
     assert.deepEqual(resolveSize("portrait"), { width: 512, height: 768 });
   });
 
+  it("returns 4:5 portrait preset", () => {
+    assert.deepEqual(resolveSize("portrait-4-5"), { width: 640, height: 800 });
+  });
+
+  it("returns 3:4 portrait preset", () => {
+    assert.deepEqual(resolveSize("portrait-3-4"), { width: 768, height: 1024 });
+  });
+
+  it("returns 16:9 landscape preset", () => {
+    assert.deepEqual(resolveSize("landscape-16-9"), { width: 1024, height: 576 });
+  });
+
+  it("returns 9:16 story preset", () => {
+    assert.deepEqual(resolveSize("story-9-16"), { width: 576, height: 1024 });
+  });
+
   it("returns a6-150dpi preset", () => {
     assert.deepEqual(resolveSize("a6-150dpi"), { width: 624, height: 880 });
   });

@@ -424,6 +424,12 @@ export default function AdminSalesTab({
                   <th className="px-4 py-3 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
                     {t("admin.colAmount", "Amount")}
                   </th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                    {t("admin.colVat", "VAT")}
+                  </th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                    {t("admin.colNet", "Net")}
+                  </th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     {t("admin.colStatus", "Status")}
                   </th>
@@ -451,6 +457,24 @@ export default function AdminSalesTab({
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums text-gray-900">
                       {formatAmount(p.amount, p.currency)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-xs tabular-nums text-gray-700">
+                      {typeof p.vatPercent === "number" &&
+                      typeof p.vatAmount === "number" ? (
+                        <span title={t("admin.vatDerivedFromSettings")}>
+                          {formatAmount(p.vatAmount, p.currency)} (
+                          {p.vatPercent}%)
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-xs font-medium tabular-nums text-gray-700">
+                      {typeof p.netAmount === "number" ? (
+                        formatAmount(p.netAmount, p.currency)
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={p.status} />

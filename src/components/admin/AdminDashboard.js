@@ -88,6 +88,21 @@ function toCents(units) {
   return Math.round(parsed * 100);
 }
 
+function parseVatPercentInput(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const parsed =
+    typeof value === "number"
+      ? value
+      : Number.parseFloat(String(value).replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return null;
+  return Math.round(parsed * 100) / 100;
+}
+
+function vatPercentToInput(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "";
+  return String(value);
+}
+
 /** Alternating row background for product lists (purple hues). */
 function emptyProduct() {
   return {
@@ -99,6 +114,8 @@ function emptyProduct() {
     priceCents: 0,
     currency: "SEK",
     fileUrl: "",
+    mimeType: "",
+    vatPercent: null,
     courseUri: "",
     active: true,
     slugEdited: false,
@@ -447,6 +464,7 @@ export default function AdminDashboard() {
   const [selectedCourseActive, setSelectedCourseActive] = useState(true);
   const [price, setPrice] = useState("0.00");
   const [currency, setCurrency] = useState("SEK");
+  const [vatPercent, setVatPercent] = useState("");
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [manualEmail, setManualEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -498,6 +516,7 @@ export default function AdminDashboard() {
   ]);
   const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
   const [shopSettingsMessage, setShopSettingsMessage] = useState("");
+  const [shopVatByCategory, setShopVatByCategory] = useState({});
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [ticketsError, setTicketsError] = useState("");
@@ -597,6 +616,9 @@ export default function AdminDashboard() {
     function onHashChange() {
       const tab = parseTabFromHash(window.location.hash);
       if (!tab) {
+        if (window.__RAGBAZ_IMPRESS_ACTIVE__) {
+          return;
+        }
         const fallback = ADMIN_TAB_SET.has(activeTabRef.current)
           ? activeTabRef.current
           : "welcome";
@@ -752,6 +774,9 @@ export default function AdminDashboard() {
       if (res.ok && json?.ok && Array.isArray(json.settings?.visibleTypes)) {
         setShopVisibleTypes(json.settings.visibleTypes);
       }
+      if (json?.settings?.vatByCategory && typeof json.settings.vatByCategory === "object") {
+        setShopVatByCategory(json.settings.vatByCategory);
+      }
       setLoaded((s) => ({ ...s, shopSettings: true }));
     } catch (err) {
       console.error("AdminDashboard: failed to load shop settings", err);
@@ -885,28 +910,51 @@ export default function AdminDashboard() {
     loaded.payments,
   ]);
 
-  async function saveShopVisibility(types) {
-    setShopVisibleTypes(types);
+  async function saveShopSettings(nextSettings, successMessageKey) {
     setShopSettingsSaving(true);
     try {
-      await fetch("/api/admin/shop-settings", {
+      const res = await fetch("/api/admin/shop-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visibleTypes: types }),
+        body: JSON.stringify(nextSettings),
       });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || t("admin.shopSettingsSaveFailed"));
+      }
+      if (Array.isArray(json.settings?.visibleTypes)) {
+        setShopVisibleTypes(json.settings.visibleTypes);
+      }
+      if (json.settings?.vatByCategory && typeof json.settings.vatByCategory === "object") {
+        setShopVatByCategory(json.settings.vatByCategory);
+      }
+      setShopSettingsMessage(t(successMessageKey || "admin.shopVisibilitySaved"));
+      setTimeout(() => setShopSettingsMessage(""), 3000);
     } catch (err) {
       console.error("Failed to save shop settings:", err);
+      setError(err.message || t("admin.shopSettingsSaveFailed"));
+    } finally {
+      setShopSettingsSaving(false);
     }
-    setShopSettingsSaving(false);
-    setShopSettingsMessage(t("admin.shopVisibilitySaved"));
-    setTimeout(() => setShopSettingsMessage(""), 3000);
   }
 
   function toggleShopType(type) {
     const next = shopVisibleTypes.includes(type)
       ? shopVisibleTypes.filter((t) => t !== type)
       : [...shopVisibleTypes, type];
-    saveShopVisibility(next);
+    setShopVisibleTypes(next);
+    saveShopSettings(
+      { visibleTypes: next, vatByCategory: shopVatByCategory },
+      "admin.shopVisibilitySaved",
+    );
+  }
+
+  function updateShopVatByCategory(nextVatByCategory) {
+    setShopVatByCategory(nextVatByCategory);
+    saveShopSettings(
+      { visibleTypes: shopVisibleTypes, vatByCategory: nextVatByCategory },
+      "admin.vatMapSaved",
+    );
   }
 
   const selectedTicket = useMemo(
@@ -1022,7 +1070,16 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chargeId }),
       });
-      if (!res.ok) throw new Error("Failed to download receipt");
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        const message =
+          json?.error ||
+          t("admin.receiptDownloadFailed", "Failed to download receipt");
+        const requestRef = json?.requestId
+          ? ` (${t("admin.errorRef", "ref")}: ${json.requestId.slice(0, 8)})`
+          : "";
+        throw new Error(`${message}${requestRef}`);
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1033,7 +1090,10 @@ export default function AdminDashboard() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err.message || "Failed to download receipt");
+      setError(
+        err.message ||
+          t("admin.receiptDownloadFailed", "Failed to download receipt"),
+      );
     } finally {
       setDownloading(null);
     }
@@ -1128,6 +1188,7 @@ export default function AdminDashboard() {
     if (isShopSelection && selectedShopProduct) {
       setPrice(toCurrencyUnits(selectedShopProduct.priceCents ?? 0));
       setCurrency((selectedShopProduct.currency || "SEK").toUpperCase());
+      setVatPercent(vatPercentToInput(selectedShopProduct.vatPercent));
       setSelectedCourseActive(true);
       const uri =
         selectedShopProduct.type === "course"
@@ -1150,6 +1211,7 @@ export default function AdminDashboard() {
     if (config) {
       setPrice(toCurrencyUnits(config.priceCents ?? 0));
       setCurrency((config.currency || "SEK").toUpperCase());
+      setVatPercent(vatPercentToInput(config.vatPercent));
       setSelectedCourseActive(config.active !== false);
       setAllowedUsers(
         Array.isArray(config.allowedUsers) ? config.allowedUsers : [],
@@ -1164,6 +1226,7 @@ export default function AdminDashboard() {
     setPrice(wpPriceCents > 0 ? toCurrencyUnits(wpPriceCents) : "");
     setSelectedCourseActive(true);
     setCurrency("SEK");
+    setVatPercent("");
     setAllowedUsers([]);
   }, [
     selectedCourse,
@@ -1187,8 +1250,6 @@ export default function AdminDashboard() {
       ),
     [knownCourses, allWpContent, products],
   );
-
-  const joinMeta = (parts = []) => parts.filter(Boolean).join(" · ");
 
   const filteredUsers = useMemo(() => {
     if (!userSearch.trim()) return users;
@@ -1284,6 +1345,7 @@ export default function AdminDashboard() {
 
     const uri = accessUri;
     const nextPriceCents = toCents(price);
+    const nextVatPercent = parseVatPercentInput(vatPercent);
     const normalizedCurrency = (currency || "SEK").toUpperCase();
     const wpMatch = isWpSelection
       ? allWpContent.find((item) => item.uri === uri)
@@ -1320,6 +1382,7 @@ export default function AdminDashboard() {
                 ...p,
                 priceCents: toCents(price),
                 currency: currency.toUpperCase(),
+                vatPercent: nextVatPercent,
               }
             : p,
         );
@@ -1334,6 +1397,11 @@ export default function AdminDashboard() {
             : Number.parseInt(String(p.priceCents || "0"), 10) || 0,
           currency: (p.currency || "SEK").toUpperCase(),
           fileUrl: p.fileUrl,
+          mimeType: p.mimeType || "",
+          vatPercent:
+            typeof p.vatPercent === "number" && Number.isFinite(p.vatPercent)
+              ? p.vatPercent
+              : null,
           courseUri: p.courseUri,
           active: p.active !== false,
         }));
@@ -1386,6 +1454,7 @@ export default function AdminDashboard() {
               allowedUsers,
               priceCents: nextPriceCents,
               currency: normalizedCurrency,
+              vatPercent: nextVatPercent,
               ...(typeof nextActive === "boolean" ? { active: nextActive } : {}),
             }),
           });
@@ -1495,6 +1564,9 @@ export default function AdminDashboard() {
           });
           setUploadProgress(null);
           updateProduct(index, field, url);
+          if (field === "fileUrl") {
+            updateProduct(index, "mimeType", file.type || "");
+          }
         } else {
           // Small file — use regular upload through Worker
           setUploadingField(field);
@@ -1514,6 +1586,9 @@ export default function AdminDashboard() {
             return;
           }
           updateProduct(index, field, json.url);
+          if (field === "fileUrl") {
+            updateProduct(index, "mimeType", file.type || json.mimeType || "");
+          }
         }
       } catch (err) {
         setUploadProgress(null);
@@ -1651,6 +1726,8 @@ export default function AdminDashboard() {
           <AdminProductsTab
             shopVisibleTypes={shopVisibleTypes}
             toggleShopType={toggleShopType}
+            shopVatByCategory={shopVatByCategory}
+            updateShopVatByCategory={updateShopVatByCategory}
             shopSettingsSaving={shopSettingsSaving}
             shopSettingsMessage={shopSettingsMessage}
             wcProducts={wcProducts}
@@ -1685,6 +1762,8 @@ export default function AdminDashboard() {
             setPrice={setPrice}
             currency={currency}
             setCurrency={setCurrency}
+            vatPercent={vatPercent}
+            setVatPercent={setVatPercent}
             userSearch={userSearch}
             setUserSearch={setUserSearch}
             users={users}
@@ -1698,7 +1777,6 @@ export default function AdminDashboard() {
             addManualEmail={addManualEmail}
             saveUnified={saveUnified}
             loading={loading}
-            joinMeta={joinMeta}
             storage={storage}
           />
         </Suspense>

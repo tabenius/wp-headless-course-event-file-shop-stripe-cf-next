@@ -4,6 +4,13 @@ const EMBEDDING_MODEL =
   process.env.CF_EMBED_MODEL || "@cf/baai/bge-base-en-v1.5";
 const CHAT_MODEL = process.env.CF_CHAT_MODEL || "@cf/meta/llama-2-7b-chat-int8";
 
+function aiError(code, message, meta = {}) {
+  const error = new Error(message);
+  error.code = code;
+  error.meta = meta;
+  return error;
+}
+
 /**
  * Run a model via the Workers AI binding (preferred on CF Workers) or fall
  * back to the REST API for local development.
@@ -13,7 +20,16 @@ async function cfRun(model, body) {
   try {
     const ctx = await getCloudflareContext({ async: true });
     if (ctx?.env?.AI) {
-      const result = await ctx.env.AI.run(model, body);
+      let result;
+      try {
+        result = await ctx.env.AI.run(model, body);
+      } catch (error) {
+        throw aiError(
+          "ai_binding_run_failed",
+          error?.message || "Workers AI binding invocation failed",
+          { model },
+        );
+      }
       return { result };
     }
   } catch {
@@ -22,24 +38,49 @@ async function cfRun(model, body) {
 
   // REST API fallback for local dev.
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  if (!accountId) throw new Error("CLOUDFLARE_ACCOUNT_ID missing");
+  if (!accountId) {
+    throw aiError(
+      "cf_account_missing",
+      "CLOUDFLARE_ACCOUNT_ID missing",
+      { model },
+    );
+  }
   const token = process.env.CF_API_TOKEN;
-  if (!token) throw new Error("CF_API_TOKEN missing");
+  if (!token) {
+    throw aiError("cf_api_token_missing", "CF_API_TOKEN missing", { model });
+  }
 
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`CF AI error ${res.status}: ${text.slice(0, 200)}`);
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    throw aiError(
+      "cf_ai_network_error",
+      error?.message || "Cloudflare AI network request failed",
+      { model },
+    );
   }
-  return res.json();
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw aiError(
+      "cf_ai_http_error",
+      `CF AI error ${res.status}: ${text.slice(0, 200)}`,
+      { model, status: res.status },
+    );
+  }
+  return res.json().catch(() => {
+    throw aiError("cf_ai_parse_error", "CF AI response was not valid JSON", {
+      model,
+    });
+  });
 }
 
 export async function embedTexts(texts) {
@@ -77,10 +118,27 @@ export async function generateImage(prompt, width = 512, height = 512) {
   try {
     const ctx = await getCloudflareContext({ async: true });
     if (ctx?.env?.AI) {
-      const buf = await ctx.env.AI.run(model, { prompt, width, height });
-      return buf instanceof ArrayBuffer
-        ? buf
-        : await new Response(buf).arrayBuffer();
+      let buf;
+      try {
+        buf = await ctx.env.AI.run(model, { prompt, width, height });
+      } catch (error) {
+        throw aiError(
+          "ai_image_binding_failed",
+          error?.message || "Workers AI image generation failed",
+          { model, width, height },
+        );
+      }
+      try {
+        return buf instanceof ArrayBuffer
+          ? buf
+          : await new Response(buf).arrayBuffer();
+      } catch {
+        throw aiError(
+          "ai_image_binding_decode_failed",
+          "Workers AI image response could not be decoded",
+          { model, width, height },
+        );
+      }
     }
   } catch {
     // Not running on Workers — fall through to REST API.
@@ -88,22 +146,52 @@ export async function generateImage(prompt, width = 512, height = 512) {
 
   // REST API fallback.
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  if (!accountId) throw new Error("CLOUDFLARE_ACCOUNT_ID missing");
+  if (!accountId) {
+    throw aiError(
+      "cf_account_missing",
+      "CLOUDFLARE_ACCOUNT_ID missing",
+      { model },
+    );
+  }
   const token = process.env.CF_API_TOKEN;
-  if (!token) throw new Error("CF_API_TOKEN missing");
+  if (!token) {
+    throw aiError("cf_api_token_missing", "CF_API_TOKEN missing", { model });
+  }
 
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ prompt, width, height }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`CF AI image error ${res.status}: ${text.slice(0, 200)}`);
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt, width, height }),
+    });
+  } catch (error) {
+    throw aiError(
+      "cf_ai_image_network_error",
+      error?.message || "Cloudflare image request failed",
+      { model, width, height },
+    );
   }
-  return res.arrayBuffer();
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw aiError(
+      "cf_ai_image_http_error",
+      `CF AI image error ${res.status}: ${text.slice(0, 200)}`,
+      { model, width, height, status: res.status },
+    );
+  }
+
+  try {
+    return await res.arrayBuffer();
+  } catch {
+    throw aiError(
+      "cf_ai_image_decode_failed",
+      "Cloudflare image response could not be decoded",
+      { model, width, height },
+    );
+  }
 }

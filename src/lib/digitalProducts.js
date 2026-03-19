@@ -3,6 +3,7 @@ import {
   readCloudflareKvJson,
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
+import { deriveDigitalProductCategories } from "@/lib/contentCategories";
 import { slugify } from "@/lib/slugify";
 
 export const PRODUCT_FILE = "config/digital-products.json";
@@ -22,6 +23,22 @@ function normalizeCurrency(currency) {
 function normalizeType(type) {
   const safe = typeof type === "string" ? type.trim().toLowerCase() : "";
   return safe === "course" ? "course" : "digital_file";
+}
+
+function normalizeMimeType(mimeType) {
+  return typeof mimeType === "string" ? mimeType.trim().toLowerCase() : "";
+}
+
+function normalizeVatPercent(vatPercent) {
+  if (vatPercent === "" || vatPercent === null || vatPercent === undefined) {
+    return null;
+  }
+  const parsed =
+    typeof vatPercent === "number"
+      ? vatPercent
+      : Number.parseFloat(String(vatPercent).replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return null;
+  return Math.round(parsed * 100) / 100;
 }
 
 function normalizeCourseUri(courseUri) {
@@ -81,10 +98,20 @@ function sanitizeProduct(product, seenSlugs) {
   const fileUrl =
     typeof product?.fileUrl === "string" ? product.fileUrl.trim() : "";
   const courseUri = normalizeCourseUri(product?.courseUri);
+  const mimeType = normalizeMimeType(product?.mimeType || product?.contentType);
+  const vatPercent = normalizeVatPercent(product?.vatPercent);
 
   if (imageUrl && !isValidHttpUrl(imageUrl)) return null;
   if (type === "digital_file" && !isValidHttpUrl(fileUrl)) return null;
   if (type === "course" && !courseUri) return null;
+
+  const normalizedType = type === "course" ? "digital_course" : "digital_file";
+  const categories = deriveDigitalProductCategories({
+    ...product,
+    type: normalizedType,
+    fileUrl,
+    mimeType,
+  });
 
   return {
     id: slug,
@@ -98,8 +125,11 @@ function sanitizeProduct(product, seenSlugs) {
     currency: normalizeCurrency(product?.currency),
     fileUrl: type === "digital_file" ? fileUrl : "",
     courseUri: type === "course" ? courseUri : "",
+    mimeType: type === "digital_file" ? mimeType : "",
+    vatPercent,
     active: product?.active !== false,
     updatedAt: new Date().toISOString(),
+    ...categories,
   };
 }
 

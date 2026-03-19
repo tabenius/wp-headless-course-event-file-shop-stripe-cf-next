@@ -183,45 +183,25 @@ Full list in `.env.example`.
 
 ## Current priorities
 
-### [Codex] Chat Enhancements (Implemented)
+### Ranked backlog (see coop file for full detail)
 
-The following features have been implemented for the chat feature:
+1. **P2 / Medium** — Welcome slideshow realism: replace mock image-generator slide with live data + fallback.
+2. **P2 / Medium** — Admin dead-link finder panel with internal/pseudo-external/external classification.
+3. **Follow-up / Monitoring** — Watch new P0/P1 hardening (image diagnostics, receipt PDF fallback/trace, VAT propagation) for regressions in production logs.
 
-1. **Chat History Persistence**: ✅ Implemented in `cloudflareKv.js` and integrated into the chat API (`route.js`).
-2. **"Clear Chat" Button**: ⏳ Postponed (no need to clear history).
-3. **Copy Button**: ✅ Added to `ChatMessage.js` with options for raw text or formatted markdown.
-4. **i18n Support**: ✅ Added labels for the copy button in all languages (`en.json`, `sv.json`, `es.json`).
+### Working rules for this backlog
 
-### Next Steps
-
-- **Claude**: Review and test the new chat features.
-- **Both**: Address open questions in `AGENTS.md` (streaming responses, user feedback mechanism).
-
-### Open Questions
-
-- Should we prioritize **streaming responses** for the chat feature? (Requires Cloudflare paid tier.)
-- Should we add a **user feedback mechanism** for AI responses?
-
-### [Claude] Image Generator Polish (Completed)
-
-- Thumbnails now scale to correct aspect ratio per preset using `thumbDims()` from `SIZE_PRESETS`.
-- Added "Copy prompt" button (EN/SV/ES i18n).
-- Count toggle extended to [1, 2, 3].
-- Elapsed-second counter shown on generate button during FLUX call.
-
-### [Codex] Chat Modularisation + Markdown Rendering (Completed)
-
-- Split `route.js` into `src/lib/chat/{rag,detect,intents}.js`.
-- Added 12 new tests for `chunkText`, `cosine`, `detectLanguage`, and intent routing.
-- Extracted `ChatPanel`, `ChatMessage`, and `ChatMarkdown` components.
-- Markdown rendering now supports tables, lists, code blocks, and inline formatting.
-- Eliminated `m.table` hack.
-- Added auto-scroll to bottom on new messages.
+- Execute in listed order unless a production regression interrupts.
+- Keep TODO ownership/status in `claude+codex-coop.md` top section.
+- Run targeted lint/tests after each backlog item lands.
 
 ---
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Closed the current P0/P1 batch by wiring `vatPercent` through the WordPress plugin GraphQL schema/mutation (`CourseAccessRule`, `SetCourseAccessRuleInput`, `setCourseAccessRule`), keeping storefront/admin VAT persistence aligned end-to-end; removed an unused legacy course-access helper; verified with `npm run lint` (warnings only) and `npm test` (15/15 pass).
+- **2026-03-19 (Codex)**: Hardened admin documentation routing by fixing `/admin/docs` index slug links, broadening markdown link rewrites to keep `docs/*.md` references inside `/admin/docs/*`, and switching chat manual source links from `/docs` to `/admin/docs` to prevent admin-side 404s.
+- **2026-03-19 (Codex)**: Added generalized product category extraction across WooCommerce/LearnPress/Events plus digital-file extension/MIME heuristics, and implemented a new VAT-by-category editor in Products → Access backed by `shopSettings.vatByCategory` persistence.
 - **2026-03-19 (Codex)**: Improved Stripe purchase clarity by sending explicit payment-intent/line-item descriptions and mirrored metadata (`product_name`, `course_title`, etc.) during checkout, then updating admin payment normalization to use configured currency (default `SEK`) and metadata-backed description fallback when charge descriptions are empty.
 - **2026-03-19 (Codex)**: Product/Stripe reliability pass: normalized admin tab event payloads, blocked AltGraph from triggering Ctrl+Alt admin hotkeys, and tightened `/api/admin/payments` query parsing (`email` trim/lowercase, safe `limit` clamp, safe `from` parse).
 - **2026-03-19 (Codex)**: Fixed payments error UX regressions by adding missing `admin.paymentsLoadFailed`/`admin.paymentsRetryHint` and Stripe-specific error keys in EN/SV/ES; mapped backend Stripe error classes to explicit codes/messages so users no longer see raw `stripe_lookup_failed`.

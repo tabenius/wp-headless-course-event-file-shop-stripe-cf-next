@@ -98,7 +98,50 @@ function isActiveSchemaMismatch(error) {
   );
 }
 
+function isVatSchemaMismatch(error) {
+  const message = String(error?.message || "").toLowerCase();
+  if (!message.includes("vatpercent")) return false;
+  return (
+    message.includes("cannot query field") ||
+    message.includes("unknown argument") ||
+    message.includes("does not exist") ||
+    message.includes("doesn't accept argument")
+  );
+}
+
+function normalizeVatPercent(vatPercent) {
+  if (vatPercent === "" || vatPercent === null || vatPercent === undefined) {
+    return null;
+  }
+  const parsed =
+    typeof vatPercent === "number"
+      ? vatPercent
+      : Number.parseFloat(String(vatPercent).replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return null;
+  return Math.round(parsed * 100) / 100;
+}
+
 async function getWordPressAdminState() {
+  const queryWithVatAndActive = `
+    query GetCourseAccessAdminData {
+      courseAccessRules {
+        courseUri
+        priceCents
+        currency
+        vatPercent
+        active
+        allowedUsers
+        updatedAt
+      }
+      users(first: 200) {
+        nodes {
+          id
+          name
+          email
+        }
+      }
+    }
+  `;
   const queryWithActive = `
     query GetCourseAccessAdminData {
       courseAccessRules {
@@ -138,10 +181,20 @@ async function getWordPressAdminState() {
   `;
   let data;
   try {
-    data = await fetchWordPressGraphQL(queryWithActive);
+    data = await fetchWordPressGraphQL(queryWithVatAndActive);
   } catch (error) {
-    if (!isActiveSchemaMismatch(error)) throw error;
-    data = await fetchWordPressGraphQL(queryLegacy);
+    if (isVatSchemaMismatch(error)) {
+      try {
+        data = await fetchWordPressGraphQL(queryWithActive);
+      } catch (fallbackError) {
+        if (!isActiveSchemaMismatch(fallbackError)) throw fallbackError;
+        data = await fetchWordPressGraphQL(queryLegacy);
+      }
+    } else if (isActiveSchemaMismatch(error)) {
+      data = await fetchWordPressGraphQL(queryLegacy);
+    } else {
+      throw error;
+    }
   }
   const rules = Array.isArray(data?.courseAccessRules)
     ? data.courseAccessRules
@@ -158,6 +211,7 @@ async function getWordPressAdminState() {
           : 0,
       currency:
         typeof rule.currency === "string" ? rule.currency.toUpperCase() : "SEK",
+      vatPercent: normalizeVatPercent(rule?.vatPercent),
       active: rule?.active !== false,
       updatedAt: typeof rule.updatedAt === "string" ? rule.updatedAt : "",
     };
@@ -187,11 +241,73 @@ async function setWordPressCourseAccess({
   priceCents,
   currency,
   active,
+  vatPercent,
 }) {
   const normalizedCourseUri = normalizeCourseUri(courseUri);
   if (!normalizedCourseUri) {
     throw new Error("Invalid course URI");
   }
+  const includesVat = vatPercent !== undefined;
+  const safeVatPercent = normalizeVatPercent(vatPercent);
+  const mutationWithVatAndActive = `
+    mutation SetCourseAccessRule(
+      $courseUri: String!
+      $allowedUsers: [String!]!
+      $priceCents: Int!
+      $currency: String!
+      $vatPercent: Float
+      $active: Boolean!
+    ) {
+      setCourseAccessRule(
+        input: {
+          courseUri: $courseUri
+          allowedUsers: $allowedUsers
+          priceCents: $priceCents
+          currency: $currency
+          vatPercent: $vatPercent
+          active: $active
+        }
+      ) {
+        rule {
+          courseUri
+          allowedUsers
+          priceCents
+          currency
+          vatPercent
+          active
+          updatedAt
+        }
+      }
+    }
+  `;
+  const mutationWithVat = `
+    mutation SetCourseAccessRule(
+      $courseUri: String!
+      $allowedUsers: [String!]!
+      $priceCents: Int!
+      $currency: String!
+      $vatPercent: Float
+    ) {
+      setCourseAccessRule(
+        input: {
+          courseUri: $courseUri
+          allowedUsers: $allowedUsers
+          priceCents: $priceCents
+          currency: $currency
+          vatPercent: $vatPercent
+        }
+      ) {
+        rule {
+          courseUri
+          allowedUsers
+          priceCents
+          currency
+          vatPercent
+          updatedAt
+        }
+      }
+    }
+  `;
   const mutationWithActive = `
     mutation SetCourseAccessRule(
       $courseUri: String!
@@ -251,7 +367,49 @@ async function setWordPressCourseAccess({
     priceCents,
     currency,
   };
-  if (typeof active === "boolean") {
+  if (typeof active === "boolean" && includesVat) {
+    try {
+      await fetchWordPressGraphQL(mutationWithVatAndActive, {
+        ...variables,
+        vatPercent: safeVatPercent,
+        active,
+      });
+    } catch (error) {
+      if (isVatSchemaMismatch(error)) {
+        try {
+          await fetchWordPressGraphQL(mutationWithActive, {
+            ...variables,
+            active,
+          });
+        } catch (fallbackError) {
+          if (!isActiveSchemaMismatch(fallbackError)) throw fallbackError;
+          await fetchWordPressGraphQL(mutationLegacy, variables);
+        }
+      } else if (isActiveSchemaMismatch(error)) {
+        try {
+          await fetchWordPressGraphQL(mutationWithVat, {
+            ...variables,
+            vatPercent: safeVatPercent,
+          });
+        } catch (fallbackError) {
+          if (!isVatSchemaMismatch(fallbackError)) throw fallbackError;
+          await fetchWordPressGraphQL(mutationLegacy, variables);
+        }
+      } else {
+        throw error;
+      }
+    }
+  } else if (includesVat) {
+    try {
+      await fetchWordPressGraphQL(mutationWithVat, {
+        ...variables,
+        vatPercent: safeVatPercent,
+      });
+    } catch (error) {
+      if (!isVatSchemaMismatch(error)) throw error;
+      await fetchWordPressGraphQL(mutationLegacy, variables);
+    }
+  } else if (typeof active === "boolean") {
     try {
       await fetchWordPressGraphQL(mutationWithActive, {
         ...variables,
@@ -306,6 +464,19 @@ async function grantWordPressCourseAccess(courseUri, email) {
 async function getWordPressCourseAccessConfig(courseUri) {
   const normalizedCourseUri = normalizeCourseUri(courseUri);
   if (!normalizedCourseUri) return null;
+  const queryWithVatAndActive = `
+    query CourseAccessConfig($courseUri: String!) {
+      courseAccessConfig(courseUri: $courseUri) {
+        courseUri
+        priceCents
+        currency
+        vatPercent
+        active
+        allowedUsers
+        updatedAt
+      }
+    }
+  `;
   const queryWithActive = `
     query CourseAccessConfig($courseUri: String!) {
       courseAccessConfig(courseUri: $courseUri) {
@@ -331,16 +502,35 @@ async function getWordPressCourseAccessConfig(courseUri) {
   `;
   let data;
   try {
-    data = await fetchWordPressGraphQL(queryWithActive, {
+    data = await fetchWordPressGraphQL(queryWithVatAndActive, {
       courseUri: normalizedCourseUri,
     });
   } catch (error) {
-    if (!isActiveSchemaMismatch(error)) throw error;
-    data = await fetchWordPressGraphQL(queryLegacy, {
-      courseUri: normalizedCourseUri,
-    });
+    if (isVatSchemaMismatch(error)) {
+      try {
+        data = await fetchWordPressGraphQL(queryWithActive, {
+          courseUri: normalizedCourseUri,
+        });
+      } catch (fallbackError) {
+        if (!isActiveSchemaMismatch(fallbackError)) throw fallbackError;
+        data = await fetchWordPressGraphQL(queryLegacy, {
+          courseUri: normalizedCourseUri,
+        });
+      }
+    } else if (isActiveSchemaMismatch(error)) {
+      data = await fetchWordPressGraphQL(queryLegacy, {
+        courseUri: normalizedCourseUri,
+      });
+    } else {
+      throw error;
+    }
   }
-  return data?.courseAccessConfig || null;
+  const config = data?.courseAccessConfig || null;
+  if (!config || typeof config !== "object") return null;
+  return {
+    ...config,
+    vatPercent: normalizeVatPercent(config.vatPercent),
+  };
 }
 
 async function replicateToCloudflare(state) {

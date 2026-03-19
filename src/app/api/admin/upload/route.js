@@ -9,6 +9,15 @@ import {
 } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
+const DEFAULT_MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+function maxImageUploadBytes() {
+  const raw = Number.parseInt(process.env.MAX_IMAGE_UPLOAD_BYTES || "", 10);
+  return Number.isFinite(raw) && raw > 0
+    ? raw
+    : DEFAULT_MAX_IMAGE_UPLOAD_BYTES;
+}
+
 async function uploadToWordPress(arrayBuffer, file) {
   const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(
     /\/+$/,
@@ -51,6 +60,8 @@ export async function POST(request) {
     const backend = getUploadBackend(
       request.nextUrl.searchParams.get("backend"),
     );
+    const uploadKind = request.nextUrl.searchParams.get("kind");
+    const imageOnly = uploadKind === "image";
     const formData = await request.formData();
     const file = formData.get("file");
     if (!file || typeof file === "string") {
@@ -61,6 +72,28 @@ export async function POST(request) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
+    if (imageOnly) {
+      const isImageMime =
+        typeof file.type === "string" && file.type.startsWith("image/");
+      if (!isImageMime) {
+        return NextResponse.json(
+          { ok: false, error: t("admin.uploadImageTypeInvalid") },
+          { status: 400 },
+        );
+      }
+      const maxBytes = maxImageUploadBytes();
+      if (arrayBuffer.byteLength > maxBytes) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: t("admin.uploadImageTooLarge", {
+              mb: Math.floor(maxBytes / (1024 * 1024)),
+            }),
+          },
+          { status: 413 },
+        );
+      }
+    }
 
     if (isS3Upload(backend)) {
       if (!isS3Configured(backend)) {
@@ -75,11 +108,20 @@ export async function POST(request) {
         file.type,
         backend,
       );
-      return NextResponse.json({ ok: true, url, title: file.name });
+      return NextResponse.json({
+        ok: true,
+        url,
+        title: file.name,
+        mimeType: file.type || "application/octet-stream",
+      });
     }
 
     const result = await uploadToWordPress(arrayBuffer, file);
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({
+      ok: true,
+      ...result,
+      mimeType: file.type || "application/octet-stream",
+    });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(

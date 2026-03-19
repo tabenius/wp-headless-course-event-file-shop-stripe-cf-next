@@ -1,5 +1,50 @@
 # Claude + Codex Co-Working Log
 
+## Active TODO Backlog (priority x impact)
+
+DONE [P0 | Very High]: Image generation runtime reliability — `/api/admin/generate-image` now returns classified diagnostics (`code`, `hint`, `requestId`) with timeout handling, provider error classification, partial-success warnings, and improved admin toast reporting.
+DONE [P0 | Very High]: Receipt PDF validity — Stripe receipt proxy now enforces HTTPS Stripe-host allowlist, verifies `%PDF`, traces response provenance (status/content-type/final URL/elapsed), extracts embedded PDF URLs from HTML wrappers, and falls back to invoice PDF URLs.
+DONE [P1 | High]: VAT/Moms completion across all product sources — per-item VAT override persists through admin save/API/store/WordPress backend, checkout metadata now carries VAT, and sales VAT/net use tax-inclusive math with metadata/product/category VAT precedence.
+TODO [P2 | Medium]: Welcome story data realism — replace the image prompt generator mock slide with live admin image-generator state (with safe read-only fallback when APIs are unavailable).
+TODO [P2 | Medium]: Dead-link finder panel — index `<a href>` links, classify internal vs pseudo-external (`xtas.nu`) vs external, and report reachability with clear remediation hints.
+
+## 2026-03-19 (cont. 11)
+
+### Codex — P0/P1 completion pass + verification
+
+- **WordPress plugin VAT schema parity** (`packages/ragbaz-articulate-plugin/Ragbaz-Articulate.php`):
+  - Added `vatPercent` to `CourseAccessRule` GraphQL object fields.
+  - Added `vatPercent` to `SetCourseAccessRuleInput`.
+  - Added `vatPercent` to `setCourseAccessRule` mutation input fields and threaded it into `ragbaz_set_rule(...)` so plugin-side persistence now matches storefront/admin VAT flows.
+- **Course access cleanup** (`src/lib/courseAccess.js`):
+  - Removed unused legacy helper (`getWordPressCourseAccessConfigLegacy`) to keep VAT/active fallback logic consolidated in the primary query/mutation paths.
+- **Verification pass**:
+  - `npm run lint` passes with only existing non-blocking `@next/next/no-img-element` warnings in admin image components.
+  - `npm test` passes all 15 suites.
+
+## 2026-03-19 (cont. 10)
+
+### Codex — category extraction + VAT map + digital file heuristics
+
+- Added shared category helpers in `src/lib/contentCategories.js`:
+  - GraphQL category extraction from `edges`/`nodes`
+  - Category slug normalization
+  - Digital-file heuristics from file extension + MIME type (e.g. PDF/document, MP3/audio, MP4/video, ZIP/archive)
+- Wired category extraction into WordPress sources:
+  - `/api/admin/course-access` now attaches `categories` + `categorySlugs` for WooCommerce, LearnPress, and Events.
+  - Uses schema field introspection to include optional fields (`lpCourseCategory`, `eventCategories`) only when present, avoiding hard failures on installs lacking those fields.
+  - `src/lib/shopProducts.js` now enriches unified storefront items with categories/categorySlugs from all source types.
+- Digital product flow now carries MIME/category metadata:
+  - `src/lib/digitalProducts.js` persists `mimeType`, computes category heuristics, and stores category slugs.
+  - `/api/digital/products` now exposes `mimeType`, `categories`, and `categorySlugs`.
+  - `/api/admin/upload` now returns `mimeType`; admin upload handler saves it on products.
+- Implemented VAT/Moms-by-category editor in Products → Access detail panel:
+  - Extracted categories are shown on selected item cards.
+  - Added editable category→VAT% list with add/remove rows and one-click save.
+  - Backed by shop settings (`vatByCategory`) with KV persistence and validation in `src/lib/shopSettings.js`.
+  - Added new EN/SV/ES i18n keys and save/error messaging.
+- Added tests: `tests/contentCategories.test.js` (category extraction, slug normalization, digital heuristic categorization).
+
 ## 2026-03-19
 
 ### Mistral — chat history + copy buttons (code review by Claude)
@@ -430,3 +475,34 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Validation**:
   - `npx eslint src/lib/stripe.js src/lib/stripePayments.js src/app/api/digital/checkout/route.js tests/stripe-payments.test.js` passes.
   - `npm test -- tests/stripe-payments.test.js` passes (full suite still green at 14/14).
+
+---
+
+## 2026-03-19 (cont. 14)
+
+### Codex — storage i18n polish + tracked TODOs
+
+- Added explicit TODOs for:
+  - Storage docs links navigating outside `/admin` leading to 404.
+  - Sales VAT/Moms derivation fallback (product override first, then category map).
+  - Full WinSCP/CyberDuck R2/S3 checklist panel requirements.
+- Improved Storage-tab localization quality:
+  - Refined Swedish (`sv`) strings to remove mixed English phrasing in core storage/upload labels and setup instructions.
+  - Tightened Spanish (`es`) storage phrasing for consistency with the same updated terminology.
+- Validation:
+  - `npm test -- tests/i18n-admin-parity.test.js` passes.
+
+---
+
+## 2026-03-19 (cont. 15)
+
+### Codex — docs routing hardening inside admin
+
+- Fixed admin documentation navigation so links stay under `/admin` and avoid 404 routes:
+  - `src/app/admin/docs/page.js` now links to valid slugs per locale/content (`architecture`, `readme-sv/en`, etc.) instead of appending `-sv/-en` to every doc.
+  - `src/app/admin/docs/[slug]/page.js` now rewrites broader markdown link formats (`docs/*.md`, `/docs/*.md`, `/README*.md`, etc.) to `/admin/docs/<slug>`.
+  - `src/lib/chat/rag.js` manual source URIs now point to `/admin/docs` (previously `/docs`).
+- Result: Documentation links used from admin and AI-chat source references no longer jump to broken non-admin routes.
+- Validation:
+  - `npx eslint src/app/admin/docs/page.js src/app/admin/docs/[slug]/page.js src/lib/chat/rag.js`
+  - `npm test -- tests/i18n-admin-parity.test.js tests/contentCategories.test.js`

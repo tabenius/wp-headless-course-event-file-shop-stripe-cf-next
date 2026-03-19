@@ -18,6 +18,10 @@ export async function GET() {
         currency: product.currency,
         fileUrl: product.fileUrl,
         courseUri: product.courseUri,
+        mimeType: product.mimeType,
+        vatPercent: product.vatPercent,
+        categories: product.categories,
+        categorySlugs: product.categorySlugs,
         active: product.active,
       })),
     });

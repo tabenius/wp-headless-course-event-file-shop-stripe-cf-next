@@ -2,6 +2,74 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
+import { SIZE_PRESETS } from "@/lib/imageQuota";
+
+const DEFAULT_ASPECT_KEY = "portrait-4-5";
+const UPLOADER_ASPECT_KEYS = [
+  "portrait-4-5",
+  "square",
+  "portrait-3-4",
+  "landscape-16-9",
+  "story-9-16",
+];
+
+const ASPECT_LABEL_KEYS = {
+  "portrait-4-5": "admin.imageSizePortrait45",
+  square: "admin.imageSizeSquare",
+  "portrait-3-4": "admin.imageSizePortrait34",
+  "landscape-16-9": "admin.imageSizeLandscape169",
+  "story-9-16": "admin.imageSizeStory916",
+};
+
+const PREVIEW_MAX = 320;
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // 20 MB
+
+function resolveAspectSize(key) {
+  return SIZE_PRESETS[key] || SIZE_PRESETS[DEFAULT_ASPECT_KEY] || SIZE_PRESETS.square;
+}
+
+function computePreviewFrame(size) {
+  if (!size?.width || !size?.height) return { width: PREVIEW_MAX, height: PREVIEW_MAX };
+  if (size.width >= size.height) {
+    return {
+      width: PREVIEW_MAX,
+      height: Math.max(1, Math.round((size.height / size.width) * PREVIEW_MAX)),
+    };
+  }
+  return {
+    width: Math.max(1, Math.round((size.width / size.height) * PREVIEW_MAX)),
+    height: PREVIEW_MAX,
+  };
+}
+
+function drawCroppedImage({
+  canvas,
+  image,
+  frameWidth,
+  frameHeight,
+  scale,
+  offsetX,
+  offsetY,
+}) {
+  const ctx = canvas?.getContext("2d");
+  if (!ctx || !image) return;
+
+  canvas.width = frameWidth;
+  canvas.height = frameHeight;
+  ctx.clearRect(0, 0, frameWidth, frameHeight);
+  ctx.fillStyle = "#f3f4f6";
+  ctx.fillRect(0, 0, frameWidth, frameHeight);
+
+  const baseScale = Math.max(
+    frameWidth / image.naturalWidth,
+    frameHeight / image.naturalHeight,
+  );
+  const drawW = image.naturalWidth * baseScale * scale;
+  const drawH = image.naturalHeight * baseScale * scale;
+  const x = (frameWidth - drawW) / 2 + offsetX;
+  const y = (frameHeight - drawH) / 2 + offsetY;
+  ctx.drawImage(image, x, y, drawW, drawH);
+}
 
 /**
  * Image uploader with crop & scale preview.
@@ -26,9 +94,33 @@ export default function ImageUploader({
   const [scale, setScale] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
+  const [aspectKey, setAspectKey] = useState(DEFAULT_ASPECT_KEY);
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
-  const dragRef = useRef(null);
+  const selectedSize = resolveAspectSize(aspectKey);
+  const previewFrame = computePreviewFrame(selectedSize);
+
+  const emitError = useCallback(
+    (message) => {
+      onError?.(message);
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "error", message },
+        }),
+      );
+    },
+    [onError],
+  );
+
+  // Revoke blob URLs when preview changes or component unmounts.
+  useEffect(
+    () => () => {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    },
+    [preview],
+  );
 
   const openFilePicker = useCallback(() => {
     const input = document.createElement("input");
@@ -37,62 +129,81 @@ export default function ImageUploader({
     input.onchange = () => {
       const picked = input.files?.[0];
       if (!picked) return;
+      if (!picked.type || !picked.type.startsWith("image/")) {
+        emitError(t("admin.uploadImageTypeInvalid"));
+        return;
+      }
+      if (picked.size > MAX_IMAGE_BYTES) {
+        emitError(t("admin.uploadImageTooLarge", { mb: 20 }));
+        return;
+      }
       setFile(picked);
       setScale(1);
       setOffsetX(0);
       setOffsetY(0);
+      setAspectKey(DEFAULT_ASPECT_KEY);
       const url = URL.createObjectURL(picked);
       setPreview(url);
       setShowEditor(true);
     };
     input.click();
-  }, []);
+  }, [emitError]);
 
-  // Draw image on canvas whenever scale/offset/preview changes
+  // Draw image on canvas whenever crop controls change.
   useEffect(() => {
     if (!showEditor || !preview) return;
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!ctx) return;
     const img = imgRef.current;
     if (!img || !img.complete) return;
-
-    const size = 320;
-    canvas.width = size;
-    canvas.height = size;
-    ctx.clearRect(0, 0, size, size);
-    ctx.fillStyle = "#f3f4f6";
-    ctx.fillRect(0, 0, size, size);
-
-    const imgAspect = img.naturalWidth / img.naturalHeight;
-    let drawW, drawH;
-    if (imgAspect > 1) {
-      drawH = size * scale;
-      drawW = drawH * imgAspect;
-    } else {
-      drawW = size * scale;
-      drawH = drawW / imgAspect;
-    }
-    const x = (size - drawW) / 2 + offsetX;
-    const y = (size - drawH) / 2 + offsetY;
-    ctx.drawImage(img, x, y, drawW, drawH);
-  }, [preview, scale, offsetX, offsetY, showEditor]);
+    drawCroppedImage({
+      canvas,
+      image: img,
+      frameWidth: previewFrame.width,
+      frameHeight: previewFrame.height,
+      scale,
+      offsetX,
+      offsetY,
+    });
+  }, [
+    preview,
+    scale,
+    offsetX,
+    offsetY,
+    showEditor,
+    previewFrame.width,
+    previewFrame.height,
+  ]);
 
   function handleImgLoad() {
-    // Trigger a redraw
-    setScale((s) => s);
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    drawCroppedImage({
+      canvas,
+      image: img,
+      frameWidth: previewFrame.width,
+      frameHeight: previewFrame.height,
+      scale,
+      offsetX,
+      offsetY,
+    });
   }
 
   function handleMouseDown(e) {
     e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const sx = rect.width > 0 ? canvas.width / rect.width : 1;
+    const sy = rect.height > 0 ? canvas.height / rect.height : 1;
     const startX = e.clientX;
     const startY = e.clientY;
     const startOX = offsetX;
     const startOY = offsetY;
 
     function onMove(ev) {
-      setOffsetX(startOX + (ev.clientX - startX));
-      setOffsetY(startOY + (ev.clientY - startY));
+      setOffsetX(startOX + (ev.clientX - startX) * sx);
+      setOffsetY(startOY + (ev.clientY - startY) * sy);
     }
     function onUp() {
       window.removeEventListener("mousemove", onMove);
@@ -104,6 +215,11 @@ export default function ImageUploader({
 
   function handleTouchStart(e) {
     if (e.touches.length !== 1) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const sx = rect.width > 0 ? canvas.width / rect.width : 1;
+    const sy = rect.height > 0 ? canvas.height / rect.height : 1;
     const touch = e.touches[0];
     const startX = touch.clientX;
     const startY = touch.clientY;
@@ -114,8 +230,8 @@ export default function ImageUploader({
       if (ev.touches.length !== 1) return;
       ev.preventDefault();
       const t = ev.touches[0];
-      setOffsetX(startOX + (t.clientX - startX));
-      setOffsetY(startOY + (t.clientY - startY));
+      setOffsetX(startOX + (t.clientX - startX) * sx);
+      setOffsetY(startOY + (t.clientY - startY) * sy);
     }
     function onEnd() {
       window.removeEventListener("touchmove", onMove);
@@ -126,13 +242,29 @@ export default function ImageUploader({
   }
 
   async function handleUpload() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const previewCanvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!previewCanvas || !img || !img.complete) return;
 
     setUploading(true);
     try {
+      const exportCanvas = document.createElement("canvas");
+      const exportWidth = selectedSize.width;
+      const exportHeight = selectedSize.height;
+      const scaleX = exportWidth / previewFrame.width;
+      const scaleY = exportHeight / previewFrame.height;
+      drawCroppedImage({
+        canvas: exportCanvas,
+        image: img,
+        frameWidth: exportWidth,
+        frameHeight: exportHeight,
+        scale,
+        offsetX: offsetX * scaleX,
+        offsetY: offsetY * scaleY,
+      });
+
       const blob = await new Promise((resolve, reject) =>
-        canvas.toBlob(
+        exportCanvas.toBlob(
           (b) => (b ? resolve(b) : reject(new Error("Canvas toBlob failed"))),
           "image/jpeg",
           0.9,
@@ -142,19 +274,14 @@ export default function ImageUploader({
       const name = file?.name?.replace(/\.[^.]+$/, "") || "image";
       formData.append("file", blob, `${name}.jpg`);
 
-      const res = await fetch("/api/admin/upload", {
+      const res = await fetch("/api/admin/upload?kind=image", {
         method: "POST",
         body: formData,
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) {
         const msg = json?.error || t("admin.uploadFailed");
-        onError?.(msg);
-        window.dispatchEvent(
-          new CustomEvent("toast", {
-            detail: { type: "error", message: msg },
-          }),
-        );
+        emitError(msg);
         return;
       }
       onUploaded?.(json.url);
@@ -163,12 +290,7 @@ export default function ImageUploader({
       setFile(null);
     } catch {
       const msg = t("admin.uploadFailed");
-      onError?.(msg);
-      window.dispatchEvent(
-        new CustomEvent("toast", {
-          detail: { type: "error", message: msg },
-        }),
-      );
+      emitError(msg);
     } finally {
       setUploading(false);
     }
@@ -176,7 +298,6 @@ export default function ImageUploader({
 
   function handleCancel() {
     setShowEditor(false);
-    if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setFile(null);
   }
@@ -222,6 +343,28 @@ export default function ImageUploader({
             <h3 className="font-semibold text-sm">{t("admin.cropAndScale")}</h3>
             <p className="text-xs text-gray-500">{t("admin.cropHint")}</p>
 
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600">
+                {t("admin.cropAspectLabel")}
+              </label>
+              <select
+                value={aspectKey}
+                onChange={(e) => {
+                  setAspectKey(e.target.value);
+                  setScale(1);
+                  setOffsetX(0);
+                  setOffsetY(0);
+                }}
+                className="w-full border rounded px-2 py-1 text-sm"
+              >
+                {UPLOADER_ASPECT_KEYS.map((key) => (
+                  <option key={key} value={key}>
+                    {t(ASPECT_LABEL_KEYS[key])}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Hidden image for drawing */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -236,10 +379,14 @@ export default function ImageUploader({
             <div className="flex justify-center">
               <canvas
                 ref={canvasRef}
-                width={320}
-                height={320}
+                width={previewFrame.width}
+                height={previewFrame.height}
                 className="border rounded cursor-move"
-                style={{ width: 320, height: 320, touchAction: "none" }}
+                style={{
+                  width: previewFrame.width,
+                  height: previewFrame.height,
+                  touchAction: "none",
+                }}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
               />
@@ -253,7 +400,7 @@ export default function ImageUploader({
               </label>
               <input
                 type="range"
-                min="0.5"
+                min="1"
                 max="3"
                 step="0.05"
                 value={scale}

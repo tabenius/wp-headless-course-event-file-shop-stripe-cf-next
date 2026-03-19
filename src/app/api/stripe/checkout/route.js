@@ -41,6 +41,18 @@ function normalizeUri(uri) {
   return withLeading.replace(/\/+$/, "") || "/";
 }
 
+function normalizeVatPercent(vatPercent) {
+  if (vatPercent === "" || vatPercent === null || vatPercent === undefined) {
+    return null;
+  }
+  const parsed =
+    typeof vatPercent === "number"
+      ? vatPercent
+      : Number.parseFloat(String(vatPercent).replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return null;
+  return Math.round(parsed * 100) / 100;
+}
+
 function uriMatches(a, b) {
   return normalizeUri(a) === normalizeUri(b);
 }
@@ -289,6 +301,7 @@ export async function POST(request) {
         ? 0
         : await resolveWordPressPriceCents(courseUri, contentKind);
     const priceCents = Math.max(configuredPriceCents, fallbackWordPressPriceCents);
+    const vatPercent = normalizeVatPercent(config?.vatPercent);
     const currency = (
       config?.currency ||
       process.env.DEFAULT_COURSE_FEE_CURRENCY ||
@@ -332,6 +345,7 @@ export async function POST(request) {
       successUrl,
       cancelUrl,
       contentKind,
+      vatPercent,
     });
 
     // If this was a guest checkout, log them in via session cookie

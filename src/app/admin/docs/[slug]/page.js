@@ -34,22 +34,47 @@ const titles = {
 const fileToSlug = {
   "../README.md": "readme",
   "README.md": "readme",
+  "/README.md": "readme",
+  "docs/README.md": "readme",
+  "/docs/README.md": "readme",
   "README.sv.md": "readme-sv",
+  "/README.sv.md": "readme-sv",
+  "docs/README.sv.md": "readme-sv",
+  "/docs/README.sv.md": "readme-sv",
   "README.en.md": "readme-en",
+  "/README.en.md": "readme-en",
+  "docs/README.en.md": "readme-en",
+  "/docs/README.en.md": "readme-en",
   "cloudflare-workers-deploy.md": "cloudflare-workers-deploy",
+  "/cloudflare-workers-deploy.md": "cloudflare-workers-deploy",
+  "docs/cloudflare-workers-deploy.md": "cloudflare-workers-deploy",
+  "/docs/cloudflare-workers-deploy.md": "cloudflare-workers-deploy",
   "wordpress-learnpress-course-access.md": "wordpress-learnpress",
+  "/wordpress-learnpress-course-access.md": "wordpress-learnpress",
+  "docs/wordpress-learnpress-course-access.md": "wordpress-learnpress",
+  "/docs/wordpress-learnpress-course-access.md": "wordpress-learnpress",
 };
 
 /** Rewrite relative .md links to /admin/docs/<slug> routes. */
 function rewriteHref(href) {
   if (!href) return href;
-  // Strip leading ./ or ../
-  const clean = href.replace(/^\.\.?\//, "");
+  // Strip leading ./ or ../ and keep compatibility for /docs/*.md links.
+  const clean = href.replace(/^\.\.?\//, "").trim();
   // Split off any #anchor
   const [file, anchor] = clean.split("#");
-  const slug = fileToSlug[file] || fileToSlug[`../${file}`];
+  const normalized = file.replace(/^\.\.?\//, "");
+  const withoutLeadingSlash = normalized.replace(/^\/+/, "");
+  const slug =
+    fileToSlug[file] ||
+    fileToSlug[`../${file}`] ||
+    fileToSlug[normalized] ||
+    fileToSlug[withoutLeadingSlash] ||
+    fileToSlug[`/${withoutLeadingSlash}`];
   if (slug) {
     return `/admin/docs/${slug}${anchor ? `#${anchor}` : ""}`;
+  }
+  if (normalized.startsWith("docs/")) {
+    return `/admin/docs${anchor ? `#${anchor}` : ""}`;
   }
   return href;
 }

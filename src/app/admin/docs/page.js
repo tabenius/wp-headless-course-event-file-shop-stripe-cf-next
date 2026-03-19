@@ -5,22 +5,26 @@ import { t } from "@/lib/i18n";
 
 const docs = [
   {
-    slug: "architecture",
+    slugSv: "architecture",
+    slugEn: "architecture",
     titleSv: "Arkitektur",
     titleEn: "Architecture Overview",
   },
   {
-    slug: "readme",
+    slugSv: "readme-sv",
+    slugEn: "readme-en",
     titleSv: "Översikt & Quickstart",
     titleEn: "README — Overview & Quickstart",
   },
   {
-    slug: "cloudflare-workers-deploy",
+    slugSv: "cloudflare-workers-deploy",
+    slugEn: "cloudflare-workers-deploy",
     titleSv: "Cloudflare Workers-deploy",
     titleEn: "Cloudflare Workers-deploy",
   },
   {
-    slug: "wordpress-learnpress",
+    slugSv: "wordpress-learnpress",
+    slugEn: "wordpress-learnpress",
     titleSv: "WordPress + LearnPress-installation",
     titleEn: "WordPress + LearnPress Setup",
   },
@@ -40,9 +44,9 @@ export default async function DocsIndexPage() {
           <h2 className="text-lg font-semibold mb-3">Svenska</h2>
           <ul className="space-y-3">
             {docs.map((doc) => (
-              <li key={doc.slug}>
+              <li key={`sv-${doc.slugSv}`}>
                 <Link
-                  href={`/admin/docs/${doc.slug}-sv`}
+                  href={`/admin/docs/${doc.slugSv}`}
                   className="text-base hover:underline"
                 >
                   {doc.titleSv}
@@ -55,9 +59,9 @@ export default async function DocsIndexPage() {
           <h2 className="text-lg font-semibold mb-3">English</h2>
           <ul className="space-y-3">
             {docs.map((doc) => (
-              <li key={doc.slug}>
+              <li key={`en-${doc.slugEn}`}>
                 <Link
-                  href={`/admin/docs/${doc.slug}-en`}
+                  href={`/admin/docs/${doc.slugEn}`}
                   className="text-base hover:underline"
                 >
                   {doc.titleEn}
