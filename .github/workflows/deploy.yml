@@ -19,7 +19,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run cf:build
+        run: npx opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_WORDPRESS_URL: https://www.xtas.nu/
 
