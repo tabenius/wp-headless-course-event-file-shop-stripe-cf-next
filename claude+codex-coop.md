@@ -177,6 +177,21 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Welcome tab**: Added the default welcome tab (Alt+0) powered by impress.js, refreshed the nav + hotkey legend, and translated the story into EN/SV/ES.
 - **Advanced tab banner**: Implemented a rotating torus banner (24×24 quads) with cyan edges, plus a separate `RagbazLogo` component so the StoreFront logo can appear with or without the animation.
 
+---
+
+## 2026-03-19 (cont. 4)
+
+### Claude — JetBrains Mono + Gruvbox dark theme + Sales redesign + Stripe tests
+
+- **JetBrains Mono**: `next/font/google` in `src/app/admin/layout.js`, weights 300–700, CSS var `--font-admin` scoped to `.admin-layout`. Ligatures enabled. Public site fonts untouched.
+- **AdminThemeWrapper**: `"use client"` wrapper reads `ragbaz-admin-theme` from `localStorage`, listens for `admin:setTheme` events, applies `admin-gruvbox` class.
+- **Gruvbox dark theme**: Full CSS palette in `globals.css` under `.admin-gruvbox`. Gruvbox dark hard (`#1d2021`) + Solarized blue accent (`#458588`). Covers all UI regions.
+- **Toggle button** in `AdminHeader`: `● gruvbox` / `☀ light`, persists to localStorage.
+- **Sales tab redesign**: `Intl.NumberFormat` currency, `MetricCard` with dark accent variant, spinner loader, icon empty state, animated download, `StatusBadge` with ring outlines, zebra+indigo-hover table, all headers i18n.
+- **Tab order**: Welcome(^⌥0) → Sales(^⌥1) → Stats(^⌥2) → Shop(^⌥3) → Access(^⌥4)…
+- **Stripe API version**: Removed hardcoded `2024-12-18` (now invalid per Stripe). SDK default `2026-02-25.clover` used. Was causing 400 errors in production.
+- **Stripe tests**: 36 unit + live smoke tests, all green with real test key. Also fixed `limit=0` bug in payments route.
+
 ## Open Questions
 
 - **Streaming chat**: Good UX improvement (token-by-token rendering). Deferred — client wants a robust shop shipped first. Architecture: `ReadableStream` on CF Workers + Mistral `stream: true`, defer `saveChatHistory` until stream end.
