@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Restored the previous moon glyph (`🌙`) for the theme toggle while keeping the button unframed (no circular background) per current admin header style.
 - **2026-03-19 (Codex)**: Tuned admin header palette toward a yellower, lower-saturation amber and aligned the `ARTICULATE STOREFRONT` subtitle with explicit `2em` horizontal offset beneath `RAGBAZ` for steadier cross-font rendering.
 - **2026-03-19 (Codex)**: Shifted Welcome screen story background from vivid indigo/blue to a lower-saturation steel gray-blue gradient to improve visual calm while preserving high-contrast white text.
 - **2026-03-19 (Codex)**: Added a subtle concrete/noise microtexture overlay on the menu bar (`admin-header-concrete`) using layered radial/repeating gradients with soft-light blending.

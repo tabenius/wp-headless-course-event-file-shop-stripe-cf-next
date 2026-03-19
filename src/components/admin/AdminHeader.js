@@ -284,7 +284,7 @@ export default function AdminHeader({ logoUrl }) {
                   : t("admin.themeDark", "Switch to gruvbox theme")
               }
             >
-              {adminTheme === "gruvbox" ? "☀" : "☾"}
+              {adminTheme === "gruvbox" ? "☀" : "🌙"}
             </button>
 
             <button

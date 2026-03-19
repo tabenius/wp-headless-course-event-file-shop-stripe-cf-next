@@ -19,6 +19,13 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Shifted Welcome story shell from vivid indigo/blue to muted steel gray-blue gradient for a calmer look with preserved white contrast text.
 - Added a subtle concrete-like microtexture to the menu bar via new `admin-header-concrete` class in `globals.css` (layered radial/repeating gradients, soft-light blend, non-interactive overlay).
 
+## 2026-03-19 (cont. 18)
+
+### Codex — theme icon consistency tweak
+
+- Restored the previous moon glyph (`🌙`) for the light-mode state in the theme toggle.
+- Kept the current styling constraints intact: no circular frame/background and no separate icon chip treatment.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
