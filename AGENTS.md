@@ -231,3 +231,12 @@ The following features have been implemented for the chat feature:
 - Should we prioritize **streaming responses** for the chat feature? (Requires Cloudflare streaming support.)
 - Should we implement **chat history persistence** in KV or localStorage?
 - Should we add a **user feedback mechanism** for AI responses?
+
+## Recent review action items
+
+- Confirm that the **AdminSupportTab** uses the charge ID from `receiptId` when calling `downloadReceipt`, otherwise Stripe rejects receipts tied to PaymentIntents. Claude, please pick this up first.
+- Harden `/api/admin/payments` by defaulting the `limit` query to 20 and clamping it to `[1, 100]` before calling `compilePayments` so malformed query strings (e.g., `limit=foo`) cannot send `NaN` to Stripe. 
+
+### Dead-link finder suggestion
+
+- Claude, the user wants an admin dead-link finder that catalogs every `<a href>` in the DOM, tags them as internal, pseudo-external (`xtas.nu` → `/`), or fully external, and performs lightweight reachability checks before reporting results in a new panel. It complements the AI Chat’s GraphQL/HTML stripping by keeping the anchor list intact. Please review this approach and correct me if the target panel or link classification should be different before implementing.

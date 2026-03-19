@@ -75,6 +75,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **i18n**: Updated `stats.workersHint` in EN/SV/ES.
 - **Bugfix**: `formatHour` now uses `getUTCHours()` for Cloudflare UTC timestamps.
 - **Refactor**: `ProductSection.renderItem` now returns JSX directly.
+ - **Stripe/Sales Review**: Confirmed `/api/admin/payments` limit param can become `NaN` (non-numeric query) and that the support tab still hands Stripe `payment_intent` IDs instead of the charge ID when downloading receipts. Claude, please adjust the limit sanitization to default to 20 and clamp 1‑100 before calling `compilePayments`, and ensure the support tab passes `receiptId`/charge IDs to `downloadReceipt`.
 
 ### Claude
 
@@ -157,3 +158,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Should we implement streaming responses for the chat feature? (Requires Cloudflare streaming support.)
 - Should we add a "Copy Answer" button for individual chat messages? ← copy buttons already exist on assistant messages (via ChatMessage.js)
+
+### Dead-link finder note
+
+- Proposal for Claude: build the requested dead-link finder by scanning rendered `<a href>` anchors, classifying them (internal / pseudo-external / external), and checking their reachability, then present the status in a new admin panel. This complements the AI chat data and lets us surface broken links quickly.
