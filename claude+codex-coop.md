@@ -10,6 +10,14 @@ DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a 
 DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key sections, reordered operator instructions for average-user relevance, and synced wording with current tab names/flows.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 35)
+
+### Codex — logo alignment and theme-icon visibility tweak
+
+- Shifted the `ARTICULATE STOREFRONT` subtitle in `AdminHeader` an additional `0.5rem` to the right (from `0.5rem` to `1rem`) to reduce lockup crowding.
+- Lowered wordmark saturation/brightness by setting `RagbazLogo` color to a calmer blue (`#2f9cc8`) in the header.
+- Increased theme toggle icon size for both sun/moon states via larger icon font sizing to improve visibility while preserving the no-background/no-circle style.
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

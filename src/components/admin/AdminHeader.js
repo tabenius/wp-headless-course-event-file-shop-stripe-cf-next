@@ -267,13 +267,14 @@ export default function AdminHeader({ logoUrl }) {
                 wordmarkOnly
                 noLetterSpacing
                 scale={1.75}
+                color="#2f9cc8"
                 outlineColor="#000000"
                 outlineWidth={1}
                 className="ml-6"
               />
               <span
                 className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] leading-none text-white"
-                style={{ marginLeft: "0.5rem", marginTop: "2px" }}
+                style={{ marginLeft: "1rem", marginTop: "2px" }}
               >
                 ARTICULATE STOREFRONT
               </span>
@@ -284,7 +285,7 @@ export default function AdminHeader({ logoUrl }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="px-1 text-white hover:text-[hsl(39_62%_93%)] focus:outline-none focus:ring-2 focus:ring-white/80"
+              className="px-1 text-[1.35rem] leading-none text-white hover:text-[hsl(39_62%_93%)] focus:outline-none focus:ring-2 focus:ring-white/80"
               aria-label={
                 adminTheme === "gruvbox"
                   ? t("admin.themeLight", "Switch to light theme")
