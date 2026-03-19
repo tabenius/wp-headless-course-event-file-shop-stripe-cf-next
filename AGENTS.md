@@ -166,15 +166,24 @@ Full list in `.env.example`.
 
 ## Current priorities
 
-### [Codex] Chat Enhancements (Proposed)
+### [Codex] Chat Enhancements (Decisions)
 
-The following enhancements are proposed for the chat feature. Review and prioritize with Claude:
+The following decisions have been made for the chat feature:
 
-1. **"Clear Chat" Button**: Add a button to clear the chat history. This would reset the `chatMessages` state and provide a fresh start for the user.
-2. **"Copy Answer" Button**: Add a button to copy the AI's response to the clipboard. This would be useful for users who want to reference the response elsewhere.
-3. **Streaming Responses**: Implement streaming responses for the chat feature. This would require Cloudflare streaming support and would provide a more interactive experience for the user.
-4. **Chat History Persistence**: Persist chat history in Cloudflare KV or localStorage. This would allow users to return to previous conversations.
-5. **User Feedback Mechanism**: Add a thumbs-up/down feedback mechanism for AI responses. This could help improve the AI model over time.
+1. **Chat History Persistence**: Store chat history in **Cloudflare KV** with separate chats for each admin user.
+2. **"Clear Chat" Button**: Postpone implementation (no need to clear history).
+3. **Copy Button**: Allow users to choose between copying raw text or formatted markdown.
+
+### Next Steps
+
+- Implement chat history persistence in Cloudflare KV.
+- Add a per-message copy button with options for raw text or formatted markdown.
+- Postpone the "Clear Chat" button until further notice.
+
+### Open Questions
+
+- Should we prioritize **streaming responses** for the chat feature? (Requires Cloudflare streaming support.)
+- Should we add a **user feedback mechanism** for AI responses?
 
 ### [Claude] Image Generator Polish (Completed)
 
