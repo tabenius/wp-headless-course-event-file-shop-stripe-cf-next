@@ -4,9 +4,7 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-01-15",
   "compatibility_flags": ["nodejs_compat"],
-  "build": {
-    "uploadSourceMaps": true,
-  },
+  "upload_source_maps": true,
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
