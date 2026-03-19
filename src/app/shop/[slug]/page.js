@@ -13,7 +13,12 @@ export default async function ShopProductPage({
   const params = await paramsPromise;
   const searchParams = await searchParamsPromise;
   const slug = typeof params?.slug === "string" ? params.slug : "";
-  const product = await getDigitalProductBySlug(slug);
+  let product;
+  try {
+    product = await getDigitalProductBySlug(slug);
+  } catch {
+    notFound();
+  }
   if (!product || !product.active) notFound();
 
   const session = await auth();
@@ -58,7 +63,7 @@ export default async function ShopProductPage({
   }
 
   const owned = userEmail
-    ? await hasDigitalAccess(product.id, userEmail)
+    ? await hasDigitalAccess(product.id, userEmail).catch(() => false)
     : false;
 
   return (
@@ -75,20 +80,19 @@ export default async function ShopProductPage({
 export async function generateMetadata({ params: paramsPromise }) {
   const params = await paramsPromise;
   const slug = typeof params?.slug === "string" ? params.slug : "";
-  const product = await getDigitalProductBySlug(slug);
-  if (!product) {
-    return { title: "Shop - RAGBAZ" };
+  let product;
+  try {
+    product = await getDigitalProductBySlug(slug);
+  } catch {
+    return { title: "Shop" };
   }
+  if (!product) return { title: "Shop" };
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_WORDPRESS_URL ||
     "https://example.com";
   const canonical = `${baseUrl.replace(/\/+$/, "")}/shop/${encodeURIComponent(product.slug)}`;
-  const description =
-    product.description ||
-    (product.type === "course"
-      ? "Köp kurs och få tillgång direkt."
-      : "Köp digital fil och ladda ner direkt.");
+  const description = product.description || "";
   const images = product.imageUrl
     ? [
         {

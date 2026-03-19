@@ -128,13 +128,19 @@ async function fetchRestFallback(uri) {
     `${wp}/wp-json/wp/v2/events?slug=${encodeURIComponent(slug)}`,
   ];
   for (const url of endpoints) {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        ...(auth.authorization ? { Authorization: auth.authorization } : {}),
-      },
-      cache: "no-store",
-    });
+    let res;
+    try {
+      res = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+      });
+    } catch {
+      continue;
+    }
     if (!res.ok) continue;
     const json = await res.json().catch(() => null);
     if (!Array.isArray(json) || json.length === 0) continue;
@@ -171,16 +177,22 @@ async function fetchCourseFallback(uri) {
 
   // REST fallback for LearnPress course
   if (!wp) return null;
-  const res = await fetch(
-    `${wp}/wp-json/wp/v2/lp_course?slug=${encodeURIComponent(slug)}`,
-    {
-      headers: {
-        Accept: "application/json",
-        ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+  let res;
+  try {
+    res = await fetch(
+      `${wp}/wp-json/wp/v2/lp_course?slug=${encodeURIComponent(slug)}`,
+      {
+        headers: {
+          Accept: "application/json",
+          ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
       },
-      cache: "no-store",
-    },
-  );
+    );
+  } catch {
+    return null;
+  }
   if (!res.ok) return null;
   const json = await res.json().catch(() => null);
   if (!Array.isArray(json) || json.length === 0) return null;
@@ -360,9 +372,16 @@ export default async function ContentPage({
       </>
     );
   if (isPaidAccessType) {
-    const session = await auth();
+    const session = await auth().catch(() => null);
     const userEmail = session?.user?.email || "";
-    let canAccess = userEmail ? await hasCourseAccess(uri, userEmail) : false;
+    let canAccess = false;
+    if (userEmail) {
+      try {
+        canAccess = await hasCourseAccess(uri, userEmail);
+      } catch {
+        // KV failure — deny access, show paywall
+      }
+    }
     const checkoutStatus =
       typeof searchParams?.checkout === "string" ? searchParams.checkout : "";
     const checkoutSessionId =
@@ -395,7 +414,7 @@ export default async function ContentPage({
     }
 
     if (!canAccess) {
-      const accessConfig = await getCourseAccessConfig(uri);
+      const accessConfig = await getCourseAccessConfig(uri).catch(() => null);
       const defaultPrice = process.env.DEFAULT_COURSE_FEE_CENTS
         ? Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS, 10)
         : undefined;
