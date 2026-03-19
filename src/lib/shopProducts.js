@@ -1,4 +1,5 @@
 import { fetchGraphQL } from "@/lib/client";
+import { appendServerLog } from "@/lib/serverLog";
 import { getCourseAccessState } from "@/lib/courseAccess";
 import { listDigitalProducts } from "@/lib/digitalProducts";
 import { getShopSettings } from "@/lib/shopSettings";
@@ -52,7 +53,11 @@ async function fetchWooCommerceProducts() {
     return (data?.products?.edges || [])
       .map((e) => e.node)
       .filter((n) => n?.name);
-  } catch {
+  } catch (err) {
+    appendServerLog({
+      level: "error",
+      msg: `fetchWooCommerceProducts failed: ${err?.message || err}`,
+    }).catch(() => {});
     return [];
   }
 }
@@ -68,7 +73,11 @@ async function fetchLearnPressCourses() {
       300,
     );
     return (data?.lpCourses?.edges || []).map((e) => e.node);
-  } catch {
+  } catch (err) {
+    appendServerLog({
+      level: "error",
+      msg: `fetchLearnPressCourses failed: ${err?.message || err}`,
+    }).catch(() => {});
     return [];
   }
 }
@@ -84,7 +93,11 @@ async function fetchEvents() {
       300,
     );
     return (data?.events?.edges || []).map((e) => e.node);
-  } catch {
+  } catch (err) {
+    appendServerLog({
+      level: "error",
+      msg: `fetchEvents failed: ${err?.message || err}`,
+    }).catch(() => {});
     return [];
   }
 }

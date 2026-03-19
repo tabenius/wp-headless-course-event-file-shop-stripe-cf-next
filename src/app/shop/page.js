@@ -7,6 +7,7 @@ import {
 import { grantCourseAccess, hasCourseAccess } from "@/lib/courseAccess";
 import { listAllShopItems } from "@/lib/shopProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
+import { appendServerLog } from "@/lib/serverLog";
 import site from "@/lib/site";
 
 export const metadata = {
@@ -70,19 +71,33 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
   const [items, ownedProductIds] = await Promise.all([
     listAllShopItems(),
     userEmail
-      ? listAccessibleDigitalProductIds(userEmail)
+      ? listAccessibleDigitalProductIds(userEmail).catch((err) => {
+          appendServerLog({
+            level: "error",
+            msg: `listAccessibleDigitalProductIds failed for ${userEmail}: ${err?.message || err}`,
+          }).catch(() => {});
+          return [];
+        })
       : Promise.resolve([]),
   ]);
 
   // Check course/event/product access for WP items the user might own
   let ownedUris = [];
+  let accessBatchFailed = false;
   if (userEmail) {
     const wpItems = items.filter((i) => i.source !== "digital");
     const accessChecks = await Promise.all(
       wpItems.map((item) =>
         hasCourseAccess(item.uri, userEmail)
           .then((has) => (has ? item.uri : null))
-          .catch(() => null),
+          .catch((err) => {
+            accessBatchFailed = true;
+            appendServerLog({
+              level: "error",
+              msg: `hasCourseAccess failed for ${item.uri} (user: ${userEmail}): ${err?.message || err}`,
+            }).catch(() => {});
+            return null;
+          }),
       ),
     );
     ownedUris = accessChecks.filter(Boolean);
@@ -94,6 +109,7 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
       items={items}
       ownedProductIds={ownedProductIds}
       ownedUris={ownedUris}
+      accessBatchFailed={accessBatchFailed}
       stripeEnabled={isStripeEnabled()}
       checkoutStatus={checkoutStatus}
       checkoutError={checkoutError}

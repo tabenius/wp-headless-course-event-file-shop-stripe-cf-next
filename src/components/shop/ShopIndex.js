@@ -57,6 +57,7 @@ export default function ShopIndex({
   items,
   ownedProductIds,
   ownedUris,
+  accessBatchFailed,
   stripeEnabled,
   checkoutStatus,
   checkoutError,
@@ -109,6 +110,17 @@ export default function ShopIndex({
         <h1 className="text-3xl font-bold">{t("shop.title")}</h1>
         <p className="text-gray-600 mt-2">{t("shop.subtitle")}</p>
       </div>
+
+      {accessBatchFailed && user?.email && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <p className="text-amber-900 font-medium">
+            {t("errors.serviceTemporarilyUnavailable")}
+          </p>
+          <p className="text-amber-800 text-sm mt-1">
+            {t("errors.accessCheckFailed")}
+          </p>
+        </div>
+      )}
 
       {checkoutStatus === "success" && checkoutError && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">

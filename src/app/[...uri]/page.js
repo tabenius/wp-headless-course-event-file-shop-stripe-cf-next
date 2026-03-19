@@ -24,6 +24,7 @@ import site from "@/lib/site";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { decodeEntities } from "@/lib/decodeEntities";
 import { t } from "@/lib/i18n";
+import { appendServerLog } from "@/lib/serverLog";
 
 // Force dynamic rendering — this route uses searchParams and external data
 export const dynamic = "force-dynamic";
@@ -139,7 +140,11 @@ async function fetchRestFallback(uri) {
         cache: "no-store",
         signal: AbortSignal.timeout(8000),
       });
-    } catch {
+    } catch (err) {
+      appendServerLog({
+        level: "warn",
+        msg: `REST fallback fetch failed for ${uri} (${url}): ${err?.message || err}`,
+      }).catch(() => {});
       continue;
     }
     if (!res.ok) continue;
@@ -191,7 +196,11 @@ async function fetchCourseFallback(uri) {
         signal: AbortSignal.timeout(8000),
       },
     );
-  } catch {
+  } catch (err) {
+    appendServerLog({
+      level: "warn",
+      msg: `Course REST fallback failed for ${uri}: ${err?.message || err}`,
+    }).catch(() => {});
     return null;
   }
   if (!res.ok) return null;
@@ -380,8 +389,12 @@ export default async function ContentPage({
     if (userEmail) {
       try {
         canAccess = await hasCourseAccess(uri, userEmail);
-      } catch {
+      } catch (err) {
         accessCheckFailed = true;
+        appendServerLog({
+          level: "error",
+          msg: `hasCourseAccess failed for ${uri} (user: ${userEmail}): ${err?.message || err}`,
+        }).catch(() => {});
       }
     }
     const checkoutStatus =

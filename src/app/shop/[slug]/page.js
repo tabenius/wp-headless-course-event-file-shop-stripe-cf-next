@@ -5,6 +5,7 @@ import { grantDigitalAccess, hasDigitalAccess } from "@/lib/digitalAccessStore";
 import { grantCourseAccess } from "@/lib/courseAccess";
 import { getDigitalProductBySlug } from "@/lib/digitalProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
+import { appendServerLog } from "@/lib/serverLog";
 
 export default async function ShopProductPage({
   params: paramsPromise,
@@ -67,8 +68,12 @@ export default async function ShopProductPage({
   if (userEmail) {
     try {
       owned = await hasDigitalAccess(product.id, userEmail);
-    } catch {
+    } catch (err) {
       accessCheckFailed = true;
+      appendServerLog({
+        level: "error",
+        msg: `hasDigitalAccess failed for product ${product.id} (user: ${userEmail}): ${err?.message || err}`,
+      }).catch(() => {});
     }
   }
 

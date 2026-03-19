@@ -1,4 +1,5 @@
 import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
+import { appendServerLog } from "@/lib/serverLog";
 
 const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
@@ -109,9 +110,9 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       } catch (fetchErr) {
         clearTimeout(tid);
         if (fetchErr.name === "AbortError") {
-          console.error(
-            `GraphQL request timed out after ${GRAPHQL_TIMEOUT_MS}ms`,
-          );
+          const msg = `GraphQL timeout after ${GRAPHQL_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
+          console.error(msg);
+          appendServerLog({ level: "error", msg }).catch(() => {});
           return {};
         }
         throw fetchErr;
@@ -156,6 +157,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
 
     if (lastError) {
       console.error(lastError);
+      appendServerLog({ level: "error", msg: lastError }).catch(() => {});
     }
     return {};
   } catch (error) {
