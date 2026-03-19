@@ -11,6 +11,22 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 68)
+
+### Codex — header color + theme icon hover + torus granularity/height tuning
+
+- Increased menu-bar saturation/contrast in `AdminHeader`:
+  - header and key controls now use richer amber HSL values for stronger visual presence.
+- Increased `RAGBAZ` wordmark intensity:
+  - logo cyan updated to a brighter/saturated value (`#00ecff`).
+- Updated sun/moon hover behavior to affect outline only:
+  - icon fill stays fixed yellow,
+  - hover now expands/darkens the icon outline via generated text-shadow radius (`1px -> 3px`).
+- Set Info torus to requested granularity and height:
+  - `TORUS_MAJOR_SEGMENTS=24`, `TORUS_MINOR_SEGMENTS=24`,
+  - canvas/banner fixed to `20vh` (`h-[20vh]`, `max-h-[20vh]`), fallback draw height raised to `80`.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 67)
 
 ### Codex — torus z-buffer pass (no backface culling)

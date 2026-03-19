@@ -103,6 +103,20 @@ const healthDotColor = {
   red: "#b91c1c",
 };
 
+function buildIconOutline(color, radius) {
+  const shadows = [];
+  for (let x = -radius; x <= radius; x += 1) {
+    for (let y = -radius; y <= radius; y += 1) {
+      if (x === 0 && y === 0) continue;
+      shadows.push(`${x}px ${y}px 0 ${color}`);
+    }
+  }
+  return shadows.join(", ");
+}
+
+const THEME_ICON_OUTLINE_NORMAL = buildIconOutline("#2f2f2f", 1);
+const THEME_ICON_OUTLINE_HOVER = buildIconOutline("#000000", 3);
+
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -115,6 +129,7 @@ export default function AdminHeader({ logoUrl }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [healthState, setHealthState] = useState("amber");
   const [showHealthTooltip, setShowHealthTooltip] = useState(false);
+  const [themeToggleHovered, setThemeToggleHovered] = useState(false);
   const ragbazWordmarkRef = useRef(null);
   const subtitleRef = useRef(null);
   const [subtitleScaleX, setSubtitleScaleX] = useState(1);
@@ -266,7 +281,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
 
   return (
-    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(33_34%_37%)] border-b border-[hsl(33_30%_29%)]">
+    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(33_40%_37%)] border-b border-[hsl(33_35%_29%)]">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -274,7 +289,7 @@ export default function AdminHeader({ logoUrl }) {
               <button
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="p-2 rounded-lg bg-[hsl(33_30%_29%/0.9)] border border-white/30 text-white hover:bg-[hsl(33_34%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
+                className="p-2 rounded-lg bg-[hsl(33_35%_29%/0.9)] border border-white/30 text-white hover:bg-[hsl(33_40%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
@@ -297,7 +312,7 @@ export default function AdminHeader({ logoUrl }) {
                   wordmarkOnly
                   noLetterSpacing
                   scale={1.75}
-                  color="#3ecbff"
+                  color="#00ecff"
                   outlineColor="#000000"
                   outlineWidth={1}
                 />
@@ -322,7 +337,9 @@ export default function AdminHeader({ logoUrl }) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="appearance-none bg-transparent hover:bg-transparent active:bg-transparent border-0 shadow-none rounded-none px-1 text-[1.35rem] leading-none text-[#ffff00] hover:!text-black transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
+              onMouseEnter={() => setThemeToggleHovered(true)}
+              onMouseLeave={() => setThemeToggleHovered(false)}
+              className="appearance-none bg-transparent hover:bg-transparent active:bg-transparent border-0 shadow-none rounded-none px-1 text-[1.35rem] leading-none text-[#ffff00] transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
               aria-label={
                 adminTheme === "gruvbox"
                   ? t("admin.themeLight", "Switch to light theme")
@@ -331,9 +348,10 @@ export default function AdminHeader({ logoUrl }) {
             >
               <span
                 style={{
-                  color: "currentColor",
-                  textShadow:
-                    "0 1px 0 #2f2f2f, 1px 0 0 #2f2f2f, 0 -1px 0 #2f2f2f, -1px 0 0 #2f2f2f, 1px 1px 0 #2f2f2f, -1px 1px 0 #2f2f2f, 1px -1px 0 #2f2f2f, -1px -1px 0 #2f2f2f",
+                  color: "#ffff00",
+                  textShadow: themeToggleHovered
+                    ? THEME_ICON_OUTLINE_HOVER
+                    : THEME_ICON_OUTLINE_NORMAL,
                 }}
               >
                 {adminTheme === "gruvbox" ? "☀" : "🌙"}
@@ -347,7 +365,7 @@ export default function AdminHeader({ logoUrl }) {
               onMouseLeave={() => setShowHealthTooltip(false)}
               onFocus={() => setShowHealthTooltip(true)}
               onBlur={() => setShowHealthTooltip(false)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(33_30%_29%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(33_34%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(33_35%_29%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(33_40%_34%)] focus:outline-none focus:ring-2 focus:ring-white"
               aria-label={t("admin.healthCheck", "Control check")}
               title={healthLabelMap[healthState]}
             >
@@ -358,7 +376,7 @@ export default function AdminHeader({ logoUrl }) {
               />
             </button>
             {showHealthTooltip && (
-              <div className="absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(33_36%_19%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
+              <div className="absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(33_42%_19%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
                 <p className="font-semibold text-white">
                   {healthLabelMap[healthState]}
                 </p>
@@ -387,7 +405,7 @@ export default function AdminHeader({ logoUrl }) {
                 className="fixed inset-0 top-14 z-40 bg-slate-950/55 backdrop-blur-[1px]"
                 onClick={() => setMenuOpen(false)}
               />
-              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(33_36%_19%/0.98)] p-4 shadow-2xl">
+              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(33_42%_19%/0.98)] p-4 shadow-2xl">
                 <div className="space-y-2">
                   {tabItems.map((item) => {
                     const keyLabel = item.hotkey
@@ -437,7 +455,7 @@ export default function AdminHeader({ logoUrl }) {
                         router.refresh();
                         setMenuOpen(false);
                       }}
-                      className="rounded border border-white/20 bg-[hsl(33_44%_34%)] px-2 py-1 text-xs text-white"
+                      className="rounded border border-white/20 bg-[hsl(33_50%_34%)] px-2 py-1 text-xs text-white"
                     >
                       <option value="sv">Svenska</option>
                       <option value="en">English</option>

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-const TORUS_MAJOR_SEGMENTS = 64;
-const TORUS_MINOR_SEGMENTS = 64;
+const TORUS_MAJOR_SEGMENTS = 24;
+const TORUS_MINOR_SEGMENTS = 24;
 const TORUS_MAJOR_RADIUS = 118;
 const TORUS_MINOR_RADIUS = 42;
 const TORUS_DEPTH_RANGE = (TORUS_MAJOR_RADIUS + TORUS_MINOR_RADIUS) * 2;
@@ -319,7 +319,7 @@ export default function TorusBanner() {
     function draw(time) {
       if (!canvas || !ctx) return;
       const width = canvas.clientWidth || 640;
-      const height = canvas.clientHeight || 65;
+      const height = canvas.clientHeight || 80;
       const dpr = window.devicePixelRatio || 1;
       const pixelWidth = Math.round(width * dpr);
       const pixelHeight = Math.round(height * dpr);
@@ -455,10 +455,10 @@ export default function TorusBanner() {
       </div>
 
       <div className="relative z-[1]">
-        <div className="torus-panel-shell min-h-[5rem] sm:min-h-[5.5rem] md:min-h-[6rem]">
+        <div className="torus-panel-shell h-[20vh] max-h-[20vh]">
           <canvas
             ref={canvasRef}
-            className="block w-full h-full min-h-[5rem] sm:min-h-[5.5rem] md:min-h-[6rem]"
+            className="block h-full w-full max-h-[20vh]"
             aria-hidden
           />
         </div>
