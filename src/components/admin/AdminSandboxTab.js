@@ -10,6 +10,7 @@ export default function AdminSandboxTab({
   uploadBackend,
   resendConfigured,
   analyticsMode,
+  analyticsConfigured,
   purging,
   purgeMessage,
   deploying,
@@ -128,8 +129,16 @@ export default function AdminSandboxTab({
                   <span className="text-amber-700">
                     Workers analytics (basic) &mdash; no CF_ZONE_ID
                   </span>
+                ) : analyticsConfigured ? (
+                  <span className="text-amber-700">
+                    Analytics env present, but no analytics data returned
+                    &mdash; verify token scopes and CF GraphQL access
+                  </span>
                 ) : (
-                  <span>Not configured &mdash; set CF_API_TOKEN</span>
+                  <span>
+                    Not configured &mdash; set CF_API_TOKEN (or
+                    CLOUDFLARE_API_TOKEN) and CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID
+                  </span>
                 )}
               </div>
               {analyticsMode === "workers" && (

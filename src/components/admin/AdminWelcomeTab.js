@@ -26,6 +26,35 @@ function computeSlideLayout() {
   return { slideWidth, slideHeight, frameHeight };
 }
 
+function clearImpressClasses(node) {
+  if (!node) return;
+  for (const cls of Array.from(node.classList)) {
+    if (cls.startsWith("impress-")) {
+      node.classList.remove(cls);
+    }
+  }
+}
+
+function resetImpressViewportState() {
+  if (typeof document === "undefined") return;
+  const html = document.documentElement;
+  const body = document.body;
+
+  clearImpressClasses(html);
+  clearImpressClasses(body);
+
+  html.style.removeProperty("height");
+  html.style.removeProperty("overflow");
+  html.style.removeProperty("overflow-x");
+  html.style.removeProperty("overflow-y");
+
+  body.style.removeProperty("height");
+  body.style.removeProperty("overflow");
+  body.style.removeProperty("overflow-x");
+  body.style.removeProperty("overflow-y");
+  body.style.removeProperty("touch-action");
+}
+
 function MenuShortcutHint() {
   return (
     <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-100/70 px-3 py-1 text-[11px] font-medium text-indigo-900">
@@ -341,16 +370,16 @@ function WelcomeCards({ showRevisionBadge }) {
       tone: "from-emerald-500/20 via-emerald-200/10 to-cyan-200/10",
     },
     {
-      tab: "support",
-      title: t("admin.navSupport", "Support"),
-      body: "Track issues, tickets, and updates in one place.",
-      tone: "from-rose-500/20 via-pink-200/10 to-fuchsia-200/10",
-    },
-    {
       tab: "storage",
       title: t("admin.navStorage", "Storage"),
       body: "Inspect bucket files and upload paths before attaching digital products.",
       tone: "from-slate-500/20 via-slate-200/10 to-gray-200/10",
+    },
+    {
+      tab: "support",
+      title: t("admin.navSupport", "Support"),
+      body: "Track issues, tickets, and updates in one place.",
+      tone: "from-rose-500/20 via-pink-200/10 to-fuchsia-200/10",
     },
   ];
 
@@ -401,6 +430,14 @@ export default function AdminWelcomeTab({
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [slideLayout, setSlideLayout] = useState(computeSlideLayout);
+
+  const keepWelcomeHashStable = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const expected = "#/welcome";
+    if (window.location.hash === expected) return;
+    const nextUrl = `${window.location.pathname}${window.location.search}${expected}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, []);
 
   useEffect(() => {
     function onResize() {
@@ -516,10 +553,11 @@ export default function AdminWelcomeTab({
     try {
       window.impress("welcome-impress")?.init();
       window.impress("welcome-impress")?.goto(slides[0].id);
+      keepWelcomeHashStable();
     } catch (error) {
       console.warn("Failed to init impress.js", error);
     }
-  }, [slides]);
+  }, [keepWelcomeHashStable, slides]);
 
   useEffect(() => {
     if (!showStory) return;
@@ -527,15 +565,46 @@ export default function AdminWelcomeTab({
   }, [showStory, initAndBind]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (showStory) return undefined;
+    try {
+      window.impress?.("welcome-impress")?.tear?.();
+    } catch (_error) {
+      // best effort cleanup only
+    }
+    resetImpressViewportState();
+    return undefined;
+  }, [showStory]);
+
+  useEffect(
+    () => () => {
+      if (typeof window === "undefined") return;
+      try {
+        window.impress?.("welcome-impress")?.tear?.();
+      } catch (_error) {
+        // best effort cleanup only
+      }
+      resetImpressViewportState();
+    },
+    [],
+  );
+
+  useEffect(() => {
     if (typeof window === "undefined" || !showStory) return undefined;
     function onStepEnter(event) {
       const id = event?.target?.id;
       const index = slides.findIndex((slide) => slide.id === id);
       if (index >= 0) setCurrentStep(index);
+      keepWelcomeHashStable();
     }
     document.addEventListener("impress:stepenter", onStepEnter);
     return () => document.removeEventListener("impress:stepenter", onStepEnter);
-  }, [slides, showStory]);
+  }, [keepWelcomeHashStable, showStory, slides]);
+
+  useEffect(() => {
+    if (!showStory) return;
+    keepWelcomeHashStable();
+  }, [showStory, keepWelcomeHashStable]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showStory) return undefined;
@@ -556,16 +625,17 @@ export default function AdminWelcomeTab({
       setCurrentStep(normalized);
       try {
         window.impress("welcome-impress")?.goto(slides[normalized].id);
+        keepWelcomeHashStable();
       } catch (error) {
         console.warn("Failed to navigate impress slide", error);
       }
     },
-    [slides],
+    [keepWelcomeHashStable, slides],
   );
 
   if (!showStory) {
     return (
-      <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-6 shadow">
+      <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-4 sm:p-6 shadow min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-widest text-indigo-700">
@@ -592,7 +662,7 @@ export default function AdminWelcomeTab({
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 p-6 text-white shadow-lg">
+    <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 p-4 sm:p-6 text-white shadow-lg min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-widest text-indigo-200">
@@ -629,6 +699,7 @@ export default function AdminWelcomeTab({
         <div
           id="welcome-impress"
           className="impress h-full w-full"
+          data-hash-changes="false"
           style={{ position: "relative" }}
         >
           {slides.map((slide) => (

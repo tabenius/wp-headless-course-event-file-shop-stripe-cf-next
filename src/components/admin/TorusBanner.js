@@ -8,8 +8,8 @@ const MAJOR_RADIUS = 110;
 const MINOR_RADIUS = 36;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
-const BACKGROUND_COLOR = "#050a17";
-const BASE_COLOR = { r: 186, g: 65, b: 22 };
+const FALLBACK_BACKGROUND = "#1b1f52";
+const BASE_COLOR = { r: 236, g: 103, b: 41 };
 
 const basePoints = Array.from({ length: SEGMENTS }, (_, i) => {
   const phi = (i / SEGMENTS) * Math.PI * 2;
@@ -75,12 +75,17 @@ export default function TorusBanner() {
         canvas.height = pixelHeight;
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.fillStyle = BACKGROUND_COLOR;
+      const root = canvas.closest(".admin-layout");
+      const torusBackground =
+        getComputedStyle(root || document.documentElement)
+          .getPropertyValue("--admin-torus-bg")
+          .trim() || FALLBACK_BACKGROUND;
+      ctx.fillStyle = torusBackground;
       ctx.fillRect(0, 0, width, height);
 
-      const rotationY = time * 0.0003;
-      const rotationX = Math.sin(time * 0.0005) * 0.35 + 0.45;
-      const rotationZ = Math.cos(time * 0.0004) * 0.4;
+      const rotationY = time * 0.00052;
+      const rotationX = Math.sin(time * 0.00084) * 0.38 + 0.5;
+      const rotationZ = Math.cos(time * 0.00068) * 0.42;
 
       const projected = basePoints.map((ring) =>
         ring.map((point) =>
@@ -109,7 +114,7 @@ export default function TorusBanner() {
           0,
           Math.min(1, (face.z + MAJOR_RADIUS) / (MAJOR_RADIUS * 2)),
         );
-        const brightness = 0.65 + 0.35 * (1 - normalized);
+        const brightness = 0.78 + 0.26 * (1 - normalized);
         const r = Math.floor(BASE_COLOR.r * brightness);
         const g = Math.floor(BASE_COLOR.g * brightness);
         const b = Math.floor(BASE_COLOR.b * brightness);
@@ -139,18 +144,18 @@ export default function TorusBanner() {
   }, []);
 
   return (
-    <div className="relative rounded-2xl border border-cyan-400/40 bg-[#050b17] shadow-2xl overflow-hidden">
+    <div className="relative rounded-2xl border border-cyan-400/40 bg-[var(--admin-torus-bg)] shadow-2xl overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="w-full h-64 block opacity-80 mix-blend-screen"
+        className="w-full h-48 sm:h-52 block opacity-90 mix-blend-screen"
         aria-hidden
       />
       <div className="absolute inset-0 bg-gradient-to-br from-[#050b17]/40 via-[#050d1d]/30 to-[#040712]/80" />
-      <div className="relative z-20 px-6 py-5 space-y-1 text-white">
+      <div className="relative z-20 px-6 py-4 space-y-1 text-white">
         <div className="flex items-center justify-between">
-          <RagbazLogo color="#f7fbff" />
+          <RagbazLogo includeStoreFront color="#f7fbff" className="scale-[1.02]" />
           <span className="text-xs uppercase tracking-[0.3em] text-cyan-200">
-            Advanced
+            Info
           </span>
         </div>
         <p className="text-sm text-white/80 max-w-2xl">

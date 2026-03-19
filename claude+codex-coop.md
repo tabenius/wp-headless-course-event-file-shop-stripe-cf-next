@@ -229,3 +229,18 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Welcome revision logic extracted**: Added `src/lib/adminWelcomeRevision.js` with `deriveWelcomeRevisionState`, `persistWelcomeRevision`, and `WELCOME_SEEN_KEY`. `AdminDashboard` now uses this shared logic instead of inline checks.
 - **New test**: Added `tests/admin-welcome-revision.test.js` covering unseen/seen/new revision flows and storage persistence behavior.
 - **Verification**: `npm test` now passes 14/14 tests and touched-file ESLint is clean.
+
+---
+
+## 2026-03-19 (cont. 6)
+
+### Codex — hash tabs, scroll-fit fixes, Info tab rename, torus/banner polish
+
+- **Hash-based admin tab URIs**: Added stable hash routing for tabs (`/admin#/welcome`, `/admin#/sales`, `/admin#/chat`, etc.) in `AdminDashboard` + `AdminHeader`, including startup parsing and `hashchange` sync.
+- **Backward compatibility**: `#/sandbox` now maps to `#/info` so old links still resolve after the tab rename.
+- **Impress URL/scroll cleanup**: Welcome story now forces stable `#/welcome` while active and performs best-effort impress teardown on hide/unmount. Added viewport cleanup removing stale `impress-*` classes/styles on `html/body` to avoid post-story scroll lock.
+- **Screen fit + scrollability**: Updated admin containers for responsive behavior (`min-w-0`, wrapped header/toolbars, responsive 1→2 column chat layout, products/access grid breakpoints, reduced fixed-width pressure) and added admin-targeted overflow protections in `globals.css`.
+- **Hamburger hotkey UX**: Removed busy per-row full hotkey badges; added compact top legend with prominent `Ctrl + Alt` keys and larger single-key mappings.
+- **Sandbox → Info**: Renamed the tab label to Info in EN/SV/ES, remapped hotkey tab ID to `info` (`Ctrl+Alt+7`), and kept Info as the last tab in order.
+- **Torus banner updates**: Increased rotation speed, brightened torus orange, reduced canvas height, changed cyan tag text to `Info`, explicitly uses the new `RagbazLogo`, and made banner background theme-matched via `--admin-torus-bg` (light/admin and gruvbox variants).
+- **Validation**: `npm test -- --runInBand` passed (14/14). `npm run lint` passes with existing `img` optimization warnings only (no errors).

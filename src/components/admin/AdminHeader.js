@@ -11,6 +11,16 @@ import {
 } from "@/lib/adminHotkeys";
 import RagbazLogo from "./RagbazLogo";
 
+function parseTabHash(hashValue) {
+  const normalized = String(hashValue || "")
+    .replace(/^#\/?/, "")
+    .split(/[/?&]/)[0]
+    .trim()
+    .toLowerCase();
+  if (normalized === "sandbox") return "info";
+  return normalized;
+}
+
 function getNavItems() {
   return [
     {
@@ -34,6 +44,11 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("products"),
     },
     {
+      label: t("admin.navStorage"),
+      tab: "storage",
+      hotkey: getAdminTabHotkeyLabel("storage"),
+    },
+    {
       label: t("admin.navSupport"),
       tab: "support",
       hotkey: getAdminTabHotkeyLabel("support"),
@@ -49,19 +64,14 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("health"),
     },
     {
-      label: t("admin.navSandbox"),
-      tab: "sandbox",
-      hotkey: getAdminTabHotkeyLabel("sandbox"),
-    },
-    {
       label: t("admin.navStyle"),
       tab: "style",
       hotkey: getAdminTabHotkeyLabel("style"),
     },
     {
-      label: t("admin.navStorage"),
-      tab: "storage",
-      hotkey: getAdminTabHotkeyLabel("storage"),
+      label: t("admin.navSandbox"),
+      tab: "info",
+      hotkey: getAdminTabHotkeyLabel("info"),
     },
     { href: "/admin/docs", label: t("admin.documentation") },
   ];
@@ -76,7 +86,10 @@ const healthDotColor = {
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState("welcome");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === "undefined") return "welcome";
+    return parseTabHash(window.location.hash) || "welcome";
+  });
   const [localeState, setLocaleState] = useState(getLocale);
   const [adminTheme, setAdminTheme] = useState("light");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -102,6 +115,16 @@ export default function AdminHeader({ logoUrl }) {
     }
     window.addEventListener("admin:switchTab", onTabSwitch);
     return () => window.removeEventListener("admin:switchTab", onTabSwitch);
+  }, []);
+
+  useEffect(() => {
+    function onHashChange() {
+      const hashTab = parseTabHash(window.location.hash);
+      if (hashTab) setActiveTab(hashTab);
+    }
+    onHashChange();
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   useEffect(() => {
@@ -166,7 +189,9 @@ export default function AdminHeader({ logoUrl }) {
 
   function switchTab(tab) {
     if (pathname !== "/admin") {
-      router.push("/admin");
+      router.push(`/admin#/${tab}`);
+      setMenuOpen(false);
+      return;
     }
     window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: tab }));
     setMenuOpen(false);
@@ -175,6 +200,14 @@ export default function AdminHeader({ logoUrl }) {
   const navItems = getNavItems();
   const tabItems = navItems.filter((item) => item.tab);
   const docItem = navItems.find((item) => item.href);
+  const healthHotkey = getAdminTabHotkeyLabel("health")
+    .split("+")
+    .pop()
+    .toUpperCase();
+  const logoutHotkey = ADMIN_ACTION_HOTKEYS.logout.combo
+    .split("+")
+    .pop()
+    .toUpperCase();
 
   return (
     <header className="w-full sticky top-0 z-40 bg-indigo-950 border-b border-indigo-900">
@@ -198,11 +231,7 @@ export default function AdminHeader({ logoUrl }) {
               className="flex items-center gap-3 text-white text-sm"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
-              <RagbazLogo
-                color="currentColor"
-                includeStoreFront
-                className="text-3xl"
-              />
+              <RagbazLogo includeStoreFront className="shrink-0" />
               {logoUrl && (
                 <span className="text-sm text-indigo-100 font-light">
                   {t("admin.headerSub", "Control room")}
@@ -247,7 +276,50 @@ export default function AdminHeader({ logoUrl }) {
                 className="fixed inset-0 top-14 z-40 bg-slate-950/55 backdrop-blur-[1px]"
                 onClick={() => setMenuOpen(false)}
               />
-              <aside className="fixed top-14 left-0 z-50 h-[calc(100vh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-indigo-950/98 p-4 shadow-2xl">
+              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-indigo-950/98 p-4 shadow-2xl">
+                <div className="mb-3 rounded-2xl border border-white/15 bg-indigo-900/70 p-3 text-indigo-100">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-indigo-200">
+                    {t("admin.hotkeys", "Hotkeys")}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <kbd className="rounded-lg border border-white/35 bg-white/10 px-3 py-1 text-base font-semibold tracking-wide text-white">
+                      Ctrl
+                    </kbd>
+                    <span className="text-lg text-indigo-200">+</span>
+                    <kbd className="rounded-lg border border-white/35 bg-white/10 px-3 py-1 text-base font-semibold tracking-wide text-white">
+                      Alt
+                    </kbd>
+                  </div>
+                  <p className="mt-2 text-[11px] text-indigo-200/95">
+                    {t(
+                      "admin.hotkeyHintCompact",
+                      "Use Ctrl + Alt with the letter below.",
+                    )}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {tabItems
+                      .filter((item) => item.hotkey)
+                      .map((item) => {
+                        const keyLabel = item.hotkey
+                          .split("+")
+                          .pop()
+                          .toUpperCase();
+                        return (
+                          <span
+                            key={`legend-${item.tab}`}
+                            className="inline-flex items-center gap-1 rounded-md border border-white/25 bg-white/10 px-2 py-1 text-[11px] leading-none"
+                          >
+                            <span className="font-semibold text-white">
+                              {keyLabel}
+                            </span>
+                            <span className="text-indigo-100/95">
+                              {item.label}
+                            </span>
+                          </span>
+                        );
+                      })}
+                  </div>
+                </div>
                 <div className="space-y-2">
                   {tabItems.map((item) => (
                     <button
@@ -262,11 +334,6 @@ export default function AdminHeader({ logoUrl }) {
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span>{item.label}</span>
-                        {item.hotkey && (
-                          <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-100">
-                            {item.hotkey}
-                          </kbd>
-                        )}
                       </span>
                     </button>
                   ))}
@@ -305,8 +372,8 @@ export default function AdminHeader({ logoUrl }) {
                     className="flex items-center justify-between w-full text-white"
                   >
                     <span>{t("admin.healthCheck")}</span>
-                    <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-100">
-                      {getAdminTabHotkeyLabel("health")}
+                    <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-indigo-100">
+                      {healthHotkey}
                     </kbd>
                   </button>
                   <button
@@ -315,8 +382,8 @@ export default function AdminHeader({ logoUrl }) {
                     className="flex items-center justify-between w-full text-rose-200"
                   >
                     <span>{t("admin.logout", "Logout")}</span>
-                    <kbd className="rounded border border-rose-200/40 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-rose-100">
-                      {ADMIN_ACTION_HOTKEYS.logout.combo}
+                    <kbd className="rounded border border-rose-200/40 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-rose-100">
+                      {logoutHotkey}
                     </kbd>
                   </button>
                 </div>

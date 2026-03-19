@@ -261,7 +261,7 @@
     "navStats": "Estadísticas",
     "navStyle": "Estilo",
     "navStorage": "Almacenamiento",
-    "navSandbox": "Sandbox",
+    "navSandbox": "Info",
     "navSupport": "Soporte",
     "navChat": "Chat",
     "menuToggle": "Alternar menú",
@@ -343,7 +343,7 @@
     "commitsLoading": "Cargando...",
     "commitsFullMessages": "Mostrar mensajes completos",
     "commitsCompact": "Vista compacta",
-    "sandboxSettings": "Ajustes de sandbox",
+    "sandboxSettings": "Info",
     "storageBackend": "Backend de almacenamiento",
     "environment": "Entorno",
     "userAccessOverview": "Resumen de acceso",
@@ -430,7 +430,9 @@
     "colReceipt": "Recibo",
     "downloading": "…",
     "noPaymentsDateHint": "Sin pagos en este rango de fechas — prueba un filtro más amplio.",
-    "noPaymentsHint": "No se encontraron cargos. Asegúrate de que STRIPE_SECRET_KEY esté configurado y la cuenta tenga transacciones."
+    "noPaymentsHint": "No se encontraron cargos para el filtro actual.",
+    "noSalesDataHint": "Stripe está configurado pero aún no se encontraron cargos para esta vista.",
+    "noStripeConfiguredHint": "Stripe no está configurado. Define STRIPE_SECRET_KEY para cargar los pagos."
   },
   "stats": {
     "totalItems": "Total de elementos",

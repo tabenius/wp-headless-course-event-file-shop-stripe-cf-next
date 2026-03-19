@@ -80,8 +80,8 @@ The lock is created automatically by `scripts/build-with-lock.mjs` and removed o
 
 - All admin tabs live in `src/components/admin/`.
 - `AdminDashboard.js` is the top-level shell — add new tabs there.
-- Hotkeys: **Alt+1..8** for tabs, **Alt+/** search, **Alt+L** logout. Update the legend when adding tabs.
-- Tabs currently: Health, Stats, Courses, Shop, Support, Chat, Style (+generate-image panel in Shop/Chat).
+- Hotkeys: **Ctrl+Alt+0..8** for tabs (plus **Ctrl+Alt+S** for Storage), **Ctrl+Alt+/** search, **Ctrl+Alt+L** logout, **Ctrl+Alt+M** hamburger toggle. Update the legend when adding tabs.
+- Tabs currently: Welcome, Sales, Stats, Products, Storage, Support, Chat, Health, Style, Info.
 - Nav items array is in `AdminHeader.js` — add `{ label: t("admin.navX"), tab: "x" }` entry when adding a tab.
 
 ### Prices
@@ -231,6 +231,9 @@ The following features have been implemented for the chat feature:
 - **2026-03-20 (Codex)**: Added the Welcome tab (default, Alt+0) that renders the migration story via impress.js slides, plus the matching nav item, hotkey legend update, and new i18n keys.
 - **2026-03-20 (Codex)**: Introduced the rotating torus banner in the Advanced tab and created the reusable `RagbazLogo` component so the StoreFront logo can be shown without the animation.
 - **2026-03-21 (Codex)**: Added `/api/admin/storage-objects` plus a bucket-list widget beside the digital-file uploader so Cyberduck/S3 uploads can be copied or assigned to products without reuploading.
+- **2026-03-19 (Codex)**: Added hash-based admin tab routing (`/admin#/welcome`, `/admin#/sales`, etc.) with backward alias `#/sandbox -> #/info`, stabilized impress.js hash behavior so welcome slides no longer pollute URL after exit, and fixed admin scroll lock by tearing down impress viewport classes/styles on exit/unmount.
+- **2026-03-19 (Codex)**: Tightened responsive admin layout containers (`min-w-0`, responsive grids, wrapped headers/toolbars) so tabs fit viewport width and remain scrollable without hidden overflow traps.
+- **2026-03-19 (Codex)**: Renamed Sandbox to Info (tab/hotkey routing/i18n), moved Info to last in tab order, simplified hamburger hotkey legend into a single prominent Ctrl+Alt block, and updated the torus banner (faster rotation, brighter orange, lower height, Info label, theme-matched background, explicit new logo usage).
 - **2026-03-19 (Codex)**: Chat modularisation, markdown rendering, i18n, and bugfixes.
 - **2026-03-19 (Claude)**: Image generator polish and chat fixes.
 - **2026-03-18 (Both)**: Admin UI, i18n, and AGENTS.md setup.

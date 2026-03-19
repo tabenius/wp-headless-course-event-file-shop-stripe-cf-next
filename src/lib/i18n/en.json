@@ -261,7 +261,7 @@
     "navStats": "Stats",
     "navStyle": "Style",
     "navStorage": "Storage",
-    "navSandbox": "Sandbox",
+    "navSandbox": "Info",
     "navSupport": "Support",
     "navChat": "Chat",
     "menuToggle": "Toggle main menu",
@@ -339,7 +339,7 @@
     "commitsLoading": "Loading...",
     "commitsFullMessages": "Show full messages",
     "commitsCompact": "Compact view",
-    "sandboxSettings": "Sandbox settings",
+    "sandboxSettings": "Info",
     "storageBackend": "Storage backend",
     "environment": "Environment",
     "userAccessOverview": "User access overview",
@@ -426,7 +426,9 @@
     "colReceipt": "Receipt",
     "downloading": "…",
     "noPaymentsDateHint": "No payments in this date range — try a wider filter.",
-    "noPaymentsHint": "No charges found. Make sure STRIPE_SECRET_KEY is set and the Stripe account has charges."
+    "noPaymentsHint": "No charges found for the current filter.",
+    "noSalesDataHint": "Stripe is configured but no charges were found yet for this view.",
+    "noStripeConfiguredHint": "Stripe is not configured. Set STRIPE_SECRET_KEY to load payment data."
   },
   "stats": {
     "totalItems": "Total items",

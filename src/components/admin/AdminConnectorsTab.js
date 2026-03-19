@@ -25,8 +25,8 @@ export default function AdminConnectorsTab({
   }, [healthChecks, webhookUrl, ragbazDownloadUrl, healthLoading]);
 
   return (
-    <div className="border rounded p-4 space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="border rounded p-4 space-y-3 min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-semibold">{t("admin.healthCheck")}</h2>
         <button
           type="button"

@@ -261,7 +261,7 @@
     "navStats": "Statistik",
     "navStyle": "Stil",
     "navStorage": "Lagring",
-    "navSandbox": "Sandbox",
+    "navSandbox": "Info",
     "navSupport": "Support",
     "navChat": "Chat",
     "menuToggle": "Växla huvudmeny",
@@ -339,7 +339,7 @@
     "commitsLoading": "Laddar...",
     "commitsFullMessages": "Visa hela meddelanden",
     "commitsCompact": "Kompakt vy",
-    "sandboxSettings": "Sandboxinställningar",
+    "sandboxSettings": "Info",
     "storageBackend": "Lagringsbackend",
     "environment": "Miljö",
     "userAccessOverview": "Användaråtkomst",
@@ -426,7 +426,9 @@
     "colReceipt": "Kvitto",
     "downloading": "…",
     "noPaymentsDateHint": "Inga betalningar i valt datumintervall — prova ett bredare filter.",
-    "noPaymentsHint": "Inga betalningar hittades. Kontrollera att STRIPE_SECRET_KEY är satt och att kontot har transaktioner."
+    "noPaymentsHint": "Inga betalningar hittades för det aktuella filtret.",
+    "noSalesDataHint": "Stripe är konfigurerat men inga transaktioner hittades ännu för den här vyn.",
+    "noStripeConfiguredHint": "Stripe är inte konfigurerat. Ange STRIPE_SECRET_KEY för att ladda betalningsdata."
   },
   "stats": {
     "totalItems": "Antal objekt",

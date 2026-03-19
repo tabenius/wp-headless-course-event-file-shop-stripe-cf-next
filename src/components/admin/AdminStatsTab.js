@@ -20,7 +20,7 @@ export default function AdminStatsTab({
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Quick stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="border rounded p-4 text-center">
@@ -124,9 +124,12 @@ export default function AdminStatsTab({
       ) : !analyticsConfigured ? (
         <div className="border rounded p-4 text-sm text-gray-500">
           <strong>Traffic analytics:</strong> Set{" "}
-          <code className="bg-gray-100 px-1 rounded">CF_API_TOKEN</code> and{" "}
           <code className="bg-gray-100 px-1 rounded">
-            CLOUDFLARE_ACCOUNT_ID
+            CF_API_TOKEN / CLOUDFLARE_API_TOKEN
+          </code>{" "}
+          and{" "}
+          <code className="bg-gray-100 px-1 rounded">
+            CLOUDFLARE_ACCOUNT_ID / CF_ACCOUNT_ID
           </code>{" "}
           for basic Workers analytics, or also add{" "}
           <code className="bg-gray-100 px-1 rounded">CF_ZONE_ID</code> for full

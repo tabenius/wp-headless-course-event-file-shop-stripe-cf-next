@@ -43,13 +43,13 @@ function InnerTabs({ active, onChange }) {
     { key: "settings", label: "Settings" },
   ];
   return (
-    <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+    <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1 min-w-0">
       {tabs.map(({ key, label }) => (
         <button
           key={key}
           type="button"
           onClick={() => onChange(key)}
-          className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+          className={`min-w-[8.5rem] flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
             active === key
               ? "bg-white text-purple-800 shadow-sm"
               : "text-gray-500 hover:text-gray-700"
@@ -342,11 +342,10 @@ function ProductsTab({
   };
   return (
     <div
-      className="grid grid-cols-[240px_1fr] gap-4"
-      style={{ minHeight: 520 }}
+      className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:min-h-[520px]"
     >
       {/* ── Left: product list ── */}
-      <div className="border rounded flex flex-col overflow-hidden">
+      <div className="border rounded flex flex-col overflow-hidden min-w-0">
         <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 border-b shrink-0">
           <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
             {products.length} product{products.length !== 1 ? "s" : ""}
@@ -441,7 +440,7 @@ function ProductsTab({
       </div>
 
       {/* ── Right: edit form ── */}
-      <div ref={editFormRef} className="border rounded overflow-auto">
+      <div ref={editFormRef} className="border rounded overflow-auto min-w-0">
         {isShopSelection && selectedShopProduct ? (
           <div className="p-5 space-y-5">
             {/* Header row */}
@@ -894,11 +893,10 @@ function AccessTab({
 
   return (
     <div
-      className="grid grid-cols-[260px_1fr] gap-4"
-      style={{ minHeight: 520 }}
+      className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:min-h-[520px]"
     >
       {/* ── Left: content list ── */}
-      <div className="border rounded flex flex-col overflow-hidden">
+      <div className="border rounded flex flex-col overflow-hidden min-w-0">
         {/* Filter pills */}
         <div className="p-2 border-b bg-gray-50 space-y-1.5">
           <div className="flex flex-wrap gap-1">
@@ -1126,7 +1124,7 @@ function AccessTab({
       </div>
 
       {/* ── Right: detail panel ── */}
-      <div ref={editFormRef} className="border rounded overflow-auto">
+      <div ref={editFormRef} className="border rounded overflow-auto min-w-0">
         {showDetail ? (
           <div className="p-5 space-y-5">
             {/* WP item info card */}
@@ -1478,9 +1476,9 @@ export default function AdminProductsTab(props) {
   } = props;
 
   return (
-    <div className="border rounded p-5 space-y-4">
+    <div className="border rounded p-4 sm:p-5 space-y-4 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold">{t("admin.contentAccess")}</h2>
           <p className="text-sm text-gray-500 mt-1">

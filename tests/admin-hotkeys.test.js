@@ -27,7 +27,7 @@ test("admin tab hotkeys stay unique and stable", () => {
       "support",
       "chat",
       "health",
-      "sandbox",
+      "info",
       "style",
       "storage",
     ],

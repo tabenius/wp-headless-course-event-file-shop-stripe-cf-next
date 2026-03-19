@@ -9,6 +9,16 @@ export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
+  const stripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+  if (!stripeConfigured) {
+    return NextResponse.json({
+      ok: true,
+      payments: [],
+      stripeConfigured: false,
+      emptyReason: "stripe_not_configured",
+    });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email") || undefined;
@@ -18,11 +28,22 @@ export async function GET(request) {
       ? Number(searchParams.get("from"))
       : undefined;
     const payments = await compilePayments(email, limit, fromTs);
-    return NextResponse.json({ ok: true, payments: payments.slice(0, limit) });
+    const rows = payments.slice(0, limit);
+    return NextResponse.json({
+      ok: true,
+      payments: rows,
+      stripeConfigured: true,
+      emptyReason: rows.length === 0 ? "no_sales_data" : null,
+    });
   } catch (error) {
     console.error("admin payments error", error);
     return NextResponse.json(
-      { ok: false, error: error.message || "Payment lookup failed" },
+      {
+        ok: false,
+        error: error.message || "Payment lookup failed",
+        stripeConfigured,
+        code: "stripe_lookup_failed",
+      },
       { status: 500 },
     );
   }

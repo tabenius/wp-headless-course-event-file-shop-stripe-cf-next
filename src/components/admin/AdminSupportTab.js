@@ -19,12 +19,14 @@ export default function AdminSupportTab({
   setPaymentsEmail,
   loadPayments,
   paymentsLoading,
+  paymentsError,
+  paymentsStripeConfigured,
   downloadReceipt,
   downloading,
 }) {
   return (
-    <div className="border rounded p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3">
+    <div className="border rounded p-4 sm:p-5 space-y-4 min-w-0">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold">
             {t("admin.supportTickets")}
@@ -325,8 +327,26 @@ export default function AdminSupportTab({
             </button>
           </div>
         </div>
+        {paymentsError && (
+          <p className="text-sm text-red-600">{paymentsError}</p>
+        )}
+        {!paymentsStripeConfigured && !paymentsError && (
+          <p className="text-sm text-amber-700">
+            {t(
+              "admin.noStripeConfiguredHint",
+              "Stripe is not configured. Set STRIPE_SECRET_KEY to load payment data.",
+            )}
+          </p>
+        )}
         {payments.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("admin.noPayments")}</p>
+          <p className="text-sm text-gray-500">
+            {paymentsStripeConfigured
+              ? t(
+                  "admin.noSalesDataHint",
+                  "Stripe is configured but no charges were found yet for this view.",
+                )
+              : t("admin.noPayments")}
+          </p>
         ) : (
           <div className="max-h-80 overflow-auto border rounded">
             <table className="min-w-full text-sm">
@@ -354,11 +374,13 @@ export default function AdminSupportTab({
                       {p.receiptUrl ? (
                         <button
                           type="button"
-                          onClick={() => downloadReceipt(p.id)}
+                          onClick={() => downloadReceipt(p.receiptId)}
                           className="text-purple-700 underline text-left"
-                          disabled={downloading === p.id}
+                          disabled={downloading === p.receiptId}
                         >
-                          {downloading === p.id ? "Downloading…" : "Download"}
+                          {downloading === p.receiptId
+                            ? "Downloading…"
+                            : "Download"}
                         </button>
                       ) : (
                         "—"

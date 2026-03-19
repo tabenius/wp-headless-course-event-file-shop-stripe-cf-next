@@ -87,6 +87,8 @@ export default function AdminSalesTab({
   loadPayments,
   paymentsLoading,
   paymentsError,
+  paymentsStripeConfigured,
+  paymentsEmptyReason,
   downloadReceipt,
   downloading,
 }) {
@@ -128,9 +130,9 @@ export default function AdminSalesTab({
   const isLoading = paymentsLoading;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* ── Page header ── */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             {t("admin.payments", "Sales")}
@@ -162,7 +164,7 @@ export default function AdminSalesTab({
       </div>
 
       {/* ── Toolbar ── */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 min-w-0">
         {/* Email search */}
         <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
           <svg
@@ -180,7 +182,7 @@ export default function AdminSalesTab({
             onChange={(e) => setPaymentsEmail(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && loadPayments(paymentsEmail)}
             placeholder={t("admin.paymentsFilter", "Filter by email")}
-            className="text-sm outline-none bg-transparent w-48 placeholder-gray-400"
+            className="text-sm outline-none bg-transparent w-48 max-w-[70vw] placeholder-gray-400"
           />
         </div>
 
@@ -196,7 +198,7 @@ export default function AdminSalesTab({
         </button>
 
         {/* Date pills */}
-        <div className="flex gap-1 ml-auto">
+        <div className="ml-auto flex flex-wrap gap-1">
           {DATE_FILTERS.map(({ key, label }) => (
             <button
               key={key}
@@ -306,15 +308,25 @@ export default function AdminSalesTab({
               {t("admin.noPayments", "No payments found.")}
             </p>
             <p className="text-xs text-gray-400 mt-1 max-w-xs">
-              {payments.length > 0
+              {!paymentsStripeConfigured
                 ? t(
-                    "admin.noPaymentsDateHint",
-                    "No payments in this date range — try a wider filter.",
+                    "admin.noStripeConfiguredHint",
+                    "Stripe is not configured. Set STRIPE_SECRET_KEY to load payment data.",
                   )
-                : t(
-                    "admin.noPaymentsHint",
-                    "No charges found. Make sure STRIPE_SECRET_KEY is set and the Stripe account has charges.",
-                  )}
+                : payments.length > 0
+                  ? t(
+                      "admin.noPaymentsDateHint",
+                      "No payments in this date range — try a wider filter.",
+                    )
+                  : paymentsEmptyReason === "no_sales_data"
+                    ? t(
+                        "admin.noSalesDataHint",
+                        "Stripe is configured but no charges were found yet for this view.",
+                      )
+                    : t(
+                        "admin.noPaymentsHint",
+                        "No charges found for the current filter.",
+                      )}
             </p>
           </div>
         </div>

@@ -42,10 +42,34 @@ const AdminSandboxTab = lazy(() => import("./AdminSandboxTab"));
 const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
 const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
 
+const ADMIN_TABS = [
+  "welcome",
+  "sales",
+  "stats",
+  "products",
+  "storage",
+  "support",
+  "chat",
+  "health",
+  "style",
+  "info",
+];
+const ADMIN_TAB_SET = new Set(ADMIN_TABS);
+
 const log = (...args) => {
   // Console output is streamed by wrangler tail in production.
   console.info("[AdminDashboard]", ...args);
 };
+
+function parseTabFromHash(hashValue) {
+  const normalized = String(hashValue || "")
+    .replace(/^#\/?/, "")
+    .split(/[/?&]/)[0]
+    .trim()
+    .toLowerCase();
+  if (normalized === "sandbox") return "info";
+  return ADMIN_TAB_SET.has(normalized) ? normalized : null;
+}
 
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
@@ -430,7 +454,10 @@ export default function AdminDashboard() {
     Boolean(WELCOME_REVISION),
   );
   const [products, setProducts] = useState([]);
-  const [activeTab, setActiveTab] = useState("welcome");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === "undefined") return "welcome";
+    return parseTabFromHash(window.location.hash) || "welcome";
+  });
   const [welcomeStoryVisible, setWelcomeStoryVisible] = useState(true);
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
@@ -491,6 +518,8 @@ export default function AdminDashboard() {
   const [paymentsEmail, setPaymentsEmail] = useState("");
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState("");
+  const [paymentsStripeConfigured, setPaymentsStripeConfigured] = useState(true);
+  const [paymentsEmptyReason, setPaymentsEmptyReason] = useState(null);
   const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
@@ -551,6 +580,29 @@ export default function AdminDashboard() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    function onHashChange() {
+      const tab = parseTabFromHash(window.location.hash);
+      if (!tab) return;
+      setActiveTab(tab);
+      window.dispatchEvent(
+        new CustomEvent("admin:switchTab", { detail: tab }),
+      );
+    }
+    onHashChange();
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !ADMIN_TAB_SET.has(activeTab)) return;
+    const nextHash = `#/${activeTab}`;
+    if (window.location.hash === nextHash) return;
+    const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, [activeTab]);
 
   const handleWelcomeSeen = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -746,6 +798,8 @@ export default function AdminDashboard() {
         if (emailFilter) url.searchParams.set("email", emailFilter);
         const res = await fetch(url.toString());
         const json = await res.json();
+        setPaymentsStripeConfigured(json?.stripeConfigured !== false);
+        setPaymentsEmptyReason(json?.emptyReason || null);
         if (!res.ok || !json?.ok)
           throw new Error(json?.error || "Failed to load payments");
         setPayments(json.payments || []);
@@ -779,7 +833,7 @@ export default function AdminDashboard() {
     if (activeTab === "storage") {
       loadUploadInfo();
     }
-    if (activeTab === "sandbox") {
+    if (activeTab === "info") {
       loadCommits();
     }
     if (activeTab === "health") {
@@ -1303,9 +1357,9 @@ export default function AdminDashboard() {
     };
   }, [showHealthTab]);
 
-  // Fetch commit log when advanced tab is shown
+  // Fetch commit log when Info tab is shown
   useEffect(() => {
-    if (activeTab !== "sandbox" || commits) return;
+    if (activeTab !== "info" || commits) return;
     fetch("/api/admin/commits")
       .then(async (res) => {
         const json = await res.json();
@@ -1478,7 +1532,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+    <section className="mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10 space-y-6 sm:space-y-8">
       {activeTab === "welcome" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
@@ -1606,6 +1660,8 @@ export default function AdminDashboard() {
             setPaymentsEmail={setPaymentsEmail}
             loadPayments={loadPayments}
             paymentsLoading={paymentsLoading}
+            paymentsError={paymentsError}
+            paymentsStripeConfigured={paymentsStripeConfigured}
             downloadReceipt={downloadReceipt}
             downloading={downloading}
           />
@@ -1624,6 +1680,8 @@ export default function AdminDashboard() {
             loadPayments={loadPayments}
             paymentsLoading={paymentsLoading}
             paymentsError={paymentsError}
+            paymentsStripeConfigured={paymentsStripeConfigured}
+            paymentsEmptyReason={paymentsEmptyReason}
             downloadReceipt={downloadReceipt}
             downloading={downloading}
           />
@@ -1834,7 +1892,7 @@ export default function AdminDashboard() {
       )}
 
       {/* ── Sandbox tab ── */}
-      {activeTab === "sandbox" && (
+      {activeTab === "info" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
         >
@@ -1844,6 +1902,7 @@ export default function AdminDashboard() {
             uploadBackend={uploadBackend}
             resendConfigured={resendConfigured}
             analyticsMode={analyticsMode}
+            analyticsConfigured={analyticsConfigured}
             purging={purging}
             purgeMessage={purgeMessage}
             deploying={deploying}
@@ -1864,7 +1923,7 @@ export default function AdminDashboard() {
 
       {/* ── Chat tab ── */}
       {activeTab === "chat" && (
-        <div className="grid grid-cols-2 gap-6 items-start">
+        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
           <ChatPanel
             chatMessages={chatMessages}
             chatInput={chatInput}
@@ -1875,7 +1934,7 @@ export default function AdminDashboard() {
             chatLoading={chatLoading}
             uploadBackend={uploadBackend}
           />
-          <div className="border rounded p-4 space-y-4 text-sm text-gray-300 bg-[#0e0018]">
+          <div className="min-w-0 border rounded p-4 space-y-4 text-sm text-gray-300 bg-[#0e0018]">
             <h3 className="font-semibold text-white">Example commands</h3>
             {[
               {

@@ -46,7 +46,7 @@ export default function AdminStorageTab({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       <div className="border rounded p-5 bg-white space-y-8">
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-gray-900">

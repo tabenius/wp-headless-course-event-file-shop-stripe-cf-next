@@ -230,6 +230,7 @@ a:focus {
 /* Admin layout: hide root header/footer, reset padding */
 main:has(.admin-layout) {
   padding-top: 0 !important;
+  overflow-x: hidden;
 }
 main:has(.admin-layout) > header {
   display: none;
@@ -237,7 +238,16 @@ main:has(.admin-layout) > header {
 main:has(.admin-layout) > footer {
   display: none;
 }
+html:has(.admin-layout),
+body:has(.admin-layout) {
+  overflow-x: hidden;
+}
+html:has(.admin-layout):not(.impress-enabled),
+body:has(.admin-layout):not(.impress-enabled) {
+  overflow-y: auto !important;
+}
 .admin-layout {
+  --admin-torus-bg: #1b1f52;
   background: #fff;
   min-height: 100vh;
   /* JetBrains Mono as the admin-exclusive type system */
@@ -284,6 +294,7 @@ body:has(.admin-layout)::before {
   --grv-purple: #b16286;
   --grv-green: #98971a;
   --grv-accent: #83a598; /* bright blue — primary interactive */
+  --admin-torus-bg: #1d2021;
 
   background-color: var(--grv-bg);
   color: var(--grv-fg);

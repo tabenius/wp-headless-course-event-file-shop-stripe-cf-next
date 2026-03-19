@@ -200,9 +200,11 @@ export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
-  const token = process.env.CF_API_TOKEN;
+  const token =
+    process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
   const zoneId = process.env.CF_ZONE_ID;
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const accountId =
+    process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;
 
   let analytics = null;
   let mode = "none"; // "zone" | "workers" | "none"
@@ -222,5 +224,10 @@ export async function GET(request) {
     analytics,
     mode,
     configured: Boolean(token && (zoneId || accountId)),
+    diagnostics: {
+      tokenPresent: Boolean(token),
+      zonePresent: Boolean(zoneId),
+      accountPresent: Boolean(accountId),
+    },
   });
 }
