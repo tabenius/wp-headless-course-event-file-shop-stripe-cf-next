@@ -134,6 +134,9 @@ Full list in `.env.example`.
 ### [Codex] Refactor AdminStatsTab — extract chart rendering into StatsChart (completed)
 
 - Completed 2026-03-19: `AdminStatsTab` now renders a new `StatsChart` component; the helper math (maxOf, barHeight, formatHour) lives in `StatsChart.helpers.js`, and dedicated `tests/stats-chart.test.js` verifies their behavior.
+### [Codex] Product list refactor (completed)
+
+- Completed 2026-03-19: the products list sections now reuse the `ProductSection` and `ProductRow` components (plus the shared `BuyableIcon` helper) so section headers and manual-entry controls stay consistent without repeating layout logic.
 
 ---
 
@@ -155,6 +158,9 @@ All items shipped:
 1. Keep admin tabs, hotkeys, and translations aligned. When adding a tab: update `AdminHeader.js`, `AdminDashboard.js`, and all three i18n files.
 2. Validate `npm test` and `npm run build` pass before every push.
 3. Update `claude+codex-coop.md` and this file after landing significant changes.
+
+## Build tracking note
+- When you start `npm run build`, write the PID of the running `next build` process into `building.lock.pid` (update it if the process restarts). Remove or zero the file when the build finishes so Claude and I know the runner is free.
 
 ---
 

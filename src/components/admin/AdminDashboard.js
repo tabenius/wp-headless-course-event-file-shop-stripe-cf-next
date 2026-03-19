@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
+import ProductSection from "./ProductSection";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 import { adminFetch } from "@/lib/adminFetch";
 
@@ -24,10 +25,6 @@ function toCents(units) {
 }
 
 /** Alternating row background for product lists (purple hues). */
-function rowBg(index) {
-  return index % 2 === 0 ? "bg-purple-50" : "bg-purple-100";
-}
-
 function emptyProduct() {
   return {
     name: "",
@@ -423,27 +420,6 @@ export default function AdminDashboard() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  /** Icon indicating whether an item is buyable (has price configured in admin). */
-  function BuyableIcon({ configured: cfg }) {
-    const hasPriceCents = cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0;
-    if (hasPriceCents) {
-      return (
-        <span title={t("admin.buyableYes")} className="shrink-0 text-green-600">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-          </svg>
-        </span>
-      );
-    }
-    return (
-      <span title={t("admin.buyableNo")} className="shrink-0 text-amber-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-        </svg>
-      </span>
-    );
-  }
 
   // Derived values for shop product selection
   const isShopSelection = selectedCourse.startsWith("__shop_");
@@ -853,6 +829,18 @@ export default function AdminDashboard() {
     () => Object.keys(courses).sort((a, b) => a.localeCompare(b)),
     [courses],
   );
+
+  const otherCourseUris = useMemo(
+    () =>
+      knownCourses.filter(
+        (uri) =>
+          !allWpContent.some((item) => item.uri === uri) &&
+          !products.some((p) => p.courseUri === uri || p.slug === uri),
+      ),
+    [knownCourses, allWpContent, products],
+  );
+
+  const joinMeta = (parts = []) => parts.filter(Boolean).join(" · ");
 
   const filteredUsers = useMemo(() => {
     if (!userSearch.trim()) return users;
@@ -1583,207 +1571,181 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-0">
-              {/* WooCommerce Products */}
-              {wcProducts.length > 0 && (
-                <>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2 pb-1">WooCommerce</p>
-                  {wcProducts.map((product, _wcIdx) => { const _rowIdx = _wcIdx;
-                    const isActive = selectedCourse === product.uri;
-                    const configured = courses[product.uri];
-                    const cat = product.productCategories?.edges?.[0]?.node?.name;
-                    const imgUrl = product.featuredImage?.node?.sourceUrl;
-                    return (
-                      <button
-                        key={`wc-${product.uri}`}
-                        type="button"
-                        onClick={() => handleSelection(product.uri)}
-                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isActive
-                            ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
-                        }`}
+              <ProductSection
+                label="WooCommerce"
+                items={wcProducts}
+                renderItem={(product) => {
+                  const isActive = selectedCourse === product.uri;
+                  const configured = courses[product.uri];
+                  const category = product.productCategories?.edges?.[0]?.node?.name;
+                  const meta = joinMeta([
+                    product.price ? product.price.replace(/&nbsp;/g, " ") : "",
+                    category,
+                    product.uri,
+                  ]);
+                  const image = product.featuredImage?.node?.sourceUrl ? (
+                    <img
+                      src={product.featuredImage.node.sourceUrl}
+                      alt=""
+                      className="w-40 h-40 rounded object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-40 h-40 rounded bg-gray-100 shrink-0" />
+                  );
+                  return {
+                    key: `wc-${product.uri}`,
+                    title: product.name,
+                    meta,
+                    image,
+                    onClick: () => handleSelection(product.uri),
+                    active: isActive,
+                    configured,
+                    badgeNode: configured ? (
+                      <span
+                        title={t("admin.configuredBadgeTooltip")}
+                        className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
                       >
-                        <BuyableIcon configured={configured} />
-                        {imgUrl ? (
-                          <img src={imgUrl} alt="" className="w-40 h-40 rounded object-cover shrink-0" />
-                        ) : (
-                          <div className="w-40 h-40 rounded bg-gray-100 shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{product.name}</p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {product.price ? product.price.replace(/&nbsp;/g, " ") : ""}
-                            {cat ? ` · ${cat}` : ""}
-                            {product.uri ? ` · ${product.uri}` : ""}
-                          </p>
-                        </div>
-                        {configured && (
-                          <span title={t("admin.configuredBadgeTooltip")} className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* LearnPress Courses */}
-              {wpCourses.length > 0 && (
-                <>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">LearnPress</p>
-                  {wpCourses.map((course, _lpIdx) => { const _rowIdx = _lpIdx;
-                    const isActive = selectedCourse === course.uri;
-                    const configured = courses[course.uri];
-                    return (
-                      <button
-                        key={`lp-${course.uri}`}
-                        type="button"
-                        onClick={() => handleSelection(course.uri)}
-                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isActive
-                            ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
-                        }`}
+                        {t("admin.configuredBadge")}
+                      </span>
+                    ) : undefined,
+                  };
+                }}
+              />
+              <ProductSection
+                label="LearnPress"
+                items={wpCourses}
+                renderItem={(course) => {
+                  const isActive = selectedCourse === course.uri;
+                  const configured = courses[course.uri];
+                  const meta = joinMeta([
+                    course.priceRendered,
+                    course.duration,
+                    course.uri,
+                  ]);
+                  const image = (
+                    <div className="w-40 h-40 rounded bg-blue-50 shrink-0 flex items-center justify-center text-blue-400 text-base font-bold">
+                      LP
+                    </div>
+                  );
+                  return {
+                    key: `lp-${course.uri}`,
+                    title: course.title,
+                    meta,
+                    image,
+                    onClick: () => handleSelection(course.uri),
+                    active: isActive,
+                    configured,
+                    badgeNode: configured ? (
+                      <span
+                        title={t("admin.configuredBadgeTooltip")}
+                        className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
                       >
-                        <BuyableIcon configured={configured} />
-                        <div className="w-40 h-40 rounded bg-blue-50 shrink-0 flex items-center justify-center text-blue-400 text-base font-bold">LP</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{course.title}</p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {course.priceRendered || ""}
-                            {course.duration ? ` · ${course.duration}` : ""}
-                            {course.uri ? ` · ${course.uri}` : ""}
-                          </p>
-                        </div>
-                        {configured && (
-                          <span title={t("admin.configuredBadgeTooltip")} className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Events */}
-              {wpEvents.length > 0 && (
-                <>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">Events</p>
-                  {wpEvents.map((event, _evIdx) => { const _rowIdx = _evIdx;
-                    const isActive = selectedCourse === event.uri;
-                    const configured = courses[event.uri];
-                    const imgUrl = event.featuredImage?.node?.sourceUrl;
-                    return (
-                      <button
-                        key={`ev-${event.uri}`}
-                        type="button"
-                        onClick={() => handleSelection(event.uri)}
-                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isActive
-                            ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
-                        }`}
+                        {t("admin.configuredBadge")}
+                      </span>
+                    ) : undefined,
+                  };
+                }}
+              />
+              <ProductSection
+                label="Events"
+                items={wpEvents}
+                renderItem={(event) => {
+                  const isActive = selectedCourse === event.uri;
+                  const configured = courses[event.uri];
+                  const meta = joinMeta([event.uri]);
+                  const image = event.featuredImage?.node?.sourceUrl ? (
+                    <img
+                      src={event.featuredImage.node.sourceUrl}
+                      alt=""
+                      className="w-40 h-40 rounded object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-40 h-40 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-400 text-base font-bold">
+                      EV
+                    </div>
+                  );
+                  return {
+                    key: `ev-${event.uri}`,
+                    title: event.title,
+                    meta,
+                    image,
+                    onClick: () => handleSelection(event.uri),
+                    active: isActive,
+                    configured,
+                    badgeNode: configured ? (
+                      <span
+                        title={t("admin.configuredBadgeTooltip")}
+                        className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0"
                       >
-                        <BuyableIcon configured={configured} />
-                        {imgUrl ? (
-                          <img src={imgUrl} alt="" className="w-40 h-40 rounded object-cover shrink-0" />
-                        ) : (
-                          <div className="w-40 h-40 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-400 text-base font-bold">EV</div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{event.title}</p>
-                          <p className="text-xs text-gray-500 truncate">{event.uri}</p>
-                        </div>
-                        {configured && (
-                          <span title={t("admin.configuredBadgeTooltip")} className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded shrink-0">{t("admin.configuredBadge")}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Shop Products */}
-              {products.length > 0 && (
-                <>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">{t("admin.shopProducts")}</p>
-                  {products.map((p, i) => { const _rowIdx = i;
-                    const isActive = selectedCourse === `__shop_${i}`;
-                    return (
-                      <button
-                        key={`shop-${i}`}
-                        type="button"
-                        onClick={() => handleSelection(`__shop_${i}`)}
-                        className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isActive
-                            ? "bg-purple-100 border border-purple-500"
-                            : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
-                        }`}
-                      >
-                        {p.imageUrl ? (
-                          <img src={p.imageUrl} alt="" className="w-32 h-32 rounded object-cover shrink-0" />
-                        ) : (
-                          <div className="w-32 h-32 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8">
-                              <path fillRule="evenodd" d="M1 5.25A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25v9.5A2.25 2.25 0 0116.75 17H3.25A2.25 2.25 0 011 14.75v-9.5zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75v-2.69l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L2.5 11.06zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {p.name || `${t("admin.product")} ${i + 1}`}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {p.priceCents ? `${toCurrencyUnits(p.priceCents)} ${p.currency || "SEK"}` : "—"}
-                            {" · "}
-                            {p.type === "course" ? t("admin.courseProduct") : t("admin.digitalFile")}
-                            {p.slug ? ` · /${p.slug}` : ""}
-                          </p>
-                        </div>
-                        {p.active === false && (
-                          <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded shrink-0">Inactive</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Known course URIs not in WP or shop */}
-              {knownCourses.filter(
-                (uri) =>
-                  !allWpContent.some((item) => item.uri === uri) &&
-                  !products.some((p) => p.courseUri === uri || p.slug === uri),
-              ).length > 0 && (
-                <>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pt-2">Other</p>
-                  {knownCourses
-                    .filter(
-                      (uri) =>
-                        !allWpContent.some((item) => item.uri === uri) &&
-                        !products.some((p) => p.courseUri === uri || p.slug === uri),
-                    )
-                    .map((courseUri, _otherIdx) => { const _rowIdx = _otherIdx;
-                      const isActive = selectedCourse === courseUri;
-                      return (
-                        <button
-                          key={courseUri}
-                          type="button"
-                          onClick={() => handleSelection(courseUri)}
-                          className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                            isActive
-                              ? "bg-purple-100 border border-purple-500"
-                              : `border border-gray-900 hover:bg-purple-50 ${rowBg(_rowIdx)}`
-                          }`}
-                        >
-                          <div className="w-40 h-40 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-base font-bold">URI</div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{courseUri}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                </>
-              )}
-
+                        {t("admin.configuredBadge")}
+                      </span>
+                    ) : undefined,
+                  };
+                }}
+              />
+              <ProductSection
+                label={t("admin.shopProducts")}
+                items={products}
+                renderItem={(product, index) => {
+                  const isActive = selectedCourse === `__shop_${index}`;
+                  const priceText = product.priceCents
+                    ? `${toCurrencyUnits(product.priceCents)} ${product.currency || "SEK"}`
+                    : "—";
+                  const meta = joinMeta([
+                    priceText,
+                    product.type === "course" ? t("admin.courseProduct") : t("admin.digitalFile"),
+                    product.slug ? `/${product.slug}` : "",
+                  ]);
+                  const image = product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt=""
+                      className="w-32 h-32 rounded object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded bg-amber-50 shrink-0 flex items-center justify-center text-amber-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8">
+                        <path
+                          fillRule="evenodd"
+                          d="M1 5.25A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25v9.5A2.25 2.25 0 0116.75 17H3.25A2.25 2.25 0 011 14.75v-9.5zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75v-2.69l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L2.5 11.06zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+                        />
+                      </svg>
+                    </div>
+                  );
+                  return {
+                    key: `shop-${index}`,
+                    title: product.name || `${t("admin.product")} ${index + 1}`,
+                    meta,
+                    image,
+                    onClick: () => handleSelection(`__shop_${index}`),
+                    active: isActive,
+                    showBuyableIcon: false,
+                    badgeNode:
+                      product.active === false ? (
+                        <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded shrink-0">
+                          Inactive
+                        </span>
+                      ) : undefined,
+                  };
+                }}
+              />
+              <ProductSection
+                label="Other"
+                items={otherCourseUris}
+                renderItem={(courseUri) => ({
+                  key: courseUri,
+                  title: courseUri,
+                  meta: "",
+                  image: (
+                    <div className="w-40 h-40 rounded bg-gray-100 shrink-0 flex items-center justify-center text-gray-400 text-base font-bold">
+                      URI
+                    </div>
+                  ),
+                  onClick: () => handleSelection(courseUri),
+                  active: selectedCourse === courseUri,
+                  showBuyableIcon: false,
+                })}
+              />
               {/* Manual entry */}
               <div className="pt-2 flex gap-2">
                 <button
