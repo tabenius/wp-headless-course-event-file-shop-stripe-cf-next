@@ -40,6 +40,12 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 
 - Changed the `Ctrl+Alt+M` hint text under the hamburger icon from a light cream tone to black to align with the updated header text contrast preference.
 
+## 2026-03-19 (cont. 39)
+
+### Codex — theme icon edge outline
+
+- Added a black edge-outline treatment to the sun/moon theme icon glyphs in `AdminHeader` via multi-direction text-shadow so the symbols keep crisp separation against the textured amber header.
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements
