@@ -28,6 +28,9 @@
     "GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
     "GITHUB_DEPLOY_WORKFLOW": "deploy.yml",
   },
+  "ai": {
+    "binding": "AI",
+  },
   "kv_namespaces": [
     {
       "binding": "COURSE_ACCESS",
