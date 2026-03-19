@@ -82,6 +82,12 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Outcome: image uploads now follow the active storage target (WordPress/R2/S3) and the clickable image area is always visually obvious.
 - Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
 
+## 2026-03-19 (cont. 43)
+
+### Codex — subtitle micro-alignment tweak
+
+- Shifted `ARTICULATE STOREFRONT` back by `0.25rem` in `AdminHeader` (`marginLeft: 1.5rem -> 1.25rem`) to refine visual balance under `RAGBAZ`.
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements
