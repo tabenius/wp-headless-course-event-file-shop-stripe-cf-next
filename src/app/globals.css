@@ -240,9 +240,187 @@ main:has(.admin-layout) > footer {
 .admin-layout {
   background: #fff;
   min-height: 100vh;
+  /* JetBrains Mono as the admin-exclusive type system */
+  font-family:
+    var(--font-admin), "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  font-feature-settings:
+    "calt" 1,
+    "liga" 1; /* ligatures */
+}
+.admin-layout h1,
+.admin-layout h2,
+.admin-layout h3,
+.admin-layout h4,
+.admin-layout h5,
+.admin-layout h6 {
+  font-family: var(--font-admin), "JetBrains Mono", monospace;
+  letter-spacing: -0.02em;
 }
 body:has(.admin-layout)::before {
   display: none;
+}
+
+/* ── Admin Gruvbox Dark theme ────────────────────────────────────────────────
+   Applied by adding class="admin-gruvbox" to the admin-layout wrapper.
+   Palette based on Gruvbox dark hard with Solarized-inspired blue accents.
+   ────────────────────────────────────────────────────────────────────────── */
+.admin-gruvbox {
+  --grv-bg: #1d2021; /* hard dark */
+  --grv-bg1: #282828;
+  --grv-bg2: #3c3836;
+  --grv-bg3: #504945;
+  --grv-bg4: #665c54;
+  --grv-fg: #ebdbb2;
+  --grv-fg1: #d5c4a1;
+  --grv-fg2: #bdae93;
+  --grv-yellow: #d79921;
+  --grv-orange: #d65d0e;
+  --grv-red: #cc241d;
+  --grv-aqua: #689d6a;
+  --grv-blue: #458588; /* Solarized blue */
+  --grv-purple: #b16286;
+  --grv-green: #98971a;
+  --grv-accent: #83a598; /* bright blue — primary interactive */
+
+  background-color: var(--grv-bg);
+  color: var(--grv-fg);
+}
+
+/* Header in gruvbox */
+.admin-gruvbox header.bg-gray-200 {
+  background-color: var(--grv-bg1) !important;
+  border-color: var(--grv-bg3) !important;
+  color: var(--grv-fg);
+}
+.admin-gruvbox header a,
+.admin-gruvbox header button {
+  color: var(--grv-fg1) !important;
+}
+.admin-gruvbox header a:hover,
+.admin-gruvbox header button:hover {
+  color: var(--grv-fg) !important;
+  background-color: var(--grv-bg2) !important;
+}
+/* Active nav tab */
+.admin-gruvbox .bg-purple-100 {
+  background-color: var(--grv-bg3) !important;
+  color: var(--grv-accent) !important;
+}
+
+/* Panels, cards, borders */
+.admin-gruvbox .bg-white {
+  background-color: var(--grv-bg1) !important;
+  color: var(--grv-fg) !important;
+}
+.admin-gruvbox .bg-gray-50 {
+  background-color: var(--grv-bg) !important;
+}
+.admin-gruvbox .bg-gray-100 {
+  background-color: var(--grv-bg2) !important;
+}
+.admin-gruvbox .border,
+.admin-gruvbox .border-gray-200,
+.admin-gruvbox .border-gray-100,
+.admin-gruvbox .divide-gray-100 > * + * {
+  border-color: var(--grv-bg3) !important;
+}
+.admin-gruvbox .rounded-xl {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Text colors */
+.admin-gruvbox .text-gray-900,
+.admin-gruvbox .text-gray-800 {
+  color: var(--grv-fg) !important;
+}
+.admin-gruvbox .text-gray-700,
+.admin-gruvbox .text-gray-600 {
+  color: var(--grv-fg1) !important;
+}
+.admin-gruvbox .text-gray-500,
+.admin-gruvbox .text-gray-400 {
+  color: var(--grv-fg2) !important;
+}
+
+/* Interactive elements */
+.admin-gruvbox input,
+.admin-gruvbox select,
+.admin-gruvbox textarea {
+  background-color: var(--grv-bg2) !important;
+  border-color: var(--grv-bg3) !important;
+  color: var(--grv-fg) !important;
+}
+.admin-gruvbox input::placeholder {
+  color: var(--grv-fg2) !important;
+}
+
+/* Primary buttons — accent blue */
+.admin-gruvbox .bg-indigo-600 {
+  background-color: var(--grv-blue) !important;
+}
+.admin-gruvbox .hover\:bg-indigo-700:hover {
+  background-color: var(--grv-accent) !important;
+}
+
+/* Metric cards */
+.admin-gruvbox .bg-indigo-950 {
+  background-color: var(--grv-bg2) !important;
+  border-color: var(--grv-blue) !important;
+}
+
+/* Status badges */
+.admin-gruvbox .bg-emerald-50 {
+  background-color: rgba(152, 151, 26, 0.15) !important;
+  color: #b8bb26 !important;
+  ring-color: var(--grv-green) !important;
+}
+.admin-gruvbox .bg-amber-50 {
+  background-color: rgba(215, 153, 33, 0.15) !important;
+  color: var(--grv-yellow) !important;
+}
+.admin-gruvbox .bg-red-50 {
+  background-color: rgba(204, 36, 29, 0.15) !important;
+  color: #fb4934 !important;
+}
+
+/* Table rows */
+.admin-gruvbox .hover\:bg-indigo-50\/40:hover {
+  background-color: rgba(69, 133, 136, 0.12) !important;
+}
+.admin-gruvbox .bg-gray-50\/50 {
+  background-color: rgba(40, 40, 40, 0.6) !important;
+}
+
+/* Links */
+.admin-gruvbox .text-indigo-600,
+.admin-gruvbox .text-purple-600 {
+  color: var(--grv-accent) !important;
+}
+.admin-gruvbox .hover\:text-indigo-800:hover,
+.admin-gruvbox .hover\:text-purple-800:hover {
+  color: var(--grv-blue) !important;
+}
+
+/* Error banner */
+.admin-gruvbox .bg-red-50.border-red-200 {
+  background-color: rgba(204, 36, 29, 0.12) !important;
+  border-color: var(--grv-orange) !important;
+  color: #fb4934 !important;
+}
+
+/* Revenue summary block */
+.admin-gruvbox .bg-purple-50 {
+  background-color: var(--grv-bg2) !important;
+  border-color: var(--grv-bg3) !important;
+}
+.admin-gruvbox .text-purple-900 {
+  color: var(--grv-fg) !important;
+}
+.admin-gruvbox .text-purple-600 {
+  color: var(--grv-accent) !important;
 }
 
 /* Dark mode — content area only (header, footer, menus stay light) */

@@ -24,6 +24,18 @@ export default function AdminHeader({ logoUrl }) {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState("welcome");
   const [localeState, setLocaleState] = useState(getLocale);
+  const [adminTheme, setAdminTheme] = useState("light");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("ragbaz-admin-theme");
+    if (saved) setAdminTheme(saved);
+  }, []);
+
+  function toggleTheme() {
+    const next = adminTheme === "gruvbox" ? "light" : "gruvbox";
+    setAdminTheme(next);
+    window.dispatchEvent(new CustomEvent("admin:setTheme", { detail: next }));
+  }
 
   // Keep activeTab in sync with AdminDashboard
   useEffect(() => {
@@ -129,6 +141,23 @@ export default function AdminHeader({ logoUrl }) {
               <option value="es">Español</option>
             </select>
           </div>
+          {/* Gruvbox theme toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={
+              adminTheme === "gruvbox"
+                ? "Switch to light theme"
+                : "Switch to Gruvbox dark"
+            }
+            className={`px-2 py-1 rounded text-xs font-mono font-medium border transition-colors ${
+              adminTheme === "gruvbox"
+                ? "bg-[#282828] text-[#ebdbb2] border-[#504945] hover:bg-[#3c3836]"
+                : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
+            }`}
+          >
+            {adminTheme === "gruvbox" ? "☀ light" : "● gruvbox"}
+          </button>
           {/* Right: Nav + actions */}
         </div>
         <nav className="flex items-center gap-1">
