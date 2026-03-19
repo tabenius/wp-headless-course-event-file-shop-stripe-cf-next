@@ -4,6 +4,27 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
 
 const IMPRESS_SCRIPT_ID = "impress-js-1.1.0";
+const BASE_SLIDE_WIDTH = 940;
+const BASE_SLIDE_HEIGHT = 420;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function computeSlideLayout() {
+  if (typeof window === "undefined") {
+    return { slideWidth: 760, slideHeight: 340, frameHeight: 420 };
+  }
+  const compact = window.innerWidth < 1024;
+  const horizontalPadding = compact ? 48 : 220;
+  const availableWidth = window.innerWidth - horizontalPadding;
+  const slideWidth = clamp(availableWidth, 360, 760);
+  const scaledHeight = Math.round((slideWidth / BASE_SLIDE_WIDTH) * BASE_SLIDE_HEIGHT);
+  const availableHeight = window.innerHeight - (compact ? 360 : 320);
+  const slideHeight = clamp(Math.min(scaledHeight, availableHeight), 220, 360);
+  const frameHeight = slideHeight + (compact ? 52 : 72);
+  return { slideWidth, slideHeight, frameHeight };
+}
 
 function MenuShortcutHint() {
   return (
@@ -379,6 +400,23 @@ export default function AdminWelcomeTab({
   onReplayStory,
 }) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [slideLayout, setSlideLayout] = useState(computeSlideLayout);
+
+  useEffect(() => {
+    function onResize() {
+      setSlideLayout(computeSlideLayout());
+    }
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const slideScaleBase = slideLayout.slideWidth / BASE_SLIDE_WIDTH;
+  const scaledStep = useCallback(
+    (scale) => Number.parseFloat((scale * slideScaleBase).toFixed(3)),
+    [slideScaleBase],
+  );
+
   const slides = useMemo(
     () => [
       {
@@ -388,7 +426,7 @@ export default function AdminWelcomeTab({
         x: 0,
         y: 0,
         z: 0,
-        scale: 1,
+        scale: scaledStep(1),
         rotate: 0,
         content: <ArchitectureOverview />,
       },
@@ -399,7 +437,7 @@ export default function AdminWelcomeTab({
         x: 1300,
         y: 220,
         z: -250,
-        scale: 1.2,
+        scale: scaledStep(1.08),
         rotate: -6,
         content: <SalesMockScreen />,
       },
@@ -410,7 +448,7 @@ export default function AdminWelcomeTab({
         x: 2800,
         y: -120,
         z: -350,
-        scale: 1.35,
+        scale: scaledStep(1.14),
         rotate: 8,
         content: <ProductsMockScreen />,
       },
@@ -421,7 +459,7 @@ export default function AdminWelcomeTab({
         x: 4300,
         y: 260,
         z: -500,
-        scale: 1.5,
+        scale: scaledStep(1.18),
         rotate: -4,
         content: <ChatMockScreen />,
       },
@@ -432,7 +470,7 @@ export default function AdminWelcomeTab({
         x: 5600,
         y: 20,
         z: -120,
-        scale: 1.15,
+        scale: scaledStep(1.02),
         rotate: 0,
         content: (
           <div className="h-full rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-6 shadow-xl">
@@ -470,7 +508,7 @@ export default function AdminWelcomeTab({
         ),
       },
     ],
-    [onHideStory, onSeenRevision],
+    [onHideStory, onSeenRevision, scaledStep],
   );
 
   const initAndBind = useCallback(() => {
@@ -584,7 +622,10 @@ export default function AdminWelcomeTab({
         </div>
       </div>
 
-      <div className="relative h-[500px] overflow-hidden rounded-2xl border border-white/20 bg-white/5 p-4">
+      <div
+        className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/5 p-4"
+        style={{ height: `${slideLayout.frameHeight}px` }}
+      >
         <div
           id="welcome-impress"
           className="impress h-full w-full"
@@ -600,7 +641,10 @@ export default function AdminWelcomeTab({
               data-z={slide.z}
               data-scale={slide.scale}
               data-rotate={slide.rotate}
-              style={{ width: "940px", height: "420px" }}
+              style={{
+                width: `${slideLayout.slideWidth}px`,
+                height: `${slideLayout.slideHeight}px`,
+              }}
             >
               {slide.content}
             </div>

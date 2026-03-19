@@ -22,12 +22,16 @@ import {
   isAdminActionHotkey,
   resolveAdminTabHotkey,
 } from "@/lib/adminHotkeys";
+import {
+  deriveWelcomeRevisionState,
+  persistWelcomeRevision,
+  WELCOME_SEEN_KEY,
+} from "@/lib/adminWelcomeRevision";
 
 const WELCOME_REVISION =
   process.env.NEXT_PUBLIC_WELCOME_REVISION ||
   process.env.NEXT_PUBLIC_GIT_SHA ||
   "";
-const WELCOME_SEEN_KEY = "ragbaz-admin-welcome-revision";
 
 const AdminStatsTab = lazy(() => import("./AdminStatsTab"));
 const AdminConnectorsTab = lazy(() => import("./AdminConnectorsTab"));
@@ -501,15 +505,18 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (
       typeof window === "undefined" ||
-      !WELCOME_REVISION ||
       window.localStorage === undefined
     ) {
       return;
     }
     const stored = window.localStorage.getItem(WELCOME_SEEN_KEY);
-    const hasSeen = stored === WELCOME_REVISION;
-    setShouldShowWelcomeBadge(!hasSeen);
-    setWelcomeStoryVisible(!hasSeen);
+    const next = deriveWelcomeRevisionState({
+      revision: WELCOME_REVISION,
+      storedRevision: stored,
+      defaultShowStory: true,
+    });
+    setShouldShowWelcomeBadge(next.showRevisionBadge);
+    setWelcomeStoryVisible(next.showStory);
   }, []);
 
   useEffect(() => {
@@ -546,8 +553,8 @@ export default function AdminDashboard() {
   }, []);
 
   const handleWelcomeSeen = useCallback(() => {
-    if (typeof window === "undefined" || !WELCOME_REVISION) return;
-    window.localStorage.setItem(WELCOME_SEEN_KEY, WELCOME_REVISION);
+    if (typeof window === "undefined") return;
+    persistWelcomeRevision(window.localStorage, WELCOME_REVISION);
     setShouldShowWelcomeBadge(false);
   }, []);
 

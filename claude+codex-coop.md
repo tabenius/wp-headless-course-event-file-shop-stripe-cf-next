@@ -222,3 +222,10 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `tests/i18n-admin-parity.test.js` verifies that `sv` and `es` include all `admin.*` keys from `en`.
 - **Locale sync for parity**: Added missing Spanish Welcome admin keys (skip/prev-next/enter-dashboard plus split slide tag/sub/paragraph keys) so parity checks pass.
 - **Verification**: `npm test` now runs 13 passing suites including the two new tests; targeted ESLint on touched files is clean.
+
+### Codex — Welcome sizing fix + welcome revision test
+
+- **Slideshow scaling fix**: `AdminWelcomeTab` now computes slide dimensions from viewport size (`computeSlideLayout`) and scales impress steps from a base slide size instead of forcing 940×420 across all screens. This prevents oversized rendering on 2K displays where users previously needed browser zoom-out.
+- **Welcome revision logic extracted**: Added `src/lib/adminWelcomeRevision.js` with `deriveWelcomeRevisionState`, `persistWelcomeRevision`, and `WELCOME_SEEN_KEY`. `AdminDashboard` now uses this shared logic instead of inline checks.
+- **New test**: Added `tests/admin-welcome-revision.test.js` covering unseen/seen/new revision flows and storage persistence behavior.
+- **Verification**: `npm test` now passes 14/14 tests and touched-file ESLint is clean.
