@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Simplified the menu hotkey legend by removing the Welcome-screen “Open menu / Öppna meny” chip and placing a smaller plain `Ctrl+Alt+M` hint directly under the hamburger icon in the admin header.
 - **2026-03-19 (Codex)**: Fixed Workers AI context-loader interop/runtime error (`Cannot read properties of undefined (reading 'default')`) by replacing static `@opennextjs/cloudflare` import in `src/lib/ai.js` with guarded lazy dynamic loading and safe REST fallback.
 - **2026-03-19 (Codex)**: Increased Welcome slideshow usable area by removing the story-mode headline, moving the menu hotkey hint inline with the product label, and enforcing high-contrast light text styling on dark-blue header surfaces.
 - **2026-03-19 (Codex)**: Tuned Welcome UI readability by increasing dark-theme contrast for the menu hotkey hint chip and compacting/localizing the welcome headline (`Control Panel` / `Kontrollpanel` / `Panel de control`) to reclaim vertical space.

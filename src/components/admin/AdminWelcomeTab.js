@@ -6,7 +6,8 @@ import { readImageGenerationSnapshot } from "@/lib/adminImageGenerationState";
 
 const IMPRESS_SCRIPT_ID = "impress-js-1.1.0";
 const BASE_SLIDE_WIDTH = 940;
-const BASE_SLIDE_HEIGHT = 420;
+const BASE_SLIDE_HEIGHT = 560;
+const IMPRESS_CONTENT_SCALE = 0.9;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -14,16 +15,16 @@ function clamp(value, min, max) {
 
 function computeSlideLayout() {
   if (typeof window === "undefined") {
-    return { slideWidth: 760, slideHeight: 340, frameHeight: 420 };
+    return { slideWidth: 860, slideHeight: 500, frameHeight: 518 };
   }
   const compact = window.innerWidth < 1024;
-  const horizontalPadding = compact ? 48 : 220;
+  const horizontalPadding = compact ? 16 : 72;
   const availableWidth = window.innerWidth - horizontalPadding;
-  const slideWidth = clamp(availableWidth, 360, 760);
+  const slideWidth = clamp(availableWidth, 420, 1100);
   const scaledHeight = Math.round((slideWidth / BASE_SLIDE_WIDTH) * BASE_SLIDE_HEIGHT);
-  const availableHeight = window.innerHeight - (compact ? 300 : 260);
-  const slideHeight = clamp(Math.min(scaledHeight, availableHeight), 220, 360);
-  const frameHeight = slideHeight + (compact ? 40 : 52);
+  const availableHeight = window.innerHeight - (compact ? 140 : 104);
+  const slideHeight = clamp(Math.min(scaledHeight, availableHeight), 320, 640);
+  const frameHeight = slideHeight + (compact ? 14 : 18);
   return { slideWidth, slideHeight, frameHeight };
 }
 
@@ -68,23 +69,6 @@ function tearImpress() {
   } catch (_error) {
     // best effort cleanup only
   }
-}
-
-function MenuShortcutHint({ onDark = false, compact = false }) {
-  const wrapperClass = onDark
-    ? `inline-flex items-center gap-2 rounded-full border border-violet-300/70 bg-violet-950/85 ${compact ? "px-2.5 py-0.5 text-[10px]" : "px-3 py-1 text-[11px]"} font-medium text-white`
-    : `inline-flex items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-100/70 ${compact ? "px-2.5 py-0.5 text-[10px]" : "px-3 py-1 text-[11px]"} font-medium text-indigo-900`;
-  const kbdClass = onDark
-    ? `rounded border border-violet-200/70 bg-violet-700 ${compact ? "px-1.5 py-0 text-[9px]" : "px-2 py-0.5 text-[10px]"} font-semibold tracking-wide text-white`
-    : `rounded border border-indigo-300 bg-white ${compact ? "px-1.5 py-0 text-[9px]" : "px-2 py-0.5 text-[10px]"} font-semibold tracking-wide text-indigo-800`;
-  return (
-    <div className={wrapperClass}>
-      <span>{t("admin.welcomeMenuHint", "Open menu")}</span>
-      <kbd className={kbdClass}>
-        Ctrl+Alt+M
-      </kbd>
-    </div>
-  );
 }
 
 function formatSnapshotTime(isoString) {
@@ -1005,12 +989,9 @@ export default function AdminWelcomeTab({
       <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-4 sm:p-6 shadow min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs uppercase tracking-widest text-indigo-700">
-                {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
-              </p>
-              <MenuShortcutHint compact />
-            </div>
+            <p className="text-xs uppercase tracking-widest text-indigo-700">
+              {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
+            </p>
             <h2 className="text-2xl font-semibold text-slate-900">
               {t("admin.welcomeHeadline", "Welcome to your new control room")}
             </h2>
@@ -1031,15 +1012,12 @@ export default function AdminWelcomeTab({
   }
 
   return (
-    <div className="space-y-1 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-2 sm:p-2.5 text-white min-w-0 min-h-[calc(100vh-5rem)]">
+    <div className="space-y-1 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs uppercase tracking-widest text-sky-100">
-              {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
-            </p>
-            <MenuShortcutHint onDark compact />
-          </div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-white">
+            {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
+          </p>
           <p className="mt-1 text-xs text-sky-100">
             {slides[currentStep]?.title} - {slides[currentStep]?.subtitle}
           </p>
@@ -1084,7 +1062,17 @@ export default function AdminWelcomeTab({
                 height: `${slideLayout.slideHeight}px`,
               }}
             >
-              {slide.content}
+              <div
+                className="h-full w-full"
+                style={{
+                  width: `${(100 / IMPRESS_CONTENT_SCALE).toFixed(3)}%`,
+                  height: `${(100 / IMPRESS_CONTENT_SCALE).toFixed(3)}%`,
+                  transform: `scale(${IMPRESS_CONTENT_SCALE})`,
+                  transformOrigin: "top left",
+                }}
+              >
+                {slide.content}
+              </div>
             </div>
           ))}
         </div>

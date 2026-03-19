@@ -235,18 +235,23 @@ export default function AdminHeader({ logoUrl }) {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((prev) => !prev)}
-              className="p-2 rounded-lg bg-indigo-900/90 border border-white/30 text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-white"
-              aria-label={t("admin.menuToggle", "Toggle main menu")}
-            >
-              <span className="flex flex-col gap-1">
-                <span className="block h-0.5 w-5 bg-white" />
-                <span className="block h-0.5 w-6 bg-white" />
-                <span className="block h-0.5 w-4 bg-white" />
+            <div className="flex flex-col items-center leading-none">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="p-2 rounded-lg bg-indigo-900/90 border border-white/30 text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label={t("admin.menuToggle", "Toggle main menu")}
+              >
+                <span className="flex flex-col gap-1">
+                  <span className="block h-0.5 w-5 bg-white" />
+                  <span className="block h-0.5 w-6 bg-white" />
+                  <span className="block h-0.5 w-4 bg-white" />
+                </span>
+              </button>
+              <span className="mt-0.5 text-[9px] font-medium tracking-wide text-indigo-200">
+                Ctrl+Alt+M
               </span>
-            </button>
+            </div>
             <Link
               href="/admin#/welcome"
               className="text-white/95 hover:text-white transition-colors"

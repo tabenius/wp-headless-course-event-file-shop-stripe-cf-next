@@ -579,3 +579,19 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npx eslint src/app/admin/docs/page.js src/app/admin/docs/[slug]/page.js src/lib/chat/rag.js`
   - `npm test -- tests/i18n-admin-parity.test.js tests/contentCategories.test.js`
+
+---
+
+## 2026-03-19 (cont. 16)
+
+### Codex — hamburger shortcut legend cleanup
+
+- Removed the extra “Open menu / Öppna meny” legend chip from the Welcome UI.
+- Added a compact plain-text `Ctrl+Alt+M` hint directly beneath the hamburger button in `AdminHeader`.
+- Kept the hint intentionally smaller and background-free to reduce visual clutter while preserving discoverability.
+- Updated locale headline strings to concise titles:
+  - EN: `Control Panel`
+  - SV: `Kontrollpanel`
+  - ES: `Panel de control`
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminWelcomeTab.js`
