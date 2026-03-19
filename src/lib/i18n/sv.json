@@ -337,7 +337,17 @@
     "colStatus": "Status",
     "clientSecretKey": "Hemlig nyckel",
     "showSecret": "Visa",
-    "hideSecret": "Dölj"
+    "hideSecret": "Dölj",
+    "navSales": "Försäljning",
+    "filterAllTime": "Alltid",
+    "filterThisMonth": "Den här månaden",
+    "filterThisWeek": "Den här veckan",
+    "filterToday": "Idag",
+    "salesRevenue": "Intäkt",
+    "salesCount": "Betalningar",
+    "salesOther": "Övrigt",
+    "noPaymentsDateHint": "Inga betalningar i valt datumintervall — prova ett bredare filter.",
+    "noPaymentsHint": "Inga betalningar hittades. Kontrollera att STRIPE_SECRET_KEY är satt och att kontot har transaktioner."
   },
   "stats": {
     "totalItems": "Antal objekt",

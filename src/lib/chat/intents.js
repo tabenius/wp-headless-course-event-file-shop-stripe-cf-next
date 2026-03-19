@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { chatWithContext } from "@/lib/ai";
+import { compilePayments } from "@/lib/stripePayments";
 
 export const IMAGE_SYSTEM_PROMPT =
   "Write a concise, vivid image generation prompt suited for FLUX (max 60 words). " +
@@ -109,13 +110,14 @@ export async function handleSales(message, lower, request, origin) {
     periodLabel = "this month";
   }
 
-  let url = `/api/admin/payments?limit=100`;
-  if (email) url += `&email=${encodeURIComponent(email)}`;
-  if (fromTs) url += `&from=${fromTs}`;
-
-  let json;
+  let payments;
   try {
-    json = await fetchAdminJson(url);
+    const all = await compilePayments(
+      email || undefined,
+      100,
+      fromTs || undefined,
+    );
+    payments = all.filter((p) => p.status === "succeeded");
   } catch (err) {
     return NextResponse.json({
       ok: true,
@@ -123,9 +125,6 @@ export async function handleSales(message, lower, request, origin) {
       sources: [],
     });
   }
-  const payments = (json.payments || []).filter(
-    (p) => p.status === "succeeded",
-  );
 
   if (payments.length === 0) {
     const who = email ? ` for ${email}` : "";
@@ -397,11 +396,11 @@ export async function handleRefund(message, lower, request, origin) {
 
 export async function handleTopProducts(message, lower, request, origin) {
   if (!RE_TOP_PRODUCTS.test(message)) return null;
-  const fetchAdminJson = makeFetch(request, origin);
 
-  let json;
+  let payments;
   try {
-    json = await fetchAdminJson("/api/admin/payments?limit=100");
+    const all = await compilePayments(undefined, 100, undefined);
+    payments = all.filter((p) => p.status === "succeeded");
   } catch (err) {
     return NextResponse.json({
       ok: true,
@@ -409,9 +408,6 @@ export async function handleTopProducts(message, lower, request, origin) {
       sources: [],
     });
   }
-  const payments = (json.payments || []).filter(
-    (p) => p.status === "succeeded",
-  );
 
   const counts = {};
   for (const p of payments) {
@@ -450,11 +446,11 @@ export async function handleTopProducts(message, lower, request, origin) {
 
 export async function handleRevenueTotal(message, lower, request, origin) {
   if (!RE_REVENUE_TOTAL.test(message)) return null;
-  const fetchAdminJson = makeFetch(request, origin);
 
-  let json;
+  let payments;
   try {
-    json = await fetchAdminJson("/api/admin/payments?limit=100");
+    const all = await compilePayments(undefined, 100, undefined);
+    payments = all.filter((p) => p.status === "succeeded");
   } catch (err) {
     return NextResponse.json({
       ok: true,
@@ -462,9 +458,6 @@ export async function handleRevenueTotal(message, lower, request, origin) {
       sources: [],
     });
   }
-  const payments = (json.payments || []).filter(
-    (p) => p.status === "succeeded",
-  );
 
   if (payments.length === 0) {
     return NextResponse.json({
@@ -544,13 +537,13 @@ export async function handleAccess(message, lower, request, origin) {
 export async function handlePayments(message, lower, request, origin) {
   if (!lower.includes("payment") && !lower.includes("receipt")) return null;
   const email = extractEmail(message);
-  const fetchAdminJson = makeFetch(request, origin);
-  const url = email
-    ? `/api/admin/payments?email=${encodeURIComponent(email)}&limit=10`
-    : `/api/admin/payments?limit=6`;
-  let json;
+  let rawPayments;
   try {
-    json = await fetchAdminJson(url);
+    rawPayments = await compilePayments(
+      email || undefined,
+      email ? 10 : 6,
+      undefined,
+    );
   } catch (err) {
     return NextResponse.json({
       ok: true,
@@ -558,7 +551,7 @@ export async function handlePayments(message, lower, request, origin) {
       sources: [],
     });
   }
-  const tableRows = (json.payments || []).slice(0, 6).map((p) => {
+  const tableRows = rawPayments.slice(0, 6).map((p) => {
     const receipt = p.receiptUrl ? `[Receipt](${p.receiptUrl})` : "—";
     return `| ${new Date(p.created).toLocaleString("sv-SE")} | ${(p.amount / 100).toFixed(2)} ${p.currency?.toUpperCase()} | ${p.status} | ${p.email || "—"} | ${receipt} |`;
   });

@@ -337,7 +337,17 @@
     "colStatus": "Status",
     "clientSecretKey": "Secret Key",
     "showSecret": "Show",
-    "hideSecret": "Hide"
+    "hideSecret": "Hide",
+    "navSales": "Sales",
+    "filterAllTime": "All time",
+    "filterThisMonth": "This month",
+    "filterThisWeek": "This week",
+    "filterToday": "Today",
+    "salesRevenue": "Revenue",
+    "salesCount": "Payments",
+    "salesOther": "Other",
+    "noPaymentsDateHint": "No payments in this date range — try a wider filter.",
+    "noPaymentsHint": "No charges found. Make sure STRIPE_SECRET_KEY is set and the Stripe account has charges."
   },
   "stats": {
     "totalItems": "Total items",

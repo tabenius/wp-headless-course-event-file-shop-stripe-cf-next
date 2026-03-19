@@ -24,6 +24,7 @@ const AdminConnectorsTab = lazy(() => import("./AdminConnectorsTab"));
 const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
 const AdminSupportTab = lazy(() => import("./AdminSupportTab"));
 const AdminAdvancedTab = lazy(() => import("./AdminAdvancedTab"));
+const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
 
 const log = (...args) => {
   // Console output is streamed by wrangler tail in production.
@@ -452,6 +453,7 @@ export default function AdminDashboard() {
   const [payments, setPayments] = useState([]);
   const [paymentsEmail, setPaymentsEmail] = useState("");
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsError, setPaymentsError] = useState("");
   const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
@@ -470,7 +472,7 @@ export default function AdminDashboard() {
         ["INPUT", "TEXTAREA", "SELECT"].includes(tag) ||
         e.target?.isContentEditable;
       if (isFormField) return;
-      if (!e.altKey) return;
+      if (!e.altKey || !e.ctrlKey) return;
       // Use e.code (e.g. "Digit2") rather than e.key — on macOS Alt+number
       // produces special characters (™, £…) so e.key is unreliable for digits.
       const digit = e.code?.startsWith("Digit") ? e.code.slice(5) : null;
@@ -478,11 +480,12 @@ export default function AdminDashboard() {
         1: "stats",
         2: "shop",
         3: "access",
-        4: "support",
-        5: "health",
-        6: "advanced",
-        7: "chat",
-        8: "style",
+        4: "sales",
+        5: "support",
+        6: "health",
+        7: "advanced",
+        8: "chat",
+        9: "style",
       };
       if (digit && tabMap[digit]) {
         e.preventDefault();
@@ -674,9 +677,10 @@ export default function AdminDashboard() {
         if (!res.ok || !json?.ok)
           throw new Error(json?.error || "Failed to load payments");
         setPayments(json.payments || []);
+        setPaymentsError("");
         setLoaded((s) => ({ ...s, payments: true }));
       } catch (err) {
-        setError(err.message || "Failed to load payments");
+        setPaymentsError(err.message || "Failed to load payments");
       } finally {
         setPaymentsLoading(false);
       }
@@ -707,7 +711,10 @@ export default function AdminDashboard() {
     if (activeTab === "health") {
       runHealthCheck();
     }
-    if (activeTab === "support" && !loaded.payments) {
+    if (
+      (activeTab === "support" || activeTab === "sales") &&
+      !loaded.payments
+    ) {
       loadPayments(paymentsEmail);
     }
   }, [
@@ -1437,16 +1444,17 @@ export default function AdminDashboard() {
         <div className="font-semibold text-white mb-1">Genvägar</div>
         <div className="space-y-0.5">
           {[
-            ["Alt+1", "Stats"],
-            ["Alt+2", "Shop"],
-            ["Alt+3", "Access"],
-            ["Alt+4", "Support"],
-            ["Alt+5", "Health"],
-            ["Alt+6", "Advanced"],
-            ["Alt+7", "Chat"],
-            ["Alt+8", "Style"],
-            ["Alt+/", "Search"],
-            ["Alt+L", "Logout"],
+            ["^⌥1", "Stats"],
+            ["^⌥2", "Shop"],
+            ["^⌥3", "Access"],
+            ["^⌥4", "Sales"],
+            ["^⌥5", "Support"],
+            ["^⌥6", "Health"],
+            ["^⌥7", "Advanced"],
+            ["^⌥8", "Chat"],
+            ["^⌥9", "Style"],
+            ["^⌥/", "Search"],
+            ["^⌥L", "Logout"],
           ].map(([key, label]) => (
             <div key={key} className="flex gap-2">
               <span className="text-purple-300 w-12 shrink-0">{key}</span>
@@ -1569,6 +1577,24 @@ export default function AdminDashboard() {
             setPaymentsEmail={setPaymentsEmail}
             loadPayments={loadPayments}
             paymentsLoading={paymentsLoading}
+            downloadReceipt={downloadReceipt}
+            downloading={downloading}
+          />
+        </Suspense>
+      )}
+
+      {/* ── Sales tab ── */}
+      {activeTab === "sales" && (
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
+          <AdminSalesTab
+            payments={payments}
+            paymentsEmail={paymentsEmail}
+            setPaymentsEmail={setPaymentsEmail}
+            loadPayments={loadPayments}
+            paymentsLoading={paymentsLoading}
+            paymentsError={paymentsError}
             downloadReceipt={downloadReceipt}
             downloading={downloading}
           />

@@ -337,7 +337,17 @@
     "colStatus": "Estado",
     "clientSecretKey": "Clave secreta",
     "showSecret": "Mostrar",
-    "hideSecret": "Ocultar"
+    "hideSecret": "Ocultar",
+    "navSales": "Ventas",
+    "filterAllTime": "Todo el tiempo",
+    "filterThisMonth": "Este mes",
+    "filterThisWeek": "Esta semana",
+    "filterToday": "Hoy",
+    "salesRevenue": "Ingresos",
+    "salesCount": "Pagos",
+    "salesOther": "Otros",
+    "noPaymentsDateHint": "Sin pagos en este rango de fechas — prueba un filtro más amplio.",
+    "noPaymentsHint": "No se encontraron cargos. Asegúrate de que STRIPE_SECRET_KEY esté configurado y la cuenta tenga transacciones."
   },
   "stats": {
     "totalItems": "Total de elementos",
