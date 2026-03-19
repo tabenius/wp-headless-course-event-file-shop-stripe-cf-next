@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Updated the header hotkey hint styling so `Ctrl+Alt+M` under the hamburger icon now renders in black to match the latest menu-bar contrast preference.
 - **2026-03-19 (Codex)**: Switched the `ARTICULATE STOREFRONT` subtitle text in the admin header logo lockup to black for stronger contrast preference against the amber menu bar.
 - **2026-03-19 (Codex)**: Updated header color balance per request: lowered menu-bar/background saturation+brightness while increasing the `RAGBAZ` cyan wordmark intensity for stronger brand contrast.
 - **2026-03-19 (Codex)**: Adjusted admin header branding polish: shifted `ARTICULATE STOREFRONT` ~`0.5rem` further right, toned down `RAGBAZ` wordmark color saturation/brightness, and enlarged sun/moon theme toggle glyphs for better visibility.

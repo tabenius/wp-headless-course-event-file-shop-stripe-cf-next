@@ -34,6 +34,12 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 
 - Changed the `ARTICULATE STOREFRONT` subtitle text in the admin header lockup from white to black to match the requested contrast style on the amber bar.
 
+## 2026-03-19 (cont. 38)
+
+### Codex — hamburger hotkey hint contrast tweak
+
+- Changed the `Ctrl+Alt+M` hint text under the hamburger icon from a light cream tone to black to align with the updated header text contrast preference.
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

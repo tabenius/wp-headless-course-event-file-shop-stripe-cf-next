@@ -254,7 +254,7 @@ export default function AdminHeader({ logoUrl }) {
                   <span className="block h-0.5 w-4 bg-white" />
                 </span>
               </button>
-              <span className="mt-1 text-[9px] font-medium tracking-wide text-[hsl(39_62%_93%)]">
+              <span className="mt-1 text-[9px] font-medium tracking-wide text-black">
                 Ctrl+Alt+M
               </span>
             </div>
