@@ -1670,8 +1670,13 @@ export default function AdminDashboard() {
     }
   }
 
+  const dashboardSectionClass =
+    activeTab === "welcome" && welcomeStoryVisible
+      ? "w-full min-w-0 px-0 py-0"
+      : "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10 space-y-6 sm:space-y-8";
+
   return (
-    <section className="mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10 space-y-6 sm:space-y-8">
+    <section className={dashboardSectionClass}>
       {activeTab === "welcome" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}

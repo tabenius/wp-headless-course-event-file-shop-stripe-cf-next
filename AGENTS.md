@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Increased Welcome slideshow usable area by removing the story-mode headline, moving the menu hotkey hint inline with the product label, and enforcing high-contrast light text styling on dark-blue header surfaces.
 - **2026-03-19 (Codex)**: Tuned Welcome UI readability by increasing dark-theme contrast for the menu hotkey hint chip and compacting/localizing the welcome headline (`Control Panel` / `Kontrollpanel` / `Panel de control`) to reclaim vertical space.
 - **2026-03-19 (Codex)**: Completed documentation UX refresh by updating `README.md` + `docs/README.en.md` + `docs/README.sv.md` with current admin tab flow/instructions and embedding new GUI visuals from `public/docs/admin/*.svg`.
 - **2026-03-19 (Codex)**: Completed P2 backlog items by replacing the Welcome image-generator mock with live quota/snapshot state plus read-only fallback, and by adding an admin dead-link finder (`/api/admin/dead-links` + Support panel) with internal/pseudo-external/external classification and reachability checks.

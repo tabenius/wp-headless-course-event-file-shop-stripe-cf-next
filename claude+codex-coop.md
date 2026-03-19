@@ -71,6 +71,14 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - SV: `Kontrollpanel`
   - ES: `Panel de control`
 
+## 2026-03-19 (cont. 15)
+
+### Codex — welcome slide density + hotkey placement polish
+
+- Removed the large story-mode welcome headline to reclaim vertical space for slides.
+- Moved the `Ctrl+Alt+M` hotkey hint inline next to the `RAGBAZ Articulate StoreFront` label in both welcome states.
+- Tightened top spacing/padding in story mode and adjusted dark-theme chip/keycap colors to maintain high contrast on the blue background (no black text on dark blue).
+
 ## 2026-03-19 (cont. 10)
 
 ### Codex — category extraction + VAT map + digital file heuristics

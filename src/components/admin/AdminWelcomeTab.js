@@ -70,13 +70,13 @@ function tearImpress() {
   }
 }
 
-function MenuShortcutHint({ onDark = false }) {
+function MenuShortcutHint({ onDark = false, compact = false }) {
   const wrapperClass = onDark
-    ? "mt-2 inline-flex items-center gap-2 rounded-full border border-violet-300/70 bg-violet-950/85 px-3 py-1 text-[11px] font-medium text-white"
-    : "mt-2 inline-flex items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-100/70 px-3 py-1 text-[11px] font-medium text-indigo-900";
+    ? `inline-flex items-center gap-2 rounded-full border border-violet-300/70 bg-violet-950/85 ${compact ? "px-2.5 py-0.5 text-[10px]" : "px-3 py-1 text-[11px]"} font-medium text-white`
+    : `inline-flex items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-100/70 ${compact ? "px-2.5 py-0.5 text-[10px]" : "px-3 py-1 text-[11px]"} font-medium text-indigo-900`;
   const kbdClass = onDark
-    ? "rounded border border-violet-200/70 bg-white/95 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-violet-950"
-    : "rounded border border-indigo-300 bg-white px-2 py-0.5 text-[10px] font-semibold tracking-wide text-indigo-800";
+    ? `rounded border border-violet-200/70 bg-violet-700 ${compact ? "px-1.5 py-0 text-[9px]" : "px-2 py-0.5 text-[10px]"} font-semibold tracking-wide text-white`
+    : `rounded border border-indigo-300 bg-white ${compact ? "px-1.5 py-0 text-[9px]" : "px-2 py-0.5 text-[10px]"} font-semibold tracking-wide text-indigo-800`;
   return (
     <div className={wrapperClass}>
       <span>{t("admin.welcomeMenuHint", "Open menu")}</span>
@@ -1005,13 +1005,15 @@ export default function AdminWelcomeTab({
       <div className="space-y-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-4 sm:p-6 shadow min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-widest text-indigo-700">
-              {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs uppercase tracking-widest text-indigo-700">
+                {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
+              </p>
+              <MenuShortcutHint compact />
+            </div>
             <h2 className="text-2xl font-semibold text-slate-900">
               {t("admin.welcomeHeadline", "Welcome to your new control room")}
             </h2>
-            <MenuShortcutHint />
           </div>
           <button
             type="button"
@@ -1029,19 +1031,16 @@ export default function AdminWelcomeTab({
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-sky-200/45 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-3 sm:p-4 text-white shadow-lg min-w-0">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+    <div className="space-y-1 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 p-2 sm:p-2.5 text-white min-w-0 min-h-[calc(100vh-5rem)]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs uppercase tracking-widest text-sky-100">
-            {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
-          </p>
-          <h2 className="text-2xl font-semibold">
-            {t("admin.welcomeHeadline", "Welcome to your new control room")}
-          </h2>
-          <div className="mt-0.5">
-            <MenuShortcutHint onDark />
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs uppercase tracking-widest text-sky-100">
+              {t("admin.welcomeSubtitle", "RAGBAZ Articulate StoreFront")}
+            </p>
+            <MenuShortcutHint onDark compact />
           </div>
-          <p className="mt-0.5 text-sm text-sky-100">
+          <p className="mt-1 text-xs text-sky-100">
             {slides[currentStep]?.title} - {slides[currentStep]?.subtitle}
           </p>
         </div>
@@ -1060,7 +1059,7 @@ export default function AdminWelcomeTab({
       </div>
 
       <div
-        className="relative overflow-hidden rounded-2xl border border-sky-200/35 bg-slate-900/45 p-2.5"
+        className="relative overflow-hidden rounded-xl border border-sky-200/35 bg-slate-900/45 p-1.5"
         style={{ height: `${slideLayout.frameHeight}px` }}
       >
         <div
@@ -1091,7 +1090,7 @@ export default function AdminWelcomeTab({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {slides.map((slide, index) => (
             <button
