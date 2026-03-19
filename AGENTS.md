@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Fixed duplicate selected-title rendering in Products detail panes (single title line only) and added dark-gray framing for empty image placeholders/pickers to improve visual affordance.
 - **2026-03-19 (Codex)**: Hardened image-crop save UX by closing/resetting the crop dialog immediately on successful upload before parent callbacks, preventing stuck modal cases after save.
 - **2026-03-19 (Codex)**: Mitigated edge-runtime `fs`-related upload failures by moving AWS S3 SDK usage in `s3upload.js` to lazy dynamic imports and async Node-only call paths (instead of static top-level imports).
 - **2026-03-19 (Codex)**: Improved Products tab selection UX: selected rows now use inverse dark/light contrast, left list panes widened to `340px`, and right detail panes now show full product/content titles with wrapping (no truncation-only headers).

@@ -136,7 +136,7 @@ function ImagePickerButton({ imgUrl, onUploaded, onError }) {
         <button
           type="button"
           onClick={openPicker}
-          className="relative w-28 h-28 rounded-lg border shrink-0 overflow-hidden group bg-gray-100"
+          className="relative w-28 h-28 rounded-lg border-2 border-gray-700 shrink-0 overflow-hidden group bg-gray-100"
           title={t("admin.uploadImage")}
         >
           {imgUrl ? (
@@ -506,7 +506,7 @@ function ProductsTab({
                       fallbackClassName="w-9 h-9 rounded bg-rose-50 shrink-0 flex items-center justify-center text-rose-400"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded bg-amber-100 shrink-0 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded border border-gray-700 bg-amber-100 shrink-0 flex items-center justify-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
@@ -569,9 +569,6 @@ function ProductsTab({
                   <h3 className="text-lg font-semibold break-words">
                     {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                   </h3>
-                  <p className="text-xs text-gray-500 break-all">
-                    {selectedShopProduct.name || `Product ${shopIndex + 1}`}
-                  </p>
                   <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs">
                     {t("admin.shopProducts")}
                   </span>
@@ -1494,9 +1491,6 @@ function AccessTab({
                         <h3 className="text-base font-semibold break-words">
                           {wpItem?.title || wpItem?.name || selectedCourse}
                         </h3>
-                        <p className="text-xs text-gray-500 break-all">
-                          {wpItem?.title || wpItem?.name || selectedCourse}
-                        </p>
                         <div className="flex flex-wrap gap-1.5 text-xs">
                           <span
                             className={`px-2 py-0.5 rounded ${sourceColor}`}
@@ -1594,7 +1588,7 @@ function AccessTab({
                     fallbackClassName="w-10 h-10 rounded bg-rose-50 flex items-center justify-center text-rose-400"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded bg-amber-50 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded border border-gray-700 bg-amber-50 flex items-center justify-center">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 20 20"
@@ -1611,9 +1605,6 @@ function AccessTab({
                 )}
                 <div>
                   <p className="text-sm font-semibold break-words">
-                    {selectedShopProduct.name || `Product ${shopIndex + 1}`}
-                  </p>
-                  <p className="text-xs text-gray-500 break-all">
                     {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                   </p>
                   <p className="text-xs text-gray-400">

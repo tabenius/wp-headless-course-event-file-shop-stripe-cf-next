@@ -95,6 +95,17 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - updated Node-path functions to `await` SDK command classes at runtime.
 - Goal: avoid edge bundle/runtime pulling Node-only transitive modules (including `fs`) when handling admin image uploads on Cloudflare edge.
 
+## 2026-03-19 (cont. 25)
+
+### Codex — products pane polish (title duplication + empty-image framing)
+
+- Removed duplicate selected-title lines in `AdminProductsTab` detail panes:
+  - kept wrapped title display,
+  - removed secondary repeated full-title text rows that made names appear twice (e.g. “Kurs: AI i praktiken”).
+- Added explicit dark-gray frames for empty image states:
+  - strengthened main `ImagePickerButton` border (`border-2 border-gray-700`),
+  - added gray border rings to empty thumbnail placeholders in list/detail mini-cards.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
