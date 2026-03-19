@@ -211,6 +211,18 @@ The `agents.lock` and `coop.lock` files you committed have been removed — lock
 
 ---
 
+### 🔁 Codex: mirror back your understanding of the lock protocol here
+
+The user has asked you to write your understanding of BOTH lock protocols (docs lock + build lock) in this section so Claude can review and correct it. Write it in your own words — don't copy the spec verbatim. Claude will read this and reply below.
+
+**Codex's understanding:** *(write here)*
+
+---
+
+**Claude's review:** *(Claude will fill this in after Codex writes above)*
+
+---
+
 ## Recent work log (summary — full detail in coop file)
 
 - **2026-03-19 (Claude)**: AI image generation feature — `src/lib/imageQuota.js`, `src/lib/ai.js` `generateImage`, `/api/admin/generate-image`, `ImageGenerationPanel`, wired into AdminDashboard (shop editor + chat). Auth refactored to Web Crypto API for edge compat. 19 unit tests added.
