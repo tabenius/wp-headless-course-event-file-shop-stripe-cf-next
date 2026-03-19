@@ -343,10 +343,10 @@
     "sources": "Källor",
     "noSources": "Inga källor",
     "empty": "Inga meddelanden ännu. Ställ en fråga för att börja.",
-      "copyRaw": "Kopiera ren text",
-      "copyRawShort": "Ren",
-      "copyMarkdown": "Kopiera formaterad markdown",
-      "copyMarkdownShort": "MD"
+    "copyRaw": "Kopiera ren text",
+    "copyRawShort": "Ren",
+    "copyMarkdown": "Kopiera formaterad markdown",
+    "copyMarkdownShort": "MD"
   },
   "health": {
     "wpNotConfigured": "WordPress-anslutningen är inte inställd ännu.",
@@ -434,7 +434,10 @@
     "paymentVerifyHint": "Oroa dig inte — din åtkomst bör dyka upp inom några minuter. Kontakta support om det inte fungerar.",
     "paymentCancelledRetry": "Du kan försöka igen när du är redo.",
     "checkoutRetryHint": "Försök igen. Kontakta support om problemet kvarstår.",
-    "courseAccessDescSimple": "Du har nu åtkomst till kursen. Klicka på knappen nedan för att börja."
+    "courseAccessDescSimple": "Du har nu åtkomst till kursen. Klicka på knappen nedan för att börja.",
+    "viewCart": "Visa varukorg",
+    "emptyShop": "Lägg till produkter från admin.",
+    "shopHint": "Använd WordPress/WooCommerce för att skapa produkter."
   },
   "darkMode": {
     "lightMode": "Ljust läge",

@@ -343,10 +343,10 @@
     "sources": "Sources",
     "noSources": "No sources",
     "empty": "No messages yet. Ask something to get started.",
-      "copyRaw": "Copy raw text",
-      "copyRawShort": "Raw",
-      "copyMarkdown": "Copy formatted markdown",
-      "copyMarkdownShort": "MD"
+    "copyRaw": "Copy raw text",
+    "copyRawShort": "Raw",
+    "copyMarkdown": "Copy formatted markdown",
+    "copyMarkdownShort": "MD"
   },
   "health": {
     "wpNotConfigured": "WordPress connection is not configured yet.",
@@ -434,7 +434,10 @@
     "paymentVerifyHint": "Don't worry — your access should appear within a few minutes. If it doesn't, contact support.",
     "paymentCancelledRetry": "You can try again whenever you're ready.",
     "checkoutRetryHint": "Please try again. If the problem persists, contact support.",
-    "courseAccessDescSimple": "You now have access to this course. Click the button below to start."
+    "courseAccessDescSimple": "You now have access to this course. Click the button below to start.",
+    "viewCart": "View cart",
+    "emptyShop": "Add products from the admin.",
+    "shopHint": "Use WordPress/WooCommerce to create products."
   },
   "darkMode": {
     "lightMode": "Light mode",

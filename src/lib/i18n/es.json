@@ -343,10 +343,10 @@
     "sources": "Fuentes",
     "noSources": "Sin fuentes",
     "empty": "Sin mensajes. Haz una pregunta para comenzar.",
-      "copyRaw": "Copiar texto sin formato",
-      "copyRawShort": "Sin formato",
-      "copyMarkdown": "Copiar markdown formateado",
-      "copyMarkdownShort": "MD"
+    "copyRaw": "Copiar texto sin formato",
+    "copyRawShort": "Sin formato",
+    "copyMarkdown": "Copiar markdown formateado",
+    "copyMarkdownShort": "MD"
   },
   "health": {
     "wpNotConfigured": "WordPress no configurado.",
@@ -415,6 +415,86 @@
     "paymentCancelled": "Pago cancelado. No se cargó nada.",
     "viewCart": "Ver carrito",
     "emptyShop": "Agrega productos desde el admin.",
-    "shopHint": "Usa WordPress/WooCommerce para crear productos."
+    "shopHint": "Usa WordPress/WooCommerce para crear productos.",
+    "paymentCancelledShort": "El pago fue cancelado.",
+    "typeCourse": "Curso",
+    "typeDigitalFile": "Archivo digital",
+    "typeLabel": "Tipo",
+    "purchased": "Comprado",
+    "sending": "Enviando...",
+    "sendingToStripe": "Redirigiendo a Stripe...",
+    "buyProduct": "Comprar producto",
+    "backToShop": "Volver a la tienda",
+    "downloadFile": "Descargar archivo",
+    "courseAccessTitle": "Cómo acceder al curso",
+    "courseAccessDesc": "Has comprado el producto del curso. Inicia sesión con el mismo correo electrónico que utilizaste para el pago.",
+    "courseAccessHint": "Luego ve a la página del curso y abre el contenido. Si falta el acceso, espera un minuto y recarga la página.",
+    "openCourse": "Abrir curso",
+    "paymentNotAvailable": "El pago no está disponible todavía. Contacta al administrador.",
+    "checkoutFailed": "No se pudo iniciar el pago.",
+    "viewAndBuy": "Ver y comprar",
+    "paymentVerifyFailed": "Tu pago fue recibido, pero no pudimos verificarlo automáticamente.",
+    "paymentVerifyHint": "No te preocupes — tu acceso debería aparecer en unos minutos. Si no, contacta al soporte.",
+    "paymentCancelledRetry": "Puedes intentarlo de nuevo cuando estés listo.",
+    "checkoutRetryHint": "Por favor, inténtalo de nuevo. Si el problema persiste, contacta al soporte.",
+    "courseAccessDescSimple": "Ahora tienes acceso a este curso. Haz clic en el botón de abajo para comenzar."
+  },
+  "darkMode": {
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro",
+    "label": "Modo oscuro"
+  },
+  "comments": {
+    "title": "Dejar un comentario",
+    "namePlaceholder": "Tu nombre",
+    "emailPlaceholder": "Tu correo electrónico",
+    "commentPlaceholder": "Tu comentario",
+    "nameTooShort": "El nombre debe tener al menos 2 caracteres.",
+    "invalidEmail": "Introduce una dirección de correo válida.",
+    "commentTooShort": "El comentario es demasiado corto.",
+    "success": "¡Comentario enviado! Aparecerá después de ser revisado.",
+    "submitting": "Enviando...",
+    "submit": "Enviar comentario"
+  },
+  "s3": {
+    "authMissing": "Falta la autenticación S3 (S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY).",
+    "accountIdMissing": "Falta CLOUDFLARE_ACCOUNT_ID (requerido para R2).",
+    "endpointMissing": "Falta S3_ENDPOINT.",
+    "bucketMissing": "Falta S3_BUCKET_NAME.",
+    "publicUrlMissing": "Falta S3_PUBLIC_URL. Define la URL pública de tu bucket."
+  },
+  "footer": {
+    "contact": "Contacto",
+    "allRightsReserved": "Todos los derechos reservados."
+  },
+  "nav": {
+    "userMenu": "Menú de usuario",
+    "closeMenu": "Cerrar menú",
+    "openMenu": "Abrir menú"
+  },
+  "resetPassword": {
+    "title": "Restablecer contraseña",
+    "subtitle": "Introduce tu nueva contraseña.",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "sendLink": "Enviar enlace de restablecimiento",
+    "backToSignIn": "Volver a iniciar sesión",
+    "emailSent": "Si existe una cuenta con ese correo, se ha enviado un enlace de restablecimiento.",
+    "emailSubject": "Restablece tu contraseña",
+    "emailBody": "Haz clic en el enlace de abajo para restablecer tu contraseña:",
+    "emailLinkText": "Restablecer mi contraseña",
+    "emailExpiry": "Este enlace expira en 24 horas.",
+    "submit": "Establecer nueva contraseña",
+    "success": "Tu contraseña ha sido restablecida. Ahora puedes iniciar sesión.",
+    "invalidToken": "Este enlace de restablecimiento no es válido o ha expirado.",
+    "tokenExpired": "Este enlace de restablecimiento ha expirado. Por favor, solicita uno nuevo.",
+    "resetFailed": "No se pudo restablecer la contraseña ahora mismo. Por favor, inténtalo de nuevo.",
+    "requestFailed": "No se pudo procesar la solicitud en este momento.",
+    "requestNewLink": "Vuelve a la página de inicio de sesión y haz clic en \"¿Olvidaste tu contraseña?\" para solicitar un nuevo enlace."
+  },
+  "metadata": {
+    "adminPage": "Administración de acceso a cursos",
+    "adminLogin": "Inicio de sesión de administrador",
+    "signIn": "Iniciar sesión",
+    "register": "Registrarse"
   }
 }
