@@ -45,6 +45,7 @@
 - Capitalized brand name to RAGBAZ throughout all user-visible text (i18n values, docs, PHP plugin header/notice, console strings); code identifiers, file names, GraphQL type names, and package names left unchanged.
 - GitHub remote set to tabenius/wp-headless-course-event-file-shop-stripe-cf-next.
 - Security: fixed 4 high Dependabot CVEs (fast-xml-parser, flatted, tar, undici) via npm audit fix; upgraded Next.js 15.5.11→16.2.0 (clears last moderate CVE; @opennextjs/cloudflare 1.17.1 supports ^16.1.5); added missing `stripe` npm dependency; fixed three latent bugs surfaced by Turbopack 16's stricter parser: broken regex literals in chat/route.js, edge→nodejs runtime (route imports node:crypto via auth), and undeclared locale variable in AdminHeader language selector.
+- `/api/chat` extended with image intent: Path A `{intent:'image-prompt', description}` checked before 400 guard; Path B natural-language keywords (EN/SV/ES); both return `{ok:true, type:'image-generation', prompt}` for the chat renderer.
 - AI image generation implementation in progress:
   - `src/lib/imageQuota.js` — pure helpers (SIZE_PRESETS, resolveSize, clampCount, computeResetsAt, arrayBufferToBase64); 19 unit tests all pass.
   - `src/lib/ai.js` — added `generateImage(prompt, width, height)` using raw `arrayBuffer()` (FLUX returns PNG bytes, not JSON).
