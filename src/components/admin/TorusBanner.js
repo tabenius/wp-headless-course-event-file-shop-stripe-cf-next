@@ -146,9 +146,9 @@ export default function TorusBanner() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-cyan-400/35 bg-transparent overflow-hidden">
+    <div className="rounded-2xl bg-transparent overflow-hidden">
       <div className="grid items-center gap-4 p-3 sm:p-4 md:grid-cols-[minmax(300px,420px)_1fr]">
-        <div className="rounded-xl border border-cyan-400/45 bg-[var(--admin-torus-bg)] shadow-[inset_0_0_0_1px_rgba(75,247,255,0.2)]">
+        <div className="rounded-xl bg-[var(--admin-torus-bg)]">
           <canvas
             ref={canvasRef}
             className="block w-full h-64 sm:h-72 opacity-95"
@@ -194,7 +194,7 @@ export default function TorusBanner() {
           font-size: clamp(0.95rem, 2.2vw, 1.6rem);
           font-weight: 700;
           letter-spacing: 0.03em;
-          color: #111827;
+          color: var(--admin-torus-scroller-color, #111827);
         }
 
         .torus-wave-char {

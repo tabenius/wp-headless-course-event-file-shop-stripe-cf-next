@@ -137,6 +137,20 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 - Kept the existing dark-gray icon edge-outline (`textShadow`) unchanged for legibility on the textured amber bar.
 - Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
 
+## 2026-03-19 (cont. 48)
+
+### Codex — torus frame removal + gruvbox scroller color
+
+- Removed frame visuals around the torus area in `TorusBanner`:
+  - dropped outer border container,
+  - dropped inner torus panel border/inset shadow.
+- Added theme-aware scroller color variable usage:
+  - `TorusBanner` scroller text now uses `var(--admin-torus-scroller-color, #111827)`,
+  - defined `--admin-torus-scroller-color` in `globals.css`:
+    - default admin layout: dark text (`#111827`)
+    - gruvbox: white (`#ffffff`)
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 17)
 
 ### Codex — admin header + welcome tone refinements

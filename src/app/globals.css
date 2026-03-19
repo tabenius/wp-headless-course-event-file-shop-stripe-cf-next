@@ -248,6 +248,7 @@ body:has(.admin-layout):not(.impress-enabled) {
 }
 .admin-layout {
   --admin-torus-bg: #1b1f52;
+  --admin-torus-scroller-color: #111827;
   background: #fff;
   min-height: 100vh;
   /* JetBrains Mono as the admin-exclusive type system */
@@ -334,6 +335,7 @@ body:has(.admin-layout)::before {
   --grv-green: #98971a;
   --grv-accent: #83a598; /* bright blue — primary interactive */
   --admin-torus-bg: #1d2021;
+  --admin-torus-scroller-color: #ffffff;
 
   background-color: var(--grv-bg);
   color: var(--grv-fg);
