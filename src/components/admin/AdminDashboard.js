@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { t } from "@/lib/i18n";
+import { parsePriceCents } from "@/lib/parsePrice";
 import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import ImageUploader from "./ImageUploader";
@@ -1157,21 +1158,10 @@ export default function AdminDashboard() {
     }
     // Auto-fill price from WordPress content
     const match = allWpContent.find((item) => item.uri === selectedCourse);
-    const rawPrice = match?.price || match?.priceRendered || "";
-    if (rawPrice) {
-      const numericPrice = parseFloat(
-        String(rawPrice)
-          .replace(/[^\d.,]/g, "")
-          .replace(",", "."),
-      );
-      if (Number.isFinite(numericPrice) && numericPrice > 0) {
-        setPrice(numericPrice.toFixed(2));
-      } else {
-        setPrice("");
-      }
-    } else {
-      setPrice("");
-    }
+    const rawPrice =
+      match?.price || match?.priceRendered || match?.regularPrice || "";
+    const wpPriceCents = parsePriceCents(rawPrice);
+    setPrice(wpPriceCents > 0 ? toCurrencyUnits(wpPriceCents) : "");
     setSelectedCourseActive(true);
     setCurrency("SEK");
     setAllowedUsers([]);
@@ -1292,9 +1282,27 @@ export default function AdminDashboard() {
     setError("");
     setMessage("");
 
+    const uri = accessUri;
+    const nextPriceCents = toCents(price);
+    const wpMatch = isWpSelection
+      ? allWpContent.find((item) => item.uri === uri)
+      : null;
+    const wpFallbackPriceCents = wpMatch
+      ? parsePriceCents(
+          wpMatch.price ||
+            wpMatch.priceRendered ||
+            wpMatch.regularPrice ||
+            wpMatch.priceText ||
+            "",
+        )
+      : 0;
+
     // Validate WP item selection
     if (isWpSelection) {
-      if (price === "" || price === null || price === undefined) {
+      if (
+        (price === "" || price === null || price === undefined) &&
+        wpFallbackPriceCents <= 0
+      ) {
         setError(t("admin.enterPrice"));
         return;
       }
@@ -1345,25 +1353,41 @@ export default function AdminDashboard() {
       }
 
       // Save access config if there's a content URI
-      const uri = accessUri;
       if (uri) {
         const nextActive = isShopSelection ? undefined : selectedCourseActive;
-        const res = await fetch("/api/admin/course-access", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            courseUri: uri,
-            allowedUsers,
-            priceCents: toCents(price),
-            currency,
-            ...(typeof nextActive === "boolean" ? { active: nextActive } : {}),
-          }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json?.ok) {
-          throw new Error(json?.error || t("admin.saveFailed"));
+        const currentConfig = courses[uri];
+        const hasManualUsers = Array.isArray(allowedUsers) && allowedUsers.length > 0;
+        const hasInactiveOverride =
+          !isShopSelection && typeof nextActive === "boolean" && nextActive === false;
+        const needsManualPrice =
+          !isWpSelection ||
+          nextPriceCents !== wpFallbackPriceCents ||
+          wpFallbackPriceCents <= 0;
+        const shouldPersistAccess =
+          isShopSelection ||
+          Boolean(currentConfig) ||
+          hasManualUsers ||
+          hasInactiveOverride ||
+          needsManualPrice;
+
+        if (shouldPersistAccess) {
+          const res = await fetch("/api/admin/course-access", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              courseUri: uri,
+              allowedUsers,
+              priceCents: nextPriceCents,
+              currency,
+              ...(typeof nextActive === "boolean" ? { active: nextActive } : {}),
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json?.ok) {
+            throw new Error(json?.error || t("admin.saveFailed"));
+          }
+          setCourses(json.courses || {});
         }
-        setCourses(json.courses || {});
       }
 
       setMessage(t("admin.courseAccessUpdated"));

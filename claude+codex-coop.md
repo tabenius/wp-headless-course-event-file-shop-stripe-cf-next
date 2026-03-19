@@ -336,3 +336,27 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `npx eslint` on touched JS files: clean (no errors).
   - `npm test -- --runInBand`: 14/14 passing.
   - Full lint remains clean except existing non-blocking `<img>` optimization warnings in admin image components.
+
+---
+
+## 2026-03-19 (cont. 10)
+
+### Codex — header logo simplification + WordPress price fallback pass
+
+- **Header/logo update**:
+  - Moved logo back into the top admin menu bar beside the hamburger button.
+  - Simplified branding to a single-word mark: `RAGBAZ`.
+  - Added `RagbazLogo` support for `wordmarkOnly` and `noLetterSpacing`; header now renders with no tracking/letterspacing as requested while keeping existing typeface/color.
+  - Removed the previous fixed-position external logo block.
+- **Products list UX**:
+  - Widened list columns in both Products and Access subviews.
+  - Added row/name tooltips so long/similar product names remain readable on hover.
+  - Access list "configured" status now treats WordPress price data (and shop product price) as valid, not only KV `priceCents`.
+- **WordPress price fallback behavior**:
+  - `AdminDashboard` now parses WP prices via `parsePriceCents` for selection defaults.
+  - `saveUnified` now avoids unnecessary `/api/admin/course-access` writes for WP-backed content when only the default WP price is used and no explicit overrides are set.
+  - Paywall page now prefers WP rendered price for `priceCents` when no positive local override exists.
+  - Stripe checkout now falls back to WP product/course prices when KV config has no usable price, reducing false "price not configured" failures.
+- **Validation**:
+  - `npx eslint src/components/admin/AdminHeader.js src/components/admin/RagbazLogo.js src/components/admin/AdminProductsTab.js src/components/admin/AdminDashboard.js src/app/api/stripe/checkout/route.js src/app/[...uri]/page.js` passes (only existing non-blocking `<img>` warning in `AdminProductsTab`).
+  - `npm test` passes: 14/14.

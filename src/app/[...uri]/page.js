@@ -23,6 +23,7 @@ import { stripHtml } from "@/lib/slugify";
 import site from "@/lib/site";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { decodeEntities } from "@/lib/decodeEntities";
+import { parsePriceCents } from "@/lib/parsePrice";
 import { t } from "@/lib/i18n";
 import { appendServerLog } from "@/lib/serverLog";
 
@@ -452,6 +453,9 @@ export default async function ContentPage({
       if (accessConfig?.active === false) {
         notFound();
       }
+      const wpPriceCents = parsePriceCents(
+        node?.priceRendered || node?.priceText || node?.price || "",
+      );
       const defaultPrice = process.env.DEFAULT_COURSE_FEE_CENTS
         ? Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS, 10)
         : undefined;
@@ -472,7 +476,12 @@ export default async function ContentPage({
           courseImage={node?.featuredImage?.node?.sourceUrl || ""}
           userEmail={userEmail}
           priceCents={
-            accessConfig?.priceCents ??
+            (typeof accessConfig?.priceCents === "number" &&
+            accessConfig.priceCents > 0
+              ? accessConfig.priceCents
+              : wpPriceCents > 0
+                ? wpPriceCents
+                : undefined) ??
             (Number.isFinite(defaultPrice) ? defaultPrice : undefined)
           }
           currency={

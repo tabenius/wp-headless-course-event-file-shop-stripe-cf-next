@@ -5,6 +5,8 @@ import { getCourseAccessConfig } from "@/lib/courseAccess";
 import { createStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { findUserByEmail, createUser } from "@/lib/userStore";
 import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import { fetchGraphQL } from "@/lib/client";
+import { parsePriceCents } from "@/lib/parsePrice";
 import { sendEmail } from "@/lib/email";
 import { z } from "zod";
 import { t } from "@/lib/i18n";
@@ -30,6 +32,79 @@ const CheckoutSchema = z
   });
 
 const SETUP_TTL = 86400; // 24 hours
+
+function normalizeUri(uri) {
+  const value = String(uri || "").trim();
+  if (!value) return "";
+  const withLeading = value.startsWith("/") ? value : `/${value}`;
+  return withLeading.replace(/\/+$/, "") || "/";
+}
+
+function uriMatches(a, b) {
+  return normalizeUri(a) === normalizeUri(b);
+}
+
+async function resolveWooPriceCentsByUri(courseUri) {
+  try {
+    const data = await fetchGraphQL(
+      `{
+        products(first: 100, where: { status: "publish" }) {
+          edges {
+            node {
+              ... on SimpleProduct { uri price regularPrice }
+              ... on VariableProduct { uri price regularPrice }
+              ... on ExternalProduct { uri price regularPrice }
+            }
+          }
+        }
+      }`,
+      {},
+      300,
+    );
+    const rows = (data?.products?.edges || []).map((edge) => edge.node);
+    const match = rows.find((product) => uriMatches(product?.uri, courseUri));
+    if (!match) return 0;
+    return parsePriceCents(match.price || match.regularPrice || "");
+  } catch {
+    return 0;
+  }
+}
+
+async function resolveLpPriceCentsByUri(courseUri) {
+  try {
+    const data = await fetchGraphQL(
+      `{
+        lpCourses(first: 100) {
+          edges {
+            node {
+              uri
+              price
+              priceRendered
+            }
+          }
+        }
+      }`,
+      {},
+      300,
+    );
+    const rows = (data?.lpCourses?.edges || []).map((edge) => edge.node);
+    const match = rows.find((course) => uriMatches(course?.uri, courseUri));
+    if (!match) return 0;
+    return parsePriceCents(match.priceRendered || match.price || "");
+  } catch {
+    return 0;
+  }
+}
+
+async function resolveWordPressPriceCents(courseUri) {
+  const normalized = normalizeUri(courseUri);
+  if (!normalized) return 0;
+  const wooPrice = await resolveWooPriceCentsByUri(normalized);
+  if (wooPrice > 0) return wooPrice;
+  const lpPrice = await resolveLpPriceCentsByUri(normalized);
+  if (lpPrice > 0) return lpPrice;
+  return 0;
+}
 
 async function logCheckoutIssue(title, description, priority = "moderate") {
   try {
@@ -177,7 +252,12 @@ export async function POST(request) {
         { status: 400 },
       );
     }
-    const priceCents = config?.priceCents ?? 0;
+    const configuredPriceCents = config?.priceCents ?? 0;
+    const fallbackWordPressPriceCents =
+      configuredPriceCents > 0
+        ? 0
+        : await resolveWordPressPriceCents(courseUri);
+    const priceCents = Math.max(configuredPriceCents, fallbackWordPressPriceCents);
     const currency = (config?.currency || "SEK").toUpperCase();
 
     if (priceCents <= 0) {
@@ -186,7 +266,7 @@ export async function POST(request) {
       );
       logCheckoutIssue(
         "Checkout blocked: no price configured",
-        `The item ${courseUri} (${contentKind}) has priceCents=${priceCents}. Set a price in the admin dashboard to enable payments.`,
+        `The item ${courseUri} (${contentKind}) has no usable price in course-access KV or WordPress source data.`,
         "moderate",
       );
       return NextResponse.json(
