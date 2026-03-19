@@ -32,6 +32,13 @@ export default function AdminAdvancedTab({
   debugLogs,
 }) {
   const [showSecret, setShowSecret] = useState(false);
+  const isCloudflare =
+    Boolean(process.env.CF_ACCOUNT_ID) ||
+    Boolean(process.env.CLOUDFLARE_ACCOUNT_ID) ||
+    Boolean(process.env.CF_API_TOKEN);
+  const showR2Docs = isCloudflare || uploadInfo?.r2;
+  const showS3Docs = !isCloudflare && uploadInfo?.s3;
+
   return (
     <div className="space-y-6">
       <TorusBanner />
@@ -183,45 +190,56 @@ export default function AdminAdvancedTab({
           </p>
         )}
         <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-gray-400">
-          <a
-            href="https://developers.cloudflare.com/r2/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 rounded-full border border-gray-700/60 px-3 py-1 transition hover:border-gray-400"
-          >
-            <span className="w-4 h-4">
-              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-                <circle cx="12" cy="12" r="10" fill="#fbbf24" />
-                <path
-                  d="M12 4v16M4 12h16"
-                  stroke="#0f172a"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-            <span>Cloudflare R2 docs</span>
-          </a>
-          <a
-            href="https://aws.amazon.com/s3/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 rounded-full border border-gray-700/60 px-3 py-1 transition hover:border-gray-400"
-          >
-            <span className="w-4 h-4">
-              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-                <rect x="3" y="7" width="18" height="10" rx="2" fill="#f5af19" />
-                <path
-                  d="M6 16 4 9h4l2 7h4l2-7h4l-2 7"
-                  stroke="#1f2937"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <span>AWS S3 docs</span>
-          </a>
+          {showR2Docs && (
+            <a
+              href="https://developers.cloudflare.com/r2/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded-full border border-gray-700/60 px-3 py-1 transition hover:border-gray-400"
+            >
+              <span className="w-4 h-4">
+                <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
+                  <circle cx="12" cy="12" r="10" fill="#fbbf24" />
+                  <path
+                    d="M12 4v16M4 12h16"
+                    stroke="#0f172a"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+              <span>Cloudflare R2 docs</span>
+            </a>
+          )}
+          {showS3Docs && (
+            <a
+              href="https://aws.amazon.com/s3/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded-full border border-gray-700/60 px-3 py-1 transition hover:border-gray-400"
+            >
+              <span className="w-4 h-4">
+                <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
+                  <rect
+                    x="3"
+                    y="7"
+                    width="18"
+                    height="10"
+                    rx="2"
+                    fill="#f5af19"
+                  />
+                  <path
+                    d="M6 16 4 9h4l2 7h4l2-7h4l-2 7"
+                    stroke="#1f2937"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <span>AWS S3 docs</span>
+            </a>
+          )}
         </div>
         {uploadBackend !== "wordpress" && uploadInfoDetails && (
           <div className="mt-3 border rounded p-3 bg-gray-50 space-y-2 text-xs text-gray-700">
