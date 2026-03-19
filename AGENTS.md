@@ -198,6 +198,8 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Added a `Fri åtkomst` / `Free access` / `Acceso gratuito` checkbox in the price editor that sets price to `0`, disables the price input while checked, and re-enables price editing on uncheck.
+- **2026-03-19 (Codex)**: Simplified user-facing price copy to remove backend implementation details (`priceSavedLocally`) and aligned fee hint text with the new free-access checkbox flow.
 - **2026-03-19 (Codex)**: Completed VAT panel dark-theme polish: removed white surfaces via dedicated `admin-vat-panel`/`admin-vat-surface` gruvbox styles and set VAT heading/hint emphasis to requested contrast (`vatMapTitle` white, `vatMapHint` soft yellow).
 - **2026-03-19 (Codex)**: Tuned the Products empty-state hint (“Select an item to configure access”) to soft yellow in gruvbox/dark mode via `.admin-soft-yellow` while keeping neutral gray in light mode.
 - **2026-03-19 (Codex)**: Renamed inner tab copy from “Digital products” to “Digital downloads” (SV: “Digitala nedladdningar”, ES: “Descargas digitales”) for clearer operator wording.

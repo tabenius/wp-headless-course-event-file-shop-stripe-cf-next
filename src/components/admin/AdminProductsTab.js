@@ -216,6 +216,9 @@ function PriceAccessForm({
   // Incrementing this counter triggers an auto-save after price state settles
   autoSaveTrigger,
 }) {
+  const parsedPrice = Number.parseFloat(String(price || "").replace(",", "."));
+  const freeAccessEnabled = Number.isFinite(parsedPrice) && parsedPrice === 0;
+
   useEffect(() => {
     if (autoSaveTrigger) saveUnified();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,6 +232,21 @@ function PriceAccessForm({
           {t("admin.courseFee")} <span className="text-red-500">*</span>
         </label>
         <p className="text-xs text-gray-500">{t("admin.feeHint")}</p>
+        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={freeAccessEnabled}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setPrice("0");
+                return;
+              }
+              setPrice("");
+            }}
+            className="accent-purple-600"
+          />
+          <span>{t("admin.freeAccess")}</span>
+        </label>
         <div className="flex gap-2">
           <input
             type="number"
@@ -237,7 +255,12 @@ function PriceAccessForm({
             min="0"
             step="0.01"
             placeholder="0.00"
-            className="flex-1 border rounded px-3 py-2 text-sm"
+            disabled={freeAccessEnabled}
+            className={`flex-1 border rounded px-3 py-2 text-sm ${
+              freeAccessEnabled
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                : ""
+            }`}
           />
           <input
             type="text"

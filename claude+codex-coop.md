@@ -191,6 +191,19 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - `Moms per kategori` uses `admin-product-title` (white/bold in dark theme),
   - VAT hint text uses `admin-soft-yellow` (soft yellow in dark theme).
 
+## 2026-03-19 (cont. 34)
+
+### Codex — free-access checkbox + user-facing copy simplification
+
+- Added a dedicated free-access toggle in `PriceAccessForm`:
+  - checkbox label uses i18n key `admin.freeAccess` (`Fri åtkomst` / `Free access` / `Acceso gratuito`),
+  - checking it sets price to `"0"` and disables the price input,
+  - unchecking clears price and re-enables manual entry.
+- Simplified user-facing price helper copy (removed backend/KV detail):
+  - `admin.priceSavedLocally` now plain “saved” phrasing in EN/SV/ES.
+- Updated fee-hint wording to match the new checkbox flow:
+  - removed “set to 0” instruction from EN/SV since free access is now explicit in UI.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
