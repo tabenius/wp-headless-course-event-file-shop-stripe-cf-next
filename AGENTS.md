@@ -147,6 +147,8 @@ node scripts/docs-lock.mjs release
 { "pid": 12345, "agent": "claude", "files": "AGENTS.md, claude+codex-coop.md", "started": "2026-03-19T14:00:00.000Z" }
 ```
 
+My understanding: we only edit these docs while holding the lock set by `scripts/docs-lock.mjs`; run `check` → `acquire` → `git pull` → edit → `git add/commit/push` → `release`, always in that order so the other agent sees updated state. I'll follow that flow from now on before touching either file.
+
 ---
 
 ## Environment variables (key ones)
