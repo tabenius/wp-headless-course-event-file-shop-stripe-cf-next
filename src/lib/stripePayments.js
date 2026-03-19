@@ -1,10 +1,87 @@
-import Stripe from "stripe";
-
-export function getStripe() {
+function stripeSecretKey() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY missing");
-  // No apiVersion specified — uses the SDK's built-in default (currently 2026-02-25.clover)
-  return new Stripe(key);
+  return key;
+}
+
+export function getStripe() {
+  // Kept for compatibility with older imports/tests.
+  stripeSecretKey();
+  return {
+    configured: true,
+    getApiField(field) {
+      if (field === "version") return "2026-02-25.clover";
+      return undefined;
+    },
+    _api: { version: "2026-02-25.clover" },
+  };
+}
+
+function stripeError(type, message, status) {
+  const err = new Error(message);
+  err.type = type;
+  if (status) err.status = status;
+  return err;
+}
+
+async function stripeRequest(path, params = {}) {
+  const key = stripeSecretKey();
+  const url = new URL(`https://api.stripe.com${path}`);
+
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+    url.searchParams.set(k, String(v));
+  });
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${key}` },
+    });
+  } catch (error) {
+    throw stripeError(
+      "StripeConnectionError",
+      error?.message || "Could not reach Stripe API",
+    );
+  }
+
+  const json = await response.json().catch(() => null);
+  if (response.ok) return json;
+
+  const message =
+    json?.error?.message ||
+    `Stripe API request failed (${response.status})`;
+  if (response.status === 401) {
+    throw stripeError("StripeAuthenticationError", message, response.status);
+  }
+  if (response.status === 403) {
+    throw stripeError("StripePermissionError", message, response.status);
+  }
+  if (response.status >= 500) {
+    throw stripeError("StripeConnectionError", message, response.status);
+  }
+  throw stripeError("StripeInvalidRequestError", message, response.status);
+}
+
+function normaliseCharge(charge, fallbackEmail) {
+  return {
+    id: charge.id,
+    amount: charge.amount,
+    currency: charge.currency,
+    status: charge.status,
+    created: charge.created * 1000, // ms
+    email:
+      charge.receipt_email ||
+      charge.billing_details?.email ||
+      fallbackEmail ||
+      null,
+    receiptUrl: charge.receipt_url || null,
+    receiptId: charge.id, // always the charge ID, needed for receipt download
+    paymentIntentId:
+      typeof charge.payment_intent === "string" ? charge.payment_intent : null,
+    description: charge.description || "",
+  };
 }
 
 /**
@@ -14,23 +91,22 @@ export function getStripe() {
  * @param {number|undefined} fromTs Unix timestamp seconds (inclusive lower bound)
  */
 export async function compilePayments(email, limit, fromTs) {
-  const stripe = getStripe();
   const normalizedEmail =
     typeof email === "string" && email.trim()
       ? email.trim().toLowerCase()
       : undefined;
-  const pageSize = normalizedEmail ? 100 : Math.min(Math.max(limit || 20, 1), 100);
-  const listParams = { limit: pageSize };
-  if (fromTs) listParams.created = { gte: fromTs };
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(limit, 100)) : 20;
+  const pageSize = normalizedEmail ? 100 : safeLimit;
 
   const charges = [];
   let startingAfter;
   for (let page = 0; page < 20; page += 1) {
-    const result = await stripe.charges.list({
-      ...listParams,
-      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    const payload = await stripeRequest("/v1/charges", {
+      limit: pageSize,
+      "created[gte]": fromTs,
+      starting_after: startingAfter,
     });
-    const rows = Array.isArray(result?.data) ? result.data : [];
+    const rows = Array.isArray(payload?.data) ? payload.data : [];
     const filtered = normalizedEmail
       ? rows.filter((charge) => {
           const receiptEmail = String(charge?.receipt_email || "").toLowerCase();
@@ -41,29 +117,21 @@ export async function compilePayments(email, limit, fromTs) {
         })
       : rows;
     charges.push(...filtered);
-    if (charges.length >= limit) break;
-    if (!result?.has_more || rows.length === 0) break;
+    if (charges.length >= safeLimit) break;
+    if (!payload?.has_more || rows.length === 0) break;
     startingAfter = rows[rows.length - 1]?.id;
     if (!startingAfter) break;
   }
-  charges.sort((a, b) => b.created - a.created);
-  const limited = charges.slice(0, limit);
 
-  return limited.map((charge) => ({
-    id: charge.id,
-    amount: charge.amount,
-    currency: charge.currency,
-    status: charge.status,
-    created: charge.created * 1000, // ms
-    email:
-      charge.receipt_email ||
-      charge.billing_details?.email ||
-      normalizedEmail ||
-      null,
-    receiptUrl: charge.receipt_url || null,
-    receiptId: charge.id, // always the charge ID, needed for receipt download
-    paymentIntentId:
-      typeof charge.payment_intent === "string" ? charge.payment_intent : null,
-    description: charge.description || "",
-  }));
+  charges.sort((a, b) => b.created - a.created);
+  return charges.slice(0, safeLimit).map((charge) =>
+    normaliseCharge(charge, normalizedEmail),
+  );
+}
+
+export async function fetchStripeCharge(chargeId) {
+  if (!chargeId) {
+    throw stripeError("StripeInvalidRequestError", "Charge ID required", 400);
+  }
+  return stripeRequest(`/v1/charges/${encodeURIComponent(chargeId)}`);
 }

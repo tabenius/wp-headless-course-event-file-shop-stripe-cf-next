@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { t } from "@/lib/i18n";
-import { getStripe, compilePayments } from "@/lib/stripePayments";
+import { compilePayments, fetchStripeCharge } from "@/lib/stripePayments";
 
 export const runtime = "nodejs";
 
@@ -90,8 +90,7 @@ export async function POST(request) {
         { status: 400 },
       );
     }
-    const stripe = getStripe();
-    const charge = await stripe.charges.retrieve(chargeId);
+    const charge = await fetchStripeCharge(chargeId);
     const receiptUrl = charge?.receipt_url;
     if (!receiptUrl) {
       return NextResponse.json(

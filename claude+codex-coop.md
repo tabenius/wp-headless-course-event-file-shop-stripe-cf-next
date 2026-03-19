@@ -388,3 +388,25 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Validation**:
   - `npx eslint` on touched files passes.
   - `npm test` passes: 14/14.
+
+---
+
+## 2026-03-19 (cont. 12)
+
+### Codex — production payments root-cause confirmation + Workers-safe Stripe path
+
+- **Reproduced against deployed worker API**:
+  - Login succeeds on `articulate-learnpress-stripe.xyzzybyragbaz.workers.dev`.
+  - `/api/admin/payments` returns 500 with `code: stripe_connection_failed`.
+  - This confirms the current live error is runtime-side, not missing admin auth.
+- **Root cause**:
+  - Admin payments/receipt flow was using Stripe Node SDK calls in a Cloudflare Worker deployment path; this produced connection failures in production.
+- **Fix implemented (local branch, to be deployed)**:
+  - Replaced `src/lib/stripePayments.js` internals with direct Stripe REST `fetch` calls (`/v1/charges`) and explicit error mapping to existing UI codes.
+  - Added `fetchStripeCharge(chargeId)` helper via REST for receipt retrieval.
+  - Updated `/api/admin/payments` POST to use `fetchStripeCharge` instead of `stripe.charges.retrieve`.
+  - Kept `getStripe()` compatibility shim for existing tests/imports.
+- **Validation**:
+  - `npx eslint src/lib/stripePayments.js src/app/api/admin/payments/route.js` passes.
+  - `npm test` passes: 14/14.
+  - Live worker still shows old error until deploy of this commit.
