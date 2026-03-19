@@ -11,6 +11,21 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 63)
+
+### Codex — foliage density down, artifacts wider, canopy lower
+
+- Re-tuned `TorusBanner` foliage generation to match requested profile:
+  - density reduced via lower `plantCount` and fewer `iterations` on mid/near layers,
+  - vertical growth reduced via lower `stepBase` and `leafSizeBase`,
+  - artifact width increased via larger `branchWidth`, `leafWidth`, `branchOutlineWidth`, `leafOutlineWidth`.
+- Updated layer placement downward to reduce perceived canopy height:
+  - far `top: 0% -> 16%`
+  - mid `top: 8% -> 24%`
+  - near `top: 16% -> 32%`
+- Net effect: fewer plants, thicker linework, and shorter foliage stack.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 62)
 
 ### Codex — removed scrolling text, coarser spherical volume, new polynomial

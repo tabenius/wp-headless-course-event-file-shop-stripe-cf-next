@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Rebalanced foliage visuals by reducing generated density (`plantCount`/`iterations`), increasing branch/leaf stroke and outline widths for chunkier artifacts, and lowering canopy placement (`top: 16%/24%/32%`) for a shorter vertical profile.
 - **2026-03-19 (Codex)**: Removed Info-banner scrolling text entirely, lowered spherical volume mesh granularity (`64x36`), and swapped to a new polynomial-based radial deformation model for the spherical-harmonics renderer.
 - **2026-03-19 (Codex)**: Increased foliage canopy height again (higher layer offsets plus stronger L-system growth) and removed horizontal sharp-edge artifacts by widening parallax overscan and adding left/right edge feather masks on all bush layers.
 - **2026-03-19 (Codex)**: Removed the trefoil-knot renderer from the Info canvas and replaced it with a spherical-harmonics volume surface (longitude/latitude mesh, harmonic radial field, depth-sorted triangle shading) while keeping the same orange/cyan visual language.

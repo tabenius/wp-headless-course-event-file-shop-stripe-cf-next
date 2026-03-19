@@ -209,18 +209,18 @@ const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   seed: 1407,
   width: 1600,
   height: 420,
-  plantCount: 16,
+  plantCount: 10,
   iterations: 2,
-  stepBase: 14.5,
+  stepBase: 9.2,
   turnBase: 23.5,
-  leafSizeBase: 5.2,
+  leafSizeBase: 3.8,
   branchColor: "#2a5b2d",
   leafColor: "#5f9644",
   outlineColor: "#0a1509",
-  branchWidth: 1.15,
-  leafWidth: 0.95,
-  branchOutlineWidth: 0.95,
-  leafOutlineWidth: 0.8,
+  branchWidth: 1.9,
+  leafWidth: 1.55,
+  branchOutlineWidth: 1.25,
+  leafOutlineWidth: 1.05,
   branchOpacity: 0.88,
   leafOpacity: 0.82,
   outlineOpacity: 0.78,
@@ -230,18 +230,18 @@ const MID_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   seed: 2771,
   width: 1600,
   height: 470,
-  plantCount: 21,
-  iterations: 3,
-  stepBase: 16.0,
+  plantCount: 14,
+  iterations: 2,
+  stepBase: 10.0,
   turnBase: 22.2,
-  leafSizeBase: 5.8,
+  leafSizeBase: 4.2,
   branchColor: "#2f6a30",
   leafColor: "#6cab4c",
   outlineColor: "#081308",
-  branchWidth: 1.25,
-  leafWidth: 1.05,
-  branchOutlineWidth: 1.05,
-  leafOutlineWidth: 0.85,
+  branchWidth: 2.05,
+  leafWidth: 1.7,
+  branchOutlineWidth: 1.35,
+  leafOutlineWidth: 1.15,
   branchOpacity: 0.91,
   leafOpacity: 0.87,
   outlineOpacity: 0.82,
@@ -251,18 +251,18 @@ const NEAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   seed: 3901,
   width: 1600,
   height: 520,
-  plantCount: 25,
-  iterations: 3,
-  stepBase: 17.8,
+  plantCount: 18,
+  iterations: 2,
+  stepBase: 11.0,
   turnBase: 21.8,
-  leafSizeBase: 6.4,
+  leafSizeBase: 4.6,
   branchColor: "#255127",
   leafColor: "#73b152",
   outlineColor: "#050d05",
-  branchWidth: 1.35,
-  leafWidth: 1.15,
-  branchOutlineWidth: 1.15,
-  leafOutlineWidth: 0.95,
+  branchWidth: 2.2,
+  leafWidth: 1.85,
+  branchOutlineWidth: 1.45,
+  leafOutlineWidth: 1.25,
   branchOpacity: 0.94,
   leafOpacity: 0.9,
   outlineOpacity: 0.86,
@@ -482,7 +482,7 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-far-bushes {
-          top: 0%;
+          top: 16%;
           left: -20%;
           right: -20%;
           bottom: -10%;
@@ -523,7 +523,7 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-mid-bushes {
-          top: 8%;
+          top: 24%;
           left: -20%;
           right: -20%;
           bottom: -14%;
@@ -565,7 +565,7 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-near-bushes {
-          top: 16%;
+          top: 32%;
           left: -20%;
           right: -20%;
           bottom: -20%;
