@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Renamed inner tab copy from “Digital products” to “Digital downloads” (SV: “Digitala nedladdningar”, ES: “Descargas digitales”) for clearer operator wording.
 - **2026-03-19 (Codex)**: Fixed low-contrast dark-theme heading text in admin by overriding gruvbox heading/title colors (`h1..h6`, `text-slate-900/800`) to white.
 - **2026-03-19 (Codex)**: Further hardened product image uploader behavior: use `showPicker()` fallback plus off-screen (not display-none) file input for broader browser support; reinforced product tile frame via explicit ring overlay and persistent top-right pen badge layer.
 - **2026-03-19 (Codex)**: Refined header branding/texture visuals: shifted only the `RAGBAZ` wordmark `1.5rem` right (subtitle untouched) and increased menu-bar concrete microtexture density/detail using higher-frequency turbulence layers.

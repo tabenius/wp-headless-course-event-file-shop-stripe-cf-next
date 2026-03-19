@@ -161,6 +161,16 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - force Tailwind slate heading utilities (`.text-slate-900`, `.text-slate-800`) to white,
   - keep secondary slate text (`.text-slate-700`, `.text-slate-600`) at lighter foreground tone for hierarchy.
 
+## 2026-03-19 (cont. 31)
+
+### Codex — wording update for digital tab
+
+- Updated inner tab label wording to the more standard “Digital downloads” terminology:
+  - EN: `Digital downloads`
+  - SV: `Digitala nedladdningar`
+  - ES: `Descargas digitales`
+- Applied via `admin.productsTabDigital` translations in `en.json`, `sv.json`, and `es.json`.
+
 ## 2026-03-19 (cont. 11)
 
 ### Codex — P0/P1 completion pass + verification
