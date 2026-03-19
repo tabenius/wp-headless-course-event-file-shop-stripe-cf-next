@@ -27,7 +27,9 @@ function normalizeCourseUri(courseUri) {
   if (typeof courseUri !== "string") return "";
   const trimmed = courseUri.trim();
   if (!trimmed) return "";
-  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  const withLeadingSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, "");
+  return withoutTrailingSlash || "/";
 }
 
 function normalizeCurrency(currency) {

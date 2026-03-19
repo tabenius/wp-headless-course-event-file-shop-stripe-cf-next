@@ -26,6 +26,14 @@ function getGraphqlEndpoint() {
   return base ? `${base.replace(/\/$/, "")}/graphql` : "";
 }
 
+function normalizeCourseUri(courseUri) {
+  const value = String(courseUri || "").trim();
+  if (!value) return "";
+  const withLeadingSlash = value.startsWith("/") ? value : `/${value}`;
+  const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, "");
+  return withoutTrailingSlash || "/";
+}
+
 async function fetchWordPressGraphQL(query, variables = {}) {
   const endpoint = getGraphqlEndpoint();
   if (!endpoint) {
@@ -79,8 +87,38 @@ async function fetchWordPressGraphQL(query, variables = {}) {
   throw new Error(lastError || "WordPress GraphQL unavailable");
 }
 
+function isActiveSchemaMismatch(error) {
+  const message = String(error?.message || "").toLowerCase();
+  if (!message.includes("active")) return false;
+  return (
+    message.includes("cannot query field") ||
+    message.includes("unknown argument") ||
+    message.includes("does not exist") ||
+    message.includes("doesn't accept argument")
+  );
+}
+
 async function getWordPressAdminState() {
-  const query = `
+  const queryWithActive = `
+    query GetCourseAccessAdminData {
+      courseAccessRules {
+        courseUri
+        priceCents
+        currency
+        active
+        allowedUsers
+        updatedAt
+      }
+      users(first: 200) {
+        nodes {
+          id
+          name
+          email
+        }
+      }
+    }
+  `;
+  const queryLegacy = `
     query GetCourseAccessAdminData {
       courseAccessRules {
         courseUri
@@ -98,14 +136,21 @@ async function getWordPressAdminState() {
       }
     }
   `;
-  const data = await fetchWordPressGraphQL(query);
+  let data;
+  try {
+    data = await fetchWordPressGraphQL(queryWithActive);
+  } catch (error) {
+    if (!isActiveSchemaMismatch(error)) throw error;
+    data = await fetchWordPressGraphQL(queryLegacy);
+  }
   const rules = Array.isArray(data?.courseAccessRules)
     ? data.courseAccessRules
     : [];
   const courses = {};
   for (const rule of rules) {
-    if (!rule?.courseUri) continue;
-    courses[rule.courseUri] = {
+    const uri = normalizeCourseUri(rule?.courseUri);
+    if (!uri) continue;
+    courses[uri] = {
       allowedUsers: Array.isArray(rule.allowedUsers) ? rule.allowedUsers : [],
       priceCents:
         typeof rule.priceCents === "number" && rule.priceCents >= 0
@@ -113,6 +158,7 @@ async function getWordPressAdminState() {
           : 0,
       currency:
         typeof rule.currency === "string" ? rule.currency.toUpperCase() : "SEK",
+      active: rule?.active !== false,
       updatedAt: typeof rule.updatedAt === "string" ? rule.updatedAt : "",
     };
   }
@@ -140,8 +186,41 @@ async function setWordPressCourseAccess({
   allowedUsers,
   priceCents,
   currency,
+  active,
 }) {
-  const mutation = `
+  const normalizedCourseUri = normalizeCourseUri(courseUri);
+  if (!normalizedCourseUri) {
+    throw new Error("Invalid course URI");
+  }
+  const mutationWithActive = `
+    mutation SetCourseAccessRule(
+      $courseUri: String!
+      $allowedUsers: [String!]!
+      $priceCents: Int!
+      $currency: String!
+      $active: Boolean!
+    ) {
+      setCourseAccessRule(
+        input: {
+          courseUri: $courseUri
+          allowedUsers: $allowedUsers
+          priceCents: $priceCents
+          currency: $currency
+          active: $active
+        }
+      ) {
+        rule {
+          courseUri
+          allowedUsers
+          priceCents
+          currency
+          active
+          updatedAt
+        }
+      }
+    }
+  `;
+  const mutationLegacy = `
     mutation SetCourseAccessRule(
       $courseUri: String!
       $allowedUsers: [String!]!
@@ -166,17 +245,32 @@ async function setWordPressCourseAccess({
       }
     }
   `;
-  await fetchWordPressGraphQL(mutation, {
-    courseUri,
+  const variables = {
+    courseUri: normalizedCourseUri,
     allowedUsers,
     priceCents,
     currency,
-  });
+  };
+  if (typeof active === "boolean") {
+    try {
+      await fetchWordPressGraphQL(mutationWithActive, {
+        ...variables,
+        active,
+      });
+    } catch (error) {
+      if (!isActiveSchemaMismatch(error)) throw error;
+      await fetchWordPressGraphQL(mutationLegacy, variables);
+    }
+  } else {
+    await fetchWordPressGraphQL(mutationLegacy, variables);
+  }
   const state = await getWordPressAdminState();
   return { courses: state.courses };
 }
 
 async function hasWordPressCourseAccess(courseUri, email) {
+  const normalizedCourseUri = normalizeCourseUri(courseUri);
+  if (!normalizedCourseUri) return false;
   const query = `
     query CheckCourseAccess($courseUri: String!, $email: String!) {
       courseAccessForUser(courseUri: $courseUri, email: $email) {
@@ -184,11 +278,18 @@ async function hasWordPressCourseAccess(courseUri, email) {
       }
     }
   `;
-  const data = await fetchWordPressGraphQL(query, { courseUri, email });
+  const data = await fetchWordPressGraphQL(query, {
+    courseUri: normalizedCourseUri,
+    email,
+  });
   return Boolean(data?.courseAccessForUser?.hasAccess);
 }
 
 async function grantWordPressCourseAccess(courseUri, email) {
+  const normalizedCourseUri = normalizeCourseUri(courseUri);
+  if (!normalizedCourseUri) {
+    throw new Error("Invalid course URI");
+  }
   const mutation = `
     mutation GrantCourseAccess($courseUri: String!, $email: String!) {
       grantCourseAccess(input: { courseUri: $courseUri, email: $email }) {
@@ -196,11 +297,28 @@ async function grantWordPressCourseAccess(courseUri, email) {
       }
     }
   `;
-  await fetchWordPressGraphQL(mutation, { courseUri, email });
+  await fetchWordPressGraphQL(mutation, {
+    courseUri: normalizedCourseUri,
+    email,
+  });
 }
 
 async function getWordPressCourseAccessConfig(courseUri) {
-  const query = `
+  const normalizedCourseUri = normalizeCourseUri(courseUri);
+  if (!normalizedCourseUri) return null;
+  const queryWithActive = `
+    query CourseAccessConfig($courseUri: String!) {
+      courseAccessConfig(courseUri: $courseUri) {
+        courseUri
+        priceCents
+        currency
+        active
+        allowedUsers
+        updatedAt
+      }
+    }
+  `;
+  const queryLegacy = `
     query CourseAccessConfig($courseUri: String!) {
       courseAccessConfig(courseUri: $courseUri) {
         courseUri
@@ -211,7 +329,17 @@ async function getWordPressCourseAccessConfig(courseUri) {
       }
     }
   `;
-  const data = await fetchWordPressGraphQL(query, { courseUri });
+  let data;
+  try {
+    data = await fetchWordPressGraphQL(queryWithActive, {
+      courseUri: normalizedCourseUri,
+    });
+  } catch (error) {
+    if (!isActiveSchemaMismatch(error)) throw error;
+    data = await fetchWordPressGraphQL(queryLegacy, {
+      courseUri: normalizedCourseUri,
+    });
+  }
   return data?.courseAccessConfig || null;
 }
 

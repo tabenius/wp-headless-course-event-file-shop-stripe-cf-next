@@ -18,6 +18,7 @@ export const ADMIN_ACTION_HOTKEYS = {
 };
 
 function isCtrlAltChord(event) {
+  if (event?.getModifierState?.("AltGraph")) return false;
   return Boolean(event?.ctrlKey && event?.altKey);
 }
 

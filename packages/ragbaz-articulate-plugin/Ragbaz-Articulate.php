@@ -5,7 +5,7 @@
  * Description: GraphQL helpers for headless storefronts — exposes LearnPress courses and generic event data (Event Organiser, The Events Calendar, Events Manager) via WPGraphQL without bundling third‑party code.
  * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 6.3
  * Tested up to: 6.5
  * Requires PHP: 7.4
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 // Keep the legacy option name so existing rules remain intact.
 const RAGBAZ_COURSE_RULES_OPTION = 'Articulate_course_access_rules';
-const RAGBAZ_VERSION = '1.0.0';
+const RAGBAZ_VERSION = '1.0.1';
 const RAGBAZ_STOREFRONT_URL = 'https://github.com/ragbaz/ragbaz-articulate-storefront';
 
 function ragbaz_get_storefront_url() {
@@ -40,7 +40,9 @@ function ragbaz_normalize_email($email) {
 function ragbaz_normalize_uri($uri) {
   $uri = trim((string) $uri);
   if ($uri === '') return '';
-  return strpos($uri, '/') === 0 ? $uri : '/' . $uri;
+  $with_leading = strpos($uri, '/') === 0 ? $uri : '/' . $uri;
+  $without_trailing = rtrim($with_leading, '/');
+  return $without_trailing === '' ? '/' : $without_trailing;
 }
 
 function ragbaz_normalize_iso_datetime($value) {
@@ -55,7 +57,26 @@ function ragbaz_normalize_iso_datetime($value) {
 // ---------------------------------------------------------------------------
 function ragbaz_get_rules() {
   $rules = get_option(RAGBAZ_COURSE_RULES_OPTION, []);
-  return is_array($rules) ? $rules : [];
+  if (!is_array($rules)) return [];
+  $normalized = [];
+  foreach ($rules as $key => $rule) {
+    if (!is_array($rule)) continue;
+    $course_uri = ragbaz_normalize_uri(isset($rule['courseUri']) ? $rule['courseUri'] : $key);
+    if ($course_uri === '') continue;
+    $allowed = isset($rule['allowedUsers']) && is_array($rule['allowedUsers']) ? $rule['allowedUsers'] : [];
+    $emails = array_values(array_unique(array_filter(array_map('ragbaz_normalize_email', $allowed))));
+    $currency = sanitize_text_field(strtolower((string) (isset($rule['currency']) ? $rule['currency'] : 'usd')));
+    if ($currency === '') $currency = 'usd';
+    $normalized[$course_uri] = [
+      'courseUri' => $course_uri,
+      'allowedUsers' => $emails,
+      'priceCents' => max(0, intval(isset($rule['priceCents']) ? $rule['priceCents'] : 0)),
+      'currency' => $currency,
+      'active' => !array_key_exists('active', $rule) || (bool) $rule['active'],
+      'updatedAt' => isset($rule['updatedAt']) ? (string) $rule['updatedAt'] : gmdate('c'),
+    ];
+  }
+  return $normalized;
 }
 
 function ragbaz_set_rules($rules) {
@@ -69,7 +90,7 @@ function ragbaz_get_rule($course_uri) {
   return isset($rules[$course_uri]) && is_array($rules[$course_uri]) ? $rules[$course_uri] : null;
 }
 
-function ragbaz_set_rule($course_uri, $allowed_users, $price_cents, $currency) {
+function ragbaz_set_rule($course_uri, $allowed_users, $price_cents, $currency, $active = null) {
   $course_uri = ragbaz_normalize_uri($course_uri);
   if ($course_uri === '') return null;
 
@@ -79,11 +100,17 @@ function ragbaz_set_rule($course_uri, $allowed_users, $price_cents, $currency) {
   if ($currency === '') $currency = 'usd';
 
   $rules = ragbaz_get_rules();
+  $existing = isset($rules[$course_uri]) && is_array($rules[$course_uri]) ? $rules[$course_uri] : null;
+  $resolved_active = is_null($active)
+    ? (!isset($existing['active']) || (bool) $existing['active'])
+    : ($active !== false);
+
   $rules[$course_uri] = [
     'courseUri' => $course_uri,
     'allowedUsers' => $emails,
     'priceCents' => $price_cents,
     'currency' => $currency,
+    'active' => $resolved_active,
     'updatedAt' => gmdate('c'),
   ];
   ragbaz_set_rules($rules);
@@ -102,6 +129,7 @@ function ragbaz_grant_user_access($course_uri, $email) {
       'allowedUsers' => [],
       'priceCents' => 0,
       'currency' => 'usd',
+      'active' => true,
       'updatedAt' => gmdate('c'),
     ];
   }
@@ -114,7 +142,8 @@ function ragbaz_grant_user_access($course_uri, $email) {
     $course_uri,
     $rule['allowedUsers'],
     isset($rule['priceCents']) ? intval($rule['priceCents']) : 0,
-    isset($rule['currency']) ? $rule['currency'] : 'usd'
+    isset($rule['currency']) ? $rule['currency'] : 'usd',
+    !isset($rule['active']) || (bool) $rule['active']
   );
 
   $user = get_user_by('email', $email);
@@ -461,6 +490,7 @@ add_action('graphql_register_types', function () {
       'allowedUsers' => ['type' => ['list_of' => 'String']],
       'priceCents' => ['type' => 'Int'],
       'currency' => ['type' => 'String'],
+      'active' => ['type' => 'Boolean'],
       'updatedAt' => ['type' => 'String'],
     ],
   ]);
@@ -477,6 +507,7 @@ add_action('graphql_register_types', function () {
       'allowedUsers' => ['type' => ['list_of' => 'String']],
       'priceCents' => ['type' => 'Int'],
       'currency' => ['type' => 'String'],
+      'active' => ['type' => 'Boolean'],
     ],
   ]);
 
@@ -539,6 +570,7 @@ add_action('graphql_register_types', function () {
       'allowedUsers' => ['type' => ['list_of' => 'String']],
       'priceCents' => ['type' => 'Int'],
       'currency' => ['type' => 'String'],
+      'active' => ['type' => 'Boolean'],
     ],
     'outputFields' => [
       'rule' => ['type' => 'CourseAccessRule'],
@@ -551,7 +583,8 @@ add_action('graphql_register_types', function () {
         isset($input['courseUri']) ? $input['courseUri'] : '',
         isset($input['allowedUsers']) ? $input['allowedUsers'] : [],
         isset($input['priceCents']) ? intval($input['priceCents']) : 0,
-        isset($input['currency']) ? $input['currency'] : 'usd'
+        isset($input['currency']) ? $input['currency'] : 'usd',
+        array_key_exists('active', $input) ? (bool) $input['active'] : null
       );
       return ['rule' => $rule];
     },

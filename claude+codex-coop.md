@@ -291,3 +291,48 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Validation**:
   - `npx eslint` on all touched files: 0 errors (existing `<img>` perf warnings only).
   - `npm test -- --runInBand`: 14/14 passing.
+
+---
+
+## 2026-03-19 (cont. 9)
+
+### Codex — product + Stripe bug-hunt hardening pass
+
+- **Admin tab safety / keyboard robustness**:
+  - Normalized `admin:switchTab` event payload handling in both `AdminHeader` and `AdminDashboard` so unknown tab IDs are ignored instead of mutating state.
+  - Added AltGraph guard in `adminHotkeys` so international keyboard layouts do not accidentally trigger Ctrl+Alt admin shortcuts while typing.
+- **Payments route hardening (`/api/admin/payments`)**:
+  - Sanitized `email` query parsing (trim + lowercase).
+  - Replaced permissive numeric coercion with safe integer parsing and clamping (`limit` defaults to 20, clamped 1–100).
+  - Added safe `from` timestamp parsing (invalid values ignored).
+  - Mapped Stripe error classes to explicit API codes:
+    - `stripe_auth_failed`
+    - `stripe_permission_failed`
+    - `stripe_connection_failed`
+    - fallback `stripe_lookup_failed`
+- **Payments UI clarity**:
+  - Added missing i18n keys in EN/SV/ES for:
+    - `admin.paymentsLoadFailed`
+    - `admin.paymentsRetryHint`
+    - `admin.paymentsStripeLookupFailed`
+    - `admin.paymentsStripeAuthFailed`
+    - `admin.paymentsStripePermissionFailed`
+    - `admin.paymentsStripeConnectionFailed`
+    - `admin.paymentsHttpFailed`
+  - Updated `AdminSalesTab` and `AdminSupportTab` to map error codes to user-facing Stripe-specific messages (instead of exposing raw code strings like `stripe_lookup_failed`).
+  - Generalized `t()` to support a string fallback as second argument (`t(key, "fallback")`) while keeping object interpolation behavior.
+- **Products/access consistency (core issue for visibility toggles)**:
+  - Canonicalized course URIs by stripping trailing slashes in `courseAccessStore`.
+  - Added equivalent URI normalization in WordPress-backed access flow (`courseAccess.js`) so reads/writes/checks use the same canonical key.
+  - Added compatibility fallback for WordPress plugin schemas that don’t yet expose `active` on `courseAccessRules`/`courseAccessConfig`/`setCourseAccessRule`.
+- **Storefront guardrails for inactive configured items**:
+  - Content page (`src/app/[...uri]/page.js`) now `notFound()` for configured access rules marked `active: false`.
+  - Stripe checkout route blocks purchase initiation when content config is inactive.
+- **Plugin schema upgrade (`packages/ragbaz-articulate-plugin`)**:
+  - Added `active` to `CourseAccessRule`, `SetCourseAccessRuleInput`, and `setCourseAccessRule` mutation input handling.
+  - Version bumped to `1.0.1`.
+  - Improved rules normalization and made `active` optional/preserved when omitted, so legacy clients do not unintentionally re-enable disabled items.
+- **Validation**:
+  - `npx eslint` on touched JS files: clean (no errors).
+  - `npm test -- --runInBand`: 14/14 passing.
+  - Full lint remains clean except existing non-blocking `<img>` optimization warnings in admin image components.

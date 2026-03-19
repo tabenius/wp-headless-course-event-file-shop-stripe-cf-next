@@ -27,6 +27,46 @@ function formatDate(ms) {
   });
 }
 
+function resolvePaymentsErrorMessage(code) {
+  if (code === "stripe_lookup_failed") {
+    return t(
+      "admin.paymentsStripeLookupFailed",
+      "Could not fetch payments from Stripe right now.",
+    );
+  }
+  if (code === "stripe_auth_failed") {
+    return t(
+      "admin.paymentsStripeAuthFailed",
+      "Stripe authentication failed. Check STRIPE_SECRET_KEY.",
+    );
+  }
+  if (code === "stripe_permission_failed") {
+    return t(
+      "admin.paymentsStripePermissionFailed",
+      "Stripe key lacks permission to list charges.",
+    );
+  }
+  if (code === "stripe_connection_failed") {
+    return t(
+      "admin.paymentsStripeConnectionFailed",
+      "Could not reach Stripe API. Check network connectivity and retry.",
+    );
+  }
+  if (code === "stripe_not_configured") {
+    return t(
+      "admin.noStripeConfiguredHint",
+      "Stripe is not configured. Set STRIPE_SECRET_KEY to load payment data.",
+    );
+  }
+  if (String(code || "").startsWith("http_")) {
+    return t(
+      "admin.paymentsHttpFailed",
+      "Payment service returned an unexpected response.",
+    );
+  }
+  return t("admin.paymentsLoadFailed", "Could not load payments.");
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function MetricCard({ label, value, sub, accent = false }) {
@@ -129,6 +169,11 @@ export default function AdminSalesTab({
   ];
 
   const isLoading = paymentsLoading;
+  const paymentErrorDisplay = paymentsErrorCode
+    ? resolvePaymentsErrorMessage(paymentsErrorCode)
+    : paymentsError || t("admin.paymentsLoadFailed", "Could not load payments.");
+  const paymentErrorDetail =
+    paymentsError && paymentsError !== paymentErrorDisplay ? paymentsError : "";
 
   return (
     <div className="space-y-6 min-w-0">
@@ -232,14 +277,7 @@ export default function AdminSalesTab({
               clipRule="evenodd"
             />
           </svg>
-          <span>
-            {paymentsError}
-            {paymentsErrorCode ? (
-              <span className="ml-2 text-xs text-red-500">
-                ({paymentsErrorCode})
-              </span>
-            ) : null}
-          </span>
+          <span>{paymentErrorDisplay}</span>
         </div>
       )}
 
@@ -317,8 +355,13 @@ export default function AdminSalesTab({
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-700">
-              {t("admin.paymentsLoadFailed", "Could not load payments.")}
+              {paymentErrorDisplay}
             </p>
+            {paymentErrorDetail ? (
+              <p className="text-xs text-red-500 mt-1 max-w-xs">
+                {paymentErrorDetail}
+              </p>
+            ) : null}
             <p className="text-xs text-gray-400 mt-1 max-w-xs">
               {t(
                 "admin.paymentsRetryHint",

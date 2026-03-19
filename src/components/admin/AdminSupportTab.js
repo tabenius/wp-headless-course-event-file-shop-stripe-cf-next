@@ -20,10 +20,34 @@ export default function AdminSupportTab({
   loadPayments,
   paymentsLoading,
   paymentsError,
+  paymentsErrorCode,
   paymentsStripeConfigured,
   downloadReceipt,
   downloading,
 }) {
+  const paymentsErrorDisplay =
+    paymentsErrorCode === "stripe_lookup_failed"
+      ? t(
+          "admin.paymentsStripeLookupFailed",
+          "Could not fetch payments from Stripe right now.",
+        )
+      : paymentsErrorCode === "stripe_auth_failed"
+        ? t(
+            "admin.paymentsStripeAuthFailed",
+            "Stripe authentication failed. Check STRIPE_SECRET_KEY.",
+          )
+        : paymentsErrorCode === "stripe_permission_failed"
+          ? t(
+              "admin.paymentsStripePermissionFailed",
+              "Stripe key lacks permission to list charges.",
+            )
+          : paymentsErrorCode === "stripe_connection_failed"
+            ? t(
+                "admin.paymentsStripeConnectionFailed",
+                "Could not reach Stripe API. Check network connectivity and retry.",
+              )
+      : paymentsError;
+
   return (
     <div className="border rounded p-4 sm:p-5 space-y-4 min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -328,7 +352,7 @@ export default function AdminSupportTab({
           </div>
         </div>
         {paymentsError && (
-          <p className="text-sm text-red-600">{paymentsError}</p>
+          <p className="text-sm text-red-600">{paymentsErrorDisplay}</p>
         )}
         {!paymentsStripeConfigured && !paymentsError && (
           <p className="text-sm text-amber-700">

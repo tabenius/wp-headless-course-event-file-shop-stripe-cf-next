@@ -449,6 +449,9 @@ export default async function ContentPage({
 
     if (!canAccess) {
       const accessConfig = await getCourseAccessConfig(uri).catch(() => null);
+      if (accessConfig?.active === false) {
+        notFound();
+      }
       const defaultPrice = process.env.DEFAULT_COURSE_FEE_CENTS
         ? Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS, 10)
         : undefined;

@@ -60,6 +60,11 @@ function resolve(obj, path) {
  * then to the key itself if missing everywhere.
  */
 export function t(key, params) {
+  const fallback = typeof params === "string" ? params : null;
+  const interpolationParams =
+    params && typeof params === "object" && !Array.isArray(params)
+      ? params
+      : null;
   const locale = getLocale();
   const dict = locales[locale] || locales.sv;
   let value = resolve(dict, key);
@@ -70,14 +75,16 @@ export function t(key, params) {
   }
 
   // Fallback to key
-  if (value === undefined) return key;
+  if (value === undefined) return fallback || key;
 
-  if (typeof value !== "string") return key;
+  if (typeof value !== "string") return fallback || key;
 
   // Interpolate {param} placeholders
-  if (params) {
+  if (interpolationParams) {
     return value.replace(/\{(\w+)\}/g, (_, name) =>
-      params[name] !== undefined ? String(params[name]) : `{${name}}`,
+      interpolationParams[name] !== undefined
+        ? String(interpolationParams[name])
+        : `{${name}}`,
     );
   }
 

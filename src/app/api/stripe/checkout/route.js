@@ -171,6 +171,12 @@ export async function POST(request) {
     }
 
     const config = await getCourseAccessConfig(courseUri);
+    if (config?.active === false) {
+      return NextResponse.json(
+        { ok: false, error: t("apiErrors.contentNotReady") },
+        { status: 400 },
+      );
+    }
     const priceCents = config?.priceCents ?? 0;
     const currency = (config?.currency || "SEK").toUpperCase();
 

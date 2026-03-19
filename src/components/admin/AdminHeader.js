@@ -30,6 +30,13 @@ function parseTabHash(hashValue) {
     .split(/[/?&]/)[0]
     .trim()
     .toLowerCase();
+  const tab = normalizeTab(normalized);
+  return tab;
+}
+
+function normalizeTab(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return null;
   const tab = normalized === "sandbox" ? "info" : normalized;
   return ADMIN_TAB_SET.has(tab) ? tab : null;
 }
@@ -124,7 +131,9 @@ export default function AdminHeader({ logoUrl }) {
 
   useEffect(() => {
     function onTabSwitch(e) {
-      setActiveTab(e.detail);
+      const tab = normalizeTab(e?.detail);
+      if (!tab) return;
+      setActiveTab(tab);
     }
     window.addEventListener("admin:switchTab", onTabSwitch);
     return () => window.removeEventListener("admin:switchTab", onTabSwitch);
@@ -201,12 +210,14 @@ export default function AdminHeader({ logoUrl }) {
   }
 
   function switchTab(tab) {
+    const safeTab = normalizeTab(tab);
+    if (!safeTab) return;
     if (pathname !== "/admin") {
-      router.push(`/admin#/${tab}`);
+      router.push(`/admin#/${safeTab}`);
       setMenuOpen(false);
       return;
     }
-    window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: tab }));
+    window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: safeTab }));
     setMenuOpen(false);
   }
 

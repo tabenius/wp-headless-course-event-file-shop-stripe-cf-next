@@ -21,12 +21,17 @@ export async function GET(request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email") || undefined;
-    const limitRaw = Number(searchParams.get("limit"));
-    const limit = Math.min(limitRaw > 0 ? limitRaw : 20, 100);
-    const fromTs = searchParams.get("from")
-      ? Number(searchParams.get("from"))
-      : undefined;
+    const emailParam = searchParams.get("email");
+    const email = emailParam ? emailParam.trim().toLowerCase() : undefined;
+    const limitParam = searchParams.get("limit");
+    const parsedLimit = limitParam ? Number.parseInt(limitParam, 10) : Number.NaN;
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.max(1, Math.min(parsedLimit, 100))
+      : 20;
+    const fromParam = searchParams.get("from");
+    const parsedFrom = fromParam ? Number.parseInt(fromParam, 10) : Number.NaN;
+    const fromTs =
+      Number.isFinite(parsedFrom) && parsedFrom > 0 ? parsedFrom : undefined;
     const payments = await compilePayments(email, limit, fromTs);
     const rows = payments.slice(0, limit);
     return NextResponse.json({
@@ -37,12 +42,36 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("admin payments error", error);
+    const stripeType = String(error?.type || "");
+    let code = "stripe_lookup_failed";
+    let errorMessage = error?.message || "Payment lookup failed";
+
+    if (stripeType === "StripeAuthenticationError") {
+      code = "stripe_auth_failed";
+      errorMessage = t(
+        "apiErrors.stripeAuthFailed",
+        "Stripe authentication failed. Check STRIPE_SECRET_KEY.",
+      );
+    } else if (stripeType === "StripePermissionError") {
+      code = "stripe_permission_failed";
+      errorMessage = t(
+        "apiErrors.stripePermissionFailed",
+        "Stripe key lacks permission to list charges.",
+      );
+    } else if (stripeType === "StripeConnectionError") {
+      code = "stripe_connection_failed";
+      errorMessage = t(
+        "apiErrors.stripeConnectionFailed",
+        "Could not reach Stripe API. Check network connectivity and retry.",
+      );
+    }
+
     return NextResponse.json(
       {
         ok: false,
-        error: error.message || "Payment lookup failed",
+        error: errorMessage,
         stripeConfigured,
-        code: "stripe_lookup_failed",
+        code,
       },
       { status: 500 },
     );

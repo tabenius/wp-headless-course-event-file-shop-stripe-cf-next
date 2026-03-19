@@ -56,6 +56,13 @@ const ADMIN_TABS = [
 ];
 const ADMIN_TAB_SET = new Set(ADMIN_TABS);
 
+function normalizeAdminTab(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === "sandbox") return "info";
+  return ADMIN_TAB_SET.has(normalized) ? normalized : null;
+}
+
 const log = (...args) => {
   // Console output is streamed by wrangler tail in production.
   console.info("[AdminDashboard]", ...args);
@@ -67,8 +74,7 @@ function parseTabFromHash(hashValue) {
     .split(/[/?&]/)[0]
     .trim()
     .toLowerCase();
-  if (normalized === "sandbox") return "info";
-  return ADMIN_TAB_SET.has(normalized) ? normalized : null;
+  return normalizeAdminTab(normalized);
 }
 
 function toCurrencyUnits(cents) {
@@ -1373,7 +1379,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     window.addEventListener("admin:showHealth", showHealthTab);
     function onSwitchTab(e) {
-      if (e.detail) setActiveTab(e.detail);
+      const tab = normalizeAdminTab(e?.detail);
+      if (!tab) return;
+      setActiveTab(tab);
     }
     window.addEventListener("admin:switchTab", onSwitchTab);
     return () => {
@@ -1688,6 +1696,7 @@ export default function AdminDashboard() {
             loadPayments={loadPayments}
             paymentsLoading={paymentsLoading}
             paymentsError={paymentsError}
+            paymentsErrorCode={paymentsErrorCode}
             paymentsStripeConfigured={paymentsStripeConfigured}
             downloadReceipt={downloadReceipt}
             downloading={downloading}
