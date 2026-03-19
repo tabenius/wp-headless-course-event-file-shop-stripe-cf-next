@@ -4,6 +4,7 @@ import { listDigitalProducts } from "@/lib/digitalProducts";
 import { getShopSettings } from "@/lib/shopSettings";
 import { stripHtml } from "@/lib/slugify";
 import { decodeEntities } from "@/lib/decodeEntities";
+import { parsePriceCents } from "@/lib/parsePrice";
 import site from "@/lib/site";
 
 /**
@@ -125,7 +126,8 @@ export async function listAllShopItems() {
       description: decodeEntities(stripHtml(p.shortDescription)),
       imageUrl: p.featuredImage?.node?.sourceUrl || "",
       price: decodeEntities(p.price || p.regularPrice || ""),
-      priceCents: config?.priceCents ?? 0,
+      priceCents:
+        config?.priceCents || parsePriceCents(p.price || p.regularPrice),
       currency: config?.currency || defaultCurrency,
       type: "product",
       source: "woocommerce",
@@ -145,7 +147,8 @@ export async function listAllShopItems() {
       description: "",
       imageUrl: c.featuredImage?.node?.sourceUrl || "",
       price: decodeEntities(c.priceRendered || c.price || ""),
-      priceCents: config?.priceCents ?? 0,
+      priceCents:
+        config?.priceCents || parsePriceCents(c.priceRendered || c.price),
       currency: config?.currency || defaultCurrency,
       type: "course",
       source: "learnpress",

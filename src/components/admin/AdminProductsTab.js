@@ -1,6 +1,7 @@
 "use client";
 
 import { t } from "@/lib/i18n";
+import { parsePriceCents } from "@/lib/parsePrice";
 import ImageUploader from "./ImageUploader";
 import ProductRow from "./ProductRow";
 import ProductSection from "./ProductSection";
@@ -563,28 +564,47 @@ export default function AdminProductsTab({
                   typeof cfg.priceCents === "number" &&
                   cfg.priceCents > 0;
                 if (!hasPriceCents) {
+                  const wpParsedCents = parsePriceCents(wpPrice);
                   return (
-                    <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="w-5 h-5 shrink-0 mt-0.5"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <div>
-                        <p className="font-semibold">
-                          {t("admin.notBuyableTitle")}
-                        </p>
-                        <p className="text-xs mt-0.5">
-                          {t("admin.notBuyableHint")}
-                        </p>
+                    <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="w-5 h-5 shrink-0 mt-0.5"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <div>
+                          <p className="font-semibold">
+                            {t("admin.notBuyableTitle")}
+                          </p>
+                          <p className="text-xs mt-0.5">
+                            {t("admin.notBuyableHint")}
+                          </p>
+                        </div>
                       </div>
+                      {wpPrice && wpParsedCents > 0 && (
+                        <div className="flex items-center gap-3 pt-1 border-t border-amber-200">
+                          <span className="text-xs">
+                            WordPress price: <strong>{wpPrice}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPrice((wpParsedCents / 100).toFixed(2));
+                            }}
+                            className="px-2 py-0.5 rounded border border-amber-400 bg-white text-amber-800 text-xs hover:bg-amber-100 shrink-0"
+                          >
+                            Use WP price
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 }
