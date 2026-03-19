@@ -4,7 +4,7 @@ Tags: graphql, wpgraphql, learnpress, events, storefront, headless
 Requires at least: 6.3
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Plugin URI: https://ragbaz.xyz/products
@@ -45,6 +45,11 @@ Call `ragbazInfo { version hasLearnPress hasEventsPlugin }` in WPGraphQL. The in
 Email ragbaz@proton.me or visit https://ragbaz.xyz/products.
 
 == Changelog ==
+= 1.0.2 =
+* Added `active` support in course access GraphQL schema and mutation handling.
+* Normalized course URI handling to avoid trailing-slash mismatch issues.
+* Preserved legacy behavior when `active` is omitted by older clients.
+
 = 1.0.0 =
 * Initial release: LearnPress fields, event normalization, course access schema, RAGBAZ storefront probe, admin linkouts.
 

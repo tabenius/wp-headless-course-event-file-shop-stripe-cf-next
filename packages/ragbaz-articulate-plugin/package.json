@@ -1,6 +1,6 @@
 {
   "name": "ragbaz-articulate-plugin",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": true,
   "description": "WPGraphQL helper plugin for LearnPress and events (Event Organiser, The Events Calendar, Events Manager) with storefront detection.",
   "license": "GPL-2.0-or-later",
