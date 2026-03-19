@@ -25,6 +25,7 @@ const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
 const AdminSupportTab = lazy(() => import("./AdminSupportTab"));
 const AdminAdvancedTab = lazy(() => import("./AdminAdvancedTab"));
 const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
+const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
 
 const log = (...args) => {
   // Console output is streamed by wrangler tail in production.
@@ -394,7 +395,7 @@ export default function AdminDashboard() {
   const [debugLogs, setDebugLogs] = useState([]);
   const [clientLogs, setClientLogs] = useState([]);
   const [products, setProducts] = useState([]);
-  const [activeTab, setActiveTab] = useState("stats");
+  const [activeTab, setActiveTab] = useState("welcome");
   const [purging, setPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);
@@ -477,6 +478,7 @@ export default function AdminDashboard() {
       // produces special characters (™, £…) so e.key is unreliable for digits.
       const digit = e.code?.startsWith("Digit") ? e.code.slice(5) : null;
       const tabMap = {
+        0: "welcome",
         1: "stats",
         2: "shop",
         3: "access",
@@ -1444,6 +1446,7 @@ export default function AdminDashboard() {
         <div className="font-semibold text-white mb-1">Genvägar</div>
         <div className="space-y-0.5">
           {[
+            ["^⌥0", "Welcome"],
             ["^⌥1", "Stats"],
             ["^⌥2", "Shop"],
             ["^⌥3", "Access"],
@@ -1655,9 +1658,16 @@ export default function AdminDashboard() {
                     <div className="text-xs text-gray-500 font-mono">{hex}</div>
                     <div className="text-[10px] text-gray-400 font-mono">
                       {token}
-                    </div>
-                  </div>
-                </div>
+          </div>
+        </div>
+      </div>
+      {activeTab === "welcome" && (
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
+          <AdminWelcomeTab />
+        </Suspense>
+      )}
               ))}
             </div>
             <div className="grid gap-3 md:grid-cols-2">

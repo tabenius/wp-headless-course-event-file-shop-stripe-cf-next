@@ -7,6 +7,7 @@ import { t, getLocale, setLocale } from "@/lib/i18n";
 
 function getNavItems() {
   return [
+    { label: t("admin.navWelcome", "Welcome"), tab: "welcome" },
     { label: t("admin.navStats"), tab: "stats" },
     { label: t("admin.navProducts"), tab: "products" },
     { label: t("admin.navSales", "Sales"), tab: "sales" },
@@ -21,7 +22,7 @@ function getNavItems() {
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState("stats");
+  const [activeTab, setActiveTab] = useState("welcome");
   const [localeState, setLocaleState] = useState(getLocale);
 
   // Keep activeTab in sync with AdminDashboard

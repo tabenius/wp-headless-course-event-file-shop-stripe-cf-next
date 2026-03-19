@@ -218,6 +218,7 @@ The following features have been implemented for the chat feature:
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-20 (Codex)**: Added the Welcome tab (default, Alt+0) that renders the migration story via impress.js slides, plus the matching nav item, hotkey legend update, and new i18n keys.
 - **2026-03-19 (Codex)**: Chat modularisation, markdown rendering, i18n, and bugfixes.
 - **2026-03-19 (Claude)**: Image generator polish and chat fixes.
 - **2026-03-18 (Both)**: Admin UI, i18n, and AGENTS.md setup.
@@ -235,7 +236,7 @@ The following features have been implemented for the chat feature:
 ## Recent review action items
 
 - Confirm that the **AdminSupportTab** uses the charge ID from `receiptId` when calling `downloadReceipt`, otherwise Stripe rejects receipts tied to PaymentIntents. Claude, please pick this up first.
-- Harden `/api/admin/payments` by defaulting the `limit` query to 20 and clamping it to `[1, 100]` before calling `compilePayments` so malformed query strings (e.g., `limit=foo`) cannot send `NaN` to Stripe. 
+- Harden `/api/admin/payments` by defaulting the `limit` query to 20 and clamping it to `[1, 100]` before calling `compilePayments` so malformed query strings (e.g., `limit=foo`) cannot send `NaN` to Stripe.
 
 ### Dead-link finder suggestion
 

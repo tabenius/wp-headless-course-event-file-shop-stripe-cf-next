@@ -167,6 +167,14 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **S3/R2 secret key**: Added `secretKey` to `/api/admin/upload-info` response. `AdminAdvancedTab` shows the key with a show/hide toggle (masked by default).
 - **Code review verification**: All five bugs from the Mistral session review confirmed resolved — `cloudflareKv.js` exports intact, `requireAdmin` guard correct, no duplicate `const` in `ChatPanel.js`, no empty-POST history load, `.catch()` on clipboard present.
 - All i18n keys added to en/sv/es.
+ 
+---
+
+## 2026-03-20
+
+### Codex
+
+- **Welcome tab**: Added the default welcome tab (Alt+0) powered by impress.js, refreshed the nav + hotkey legend, and translated the story into EN/SV/ES.
 
 ## Open Questions
 
