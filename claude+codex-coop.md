@@ -138,8 +138,22 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 ---
 
+## 2026-03-19 (cont. 2)
+
+### Claude — Clear Chat + AdminDashboard modularisation
+
+- **Clear Chat implemented**: DELETE /api/chat handler deletes `chat_history:admin` from KV (fail-open). `clearChat()` in AdminDashboard clears local state then fires the DELETE. Button appears in ChatPanel header only when messages exist, disabled while loading. `chat.clear` i18n key added to all three locales.
+- **AdminDashboard split**: 3505-line monolith extracted into focused tab components, each lazy-loaded:
+  - `AdminProductsTab.js` (995 lines) — products, access, shop settings
+  - `AdminSupportTab.js` (376 lines) — tickets, comments, payments
+  - `AdminAdvancedTab.js` (365 lines) — deploy, storage, environment, commits, debug log
+  - `AdminDashboard.js` reduced to 1967 lines (−44%)
+  - All three wrapped with `React.lazy` + `<Suspense>` — tabs not yet visited ship zero JS on initial load
+- All 79 tests green, build clean.
+
+---
+
 ## Open Questions
 
-- Should we add a "Clear Chat" button to the ChatPanel?
 - Should we implement streaming responses for the chat feature? (Requires Cloudflare streaming support.)
-- Should we add a "Copy Answer" button for individual chat messages?
+- Should we add a "Copy Answer" button for individual chat messages? ← copy buttons already exist on assistant messages (via ChatMessage.js)
