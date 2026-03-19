@@ -61,6 +61,16 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
   - `public/docs/admin/support-chat.svg`
   - Embedded these visuals directly next to relevant admin workflow sections in README/docs.
 
+## 2026-03-19 (cont. 14)
+
+### Codex — welcome contrast + localized headline tuning
+
+- Improved Welcome story contrast on dark blue backgrounds by restyling the `Ctrl+Alt+M` hint chip for dark mode in `AdminWelcomeTab`.
+- Updated `admin.welcomeHeadline` copy to save vertical space and then localized the suffix for non-English locales:
+  - EN: `Control Panel`
+  - SV: `Kontrollpanel`
+  - ES: `Panel de control`
+
 ## 2026-03-19 (cont. 10)
 
 ### Codex — category extraction + VAT map + digital file heuristics

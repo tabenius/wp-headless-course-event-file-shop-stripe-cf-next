@@ -70,11 +70,17 @@ function tearImpress() {
   }
 }
 
-function MenuShortcutHint() {
+function MenuShortcutHint({ onDark = false }) {
+  const wrapperClass = onDark
+    ? "mt-2 inline-flex items-center gap-2 rounded-full border border-violet-300/70 bg-violet-950/85 px-3 py-1 text-[11px] font-medium text-white"
+    : "mt-2 inline-flex items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-100/70 px-3 py-1 text-[11px] font-medium text-indigo-900";
+  const kbdClass = onDark
+    ? "rounded border border-violet-200/70 bg-white/95 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-violet-950"
+    : "rounded border border-indigo-300 bg-white px-2 py-0.5 text-[10px] font-semibold tracking-wide text-indigo-800";
   return (
-    <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-100/70 px-3 py-1 text-[11px] font-medium text-indigo-900">
+    <div className={wrapperClass}>
       <span>{t("admin.welcomeMenuHint", "Open menu")}</span>
-      <kbd className="rounded border border-indigo-300 bg-white px-2 py-0.5 text-[10px] font-semibold tracking-wide text-indigo-800">
+      <kbd className={kbdClass}>
         Ctrl+Alt+M
       </kbd>
     </div>
@@ -1033,7 +1039,7 @@ export default function AdminWelcomeTab({
             {t("admin.welcomeHeadline", "Welcome to your new control room")}
           </h2>
           <div className="mt-0.5">
-            <MenuShortcutHint />
+            <MenuShortcutHint onDark />
           </div>
           <p className="mt-0.5 text-sm text-sky-100">
             {slides[currentStep]?.title} - {slides[currentStep]?.subtitle}
