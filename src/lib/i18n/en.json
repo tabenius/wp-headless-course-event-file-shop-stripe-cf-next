@@ -479,6 +479,11 @@
     "bucketMissing": "S3_BUCKET_NAME is missing.",
     "publicUrlMissing": "S3_PUBLIC_URL is missing. Set the public URL for your bucket."
   },
+  "errors": {
+    "serviceTemporarilyUnavailable": "Service temporarily unavailable",
+    "accessCheckFailed": "We're having trouble verifying your access right now. This may be due to a partial network outage affecting our systems. Please try reloading the page — if you have already purchased access, it has not been lost.",
+    "tryAgainReload": "Reload page"
+  },
   "courses": {
     "title": "Online Courses",
     "requiresLearnPress": "The courses page requires LearnPress with WPGraphQL support.",

@@ -479,6 +479,11 @@
     "bucketMissing": "S3_BUCKET_NAME saknas.",
     "publicUrlMissing": "S3_PUBLIC_URL saknas. Ange den offentliga URL:en för din bucket."
   },
+  "errors": {
+    "serviceTemporarilyUnavailable": "Tjänsten är tillfälligt otillgänglig",
+    "accessCheckFailed": "Vi kan inte verifiera din åtkomst just nu. Det kan bero på ett tillfälligt nätverksproblem i våra system. Prova att ladda om sidan — om du redan har köpt åtkomst har den inte försvunnit.",
+    "tryAgainReload": "Ladda om sidan"
+  },
   "courses": {
     "title": "Onlinekurser",
     "requiresLearnPress": "Kurssidan kräver LearnPress med WPGraphQL-stöd.",

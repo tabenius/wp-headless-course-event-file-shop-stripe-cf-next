@@ -62,15 +62,22 @@ export default async function ShopProductPage({
     }
   }
 
-  const owned = userEmail
-    ? await hasDigitalAccess(product.id, userEmail).catch(() => false)
-    : false;
+  let owned = false;
+  let accessCheckFailed = false;
+  if (userEmail) {
+    try {
+      owned = await hasDigitalAccess(product.id, userEmail);
+    } catch {
+      accessCheckFailed = true;
+    }
+  }
 
   return (
     <ShopProductDetail
       user={session?.user || null}
       product={product}
       owned={owned}
+      accessCheckFailed={accessCheckFailed}
       stripeEnabled={isStripeEnabled()}
       checkoutStatus={checkoutStatus}
     />

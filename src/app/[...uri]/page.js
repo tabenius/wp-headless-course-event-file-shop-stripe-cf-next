@@ -23,6 +23,7 @@ import { stripHtml } from "@/lib/slugify";
 import site from "@/lib/site";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { decodeEntities } from "@/lib/decodeEntities";
+import { t } from "@/lib/i18n";
 
 // Force dynamic rendering — this route uses searchParams and external data
 export const dynamic = "force-dynamic";
@@ -375,11 +376,12 @@ export default async function ContentPage({
     const session = await auth().catch(() => null);
     const userEmail = session?.user?.email || "";
     let canAccess = false;
+    let accessCheckFailed = false;
     if (userEmail) {
       try {
         canAccess = await hasCourseAccess(uri, userEmail);
       } catch {
-        // KV failure — deny access, show paywall
+        accessCheckFailed = true;
       }
     }
     const checkoutStatus =
@@ -411,6 +413,25 @@ export default async function ContentPage({
       } catch (error) {
         console.error("Failed to confirm Stripe checkout session:", error);
       }
+    }
+
+    // Logged-in user's access check failed due to KV/network outage — don't show
+    // the paywall (they may already have access and could accidentally repurchase).
+    if (accessCheckFailed && userEmail) {
+      return (
+        <main className="max-w-2xl mx-auto px-6 py-24 text-center space-y-6">
+          <h1 className="text-2xl font-semibold">
+            {t("errors.serviceTemporarilyUnavailable")}
+          </h1>
+          <p className="text-gray-600">{t("errors.accessCheckFailed")}</p>
+          <a
+            href=""
+            className="inline-block px-6 py-3 rounded bg-gray-800 text-white hover:bg-gray-700"
+          >
+            {t("errors.tryAgainReload")}
+          </a>
+        </main>
+      );
     }
 
     if (!canAccess) {

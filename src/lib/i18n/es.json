@@ -479,6 +479,11 @@
     "bucketMissing": "Falta S3_BUCKET_NAME.",
     "publicUrlMissing": "Falta S3_PUBLIC_URL. Define la URL pública de tu bucket."
   },
+  "errors": {
+    "serviceTemporarilyUnavailable": "Servicio temporalmente no disponible",
+    "accessCheckFailed": "No podemos verificar tu acceso en este momento. Esto puede deberse a una interrupción parcial de la red en nuestros sistemas. Por favor, recarga la página — si ya has comprado acceso, no se ha perdido.",
+    "tryAgainReload": "Recargar página"
+  },
   "courses": {
     "title": "Cursos en línea",
     "requiresLearnPress": "La página de cursos requiere LearnPress con soporte WPGraphQL.",

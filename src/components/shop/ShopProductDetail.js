@@ -13,6 +13,7 @@ export default function ShopProductDetail({
   user,
   product,
   owned,
+  accessCheckFailed,
   stripeEnabled,
   checkoutStatus,
 }) {
@@ -95,7 +96,22 @@ export default function ShopProductDetail({
       ) : null}
       {error ? <p className="text-red-600">{error}</p> : null}
 
-      {owned ? (
+      {accessCheckFailed && user?.email ? (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-5 space-y-3">
+          <p className="font-semibold text-amber-900">
+            {t("errors.serviceTemporarilyUnavailable")}
+          </p>
+          <p className="text-amber-800 text-sm">
+            {t("errors.accessCheckFailed")}
+          </p>
+          <a
+            href=""
+            className="inline-block px-4 py-2 rounded bg-amber-700 text-white text-sm hover:bg-amber-600"
+          >
+            {t("errors.tryAgainReload")}
+          </a>
+        </div>
+      ) : owned ? (
         product.type === "digital_file" ? (
           <a
             href={`/api/digital/download?productId=${encodeURIComponent(product.id)}`}
