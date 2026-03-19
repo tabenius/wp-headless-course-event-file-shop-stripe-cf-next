@@ -199,6 +199,8 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Completed software z-buffer rendering for the Info-tab torus (per-pixel depth-tested triangle rasterization + depth-tested cyan edge lines) and removed backface culling so hidden-surface resolution comes from depth buffering only.
+- **2026-03-19 (Codex)**: Halved the torus canvas height again (`10/11/12rem -> 5/5.5/6rem`, draw fallback `130 -> 65`) and increased Sierpinski tree recursion depth for all parallax layers (far `3-4`, mid `4-5`, near `4-6`).
 - **2026-03-19 (Codex)**: Updated header sun/moon theme-toggle interaction to color-only hover feedback (no background darkening) and removed active/focus framing/rings from the toggle control.
 - **2026-03-19 (Codex)**: Replaced the foliage background with high-contrast Sierpinski fractal tree groups (layered/parallax SVGs), switched geometry renderer back to torus using depth-sorted quads with backface culling, and reduced the canvas vertical footprint to roughly half height.
 - **2026-03-19 (Codex)**: Rebalanced foliage visuals by reducing generated density (`plantCount`/`iterations`), increasing branch/leaf stroke and outline widths for chunkier artifacts, and lowering canopy placement (`top: 16%/24%/32%`) for a shorter vertical profile.

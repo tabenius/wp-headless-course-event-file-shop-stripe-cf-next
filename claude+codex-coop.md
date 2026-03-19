@@ -11,6 +11,36 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 67)
+
+### Codex — torus z-buffer pass (no backface culling)
+
+- Replaced the old depth-sorted face painter pass in `TorusBanner` with a software z-buffer pipeline:
+  - per-frame `Float32Array` depth buffer (initialized to `-Infinity`),
+  - per-frame RGBA color buffer + `ImageData`,
+  - depth-tested triangle rasterizer using barycentric interpolation.
+- Added depth-tested cyan edge rendering so wire edges respect occlusion:
+  - line raster pass writes through the same z-test as fill triangles.
+- Removed backface culling from the torus draw path:
+  - both front/back faces are rasterized,
+  - visibility is now resolved strictly by z-buffer depth compare.
+- Kept existing torus style (orange fill + cyan edges) and current reduced canvas footprint.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
+## 2026-03-19 (cont. 66)
+
+### Codex — smaller canvas + deeper Sierpinski recursion
+
+- Reduced Info canvas height to half again:
+  - draw fallback height `130 -> 65`,
+  - panel/canvas min-height classes `10/11/12rem -> 5/5.5/6rem`.
+- Increased Sierpinski recursion across parallax layers:
+  - far depth `2-3 -> 3-4`,
+  - mid depth `3 -> 4-5`,
+  - near depth `3-4 -> 4-6`.
+- Also removed an unused torus renderer constant from the interrupted z-buffer draft (`TORUS_RASTER_SCALE`) to keep the file clean.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 65)
 
 ### Codex — sun/moon hover/focus visual cleanup

@@ -122,8 +122,8 @@ const FAR_TREE_LAYER_IMAGE = buildSierpinskiForestLayerDataUri({
   treeCount: 7,
   minSize: 84,
   maxSize: 160,
-  minDepth: 2,
-  maxDepth: 3,
+  minDepth: 3,
+  maxDepth: 4,
   palette: ["#22ffea", "#ff2cab", "#ffe300", "#5dff3a"],
   strokeColor: "#080d1a",
   strokeWidth: 1.05,
@@ -137,8 +137,8 @@ const MID_TREE_LAYER_IMAGE = buildSierpinskiForestLayerDataUri({
   treeCount: 9,
   minSize: 108,
   maxSize: 210,
-  minDepth: 3,
-  maxDepth: 3,
+  minDepth: 4,
+  maxDepth: 5,
   palette: ["#6dff00", "#a700ff", "#ff3d00", "#00b8ff"],
   strokeColor: "#060812",
   strokeWidth: 1.2,
@@ -152,8 +152,8 @@ const NEAR_TREE_LAYER_IMAGE = buildSierpinskiForestLayerDataUri({
   treeCount: 11,
   minSize: 130,
   maxSize: 250,
-  minDepth: 3,
-  maxDepth: 4,
+  minDepth: 4,
+  maxDepth: 6,
   palette: ["#00ffa6", "#ff006f", "#00a2ff", "#ffd000", "#ad00ff"],
   strokeColor: "#03050b",
   strokeWidth: 1.35,
@@ -202,11 +202,124 @@ export default function TorusBanner() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     let frameId;
+    let rasterCanvas = null;
+    let rasterCtx = null;
+    let rasterWidth = 0;
+    let rasterHeight = 0;
+    let zBuffer = null;
+    let colorBuffer = null;
+    let imageData = null;
+
+    function ensureRasterBuffers(width, height) {
+      if (!rasterCanvas) {
+        rasterCanvas = document.createElement("canvas");
+        rasterCtx = rasterCanvas.getContext("2d");
+      }
+      if (
+        width !== rasterWidth ||
+        height !== rasterHeight ||
+        !zBuffer ||
+        !colorBuffer ||
+        !imageData
+      ) {
+        rasterWidth = width;
+        rasterHeight = height;
+        zBuffer = new Float32Array(width * height);
+        colorBuffer = new Uint8ClampedArray(width * height * 4);
+        imageData = new ImageData(colorBuffer, width, height);
+        rasterCanvas.width = width;
+        rasterCanvas.height = height;
+      }
+    }
+
+    function clearRasterBuffers() {
+      if (!zBuffer || !colorBuffer) return;
+      zBuffer.fill(Number.NEGATIVE_INFINITY);
+      colorBuffer.fill(0);
+    }
+
+    function writeDepthPixel(x, y, z, r, g, b, a) {
+      if (x < 0 || x >= rasterWidth || y < 0 || y >= rasterHeight) return;
+      const depthIndex = y * rasterWidth + x;
+      if (z <= zBuffer[depthIndex]) return;
+      zBuffer[depthIndex] = z;
+      const colorIndex = depthIndex * 4;
+      colorBuffer[colorIndex] = r;
+      colorBuffer[colorIndex + 1] = g;
+      colorBuffer[colorIndex + 2] = b;
+      colorBuffer[colorIndex + 3] = a;
+    }
+
+    function rasterizeTriangle(v1, v2, v3, color) {
+      const minX = Math.max(0, Math.floor(Math.min(v1.x, v2.x, v3.x)));
+      const maxX = Math.min(
+        rasterWidth - 1,
+        Math.ceil(Math.max(v1.x, v2.x, v3.x)),
+      );
+      const minY = Math.max(0, Math.floor(Math.min(v1.y, v2.y, v3.y)));
+      const maxY = Math.min(
+        rasterHeight - 1,
+        Math.ceil(Math.max(v1.y, v2.y, v3.y)),
+      );
+      const denom =
+        (v2.y - v3.y) * (v1.x - v3.x) + (v3.x - v2.x) * (v1.y - v3.y);
+      if (Math.abs(denom) < 1e-6) return;
+      const invDenom = 1 / denom;
+
+      for (let y = minY; y <= maxY; y += 1) {
+        for (let x = minX; x <= maxX; x += 1) {
+          const px = x + 0.5;
+          const py = y + 0.5;
+          const w1 =
+            ((v2.y - v3.y) * (px - v3.x) + (v3.x - v2.x) * (py - v3.y)) *
+            invDenom;
+          const w2 =
+            ((v3.y - v1.y) * (px - v3.x) + (v1.x - v3.x) * (py - v3.y)) *
+            invDenom;
+          const w3 = 1 - w1 - w2;
+          if (w1 < 0 || w2 < 0 || w3 < 0) continue;
+          const z = w1 * v1.z + w2 * v2.z + w3 * v3.z;
+          writeDepthPixel(x, y, z, color.r, color.g, color.b, color.a);
+        }
+      }
+    }
+
+    const edgeOffsets = [
+      [0, 0],
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ];
+
+    function rasterizeDepthLine(v1, v2, color) {
+      const dx = v2.x - v1.x;
+      const dy = v2.y - v1.y;
+      const dz = v2.z - v1.z;
+      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))));
+      for (let s = 0; s <= steps; s += 1) {
+        const t = s / steps;
+        const x = Math.round(v1.x + dx * t);
+        const y = Math.round(v1.y + dy * t);
+        const z = v1.z + dz * t;
+        for (const [ox, oy] of edgeOffsets) {
+          writeDepthPixel(
+            x + ox,
+            y + oy,
+            z,
+            color.r,
+            color.g,
+            color.b,
+            color.a,
+          );
+        }
+      }
+    }
 
     function draw(time) {
       if (!canvas || !ctx) return;
       const width = canvas.clientWidth || 640;
-      const height = canvas.clientHeight || 130;
+      const height = canvas.clientHeight || 65;
       const dpr = window.devicePixelRatio || 1;
       const pixelWidth = Math.round(width * dpr);
       const pixelHeight = Math.round(height * dpr);
@@ -216,6 +329,8 @@ export default function TorusBanner() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
+      ensureRasterBuffers(Math.max(2, Math.round(width)), Math.max(2, Math.round(height)));
+      clearRasterBuffers();
 
       const rotationY = time * 0.00052;
       const rotationX = Math.sin(time * 0.00084) * 0.38 + 0.5;
@@ -227,7 +342,6 @@ export default function TorusBanner() {
         ),
       );
 
-      const faces = [];
       const lightDir = normalize({ x: 0.35, y: -0.24, z: 0.9 });
 
       for (let i = 0; i < TORUS_MAJOR_SEGMENTS; i += 1) {
@@ -264,53 +378,54 @@ export default function TorusBanner() {
             normal.x * toCamera.x +
             normal.y * toCamera.y +
             normal.z * toCamera.z;
-          if (facing <= 0) continue;
-
           const lambert = Math.max(
-            0.12,
-            normal.x * lightDir.x +
-              normal.y * lightDir.y +
-              normal.z * lightDir.z,
+            0.08,
+            Math.abs(
+              normal.x * lightDir.x +
+                normal.y * lightDir.y +
+                normal.z * lightDir.z,
+            ),
           );
-          faces.push({
-            verts: [a, b, c, d],
-            z: (a.z + b.z + c.z + d.z) / 4,
-            lambert,
-            facing,
-          });
+          const faceDepth = (a.z + b.z + c.z + d.z) / 4;
+          const normalized = Math.max(
+            0,
+            Math.min(1, (faceDepth + TORUS_DEPTH_RANGE / 2) / TORUS_DEPTH_RANGE),
+          );
+          const depthBoost = 1 - normalized;
+          const brightness =
+            0.38 + 0.44 * lambert + 0.16 * depthBoost + 0.08 * Math.abs(facing);
+          const fillColor = {
+            r: Math.floor(BASE_COLOR.r * brightness),
+            g: Math.floor(BASE_COLOR.g * brightness),
+            b: Math.floor(BASE_COLOR.b * brightness),
+            a: Math.round((0.9 + 0.08 * normalized) * 255),
+          };
+          const edgeAlpha = 0.22 + 0.18 * depthBoost + 0.08 * Math.abs(facing);
+          const edgeColor = {
+            r: 75,
+            g: 247,
+            b: 255,
+            a: Math.round(Math.min(1, edgeAlpha) * 255),
+          };
+
+          const qa = { x: a.x, y: a.y, z: a.z };
+          const qb = { x: b.x, y: b.y, z: b.z };
+          const qc = { x: c.x, y: c.y, z: c.z };
+          const qd = { x: d.x, y: d.y, z: d.z };
+          rasterizeTriangle(qa, qb, qc, fillColor);
+          rasterizeTriangle(qa, qc, qd, fillColor);
+          rasterizeDepthLine(qa, qb, edgeColor);
+          rasterizeDepthLine(qb, qc, edgeColor);
+          rasterizeDepthLine(qc, qd, edgeColor);
+          rasterizeDepthLine(qd, qa, edgeColor);
         }
       }
 
-      faces.sort((a, b) => a.z - b.z);
-
-      faces.forEach((face) => {
-        const normalized = Math.max(
-          0,
-          Math.min(1, (face.z + TORUS_DEPTH_RANGE / 2) / TORUS_DEPTH_RANGE),
-        );
-        const depthBoost = 1 - normalized;
-        const brightness =
-          0.44 + 0.38 * face.lambert + 0.16 * depthBoost + 0.08 * face.facing;
-        const r = Math.floor(BASE_COLOR.r * brightness);
-        const g = Math.floor(BASE_COLOR.g * brightness);
-        const b = Math.floor(BASE_COLOR.b * brightness);
-        ctx.beginPath();
-        face.verts.forEach((vert, index) => {
-          if (index === 0) {
-            ctx.moveTo(vert.x, vert.y);
-          } else {
-            ctx.lineTo(vert.x, vert.y);
-          }
-        });
-        ctx.closePath();
-        const alpha = 0.9 + 0.07 * normalized;
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        ctx.fill();
-        const edgeAlpha = 0.16 + 0.16 * depthBoost + 0.1 * face.facing;
-        ctx.strokeStyle = `rgba(75, 247, 255, ${edgeAlpha})`;
-        ctx.lineWidth = 0.45;
-        ctx.stroke();
-      });
+      if (rasterCtx && rasterCanvas && imageData) {
+        rasterCtx.putImageData(imageData, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(rasterCanvas, 0, 0, width, height);
+      }
 
       frameId = requestAnimationFrame(draw);
     }
@@ -340,10 +455,10 @@ export default function TorusBanner() {
       </div>
 
       <div className="relative z-[1]">
-        <div className="torus-panel-shell min-h-[10rem] sm:min-h-[11rem] md:min-h-[12rem]">
+        <div className="torus-panel-shell min-h-[5rem] sm:min-h-[5.5rem] md:min-h-[6rem]">
           <canvas
             ref={canvasRef}
-            className="block w-full h-full min-h-[10rem] sm:min-h-[11rem] md:min-h-[12rem]"
+            className="block w-full h-full min-h-[5rem] sm:min-h-[5.5rem] md:min-h-[6rem]"
             aria-hidden
           />
         </div>
