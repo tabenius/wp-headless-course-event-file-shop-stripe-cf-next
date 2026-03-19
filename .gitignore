@@ -3,6 +3,8 @@
 # Lock files (never committed — local coordination only)
 building.lock.pid
 docs.lock.pid
+agents.lock
+coop.lock
 
 # dependencies
 /node_modules

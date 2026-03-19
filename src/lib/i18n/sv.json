@@ -298,6 +298,7 @@
     "imagePromptPlaceholder": "Beskriv bilden (eller vänta på att AI genererar en prompt)...",
     "regeneratePrompt": "↺ Generera ny prompt",
     "copyPrompt": "Kopiera prompt",
+    "copyFailed": "Kopiering misslyckades — klistra in manuellt",
     "imageCount": "Bilder:",
     "imageSize": "Storlek:",
     "generateButton": "✨ Generera",

@@ -59,6 +59,11 @@ export default function ImageGenerationPanel({
       .catch(() => {});
   }, []);
 
+  // Clear the elapsed timer if the component unmounts mid-generation
+  useEffect(() => {
+    return () => clearInterval(elapsedRef.current);
+  }, []);
+
   const generatePrompt = useCallback(async () => {
     if (!description) return;
     setPromptLoading(true);
@@ -211,7 +216,12 @@ export default function ImageGenerationPanel({
           )}
           <button
             type="button"
-            onClick={() => navigator.clipboard.writeText(prompt)}
+            onClick={() => {
+              navigator.clipboard.writeText(prompt).catch((err) => {
+                console.warn("[ImageGenerationPanel] clipboard write failed:", err);
+                showToast(t("admin.copyFailed"));
+              });
+            }}
             disabled={!prompt.trim()}
             className="px-2 py-1 rounded border text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40 whitespace-nowrap"
           >

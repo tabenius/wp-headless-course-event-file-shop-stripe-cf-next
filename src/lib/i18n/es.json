@@ -298,6 +298,7 @@
     "imagePromptPlaceholder": "Describe la imagen (o espera a que la IA genere un prompt)...",
     "regeneratePrompt": "↺ Regenerar prompt",
     "copyPrompt": "Copiar prompt",
+    "copyFailed": "Error al copiar — pegue manualmente",
     "imageCount": "Imágenes:",
     "imageSize": "Tamaño:",
     "generateButton": "✨ Generar",

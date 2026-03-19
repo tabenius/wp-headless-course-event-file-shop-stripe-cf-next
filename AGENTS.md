@@ -109,12 +109,6 @@ But here are natural areas of focus:
 4. Before touching a file the other agent recently committed, pull first.
 5. If you discover a bug or leave something half-done, note it at the top of the coop file with `TODO:` so the other agent doesn't step on it.
 
-### Document lock protocol
-
-- Before editing `AGENTS.md`, set `agents.lock` to `status: locked`, `holder: <your name>`, `updated: <ISO timestamp>` so Claude/Codex know the file is in use. Clear it back to `status: idle` once you are done.
-- Do the same for `claude+codex-coop.md` using `coop.lock`. Always check the lock file first and wait for the other agent to release it before editing.
-- Treat the lock file as the source of truth: when you notice a stale lock (e.g., still locked after a session), ask the other agent before overriding it.
-
 ### Shared-doc lock protocol (AGENTS.md and claude+codex-coop.md)
 
 Both agents edit the same two files. To prevent merge conflicts, use `docs.lock.pid` as an advisory lock before editing either file.
