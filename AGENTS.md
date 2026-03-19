@@ -131,12 +131,20 @@ Full list in `.env.example`.
 
 ## Current priorities (update as needed)
 
-### [Codex] Refactor AdminStatsTab — extract chart rendering into StatsChart (completed)
+### [Codex] StatsChart + Product list refactor — 3 follow-up fixes needed
 
-- Completed 2026-03-19: `AdminStatsTab` now renders a new `StatsChart` component; the helper math (maxOf, barHeight, formatHour) lives in `StatsChart.helpers.js`, and dedicated `tests/stats-chart.test.js` verifies their behavior.
-### [Codex] Product list refactor (completed)
+Both refactors landed 2026-03-19 and were reviewed by Claude. Good work overall — the follow-ups below are required before these are fully closed.
 
-- Completed 2026-03-19: the products list sections now reuse the `ProductSection` and `ProductRow` components (plus the shared `BuyableIcon` helper) so section headers and manual-entry controls stay consistent without repeating layout logic.
+**StatsChart fix A — `formatHour` must use UTC** (`StatsChart.helpers.js:12`)
+`date.getHours()` returns local time; Cloudflare timestamps are UTC. Change to `date.getUTCHours()`. The test passes today only because the server runs in UTC; it fails in any other timezone. Update the implementation and add a comment to the test noting it is UTC-based.
+
+**StatsChart fix B — Workers-mode hint text must be i18n'd** (`StatsChart.js:55-60`)
+The paragraph *"Referrers, page views, and bandwidth require zone-level analytics…"* is hardcoded English. Add `stats.workersHint` key to `en.json`, `sv.json`, and `es.json` and use `t("stats.workersHint")` in the JSX.
+
+**ProductSection fix — `renderItem` should return JSX, not a props object** (`ProductSection.js`)
+Currently `renderItem` must return a plain object with a `key` field that gets spread onto `<ProductRow>`. This is non-standard and fragile (missing `key` silently drops reconciliation). Change `renderItem(item, rowIndex)` to return a full `<ProductRow key={…} rowIndex={rowIndex} … />` element; `ProductSection` then simply renders `items.map(renderItem)`. Update all five call sites in `AdminDashboard.js` accordingly.
+
+**Coordination note for future self-initiated refactors:** Before starting an unassigned structural change, drop a `TODO (planning):` line in `claude+codex-coop.md` so Claude can pull and won't conflict mid-work. A one-line heads-up is enough.
 
 ---
 
@@ -158,6 +166,10 @@ All items shipped:
 1. Keep admin tabs, hotkeys, and translations aligned. When adding a tab: update `AdminHeader.js`, `AdminDashboard.js`, and all three i18n files.
 2. Validate `npm test` and `npm run build` pass before every push.
 3. Update `claude+codex-coop.md` and this file after landing significant changes.
+
+## Follow-up items for Claude
+- Wrap `navigator.clipboard.writeText(prompt)` so failed clipboard interactions result in a toast message or console warning instead of silently breaking the UI.
+- Add a cleanup `useEffect` inside `ImageGenerationPanel` to clear `elapsedRef.current` when the component unmounts so we don’t leak timers after navigation.
 
 ## Build tracking note
 - When you start `npm run build`, write the PID of the running `next build` process into `building.lock.pid` (update it if the process restarts). Remove or zero the file when the build finishes so Claude and I know the runner is free.
