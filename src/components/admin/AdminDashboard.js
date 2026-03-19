@@ -1649,16 +1649,90 @@ export default function AdminDashboard() {
 
       {/* ── Chat tab ── */}
       {activeTab === "chat" && (
-        <ChatPanel
-          chatMessages={chatMessages}
-          chatInput={chatInput}
-          setChatInput={setChatInput}
-          sendChat={sendChat}
-          rebuildIndex={rebuildIndex}
-          clearChat={clearChat}
-          chatLoading={chatLoading}
-          uploadBackend={uploadBackend}
-        />
+        <div className="grid grid-cols-2 gap-6 items-start">
+          <ChatPanel
+            chatMessages={chatMessages}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            sendChat={sendChat}
+            rebuildIndex={rebuildIndex}
+            clearChat={clearChat}
+            chatLoading={chatLoading}
+            uploadBackend={uploadBackend}
+          />
+          <div className="border rounded p-4 space-y-4 text-sm text-gray-300 bg-[#0e0018]">
+            <h3 className="font-semibold text-white">Example commands</h3>
+            {[
+              {
+                group: "Sales & revenue",
+                examples: [
+                  "sales today",
+                  "sales this week",
+                  "sales this month",
+                  "försäljning denna månad",
+                  "ventas hoy",
+                  "sales for user@example.com",
+                  "revenue total",
+                  "total intäkt",
+                ],
+              },
+              {
+                group: "Payments & receipts",
+                examples: [
+                  "payments for user@example.com",
+                  "best sellers",
+                  "bästsäljare",
+                  "más vendidos",
+                ],
+              },
+              {
+                group: "Refunds",
+                examples: [
+                  "refund pi_3abc123",
+                  "återbetala pi_3abc123",
+                  "reembolsar pi_3abc123",
+                ],
+              },
+              {
+                group: "Access control",
+                examples: [
+                  "who bought /course-name",
+                  "vem köpte /kursnamn",
+                  "quién compró /curso",
+                  "grant access user@example.com /course-name",
+                  "ge åtkomst user@example.com /kursnamn",
+                  "conceder acceso user@example.com /curso",
+                  "revoke access user@example.com /course-name",
+                  "ta bort åtkomst user@example.com /kursnamn",
+                  "revocar acceso user@example.com /curso",
+                ],
+              },
+              {
+                group: "Index",
+                examples: ["rebuild index", "bygg om index", "reindexar"],
+              },
+            ].map(({ group, examples }) => (
+              <div key={group}>
+                <p className="text-purple-300 font-medium mb-1">{group}</p>
+                <ul className="space-y-1">
+                  {examples.map((ex) => (
+                    <li key={ex}>
+                      <button
+                        type="button"
+                        className="text-left text-gray-400 hover:text-white font-mono text-xs"
+                        onClick={() => {
+                          setChatInput(ex);
+                        }}
+                      >
+                        {ex}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {uploadProgress && (

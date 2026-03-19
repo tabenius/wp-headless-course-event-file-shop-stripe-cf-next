@@ -206,6 +206,36 @@ export async function listAccessibleDigitalProductIds(email) {
   return [...new Set(user.productIds.map(normalizeProductId).filter(Boolean))];
 }
 
+export async function revokeDigitalAccess(productId, email) {
+  const safeProductId = normalizeProductId(productId);
+  const safeEmail = normalizeEmail(email);
+  if (!safeProductId || !safeEmail) return;
+
+  const state = await getState();
+  const user = state.users[safeEmail];
+  if (!user || !Array.isArray(user.productIds)) return;
+
+  state.users[safeEmail] = {
+    ...user,
+    productIds: user.productIds.filter((id) => id !== safeProductId),
+    updatedAt: new Date().toISOString(),
+  };
+  await saveState(state);
+}
+
+export async function listUsersWithProductAccess(productId) {
+  const safeProductId = normalizeProductId(productId);
+  if (!safeProductId) return [];
+  const state = await getState();
+  return Object.entries(state.users)
+    .filter(
+      ([, data]) =>
+        Array.isArray(data.productIds) &&
+        data.productIds.includes(safeProductId),
+    )
+    .map(([email]) => email);
+}
+
 export function getDigitalStorageInfo() {
   return shouldUseCloudflareBackend()
     ? { provider: "cloudflare-kv", key: getKvKey() }

@@ -12,6 +12,13 @@ import {
 } from "@/lib/cloudflareKv";
 import {
   IMAGE_SYSTEM_PROMPT,
+  handleSales,
+  handleWhoBought,
+  handleGrantAccess,
+  handleRevokeAccess,
+  handleRefund,
+  handleTopProducts,
+  handleRevenueTotal,
   handleProducts,
   handleAccess,
   handlePayments,
@@ -66,8 +73,15 @@ export async function POST(request) {
     const lower = message.toLowerCase();
     const origin = new URL(request.url).origin;
 
-    // ── Intent routing ──
+    // ── Intent routing (specific before general) ──
     for (const handler of [
+      handleWhoBought,
+      handleGrantAccess,
+      handleRevokeAccess,
+      handleRefund,
+      handleTopProducts,
+      handleRevenueTotal,
+      handleSales,
       handleProducts,
       handleAccess,
       handlePayments,

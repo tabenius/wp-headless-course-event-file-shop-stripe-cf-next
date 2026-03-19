@@ -13,29 +13,44 @@ function getStripe() {
   return new Stripe(key, { apiVersion: stripeVersion });
 }
 
-async function compilePayments(email, limit) {
+async function compilePayments(email, limit, fromTs) {
   const stripe = getStripe();
-  const intents = await stripe.paymentIntents.list({
-    limit,
-    expand: ["data.charges"],
-  });
-  const normalized = intents.data.map((pi) => {
-    const charge = pi.charges?.data?.[0];
-    return {
-      id: pi.id,
-      amount: pi.amount_received || pi.amount,
-      currency: pi.currency,
-      status: pi.status,
-      created: pi.created * 1000,
-      email: charge?.receipt_email || null,
-      receiptUrl: charge?.receipt_url || null,
-      receiptId: charge?.id,
-      description: charge?.description || pi.description || "",
-    };
-  });
-  if (!email) return normalized;
-  const lower = email.toLowerCase();
-  return normalized.filter((r) => (r.email || "").toLowerCase() === lower);
+  const listParams = { limit };
+  if (fromTs) listParams.created = { gte: fromTs };
+
+  let charges;
+  if (email) {
+    // Look up by customer email for reliable matching
+    const customers = await stripe.customers.list({
+      email: email.toLowerCase(),
+      limit: 5,
+    });
+    if (customers.data.length === 0) return [];
+    const all = await Promise.all(
+      customers.data.map((c) =>
+        stripe.charges.list({ customer: c.id, ...listParams }),
+      ),
+    );
+    charges = all.flatMap((r) => r.data);
+    charges.sort((a, b) => b.created - a.created);
+    charges = charges.slice(0, limit);
+  } else {
+    const result = await stripe.charges.list(listParams);
+    charges = result.data;
+  }
+
+  return charges.map((charge) => ({
+    id: charge.payment_intent || charge.id,
+    amount: charge.amount,
+    currency: charge.currency,
+    status: charge.status,
+    created: charge.created * 1000,
+    email:
+      charge.receipt_email || charge.billing_details?.email || email || null,
+    receiptUrl: charge.receipt_url || null,
+    receiptId: charge.id,
+    description: charge.description || "",
+  }));
 }
 
 export async function GET(request) {
@@ -46,7 +61,10 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email") || undefined;
     const limit = Math.min(Number(searchParams.get("limit") || 20), 100);
-    const payments = await compilePayments(email, limit);
+    const fromTs = searchParams.get("from")
+      ? Number(searchParams.get("from"))
+      : undefined;
+    const payments = await compilePayments(email, limit, fromTs);
     return NextResponse.json({ ok: true, payments: payments.slice(0, limit) });
   } catch (error) {
     console.error("admin payments error", error);
