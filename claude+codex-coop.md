@@ -11,6 +11,31 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 56)
+
+### Codex — leafy parallax clarity pass (less fog + black outlines)
+
+- Updated L-system foliage SVG generation in `TorusBanner` to add dark structural outlines:
+  - introduced outline pass for both branch and leaf paths (rendered before color strokes),
+  - added per-layer outline config (`outlineColor`, `branchOutlineWidth`, `leafOutlineWidth`, `outlineOpacity`).
+- Increased foliage legibility by raising branch/leaf stroke opacity across far/mid/near generated layers.
+- Reduced foggy appearance by retuning bush-layer CSS blending:
+  - increased layer alpha (`far 0.90`, `mid 0.96`, `near 1.0`),
+  - reduced translucent haze in gradient overlays so line structures remain crisp.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
+## 2026-03-19 (cont. 55)
+
+### Codex — trefoil smoothness + crossing cleanup pass
+
+- Refined trefoil mesh generation in `TorusBanner` for smoother continuity along the knot:
+  - split mesh density into separate axes (`CURVE_SEGMENTS = 72`, `RING_SEGMENTS = 24`) to increase longitudinal smoothness without over-thickening the tube ring.
+- Reduced self-contact artifacts at crossings by changing trefoil proportions:
+  - `TREFOIL_TUBE_RADIUS: 18 -> 10`,
+  - knot scales increased modestly (`XY 36->42`, `Y 31->36`, `Z 58->66`) so strands separate better visually.
+- Updated depth-shading normalization range for the new bounds (`GEOMETRY_DEPTH_RANGE: 220 -> 260`) to keep color falloff stable.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 54)
 
 ### Codex — leafy bush parallax switched to line-drawn L-system layers

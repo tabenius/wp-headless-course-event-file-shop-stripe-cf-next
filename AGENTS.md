@@ -199,6 +199,8 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: De-fogged the L-system leafy parallax by increasing foliage stroke opacity/contrast, adding black outline strokes around branches/leaves in generated SVG layers, and reducing haze in the per-layer gradient overlays.
+- **2026-03-19 (Codex)**: Smoothed the trefoil knot mesh by increasing longitudinal geometry resolution (`72x24`) and reduced tube thickness with adjusted knot scale (`tube radius 10`) to avoid visual self-sticking at crossings while keeping the same orange/cyan render style.
 - **2026-03-19 (Codex)**: Replaced gradient-blob bush parallax with procedural leaf drawings based on Lindenmayer-style branch grammar and line rendering, generating three deterministic SVG leaf layers (far/mid/near) reused as animated pendulum parallax backgrounds.
 - **2026-03-19 (Codex)**: Temporarily disabled torus rendering in Info-tab canvas and switched to a trefoil-knot tube mesh renderer (`24x24` granularity) while preserving the original torus geometry path in code behind a toggle.
 - **2026-03-19 (Codex)**: Temporarily disabled the Info-tab sine scroller via an explicit `ENABLE_SINE_SCROLLER` toggle in `TorusBanner`, preserving all scroller animation code paths and rendering a non-animated fallback line while disabled.

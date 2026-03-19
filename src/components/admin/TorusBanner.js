@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-const SEGMENTS = 24;
+const CURVE_SEGMENTS = 72;
+const RING_SEGMENTS = 24;
 const MAJOR_RADIUS = 104;
 const MINOR_RADIUS = 44;
-const TREFOIL_SCALE_XY = 36;
-const TREFOIL_SCALE_Y = 31;
-const TREFOIL_SCALE_Z = 58;
-const TREFOIL_TUBE_RADIUS = 18;
+const TREFOIL_SCALE_XY = 42;
+const TREFOIL_SCALE_Y = 36;
+const TREFOIL_SCALE_Z = 66;
+const TREFOIL_TUBE_RADIUS = 10;
 const CAMERA_DISTANCE = 420;
 const EDGE_COLOR = "#4bf7ff";
 const BASE_COLOR = { r: 236, g: 103, b: 41 };
@@ -126,10 +127,14 @@ function buildLeafBushLayerDataUri({
   leafSizeBase,
   branchColor,
   leafColor,
+  outlineColor,
   branchWidth,
   leafWidth,
+  branchOutlineWidth,
+  leafOutlineWidth,
   branchOpacity,
   leafOpacity,
+  outlineOpacity,
 }) {
   const rand = mulberry32(seed);
   const commands = expandLSystem("F", L_SYSTEM_RULES, iterations);
@@ -156,7 +161,7 @@ function buildLeafBushLayerDataUri({
     leaves += traced.leaves;
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><g fill="none" stroke="${branchColor}" stroke-width="${branchWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${branchOpacity}"><path d="${branches}"/></g><g fill="none" stroke="${leafColor}" stroke-width="${leafWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${leafOpacity}"><path d="${leaves}"/></g></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><g fill="none" stroke="${outlineColor}" stroke-width="${branchWidth + branchOutlineWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${outlineOpacity}"><path d="${branches}"/></g><g fill="none" stroke="${outlineColor}" stroke-width="${leafWidth + leafOutlineWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${outlineOpacity}"><path d="${leaves}"/></g><g fill="none" stroke="${branchColor}" stroke-width="${branchWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${branchOpacity}"><path d="${branches}"/></g><g fill="none" stroke="${leafColor}" stroke-width="${leafWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${leafOpacity}"><path d="${leaves}"/></g></svg>`;
   return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
 }
 
@@ -173,12 +178,12 @@ function normalize(v) {
   return { x: v.x / len, y: v.y / len, z: v.z / len };
 }
 
-const torusBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
-  const phi = (i / SEGMENTS) * Math.PI * 2;
+const torusBasePoints = Array.from({ length: CURVE_SEGMENTS }, (_, i) => {
+  const phi = (i / CURVE_SEGMENTS) * Math.PI * 2;
   const cosPhi = Math.cos(phi);
   const sinPhi = Math.sin(phi);
-  return Array.from({ length: SEGMENTS }, (_, j) => {
-    const theta = (j / SEGMENTS) * Math.PI * 2;
+  return Array.from({ length: RING_SEGMENTS }, (_, j) => {
+    const theta = (j / RING_SEGMENTS) * Math.PI * 2;
     const cosTheta = Math.cos(theta);
     const sinTheta = Math.sin(theta);
     return {
@@ -189,8 +194,8 @@ const torusBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
   });
 });
 
-const trefoilBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
-  const t = (i / SEGMENTS) * Math.PI * 2;
+const trefoilBasePoints = Array.from({ length: CURVE_SEGMENTS }, (_, i) => {
+  const t = (i / CURVE_SEGMENTS) * Math.PI * 2;
   const center = {
     x: TREFOIL_SCALE_XY * (Math.sin(t) + 2 * Math.sin(2 * t)),
     y: TREFOIL_SCALE_Y * (Math.cos(t) - 2 * Math.cos(2 * t)),
@@ -205,8 +210,8 @@ const trefoilBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
   const normal = normalize(cross(tangent, helper));
   const binormal = normalize(cross(tangent, normal));
 
-  return Array.from({ length: SEGMENTS }, (_, j) => {
-    const theta = (j / SEGMENTS) * Math.PI * 2;
+  return Array.from({ length: RING_SEGMENTS }, (_, j) => {
+    const theta = (j / RING_SEGMENTS) * Math.PI * 2;
     const cosTheta = Math.cos(theta);
     const sinTheta = Math.sin(theta);
     return {
@@ -223,7 +228,7 @@ const trefoilBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
   });
 });
 
-const GEOMETRY_DEPTH_RANGE = ENABLE_TREFOIL_KNOT ? 220 : MAJOR_RADIUS * 2;
+const GEOMETRY_DEPTH_RANGE = ENABLE_TREFOIL_KNOT ? 260 : MAJOR_RADIUS * 2;
 const activeBasePoints = ENABLE_TREFOIL_KNOT ? trefoilBasePoints : torusBasePoints;
 
 const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
@@ -237,10 +242,14 @@ const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   leafSizeBase: 2.9,
   branchColor: "#2a5b2d",
   leafColor: "#5f9644",
+  outlineColor: "#0a1509",
   branchWidth: 1.15,
   leafWidth: 0.95,
-  branchOpacity: 0.52,
-  leafOpacity: 0.46,
+  branchOutlineWidth: 0.95,
+  leafOutlineWidth: 0.8,
+  branchOpacity: 0.88,
+  leafOpacity: 0.82,
+  outlineOpacity: 0.78,
 });
 
 const MID_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
@@ -254,10 +263,14 @@ const MID_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   leafSizeBase: 3.5,
   branchColor: "#2f6a30",
   leafColor: "#6cab4c",
+  outlineColor: "#081308",
   branchWidth: 1.25,
   leafWidth: 1.05,
-  branchOpacity: 0.62,
-  leafOpacity: 0.57,
+  branchOutlineWidth: 1.05,
+  leafOutlineWidth: 0.85,
+  branchOpacity: 0.91,
+  leafOpacity: 0.87,
+  outlineOpacity: 0.82,
 });
 
 const NEAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
@@ -271,10 +284,14 @@ const NEAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   leafSizeBase: 3.9,
   branchColor: "#255127",
   leafColor: "#73b152",
+  outlineColor: "#050d05",
   branchWidth: 1.35,
   leafWidth: 1.15,
-  branchOpacity: 0.74,
-  leafOpacity: 0.68,
+  branchOutlineWidth: 1.15,
+  leafOutlineWidth: 0.95,
+  branchOpacity: 0.94,
+  leafOpacity: 0.9,
+  outlineOpacity: 0.86,
 });
 
 const FAR_BUSH_STYLE = { "--leafy-bush-layer": FAR_BUSH_LAYER_IMAGE };
@@ -343,10 +360,10 @@ export default function TorusBanner() {
       );
 
       const faces = [];
-      for (let i = 0; i < SEGMENTS; i += 1) {
-        const nextI = (i + 1) % SEGMENTS;
-        for (let j = 0; j < SEGMENTS; j += 1) {
-          const nextJ = (j + 1) % SEGMENTS;
+      for (let i = 0; i < CURVE_SEGMENTS; i += 1) {
+        const nextI = (i + 1) % CURVE_SEGMENTS;
+        for (let j = 0; j < RING_SEGMENTS; j += 1) {
+          const nextJ = (j + 1) % RING_SEGMENTS;
           const a = projected[i][j];
           const b = projected[nextI][j];
           const c = projected[nextI][nextJ];
@@ -490,13 +507,13 @@ export default function TorusBanner() {
           left: -8%;
           right: -8%;
           bottom: -10%;
-          opacity: 0.72;
+          opacity: 0.9;
           background-image:
             linear-gradient(
               180deg,
-              rgba(36, 87, 40, 0.08) 0%,
-              rgba(30, 92, 35, 0.42) 52%,
-              rgba(22, 73, 28, 0.64) 100%
+              rgba(34, 90, 37, 0.02) 0%,
+              rgba(28, 90, 33, 0.24) 52%,
+              rgba(20, 69, 25, 0.42) 100%
             ),
             var(--leafy-bush-layer);
           background-size:
@@ -517,13 +534,13 @@ export default function TorusBanner() {
           left: -9%;
           right: -9%;
           bottom: -14%;
-          opacity: 0.84;
+          opacity: 0.96;
           background-image:
             linear-gradient(
               180deg,
-              rgba(31, 90, 35, 0.06) 0%,
-              rgba(26, 87, 32, 0.52) 48%,
-              rgba(16, 58, 24, 0.82) 100%
+              rgba(28, 90, 33, 0.01) 0%,
+              rgba(24, 84, 31, 0.28) 48%,
+              rgba(14, 54, 22, 0.58) 100%
             ),
             var(--leafy-bush-layer);
           background-size:
@@ -545,13 +562,13 @@ export default function TorusBanner() {
           left: -10%;
           right: -10%;
           bottom: -20%;
-          opacity: 0.96;
+          opacity: 1;
           background-image:
             linear-gradient(
               180deg,
-              rgba(24, 74, 29, 0.02) 0%,
-              rgba(16, 58, 24, 0.63) 43%,
-              rgba(8, 34, 16, 0.92) 100%
+              rgba(22, 70, 28, 0) 0%,
+              rgba(14, 54, 22, 0.34) 43%,
+              rgba(7, 30, 14, 0.7) 100%
             ),
             var(--leafy-bush-layer);
           background-size:
