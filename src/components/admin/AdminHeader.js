@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { t, getLocale, setLocale } from "@/lib/i18n";
+import RagbazLogo from "./RagbazLogo";
 
 function getNavItems() {
   return [
@@ -79,31 +80,11 @@ export default function AdminHeader({ logoUrl }) {
               className="text-xl font-bold tracking-tight text-gray-900 flex items-baseline gap-1"
               aria-label="RAGBAZ Articulate StoreFront"
             >
-              <span
-                style={{
-                  fontFamily:
-                    "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')",
-                }}
-              >
-                RAGBAZ
-              </span>
-              <span
-                style={{
-                  fontFamily:
-                    "var(--font-merriweather, 'Merriweather', serif')",
-                }}
-              >
-                Articulate
-              </span>
-              <span
-                className="text-base font-normal text-gray-700"
-                style={{
-                  fontFamily:
-                    "var(--font-sans, 'Helvetica Neue', 'Inter', system-ui, sans-serif')",
-                }}
-              >
-                StoreFront
-              </span>
+              <RagbazLogo
+                color="currentColor"
+                className="items-baseline text-gray-900"
+                includeStoreFront
+              />
             </Link>
             {process.env.NEXT_PUBLIC_BUILD_TIME && (
               <span className="text-[9px] text-gray-400 leading-tight pt-0.5">
