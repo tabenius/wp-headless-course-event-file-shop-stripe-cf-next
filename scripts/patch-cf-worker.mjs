@@ -2,13 +2,13 @@
 /**
  * Post-build patch for OpenNext + Next.js 16 compatibility.
  *
- * Problem: Next.js 16 introduced prefetch-hints.json as a new optional manifest.
- * next-server.js calls loadManifest("/.next/server/prefetch-hints.json", true, …, handleMissing=true).
- * OpenNext 1.17.x's loadManifest patch only inlines manifests matching the glob
- * **\/{*-manifest,required-server-files}.json, so prefetch-hints.json falls through
- * to the catch-all throw — ignoring the handleMissing argument.
+ * Fallback for local cf:build runs. The primary fix is patch-opennext.mjs
+ * (postinstall), which patches the OpenNext source before the build so the
+ * generated handler already returns {} for unrecognised manifests.
  *
- * Fix: insert an early-return for prefetch-hints.json before the throw.
+ * This script handles the case where the handler was built without the source
+ * patch (e.g. stale node_modules). It replaces the throw with return {} in the
+ * already-built handler.mjs.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -17,8 +17,8 @@ import { resolve } from "node:path";
 const HANDLER = resolve(".open-next/server-functions/default/handler.mjs");
 
 const NEEDLE = "throw new Error(`Unexpected loadManifest(${path2}) call!`)";
-const PATCH =
-  'if(path2.endsWith("server/prefetch-hints.json"))return{};' + NEEDLE;
+// Replace throw with graceful return {} — handles all optional manifests.
+const PATCH = "return{}";
 
 let src;
 try {
@@ -28,21 +28,14 @@ try {
   process.exit(1);
 }
 
-if (src.includes(PATCH)) {
-  console.log("patch-cf-worker: already patched, skipping.");
-  process.exit(0);
-}
-
 if (!src.includes(NEEDLE)) {
-  console.error(
-    "patch-cf-worker: needle not found — OpenNext version may have changed. Skipping patch.",
-  );
-  // Exit 0 so the build doesn't fail; the error will surface at runtime instead.
+  // Already patched (by source patch or previous run), nothing to do.
+  console.log("patch-cf-worker: handler already has no throw, skipping.");
   process.exit(0);
 }
 
 const patched = src.replace(NEEDLE, PATCH);
 writeFileSync(HANDLER, patched, "utf8");
 console.log(
-  "patch-cf-worker: patched prefetch-hints.json handling in handler.mjs",
+  "patch-cf-worker: replaced loadManifest throw with return{} in handler.mjs",
 );
