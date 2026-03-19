@@ -12,13 +12,16 @@ export default function AdminStorageTab({
 }) {
   const [showSecret, setShowSecret] = useState(false);
   const [copiedField, setCopiedField] = useState("");
-  const isCloudflare =
-    Boolean(process.env.CF_ACCOUNT_ID) ||
-    Boolean(process.env.CLOUDFLARE_ACCOUNT_ID) ||
-    Boolean(process.env.CF_API_TOKEN);
-  const showR2Docs = isCloudflare || uploadInfo?.r2;
-  const showS3Docs = !isCloudflare && uploadInfo?.s3;
   const clientDetails = uploadInfoDetails || {};
+  const backendMode = (() => {
+    if (uploadBackend === "r2" || uploadBackend === "s3") return uploadBackend;
+    if (clientDetails.isR2) return "r2";
+    if (uploadInfo?.r2) return "r2";
+    if (uploadInfo?.s3) return "s3";
+    return null;
+  })();
+  const showR2Docs = backendMode === "r2";
+  const showS3Docs = backendMode === "s3";
   const remotePath = clientDetails.bucket ? `/${clientDetails.bucket}` : "";
   const protocol = "S3";
   const pathStyleValue =

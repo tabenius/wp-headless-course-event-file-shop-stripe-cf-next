@@ -660,3 +660,20 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Moved `const [uploadInfoDetails, setUploadInfoDetails] = useState(null);` up into the primary state-hook block before `loadUploadInfo` callback definition.
 - Result:
   - No remaining source-level TDZ errors under the strict `no-use-before-define` check (excluding `.next` compiled artifacts).
+
+---
+
+## 2026-03-19 (cont. 21)
+
+### Codex — Storage docs-mode bug fix (client env misuse)
+
+- Bug identified: `AdminStorageTab` used server-only `process.env.*` inside a client component to infer Cloudflare mode (`isCloudflare`), which can resolve incorrectly in the browser and show mismatched docs links.
+- Fix:
+  - Removed client-side `process.env` checks.
+  - Added deterministic `backendMode` resolution from runtime state:
+    - `uploadBackend` selection (primary)
+    - `uploadInfoDetails.isR2` (API response)
+    - `uploadInfo.r2/s3` capability fallback
+  - `showR2Docs` / `showS3Docs` now map strictly to resolved backend mode.
+- Validation:
+  - `npx eslint src/components/admin/AdminStorageTab.js`

@@ -198,6 +198,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Fixed a Storage docs-selection bug by removing server-only env checks from the client component and deriving R2/S3 documentation links from selected backend + backend response (`uploadBackend`, `uploadInfoDetails.isR2`, `uploadInfo`), preventing wrong docs from showing in browser runtime.
 - **2026-03-19 (Codex)**: Performed an explicit TDZ sweep on source files (`no-use-before-define` with variable/class checks, excluding build artifacts) and fixed one additional real risk in `AdminDashboard` by moving `uploadInfoDetails` state declaration above `loadUploadInfo` usage.
 - **2026-03-19 (Codex)**: Fixed admin runtime crash (`Cannot access '<minified>' before initialization`) by resolving a temporal-dead-zone bug in `AdminDashboard`: `runHealthCheck` is now declared before the effect that depends on it. Also adjusted header brand spacing so `ARTICULATE STOREFRONT` no longer overlaps `RAGBAZ`.
 - **2026-03-19 (Codex)**: Switched course-access backend defaults to Cloudflare KV (`COURSE_ACCESS_BACKEND=cloudflare-kv` in `.env.example` and `wrangler.jsonc`), made upload-info backend-aware (`/api/admin/upload-info?backend=...`), and redesigned the Storage tab to remove repeated R2/S3 credential blocks in favor of one canonical checklist with copy actions.
