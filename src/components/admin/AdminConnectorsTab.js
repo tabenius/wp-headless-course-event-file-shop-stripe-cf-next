@@ -9,7 +9,6 @@ export default function AdminConnectorsTab({
   webhookUrl,
   ragbazDownloadUrl,
   runHealthCheck,
-  debugLogs,
 }) {
   useEffect(() => {
     console.info("[AdminConnectorsTab] mounted");
@@ -57,30 +56,6 @@ export default function AdminConnectorsTab({
         </ul>
       ) : (
         <p className="text-sm text-gray-600">{t("admin.healthCheckDesc")}</p>
-      )}
-
-      {debugLogs?.length > 0 && (
-        <div className="bg-gray-50 border rounded p-3 text-xs space-y-1">
-          <div className="font-semibold">Debug logs (latest)</div>
-          {debugLogs.map((logItem) => (
-            <div
-              key={`${logItem.reqId}-${logItem.ts}`}
-              className="flex flex-wrap gap-2"
-            >
-              <span className="text-gray-500">
-                {new Date(logItem.ts).toLocaleTimeString()}
-              </span>
-              <code className="bg-white border rounded px-1">
-                {logItem.path}
-              </code>
-              <span>Status {logItem.status}</span>
-              <span>{logItem.duration} ms</span>
-              <code className="bg-white border rounded px-1">
-                {logItem.reqId}
-              </code>
-            </div>
-          ))}
-        </div>
       )}
 
       {webhookUrl && (

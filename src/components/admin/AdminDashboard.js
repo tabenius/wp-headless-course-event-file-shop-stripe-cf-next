@@ -1392,8 +1392,10 @@ export default function AdminDashboard() {
         <div>Alt+/ Search • Alt+L Logout</div>
       </div>
       {/* ── Stats tab ── */}
-      {activeTab === 'stats' && (
-        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}>
+      {activeTab === "stats" && (
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
           <AdminStatsTab
             wcProducts={wcProducts}
             wpCourses={wpCourses}
@@ -1408,20 +1410,21 @@ export default function AdminDashboard() {
       )}
 
       {/* ── Health tab ── */}
-      {activeTab === 'health' && (
-        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}>
+      {activeTab === "health" && (
+        <Suspense
+          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+        >
           <AdminConnectorsTab
             healthChecks={healthChecks}
             healthLoading={healthLoading}
             webhookUrl={webhookUrl}
             ragbazDownloadUrl={ragbazDownloadUrl}
             runHealthCheck={runHealthCheck}
-            debugLogs={debugLogs}
           />
         </Suspense>
       )}
 
-            {/* ── Unified Products & Access tab ── */}
+      {/* ── Unified Products & Access tab ── */}
       {activeTab === "products" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
@@ -1578,6 +1581,7 @@ export default function AdminDashboard() {
             triggerDeploy={triggerDeploy}
             clientLogs={clientLogs}
             setClientLogs={setClientLogs}
+            debugLogs={debugLogs}
           />
         </Suspense>
       )}

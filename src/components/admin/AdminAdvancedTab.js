@@ -27,6 +27,7 @@ export default function AdminAdvancedTab({
   triggerDeploy,
   clientLogs,
   setClientLogs,
+  debugLogs,
 }) {
   return (
     <div className="border rounded p-5 space-y-6">
@@ -357,6 +358,37 @@ export default function AdminAdvancedTab({
           <p className="text-xs text-gray-400">{t("admin.commitsLoading")}</p>
         ) : null}
       </div>
+
+      {/* ── Server request log ── */}
+      {debugLogs?.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-gray-700">
+            Recent requests
+          </h3>
+          <div className="bg-gray-900 text-gray-100 rounded p-3 font-mono text-xs space-y-1 max-h-48 overflow-auto">
+            {debugLogs.map((logItem) => (
+              <div
+                key={`${logItem.reqId}-${logItem.ts}`}
+                className="flex flex-wrap gap-2"
+              >
+                <span className="text-gray-500">
+                  {new Date(logItem.ts).toLocaleTimeString()}
+                </span>
+                <code className="text-yellow-400">{logItem.path}</code>
+                <span
+                  className={
+                    logItem.status >= 400 ? "text-red-400" : "text-green-400"
+                  }
+                >
+                  {logItem.status}
+                </span>
+                <span className="text-gray-400">{logItem.duration}ms</span>
+                <code className="text-gray-600">{logItem.reqId}</code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Debug log panel ── */}
       <DebugLogPanel clientLogs={clientLogs} setClientLogs={setClientLogs} />
