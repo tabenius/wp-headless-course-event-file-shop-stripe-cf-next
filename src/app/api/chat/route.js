@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { embedTexts, chatWithContext } from "@/lib/ai";
 import { requireAdmin } from "@/lib/adminRoute";
-import { buildIndex, cosine } from "@/lib/chat/rag";
+import { buildIndex, cosine, getIndexedItems } from "@/lib/chat/rag";
 import { detectLanguage } from "@/lib/chat/detect";
 import {
   saveChatHistory,
@@ -19,6 +19,7 @@ import {
   handleRefund,
   handleTopProducts,
   handleRevenueTotal,
+  handleListContent,
   handleProducts,
   handleAccess,
   handlePayments,
@@ -81,6 +82,7 @@ export async function POST(request) {
       handleRefund,
       handleTopProducts,
       handleRevenueTotal,
+      handleListContent,
       handleSales,
       handleProducts,
       handleAccess,
@@ -98,6 +100,33 @@ export async function POST(request) {
         { ok: false, error: "No content available" },
         { status: 503 },
       );
+
+    // ── Rebuild summary ──
+    if (force) {
+      const indexed = getIndexedItems();
+      const byKind = {};
+      for (const item of indexed) {
+        if (item.kind === "manual") continue;
+        (byKind[item.kind] = byKind[item.kind] || []).push(item);
+      }
+      const lines = Object.entries(byKind).map(([kind, items]) => {
+        const rows = items.map((i) => `  - ${i.title} (${i.uri})`).join("\n");
+        return `**${kind}s** (${items.length})\n${rows}`;
+      });
+      const answer = `Index rebuilt — ${indexed.filter((i) => i.kind !== "manual").length} items indexed:\n\n${lines.join("\n\n")}`;
+      const updatedHistory = [
+        ...chatHistory,
+        { role: "user", content: message },
+        { role: "assistant", content: answer },
+      ].slice(-40);
+      await saveChatHistory(historyKey, updatedHistory);
+      return NextResponse.json({
+        ok: true,
+        answer,
+        sources: [],
+        history: updatedHistory,
+      });
+    }
 
     const qEmbed = await embedTexts([message]);
     const scores = index.map((c) => ({

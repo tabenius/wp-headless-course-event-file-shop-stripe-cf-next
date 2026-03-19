@@ -41,6 +41,30 @@ function formatCents(cents, currency) {
   return `${(cents / 100).toFixed(2)} ${(currency || "SEK").toUpperCase()}`;
 }
 
+// ── Content type listing map (EN / SV / ES) ──
+const CONTENT_TYPES = [
+  {
+    type: "pages",
+    re: /list\s*(all\s*)?pages|visa\s*(alla\s*)?sidor|listar\s*(todas\s*(las\s*)?)?p[aá]ginas/i,
+  },
+  {
+    type: "posts",
+    re: /list\s*(all\s*)?posts?|visa\s*(alla\s*)?inlägg|listar\s*(todos\s*(los\s*)?)?art[ií]culos/i,
+  },
+  {
+    type: "events",
+    re: /list\s*(all\s*)?events?|visa\s*(alla\s*)?evenemang|listar\s*(todos\s*(los\s*)?)?eventos/i,
+  },
+  {
+    type: "courses",
+    re: /list\s*(all\s*)?courses?|visa\s*(alla\s*)?kurser|listar\s*(todos\s*(los\s*)?)?cursos/i,
+  },
+  {
+    type: "products",
+    re: /list\s*(all\s*)?products?|visa\s*(alla\s*)?produkter|listar\s*(todos\s*(los\s*)?)?productos/i,
+  },
+];
+
 // ── Multilingual matchers (EN / SV / ES) ──
 const RE_SALES = /försäljning|intäkt|omsättning|ventas|ingresos|sales|revenue/i;
 const RE_TODAY = /idag|hoy|today/i;
@@ -512,6 +536,41 @@ export async function handlePayments(message, lower, request, origin) {
     answer: `Payments${email ? ` for ${email}` : ""}:\n\n${table}`,
     sources: [],
   });
+}
+
+export async function handleListContent(message, lower, request, origin) {
+  const match = CONTENT_TYPES.find(({ re }) => re.test(message));
+  if (!match) return null;
+  const fetchAdminJson = makeFetch(request, origin);
+  try {
+    const json = await fetchAdminJson(`/api/admin/content?type=${match.type}`);
+    const items = json.items || [];
+    if (items.length === 0) {
+      return NextResponse.json({
+        ok: true,
+        answer: `No ${match.type} found.`,
+        sources: [],
+      });
+    }
+    const rows = items
+      .map((i) => `- **${i.title}** — ${i.uri || "no URI"}`)
+      .join("\n");
+    return NextResponse.json({
+      ok: true,
+      answer: `${match.type.charAt(0).toUpperCase() + match.type.slice(1)} (${items.length}):\n${rows}`,
+      sources: items.map((i) => ({
+        uri: i.uri,
+        title: i.title,
+        kind: match.type.replace(/s$/, ""),
+      })),
+    });
+  } catch (err) {
+    return NextResponse.json({
+      ok: true,
+      answer: `Failed to list ${match.type}: ${err.message}`,
+      sources: [],
+    });
+  }
 }
 
 export async function handleImageGen(message, lower, request, origin) {

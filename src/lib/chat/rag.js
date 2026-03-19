@@ -6,7 +6,7 @@ import { chunkText, cosine } from "./rag-utils";
 
 export { chunkText, cosine } from "./rag-utils";
 
-export const INDEX_CACHE = { ts: 0, chunks: [] };
+export const INDEX_CACHE = { ts: 0, chunks: [], indexed: [] };
 export const CACHE_TTL_MS = 10 * 60 * 1000;
 
 export async function buildIndex(force = false) {
@@ -94,5 +94,26 @@ export async function buildIndex(force = false) {
     embedding: embeddings[i],
   }));
   INDEX_CACHE.ts = now;
+
+  // Deduplicated list of indexed items for the rebuild summary
+  const seen = new Set();
+  INDEX_CACHE.indexed = [];
+  for (const chunk of chunks) {
+    const key = `${chunk.kind}:${chunk.uri}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      INDEX_CACHE.indexed.push({
+        kind: chunk.kind,
+        title: chunk.title,
+        uri: chunk.uri,
+      });
+    }
+  }
+
   return INDEX_CACHE.chunks;
+}
+
+/** Return the deduplicated index manifest (populated after first buildIndex call). */
+export function getIndexedItems() {
+  return INDEX_CACHE.indexed;
 }

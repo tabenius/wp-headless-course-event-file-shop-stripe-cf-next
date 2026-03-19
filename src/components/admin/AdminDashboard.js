@@ -1858,6 +1858,21 @@ export default function AdminDashboard() {
                 ],
               },
               {
+                group: "Content",
+                examples: [
+                  "list all pages",
+                  "visa alla sidor",
+                  "list all posts",
+                  "visa alla inlägg",
+                  "list all events",
+                  "visa alla evenemang",
+                  "list all courses",
+                  "visa alla kurser",
+                  "list all products",
+                  "visa alla produkter",
+                ],
+              },
+              {
                 group: "Index",
                 examples: ["rebuild index", "bygg om index", "reindexar"],
               },
