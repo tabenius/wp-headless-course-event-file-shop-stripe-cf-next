@@ -297,6 +297,7 @@
     "aiImagesTitle": "AI-bilder",
     "imagePromptPlaceholder": "Beskriv bilden (eller vänta på att AI genererar en prompt)...",
     "regeneratePrompt": "↺ Generera ny prompt",
+    "copyPrompt": "Kopiera prompt",
     "imageCount": "Bilder:",
     "imageSize": "Storlek:",
     "generateButton": "✨ Generera",

@@ -297,6 +297,7 @@
     "aiImagesTitle": "AI Images",
     "imagePromptPlaceholder": "Describe the image (or wait for AI to generate a prompt)...",
     "regeneratePrompt": "↺ Regenerate prompt",
+    "copyPrompt": "Copy prompt",
     "imageCount": "Images:",
     "imageSize": "Size:",
     "generateButton": "✨ Generate",
