@@ -749,10 +749,52 @@ export default function AdminDashboard() {
     [tickets, selectedTicketId],
   );
 
+  async function rebuildIndex() {
+    setChatLoading(true);
+    setChatMessages((prev) => [
+      ...prev,
+      { role: "user", content: "rebuild index" },
+    ]);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "rebuild index", rebuild: true }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok)
+        throw new Error(json?.error || "Rebuild failed");
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: json.answer || "Index rebuilt.",
+          sources: json.sources || [],
+        },
+      ]);
+    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: err.message || "Rebuild failed",
+          sources: [],
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
   async function sendChat() {
     if (!chatInput.trim()) return;
     const message = chatInput.trim();
+    const isRebuild = /^rebuild\s+index$/i.test(message);
     setChatInput("");
+    if (isRebuild) {
+      await rebuildIndex();
+      return;
+    }
     const history = [...chatMessages, { role: "user", content: message }];
     setChatMessages(history);
     setChatLoading(true);
@@ -1607,6 +1649,7 @@ export default function AdminDashboard() {
           chatInput={chatInput}
           setChatInput={setChatInput}
           sendChat={sendChat}
+          rebuildIndex={rebuildIndex}
           clearChat={clearChat}
           chatLoading={chatLoading}
           uploadBackend={uploadBackend}

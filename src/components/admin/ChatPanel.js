@@ -9,6 +9,7 @@ export default function ChatPanel({
   chatInput,
   setChatInput,
   sendChat,
+  rebuildIndex,
   clearChat,
   chatLoading,
   uploadBackend,
@@ -26,18 +27,29 @@ export default function ChatPanel({
           <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
           <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
         </div>
-        {chatMessages.length > 0 && (
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() =>
-              window.confirm(t("chat.clearConfirm")) && clearChat()
-            }
+            onClick={rebuildIndex}
             disabled={chatLoading}
-            className="shrink-0 text-xs text-gray-400 hover:text-red-500 disabled:opacity-50 mt-1"
+            className="shrink-0 text-xs text-purple-400 hover:text-purple-200 disabled:opacity-50 mt-1"
+            title="Force-rebuild the RAG search index from site content"
           >
-            {t("chat.clear")}
+            Rebuild index
           </button>
-        )}
+          {chatMessages.length > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                window.confirm(t("chat.clearConfirm")) && clearChat()
+              }
+              disabled={chatLoading}
+              className="shrink-0 text-xs text-gray-400 hover:text-red-500 disabled:opacity-50 mt-1"
+            >
+              {t("chat.clear")}
+            </button>
+          )}
+        </div>
       </div>
       <div className="space-y-3 max-h-[28rem] overflow-auto border rounded p-3 bg-white">
         {chatMessages.length === 0 ? (
