@@ -75,7 +75,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **i18n**: Updated `stats.workersHint` in EN/SV/ES.
 - **Bugfix**: `formatHour` now uses `getUTCHours()` for Cloudflare UTC timestamps.
 - **Refactor**: `ProductSection.renderItem` now returns JSX directly.
- - **Stripe/Sales Review**: Confirmed `/api/admin/payments` limit param can become `NaN` (non-numeric query) and that the support tab still hands Stripe `payment_intent` IDs instead of the charge ID when downloading receipts. Claude, please adjust the limit sanitization to default to 20 and clamp 1‑100 before calling `compilePayments`, and ensure the support tab passes `receiptId`/charge IDs to `downloadReceipt`.
+- **Stripe/Sales Review**: Confirmed `/api/admin/payments` limit param can become `NaN` (non-numeric query) and that the support tab still hands Stripe `payment_intent` IDs instead of the charge ID when downloading receipts. Claude, please adjust the limit sanitization to default to 20 and clamp 1‑100 before calling `compilePayments`, and ensure the support tab passes `receiptId`/charge IDs to `downloadReceipt`.
 
 ### Claude
 
@@ -154,11 +154,21 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 ---
 
+---
+
+## 2026-03-19 (cont. 3)
+
+### Claude — Stripe fix, Sales tab, Ctrl+Alt hotkeys, type column
+
+- **Stripe self-fetch bug fixed**: `intents.js` was doing HTTP self-fetch to `/api/admin/payments`; on Stripe error the route returned non-JSON (HTML 500), causing `makeFetch` to throw a misleading "Failed to load /api/admin/payments" error in chat. Fix: extracted `getStripe()` + `compilePayments()` to `src/lib/stripePayments.js` and imported directly in `intents.js` — no more internal HTTP round-trip. `route.js` also updated to use the shared module and now surfaces `error.message` instead of a generic string.
+- **Sales tab**: New `AdminSalesTab.js` with client-side date filter (All time / Month / Week / Today), email filter, revenue summary by currency, payment table, and two distinct empty states (no payments in date range vs no Stripe data at all). Lazy-loaded in `AdminDashboard`. Nav item added to `AdminHeader`.
+- **Ctrl+Alt hotkeys**: Changed from `e.altKey` to `e.altKey && e.ctrlKey` throughout. Tab map updated to include Sales at position 4. Shortcut panel labels updated to `^⌥` notation.
+- **Type column in Access & Pricing**: Replaced four IIFE-grouped sections with a single flat sortable list. Compact coloured type badges (WC/LP/EV/SH/URI) per row. Three clickable column headers (Type / Name / Status) toggle sort direction. Filter pill label/count pattern fixed so i18n text and dynamic count are correctly separated.
+- **S3/R2 secret key**: Added `secretKey` to `/api/admin/upload-info` response. `AdminAdvancedTab` shows the key with a show/hide toggle (masked by default).
+- **Code review verification**: All five bugs from the Mistral session review confirmed resolved — `cloudflareKv.js` exports intact, `requireAdmin` guard correct, no duplicate `const` in `ChatPanel.js`, no empty-POST history load, `.catch()` on clipboard present.
+- All i18n keys added to en/sv/es.
+
 ## Open Questions
 
-- Should we implement streaming responses for the chat feature? (Requires Cloudflare streaming support.)
-- Should we add a "Copy Answer" button for individual chat messages? ← copy buttons already exist on assistant messages (via ChatMessage.js)
-
-### Dead-link finder note
-
-- Proposal for Claude: build the requested dead-link finder by scanning rendered `<a href>` anchors, classifying them (internal / pseudo-external / external), and checking their reachability, then present the status in a new admin panel. This complements the AI chat data and lets us surface broken links quickly.
+- **Streaming chat**: Good UX improvement (token-by-token rendering). Deferred — client wants a robust shop shipped first. Architecture: `ReadableStream` on CF Workers + Mistral `stream: true`, defer `saveChatHistory` until stream end.
+- **Dead-link finder**: Scan `<a href>` anchors, classify (internal/anchor/external), HEAD-check externals with per-domain concurrency cap + 3s timeout, present in a new admin panel. Parked for later.
