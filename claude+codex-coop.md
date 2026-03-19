@@ -5,8 +5,10 @@
 DONE [P0 | Very High]: Image generation runtime reliability — `/api/admin/generate-image` now returns classified diagnostics (`code`, `hint`, `requestId`) with timeout handling, provider error classification, partial-success warnings, and improved admin toast reporting.
 DONE [P0 | Very High]: Receipt PDF validity — Stripe receipt proxy now enforces HTTPS Stripe-host allowlist, verifies `%PDF`, traces response provenance (status/content-type/final URL/elapsed), extracts embedded PDF URLs from HTML wrappers, and falls back to invoice PDF URLs.
 DONE [P1 | High]: VAT/Moms completion across all product sources — per-item VAT override persists through admin save/API/store/WordPress backend, checkout metadata now carries VAT, and sales VAT/net use tax-inclusive math with metadata/product/category VAT precedence.
-TODO [P2 | Medium]: Welcome story data realism — replace the image prompt generator mock slide with live admin image-generator state (with safe read-only fallback when APIs are unavailable).
-TODO [P2 | Medium]: Dead-link finder panel — index `<a href>` links, classify internal vs pseudo-external (`xtas.nu`) vs external, and report reachability with clear remediation hints.
+DONE [P2 | Medium]: Welcome story data realism — replaced the mock image-generator slide with live quota + latest-run snapshot state and a read-only fallback when live API state is unavailable.
+DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a href>` extraction + internal/pseudo-external/external classification + reachability checks) and surfaced it in Support with filters and source traces.
+TODO [P3 | Medium]: Documentation UX pass — add GUI images alongside key sections, reorder docs by average-user relevance, and sync wording with current tab names/flows.
+TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
 ## 2026-03-19 (cont. 11)
 
@@ -21,6 +23,27 @@ TODO [P2 | Medium]: Dead-link finder panel — index `<a href>` links, classify 
 - **Verification pass**:
   - `npm run lint` passes with only existing non-blocking `@next/next/no-img-element` warnings in admin image components.
   - `npm test` passes all 15 suites.
+
+## 2026-03-19 (cont. 12)
+
+### Codex — P2 implementation (live welcome image state + dead-link finder)
+
+- **Welcome image slide realism**:
+  - Added shared snapshot storage helper (`src/lib/adminImageGenerationState.js`) and tests.
+  - Image generation panel now persists latest run metadata (prompt, size, count, status, generated count, request id) and emits `admin:imageSnapshotUpdated`.
+  - Welcome story image slide now shows live quota from `/api/admin/generate-image`, latest run snapshot, and a clear read-only fallback message when API state is unavailable.
+- **Dead-link finder**:
+  - Added link extraction/classification helpers (`src/lib/deadLinks.js`) with tests.
+  - Added `/api/admin/dead-links` scanner route:
+    - indexes anchor links from posts/pages/events/courses/products,
+    - classifies links as internal / pseudo-external (`xtas.nu`) / external (+ invalid/unsupported),
+    - runs bounded reachability checks with timeout and concurrency control.
+  - Added dead-link panel to Support tab with:
+    - totals, filters, rescan action,
+    - status badges (reachable/broken/unchecked/skipped),
+    - pseudo-external translation path hints and source references.
+- **i18n sync**:
+  - Added EN/SV/ES keys for new welcome live-state text and dead-link panel UI.
 
 ## 2026-03-19 (cont. 10)
 

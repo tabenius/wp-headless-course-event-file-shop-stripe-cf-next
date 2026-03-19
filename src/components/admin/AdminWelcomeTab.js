@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
+import { readImageGenerationSnapshot } from "@/lib/adminImageGenerationState";
 
 const IMPRESS_SCRIPT_ID = "impress-js-1.1.0";
 const BASE_SLIDE_WIDTH = 940;
@@ -78,6 +79,13 @@ function MenuShortcutHint() {
       </kbd>
     </div>
   );
+}
+
+function formatSnapshotTime(isoString) {
+  if (!isoString) return "—";
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("sv-SE");
 }
 
 function loadImpressScript(onReady) {
@@ -425,73 +433,178 @@ function ProductsMockScreen() {
   );
 }
 
-function ImagePromptMockScreen() {
-  const chips = ["cinematic", "minimal", "swedish", "book cover", "soft light"];
+function ImagePromptLiveScreen() {
+  const [quota, setQuota] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [snapshot, setSnapshot] = useState(null);
+
+  const refreshSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return;
+    setSnapshot(readImageGenerationSnapshot(window.localStorage));
+  }, []);
+
+  useEffect(() => {
+    refreshSnapshot();
+    if (typeof window === "undefined") return undefined;
+    function onSnapshotUpdate() {
+      refreshSnapshot();
+    }
+    window.addEventListener("admin:imageSnapshotUpdated", onSnapshotUpdate);
+    window.addEventListener("storage", onSnapshotUpdate);
+    return () => {
+      window.removeEventListener("admin:imageSnapshotUpdated", onSnapshotUpdate);
+      window.removeEventListener("storage", onSnapshotUpdate);
+    };
+  }, [refreshSnapshot]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadQuota() {
+      setLoading(true);
+      setLoadError("");
+      try {
+        const res = await fetch("/api/admin/generate-image");
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || "image_state_unavailable");
+        }
+        if (!cancelled) {
+          setQuota(json.quota || null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(String(error?.message || "image_state_unavailable"));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+    loadQuota();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const fallbackMode = !loading && (Boolean(loadError) || !quota);
+  const used = Number.isFinite(quota?.used) ? quota.used : 0;
+  const limit = Number.isFinite(quota?.limit) ? quota.limit : 0;
+  const remaining = Number.isFinite(quota?.remaining) ? quota.remaining : 0;
+  const progressPercent = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const promptPreview = snapshot?.prompt
+    ? snapshot.prompt.slice(0, 220)
+    : "";
+
   return (
     <div className="h-full rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-pink-100 p-5 shadow-xl">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">
-            AI image prompt generator
+            {t("admin.welcomeImageLiveTitle", "AI image generator status")}
           </h3>
           <p className="text-xs text-gray-700">
-            Draft product visuals from intent-aware prompt presets.
+            {fallbackMode
+              ? t(
+                  "admin.welcomeImageReadOnlyHint",
+                  "Read-only fallback is active. Open Products to generate images.",
+                )
+              : t(
+                  "admin.welcomeImageLiveHint",
+                  "Live state from the admin image generator quota and latest run snapshot.",
+                )}
           </p>
         </div>
-        <span className="rounded-full border border-fuchsia-300 bg-fuchsia-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-800">
-          mock
+        <span
+          className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+            fallbackMode
+              ? "border-amber-300 bg-amber-100 text-amber-900"
+              : "border-emerald-300 bg-emerald-100 text-emerald-900"
+          }`}
+        >
+          {fallbackMode
+            ? t("admin.welcomeImageReadOnlyBadge", "read-only fallback")
+            : t("admin.welcomeImageLiveBadge", "live")}
         </span>
       </div>
       <div className="mt-4 grid h-[255px] grid-cols-12 gap-3">
         <div className="col-span-7 rounded-xl border border-fuchsia-200 bg-white p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-fuchsia-800">
-            Prompt editor
+            {t("admin.welcomeImageQuotaTitle", "Quota")}
           </p>
-          <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs text-gray-700">
-            Create a moody 4:5 hero image for the course &quot;AI i praktiken&quot;,
-            with handwritten notes, nordic desk, and warm dusk lighting.
-          </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {chips.map((chip) => (
-              <span
-                key={chip}
-                className="rounded-full border border-fuchsia-200 bg-fuchsia-50 px-2 py-0.5 text-[10px] font-medium text-fuchsia-700"
-              >
-                {chip}
-              </span>
-            ))}
-          </div>
+          {loading ? (
+            <div className="mt-3 space-y-2">
+              <div className="h-3 w-full animate-pulse rounded bg-fuchsia-100" />
+              <div className="h-3 w-4/5 animate-pulse rounded bg-fuchsia-100" />
+            </div>
+          ) : (
+            <div className="mt-2 space-y-2 text-xs text-gray-700">
+              <div className="flex items-center justify-between gap-2">
+                <span>{t("admin.welcomeImageQuotaUsed", "Used today")}</span>
+                <span className="font-semibold">
+                  {used} / {limit || "?"}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-fuchsia-100">
+                <div
+                  className="h-full bg-fuchsia-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span>{t("admin.welcomeImageQuotaRemaining", "Remaining")}</span>
+                <span className="font-semibold">{remaining}</span>
+              </div>
+              <div className="rounded border border-fuchsia-100 bg-fuchsia-50 px-2 py-1">
+                {t("admin.welcomeImageQuotaReset", "Resets")}:
+                {" "}
+                {quota?.resetsAt
+                  ? new Date(quota.resetsAt).toLocaleString("sv-SE")
+                  : "—"}
+              </div>
+            </div>
+          )}
           <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-slate-800">
             <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
-              Ratio: 4:5
+              {t("admin.welcomeImageSettingSize", "Size")}: {snapshot?.size || "portrait-4-5"}
             </div>
             <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
-              Style: editorial
+              {t("admin.welcomeImageSettingCount", "Count")}: {snapshot?.count ?? 1}
             </div>
             <div className="rounded border border-gray-300 bg-white px-2 py-1.5 font-medium">
-              Lang: SV/EN/ES
+              {t("admin.welcomeImageSettingStatus", "Status")}: {snapshot?.status || "idle"}
             </div>
           </div>
-          <button
-            type="button"
-            className="mt-3 rounded-lg bg-fuchsia-700 px-3 py-1.5 text-xs font-semibold text-white"
-          >
-            Generate prompt + image
-          </button>
+          {fallbackMode && (
+            <div className="mt-3 rounded border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+              {t(
+                "admin.welcomeImageFallbackHint",
+                "Could not read live quota from the API. This snapshot stays read-only until the endpoint responds again.",
+              )}
+            </div>
+          )}
+          <div className="mt-2 text-[11px] text-gray-500">
+            {t("admin.welcomeImageLastRun", "Last run")}:
+            {" "}
+            {formatSnapshotTime(snapshot?.updatedAt)}
+          </div>
         </div>
         <div className="col-span-5 rounded-xl border border-fuchsia-200 bg-white p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-fuchsia-800">
-            Preview
+            {t("admin.welcomeImagePromptTitle", "Latest prompt")}
           </p>
-          <div className="mt-2 flex h-[188px] items-center justify-center rounded-lg border border-dashed border-fuchsia-300 bg-gradient-to-br from-fuchsia-100 to-rose-100">
-            <svg viewBox="0 0 140 180" className="h-[170px] w-[132px] rounded border border-fuchsia-300 bg-white">
-              <rect x="0" y="0" width="140" height="180" fill="#fff0f8" />
-              <circle cx="70" cy="72" r="35" fill="#f9a8d4" />
-              <rect x="25" y="120" width="90" height="36" rx="6" fill="#f472b6" />
-              <text x="70" y="140" textAnchor="middle" fontSize="9" fill="#5b1030">
-                4:5 cover mock
-              </text>
-            </svg>
+          <div className="mt-2 h-[188px] overflow-auto rounded-lg border border-dashed border-fuchsia-300 bg-gradient-to-br from-fuchsia-100 to-rose-100 p-3 text-xs text-fuchsia-950">
+            {promptPreview ||
+              t(
+                "admin.welcomeImageNoPrompt",
+                "No prompt has been generated yet. Open Products and run the image generator to populate this snapshot.",
+              )}
+          </div>
+          <div className="mt-2 text-[11px] text-gray-500">
+            {t("admin.welcomeImageGeneratedCount", "Images generated in last run")}:
+            {" "}
+            {snapshot?.generatedCount ?? 0}
           </div>
         </div>
       </div>
@@ -714,13 +827,14 @@ export default function AdminWelcomeTab({
       {
         id: "story-image",
         title: "Image prompt generator",
-        subtitle: "Generate product image prompts with ratio, style, and multilingual hints.",
+        subtitle:
+          "Live image-generator status with quota and latest run snapshot (read-only fallback supported).",
         x: 5260,
         y: 110,
         z: -440,
         scale: scaledStep(1.16),
         rotate: -5,
-        content: <ImagePromptMockScreen />,
+        content: <ImagePromptLiveScreen />,
       },
       {
         id: "story-chat",

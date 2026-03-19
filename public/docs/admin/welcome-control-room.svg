@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">RAGBAZ Admin Welcome and Sales Overview</title>
+  <desc id="desc">Illustration of the welcome control panel with navigation drawer and sales summary cards.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#bg)" />
+  <rect x="0" y="0" width="1200" height="72" fill="#312e81" />
+  <text x="40" y="46" fill="#e0e7ff" font-family="Arial, sans-serif" font-size="30" font-weight="700">RAGBAZ</text>
+  <circle cx="1136" cy="36" r="12" fill="#4ade80" />
+  <text x="1080" y="41" fill="#dcfce7" font-family="Arial, sans-serif" font-size="16">Health</text>
+
+  <rect x="36" y="108" width="288" height="548" rx="18" fill="#111827" stroke="#4338ca" />
+  <text x="64" y="150" fill="#c7d2fe" font-family="Arial, sans-serif" font-size="20" font-weight="700">Main Menu</text>
+  <g fill="#e2e8f0" font-family="Arial, sans-serif" font-size="18">
+    <text x="64" y="194">Welcome</text>
+    <text x="64" y="232">Sales</text>
+    <text x="64" y="270">Stats</text>
+    <text x="64" y="308">Storage</text>
+    <text x="64" y="346">Products</text>
+    <text x="64" y="384">Support</text>
+    <text x="64" y="422">Chat</text>
+    <text x="64" y="460">Health</text>
+  </g>
+  <rect x="56" y="212" width="246" height="32" rx="10" fill="#4338ca" opacity="0.45" />
+  <text x="64" y="532" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="15">Ctrl+Alt+M opens this drawer</text>
+
+  <rect x="352" y="108" width="812" height="548" rx="18" fill="#f8fafc" />
+  <text x="388" y="152" fill="#111827" font-family="Arial, sans-serif" font-size="32" font-weight="700">Control Room</text>
+  <text x="388" y="182" fill="#334155" font-family="Arial, sans-serif" font-size="18">Start here: overview, quick links, and live status</text>
+
+  <rect x="388" y="214" width="240" height="116" rx="14" fill="#ffedd5" stroke="#fb923c" />
+  <text x="412" y="248" fill="#9a3412" font-family="Arial, sans-serif" font-size="16">Revenue</text>
+  <text x="412" y="292" fill="#7c2d12" font-family="Arial, sans-serif" font-size="34" font-weight="700">52 300 SEK</text>
+
+  <rect x="646" y="214" width="240" height="116" rx="14" fill="#dbeafe" stroke="#60a5fa" />
+  <text x="670" y="248" fill="#1e3a8a" font-family="Arial, sans-serif" font-size="16">Payments</text>
+  <text x="670" y="292" fill="#1d4ed8" font-family="Arial, sans-serif" font-size="34" font-weight="700">87</text>
+
+  <rect x="904" y="214" width="240" height="116" rx="14" fill="#dcfce7" stroke="#34d399" />
+  <text x="928" y="248" fill="#065f46" font-family="Arial, sans-serif" font-size="16">Receipts</text>
+  <text x="928" y="292" fill="#047857" font-family="Arial, sans-serif" font-size="34" font-weight="700">Ready</text>
+
+  <rect x="388" y="354" width="756" height="272" rx="14" fill="#ffffff" stroke="#cbd5e1" />
+  <rect x="388" y="354" width="756" height="46" rx="14" fill="#e2e8f0" />
+  <text x="412" y="384" fill="#334155" font-family="Arial, sans-serif" font-size="16" font-weight="700">Latest sales snapshot</text>
+  <g fill="#0f172a" font-family="Arial, sans-serif" font-size="14">
+    <text x="412" y="430">ch_3Q82Az2x</text>
+    <text x="624" y="430">emma@xtas.nu</text>
+    <text x="860" y="430">1490 SEK</text>
+    <text x="1034" y="430">Succeeded</text>
+
+    <text x="412" y="468">ch_3Q7xWn7p</text>
+    <text x="624" y="468">leo@xtas.nu</text>
+    <text x="860" y="468">990 SEK</text>
+    <text x="1034" y="468">Succeeded</text>
+
+    <text x="412" y="506">ch_3Q7uT89q</text>
+    <text x="624" y="506">nina@xtas.nu</text>
+    <text x="860" y="506">490 SEK</text>
+    <text x="1034" y="506">Pending</text>
+  </g>
+</svg>

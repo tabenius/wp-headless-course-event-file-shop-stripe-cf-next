@@ -185,9 +185,9 @@ Full list in `.env.example`.
 
 ### Ranked backlog (see coop file for full detail)
 
-1. **P2 / Medium** — Welcome slideshow realism: replace mock image-generator slide with live data + fallback.
-2. **P2 / Medium** — Admin dead-link finder panel with internal/pseudo-external/external classification.
-3. **Follow-up / Monitoring** — Watch new P0/P1 hardening (image diagnostics, receipt PDF fallback/trace, VAT propagation) for regressions in production logs.
+1. **P3 / Medium** — Documentation UX pass: add GUI visuals in key sections, reorder instructions for average-user relevance, and align wording with current admin tabs/flows.
+2. **P3 / Medium** — Full code review pass focused on code quality, maintainability, and admin UI usability improvements.
+3. **Follow-up / Monitoring** — Watch new P0/P1/P2 hardening (image diagnostics, receipt fallback trace, VAT propagation, dead-link scanner) for regressions in logs.
 
 ### Working rules for this backlog
 
@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Completed P2 backlog items by replacing the Welcome image-generator mock with live quota/snapshot state plus read-only fallback, and by adding an admin dead-link finder (`/api/admin/dead-links` + Support panel) with internal/pseudo-external/external classification and reachability checks.
 - **2026-03-19 (Codex)**: Closed the current P0/P1 batch by wiring `vatPercent` through the WordPress plugin GraphQL schema/mutation (`CourseAccessRule`, `SetCourseAccessRuleInput`, `setCourseAccessRule`), keeping storefront/admin VAT persistence aligned end-to-end; removed an unused legacy course-access helper; verified with `npm run lint` (warnings only) and `npm test` (15/15 pass).
 - **2026-03-19 (Codex)**: Hardened admin documentation routing by fixing `/admin/docs` index slug links, broadening markdown link rewrites to keep `docs/*.md` references inside `/admin/docs/*`, and switching chat manual source links from `/docs` to `/admin/docs` to prevent admin-side 404s.
 - **2026-03-19 (Codex)**: Added generalized product category extraction across WooCommerce/LearnPress/Events plus digital-file extension/MIME heuristics, and implemented a new VAT-by-category editor in Products → Access backed by `shopSettings.vatByCategory` persistence.

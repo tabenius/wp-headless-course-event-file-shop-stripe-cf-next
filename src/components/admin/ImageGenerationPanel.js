@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { t } from "@/lib/i18n";
 import { SIZE_PRESETS } from "@/lib/imageQuota";
+import { writeImageGenerationSnapshot } from "@/lib/adminImageGenerationState";
 
 const SIZE_PRESET_KEYS = [
   "portrait-4-5",
@@ -61,6 +62,15 @@ export default function ImageGenerationPanel({
     setTimeout(() => setToast(null), 4000);
   }
 
+  const persistSnapshot = useCallback((patch) => {
+    if (typeof window === "undefined") return;
+    const snapshot = writeImageGenerationSnapshot(patch, window.localStorage);
+    if (!snapshot) return;
+    window.dispatchEvent(
+      new CustomEvent("admin:imageSnapshotUpdated", { detail: snapshot }),
+    );
+  }, []);
+
   useEffect(() => {
     fetch("/api/admin/generate-image")
       .then((r) => r.json())
@@ -100,6 +110,14 @@ export default function ImageGenerationPanel({
 
   async function handleGenerate() {
     if (!prompt.trim() || generating) return;
+    const trimmedPrompt = prompt.trim();
+    persistSnapshot({
+      prompt: trimmedPrompt,
+      size,
+      count,
+      generatedCount: 0,
+      status: "running",
+    });
     setGenerating(true);
     setElapsed(0);
     setImages([]);
@@ -108,17 +126,33 @@ export default function ImageGenerationPanel({
       const res = await fetch("/api/admin/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), count, size }),
+        body: JSON.stringify({ prompt: trimmedPrompt, count, size }),
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) {
         if (res.status === 429) {
           if (json?.quota) setQuota(json.quota);
+          persistSnapshot({
+            prompt: trimmedPrompt,
+            size,
+            count,
+            generatedCount: 0,
+            status: "quota",
+            requestId: json?.requestId || "",
+          });
           const resetTime = json.quota?.resetsAt
             ? new Date(json.quota.resetsAt).toUTCString().slice(17, 22)
             : "?";
           showToast(t("admin.quotaExhausted", { time: resetTime }));
         } else {
+          persistSnapshot({
+            prompt: trimmedPrompt,
+            size,
+            count,
+            generatedCount: 0,
+            status: "error",
+            requestId: json?.requestId || "",
+          });
           const requestRef = json?.requestId
             ? t("admin.imageErrorRef", { id: json.requestId.slice(0, 8) })
             : "";
@@ -132,6 +166,17 @@ export default function ImageGenerationPanel({
       }
       if (json.quota) setQuota(json.quota);
       setImages(json.images || []);
+      persistSnapshot({
+        prompt: trimmedPrompt,
+        size,
+        count,
+        generatedCount: json.images?.length ?? 0,
+        status:
+          Array.isArray(json.warnings) && json.warnings.length > 0
+            ? "partial"
+            : "ok",
+        requestId: json?.requestId || "",
+      });
       if (Array.isArray(json.warnings) && json.warnings.length > 0) {
         showToast(
           t("admin.imagePartialWarning", { n: json.warnings.length }),
@@ -145,6 +190,13 @@ export default function ImageGenerationPanel({
         );
       }
     } catch (err) {
+      persistSnapshot({
+        prompt: trimmedPrompt,
+        size,
+        count,
+        generatedCount: 0,
+        status: "error",
+      });
       showToast(err.message || t("admin.imageGenFailed"));
     } finally {
       clearInterval(elapsedRef.current);
