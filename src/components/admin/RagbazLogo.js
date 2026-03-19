@@ -5,6 +5,8 @@ export default function RagbazLogo({
   includeStoreFront = true,
   color = "#39b6f2",
   size = "normal",
+  wordmarkOnly = false,
+  noLetterSpacing = false,
 }) {
   const isDouble = size === "2x";
   const lineWidth = includeStoreFront
@@ -27,6 +29,32 @@ export default function RagbazLogo({
         storefront: "0.67rem",
       };
 
+  const ragbazLetterSpacing = noLetterSpacing ? "0" : "0.24em";
+  const articulateLetterSpacing = noLetterSpacing ? "0" : "0.135em";
+  const storefrontLetterSpacing = noLetterSpacing ? "0" : "0.34em";
+
+  if (wordmarkOnly) {
+    return (
+      <div className={`inline-flex items-center leading-[0.92] ${className}`}>
+        <span
+          className="block uppercase font-black"
+          style={{
+            fontSize: fontSize.ragbaz,
+            textAlign: "center",
+            letterSpacing: ragbazLetterSpacing,
+            transform: "scaleX(1.12)",
+            transformOrigin: "center",
+            fontFamily:
+              "var(--font-neo-grotesque, 'Space Grotesk', 'Inter', system-ui, sans-serif)",
+            color,
+          }}
+        >
+          RAGBAZ
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className={`inline-flex flex-col items-center leading-[0.92] ${className}`}>
       <span
@@ -35,7 +63,7 @@ export default function RagbazLogo({
           width: lineWidth,
           fontSize: fontSize.ragbaz,
           textAlign: "center",
-          letterSpacing: "0.24em",
+          letterSpacing: ragbazLetterSpacing,
           transform: "scaleX(1.12)",
           transformOrigin: "center",
           fontFamily:
@@ -51,7 +79,7 @@ export default function RagbazLogo({
           width: lineWidth,
           fontSize: fontSize.articulate,
           textAlign: "center",
-          letterSpacing: "0.135em",
+          letterSpacing: articulateLetterSpacing,
           transform: "scaleX(1.2)",
           transformOrigin: "center",
           fontFamily:
@@ -68,7 +96,7 @@ export default function RagbazLogo({
             width: lineWidth,
             fontSize: fontSize.storefront,
             textAlign: "center",
-            letterSpacing: "0.34em",
+            letterSpacing: storefrontLetterSpacing,
             transform: "scaleX(1.26)",
             transformOrigin: "center",
             fontFamily:

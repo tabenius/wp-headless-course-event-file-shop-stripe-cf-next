@@ -396,7 +396,7 @@ function ProductsTab({
   };
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:min-h-[520px]"
+      className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:min-h-[520px]"
     >
       {/* ── Left: product list ── */}
       <div className="border rounded flex flex-col overflow-hidden min-w-0">
@@ -437,6 +437,7 @@ function ProductsTab({
           ) : (
             products.map((product, index) => {
               const isActive = selectedCourse === `__shop_${index}`;
+              const productName = product.name || `Product ${index + 1}`;
               const priceText = product.priceCents
                 ? `${toCurrencyUnits(product.priceCents)} ${product.currency || "SEK"}`
                 : "no price set";
@@ -445,6 +446,7 @@ function ProductsTab({
                   key={`shop-${index}`}
                   type="button"
                   onClick={() => handleSelection(`__shop_${index}`)}
+                  title={productName}
                   className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-colors ${
                     isActive
                       ? "bg-purple-50 border-l-2 border-purple-500"
@@ -475,10 +477,13 @@ function ProductsTab({
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate text-gray-800">
-                      {product.name || `Product ${index + 1}`}
+                    <p
+                      className="text-sm font-medium truncate text-gray-800"
+                      title={productName}
+                    >
+                      {productName}
                     </p>
-                    <p className="text-xs text-gray-400 truncate">
+                    <p className="text-xs text-gray-400 truncate" title={priceText}>
                       {priceText}
                     </p>
                   </div>
@@ -926,10 +931,26 @@ function AccessTab({
     products.length +
     otherCourseUris.length;
 
-  // "Needs config" = no priceCents set yet
+  function wpPriceForUri(uri) {
+    const item = allWpContent.find((entry) => entry.uri === uri);
+    if (!item) return 0;
+    const raw =
+      item.priceRendered || item.price || item.regularPrice || item.priceText;
+    return parsePriceCents(raw || "");
+  }
+
+  // "Needs config" = no local config and no usable WordPress/shop price
   const isConfigured = (uri) => {
+    if (uri.startsWith("__shop_")) {
+      const idx = Number.parseInt(uri.replace("__shop_", ""), 10);
+      const p = Number.isFinite(idx) ? products[idx] : null;
+      return Boolean(p && Number(p.priceCents) > 0);
+    }
     const cfg = courses[uri];
-    return cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0;
+    if (cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0) {
+      return true;
+    }
+    return wpPriceForUri(uri) > 0;
   };
   const needsConfigCount = [
     ...wcProducts.map((p) => p.uri),
@@ -959,7 +980,7 @@ function AccessTab({
 
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:min-h-[520px]"
+      className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:min-h-[520px]"
     >
       {/* ── Left: content list ── */}
       <div className="border rounded flex flex-col overflow-hidden min-w-0">
@@ -1142,6 +1163,7 @@ function AccessTab({
                   key={item.uri}
                   type="button"
                   onClick={() => handleSelection(item.uri)}
+                  title={item.name || item.uri}
                   className={`w-full text-left px-2 py-2 flex items-center gap-1.5 border-b last:border-b-0 transition-colors ${isActive ? "bg-purple-50 border-l-2 border-l-purple-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"}`}
                 >
                   <span
@@ -1149,7 +1171,10 @@ function AccessTab({
                   >
                     {TYPE_LABEL[item.source]}
                   </span>
-                  <span className="text-sm truncate flex-1 text-gray-800">
+                  <span
+                    className="text-sm truncate flex-1 text-gray-800"
+                    title={item.name || item.uri}
+                  >
                     {item.name}
                   </span>
                   {item.active === false && (
@@ -1227,6 +1252,7 @@ function AccessTab({
                   wpItem?.priceRendered ||
                   ""
                 ).replace(/&nbsp;/g, " ");
+                const wpParsedCents = parsePriceCents(wpPrice);
                 const sourceLabel =
                   wpItem?._source === "woocommerce"
                     ? "WooCommerce"
@@ -1283,7 +1309,7 @@ function AccessTab({
                               WP: {wpPrice}
                             </span>
                           )}
-                          {courses[selectedCourse] && (
+                          {(courses[selectedCourse] || wpParsedCents > 0) && (
                             <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
                               {t("admin.configuredBadge")}
                             </span>
@@ -1302,8 +1328,7 @@ function AccessTab({
                         cfg &&
                         typeof cfg.priceCents === "number" &&
                         cfg.priceCents > 0;
-                      if (hasPriceCents) return null;
-                      const wpParsedCents = parsePriceCents(wpPrice);
+                      if (hasPriceCents || wpParsedCents > 0) return null;
                       return (
                         <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 mb-4">
                           <div className="flex items-start gap-2">

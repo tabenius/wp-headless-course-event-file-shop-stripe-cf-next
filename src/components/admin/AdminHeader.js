@@ -250,6 +250,13 @@ export default function AdminHeader({ logoUrl }) {
                 <span className="block h-0.5 w-4 bg-white" />
               </span>
             </button>
+            <Link
+              href="/admin#/welcome"
+              className="text-white/95 hover:text-white transition-colors"
+              aria-label={t("admin.headerAria", "Goto admin home")}
+            >
+              <RagbazLogo wordmarkOnly noLetterSpacing />
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -404,15 +411,6 @@ export default function AdminHeader({ logoUrl }) {
           )}
         </div>
       </div>
-      {pathname !== "/admin/login" && (
-        <Link
-          href="/admin#/welcome"
-          className="fixed left-[2em] top-[calc(3.5rem+2em)] z-30 text-white/95 hover:text-white transition-colors"
-          aria-label={t("admin.headerAria", "Goto admin home")}
-        >
-          <RagbazLogo includeStoreFront size="2x" />
-        </Link>
-      )}
     </header>
   );
 }
