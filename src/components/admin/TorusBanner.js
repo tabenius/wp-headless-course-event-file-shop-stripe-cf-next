@@ -17,6 +17,149 @@ const SCROLLER_TEXT =
 const ENABLE_SINE_SCROLLER = false;
 const ENABLE_TREFOIL_KNOT = true;
 
+const L_SYSTEM_RULES = {
+  F: "FF-[-F+F+F]+[+F-F-F]",
+};
+
+function mulberry32(seed) {
+  let value = seed >>> 0;
+  return () => {
+    value += 0x6d2b79f5;
+    let t = value;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function expandLSystem(axiom, rules, iterations) {
+  let output = axiom;
+  for (let i = 0; i < iterations; i += 1) {
+    let next = "";
+    for (const token of output) {
+      next += rules[token] || token;
+    }
+    output = next;
+  }
+  return output;
+}
+
+function degToRad(deg) {
+  return (deg * Math.PI) / 180;
+}
+
+function traceLSystemPlant({
+  commands,
+  startX,
+  startY,
+  startAngle,
+  stepBase,
+  turnBase,
+  leafSizeBase,
+  rand,
+}) {
+  let x = startX;
+  let y = startY;
+  let angle = startAngle;
+  const stack = [];
+  let branches = "";
+  let leaves = "";
+
+  for (let i = 0; i < commands.length; i += 1) {
+    const token = commands[i];
+    if (token === "F") {
+      const len = stepBase * (0.84 + rand() * 0.34);
+      const rad = degToRad(angle);
+      const nx = x + Math.cos(rad) * len;
+      const ny = y + Math.sin(rad) * len;
+      branches += `M${x.toFixed(2)} ${y.toFixed(2)}L${nx.toFixed(2)} ${ny.toFixed(2)}`;
+
+      if (stack.length > 1 && (i % 3 === 0 || rand() > 0.74)) {
+        const leafLen = leafSizeBase * (0.72 + rand() * 0.62);
+        const leftAngle = rad + 2.34;
+        const rightAngle = rad - 2.34;
+        const lx = nx + Math.cos(leftAngle) * leafLen;
+        const ly = ny + Math.sin(leftAngle) * leafLen;
+        const rx = nx + Math.cos(rightAngle) * leafLen;
+        const ry = ny + Math.sin(rightAngle) * leafLen;
+        leaves += `M${nx.toFixed(2)} ${ny.toFixed(2)}L${lx.toFixed(2)} ${ly.toFixed(2)}M${nx.toFixed(2)} ${ny.toFixed(2)}L${rx.toFixed(2)} ${ry.toFixed(2)}`;
+      }
+
+      x = nx;
+      y = ny;
+      continue;
+    }
+
+    if (token === "+") {
+      angle += turnBase * (0.82 + rand() * 0.36);
+      continue;
+    }
+    if (token === "-") {
+      angle -= turnBase * (0.82 + rand() * 0.36);
+      continue;
+    }
+    if (token === "[") {
+      stack.push({ x, y, angle });
+      continue;
+    }
+    if (token === "]") {
+      const prev = stack.pop();
+      if (prev) {
+        x = prev.x;
+        y = prev.y;
+        angle = prev.angle;
+      }
+    }
+  }
+
+  return { branches, leaves };
+}
+
+function buildLeafBushLayerDataUri({
+  seed,
+  width,
+  height,
+  plantCount,
+  iterations,
+  stepBase,
+  turnBase,
+  leafSizeBase,
+  branchColor,
+  leafColor,
+  branchWidth,
+  leafWidth,
+  branchOpacity,
+  leafOpacity,
+}) {
+  const rand = mulberry32(seed);
+  const commands = expandLSystem("F", L_SYSTEM_RULES, iterations);
+  let branches = "";
+  let leaves = "";
+
+  for (let i = 0; i < plantCount; i += 1) {
+    const progress = i / Math.max(1, plantCount - 1);
+    const jitter = (rand() - 0.5) * (width / plantCount) * 0.7;
+    const startX = progress * width + jitter;
+    const startY = height * (0.9 + rand() * 0.07);
+    const startAngle = -90 + (rand() - 0.5) * 20;
+    const traced = traceLSystemPlant({
+      commands,
+      startX,
+      startY,
+      startAngle,
+      stepBase: stepBase * (0.86 + rand() * 0.3),
+      turnBase: turnBase * (0.9 + rand() * 0.22),
+      leafSizeBase: leafSizeBase * (0.9 + rand() * 0.35),
+      rand,
+    });
+    branches += traced.branches;
+    leaves += traced.leaves;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><g fill="none" stroke="${branchColor}" stroke-width="${branchWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${branchOpacity}"><path d="${branches}"/></g><g fill="none" stroke="${leafColor}" stroke-width="${leafWidth}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${leafOpacity}"><path d="${leaves}"/></g></svg>`;
+  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+}
+
 function cross(a, b) {
   return {
     x: a.y * b.z - a.z * b.y,
@@ -82,6 +225,61 @@ const trefoilBasePoints = Array.from({ length: SEGMENTS }, (_, i) => {
 
 const GEOMETRY_DEPTH_RANGE = ENABLE_TREFOIL_KNOT ? 220 : MAJOR_RADIUS * 2;
 const activeBasePoints = ENABLE_TREFOIL_KNOT ? trefoilBasePoints : torusBasePoints;
+
+const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
+  seed: 1407,
+  width: 1600,
+  height: 420,
+  plantCount: 16,
+  iterations: 2,
+  stepBase: 6.4,
+  turnBase: 23.5,
+  leafSizeBase: 2.9,
+  branchColor: "#2a5b2d",
+  leafColor: "#5f9644",
+  branchWidth: 1.15,
+  leafWidth: 0.95,
+  branchOpacity: 0.52,
+  leafOpacity: 0.46,
+});
+
+const MID_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
+  seed: 2771,
+  width: 1600,
+  height: 470,
+  plantCount: 21,
+  iterations: 3,
+  stepBase: 7.2,
+  turnBase: 22.2,
+  leafSizeBase: 3.5,
+  branchColor: "#2f6a30",
+  leafColor: "#6cab4c",
+  branchWidth: 1.25,
+  leafWidth: 1.05,
+  branchOpacity: 0.62,
+  leafOpacity: 0.57,
+});
+
+const NEAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
+  seed: 3901,
+  width: 1600,
+  height: 520,
+  plantCount: 25,
+  iterations: 3,
+  stepBase: 7.8,
+  turnBase: 21.8,
+  leafSizeBase: 3.9,
+  branchColor: "#255127",
+  leafColor: "#73b152",
+  branchWidth: 1.35,
+  leafWidth: 1.15,
+  branchOpacity: 0.74,
+  leafOpacity: 0.68,
+});
+
+const FAR_BUSH_STYLE = { "--leafy-bush-layer": FAR_BUSH_LAYER_IMAGE };
+const MID_BUSH_STYLE = { "--leafy-bush-layer": MID_BUSH_LAYER_IMAGE };
+const NEAR_BUSH_STYLE = { "--leafy-bush-layer": NEAR_BUSH_LAYER_IMAGE };
 
 function projectPoint(point, rotationX, rotationY, rotationZ, width, height) {
   const cosX = Math.cos(rotationX);
@@ -198,9 +396,18 @@ export default function TorusBanner() {
     <div className="-mx-3 sm:-mx-4 lg:-mx-6 relative bg-transparent overflow-hidden">
       <div className="torus-parallax-scene" aria-hidden>
         <div className="torus-parallax-layer torus-parallax-sky" />
-        <div className="torus-parallax-layer torus-parallax-far-bushes" />
-        <div className="torus-parallax-layer torus-parallax-mid-bushes" />
-        <div className="torus-parallax-layer torus-parallax-near-bushes" />
+        <div
+          className="torus-parallax-layer torus-parallax-far-bushes"
+          style={FAR_BUSH_STYLE}
+        />
+        <div
+          className="torus-parallax-layer torus-parallax-mid-bushes"
+          style={MID_BUSH_STYLE}
+        />
+        <div
+          className="torus-parallax-layer torus-parallax-near-bushes"
+          style={NEAR_BUSH_STYLE}
+        />
       </div>
 
       <div className="relative z-[1] grid items-stretch gap-0 md:grid-cols-[minmax(360px,1.05fr)_1fr]">
@@ -284,38 +491,23 @@ export default function TorusBanner() {
           right: -8%;
           bottom: -10%;
           opacity: 0.72;
-          background:
-            radial-gradient(
-              24% 18% at 10% 28%,
-              rgba(94, 151, 58, 0.6) 0%,
-              transparent 82%
-            ),
-            radial-gradient(
-              20% 16% at 30% 36%,
-              rgba(104, 158, 52, 0.58) 0%,
-              transparent 85%
-            ),
-            radial-gradient(
-              22% 18% at 56% 30%,
-              rgba(99, 147, 48, 0.64) 0%,
-              transparent 83%
-            ),
-            radial-gradient(
-              24% 18% at 80% 36%,
-              rgba(93, 141, 43, 0.58) 0%,
-              transparent 84%
-            ),
-            radial-gradient(
-              22% 18% at 94% 34%,
-              rgba(81, 132, 40, 0.56) 0%,
-              transparent 84%
-            ),
+          background-image:
             linear-gradient(
               180deg,
-              rgba(42, 93, 44, 0) 0%,
-              rgba(36, 96, 38, 0.44) 48%,
-              rgba(28, 84, 34, 0.66) 100%
-            );
+              rgba(36, 87, 40, 0.08) 0%,
+              rgba(30, 92, 35, 0.42) 52%,
+              rgba(22, 73, 28, 0.64) 100%
+            ),
+            var(--leafy-bush-layer);
+          background-size:
+            100% 100%,
+            126% 100%;
+          background-position:
+            center bottom,
+            center bottom;
+          background-repeat:
+            no-repeat,
+            repeat-x;
           animation-duration: 56s;
           transform: translateX(-2.4%);
         }
@@ -326,43 +518,23 @@ export default function TorusBanner() {
           right: -9%;
           bottom: -14%;
           opacity: 0.84;
-          background:
-            radial-gradient(
-              16% 22% at 8% 24%,
-              rgba(78, 138, 47, 0.9) 0%,
-              transparent 76%
-            ),
-            radial-gradient(
-              14% 22% at 22% 30%,
-              rgba(63, 126, 41, 0.84) 0%,
-              transparent 75%
-            ),
-            radial-gradient(
-              16% 24% at 38% 26%,
-              rgba(82, 145, 45, 0.88) 0%,
-              transparent 74%
-            ),
-            radial-gradient(
-              14% 20% at 56% 30%,
-              rgba(70, 130, 43, 0.9) 0%,
-              transparent 74%
-            ),
-            radial-gradient(
-              18% 24% at 74% 26%,
-              rgba(84, 147, 44, 0.9) 0%,
-              transparent 75%
-            ),
-            radial-gradient(
-              14% 20% at 88% 30%,
-              rgba(66, 124, 39, 0.88) 0%,
-              transparent 74%
-            ),
+          background-image:
             linear-gradient(
               180deg,
-              rgba(26, 83, 34, 0) 0%,
-              rgba(26, 86, 33, 0.58) 46%,
-              rgba(19, 64, 29, 0.78) 100%
-            );
+              rgba(31, 90, 35, 0.06) 0%,
+              rgba(26, 87, 32, 0.52) 48%,
+              rgba(16, 58, 24, 0.82) 100%
+            ),
+            var(--leafy-bush-layer);
+          background-size:
+            100% 100%,
+            132% 100%;
+          background-position:
+            center bottom,
+            center bottom;
+          background-repeat:
+            no-repeat,
+            repeat-x;
           animation-duration: 44s;
           animation-direction: reverse;
           transform: translateX(2.8%);
@@ -374,48 +546,23 @@ export default function TorusBanner() {
           right: -10%;
           bottom: -20%;
           opacity: 0.96;
-          background:
-            radial-gradient(
-              18% 28% at 7% 20%,
-              rgba(76, 126, 44, 0.96) 0%,
-              transparent 74%
-            ),
-            radial-gradient(
-              20% 30% at 21% 24%,
-              rgba(62, 112, 38, 0.95) 0%,
-              transparent 73%
-            ),
-            radial-gradient(
-              18% 30% at 36% 18%,
-              rgba(82, 134, 48, 0.95) 0%,
-              transparent 73%
-            ),
-            radial-gradient(
-              20% 30% at 54% 24%,
-              rgba(58, 104, 35, 0.95) 0%,
-              transparent 73%
-            ),
-            radial-gradient(
-              18% 28% at 70% 20%,
-              rgba(74, 126, 44, 0.95) 0%,
-              transparent 73%
-            ),
-            radial-gradient(
-              20% 32% at 85% 24%,
-              rgba(54, 100, 33, 0.95) 0%,
-              transparent 74%
-            ),
-            radial-gradient(
-              18% 30% at 97% 20%,
-              rgba(70, 120, 39, 0.95) 0%,
-              transparent 74%
-            ),
+          background-image:
             linear-gradient(
               180deg,
-              rgba(20, 62, 28, 0) 0%,
-              rgba(17, 60, 24, 0.76) 44%,
-              rgba(10, 44, 18, 0.92) 100%
-            );
+              rgba(24, 74, 29, 0.02) 0%,
+              rgba(16, 58, 24, 0.63) 43%,
+              rgba(8, 34, 16, 0.92) 100%
+            ),
+            var(--leafy-bush-layer);
+          background-size:
+            100% 100%,
+            138% 100%;
+          background-position:
+            center bottom,
+            center bottom;
+          background-repeat:
+            no-repeat,
+            repeat-x;
           animation-duration: 34s;
           transform: translateX(-3.6%);
         }

@@ -11,6 +11,20 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 54)
+
+### Codex — leafy bush parallax switched to line-drawn L-system layers
+
+- Replaced radial-gradient bush blobs in `TorusBanner` with procedural line-drawn foliage layers built from a Lindenmayer-style branch grammar (`F -> FF-[-F+F+F]+[+F-F-F]`).
+- Added deterministic procedural generation helpers:
+  - seeded PRNG (`mulberry32`),
+  - L-system expansion,
+  - turtle tracing into SVG branch/leaf path segments,
+  - layer export as inline SVG data URIs.
+- Built three separate leaf layers (far/mid/near) with different densities and stroke weights, then applied them to parallax layers via CSS custom property (`--leafy-bush-layer`) and layered gradient tinting.
+- Kept existing slow pendulum layer motion/duration differences so depth scrolling behavior is preserved.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 53)
 
 ### Codex — trefoil knot renderer (torus temporarily disabled)
