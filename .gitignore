@@ -58,3 +58,4 @@ __pycache__/
 /outlog.txt
 /docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.zip
 /.wrangler/
+.env.agents
