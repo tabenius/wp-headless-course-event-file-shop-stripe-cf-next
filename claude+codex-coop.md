@@ -11,6 +11,21 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-19 (cont. 61)
+
+### Codex — higher foliage + seamless horizontal fog edges
+
+- Increased foliage vertical reach further in `TorusBanner`:
+  - raised growth parameters (`stepBase`, `leafSizeBase`) for far/mid/near generated L-system layers,
+  - moved bush layers upward again (`top`: far `0%`, mid `8%`, near `16%`).
+- Hardened side-edge blending to remove sharp horizontal artifacts:
+  - expanded bush-layer horizontal overscan (`left/right: -20%`),
+  - enlarged foliage texture scale (`170%/180%/190%`),
+  - switched foliage texture repetition to non-tiling (`no-repeat`) to avoid seam repetition,
+  - added left/right feather masks (`mask-image` + `-webkit-mask-image`) on each bush layer for smooth side fade under all pendulum offsets.
+- Also widened generic layer inset (`-18%`) to better cover swing extremes.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 60)
 
 ### Codex — trefoil removed, spherical harmonics volume added

@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-19 (Codex)**: Increased foliage canopy height again (higher layer offsets plus stronger L-system growth) and removed horizontal sharp-edge artifacts by widening parallax overscan and adding left/right edge feather masks on all bush layers.
 - **2026-03-19 (Codex)**: Removed the trefoil-knot renderer from the Info canvas and replaced it with a spherical-harmonics volume surface (longitude/latitude mesh, harmonic radial field, depth-sorted triangle shading) while keeping the same orange/cyan visual language.
 - **2026-03-19 (Codex)**: Raised the parallax foliage canopy substantially (about 2x perceived height) by both increasing L-system growth parameters (`stepBase`/`leafSizeBase`) and moving all three bush layers upward in CSS (`far/mid/near top: 20%/26%/34%`).
 - **2026-03-19 (Codex)**: Moved the Info banner text to a bottom-mounted ticker when sine mode is disabled, reduced ticker font size, set ticker color to bright yellow, and increased horizontal scroll speed for clearer compact motion.

@@ -206,9 +206,9 @@ const FAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   height: 420,
   plantCount: 16,
   iterations: 2,
-  stepBase: 11.8,
+  stepBase: 14.5,
   turnBase: 23.5,
-  leafSizeBase: 4.2,
+  leafSizeBase: 5.2,
   branchColor: "#2a5b2d",
   leafColor: "#5f9644",
   outlineColor: "#0a1509",
@@ -227,9 +227,9 @@ const MID_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   height: 470,
   plantCount: 21,
   iterations: 3,
-  stepBase: 13.0,
+  stepBase: 16.0,
   turnBase: 22.2,
-  leafSizeBase: 4.8,
+  leafSizeBase: 5.8,
   branchColor: "#2f6a30",
   leafColor: "#6cab4c",
   outlineColor: "#081308",
@@ -248,9 +248,9 @@ const NEAR_BUSH_LAYER_IMAGE = buildLeafBushLayerDataUri({
   height: 520,
   plantCount: 25,
   iterations: 3,
-  stepBase: 14.2,
+  stepBase: 17.8,
   turnBase: 21.8,
-  leafSizeBase: 5.3,
+  leafSizeBase: 6.4,
   branchColor: "#255127",
   leafColor: "#73b152",
   outlineColor: "#050d05",
@@ -487,7 +487,7 @@ export default function TorusBanner() {
 
         .torus-parallax-layer {
           position: absolute;
-          inset: -5%;
+          inset: -18%;
           transform-origin: 50% 100%;
           animation-name: pendulum-sway;
           animation-timing-function: ease-in-out;
@@ -516,9 +516,9 @@ export default function TorusBanner() {
         }
 
         .torus-parallax-far-bushes {
-          top: 20%;
-          left: -8%;
-          right: -8%;
+          top: 0%;
+          left: -20%;
+          right: -20%;
           bottom: -10%;
           opacity: 0.9;
           background-image:
@@ -531,21 +531,35 @@ export default function TorusBanner() {
             var(--leafy-bush-layer);
           background-size:
             100% 100%,
-            126% 100%;
+            170% 100%;
           background-position:
             center bottom,
             center bottom;
           background-repeat:
             no-repeat,
-            repeat-x;
+            no-repeat;
+          -webkit-mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 8%,
+            #000 92%,
+            transparent 100%
+          );
+          mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 8%,
+            #000 92%,
+            transparent 100%
+          );
           animation-duration: 56s;
           transform: translateX(-2.4%);
         }
 
         .torus-parallax-mid-bushes {
-          top: 26%;
-          left: -9%;
-          right: -9%;
+          top: 8%;
+          left: -20%;
+          right: -20%;
           bottom: -14%;
           opacity: 0.96;
           background-image:
@@ -558,22 +572,36 @@ export default function TorusBanner() {
             var(--leafy-bush-layer);
           background-size:
             100% 100%,
-            132% 100%;
+            180% 100%;
           background-position:
             center bottom,
             center bottom;
           background-repeat:
             no-repeat,
-            repeat-x;
+            no-repeat;
+          -webkit-mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 9%,
+            #000 91%,
+            transparent 100%
+          );
+          mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 9%,
+            #000 91%,
+            transparent 100%
+          );
           animation-duration: 44s;
           animation-direction: reverse;
           transform: translateX(2.8%);
         }
 
         .torus-parallax-near-bushes {
-          top: 34%;
-          left: -10%;
-          right: -10%;
+          top: 16%;
+          left: -20%;
+          right: -20%;
           bottom: -20%;
           opacity: 1;
           background-image:
@@ -586,13 +614,27 @@ export default function TorusBanner() {
             var(--leafy-bush-layer);
           background-size:
             100% 100%,
-            138% 100%;
+            190% 100%;
           background-position:
             center bottom,
             center bottom;
           background-repeat:
             no-repeat,
-            repeat-x;
+            no-repeat;
+          -webkit-mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 10%,
+            #000 90%,
+            transparent 100%
+          );
+          mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 10%,
+            #000 90%,
+            transparent 100%
+          );
           animation-duration: 34s;
           transform: translateX(-3.6%);
         }
