@@ -101,6 +101,47 @@ function sanitizeText(value, max = MAX_METADATA_TEXT) {
     .slice(0, max);
 }
 
+function normalizeOwnerUri(value, max = 320) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "/") return "/";
+  let path = raw;
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      path = new URL(raw).pathname || "/";
+    } catch {
+      path = raw;
+    }
+  }
+  let safe = path
+    .replace(/\s+/g, "")
+    .replace(/\/{2,}/g, "/");
+  if (!safe.startsWith("/")) safe = `/${safe}`;
+  if (safe.length > 1) safe = safe.replace(/\/+$/, "");
+  return safe.slice(0, max) || "/";
+}
+
+function sanitizeAssetSlug(value, max = 120) {
+  const raw = sanitizeText(value, max).toLowerCase();
+  if (!raw) return "";
+  return raw
+    .replace(/[^a-z0-9._/-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-/]+|[-/]+$/g, "")
+    .slice(0, max);
+}
+
+function sanitizeAssetId(value, max = 96) {
+  const raw = sanitizeText(value, max).toLowerCase();
+  if (!raw) return "";
+  return raw.replace(/[^a-z0-9._:-]/g, "");
+}
+
+function buildAssetIdUri(assetId) {
+  const safeId = sanitizeAssetId(assetId);
+  if (!safeId) return "";
+  return `/asset/${encodeURIComponent(safeId)}`;
+}
+
 function htmlToText(value, max = MAX_METADATA_TEXT) {
   const raw = typeof value === "string" ? value : "";
   if (!raw) return "";
@@ -368,7 +409,13 @@ function normalizeWordPressMediaRow(row) {
     1800,
   );
   const schemaRef = readWordPressMeta(rowMeta, "ragbaz_asset_schema_ref", 400);
-  const assetId = readWordPressMeta(rowMeta, "ragbaz_asset_id", 96);
+  const assetId = sanitizeAssetId(readWordPressMeta(rowMeta, "ragbaz_asset_id", 96));
+  const ownerUri = normalizeOwnerUri(
+    readWordPressMeta(rowMeta, "ragbaz_asset_owner_uri", 320) || "/",
+  );
+  const assetUri =
+    sanitizeText(rowMeta.ragbaz_asset_uri, 400) || buildAssetIdUri(assetId);
+  const assetSlug = sanitizeAssetSlug(readWordPressMeta(rowMeta, "ragbaz_asset_slug", 120));
   const assetRole = readWordPressMeta(rowMeta, "ragbaz_asset_role", 40);
   const assetFormat = readWordPressMeta(rowMeta, "ragbaz_asset_format", 40);
   const variantKind =
@@ -413,6 +460,10 @@ function normalizeWordPressMediaRow(row) {
     },
     asset: {
       assetId: assetId || null,
+      ownerUri,
+      uri: assetUri || null,
+      slug: assetSlug || null,
+      accessInheritance: "owner",
       role: assetRole || null,
       format: assetFormat || null,
       variantKind: variantKind || null,
@@ -507,6 +558,10 @@ async function fetchR2Media({ limit, prefix, search }) {
       },
       asset: {
         assetId: null,
+        ownerUri: "/",
+        uri: null,
+        slug: null,
+        accessInheritance: "owner",
         role: null,
         format: null,
         variantKind: null,
@@ -562,8 +617,16 @@ async function fetchR2Media({ limit, prefix, search }) {
       const metaHeight = normalizeInt(meta.asset_height);
       if (!row.width && metaWidth) row.width = metaWidth;
       if (!row.height && metaHeight) row.height = metaHeight;
+      const assetId = sanitizeAssetId(meta.asset_id, 96);
+      const ownerUri = normalizeOwnerUri(meta.asset_owner_uri || "/");
+      const assetUri = sanitizeText(meta.asset_uri, 400) || buildAssetIdUri(assetId);
+      const assetSlug = sanitizeAssetSlug(meta.asset_slug, 120);
       row.asset = {
-        assetId: sanitizeText(meta.asset_id, 96) || null,
+        assetId: assetId || null,
+        ownerUri,
+        uri: assetUri || null,
+        slug: assetSlug || null,
+        accessInheritance: "owner",
         role: sanitizeText(meta.asset_role, 40) || null,
         format: sanitizeText(meta.asset_format, 40) || null,
         variantKind: sanitizeText(meta.asset_variant_kind, 80) || null,
@@ -599,6 +662,9 @@ const R2_MANAGED_METADATA_KEYS = [
   "asset_usage_notes",
   "asset_structured_meta",
   "asset_schema_ref",
+  "asset_owner_uri",
+  "asset_uri",
+  "asset_slug",
   "asset_copyright_holder",
   "asset_license",
 ];
@@ -626,10 +692,21 @@ function toPatchPayload(body) {
   }
   const metadata = body?.metadata || {};
   const rights = body?.rights || {};
+  const asset = body?.asset || {};
+  const ownerUri = normalizeOwnerUri(asset?.ownerUri || "/");
+  const assetUriRaw = sanitizeText(asset?.uri, 400);
+  const assetId = sanitizeAssetId(asset?.assetId || "", 96);
+  const assetUri = assetUriRaw || buildAssetIdUri(assetId);
+  const assetSlug = sanitizeAssetSlug(asset?.slug, 120);
   return {
     source,
     sourceId,
     key,
+    asset: {
+      ownerUri,
+      uri: assetUri,
+      slug: assetSlug,
+    },
     metadata: {
       title: sanitizeText(metadata?.title, 200),
       caption: sanitizeText(metadata?.caption, 300),
@@ -647,7 +724,7 @@ function toPatchPayload(body) {
   };
 }
 
-async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights }) {
+async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights, asset }) {
   const baseUrl = normalizeWordPressUrl();
   if (!baseUrl) throw new Error("WordPress URL is not configured.");
   const auth = getWordPressGraphqlAuth();
@@ -665,6 +742,9 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights })
       ragbaz_asset_usage_notes: metadata.usageNotes,
       ragbaz_asset_structured_meta: metadata.structuredMeta,
       ragbaz_asset_schema_ref: metadata.schemaRef,
+      ragbaz_asset_owner_uri: asset.ownerUri || "/",
+      ragbaz_asset_uri: asset.uri || "",
+      ragbaz_asset_slug: asset.slug || "",
       ragbaz_asset_copyright_holder: rights.copyrightHolder,
       ragbaz_asset_license: rights.license,
     },
@@ -716,7 +796,7 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights })
   return normalizeWordPressMediaRow(row);
 }
 
-async function updateR2ObjectMetadata({ key, metadata, rights }) {
+async function updateR2ObjectMetadata({ key, metadata, rights, asset }) {
   if (!isS3Configured("r2")) {
     throw new Error("R2 is not configured.");
   }
@@ -732,6 +812,9 @@ async function updateR2ObjectMetadata({ key, metadata, rights }) {
       asset_usage_notes: metadata.usageNotes,
       asset_structured_meta: metadata.structuredMeta,
       asset_schema_ref: metadata.schemaRef,
+      asset_owner_uri: asset.ownerUri || "/",
+      asset_uri: asset.uri || "",
+      asset_slug: asset.slug || "",
       asset_copyright_holder: rights.copyrightHolder,
       asset_license: rights.license,
     },

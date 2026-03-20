@@ -72,6 +72,41 @@ function sanitizeAssetId(value) {
   return safe || "";
 }
 
+function normalizeOwnerUri(value, max = 320) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "/") return "/";
+  let path = raw;
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      path = new URL(raw).pathname || "/";
+    } catch {
+      path = raw;
+    }
+  }
+  let safe = path
+    .replace(/\s+/g, "")
+    .replace(/\/{2,}/g, "/");
+  if (!safe.startsWith("/")) safe = `/${safe}`;
+  if (safe.length > 1) safe = safe.replace(/\/+$/, "");
+  return safe.slice(0, max) || "/";
+}
+
+function sanitizeAssetSlug(value, max = 120) {
+  const raw = sanitizeAssetValue(value, max).toLowerCase();
+  if (!raw) return "";
+  return raw
+    .replace(/[^a-z0-9._/-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-/]+|[-/]+$/g, "")
+    .slice(0, max);
+}
+
+function buildAssetIdUri(assetId) {
+  const safeId = sanitizeAssetId(assetId);
+  if (!safeId) return "";
+  return `/asset/${encodeURIComponent(safeId)}`;
+}
+
 function parseNullableInt(value) {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number.parseInt(String(value), 10);
@@ -87,6 +122,7 @@ function inferAssetFormat(fileType) {
 }
 
 function parseAssetContext(formData, file, sizeBytes) {
+  const assetId = sanitizeAssetId(formData.get("assetId")) || createAssetId();
   const rawRole = String(
     formData.get("assetRole") || formData.get("variantRole") || "",
   )
@@ -112,9 +148,15 @@ function parseAssetContext(formData, file, sizeBytes) {
       : ALLOWED_VARIANT_KINDS.has(rawVariantKind)
         ? rawVariantKind
         : "compressed";
+  const ownerUri = normalizeOwnerUri(formData.get("ownerUri"));
+  const assetSlug = sanitizeAssetSlug(formData.get("assetSlug"));
+  const assetUri = buildAssetIdUri(assetId);
 
   return {
-    assetId: sanitizeAssetId(formData.get("assetId")) || createAssetId(),
+    assetId,
+    ownerUri,
+    assetSlug,
+    assetUri,
     assetRole,
     assetFormat,
     originalUrl: sanitizeAssetValue(formData.get("originalUrl"), 1000),
@@ -133,11 +175,14 @@ function parseAssetContext(formData, file, sizeBytes) {
 function toStorageMetadata(asset) {
   const metadata = {
     asset_id: asset.assetId,
+    asset_owner_uri: asset.ownerUri || "/",
     asset_role: asset.assetRole,
     asset_format: asset.assetFormat,
     asset_mime: asset.mimeType,
     asset_size: String(asset.sizeBytes),
   };
+  if (asset.assetUri) metadata.asset_uri = asset.assetUri;
+  if (asset.assetSlug) metadata.asset_slug = asset.assetSlug;
   if (asset.originalUrl) metadata.asset_original_url = asset.originalUrl;
   if (asset.originalId) metadata.asset_original_id = asset.originalId;
   if (asset.sourceHash) metadata.asset_hash = asset.sourceHash;
@@ -186,6 +231,9 @@ function buildAssetResponse(asset, uploadResult, backend) {
 
   return {
     assetId: asset.assetId,
+    ownerUri: asset.ownerUri || "/",
+    uri: asset.assetUri || null,
+    slug: asset.assetSlug || null,
     backend,
     role: asset.assetRole,
     format: asset.assetFormat,
@@ -265,6 +313,9 @@ async function uploadToWordPress(arrayBuffer, file, assetContext) {
   if (assetContext?.assetId) {
     const meta = {
       ragbaz_asset_id: assetContext.assetId,
+      ragbaz_asset_owner_uri: assetContext.ownerUri || "/",
+      ragbaz_asset_uri: assetContext.assetUri || "",
+      ragbaz_asset_slug: assetContext.assetSlug || "",
       ragbaz_asset_role: assetContext.assetRole,
       ragbaz_asset_format: assetContext.assetFormat,
       ragbaz_asset_original_url:

@@ -131,9 +131,31 @@ function normalizeEditorMultiline(value, max = 1200) {
     .slice(0, max);
 }
 
+function normalizeOwnerUri(value, max = 320) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "/") return "/";
+  let safe = raw
+    .replace(/\s+/g, "")
+    .replace(/\/{2,}/g, "/");
+  if (!safe.startsWith("/")) safe = `/${safe}`;
+  if (safe.length > 1) safe = safe.replace(/\/+$/, "");
+  return safe.slice(0, max) || "/";
+}
+
+function normalizeAssetSlug(value, max = 120) {
+  const raw = normalizeEditorValue(value, max).toLowerCase();
+  if (!raw) return "";
+  return raw
+    .replace(/[^a-z0-9._/-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-/]+|[-/]+$/g, "")
+    .slice(0, max);
+}
+
 function toEditorState(item) {
   const metadata = item?.metadata || {};
   const rights = item?.rights || {};
+  const asset = item?.asset || {};
   return {
     title: normalizeEditorValue(metadata.title || item?.title || "", 200),
     caption: normalizeEditorValue(metadata.caption || "", 300),
@@ -143,6 +165,10 @@ function toEditorState(item) {
     usageNotes: normalizeEditorMultiline(metadata.usageNotes || "", 1200),
     structuredMeta: normalizeEditorMultiline(metadata.structuredMeta || "", 1800),
     schemaRef: normalizeEditorValue(metadata.schemaRef || "", 400),
+    ownerUri: normalizeOwnerUri(asset.ownerUri || "/"),
+    assetUri: normalizeEditorValue(asset.uri || "", 400),
+    assetSlug: normalizeAssetSlug(asset.slug || "", 120),
+    assetId: normalizeEditorValue(asset.assetId || "", 96),
     copyrightHolder: normalizeEditorValue(rights.copyrightHolder || "", 180),
     license: normalizeEditorValue(rights.license || "", 180),
   };
@@ -339,6 +365,12 @@ export default function AdminMediaLibraryTab({
           usageNotes: normalizeEditorMultiline(editor.usageNotes, 1200),
           structuredMeta: normalizeEditorMultiline(editor.structuredMeta, 1800),
           schemaRef: normalizeEditorValue(editor.schemaRef, 400),
+        },
+        asset: {
+          assetId: normalizeEditorValue(editor.assetId, 96),
+          ownerUri: normalizeOwnerUri(editor.ownerUri, 320),
+          uri: normalizeEditorValue(editor.assetUri, 400),
+          slug: normalizeAssetSlug(editor.assetSlug, 120),
         },
         rights: {
           copyrightHolder: normalizeEditorValue(editor.copyrightHolder, 180),
@@ -1326,6 +1358,51 @@ export default function AdminMediaLibraryTab({
                   "admin.mediaSchemaRefPlaceholder",
                   "URL or key to external schema/contract documentation",
                 )}
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600">
+              <span>{t("admin.mediaOwnerUri", "Owner URI")}</span>
+              <input
+                type="text"
+                value={editor.ownerUri}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    ownerUri: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+                placeholder={t("admin.mediaOwnerUriPlaceholder", "/")}
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600">
+              <span>{t("admin.mediaAssetSlug", "Asset slug (optional)")}</span>
+              <input
+                type="text"
+                value={editor.assetSlug}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    assetSlug: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+                placeholder={t("admin.mediaAssetSlugPlaceholder", "optional-human-readable-label")}
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
+              <span>{t("admin.mediaAssetUri", "Asset URI (asset-id based)")}</span>
+              <input
+                type="text"
+                value={editor.assetUri}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    assetUri: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+                placeholder={t("admin.mediaAssetUriPlaceholder", "/asset/<asset-id>")}
               />
             </label>
             <label className="space-y-1 text-xs text-gray-600">
