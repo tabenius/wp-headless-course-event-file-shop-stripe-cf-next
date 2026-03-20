@@ -2,6 +2,10 @@
 
 This document covers the technical details of the platform. For a high-level overview and quickstart, see the [main README](../README.md).
 
+## Focus Guides
+
+- [Performance & SEO playbook](./performance-and-seo.md) — Web Vitals targets, roundtrip bottlenecks, payload impact, project optimizations, and roadmap tradeoffs.
+
 ## Architecture Overview
 
 ```mermaid

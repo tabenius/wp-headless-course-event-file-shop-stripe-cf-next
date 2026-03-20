@@ -2,6 +2,10 @@
 
 Det här dokumentet beskriver den tekniska bakgrunden till plattformen. För en snabb översikt och kom-igång-guide, se [huvuddokumentationen](../README.md).
 
+## Fokuserade guider
+
+- [Performance & SEO playbook](./performance-and-seo.md) — Web Vitals-mål, roundtrip-flaskhalsar, payload-effekt, genomförda projektoptimeringar och roadmap-tradeoffs.
+
 ## Arkitekturöversikt
 
 ```mermaid

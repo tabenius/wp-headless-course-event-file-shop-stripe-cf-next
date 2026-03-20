@@ -562,6 +562,7 @@ Production client-side source maps are served at `/__maps/*` (admin session requ
 | -------------------------------------------------------------------------- | -------- | --------------------------------------------------- |
 | [English technical reference](docs/README.en.md)                           | English  | Architecture, storage backends, GraphQL details     |
 | [Svensk teknisk referens](docs/README.sv.md)                               | Svenska  | Arkitektur, lagringsbackends, GraphQL-detaljer      |
+| [Performance & SEO playbook](docs/performance-and-seo.md)                  | English  | Web Vitals, bottlenecks, payload impact, SEO roadmap |
 | [Cloudflare deployment](docs/cloudflare-workers-deploy.md)                 | Svenska  | Step-by-step Cloudflare Workers deployment          |
 | [WordPress + LearnPress setup](docs/wordpress-learnpress-course-access.md) | English  | Plugin installation and course access configuration |
 

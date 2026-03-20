@@ -1742,3 +1742,25 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `docs/README.sv.md`: same guidance in Swedish.
 - Validation:
   - Reviewed targeted diffs only for `.env.example`, `docs/README.en.md`, `docs/README.sv.md`.
+
+---
+
+## 2026-03-20 (cont. 33)
+
+### Codex — added dedicated performance + SEO documentation playbook
+
+- Added new documentation file:
+  - `docs/performance-and-seo.md`
+- Content covers:
+  - Web Vitals targets (LCP/INP/CLS/TTFB) and Lighthouse interpretation.
+  - Roundtrip analysis and common bottlenecks (with `/shop` highlighted as current dynamic hotspot).
+  - Quantified payload snapshot (HTML transfer samples, JS/CSS/font totals, static image totals) from local current build/start probes.
+  - Implemented optimizations already landed in this repo (header auth split, menu cache, catch-all dedupe/parallel fallback, batched access checks, image optimization, source-map opt-in, debug-delay defaults).
+  - Directional comparison to plain WordPress (uncached/cached architectural tradeoffs).
+  - SEO section covering classic ranking factors, PageRank context, technical SEO already present, and future roadmap tradeoffs.
+- Linked the new guide in existing docs indexes:
+  - `README.md` detailed documentation table.
+  - `docs/README.en.md` (`Focus Guides` section).
+  - `docs/README.sv.md` (`Fokuserade guider` section).
+- Validation:
+  - Manually verified new links and headings render in all three index documents.
