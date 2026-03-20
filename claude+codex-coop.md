@@ -11,6 +11,36 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
+TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
+
+## 2026-03-20 (cont. 78)
+
+### Codex — asset-aware upload pipeline + media annotation (WP + R2)
+
+- Rebuilt image upload pipeline around a shared asset record with two-step upload flow:
+  - original file uploads first and is tagged as `original`,
+  - processed variant uploads second and links back to original (`assetId`, original URL/ID, hash, dimensions, format).
+- Added upload-time variant typing + rights metadata:
+  - variant kind now supports `compressed` and `derived-work`,
+  - copyright holder + license captured in uploader and propagated through upload API/storage metadata.
+- Extended `/api/admin/upload` asset metadata handling:
+  - persists asset metadata for WP, R2, and optional S3 paths,
+  - writes WordPress attachment meta (`ragbaz_asset_*`) when WP accepts those keys,
+  - includes structured `asset` object in upload response for downstream UI.
+- Extended combined media library API/UI for browsing + annotation:
+  - `/api/admin/media-library` now returns inherited metadata for WP attachments (`title/caption/description/alt`) plus asset/rights fields where present,
+  - R2 rows now probe object metadata headers and surface asset/rights annotations in the same shape,
+  - added `POST /api/admin/media-library` metadata updates for:
+    - WordPress attachments (title/caption/description/alt + ragbaz meta),
+    - R2 objects (managed `x-amz-meta-asset_*` keys via metadata replacement copy).
+- Added media annotation editor in `AdminMediaLibraryTab`:
+  - per-item annotate panel for title/caption/description/alt/tooltip + copyright/license,
+  - quick “suggest alt/tooltip” helper from existing metadata seed,
+  - save flow with success/error toasts and refresh.
+- Added/updated EN/SV/ES i18n keys for media tab + annotation labels and uploader variant/rights controls.
+- Verification:
+  - `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only),
+  - `npm test` passes (`144` pass, `0` fail, `3` skipped).
 
 ## 2026-03-20 (cont. 77)
 
