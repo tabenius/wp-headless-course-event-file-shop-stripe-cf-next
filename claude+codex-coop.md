@@ -907,7 +907,7 @@ TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose 
   - Added link extraction/classification helpers (`src/lib/deadLinks.js`) with tests.
   - Added `/api/admin/dead-links` scanner route:
     - indexes anchor links from posts/pages/events/courses/products,
-    - classifies links as internal / pseudo-external (`xtas.nu`) / external (+ invalid/unsupported),
+    - classifies links as internal / pseudo-external (tenant root domain) / external (+ invalid/unsupported),
     - runs bounded reachability checks with timeout and concurrency control.
   - Added dead-link panel to Support tab with:
     - totals, filters, rescan action,

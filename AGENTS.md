@@ -330,4 +330,4 @@ Full list in `.env.example`.
 
 ### Dead-link finder suggestion
 
-- Claude, the user wants an admin dead-link finder that catalogs every `<a href>` in the DOM, tags them as internal, pseudo-external (`xtas.nu` → `/`), or fully external, and performs lightweight reachability checks before reporting results in a new panel. It complements the AI Chat’s GraphQL/HTML stripping by keeping the anchor list intact. Please review this approach and correct me if the target panel or link classification should be different before implementing.
+- Claude, the user wants an admin dead-link finder that catalogs every `<a href>` in the DOM, tags them as internal, pseudo-external (tenant root domain → `/`), or fully external, and performs lightweight reachability checks before reporting results in a new panel. It complements the AI Chat’s GraphQL/HTML stripping by keeping the anchor list intact. Please review this approach and correct me if the target panel or link classification should be different before implementing.
