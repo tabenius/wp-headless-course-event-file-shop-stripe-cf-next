@@ -11,6 +11,7 @@
     "test:theme": "node --test scripts/generate-theme-css.test.mjs",
     "predev": "npm run theme:css",
     "prebuild": "npm run theme:css",
+    "postbuild": "npm run plugin:copy",
     "prestart": "npm run theme:css",
     "precf:build": "npm run theme:css",
     "config": "./configure.sh",
@@ -24,7 +25,7 @@
     "lint": "eslint .",
     "prettier": "prettier --write .",
     "plugin:build": "npm run build --workspace ragbaz-articulate-plugin",
-    "plugin:copy": "npm run plugin:build && mkdir -p public/downloads/ragbaz-articulate && cp packages/ragbaz-articulate-plugin/dist/Ragbaz-Articulate.zip public/downloads/ragbaz-articulate/",
+    "plugin:copy": "npm run plugin:build && node scripts/copy-plugin-zip.mjs",
     "test": "node --test tests/**/*.test.js"
   },
   "dependencies": {
