@@ -295,6 +295,9 @@ export default function ImageUploader({
       if (!res.ok || !json?.ok) {
         const msg = json?.error || t("admin.uploadFailed");
         emitError(msg);
+        setShowEditor(false);
+        setPreview(null);
+        setFile(null);
         return;
       }
       setShowEditor(false);
@@ -308,6 +311,9 @@ export default function ImageUploader({
     } catch {
       const msg = t("admin.uploadFailed");
       emitError(msg);
+      setShowEditor(false);
+      setPreview(null);
+      setFile(null);
     } finally {
       setUploading(false);
     }

@@ -1517,7 +1517,7 @@ function AccessTab({
                     <div className="flex gap-4 mb-4">
                       <ImagePickerButton
                         imgUrl={imgUrl}
-                        uploadBackend={uploadBackend}
+                        uploadBackend="wordpress"
                         onUploaded={(url) => {
                           const upd = (setter) =>
                             setter((prev) =>

@@ -11,6 +11,18 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-20 (cont. 73)
+
+### Codex — All Products image upload backend safety + modal-close-on-error
+
+- Applied targeted backend safety for WP-content image editing in Access (All Products) panel:
+  - Access-tab `ImagePickerButton` now explicitly uses `uploadBackend=\"wordpress\"` for WP item images.
+  - This avoids bucket-backend code paths when updating WordPress-native content images in that panel.
+- Improved failed-upload UX in `ImageUploader`:
+  - when upload returns non-OK or throws, modal now auto-closes and clears transient preview/file state instead of requiring manual Cancel.
+- Context: user observed Digital Downloads image edit working while All Products save emitted `fs`-related error and left crop dialog open.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-20 (cont. 72)
 
 ### Codex — regression timeline check + revert to near-working picker interaction
