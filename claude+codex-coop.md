@@ -1672,3 +1672,21 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Adds direct “Control check” action button that navigates to Health tab.
 - Validation:
   - `npx eslint src/components/admin/AdminHeader.js`
+
+---
+
+## 2026-03-20 (cont. 30)
+
+### Codex — public style revision history + restore
+
+- Added simple revision control for public-facing style settings in shop settings storage:
+  - `siteStyle` tokens (colors + heading/body font stacks).
+  - `siteStyleHistory` (most recent first, capped at 40, normalized/validated).
+  - Automatic revision snapshots when published style changes.
+- Extended Admin Style tab to edit/publish site style tokens and restore prior revisions from a history table.
+- Added public endpoint `/api/site-style` and client-side style bootstrap in root layout so storefront pages load latest published style (with local cache + refresh).
+- Added EN/SV/ES i18n copy for style save/restore/history UX.
+- Validation:
+  - `npm run lint` (warnings only)
+  - `npm test` (pass)
+  - `npm run build` (pass)
