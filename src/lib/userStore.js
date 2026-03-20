@@ -4,6 +4,7 @@ import {
   readCloudflareKvJson,
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
+import { normalizeUsername } from "@/lib/username";
 
 function getUsersKvKey() {
   return process.env.CF_USERS_KV_KEY || "users";
@@ -13,6 +14,41 @@ let inMemoryUsers = [];
 
 function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
+function normalizeAvatarPublic(value) {
+  return value === true;
+}
+
+function getUsernameSecret() {
+  return process.env.USERNAME_SECRET || process.env.AUTH_SECRET || "dev-only-change-me";
+}
+
+function buildOpaqueEmailDerivedUsername(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return "";
+  const digest = crypto
+    .createHmac("sha256", getUsernameSecret())
+    .update(`username:v1:${normalized}`)
+    .digest("hex")
+    .slice(0, 24);
+  return normalizeUsername(digest) || "0";
+}
+
+function resolveImmutableUsername(user) {
+  const existing = normalizeUsername(user?.username || "");
+  if (existing) return existing;
+  return buildOpaqueEmailDerivedUsername(user?.email || "");
+}
+
+function toPublicUser(user) {
+  return {
+    id: user?.id || "",
+    name: user?.name || "",
+    email: user?.email || "",
+    username: resolveImmutableUsername(user),
+    avatarPublic: normalizeAvatarPublic(user?.avatarPublic),
+  };
 }
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
@@ -133,13 +169,35 @@ export async function findUserByEmail(email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
   const users = await readUsers();
-  return (
-    users.find(
-      (user) =>
-        typeof user?.email === "string" &&
-        normalizeEmail(user.email) === normalized,
-    ) || null
+  const index = users.findIndex(
+    (user) =>
+      typeof user?.email === "string" && normalizeEmail(user.email) === normalized,
   );
+  if (index < 0) return null;
+
+  const stored = users[index] || {};
+  const expectedUsername = resolveImmutableUsername(stored);
+  const expectedAvatarPublic = normalizeAvatarPublic(stored.avatarPublic);
+  const needsPatch =
+    normalizeUsername(stored.username || "") !== expectedUsername ||
+    stored.avatarPublic !== expectedAvatarPublic;
+
+  if (needsPatch) {
+    users[index] = {
+      ...stored,
+      username: expectedUsername,
+      avatarPublic: expectedAvatarPublic,
+      updatedAt: new Date().toISOString(),
+    };
+    await writeUsers(users);
+    return users[index];
+  }
+
+  return {
+    ...stored,
+    username: expectedUsername,
+    avatarPublic: expectedAvatarPublic,
+  };
 }
 
 export async function createUser({ name, email, password }) {
@@ -159,17 +217,20 @@ export async function createUser({ name, email, password }) {
     throw new Error("Email already exists");
   }
 
+  const userId = crypto.randomUUID();
   const user = {
-    id: crypto.randomUUID(),
+    id: userId,
     name: trimmedName,
     email: normalizedEmail,
+    username: buildOpaqueEmailDerivedUsername(normalizedEmail),
+    avatarPublic: false,
     passwordHash: hashPassword(trimmedPassword),
     createdAt: new Date().toISOString(),
   };
 
   users.push(user);
   await writeUsers(users);
-  return { id: user.id, name: user.name, email: user.email };
+  return toPublicUser(user);
 }
 
 export async function validateUserPassword(email, password) {
@@ -177,7 +238,7 @@ export async function validateUserPassword(email, password) {
   if (!user) return null;
   const isValid = verifyPassword(password, user.passwordHash);
   if (!isValid) return null;
-  return { id: user.id, name: user.name, email: user.email };
+  return toPublicUser(user);
 }
 
 export async function updateUserPassword(email, newPassword) {
@@ -196,15 +257,13 @@ export async function updateUserPassword(email, newPassword) {
   if (index < 0) throw new Error("User not found");
   users[index] = {
     ...users[index],
+    username: resolveImmutableUsername(users[index]),
+    avatarPublic: normalizeAvatarPublic(users[index]?.avatarPublic),
     passwordHash: hashPassword(newPassword),
     updatedAt: new Date().toISOString(),
   };
   await writeUsers(users);
-  return {
-    id: users[index].id,
-    name: users[index].name,
-    email: users[index].email,
-  };
+  return toPublicUser(users[index]);
 }
 
 export async function listUsers() {
@@ -212,6 +271,7 @@ export async function listUsers() {
   return users
     .map((user) => ({
       id: user?.id || "",
+      username: resolveImmutableUsername(user),
       name:
         typeof user?.name === "string" && user.name.trim() !== ""
           ? user.name
@@ -219,6 +279,7 @@ export async function listUsers() {
             ? user.email
             : "Unknown",
       email: typeof user?.email === "string" ? user.email : "",
+      avatarPublic: normalizeAvatarPublic(user?.avatarPublic),
       createdAt: user?.createdAt || "",
     }))
     .filter((user) => user.email.includes("@"));
@@ -260,26 +321,27 @@ export async function upsertOAuthUser({
     users[existingIndex] = {
       ...existing,
       name: trimmedName || existing.name,
+      username: resolveImmutableUsername(existing),
+      avatarPublic: normalizeAvatarPublic(existing?.avatarPublic),
       oauthAccounts,
       updatedAt: new Date().toISOString(),
     };
     await writeUsers(users);
-    return {
-      id: users[existingIndex].id,
-      name: users[existingIndex].name,
-      email: users[existingIndex].email,
-    };
+    return toPublicUser(users[existingIndex]);
   }
 
+  const newUserId = crypto.randomUUID();
   const newUser = {
-    id: crypto.randomUUID(),
+    id: newUserId,
     name: trimmedName || normalizedEmail.split("@")[0],
     email: normalizedEmail,
+    username: buildOpaqueEmailDerivedUsername(normalizedEmail),
+    avatarPublic: false,
     passwordHash: "",
     oauthAccounts: [nextOAuthAccount],
     createdAt: new Date().toISOString(),
   };
   users.push(newUser);
   await writeUsers(users);
-  return { id: newUser.id, name: newUser.name, email: newUser.email };
+  return toPublicUser(newUser);
 }

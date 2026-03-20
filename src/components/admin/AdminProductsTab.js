@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import { parsePriceCents } from "@/lib/parsePrice";
 import {
@@ -79,8 +79,8 @@ function SafeProductImage({ src, alt = "", className, fallbackClassName }) {
 
 function InnerTabs({ active, onChange }) {
   const tabs = [
-    { key: "access", label: t("admin.productsTabAll", "All products") },
-    { key: "settings", label: t("admin.visibleTypesTab", "Visible types") },
+    { key: "access", label: t("admin.productsTabAll", "Products") },
+    { key: "settings", label: t("admin.visibleTypesTab", "Types") },
   ];
   return (
     <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1 min-w-0">
@@ -218,7 +218,6 @@ function PriceAccessForm({
         <label className="text-sm font-semibold text-gray-700">
           {t("admin.courseFee")} <span className="text-red-500">*</span>
         </label>
-        <p className="text-xs text-gray-500">{t("admin.feeHint")}</p>
         <label className="inline-flex items-center gap-2 text-sm text-gray-700">
           <input
             type="checkbox"
@@ -516,7 +515,7 @@ function AccessTab({
       <span className="ml-0.5">{sortDir === "asc" ? "↑" : "↓"}</span>
     ) : null;
 
-  const TYPE_LABEL = { wc: "WC", lp: "LP", ev: "EV", shop: "SH", other: "URI" };
+  const TYPE_LABEL = { wc: "WC", lp: "LP", ev: "EV", shop: "DL", other: "URI" };
   const TYPE_COLOR = {
     wc: "bg-blue-100 text-blue-800",
     lp: "bg-indigo-100 text-indigo-800",
@@ -627,6 +626,123 @@ function AccessTab({
     setVatRateDraft("");
   }
 
+  const listContainerRef = useRef(null);
+  const didInitialListFocusRef = useRef(false);
+
+  const focusProductList = useCallback((preferredUri = "") => {
+    if (typeof window === "undefined") return;
+    window.requestAnimationFrame(() => {
+      const container = listContainerRef.current;
+      if (!container) return;
+      const buttons = Array.from(
+        container.querySelectorAll("button[data-product-list-item='true']"),
+      );
+      const target =
+        buttons.find((button) => button.dataset.productUri === preferredUri) ||
+        buttons[0] ||
+        container;
+      if (typeof target.focus === "function") {
+        target.focus();
+      }
+      if (
+        target !== container &&
+        typeof target.scrollIntoView === "function"
+      ) {
+        target.scrollIntoView({ block: "nearest" });
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (didInitialListFocusRef.current || typeof window === "undefined") return;
+
+    const delays = [0, 80, 180, 320];
+    const timers = delays.map((delay) =>
+      window.setTimeout(() => {
+        if (didInitialListFocusRef.current) return;
+        focusProductList(selectedCourse);
+
+        const container = listContainerRef.current;
+        const active = document.activeElement;
+        if (
+          container &&
+          active &&
+          (active === container || container.contains(active))
+        ) {
+          didInitialListFocusRef.current = true;
+        }
+      }, delay),
+    );
+
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [focusProductList, selectedCourse]);
+
+  useEffect(() => {
+    function handleEscapeToCloseEditor(event) {
+      if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
+      if (!showDetail || !selectedCourse) return;
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector("[data-admin-modal='true']")
+      ) {
+        return;
+      }
+      event.preventDefault();
+      const closedUri = selectedCourse;
+      setSelectedCourse("");
+      focusProductList(closedUri);
+    }
+
+    window.addEventListener("keydown", handleEscapeToCloseEditor);
+    return () => window.removeEventListener("keydown", handleEscapeToCloseEditor);
+  }, [focusProductList, selectedCourse, setSelectedCourse, showDetail]);
+
+  const handleListKeyDown = useCallback(
+    (event) => {
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      const container = listContainerRef.current;
+      if (!container) return;
+      const buttons = Array.from(
+        container.querySelectorAll("button[data-product-list-item='true']"),
+      );
+      if (buttons.length === 0) return;
+
+      event.preventDefault();
+
+      const activeUri = document.activeElement?.dataset?.productUri || "";
+      let currentIndex = buttons.findIndex(
+        (button) => button.dataset.productUri === activeUri,
+      );
+
+      if (currentIndex < 0 && selectedCourse) {
+        currentIndex = buttons.findIndex(
+          (button) => button.dataset.productUri === selectedCourse,
+        );
+      }
+
+      if (currentIndex < 0) {
+        currentIndex = event.key === "ArrowDown" ? -1 : buttons.length;
+      }
+
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      const nextIndex = Math.max(
+        0,
+        Math.min(buttons.length - 1, currentIndex + step),
+      );
+      const nextButton = buttons[nextIndex];
+      const nextUri = nextButton?.dataset?.productUri;
+      if (!nextUri) return;
+
+      handleSelection(nextUri);
+      window.requestAnimationFrame(() => {
+        nextButton.focus();
+        nextButton.scrollIntoView({ block: "nearest" });
+      });
+    },
+    [handleSelection, selectedCourse],
+  );
+
   return (
     <div
       className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:min-h-[520px]"
@@ -687,7 +803,7 @@ function AccessTab({
               },
               products.length > 0 && {
                 key: "shop",
-                label: `Shop (${products.length})`,
+                label: `${t("admin.downloadsLabel", "Downloads")} (${products.length})`,
               },
             ]
               .filter(Boolean)
@@ -736,7 +852,13 @@ function AccessTab({
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto">
+        <div
+          ref={listContainerRef}
+          className="flex-1 overflow-auto focus:outline-none"
+          tabIndex={0}
+          onKeyDown={handleListKeyDown}
+          aria-label={t("admin.productList", "Product list")}
+        >
           {(() => {
             // Build flat list from all sources
             const flat = [
@@ -823,6 +945,8 @@ function AccessTab({
                   key={item.uri}
                   type="button"
                   onClick={() => handleSelection(item.uri)}
+                  data-product-list-item="true"
+                  data-product-uri={item.uri}
                   title={titleText}
                   className={`w-full text-left px-2 py-2 flex items-center gap-1.5 border-b last:border-b-0 transition-colors ${
                     isActive
@@ -1094,12 +1218,12 @@ function AccessTab({
                       <p className="admin-product-title text-sm font-bold break-words">
                         {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                       </p>
-                      <p className="text-xs text-gray-400">
-                        {t(
-                          "admin.shopProductInlineHint",
-                          "Shop product — edit details below in this panel.",
-                        )}
-                      </p>
+                        <p className="text-xs text-gray-400">
+                          {t(
+                            "admin.shopProductInlineHint",
+                            "Download product — edit details below in this panel.",
+                          )}
+                        </p>
                       {selectedShopCategories.length > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
                           {t("admin.categoryLabel")}:{" "}
@@ -1598,17 +1722,6 @@ export default function AdminProductsTab(props) {
             {t("admin.contentAccessDesc")}
           </p>
         </div>
-        {process.env.NEXT_PUBLIC_STRIPE_MODE !== "live" && (
-          <a
-            href="https://dashboard.stripe.com/test/payments"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-purple-700 hover:underline shrink-0"
-            title={t("admin.stripePaymentsTooltip")}
-          >
-            {t("admin.stripePayments")} &rarr;
-          </a>
-        )}
       </div>
 
       <InnerTabs active={innerTab} onChange={setInnerTab} />

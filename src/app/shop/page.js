@@ -54,7 +54,8 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
       ) {
         if (
           purchaseKind === "digital_file" ||
-          purchaseKind === "course_product"
+          purchaseKind === "course_product" ||
+          purchaseKind === "asset_product"
         ) {
           await grantDigitalAccess(paidProductId, userEmail);
         }

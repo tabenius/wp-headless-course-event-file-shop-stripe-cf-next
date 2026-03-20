@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { buildR2Url, signR2Put } from "@/lib/r2Edge";
+import { registerUploadedAsset } from "@/lib/avatarFeedStore";
 import { t } from "@/lib/i18n";
 
 const DEFAULT_MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
@@ -70,6 +71,29 @@ function sanitizeAssetId(value) {
   const raw = sanitizeAssetValue(value, 96).toLowerCase();
   const safe = raw.replace(/[^a-z0-9._:-]/g, "");
   return safe || "";
+}
+
+function normalizeAvatarId(value) {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) return "";
+  const withoutPrefix = raw.startsWith("0x") ? raw.slice(2) : raw;
+  if (!withoutPrefix || !/^[0-9a-f]+$/.test(withoutPrefix)) return "";
+  return withoutPrefix;
+}
+
+function normalizeAuthorType(value) {
+  const safe = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (safe === "avatar") return "avatar";
+  if (safe === "user") return "user";
+  return "admin";
+}
+
+function normalizeAuthorId(value, authorType) {
+  if (authorType === "admin") return "admins";
+  if (authorType === "avatar") return normalizeAvatarId(value);
+  return sanitizeAssetValue(value, 160);
 }
 
 function normalizeOwnerUri(value, max = 320) {
@@ -151,6 +175,10 @@ function parseAssetContext(formData, file, sizeBytes) {
   const ownerUri = normalizeOwnerUri(formData.get("ownerUri"));
   const assetSlug = sanitizeAssetSlug(formData.get("assetSlug"));
   const assetUri = buildAssetIdUri(assetId);
+  const authorType = normalizeAuthorType(formData.get("authorType"));
+  const authorId = normalizeAuthorId(formData.get("authorId"), authorType);
+  const safeAuthorType = authorId ? authorType : "admin";
+  const safeAuthorId = authorId || "admins";
 
   return {
     assetId,
@@ -165,6 +193,8 @@ function parseAssetContext(formData, file, sizeBytes) {
     copyrightHolder: sanitizeAssetValue(formData.get("copyrightHolder"), 160),
     license: sanitizeAssetValue(formData.get("license"), 160),
     variantKind,
+    authorType: safeAuthorType,
+    authorId: safeAuthorId,
     width: parseNullableInt(formData.get("width")),
     height: parseNullableInt(formData.get("height")),
     sizeBytes,
@@ -187,6 +217,8 @@ function toStorageMetadata(asset) {
   if (asset.originalId) metadata.asset_original_id = asset.originalId;
   if (asset.sourceHash) metadata.asset_hash = asset.sourceHash;
   if (asset.variantKind) metadata.asset_variant_kind = asset.variantKind;
+  if (asset.authorType) metadata.asset_author_type = asset.authorType;
+  if (asset.authorId) metadata.asset_author_id = asset.authorId;
   if (asset.copyrightHolder) {
     metadata.asset_copyright_holder = asset.copyrightHolder;
   }
@@ -239,6 +271,10 @@ function buildAssetResponse(asset, uploadResult, backend) {
     format: asset.assetFormat,
     sourceHash: asset.sourceHash || null,
     variantKind: asset.variantKind,
+    author: {
+      type: asset.authorType || "admin",
+      id: asset.authorId || "admins",
+    },
     rights: {
       copyrightHolder: asset.copyrightHolder || null,
       license: asset.license || null,
@@ -330,6 +366,8 @@ async function uploadToWordPress(arrayBuffer, file, assetContext) {
       ragbaz_asset_size: assetContext.sizeBytes,
       ragbaz_asset_hash: assetContext.sourceHash || "",
       ragbaz_asset_variant_kind: assetContext.variantKind,
+      ragbaz_asset_author_type: assetContext.authorType || "admin",
+      ragbaz_asset_author_id: assetContext.authorId || "admins",
       ragbaz_asset_copyright_holder: assetContext.copyrightHolder || "",
       ragbaz_asset_license: assetContext.license || "",
       ragbaz_asset_width:
@@ -346,6 +384,19 @@ async function uploadToWordPress(arrayBuffer, file, assetContext) {
   }
 
   return result;
+}
+
+async function persistAssetRecord(asset, uploadResult) {
+  try {
+    await registerUploadedAsset({
+      asset,
+      uploadResult,
+      creatorType: asset?.author?.type || "admin",
+      creatorId: asset?.author?.id || "admins",
+    });
+  } catch (error) {
+    console.warn("Asset record persistence skipped:", error);
+  }
 }
 
 function getR2Config() {
@@ -480,6 +531,7 @@ export async function POST(request) {
     if (backend === "r2") {
       const result = await uploadToR2(arrayBuffer, file, storageMetadata);
       const asset = buildAssetResponse(assetContext, result, backend);
+      await persistAssetRecord(asset, result);
       return NextResponse.json({
         ok: true,
         ...result,
@@ -513,6 +565,7 @@ export async function POST(request) {
       );
       const result = { url, title: file.name };
       const asset = buildAssetResponse(assetContext, result, backend);
+      await persistAssetRecord(asset, result);
       return NextResponse.json({
         ok: true,
         ...result,
@@ -525,6 +578,7 @@ export async function POST(request) {
 
     const result = await uploadToWordPress(arrayBuffer, file, assetContext);
     const asset = buildAssetResponse(assetContext, result, "wordpress");
+    await persistAssetRecord(asset, result);
     return NextResponse.json({
       ok: true,
       ...result,

@@ -26,6 +26,14 @@ export default async function Header() {
     fetchSiteTitle(),
     getNavigation(),
   ]);
+  const isLoggedIn = Boolean(session?.user);
+  const inventoryNavItem = {
+    href: "/inventory",
+    label: t("common.inventory", "Inventory"),
+  };
+  const navItems = isLoggedIn
+    ? [...navigation, inventoryNavItem]
+    : navigation;
   const menuItemClass =
     "font-[family-name:var(--font-montserrat)] text-[13px] font-normal hover:underline focus:underline whitespace-nowrap";
   const activeMenuClass =
@@ -38,6 +46,9 @@ export default async function Header() {
       <span className="block text-[13px] font-[family-name:var(--font-montserrat)] text-gray-500 py-[6px]">
         {session.user.name || session.user.email}
       </span>
+      <Link href="/me" className={mobileAuthClass}>
+        {t("common.profile", "Profile")}
+      </Link>
       <SignOutButton className={mobileAuthClass} />
     </>
   ) : (
@@ -72,7 +83,7 @@ export default async function Header() {
         {/* Desktop navigation + user icon */}
         <div className="hidden lg:flex items-center gap-x-3">
           <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-            {navigation.map((item) =>
+            {navItems.map((item) =>
               item.children?.length > 0 ? (
                 <NavDropdown
                   key={item.href}
@@ -103,7 +114,7 @@ export default async function Header() {
 
         {/* Mobile hamburger + slide-out menu */}
         <MobileNav
-          items={[...navigation, { href: "/admin", label: t("common.admin") }]}
+          items={[...navItems, { href: "/admin", label: t("common.admin") }]}
           authLinks={mobileAuthLinks}
         />
       </div>

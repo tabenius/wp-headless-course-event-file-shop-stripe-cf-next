@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-20 (Codex)**: Added a new avatar-feed marketplace foundation: persistent asset authoring records (`admin`/`user`/`avatar`), private avatar feed/item graph (default/composite/collection feeds, follows, item URIs), new avatar feed APIs/routes (`/avatar/*`, `/items/*`), and upload/media-library author metadata propagation to WP+R2 (`asset_author_type`/`asset_author_id`) with composite feed aggregation including collection feeds.
 - **2026-03-20 (Codex)**: Completed cleanup after Products/Access merge by deleting the obsolete `ProductsTab` component and removing the unreachable `innerTab === "products"` render branch in `AdminProductsTab`; also removed leftover helper functions that were only used by that dead path.
 - **2026-03-20 (Codex)**: Began UI merge of “All products” + “Digital downloads” by removing the dedicated Digital Downloads inner-tab button and embedding shop-product detail editing directly in the Access/All-products right pane (image, name/slug/type/active, description + image generator, file/course URI + upload controls).
 - **2026-03-20 (Codex)**: Reverted temporary Access-tab image-backend pin to preserve backend flexibility (`uploadBackend={uploadBackend}` restored for WP-item image edits), and added explicit image-upload diagnostics in `ImageUploader` (logs/status + backend-tagged error text) while keeping modal auto-close on upload failure.

@@ -13,6 +13,43 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
 
+## 2026-03-20 (cont. 83)
+
+### Codex — avatar-feed marketplace foundation (private items, authored assets)
+
+- Added a new persistent avatar-feed graph store (`src/lib/avatarFeedStore.js`) with:
+  - asset records with creator identity (`admin` / `user` / `avatar`),
+  - hardcoded avatar feeds (`default`, `composite`),
+  - virtual collection feeds (reference-based),
+  - avatar feed follows,
+  - feed items with canonical URI `/items/{item_id}`.
+- Implemented feed access policy as private-by-default:
+  - feed and item reads require avatar context and pass owner/follower checks,
+  - `/items/{item_id}` remains private.
+- Implemented publishing policy:
+  - normal users can create assets,
+  - only avatars can publish feed items,
+  - collection/composite feeds are virtual and cannot accept direct publish writes.
+- Added new avatar/feed/item APIs:
+  - `/api/avatar/assets` (list/create asset records),
+  - `/api/avatar/feeds` (list feeds + create collection feed),
+  - `/api/avatar/follows` (follow/unfollow/list),
+  - `/api/avatar/items` (list/publish feed items).
+- Added URI pages for feed and item flows:
+  - `/avatar/[avatar_hex]` profile/feed entrypoint,
+  - `/avatar/[avatar_hex]/default`,
+  - `/avatar/[avatar_hex]/composite`,
+  - `/avatar/[avatar_hex]/feeds/[feedSlug]`,
+  - `/items/[item_id]`.
+- Wired upload/media metadata to asset authorship:
+  - upload route now propagates `asset_author_type` / `asset_author_id` to WP/R2 metadata and persists asset records,
+  - media-library API now reads/writes author metadata for both WP and R2.
+- Updated composite behavior per clarification:
+  - composite now merges own default feed, own collection feeds, and followed feeds.
+- Verification:
+  - `npm run lint` (passes; existing 3 `@next/next/no-img-element` warnings unchanged),
+  - `npm test` (passes: `144` pass, `0` fail, `3` skipped).
+
 ## 2026-03-20 (cont. 82)
 
 ### Codex — image uploader UX compacted + source chooser + Escape cancel

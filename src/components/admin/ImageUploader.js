@@ -676,6 +676,7 @@ export default function ImageUploader({
 
       {showSourceChooser && (
         <div
+          data-admin-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
@@ -724,6 +725,7 @@ export default function ImageUploader({
 
       {showMediaBrowser && (
         <div
+          data-admin-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(event) => {
             if (event.target === event.currentTarget) closeMediaBrowser();
@@ -836,7 +838,10 @@ export default function ImageUploader({
 
       {/* Crop/scale editor modal */}
       {showEditor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div
+          data-admin-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
           <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full p-4 sm:p-5 space-y-4 max-h-[92vh] overflow-y-auto">
             <div>
               <h3 className="font-semibold text-sm">{t("admin.cropAndScale")}</h3>

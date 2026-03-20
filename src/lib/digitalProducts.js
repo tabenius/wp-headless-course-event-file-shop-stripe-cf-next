@@ -25,6 +25,16 @@ function normalizeType(type) {
   return safe === "course" ? "course" : "digital_file";
 }
 
+function normalizeProductMode(mode, type, assetId) {
+  const safe = typeof mode === "string" ? mode.trim().toLowerCase() : "";
+  if (safe === "asset") return "asset";
+  if (safe === "manual_uri" || safe === "course") return "manual_uri";
+  if (safe === "digital_file" || safe === "file") return "digital_file";
+  if (type === "course") return "manual_uri";
+  if (assetId) return "asset";
+  return "digital_file";
+}
+
 function normalizeMimeType(mimeType) {
   return typeof mimeType === "string" ? mimeType.trim().toLowerCase() : "";
 }
@@ -46,6 +56,12 @@ function normalizeCourseUri(courseUri) {
   const trimmed = courseUri.trim();
   if (!trimmed) return "";
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function normalizeAssetId(assetId) {
+  const safe = typeof assetId === "string" ? assetId.trim().toLowerCase() : "";
+  if (!safe) return "";
+  return safe.replace(/[^a-z0-9._:-]/g, "");
 }
 
 function isValidHttpUrl(url) {
@@ -89,6 +105,8 @@ function sanitizeProduct(product, seenSlugs) {
   const imageUrl =
     typeof product?.imageUrl === "string" ? product.imageUrl.trim() : "";
   const type = normalizeType(product?.type);
+  const assetId = normalizeAssetId(product?.assetId || "");
+  const productMode = normalizeProductMode(product?.productMode, type, assetId);
   const rawPrice = product?.priceCents;
   const priceCents =
     typeof rawPrice === "number" && Number.isFinite(rawPrice)
@@ -102,10 +120,12 @@ function sanitizeProduct(product, seenSlugs) {
   const vatPercent = normalizeVatPercent(product?.vatPercent);
 
   if (imageUrl && !isValidHttpUrl(imageUrl)) return null;
-  if (type === "digital_file" && !isValidHttpUrl(fileUrl)) return null;
-  if (type === "course" && !courseUri) return null;
+  if (productMode === "digital_file" && !isValidHttpUrl(fileUrl)) return null;
+  if (productMode === "manual_uri" && !courseUri) return null;
+  if (productMode === "asset" && !assetId) return null;
 
-  const normalizedType = type === "course" ? "digital_course" : "digital_file";
+  const normalizedType =
+    productMode === "manual_uri" ? "digital_course" : "digital_file";
   const categories = deriveDigitalProductCategories({
     ...product,
     type: normalizedType,
@@ -120,12 +140,14 @@ function sanitizeProduct(product, seenSlugs) {
     title: name,
     description,
     imageUrl,
-    type,
+    type: productMode === "manual_uri" ? "course" : "digital_file",
+    productMode,
     priceCents,
     currency: normalizeCurrency(product?.currency),
-    fileUrl: type === "digital_file" ? fileUrl : "",
-    courseUri: type === "course" ? courseUri : "",
-    mimeType: type === "digital_file" ? mimeType : "",
+    fileUrl: productMode === "digital_file" ? fileUrl : "",
+    courseUri: productMode === "manual_uri" ? courseUri : "",
+    mimeType: productMode === "digital_file" ? mimeType : "",
+    assetId: productMode === "asset" ? assetId : "",
     vatPercent,
     active: product?.active !== false,
     updatedAt: new Date().toISOString(),
@@ -246,14 +268,42 @@ export async function listDigitalProducts({ includeInactive = false } = {}) {
 }
 
 export async function getDigitalProductBySlug(slug) {
-  const safeSlug = slugify(slug);
-  if (!safeSlug) return null;
+  const rawSlug = String(slug || "").trim().replace(/^\/+|\/+$/g, "");
+  const decodedSlug = (() => {
+    if (!rawSlug) return "";
+    try {
+      return decodeURIComponent(rawSlug);
+    } catch {
+      return rawSlug;
+    }
+  })();
+  const safeSlug = slugify(decodedSlug);
+  const safeAssetId = normalizeAssetId(decodedSlug);
+  if (!safeSlug && !safeAssetId) return null;
   const products = await listDigitalProducts({ includeInactive: true });
-  return products.find((product) => product.slug === safeSlug) || null;
+  return (
+    products.find(
+      (product) =>
+        product.slug === safeSlug ||
+        (product.productMode === "asset" && product.assetId === safeAssetId),
+    ) || null
+  );
 }
 
 export async function getDigitalProductById(productId) {
   return getDigitalProductBySlug(productId);
+}
+
+export async function getDigitalProductByAssetId(assetId) {
+  const safeAssetId = normalizeAssetId(assetId);
+  if (!safeAssetId) return null;
+  const products = await listDigitalProducts({ includeInactive: true });
+  return (
+    products.find(
+      (product) =>
+        product.productMode === "asset" && product.assetId === safeAssetId,
+    ) || null
+  );
 }
 
 export function buildProductSlug(name) {

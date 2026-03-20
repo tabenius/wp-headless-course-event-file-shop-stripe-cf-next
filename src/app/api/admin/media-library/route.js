@@ -136,6 +136,27 @@ function sanitizeAssetId(value, max = 96) {
   return raw.replace(/[^a-z0-9._:-]/g, "");
 }
 
+function normalizeAvatarId(value) {
+  const raw = sanitizeText(value, 128).toLowerCase();
+  if (!raw) return "";
+  const withoutPrefix = raw.startsWith("0x") ? raw.slice(2) : raw;
+  if (!withoutPrefix || !/^[0-9a-f]+$/.test(withoutPrefix)) return "";
+  return withoutPrefix;
+}
+
+function normalizeAuthorType(value) {
+  const safe = sanitizeText(value, 24).toLowerCase();
+  if (safe === "avatar") return "avatar";
+  if (safe === "user") return "user";
+  return "admin";
+}
+
+function normalizeAuthorId(value, authorType) {
+  if (authorType === "admin") return "admins";
+  if (authorType === "avatar") return normalizeAvatarId(value);
+  return sanitizeText(value, 160);
+}
+
 function buildAssetIdUri(assetId) {
   const safeId = sanitizeAssetId(assetId);
   if (!safeId) return "";
@@ -424,6 +445,14 @@ function normalizeWordPressMediaRow(row) {
   const sourceHash = readWordPressMeta(rowMeta, "ragbaz_asset_hash", 180);
   const originalUrl = readWordPressMeta(rowMeta, "ragbaz_asset_original_url", 1024);
   const originalId = readWordPressMeta(rowMeta, "ragbaz_asset_original_id", 96);
+  const authorType = normalizeAuthorType(
+    readWordPressMeta(rowMeta, "ragbaz_asset_author_type", 24),
+  );
+  const authorId =
+    normalizeAuthorId(
+      readWordPressMeta(rowMeta, "ragbaz_asset_author_id", 160),
+      authorType,
+    ) || "admins";
   const copyrightHolder = readWordPressMeta(
     rowMeta,
     "ragbaz_asset_copyright_holder",
@@ -470,6 +499,10 @@ function normalizeWordPressMediaRow(row) {
       sourceHash: sourceHash || null,
       originalUrl: originalUrl || null,
       originalId: originalId || null,
+      author: {
+        type: authorType,
+        id: authorId,
+      },
     },
   };
 }
@@ -568,6 +601,10 @@ async function fetchR2Media({ limit, prefix, search }) {
         sourceHash: null,
         originalUrl: null,
         originalId: null,
+        author: {
+          type: "admin",
+          id: "admins",
+        },
       },
     };
   });
@@ -621,6 +658,9 @@ async function fetchR2Media({ limit, prefix, search }) {
       const ownerUri = normalizeOwnerUri(meta.asset_owner_uri || "/");
       const assetUri = sanitizeText(meta.asset_uri, 400) || buildAssetIdUri(assetId);
       const assetSlug = sanitizeAssetSlug(meta.asset_slug, 120);
+      const authorType = normalizeAuthorType(meta.asset_author_type);
+      const authorId =
+        normalizeAuthorId(meta.asset_author_id, authorType) || "admins";
       row.asset = {
         assetId: assetId || null,
         ownerUri,
@@ -633,6 +673,10 @@ async function fetchR2Media({ limit, prefix, search }) {
         sourceHash: sanitizeText(meta.asset_hash, 180) || null,
         originalUrl: sanitizeText(meta.asset_original_url, 1024) || null,
         originalId: sanitizeText(meta.asset_original_id, 96) || null,
+        author: {
+          type: authorType,
+          id: authorId,
+        },
       };
     } catch {
       // Keep base list row if metadata probe fails.
@@ -665,6 +709,8 @@ const R2_MANAGED_METADATA_KEYS = [
   "asset_owner_uri",
   "asset_uri",
   "asset_slug",
+  "asset_author_type",
+  "asset_author_id",
   "asset_copyright_holder",
   "asset_license",
 ];
@@ -698,6 +744,12 @@ function toPatchPayload(body) {
   const assetId = sanitizeAssetId(asset?.assetId || "", 96);
   const assetUri = assetUriRaw || buildAssetIdUri(assetId);
   const assetSlug = sanitizeAssetSlug(asset?.slug, 120);
+  const authorType = normalizeAuthorType(asset?.author?.type || asset?.authorType);
+  const authorId =
+    normalizeAuthorId(
+      asset?.author?.id || asset?.authorId,
+      authorType,
+    ) || "admins";
   return {
     source,
     sourceId,
@@ -706,6 +758,10 @@ function toPatchPayload(body) {
       ownerUri,
       uri: assetUri,
       slug: assetSlug,
+      author: {
+        type: authorType,
+        id: authorId,
+      },
     },
     metadata: {
       title: sanitizeText(metadata?.title, 200),
@@ -745,6 +801,8 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights, a
       ragbaz_asset_owner_uri: asset.ownerUri || "/",
       ragbaz_asset_uri: asset.uri || "",
       ragbaz_asset_slug: asset.slug || "",
+      ragbaz_asset_author_type: asset.author?.type || "admin",
+      ragbaz_asset_author_id: asset.author?.id || "admins",
       ragbaz_asset_copyright_holder: rights.copyrightHolder,
       ragbaz_asset_license: rights.license,
     },
@@ -815,6 +873,8 @@ async function updateR2ObjectMetadata({ key, metadata, rights, asset }) {
       asset_owner_uri: asset.ownerUri || "/",
       asset_uri: asset.uri || "",
       asset_slug: asset.slug || "",
+      asset_author_type: asset.author?.type || "admin",
+      asset_author_id: asset.author?.id || "admins",
       asset_copyright_holder: rights.copyrightHolder,
       asset_license: rights.license,
     },

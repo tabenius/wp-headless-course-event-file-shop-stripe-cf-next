@@ -53,6 +53,15 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
           )}
           {isLoggedIn && (
             <Link
+              href="/me"
+              className={itemClass}
+              onClick={() => setOpen(false)}
+            >
+              {t("common.profile", "Profile")}
+            </Link>
+          )}
+          {isLoggedIn && (
+            <Link
               href="/admin"
               className={itemClass}
               onClick={() => setOpen(false)}

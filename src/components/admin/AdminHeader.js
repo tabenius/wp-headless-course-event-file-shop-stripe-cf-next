@@ -93,7 +93,7 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("sales"),
     },
     {
-      label: t("admin.navMedia", "Media"),
+      label: t("admin.navMedia", "Asset library"),
       tab: "media",
       hotkey: getAdminTabHotkeyLabel("media"),
     },

@@ -9,6 +9,20 @@ function formatPrice(priceCents, currency) {
   return `${(priceCents / 100).toFixed(0)} ${String(currency || "SEK").toUpperCase()}`;
 }
 
+function deriveBuyableUri(product) {
+  if (product?.productMode === "asset" && product?.assetId) {
+    return `/shop/${encodeURIComponent(product.assetId)}`;
+  }
+  return `/shop/${encodeURIComponent(product?.slug || "")}`;
+}
+
+function deriveBoughtUri(product) {
+  if (product?.productMode === "asset" && product?.assetId) {
+    return `/inventory/${encodeURIComponent(product.assetId)}`;
+  }
+  return "";
+}
+
 export default function ShopProductDetail({
   user,
   product,
@@ -20,10 +34,12 @@ export default function ShopProductDetail({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imageBroken, setImageBroken] = useState(false);
+  const buyableUri = deriveBuyableUri(product);
+  const boughtUri = deriveBoughtUri(product);
 
   async function startCheckout() {
     if (!user?.email) {
-      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(`/shop/${product.slug}`)}`;
+      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(buyableUri)}`;
       return;
     }
     if (!stripeEnabled) {
@@ -112,7 +128,14 @@ export default function ShopProductDetail({
           </a>
         </div>
       ) : owned ? (
-        product.type === "digital_file" ? (
+        product.productMode === "asset" && boughtUri ? (
+          <Link
+            href={boughtUri}
+            className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600"
+          >
+            {t("shop.openPurchasedAsset", "Open purchased asset")}
+          </Link>
+        ) : product.type === "digital_file" ? (
           <a
             href={`/api/digital/download?productId=${encodeURIComponent(product.id)}`}
             className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600"
