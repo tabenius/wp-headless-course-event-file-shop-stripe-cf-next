@@ -52,6 +52,13 @@ function typeBadgeColor(item) {
   }
 }
 
+function deriveBoughtUri(item) {
+  if (item?.productMode === "asset" && item?.assetId) {
+    return `/inventory/${encodeURIComponent(item.assetId)}`;
+  }
+  return "";
+}
+
 export default function ShopIndex({
   user,
   items,
@@ -162,6 +169,7 @@ export default function ShopIndex({
           const owned = isOwned(item);
           const loading = loadingId === item.slug;
           const isDigital = item.source === "digital";
+          const boughtUri = deriveBoughtUri(item);
           const effectiveCents =
             item.priceCents > 0 ? item.priceCents : parseWpPrice(item.price);
           const priceDisplay = formatPrice(effectiveCents, item.currency) || "";
@@ -177,7 +185,7 @@ export default function ShopIndex({
                   alt={item.name}
                   width={1200}
                   height={600}
-                  unoptimized
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="w-full h-44 object-cover"
                   onError={() =>
                     setBrokenImages((prev) => ({ ...prev, [item.id]: true }))
@@ -228,9 +236,18 @@ export default function ShopIndex({
 
                   <div className="flex gap-2 items-center">
                     {owned ? (
-                      <span className="text-green-700 text-sm font-semibold">
-                        {t("shop.purchased")}
-                      </span>
+                      boughtUri ? (
+                        <Link
+                          href={boughtUri}
+                          className="px-4 py-2 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600 text-sm"
+                        >
+                          {t("shop.openPurchasedAsset", "Open purchased asset")}
+                        </Link>
+                      ) : (
+                        <span className="text-green-700 text-sm font-semibold">
+                          {t("shop.purchased")}
+                        </span>
+                      )
                     ) : (
                       <Link
                         href={item.uri}

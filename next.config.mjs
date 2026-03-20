@@ -12,7 +12,8 @@ const wpHostname = (() => {
 
 const nextConfig = {
   reactStrictMode: true,
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps:
+    process.env.PRODUCTION_BROWSER_SOURCEMAPS === "1",
   outputFileTracingRoot: ".",
   env: {
     NEXT_PUBLIC_BUILD_TIME:

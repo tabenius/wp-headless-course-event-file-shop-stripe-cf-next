@@ -45,7 +45,7 @@ async function fetchWordPressGraphQL(query, variables = {}) {
   const authOptions = getWordPressGraphqlAuthOptions();
   let lastError = null;
   const delayMs =
-    Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
+    Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const firstLines = (text, lines = 3) =>
     text ? text.split("\n").slice(0, lines).join("\n") : "";
@@ -443,6 +443,88 @@ async function hasWordPressCourseAccess(courseUri, email) {
   return Boolean(data?.courseAccessForUser?.hasAccess);
 }
 
+async function listWordPressAccessibleCourseUris(courseUris, email) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return [];
+  const uriSet = new Set(
+    (Array.isArray(courseUris) ? courseUris : [])
+      .map((uri) => normalizeCourseUri(uri))
+      .filter(Boolean),
+  );
+  if (uriSet.size === 0) return [];
+
+  const queryWithActive = `
+    query ListCourseAccessRules {
+      courseAccessRules {
+        courseUri
+        active
+        allowedUsers
+      }
+    }
+  `;
+  const queryLegacy = `
+    query ListCourseAccessRules {
+      courseAccessRules {
+        courseUri
+        allowedUsers
+      }
+    }
+  `;
+
+  let data;
+  try {
+    data = await fetchWordPressGraphQL(queryWithActive);
+  } catch (error) {
+    if (!isActiveSchemaMismatch(error)) throw error;
+    data = await fetchWordPressGraphQL(queryLegacy);
+  }
+
+  const rules = Array.isArray(data?.courseAccessRules)
+    ? data.courseAccessRules
+    : [];
+  const out = [];
+  for (const rule of rules) {
+    const uri = normalizeCourseUri(rule?.courseUri);
+    if (!uri || !uriSet.has(uri) || rule?.active === false) continue;
+    const allowedUsers = Array.isArray(rule?.allowedUsers)
+      ? rule.allowedUsers
+      : [];
+    const hasAccess = allowedUsers.some(
+      (userEmail) =>
+        String(userEmail || "").trim().toLowerCase() === normalizedEmail,
+    );
+    if (hasAccess) out.push(uri);
+  }
+  return out;
+}
+
+async function listLocalAccessibleCourseUris(courseUris, email) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return [];
+  const uriSet = new Set(
+    (Array.isArray(courseUris) ? courseUris : [])
+      .map((uri) => normalizeCourseUri(uri))
+      .filter(Boolean),
+  );
+  if (uriSet.size === 0) return [];
+  const state = await getLocalCourseAccessState();
+  const courses = state?.courses || {};
+  const out = [];
+  for (const [rawUri, config] of Object.entries(courses)) {
+    const uri = normalizeCourseUri(rawUri);
+    if (!uri || !uriSet.has(uri) || config?.active === false) continue;
+    const allowedUsers = Array.isArray(config?.allowedUsers)
+      ? config.allowedUsers
+      : [];
+    const hasAccess = allowedUsers.some(
+      (userEmail) =>
+        String(userEmail || "").trim().toLowerCase() === normalizedEmail,
+    );
+    if (hasAccess) out.push(uri);
+  }
+  return out;
+}
+
 async function grantWordPressCourseAccess(courseUri, email) {
   const normalizedCourseUri = normalizeCourseUri(courseUri);
   if (!normalizedCourseUri) {
@@ -625,6 +707,38 @@ export async function hasCourseAccess(courseUri, email) {
     }
   }
   return hasLocalCourseAccess(courseUri, email);
+}
+
+export async function listAccessibleCourseUris(courseUris, email) {
+  if (isWordPressBackend()) {
+    if (!isWordPressBackendConfigured()) {
+      console.error(
+        "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
+      );
+      return listLocalAccessibleCourseUris(courseUris, email);
+    }
+    try {
+      const wordpressUris = await listWordPressAccessibleCourseUris(
+        courseUris,
+        email,
+      );
+      if (
+        isCloudflareKvConfigured() ||
+        process.env.COURSE_ACCESS_STORE === "cloudflare"
+      ) {
+        const localUris = await listLocalAccessibleCourseUris(courseUris, email);
+        return [...new Set([...wordpressUris, ...localUris])];
+      }
+      return wordpressUris;
+    } catch (error) {
+      console.error(
+        "WordPress course access list failed. Falling back to local course access store:",
+        error,
+      );
+      return listLocalAccessibleCourseUris(courseUris, email);
+    }
+  }
+  return listLocalAccessibleCourseUris(courseUris, email);
 }
 
 export async function grantCourseAccess(courseUri, email) {

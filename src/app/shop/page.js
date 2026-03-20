@@ -4,7 +4,10 @@ import {
   listAccessibleDigitalProductIds,
   grantDigitalAccess,
 } from "@/lib/digitalAccessStore";
-import { grantCourseAccess, hasCourseAccess } from "@/lib/courseAccess";
+import {
+  grantCourseAccess,
+  listAccessibleCourseUris,
+} from "@/lib/courseAccess";
 import { listAllShopItems } from "@/lib/shopProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { appendServerLog } from "@/lib/serverLog";
@@ -54,7 +57,8 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
       ) {
         if (
           purchaseKind === "digital_file" ||
-          purchaseKind === "course_product"
+          purchaseKind === "course_product" ||
+          purchaseKind === "asset_product"
         ) {
           await grantDigitalAccess(paidProductId, userEmail);
         }
@@ -85,22 +89,19 @@ export default async function ShopPage({ searchParams: searchParamsPromise }) {
   let ownedUris = [];
   let accessBatchFailed = false;
   if (userEmail) {
-    const wpItems = items.filter((i) => i.source !== "digital");
-    const accessChecks = await Promise.all(
-      wpItems.map((item) =>
-        hasCourseAccess(item.uri, userEmail)
-          .then((has) => (has ? item.uri : null))
-          .catch((err) => {
-            accessBatchFailed = true;
-            appendServerLog({
-              level: "error",
-              msg: `hasCourseAccess failed for ${item.uri} (user: ${userEmail}): ${err?.message || err}`,
-            }).catch(() => {});
-            return null;
-          }),
-      ),
+    const wpUris = items
+      .filter((item) => item.source !== "digital" && typeof item.uri === "string")
+      .map((item) => item.uri);
+    ownedUris = await listAccessibleCourseUris(wpUris, userEmail).catch(
+      (err) => {
+        accessBatchFailed = true;
+        appendServerLog({
+          level: "error",
+          msg: `listAccessibleCourseUris failed for ${userEmail}: ${err?.message || err}`,
+        }).catch(() => {});
+        return [];
+      },
     );
-    ownedUris = accessChecks.filter(Boolean);
   }
 
   return (

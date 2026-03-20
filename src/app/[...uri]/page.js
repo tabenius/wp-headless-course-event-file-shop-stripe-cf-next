@@ -1,6 +1,5 @@
 // Catch all template
 import { notFound } from "next/navigation";
-import { redirect } from "next/navigation";
 import { getSingleEventFragment } from "@/lib/fragments/SingleEventFragment";
 import { getLpCourseFragment } from "@/lib/fragments/LpCourseFragment";
 import { SinglePageFragment } from "@/lib/fragments/SinglePageFragment";
@@ -26,9 +25,7 @@ import { decodeEntities } from "@/lib/decodeEntities";
 import { parsePriceCents } from "@/lib/parsePrice";
 import { t } from "@/lib/i18n";
 import { appendServerLog } from "@/lib/serverLog";
-
-// Force dynamic rendering — this route uses searchParams and external data
-export const dynamic = "force-dynamic";
+import { cache } from "react";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 
@@ -218,6 +215,18 @@ async function fetchCourseFallback(uri) {
   };
 }
 
+const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
+  const data = await fetchContent(uri);
+  if (data?.nodeByUri) return data.nodeByUri;
+
+  // Fallback lookups can run in parallel because neither depends on the other.
+  const [restNode, courseNode] = await Promise.all([
+    fetchRestFallback(uri),
+    fetchCourseFallback(uri),
+  ]);
+  return restNode || courseNode || null;
+});
+
 function makeExcerpt(content, maxLen = 160) {
   const text = stripHtml(content);
   if (text.length <= maxLen) return text;
@@ -229,8 +238,7 @@ export async function generateMetadata({ params: paramsPromise }) {
   const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
   const uri =
     uriSegments.length > 0 ? `/${uriSegments.filter(Boolean).join("/")}` : "/";
-  const data = await fetchContent(uri);
-  const node = data?.nodeByUri;
+  const node = await resolveNodeByUri(uri);
   if (!node) return {};
 
   const title = node.title || undefined;
@@ -342,11 +350,7 @@ export default async function ContentPage({
     .filter(Boolean);
   const uri =
     normalizedSegments.length > 0 ? `/${normalizedSegments.join("/")}` : "/";
-  const data = await fetchContent(uri);
-
-  let node = data?.nodeByUri;
-  if (!node) node = await fetchRestFallback(uri);
-  if (!node) node = await fetchCourseFallback(uri);
+  const node = await resolveNodeByUri(uri);
   if (!node) {
     console.warn("No nodeByUri data found, returning 404");
     notFound();

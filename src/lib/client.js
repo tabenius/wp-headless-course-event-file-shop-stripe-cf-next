@@ -2,7 +2,7 @@ import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
 import { appendServerLog } from "@/lib/serverLog";
 
 const DEFAULT_DELAY_MS =
-  Number.parseInt(process.env.GRAPHQL_DELAY_MS || "150", 10) || 0;
+  Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
 const GRAPHQL_TIMEOUT_MS =
   Number.parseInt(process.env.GRAPHQL_TIMEOUT_MS || "8000", 10) || 8000;
 let lastCallTs = 0;
@@ -57,7 +57,9 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
   }
   const graphqlEndpoint = `${wordpressUrl.replace(/\/+$/, "")}/graphql`;
 
-  const debugGraphQL = process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
+  const debugGraphQL =
+    process.env.WORDPRESS_GRAPHQL_DEBUG === "1" ||
+    process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
 
   try {
     if (debugGraphQL) {
