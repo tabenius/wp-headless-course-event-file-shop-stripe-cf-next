@@ -13,6 +13,28 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
 
+## 2026-03-20 (cont. 80)
+
+### Codex — media library extended to structured assets + in-app viewers
+
+- Extended Media tab uploads beyond images to support JSON, YAML, CSV, Markdown, and SQLite files (plus images), with backend selection preserved (default WordPress, optional R2/S3 if enabled).
+- Added `/api/admin/media-library/view` (Node runtime) to securely fetch/preview assets server-side with allowed-host checks and typed viewers:
+  - JSON: parse + pretty + root summary,
+  - CSV: header annotation parsing + inferred column types + sample rows,
+  - YAML: text + top-level key summary,
+  - Markdown: heading extraction + rendered preview,
+  - SQLite: binary header inspection (page size/encoding/page count/user version/schema cookie).
+- Added metadata model extensions across WP/R2 media APIs and UI annotation editor:
+  - `usageNotes` (unstructured usage guidance),
+  - `structuredMeta` (structured schema/semantics blob),
+  - `schemaRef` (external schema/contract reference).
+- Updated locale parity in EN/SV/ES for the new media upload/viewer/metadata strings.
+- Hardened Media-tab uploader behavior for mixed selections by preserving unsupported-file detection and clearer skip/error messaging.
+- Verification:
+  - `npm run lint` (passes; existing 3 `@next/next/no-img-element` warnings unchanged),
+  - `npm test` (passes: `144` pass, `0` fail, `3` skipped),
+  - `npm run build` (passes; route list now includes `/api/admin/media-library/view`; observed transient WordPress/GraphQL network 429/socket warnings during build fetches but final build succeeded).
+
 ## 2026-03-20 (cont. 79)
 
 ### Codex — Media tab upload zone (drag/drop + paste + backend chooser)
