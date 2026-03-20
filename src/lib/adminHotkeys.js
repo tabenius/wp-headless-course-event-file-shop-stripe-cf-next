@@ -9,6 +9,7 @@ export const ADMIN_TAB_HOTKEYS = [
   { tab: "style", combo: "Ctrl+Alt+7", match: { code: "Digit7", key: "7" } },
   { tab: "info", combo: "Ctrl+Alt+8", match: { code: "Digit8", key: "8" } },
   { tab: "support", combo: "Ctrl+Alt+9", match: { code: "Digit9", key: "9" } },
+  { tab: "media", combo: "Ctrl+Alt+A", match: { code: "KeyA", key: "a" } },
 ];
 
 export const ADMIN_ACTION_HOTKEYS = {

@@ -14,11 +14,10 @@ import RagbazLogo from "./RagbazLogo";
 const ADMIN_TAB_SET = new Set([
   "welcome",
   "sales",
-  "stats",
+  "media",
   "storage",
   "products",
   "chat",
-  "health",
   "style",
   "info",
   "support",
@@ -35,10 +34,50 @@ function parseTabHash(hashValue) {
 }
 
 function normalizeTab(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  if (!normalized) return null;
-  const tab = normalized === "sandbox" ? "info" : normalized;
-  return ADMIN_TAB_SET.has(tab) ? tab : null;
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^#\/?/, "");
+  const base = normalized.split(/[/?&]/)[0];
+  if (!base) return null;
+  if (
+    base === "sandbox" ||
+    base === "health" ||
+    base === "stats" ||
+    base === "docs" ||
+    base === "documentation"
+  ) {
+    return "info";
+  }
+  return ADMIN_TAB_SET.has(base) ? base : null;
+}
+
+function hashForTabRoute(value) {
+  const normalized = String(value || "").trim().toLowerCase().replace(/^#\/?/, "");
+  if (
+    normalized === "health" ||
+    normalized === "status" ||
+    normalized === "info/health"
+  ) {
+    return "#/info/health";
+  }
+  if (
+    normalized === "stats" ||
+    normalized === "statistics" ||
+    normalized === "info/stats"
+  ) {
+    return "#/info/stats";
+  }
+  if (
+    normalized === "docs" ||
+    normalized === "documentation" ||
+    normalized === "info/docs"
+  ) {
+    return "#/info/docs";
+  }
+  const tab = normalizeTab(normalized);
+  if (!tab) return null;
+  return `#/${tab}`;
 }
 
 function getNavItems() {
@@ -54,9 +93,9 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("sales"),
     },
     {
-      label: t("admin.navStats"),
-      tab: "stats",
-      hotkey: getAdminTabHotkeyLabel("stats"),
+      label: t("admin.navMedia", "Media"),
+      tab: "media",
+      hotkey: getAdminTabHotkeyLabel("media"),
     },
     {
       label: t("admin.navStorage"),
@@ -74,11 +113,6 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("chat"),
     },
     {
-      label: t("admin.healthStatus", "Health"),
-      tab: "health",
-      hotkey: getAdminTabHotkeyLabel("health"),
-    },
-    {
       label: t("admin.navStyle"),
       tab: "style",
       hotkey: getAdminTabHotkeyLabel("style"),
@@ -93,7 +127,6 @@ function getNavItems() {
       tab: "support",
       hotkey: getAdminTabHotkeyLabel("support"),
     },
-    { href: "/admin/docs", label: t("admin.documentation") },
   ];
 }
 
@@ -259,18 +292,26 @@ export default function AdminHeader({ logoUrl }) {
   function switchTab(tab) {
     const safeTab = normalizeTab(tab);
     if (!safeTab) return;
+    const nextHash = hashForTabRoute(tab) || `#/${safeTab}`;
     if (pathname !== "/admin") {
-      router.push(`/admin#/${safeTab}`);
+      router.push(`/admin${nextHash}`);
       setMenuOpen(false);
       return;
     }
-    window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: safeTab }));
+    if (window.location.hash !== nextHash) {
+      const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+      window.history.replaceState(null, "", nextUrl);
+    }
+    window.dispatchEvent(
+      new CustomEvent("admin:switchTab", {
+        detail: nextHash.replace(/^#\/?/, ""),
+      }),
+    );
     setMenuOpen(false);
   }
 
   const navItems = getNavItems();
   const tabItems = navItems.filter((item) => item.tab);
-  const docItem = navItems.find((item) => item.href);
   const healthHotkey = getAdminTabHotkeyLabel("health")
     .split("+")
     .pop()
@@ -360,7 +401,7 @@ export default function AdminHeader({ logoUrl }) {
 
             <button
               type="button"
-              onClick={() => switchTab("health")}
+              onClick={() => switchTab("info/health")}
               onMouseEnter={() => setShowHealthTooltip(true)}
               onMouseLeave={() => setShowHealthTooltip(false)}
               onFocus={() => setShowHealthTooltip(true)}
@@ -388,7 +429,7 @@ export default function AdminHeader({ logoUrl }) {
                 </p>
                 <button
                   type="button"
-                  onClick={() => switchTab("health")}
+                  onClick={() => switchTab("info/health")}
                   className="mt-2 inline-flex items-center rounded border border-white/30 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/10"
                 >
                   {t("admin.healthCheck", "Control check")}
@@ -434,15 +475,6 @@ export default function AdminHeader({ logoUrl }) {
                     );
                   })}
                 </div>
-                {docItem && (
-                  <Link
-                    href={docItem.href}
-                    className="mt-3 inline-flex items-center justify-center w-full rounded-2xl border border-white/20 px-3 py-2 text-sm text-white hover:bg-white/10"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {docItem.label}
-                  </Link>
-                )}
                 <div className="mt-4 space-y-2 text-xs text-[hsl(39_62%_93%)]">
                   <div className="flex items-center gap-2">
                     <label className="font-semibold">{t("admin.languageLabel")}</label>
@@ -464,7 +496,7 @@ export default function AdminHeader({ logoUrl }) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => switchTab("health")}
+                    onClick={() => switchTab("info/health")}
                     className="flex items-center justify-between w-full text-white"
                   >
                     <span>{t("admin.healthCheck")}</span>

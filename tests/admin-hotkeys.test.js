@@ -30,6 +30,7 @@ test("admin tab hotkeys stay unique and stable", () => {
       "style",
       "info",
       "support",
+      "media",
     ],
   );
 });
@@ -100,5 +101,6 @@ test("tab labels returned by getAdminTabHotkeyLabel remain user-facing", () => {
   assert.equal(getAdminTabHotkeyLabel("welcome"), "Ctrl+Alt+0");
   assert.equal(getAdminTabHotkeyLabel("storage"), "Ctrl+Alt+3");
   assert.equal(getAdminTabHotkeyLabel("support"), "Ctrl+Alt+9");
+  assert.equal(getAdminTabHotkeyLabel("media"), "Ctrl+Alt+A");
   assert.equal(ADMIN_ACTION_HOTKEYS.menuToggle.combo, "Ctrl+Alt+M");
 });

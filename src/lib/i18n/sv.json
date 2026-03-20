@@ -236,6 +236,7 @@
     "shopProductsTabDesc": "Skapa och hantera nedladdningsbara filer och kursprodukter som säljs på din /shop-sida.",
     "contentAccessTabDesc": "Sätt priser och styr vem som har tillgång till kurser, evenemang och produkter.",
     "shopProductsDesc": "Varje produkt visas på /shop-sidan. Digitala filer kan laddas ner efter köp. Kursprodukter låser upp en kurssida.",
+    "shopProductInlineHint": "Butiksprodukt — redigera detaljerna nedan i den här panelen.",
     "slugHint": "URL-vänligt namn, genereras automatiskt från produktnamnet.",
     "productTypeHint": "Digital fil = ladda ner efter köp. Kursprodukt = låser upp en kurssida.",
     "priceCentsHint": "Pris i minsta valutaenhet (t.ex. 9900 = 99,00 SEK).",

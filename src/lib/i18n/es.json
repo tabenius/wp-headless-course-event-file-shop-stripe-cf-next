@@ -236,6 +236,7 @@
     "shopProductsTabDesc": "Crea y gestiona archivos y cursos para /shop.",
     "contentAccessTabDesc": "Configura precios y accesos.",
     "shopProductsDesc": "Cada producto aparece en /shop y puede incluir descargas.",
+    "shopProductInlineHint": "Producto de tienda: edita los detalles abajo en este panel.",
     "slugHint": "Nombre URL amigable, generado automáticamente.",
     "productTypeHint": "Archivo digital = descarga. Curso = desbloquea acceso.",
     "priceCentsHint": "Precio en la unidad mínima (ej. 9900 = 99,00 SEK).",

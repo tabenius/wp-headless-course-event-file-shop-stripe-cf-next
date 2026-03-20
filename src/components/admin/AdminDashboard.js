@@ -34,34 +34,72 @@ const WELCOME_REVISION =
   process.env.NEXT_PUBLIC_GIT_SHA ||
   "";
 
-const AdminStatsTab = lazy(() => import("./AdminStatsTab"));
-const AdminConnectorsTab = lazy(() => import("./AdminConnectorsTab"));
 const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
 const AdminSupportTab = lazy(() => import("./AdminSupportTab"));
 const AdminStorageTab = lazy(() => import("./AdminStorageTab"));
-const AdminSandboxTab = lazy(() => import("./AdminSandboxTab"));
 const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
 const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
+const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
+const AdminInfoHubTab = lazy(() => import("./AdminInfoHubTab"));
 
 const ADMIN_TABS = [
   "welcome",
   "sales",
-  "stats",
-  "products",
+  "media",
   "storage",
-  "support",
+  "products",
   "chat",
-  "health",
   "style",
   "info",
+  "support",
 ];
 const ADMIN_TAB_SET = new Set(ADMIN_TABS);
 
 function normalizeAdminTab(value) {
-  const normalized = String(value || "").trim().toLowerCase();
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^#\/?/, "")
+    .split(/[/?&]/)[0];
   if (!normalized) return null;
-  if (normalized === "sandbox") return "info";
+  if (
+    normalized === "sandbox" ||
+    normalized === "health" ||
+    normalized === "stats" ||
+    normalized === "docs" ||
+    normalized === "documentation"
+  ) {
+    return "info";
+  }
   return ADMIN_TAB_SET.has(normalized) ? normalized : null;
+}
+
+function hashForAdminRoute(detail) {
+  const normalized = String(detail || "").trim().toLowerCase();
+  if (
+    normalized === "health" ||
+    normalized === "info/health" ||
+    normalized === "status"
+  ) {
+    return "#/info/health";
+  }
+  if (
+    normalized === "stats" ||
+    normalized === "info/stats" ||
+    normalized === "statistics"
+  ) {
+    return "#/info/stats";
+  }
+  if (
+    normalized === "docs" ||
+    normalized === "documentation" ||
+    normalized === "info/docs"
+  ) {
+    return "#/info/docs";
+  }
+  const tab = normalizeAdminTab(normalized);
+  if (!tab) return null;
+  return `#/${tab}`;
 }
 
 const log = (...args) => {
@@ -607,9 +645,17 @@ export default function AdminDashboard() {
       const tab = resolveAdminTabHotkey(e);
       if (tab) {
         e.preventDefault();
-        setActiveTab(tab);
+        const routeDetail =
+          tab === "health" ? "info/health" : tab === "stats" ? "info/stats" : tab;
+        const normalizedTab = normalizeAdminTab(routeDetail) || "welcome";
+        setActiveTab(normalizedTab);
+        const nextHash = hashForAdminRoute(routeDetail);
+        if (nextHash && window.location.hash !== nextHash) {
+          const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+          window.history.replaceState(null, "", nextUrl);
+        }
         window.dispatchEvent(
-          new CustomEvent("admin:switchTab", { detail: tab }),
+          new CustomEvent("admin:switchTab", { detail: routeDetail }),
         );
         return;
       }
@@ -658,6 +704,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     function onHashChange() {
+      const rawHash = String(window.location.hash || "").toLowerCase();
+      const legacyToInfoHash = rawHash.startsWith("#/health")
+        ? "#/info/health"
+        : rawHash.startsWith("#/stats")
+          ? "#/info/stats"
+          : rawHash.startsWith("#/docs")
+            ? "#/info/docs"
+            : null;
+      if (legacyToInfoHash && window.location.hash !== legacyToInfoHash) {
+        const migratedUrl = `${window.location.pathname}${window.location.search}${legacyToInfoHash}`;
+        window.history.replaceState(null, "", migratedUrl);
+      }
+
       const tab = parseTabFromHash(window.location.hash);
       if (!tab) {
         if (window.__RAGBAZ_IMPRESS_ACTIVE__) {
@@ -675,7 +734,7 @@ export default function AdminDashboard() {
       }
       setActiveTab(tab);
       window.dispatchEvent(
-        new CustomEvent("admin:switchTab", { detail: tab }),
+        new CustomEvent("admin:switchTab", { detail: window.location.hash }),
       );
     }
     onHashChange();
@@ -685,6 +744,12 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !ADMIN_TAB_SET.has(activeTab)) return;
+    if (
+      activeTab === "info" &&
+      String(window.location.hash || "").toLowerCase().startsWith("#/info/")
+    ) {
+      return;
+    }
     const nextHash = `#/${activeTab}`;
     if (window.location.hash === nextHash) return;
     const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
@@ -956,10 +1021,6 @@ export default function AdminDashboard() {
   }, [loadCourseAccess, loadProducts]);
 
   useEffect(() => {
-    if (activeTab === "stats") {
-      loadAnalytics();
-      loadDeploy();
-    }
     if (activeTab === "products") {
       loadShopSettings();
     }
@@ -971,9 +1032,8 @@ export default function AdminDashboard() {
     }
     if (activeTab === "info") {
       loadCommits();
-    }
-    if (activeTab === "health") {
-      runHealthCheck();
+      loadAnalytics();
+      loadDeploy();
     }
     if (
       (activeTab === "support" || activeTab === "sales") &&
@@ -990,7 +1050,6 @@ export default function AdminDashboard() {
     loadUploadInfo,
     loadCommits,
     loadPayments,
-    runHealthCheck,
     paymentsEmail,
     loaded.payments,
   ]);
@@ -1560,20 +1619,29 @@ export default function AdminDashboard() {
   }
 
   // Listen for tab-switch events from AdminHeader
-  const showHealthTab = useCallback(() => setActiveTab("health"), []);
   useEffect(() => {
-    window.addEventListener("admin:showHealth", showHealthTab);
     function onSwitchTab(e) {
-      const tab = normalizeAdminTab(e?.detail);
+      const rawDetail = String(e?.detail || "");
+      const detail = rawDetail.replace(/^#\/?/, "");
+      const tab = normalizeAdminTab(detail);
       if (!tab) return;
       setActiveTab(tab);
+
+      const nextHash = hashForAdminRoute(detail);
+      if (
+        nextHash &&
+        typeof window !== "undefined" &&
+        window.location.hash !== nextHash
+      ) {
+        const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+        window.history.replaceState(null, "", nextUrl);
+      }
     }
     window.addEventListener("admin:switchTab", onSwitchTab);
     return () => {
-      window.removeEventListener("admin:showHealth", showHealthTab);
       window.removeEventListener("admin:switchTab", onSwitchTab);
     };
-  }, [showHealthTab]);
+  }, []);
 
   // Fetch commit log when Info tab is shown
   useEffect(() => {
@@ -1758,36 +1826,12 @@ export default function AdminDashboard() {
           />
         </Suspense>
       )}
-      {/* ── Stats tab ── */}
-      {activeTab === "stats" && (
+      {/* ── Media tab ── */}
+      {activeTab === "media" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
         >
-          <AdminStatsTab
-            wcProducts={wcProducts}
-            wpCourses={wpCourses}
-            wpEvents={wpEvents}
-            products={products}
-            users={users}
-            analytics={analytics}
-            analyticsMode={analyticsMode}
-            analyticsConfigured={analyticsConfigured}
-          />
-        </Suspense>
-      )}
-
-      {/* ── Health tab ── */}
-      {activeTab === "health" && (
-        <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
-        >
-          <AdminConnectorsTab
-            healthChecks={healthChecks}
-            healthLoading={healthLoading}
-            webhookUrl={webhookUrl}
-            ragbazDownloadUrl={ragbazDownloadUrl}
-            runHealthCheck={runHealthCheck}
-          />
+          <AdminMediaLibraryTab />
         </Suspense>
       )}
 
@@ -2147,18 +2191,29 @@ export default function AdminDashboard() {
         </Suspense>
       )}
 
-      {/* ── Sandbox tab ── */}
+      {/* ── Info hub tab ── */}
       {activeTab === "info" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
         >
-          <AdminSandboxTab
+          <AdminInfoHubTab
             buildTimestamp={buildTimestamp}
             gitRevision={gitRevision}
             uploadBackend={uploadBackend}
             resendConfigured={resendConfigured}
+            wcProducts={wcProducts}
+            wpCourses={wpCourses}
+            wpEvents={wpEvents}
+            products={products}
+            users={users}
+            analytics={analytics}
             analyticsMode={analyticsMode}
             analyticsConfigured={analyticsConfigured}
+            healthChecks={healthChecks}
+            healthLoading={healthLoading}
+            webhookUrl={webhookUrl}
+            ragbazDownloadUrl={ragbazDownloadUrl}
+            runHealthCheck={runHealthCheck}
             purging={purging}
             purgeMessage={purgeMessage}
             deploying={deploying}

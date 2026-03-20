@@ -11,6 +11,34 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-20 (cont. 77)
+
+### Codex — Media tab + consolidated Info hub (stats/health/docs subroutes)
+
+- Added a new dedicated admin **Media** tab backed by `/api/admin/media-library`:
+  - combines WordPress media library + R2 object listings in one response,
+  - includes file size, file type, and image resolution metadata when available,
+  - supports source filtering (`all|wordpress|r2`) and search.
+- Added `AdminMediaLibraryTab` UI:
+  - combined table view with source badges, preview, size/type/resolution columns, updated timestamp, and copyable URLs.
+- Consolidated top-level admin surface area by moving **Stats**, **Health check**, and **Documentation** under the **Info** hub as subroutes:
+  - `#/info` (overview/runtime),
+  - `#/info/stats`,
+  - `#/info/health`,
+  - `#/info/docs`.
+- Updated routing aliases for backward compatibility:
+  - legacy `#/stats`, `#/health`, and `#/docs` now map into `#/info/...` paths.
+- Updated header/navigation behavior:
+  - removed standalone top-level Stats/Health/Docs nav entries,
+  - added top-level Media nav entry,
+  - status control now routes to `#/info/health` (subroute) for health checks.
+- Updated welcome quick-nav cards to target new consolidated info subroutes and include Media.
+- Added `Ctrl+Alt+A` tab hotkey for Media (`adminHotkeys` + test update), while keeping legacy stats/health hotkeys functional via Info subroute aliasing.
+- Synced missing i18n parity key (`shopProductInlineHint`) in `sv`/`es`.
+- Verification:
+  - `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only),
+  - `npm test -- tests/admin-hotkeys.test.js tests/i18n-admin-parity.test.js` passes.
+
 ## 2026-03-20 (cont. 76)
 
 ### Codex — remove hidden legacy Products tab code path

@@ -599,7 +599,16 @@ function WelcomeCards({ showRevisionBadge }) {
       tone: "from-orange-500/20 via-orange-200/10 to-amber-200/10",
     },
     {
-      tab: "stats",
+      tab: "media",
+      title: t("admin.navMedia", "Media"),
+      body: t(
+        "admin.cardMediaBody",
+        "Browse WordPress and R2 media assets in one combined library.",
+      ),
+      tone: "from-teal-500/20 via-emerald-200/10 to-cyan-200/10",
+    },
+    {
+      tab: "info/stats",
       title: t("admin.cardStats", "Analytics"),
       body: t(
         "admin.cardStatsBody",
@@ -635,7 +644,7 @@ function WelcomeCards({ showRevisionBadge }) {
       tone: "from-emerald-500/20 via-emerald-200/10 to-cyan-200/10",
     },
     {
-      tab: "health",
+      tab: "info/health",
       title: t("admin.healthStatus", "Health"),
       body: t(
         "admin.cardHealthBody",
@@ -657,7 +666,7 @@ function WelcomeCards({ showRevisionBadge }) {
       title: t("admin.navSandbox", "Info"),
       body: t(
         "admin.cardInfoBody",
-        "Check runtime and environment details for this storefront.",
+        "Runtime, health checks, analytics, and docs in one consolidated hub.",
       ),
       tone: "from-cyan-500/20 via-cyan-200/10 to-sky-200/10",
     },
@@ -671,7 +680,7 @@ function WelcomeCards({ showRevisionBadge }) {
       tone: "from-rose-500/20 via-pink-200/10 to-fuchsia-200/10",
     },
     {
-      href: "/admin/docs",
+      tab: "info/docs",
       title: t("admin.documentation", "Documentation"),
       body: t(
         "admin.cardDocsBody",
