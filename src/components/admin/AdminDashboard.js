@@ -141,6 +141,114 @@ function vatPercentToInput(value) {
   return String(value);
 }
 
+const SITE_STYLE_DEFAULTS = {
+  background: "#fff1f1",
+  foreground: "#1a1a1a",
+  primary: "#6d003e",
+  secondary: "#ffb606",
+  tertiary: "#442e66",
+  muted: "#686868",
+  fontHeading: "var(--font-montserrat), 'Helvetica Neue', sans-serif",
+  fontBody: "var(--font-merriweather), Georgia, serif",
+};
+
+const SITE_STYLE_COLOR_FIELDS = [
+  {
+    key: "background",
+    labelKey: "admin.styleColorBackground",
+    token: "--color-background",
+  },
+  {
+    key: "foreground",
+    labelKey: "admin.styleColorForeground",
+    token: "--color-foreground",
+  },
+  { key: "primary", labelKey: "admin.styleColorPrimary", token: "--color-primary" },
+  {
+    key: "secondary",
+    labelKey: "admin.styleColorSecondary",
+    token: "--color-secondary",
+  },
+  {
+    key: "tertiary",
+    labelKey: "admin.styleColorTertiary",
+    token: "--color-tertiary",
+  },
+  { key: "muted", labelKey: "admin.styleColorMuted", token: "--color-muted" },
+];
+
+const SITE_STYLE_FONT_PRESETS = [
+  "var(--font-montserrat), 'Helvetica Neue', sans-serif",
+  "var(--font-merriweather), Georgia, serif",
+  "system-ui, -apple-system, 'Segoe UI', sans-serif",
+  "Georgia, 'Times New Roman', serif",
+];
+
+const SITE_STYLE_FONT_SET = new Set(SITE_STYLE_FONT_PRESETS);
+const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}){1,2}$/i;
+
+function normalizeStyleColor(value, fallback) {
+  const text = String(value || "").trim();
+  if (!HEX_COLOR_PATTERN.test(text)) return fallback;
+  return text.toLowerCase();
+}
+
+function normalizeStyleFont(value, fallback) {
+  const text = String(value || "").trim();
+  if (!SITE_STYLE_FONT_SET.has(text)) return fallback;
+  return text;
+}
+
+function sanitizeSiteStyleTokens(input, fallback = SITE_STYLE_DEFAULTS) {
+  const source = input && typeof input === "object" ? input : {};
+  return {
+    background: normalizeStyleColor(source.background, fallback.background),
+    foreground: normalizeStyleColor(source.foreground, fallback.foreground),
+    primary: normalizeStyleColor(source.primary, fallback.primary),
+    secondary: normalizeStyleColor(source.secondary, fallback.secondary),
+    tertiary: normalizeStyleColor(source.tertiary, fallback.tertiary),
+    muted: normalizeStyleColor(source.muted, fallback.muted),
+    fontHeading: normalizeStyleFont(source.fontHeading, fallback.fontHeading),
+    fontBody: normalizeStyleFont(source.fontBody, fallback.fontBody),
+  };
+}
+
+function readSiteStyleTokensFromDom(fallback = SITE_STYLE_DEFAULTS) {
+  if (typeof window === "undefined") return { ...fallback };
+  const styles = getComputedStyle(document.documentElement);
+  const read = (name, fallbackValue) =>
+    styles.getPropertyValue(name).trim() || fallbackValue;
+  return sanitizeSiteStyleTokens(
+    {
+      background: read("--color-background", fallback.background),
+      foreground: read("--color-foreground", fallback.foreground),
+      primary: read("--color-primary", fallback.primary),
+      secondary: read("--color-secondary", fallback.secondary),
+      tertiary: read("--color-tertiary", fallback.tertiary),
+      muted: read("--color-muted", fallback.muted),
+      fontHeading: read("--font-heading", fallback.fontHeading),
+      fontBody: read("--font-body", fallback.fontBody),
+    },
+    fallback,
+  );
+}
+
+function applySiteStyleTokensToDom(tokens) {
+  if (typeof window === "undefined") return;
+  const safe = sanitizeSiteStyleTokens(tokens, SITE_STYLE_DEFAULTS);
+  const root = document.documentElement;
+  root.style.setProperty("--color-background", safe.background);
+  root.style.setProperty("--color-foreground", safe.foreground);
+  root.style.setProperty("--color-primary", safe.primary);
+  root.style.setProperty("--color-secondary", safe.secondary);
+  root.style.setProperty("--color-tertiary", safe.tertiary);
+  root.style.setProperty("--color-muted", safe.muted);
+  root.style.setProperty("--font-heading", safe.fontHeading);
+  root.style.setProperty("--font-body", safe.fontBody);
+  root.style.setProperty("--background", "var(--color-background)");
+  root.style.setProperty("--foreground", "var(--color-foreground)");
+}
+
 /** Alternating row background for product lists (purple hues). */
 function emptyProduct() {
   return {
@@ -574,6 +682,10 @@ export default function AdminDashboard() {
   const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
   const [shopSettingsMessage, setShopSettingsMessage] = useState("");
   const [shopVatByCategory, setShopVatByCategory] = useState({});
+  const [siteStyleTokens, setSiteStyleTokens] = useState(() =>
+    readSiteStyleTokensFromDom(SITE_STYLE_DEFAULTS),
+  );
+  const [siteStyleHistory, setSiteStyleHistory] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [ticketsError, setTicketsError] = useState("");
@@ -883,9 +995,24 @@ export default function AdminDashboard() {
       if (res.ok && json?.ok && Array.isArray(json.settings?.visibleTypes)) {
         setShopVisibleTypes(json.settings.visibleTypes);
       }
-      if (json?.settings?.vatByCategory && typeof json.settings.vatByCategory === "object") {
+      if (
+        json?.settings?.vatByCategory &&
+        typeof json.settings.vatByCategory === "object"
+      ) {
         setShopVatByCategory(json.settings.vatByCategory);
       }
+      const fallbackTokens = readSiteStyleTokensFromDom(SITE_STYLE_DEFAULTS);
+      const nextSiteStyle = sanitizeSiteStyleTokens(
+        json?.settings?.siteStyle,
+        fallbackTokens,
+      );
+      setSiteStyleTokens(nextSiteStyle);
+      applySiteStyleTokensToDom(nextSiteStyle);
+      setSiteStyleHistory(
+        Array.isArray(json?.settings?.siteStyleHistory)
+          ? json.settings.siteStyleHistory
+          : [],
+      );
       setLoaded((s) => ({ ...s, shopSettings: true }));
     } catch (err) {
       console.error("AdminDashboard: failed to load shop settings", err);
@@ -1021,7 +1148,7 @@ export default function AdminDashboard() {
   }, [loadCourseAccess, loadProducts]);
 
   useEffect(() => {
-    if (activeTab === "products") {
+    if (activeTab === "products" || activeTab === "style") {
       loadShopSettings();
     }
     if (activeTab === "support") {
@@ -1072,6 +1199,17 @@ export default function AdminDashboard() {
       if (json.settings?.vatByCategory && typeof json.settings.vatByCategory === "object") {
         setShopVatByCategory(json.settings.vatByCategory);
       }
+      if (json.settings?.siteStyle && typeof json.settings.siteStyle === "object") {
+        const nextSiteStyle = sanitizeSiteStyleTokens(
+          json.settings.siteStyle,
+          SITE_STYLE_DEFAULTS,
+        );
+        setSiteStyleTokens(nextSiteStyle);
+        applySiteStyleTokensToDom(nextSiteStyle);
+      }
+      if (Array.isArray(json.settings?.siteStyleHistory)) {
+        setSiteStyleHistory(json.settings.siteStyleHistory);
+      }
       setShopSettingsMessage(t(successMessageKey || "admin.shopVisibilitySaved"));
       setTimeout(() => setShopSettingsMessage(""), 3000);
     } catch (err) {
@@ -1099,6 +1237,55 @@ export default function AdminDashboard() {
       { visibleTypes: shopVisibleTypes, vatByCategory: nextVatByCategory },
       "admin.vatMapSaved",
     );
+  }
+
+  function updateSiteStyleColor(key, value) {
+    if (!key || !Object.prototype.hasOwnProperty.call(SITE_STYLE_DEFAULTS, key)) {
+      return;
+    }
+    setSiteStyleTokens((current) => {
+      const next = sanitizeSiteStyleTokens(
+        { ...current, [key]: value },
+        current,
+      );
+      applySiteStyleTokensToDom(next);
+      return next;
+    });
+  }
+
+  function updateSiteStyleFont(key, value) {
+    if (key !== "fontHeading" && key !== "fontBody") return;
+    setSiteStyleTokens((current) => {
+      const next = sanitizeSiteStyleTokens(
+        { ...current, [key]: value },
+        current,
+      );
+      applySiteStyleTokensToDom(next);
+      return next;
+    });
+  }
+
+  function resetSiteStyleDefaults() {
+    const defaults = { ...SITE_STYLE_DEFAULTS };
+    setSiteStyleTokens(defaults);
+    applySiteStyleTokensToDom(defaults);
+  }
+
+  async function saveSiteStyleSettings() {
+    const safe = sanitizeSiteStyleTokens(siteStyleTokens, SITE_STYLE_DEFAULTS);
+    setSiteStyleTokens(safe);
+    applySiteStyleTokensToDom(safe);
+    await saveShopSettings({ siteStyle: safe }, "admin.styleSiteSaved");
+  }
+
+  async function restoreSiteStyleRevision(revision) {
+    const candidate =
+      revision && typeof revision === "object" ? revision.style : null;
+    if (!candidate || typeof candidate !== "object") return;
+    const safe = sanitizeSiteStyleTokens(candidate, SITE_STYLE_DEFAULTS);
+    setSiteStyleTokens(safe);
+    applySiteStyleTokensToDom(safe);
+    await saveShopSettings({ siteStyle: safe }, "admin.styleSiteRestored");
   }
 
   const selectedTicket = useMemo(
@@ -1788,29 +1975,6 @@ export default function AdminDashboard() {
       ? "w-full min-w-0 px-0 py-0"
       : "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10 space-y-6 sm:space-y-8";
 
-  const siteStyleTokens = (() => {
-    const fallback = {
-      background: "#ffffff",
-      foreground: "#1a1a1a",
-      primary: "#6d003e",
-      secondary: "#ffb606",
-      tertiary: "#442e66",
-      muted: "#686868",
-    };
-    if (typeof window === "undefined") return fallback;
-    const styles = getComputedStyle(document.documentElement);
-    const read = (name, fallbackValue) =>
-      styles.getPropertyValue(name).trim() || fallbackValue;
-    return {
-      background: read("--color-background", fallback.background),
-      foreground: read("--color-foreground", fallback.foreground),
-      primary: read("--color-primary", fallback.primary),
-      secondary: read("--color-secondary", fallback.secondary),
-      tertiary: read("--color-tertiary", fallback.tertiary),
-      muted: read("--color-muted", fallback.muted),
-    };
-  })();
-
   return (
     <section className={dashboardSectionClass}>
       {activeTab === "welcome" && (
@@ -1968,58 +2132,98 @@ export default function AdminDashboard() {
                 {t("admin.styleSiteSummary")}
               </p>
             </div>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-              {[
-                {
-                  label: t("admin.styleColorBackground"),
-                  hex: siteStyleTokens.background,
-                  token: "--color-background",
-                },
-                {
-                  label: t("admin.styleColorForeground"),
-                  hex: siteStyleTokens.foreground,
-                  token: "--color-foreground",
-                },
-                {
-                  label: t("admin.styleColorPrimary"),
-                  hex: siteStyleTokens.primary,
-                  token: "--color-primary",
-                },
-                {
-                  label: t("admin.styleColorSecondary"),
-                  hex: siteStyleTokens.secondary,
-                  token: "--color-secondary",
-                },
-                {
-                  label: t("admin.styleColorTertiary"),
-                  hex: siteStyleTokens.tertiary,
-                  token: "--color-tertiary",
-                },
-                {
-                  label: t("admin.styleColorMuted"),
-                  hex: siteStyleTokens.muted,
-                  token: "--color-muted",
-                },
-              ].map(({ label, hex, token }) => (
-                <div
+            <p className="text-xs text-gray-500">
+              {t(
+                "admin.styleSiteEditHint",
+                "Edit colors/fonts, preview instantly, then publish. Each publish creates a revision you can restore later.",
+              )}
+            </p>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {SITE_STYLE_COLOR_FIELDS.map(({ key, labelKey, token }) => (
+                <label
                   key={token}
                   className="flex items-center gap-3 border rounded p-3 bg-gray-50"
                 >
-                  <div
-                    className="w-10 h-10 rounded border border-gray-200 shrink-0"
-                    style={{ background: hex }}
+                  <input
+                    type="color"
+                    value={siteStyleTokens[key]}
+                    onChange={(event) =>
+                      updateSiteStyleColor(key, event.target.value)
+                    }
+                    className="h-10 w-10 rounded border border-gray-200 shrink-0 bg-transparent"
+                    title={t(labelKey)}
                   />
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-sm font-medium text-gray-800">
-                      {label}
+                      {t(labelKey)}
                     </div>
-                    <div className="text-xs text-gray-500 font-mono">{hex}</div>
+                    <div className="text-xs text-gray-500 font-mono">
+                      {siteStyleTokens[key]}
+                    </div>
                     <div className="text-[10px] text-gray-400 font-mono">
                       {token}
                     </div>
                   </div>
-                </div>
+                </label>
               ))}
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="space-y-1 text-xs text-gray-600">
+                <span>{t("admin.styleHeadingFontLabel")}</span>
+                <select
+                  value={siteStyleTokens.fontHeading}
+                  onChange={(event) =>
+                    updateSiteStyleFont("fontHeading", event.target.value)
+                  }
+                  className="w-full border rounded px-2 py-1.5 text-sm"
+                >
+                  {SITE_STYLE_FONT_PRESETS.map((value) => (
+                    <option key={`heading-${value}`} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1 text-xs text-gray-600">
+                <span>{t("admin.styleBodyFontLabel")}</span>
+                <select
+                  value={siteStyleTokens.fontBody}
+                  onChange={(event) =>
+                    updateSiteStyleFont("fontBody", event.target.value)
+                  }
+                  className="w-full border rounded px-2 py-1.5 text-sm"
+                >
+                  {SITE_STYLE_FONT_PRESETS.map((value) => (
+                    <option key={`body-${value}`} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={saveSiteStyleSettings}
+                disabled={shopSettingsSaving}
+                className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm hover:bg-gray-700 disabled:opacity-50"
+              >
+                {shopSettingsSaving
+                  ? t("admin.saving", "Saving…")
+                  : t("common.save")}
+              </button>
+              <button
+                type="button"
+                onClick={resetSiteStyleDefaults}
+                className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50"
+              >
+                {t("admin.styleSiteResetDefaults", "Reset to defaults")}
+              </button>
+              {shopSettingsMessage && (
+                <span className="text-xs text-emerald-700">
+                  {shopSettingsMessage}
+                </span>
+              )}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div
@@ -2038,7 +2242,7 @@ export default function AdminDashboard() {
                 <p
                   className="text-lg font-semibold"
                   style={{
-                    fontFamily: "'Montserrat', 'Helvetica Neue', sans-serif",
+                    fontFamily: siteStyleTokens.fontHeading,
                   }}
                 >
                   {t("admin.styleHeadingFontSample")}
@@ -2065,7 +2269,7 @@ export default function AdminDashboard() {
                 </div>
                 <p
                   className="text-base"
-                  style={{ fontFamily: "'Merriweather', Georgia, serif" }}
+                  style={{ fontFamily: siteStyleTokens.fontBody }}
                 >
                   {t("admin.styleBodyFontSample")}
                 </p>
@@ -2108,6 +2312,82 @@ export default function AdminDashboard() {
               >
                 {t("admin.styleBadge")}
               </span>
+            </div>
+            <div className="rounded border bg-gray-50 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-gray-800">
+                  {t("admin.styleRevisionHistory", "Style revision history")}
+                </h3>
+                <span className="text-xs text-gray-500">
+                  {t("admin.styleRevisionCount", "{count} saved revisions", {
+                    count: siteStyleHistory.length,
+                  })}
+                </span>
+              </div>
+              {siteStyleHistory.length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  {t(
+                    "admin.styleRevisionEmpty",
+                    "No style revisions saved yet. Publish your first style to create history.",
+                  )}
+                </p>
+              ) : (
+                <div className="overflow-auto border rounded bg-white">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide">
+                      <tr>
+                        <th className="text-left px-2 py-1.5">
+                          {t("admin.updatedAt", "Updated")}
+                        </th>
+                        <th className="text-left px-2 py-1.5">
+                          {t("admin.styleColors", "Colors")}
+                        </th>
+                        <th className="text-left px-2 py-1.5">
+                          {t("admin.action", "Action")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {siteStyleHistory.slice(0, 20).map((revision) => (
+                        <tr key={revision.id || revision.savedAt} className="border-t">
+                          <td className="px-2 py-1.5 text-gray-600 whitespace-nowrap">
+                            {revision.savedAt
+                              ? new Date(revision.savedAt).toLocaleString("sv-SE")
+                              : "—"}
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1.5">
+                              {[
+                                revision.style?.background,
+                                revision.style?.primary,
+                                revision.style?.secondary,
+                                revision.style?.tertiary,
+                              ].map((value, index) => (
+                                <span
+                                  key={`${revision.id || revision.savedAt}-swatch-${index}`}
+                                  className="inline-block h-4 w-4 rounded border border-gray-300"
+                                  style={{ background: value || "#000000" }}
+                                  title={value || ""}
+                                />
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <button
+                              type="button"
+                              onClick={() => restoreSiteStyleRevision(revision)}
+                              disabled={shopSettingsSaving}
+                              className="px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              {t("admin.styleRevisionRestore", "Restore")}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
