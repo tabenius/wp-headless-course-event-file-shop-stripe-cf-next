@@ -13,6 +13,28 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
 
+## 2026-03-20 (cont. 79)
+
+### Codex — Media tab upload zone (drag/drop + paste + backend chooser)
+
+- Added direct image-ingest UI to `AdminMediaLibraryTab`:
+  - drag-and-drop upload area for image files,
+  - clipboard paste ingestion (click zone + `Ctrl/Cmd+V`),
+  - hidden multi-file picker fallback (`Choose images`).
+- Wired uploads to the existing admin upload API (`/api/admin/upload?kind=image`) so media-tab uploads use the same backend-aware asset pipeline as product image uploads.
+- Added per-upload backend selector in Media tab:
+  - defaults to WordPress media when available,
+  - allows switching to R2 (and S3 only when explicitly enabled/configured).
+- Added upload UX feedback:
+  - in-zone active drag state,
+  - progress/status text + success/error toasts,
+  - partial-success messaging for mixed outcomes (e.g., oversized files skipped).
+- Updated admin i18n keys in EN/SV/ES for the new media upload zone copy and statuses.
+- Updated `AdminDashboard` to pass `uploadBackend` and `uploadInfo` props into Media tab for backend availability logic.
+- Verification:
+  - `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only),
+  - `npm test` passes (`144` pass, `0` fail, `3` skipped).
+
 ## 2026-03-20 (cont. 78)
 
 ### Codex — asset-aware upload pipeline + media annotation (WP + R2)
