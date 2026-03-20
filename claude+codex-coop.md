@@ -1764,3 +1764,41 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `docs/README.sv.md` (`Fokuserade guider` section).
 - Validation:
   - Manually verified new links and headings render in all three index documents.
+
+---
+
+## 2026-03-20 (cont. 34)
+
+### Codex — welcome performance slide + WP runtime/version probes
+
+- Welcome impress update:
+  - Added new `PerformanceGainsSlide` in `src/components/admin/AdminWelcomeTab.js`.
+  - Slide includes graphic blocks for:
+    - Before/after operations (`GRAPHQL_DELAY_MS` default `150ms -> 0ms`, shop access checks sample `8 -> 1` batch).
+    - Local TTFB bar chart snapshot (`/`, `/courses`, `/events`, `/blog`, `/shop`).
+    - Transfer mix graphic (JS/fonts vs CSS/HTML emphasis).
+  - Inserted slide into the story flow (`story-performance`) and shifted subsequent slide coordinates to keep spacing clean.
+
+- WordPress plugin runtime checks + graphql essentials:
+  - Updated plugin version to `1.0.3`:
+    - `packages/ragbaz-articulate-plugin/Ragbaz-Articulate.php`
+    - `packages/ragbaz-articulate-plugin/package.json`
+    - `packages/ragbaz-articulate-plugin/readme.txt` (stable tag/changelog)
+  - Added runtime check helpers in plugin:
+    - `WP_DEBUG`, `WP_DEBUG_LOG`, `SCRIPT_DEBUG`, `SAVEQUERIES`, `GRAPHQL_DEBUG`
+    - Query Monitor active, Xdebug loaded
+    - Persistent object cache enabled, OPcache loaded
+    - Derived booleans: `debugFlagsOk`, `debugToolsOk`, `okForProduction`
+  - Added wp-admin info screen:
+    - `Tools -> RAGBAZ Articulate`
+    - Minimal table + production summary + GraphQL query snippet.
+  - Added GraphQL exposure:
+    - New object type: `RagbazWpRuntime`
+    - New root fields:
+      - `ragbazWpRuntime` (terse runtime essentials)
+      - `ragbazPluginVersion` (explicit plugin version)
+    - Extended `ragbazInfo` with `wpRuntime`.
+
+- Validation:
+  - `npx eslint src/components/admin/AdminWelcomeTab.js` (pass)
+  - `php -l` could not run in this environment (`php: command not found`), so PHP syntax check is pending runtime validation in WP environment.

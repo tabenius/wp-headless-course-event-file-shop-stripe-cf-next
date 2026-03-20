@@ -286,6 +286,151 @@ function ArchitectureFlowSlide() {
   );
 }
 
+function PerformanceGainsSlide() {
+  const routeTimings = [
+    { route: "/", ttfbMs: 3, color: "#16a34a" },
+    { route: "/courses", ttfbMs: 3, color: "#22c55e" },
+    { route: "/events", ttfbMs: 3, color: "#22c55e" },
+    { route: "/blog", ttfbMs: 4, color: "#4ade80" },
+    { route: "/shop", ttfbMs: 542, color: "#f97316" },
+  ];
+  const maxRouteMs = 560;
+  const graphQlDelayBefore = 150;
+  const graphQlDelayAfter = 0;
+  const accessChecksBefore = 8;
+  const accessChecksAfter = 1;
+  const maxOps = 160;
+
+  const scaleBar = (value, max) =>
+    Math.max(0, Math.min(100, (value / max) * 100));
+
+  return (
+    <div className="h-full rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-lime-100 p-5 shadow-xl">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">
+            Performance gains shipped
+          </h3>
+          <p className="text-xs text-slate-700">
+            Concrete wins from caching and roundtrip reduction in this codebase.
+          </p>
+        </div>
+        <span className="rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-900">
+          perf update
+        </span>
+      </div>
+
+      <div className="mt-4 grid h-[255px] grid-cols-12 gap-3">
+        <div className="col-span-7 rounded-xl border border-emerald-200 bg-white p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
+            Before vs after operations
+          </p>
+          <div className="mt-2 space-y-2 text-[11px] text-slate-700">
+            <div>
+              <div className="flex items-center justify-between">
+                <span>GraphQL default delay</span>
+                <span className="font-semibold text-slate-900">
+                  {graphQlDelayBefore} ms → {graphQlDelayAfter} ms
+                </span>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-emerald-100">
+                <div
+                  className="h-full bg-emerald-500"
+                  style={{ width: `${scaleBar(graphQlDelayBefore, maxOps)}%` }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <span>Shop access checks (sample 8 items)</span>
+                <span className="font-semibold text-slate-900">
+                  {accessChecksBefore} calls → {accessChecksAfter} batch call
+                </span>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-emerald-100">
+                <div
+                  className="h-full bg-teal-500"
+                  style={{
+                    width: `${scaleBar((accessChecksBefore / 8) * maxOps, maxOps)}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[11px] text-emerald-900">
+              Core public routes now report cache HIT: `/`, `/courses`, `/events`,
+              `/blog`.
+            </div>
+          </div>
+
+          <svg
+            viewBox="0 0 440 140"
+            className="mt-3 h-[125px] w-full rounded-lg border border-emerald-100 bg-gradient-to-r from-white to-emerald-50"
+          >
+            <text x="12" y="18" fontSize="11" fill="#065f46" fontWeight="700">
+              Local TTFB snapshot (ms)
+            </text>
+            {routeTimings.map((row, index) => {
+              const y = 34 + index * 20;
+              const width = Math.max(2, (row.ttfbMs / maxRouteMs) * 260);
+              return (
+                <g key={row.route}>
+                  <text x="12" y={y + 10} fontSize="10" fill="#334155">
+                    {row.route}
+                  </text>
+                  <rect
+                    x="84"
+                    y={y}
+                    width={width}
+                    height="12"
+                    rx="4"
+                    fill={row.color}
+                    opacity="0.9"
+                  />
+                  <text x="352" y={y + 10} fontSize="10" fill="#0f172a">
+                    {row.ttfbMs} ms
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        <div className="col-span-5 rounded-xl border border-emerald-200 bg-white p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
+            Transfer mix (gzip snapshot)
+          </p>
+          <svg
+            viewBox="0 0 220 130"
+            className="mt-2 h-[118px] w-full rounded-lg border border-emerald-100 bg-emerald-50/40"
+          >
+            <rect x="18" y="22" width="164" height="18" rx="8" fill="#d1fae5" />
+            <rect x="18" y="22" width="79" height="18" rx="8" fill="#10b981" />
+            <rect x="97" y="22" width="96" height="18" rx="8" fill="#f59e0b" />
+            <rect x="18" y="56" width="164" height="18" rx="8" fill="#d1fae5" />
+            <rect x="18" y="56" width="4" height="18" rx="8" fill="#0ea5e9" />
+            <rect x="22" y="56" width="38" height="18" rx="8" fill="#a855f7" />
+            <text x="18" y="15" fontSize="10" fill="#065f46">
+              JS 424 KB + Fonts 515 KB
+            </text>
+            <text x="18" y="49" fontSize="10" fill="#065f46">
+              CSS 20 KB + HTML route payloads
+            </text>
+            <text x="18" y="95" fontSize="10" fill="#334155">
+              Largest wins continue to come from JS/fonts/media work.
+            </text>
+            <text x="18" y="111" fontSize="10" fill="#334155">
+              Next target: reduce /shop dynamic latency.
+            </text>
+          </svg>
+          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+            Next step candidate: static shop shell + async ownership enrichment.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SalesMockScreen() {
   const rows = [
     {
@@ -784,10 +929,21 @@ export default function AdminWelcomeTab({
         content: <ArchitectureFlowSlide />,
       },
       {
+        id: "story-performance",
+        title: "Performance gains",
+        subtitle: "Cache hits, reduced roundtrips, and a clear next target for /shop.",
+        x: 2480,
+        y: 40,
+        z: -300,
+        scale: scaledStep(1.08),
+        rotate: 4,
+        content: <PerformanceGainsSlide />,
+      },
+      {
         id: "story-sales",
         title: "Zoom to sales",
         subtitle: "Live payment visibility and receipts where operators actually work.",
-        x: 2480,
+        x: 3860,
         y: 180,
         z: -320,
         scale: scaledStep(1.08),
@@ -798,7 +954,7 @@ export default function AdminWelcomeTab({
         id: "story-products",
         title: "Then products",
         subtitle: "Catalog curation, pricing, and delivery links from one studio.",
-        x: 3860,
+        x: 5260,
         y: -120,
         z: -380,
         scale: scaledStep(1.14),
@@ -810,7 +966,7 @@ export default function AdminWelcomeTab({
         title: "Image prompt generator",
         subtitle:
           "Live image-generator status with quota and latest run snapshot (read-only fallback supported).",
-        x: 5260,
+        x: 6660,
         y: 110,
         z: -440,
         scale: scaledStep(1.16),
@@ -821,7 +977,7 @@ export default function AdminWelcomeTab({
         id: "story-chat",
         title: "Finally AI operations",
         subtitle: "Reasoning over logs, receipts, access, and manuals in one multilingual panel.",
-        x: 6680,
+        x: 8080,
         y: 240,
         z: -520,
         scale: scaledStep(1.18),
@@ -832,7 +988,7 @@ export default function AdminWelcomeTab({
         id: "landing",
         title: "Ready to operate",
         subtitle: "Exit the story and jump directly into the admin sections.",
-        x: 8050,
+        x: 9450,
         y: 20,
         z: -140,
         scale: scaledStep(1.02),

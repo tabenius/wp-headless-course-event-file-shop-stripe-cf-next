@@ -5,7 +5,7 @@
  * Description: GraphQL helpers for headless storefronts — exposes LearnPress courses and generic event data (Event Organiser, The Events Calendar, Events Manager) via WPGraphQL without bundling third‑party code.
  * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
- * Version: 1.0.2
+ * Version: 1.0.3
  * Requires at least: 6.3
  * Tested up to: 6.5
  * Requires PHP: 7.4
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 // Keep the legacy option name so existing rules remain intact.
 const RAGBAZ_COURSE_RULES_OPTION = 'Articulate_course_access_rules';
-const RAGBAZ_VERSION = '1.0.2';
+const RAGBAZ_VERSION = '1.0.3';
 const RAGBAZ_STOREFRONT_URL = 'https://github.com/ragbaz/ragbaz-articulate-storefront';
 
 function ragbaz_get_storefront_url() {
@@ -58,6 +58,123 @@ function ragbaz_normalize_vat_percent($value) {
   $numeric = floatval($value);
   if ($numeric < 0 || $numeric > 100) return null;
   return round($numeric, 2);
+}
+
+function ragbaz_is_plugin_active_anywhere($plugin_basename) {
+  $active = get_option('active_plugins', []);
+  if (is_array($active) && in_array($plugin_basename, $active, true)) {
+    return true;
+  }
+  if (is_multisite()) {
+    $network_active = get_site_option('active_sitewide_plugins', []);
+    if (is_array($network_active) && isset($network_active[$plugin_basename])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function ragbaz_get_wp_runtime_status() {
+  $wp_debug = defined('WP_DEBUG') ? (bool) WP_DEBUG : false;
+  $wp_debug_log = defined('WP_DEBUG_LOG') ? (bool) WP_DEBUG_LOG : false;
+  $script_debug = defined('SCRIPT_DEBUG') ? (bool) SCRIPT_DEBUG : false;
+  $savequeries = defined('SAVEQUERIES') ? (bool) SAVEQUERIES : false;
+  $graphql_debug = defined('GRAPHQL_DEBUG') ? (bool) GRAPHQL_DEBUG : false;
+  $query_monitor_active = ragbaz_is_plugin_active_anywhere('query-monitor/query-monitor.php');
+  $xdebug_active = extension_loaded('xdebug');
+  $opcache_enabled = extension_loaded('Zend OPcache') || extension_loaded('opcache');
+  $object_cache_enabled = function_exists('wp_using_ext_object_cache')
+    ? (bool) wp_using_ext_object_cache()
+    : false;
+
+  $debug_flags_ok = !$wp_debug && !$wp_debug_log && !$script_debug && !$savequeries && !$graphql_debug;
+  $debug_tools_ok = !$query_monitor_active && !$xdebug_active;
+
+  return [
+    'pluginVersion' => RAGBAZ_VERSION,
+    'checkedAt' => gmdate('c'),
+    'wpDebug' => $wp_debug,
+    'wpDebugLog' => $wp_debug_log,
+    'scriptDebug' => $script_debug,
+    'saveQueries' => $savequeries,
+    'graphqlDebug' => $graphql_debug,
+    'queryMonitorActive' => $query_monitor_active,
+    'xdebugActive' => $xdebug_active,
+    'opcacheEnabled' => $opcache_enabled,
+    'objectCacheEnabled' => $object_cache_enabled,
+    'debugFlagsOk' => $debug_flags_ok,
+    'debugToolsOk' => $debug_tools_ok,
+    'okForProduction' => $debug_flags_ok && $debug_tools_ok,
+  ];
+}
+
+function ragbaz_get_wp_runtime_checks() {
+  $status = ragbaz_get_wp_runtime_status();
+  return [
+    [
+      'label' => 'WP_DEBUG',
+      'value' => $status['wpDebug'],
+      'recommended' => false,
+      'ok' => !$status['wpDebug'],
+      'required' => true,
+    ],
+    [
+      'label' => 'WP_DEBUG_LOG',
+      'value' => $status['wpDebugLog'],
+      'recommended' => false,
+      'ok' => !$status['wpDebugLog'],
+      'required' => true,
+    ],
+    [
+      'label' => 'SCRIPT_DEBUG',
+      'value' => $status['scriptDebug'],
+      'recommended' => false,
+      'ok' => !$status['scriptDebug'],
+      'required' => true,
+    ],
+    [
+      'label' => 'SAVEQUERIES',
+      'value' => $status['saveQueries'],
+      'recommended' => false,
+      'ok' => !$status['saveQueries'],
+      'required' => true,
+    ],
+    [
+      'label' => 'GRAPHQL_DEBUG',
+      'value' => $status['graphqlDebug'],
+      'recommended' => false,
+      'ok' => !$status['graphqlDebug'],
+      'required' => true,
+    ],
+    [
+      'label' => 'Query Monitor active',
+      'value' => $status['queryMonitorActive'],
+      'recommended' => false,
+      'ok' => !$status['queryMonitorActive'],
+      'required' => true,
+    ],
+    [
+      'label' => 'Xdebug loaded',
+      'value' => $status['xdebugActive'],
+      'recommended' => false,
+      'ok' => !$status['xdebugActive'],
+      'required' => true,
+    ],
+    [
+      'label' => 'Persistent object cache',
+      'value' => $status['objectCacheEnabled'],
+      'recommended' => true,
+      'ok' => $status['objectCacheEnabled'],
+      'required' => false,
+    ],
+    [
+      'label' => 'OPcache loaded',
+      'value' => $status['opcacheEnabled'],
+      'recommended' => true,
+      'ok' => $status['opcacheEnabled'],
+      'required' => false,
+    ],
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -432,6 +549,92 @@ function ragbaz_admin_notice() {
 add_action('admin_notices', 'ragbaz_admin_notice');
 add_action('network_admin_notices', 'ragbaz_admin_notice');
 
+function ragbaz_register_info_page() {
+  add_management_page(
+    'RAGBAZ Articulate Info',
+    'RAGBAZ Articulate',
+    'manage_options',
+    'ragbaz-articulate-info',
+    'ragbaz_render_info_page'
+  );
+}
+add_action('admin_menu', 'ragbaz_register_info_page');
+
+function ragbaz_bool_label($value) {
+  return $value ? 'on' : 'off';
+}
+
+function ragbaz_render_info_page() {
+  if (!current_user_can('manage_options')) {
+    wp_die(esc_html__('Unauthorized', 'ragbaz'));
+  }
+  $status = ragbaz_get_wp_runtime_status();
+  $checks = ragbaz_get_wp_runtime_checks();
+  ?>
+  <div class="wrap">
+    <h1>RAGBAZ Articulate Info</h1>
+    <p>
+      Minimal production-readiness checks for WordPress runtime and GraphQL debug settings.
+    </p>
+    <table class="widefat striped" style="max-width: 980px;">
+      <thead>
+        <tr>
+          <th>Setting</th>
+          <th>Current</th>
+          <th>Recommended</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php foreach ($checks as $check) : ?>
+        <?php
+        $ok = !empty($check['ok']);
+        $required = !empty($check['required']);
+        $status_text = $ok ? 'OK' : ($required ? 'ACTION' : 'RECOMMENDED');
+        ?>
+        <tr>
+          <td><code><?php echo esc_html($check['label']); ?></code></td>
+          <td><strong><?php echo esc_html(ragbaz_bool_label(!empty($check['value']))); ?></strong></td>
+          <td><?php echo esc_html(ragbaz_bool_label(!empty($check['recommended']))); ?></td>
+          <td style="font-weight: 600; color: <?php echo esc_attr($ok ? '#166534' : ($required ? '#b91c1c' : '#92400e')); ?>">
+            <?php echo esc_html($status_text); ?>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+
+    <p style="margin-top: 14px;">
+      <strong>Production-ready summary:</strong>
+      <span style="color: <?php echo esc_attr($status['okForProduction'] ? '#166534' : '#b91c1c'); ?>; font-weight: 600;">
+        <?php echo esc_html($status['okForProduction'] ? 'OK' : 'Needs action'); ?>
+      </span>
+      <span style="margin-left: 12px; color: #475569;">Checked: <?php echo esc_html($status['checkedAt']); ?></span>
+    </p>
+
+    <h2 style="margin-top: 24px;">GraphQL essentials</h2>
+    <p>Query only the terse essentials from WPGraphQL:</p>
+    <pre style="max-width: 980px; overflow: auto;"><code>query RagbazRuntime {
+  ragbazPluginVersion
+  ragbazWpRuntime {
+    pluginVersion
+    checkedAt
+    okForProduction
+    wpDebug
+    wpDebugLog
+    scriptDebug
+    saveQueries
+    graphqlDebug
+    queryMonitorActive
+    xdebugActive
+    objectCacheEnabled
+    opcacheEnabled
+  }
+}</code></pre>
+  </div>
+  <?php
+}
+
 add_action('graphql_register_types', function () {
   if (!function_exists('register_graphql_field')) {
     return;
@@ -630,11 +833,31 @@ add_action('graphql_register_types', function () {
   ]);
 
   // --- RAGBAZ info probe (for storefront detection) ---
+  register_graphql_object_type('RagbazWpRuntime', [
+    'fields' => [
+      'pluginVersion' => ['type' => 'String'],
+      'checkedAt' => ['type' => 'String'],
+      'wpDebug' => ['type' => 'Boolean'],
+      'wpDebugLog' => ['type' => 'Boolean'],
+      'scriptDebug' => ['type' => 'Boolean'],
+      'saveQueries' => ['type' => 'Boolean'],
+      'graphqlDebug' => ['type' => 'Boolean'],
+      'queryMonitorActive' => ['type' => 'Boolean'],
+      'xdebugActive' => ['type' => 'Boolean'],
+      'objectCacheEnabled' => ['type' => 'Boolean'],
+      'opcacheEnabled' => ['type' => 'Boolean'],
+      'debugFlagsOk' => ['type' => 'Boolean'],
+      'debugToolsOk' => ['type' => 'Boolean'],
+      'okForProduction' => ['type' => 'Boolean'],
+    ],
+  ]);
+
   register_graphql_object_type('RagbazInfo', [
     'fields' => [
       'version' => ['type' => 'String'],
       'hasLearnPress' => ['type' => 'Boolean'],
       'hasEventsPlugin' => ['type' => 'Boolean'],
+      'wpRuntime' => ['type' => 'RagbazWpRuntime'],
     ],
   ]);
 
@@ -645,7 +868,25 @@ add_action('graphql_register_types', function () {
         'version' => RAGBAZ_VERSION,
         'hasLearnPress' => function_exists('learn_press_get_user'),
         'hasEventsPlugin' => ragbaz_detect_events_plugin(),
+        'wpRuntime' => current_user_can('manage_options')
+          ? ragbaz_get_wp_runtime_status()
+          : null,
       ];
+    },
+  ]);
+
+  register_graphql_field('RootQuery', 'ragbazWpRuntime', [
+    'type' => 'RagbazWpRuntime',
+    'resolve' => function () {
+      if (!current_user_can('manage_options')) return null;
+      return ragbaz_get_wp_runtime_status();
+    },
+  ]);
+
+  register_graphql_field('RootQuery', 'ragbazPluginVersion', [
+    'type' => 'String',
+    'resolve' => function () {
+      return RAGBAZ_VERSION;
     },
   ]);
 
