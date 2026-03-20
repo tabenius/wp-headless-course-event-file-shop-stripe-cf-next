@@ -1,5 +1,6 @@
 import { fetchGraphQL } from "@/lib/client";
 import site from "@/lib/site";
+import { cache } from "react";
 
 const MENU_QUERY = `
   query GetPrimaryMenu {
@@ -88,7 +89,7 @@ function mapItem(node, { uppercase = false } = {}) {
  * Falls back to site.json navigation if the menu is empty or the query fails.
  * Returns items with optional `children` arrays.
  */
-export async function getNavigation() {
+export const getNavigation = cache(async function getNavigation() {
   try {
     const data = await fetchGraphQL(MENU_QUERY, {}, 1800);
     const menuItems =
@@ -107,4 +108,4 @@ export async function getNavigation() {
   } catch {
     return site.navigation;
   }
-}
+});
