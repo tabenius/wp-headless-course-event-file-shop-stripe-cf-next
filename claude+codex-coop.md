@@ -1897,3 +1897,40 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Nested repo commit pushed:
   - `ragbaz.xyz` `master`: `3e54194` — `feat: serve gifted tenant drafts on hex.ragbaz.xyz`
+
+---
+
+## 2026-03-20 (cont. 38)
+
+### Codex — Tenant hosts now expose the same `/admin` surface via proxy under `[tenant_hex].ragbaz.xyz/admin`
+
+- Extended `ragbaz.xyz` host-based tenant routing:
+  - For gifted tenant hosts (`{gift_key}.ragbaz.xyz`), requests to:
+    - `/admin`
+    - `/admin/*`
+    - `/api/admin/*`
+    are now proxied to a shared upstream admin origin.
+
+- New configuration:
+  - `RAGBAZ_TENANT_ADMIN_ORIGIN` (plus fallback aliases `RAGBAZ_ARTICULATE_ADMIN_ORIGIN` / `RAGBAZ_ADMIN_ORIGIN`)
+  - Added to `ragbaz.xyz/wrangler.toml` sample vars and documented in `ragbaz.xyz/README.md`.
+
+- Proxy behavior details:
+  - Preserves request method/path/query and forwards upstream response body/status.
+  - Injects tenant context headers upstream:
+    - `x-ragbaz-tenant-gift`
+    - `x-ragbaz-tenant-host`
+    - `x-ragbaz-tenant-base-domain`
+    - `x-ragbaz-tenant-account-id`
+  - Adds response marker headers:
+    - `x-ragbaz-tenant-proxy: 1`
+    - `x-ragbaz-tenant-gift: {gift_key}`
+  - If admin origin is not configured, returns a deterministic `501` for tenant admin routes.
+
+- Validation:
+  - Extended `ragbaz.xyz/tests/home-api.test.js` with:
+    - `tenant hex host proxies /admin to configured admin origin`
+  - `cd ragbaz.xyz && npm test` passes (5/5).
+
+- Nested repo commit pushed:
+  - `ragbaz.xyz` `master`: `94b91b5` — `feat: proxy tenant hex admin paths to shared admin origin`
