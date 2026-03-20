@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
+
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 function formatBytes(bytes) {
   const value = Number(bytes);
@@ -50,6 +52,14 @@ function canPreviewImage(item) {
   return /\.(png|jpe?g|gif|webp|bmp|avif|svg)$/i.test(url);
 }
 
+function isImageFile(file) {
+  if (!(file instanceof File)) return false;
+  const mime = String(file.type || "").toLowerCase();
+  if (mime.startsWith("image/")) return true;
+  const name = String(file.name || "").toLowerCase();
+  return /\.(png|jpe?g|gif|webp|bmp|avif|svg)$/i.test(name);
+}
+
 function normalizeEditorValue(value, max = 600) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
@@ -71,7 +81,10 @@ function toEditorState(item) {
   };
 }
 
-export default function AdminMediaLibraryTab() {
+export default function AdminMediaLibraryTab({
+  uploadBackend = "wordpress",
+  uploadInfo = null,
+}) {
   const [items, setItems] = useState([]);
   const [sources, setSources] = useState(null);
   const [warnings, setWarnings] = useState([]);
@@ -87,6 +100,62 @@ export default function AdminMediaLibraryTab() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [selectedUploadBackend, setSelectedUploadBackend] = useState("wordpress");
+  const uploadInputRef = useRef(null);
+  const dragDepthRef = useRef(0);
+
+  const imageUploadOptions = useMemo(
+    () => [
+      {
+        id: "wordpress",
+        label: t("admin.uploadTargetWordpress"),
+        enabled: true,
+      },
+      {
+        id: "r2",
+        label: t("admin.uploadTargetR2"),
+        enabled: Boolean(uploadInfo?.r2),
+      },
+      ...(uploadInfo?.s3Enabled
+        ? [
+            {
+              id: "s3",
+              label: t("admin.uploadTargetS3"),
+              enabled: Boolean(uploadInfo?.s3),
+            },
+          ]
+        : []),
+    ],
+    [uploadInfo],
+  );
+
+  const enabledUploadOptions = useMemo(
+    () => imageUploadOptions.filter((option) => option.enabled !== false),
+    [imageUploadOptions],
+  );
+
+  const preferredUploadBackend = useMemo(
+    () =>
+      enabledUploadOptions.find((option) => option.id === "wordpress")?.id ||
+      enabledUploadOptions.find((option) => option.id === uploadBackend)?.id ||
+      enabledUploadOptions[0]?.id ||
+      "wordpress",
+    [enabledUploadOptions, uploadBackend],
+  );
+
+  useEffect(() => {
+    const backendExists = enabledUploadOptions.some(
+      (option) => option.id === selectedUploadBackend,
+    );
+    if (!backendExists) {
+      setSelectedUploadBackend(preferredUploadBackend);
+    }
+  }, [enabledUploadOptions, preferredUploadBackend, selectedUploadBackend]);
 
   const loadLibrary = useCallback(async () => {
     setLoading(true);
@@ -236,6 +305,178 @@ export default function AdminMediaLibraryTab() {
     }
   }
 
+  function openUploadPicker() {
+    const input = uploadInputRef.current;
+    if (!input) return;
+    input.value = "";
+    input.click();
+  }
+
+  function extractImageFiles(sourceData) {
+    if (!sourceData) return [];
+    const fromFiles = Array.from(sourceData.files || []);
+    if (fromFiles.length > 0) {
+      return fromFiles.filter((file) => isImageFile(file));
+    }
+    const files = [];
+    const items = Array.from(sourceData.items || []);
+    for (const item of items) {
+      if (!item || item.kind !== "file") continue;
+      const file = item.getAsFile?.();
+      if (!isImageFile(file)) continue;
+      files.push(file);
+    }
+    return files;
+  }
+
+  async function uploadImageFiles(files) {
+    if (uploading) return;
+    const list = Array.from(files || []).filter((file) => file instanceof File);
+    if (list.length === 0) return;
+
+    const oversized = list.filter((file) => file.size > MAX_IMAGE_BYTES);
+    const valid = list.filter((file) => file.size <= MAX_IMAGE_BYTES);
+    if (valid.length === 0) {
+      setUploadStatus("");
+      setUploadError(
+        oversized.length > 0
+          ? t("admin.mediaUploadTooLarge", { mb: 20 })
+          : t("admin.uploadImageTypeInvalid"),
+      );
+      return;
+    }
+
+    setUploading(true);
+    setUploadCount(valid.length);
+    setUploadError("");
+    setUploadStatus(t("admin.mediaUploadUploading", { n: valid.length }));
+    let succeeded = 0;
+    const errors = [];
+
+    for (const file of valid) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file, file.name || "media-image.png");
+        const query = new URLSearchParams({ kind: "image" });
+        if (selectedUploadBackend) {
+          query.set("backend", selectedUploadBackend);
+        }
+        const response = await fetch(`/api/admin/upload?${query.toString()}`, {
+          method: "POST",
+          body: formData,
+        });
+        const json = await response.json().catch(() => ({}));
+        if (!response.ok || !json?.ok) {
+          throw new Error(json?.error || t("admin.mediaUploadFailed"));
+        }
+        succeeded += 1;
+      } catch (uploadSingleError) {
+        errors.push(
+          uploadSingleError instanceof Error
+            ? uploadSingleError.message
+            : t("admin.mediaUploadFailed"),
+        );
+      }
+    }
+
+    const skipped = oversized.length;
+    const failed = errors.length;
+    const total = valid.length + skipped;
+
+    if (succeeded > 0) {
+      const successText =
+        failed > 0 || skipped > 0
+          ? t("admin.mediaUploadPartial", {
+              ok: succeeded,
+              total,
+            })
+          : t("admin.mediaUploadDone", { n: succeeded });
+      setUploadStatus(successText);
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: successText },
+        }),
+      );
+      setRefreshToken((value) => value + 1);
+    } else {
+      setUploadStatus("");
+    }
+
+    if (failed > 0 || skipped > 0) {
+      const parts = [];
+      if (failed > 0) {
+        parts.push(t("admin.mediaUploadFailed"));
+      }
+      if (skipped > 0) {
+        parts.push(t("admin.mediaUploadTooLarge", { mb: 20 }));
+      }
+      if (errors[0]) {
+        parts.push(errors[0]);
+      }
+      const message = parts.filter(Boolean).join(" ");
+      setUploadError(message);
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "error", message },
+        }),
+      );
+    } else {
+      setUploadError("");
+    }
+
+    setUploading(false);
+    setUploadCount(0);
+  }
+
+  function handleUploadInputChange(event) {
+    const files = extractImageFiles(event.currentTarget);
+    uploadImageFiles(files);
+  }
+
+  function handleDropZonePaste(event) {
+    const files = extractImageFiles(event.clipboardData);
+    if (files.length === 0) return;
+    event.preventDefault();
+    uploadImageFiles(files);
+  }
+
+  function handleDropZoneDragEnter(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current += 1;
+    setIsDragActive(true);
+  }
+
+  function handleDropZoneDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDragActive(false);
+    }
+  }
+
+  function handleDropZoneDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "copy";
+    }
+  }
+
+  function handleDropZoneDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDragActive(false);
+    const files = extractImageFiles(event.dataTransfer);
+    if (files.length === 0) {
+      setUploadError(t("admin.uploadImageTypeInvalid"));
+      return;
+    }
+    uploadImageFiles(files);
+  }
+
   return (
     <div className="border rounded p-5 space-y-4 bg-white min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -305,6 +546,103 @@ export default function AdminMediaLibraryTab() {
           {t("admin.mediaSearch", "Search")}
         </button>
       </form>
+
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleUploadInputChange}
+        className="absolute -left-[10000px] top-auto h-px w-px opacity-0"
+      />
+
+      <div className="space-y-2">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={openUploadPicker}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openUploadPicker();
+            }
+          }}
+          onPaste={handleDropZonePaste}
+          onDragEnter={handleDropZoneDragEnter}
+          onDragLeave={handleDropZoneDragLeave}
+          onDragOver={handleDropZoneDragOver}
+          onDrop={handleDropZoneDrop}
+          className={`rounded border-2 border-dashed p-4 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+            isDragActive
+              ? "border-purple-500 bg-purple-50"
+              : "border-gray-300 bg-gray-50 hover:bg-gray-100"
+          }`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-gray-800">
+                {t("admin.mediaDropzoneTitle", "Upload new images")}
+              </p>
+              <p className="text-xs text-gray-600">
+                {isDragActive
+                  ? t("admin.mediaDropzoneActive", "Drop image files to upload now.")
+                  : t(
+                      "admin.mediaDropzoneHint",
+                      "Drag and drop image files here, or click to select files.",
+                    )}
+              </p>
+              <p className="text-xs text-gray-500">
+                {t(
+                  "admin.mediaDropzonePasteHint",
+                  "Paste also works: click this area and press Ctrl/Cmd+V.",
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                openUploadPicker();
+              }}
+              disabled={uploading}
+              className="px-3 py-1.5 rounded border text-xs hover:bg-gray-100 disabled:opacity-50"
+            >
+              {t("admin.mediaChooseFiles", "Choose images")}
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {enabledUploadOptions.length > 1 && (
+            <label className="flex items-center gap-2 text-xs text-gray-600">
+              <span>{t("admin.uploadDestinationTitle", "Upload destination")}</span>
+              <select
+                value={selectedUploadBackend}
+                onChange={(event) => setSelectedUploadBackend(event.target.value)}
+                className="border rounded px-2 py-1 text-xs bg-white"
+              >
+                {enabledUploadOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {uploading && (
+            <span className="text-xs text-gray-600">
+              {t("admin.mediaUploadUploading", { n: uploadCount || 1 })}
+            </span>
+          )}
+          {uploadStatus && !uploading && (
+            <span className="text-xs text-emerald-700">{uploadStatus}</span>
+          )}
+        </div>
+        {uploadError && (
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+            {uploadError}
+          </p>
+        )}
+      </div>
 
       {sources && (
         <div className="flex flex-wrap gap-2 text-xs">

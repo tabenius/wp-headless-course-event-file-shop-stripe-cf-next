@@ -1831,7 +1831,10 @@ export default function AdminDashboard() {
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
         >
-          <AdminMediaLibraryTab />
+          <AdminMediaLibraryTab
+            uploadBackend={uploadBackend}
+            uploadInfo={uploadInfo}
+          />
         </Suspense>
       )}
 
