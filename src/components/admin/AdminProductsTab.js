@@ -109,6 +109,7 @@ function ImagePickerButton({
   onUploaded,
   onError,
   uploadBackend = "wordpress",
+  uploadOptions = [],
 }) {
   return (
     <ImageUploader
@@ -116,6 +117,7 @@ function ImagePickerButton({
       onUploaded={onUploaded}
       onError={onError}
       uploadBackend={uploadBackend}
+      uploadOptions={uploadOptions}
       renderTrigger={(openPicker) => (
         <button
           type="button"
@@ -397,6 +399,7 @@ function AccessTab({
   uploadFile,
   uploadingField,
   uploadBackend,
+  uploadInfo,
   runtime,
   showImageGen,
   setShowImageGen,
@@ -438,6 +441,27 @@ function AccessTab({
   const [vatDraft, setVatDraft] = useState({});
   const [vatCategoryDraft, setVatCategoryDraft] = useState("");
   const [vatRateDraft, setVatRateDraft] = useState("");
+  const imageUploadOptions = [
+    {
+      id: "wordpress",
+      label: t("admin.uploadTargetWordpress"),
+      enabled: true,
+    },
+    {
+      id: "r2",
+      label: t("admin.uploadTargetR2"),
+      enabled: Boolean(uploadInfo?.r2),
+    },
+    ...(uploadInfo?.s3Enabled
+      ? [
+          {
+            id: "s3",
+            label: t("admin.uploadTargetS3"),
+            enabled: Boolean(uploadInfo?.s3),
+          },
+        ]
+      : []),
+  ];
 
   useEffect(() => {
     setVatDraft(
@@ -942,7 +966,8 @@ function AccessTab({
                     <div className="flex gap-4 mb-4">
                       <ImagePickerButton
                         imgUrl={imgUrl}
-                        uploadBackend={uploadBackend}
+                        uploadBackend="wordpress"
+                        uploadOptions={imageUploadOptions}
                         onUploaded={(url) => {
                           const upd = (setter) =>
                             setter((prev) =>
@@ -1060,7 +1085,8 @@ function AccessTab({
                   <div className="flex items-center gap-3 min-w-0">
                     <ImagePickerButton
                       imgUrl={selectedShopProduct.imageUrl}
-                      uploadBackend={uploadBackend}
+                      uploadBackend="wordpress"
+                      uploadOptions={imageUploadOptions}
                       onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
                       onError={setError}
                     />
@@ -1532,6 +1558,7 @@ export default function AdminProductsTab(props) {
     uploadFile,
     uploadingField,
     uploadBackend,
+    uploadInfo,
     runtime,
     showImageGen,
     setShowImageGen,
@@ -1609,6 +1636,7 @@ export default function AdminProductsTab(props) {
             uploadFile={uploadFile}
             uploadingField={uploadingField}
             uploadBackend={uploadBackend}
+            uploadInfo={uploadInfo}
             runtime={runtime}
             showImageGen={showImageGen}
             setShowImageGen={setShowImageGen}

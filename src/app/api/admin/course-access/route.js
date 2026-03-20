@@ -9,7 +9,12 @@ import {
 } from "@/lib/courseAccess";
 import { fetchGraphQL } from "@/lib/client";
 import { deriveCategories } from "@/lib/contentCategories";
-import { getUploadBackend, isS3Configured, isS3Upload } from "@/lib/s3upload";
+import {
+  getUploadBackend,
+  isS3BackendEnabled,
+  isS3Configured,
+  isS3Upload,
+} from "@/lib/s3upload";
 
 const graphqlFieldSupportCache = new Map();
 
@@ -206,6 +211,9 @@ export async function GET(request) {
       fetchEvents(),
     ]);
     const uploadBackend = getUploadBackend();
+    const r2Configured = isS3Upload("r2") && isS3Configured("r2");
+    const s3Enabled = isS3BackendEnabled();
+    const s3Configured = s3Enabled && isS3Upload("s3") && isS3Configured("s3");
     return NextResponse.json({
       ok: true,
       courses: state.courses,
@@ -220,8 +228,9 @@ export async function GET(request) {
       upload: {
         backend: uploadBackend,
         wordpress: true,
-        s3: isS3Upload(uploadBackend) && isS3Configured(uploadBackend),
-        r2: isS3Upload("r2") && isS3Configured("r2"),
+        r2: r2Configured,
+        s3: s3Configured,
+        s3Enabled,
       },
     });
   } catch (error) {

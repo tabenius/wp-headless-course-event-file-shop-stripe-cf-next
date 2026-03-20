@@ -132,15 +132,20 @@ async function signCanonical({
 export async function signR2Put({
   url,
   body,
+  headers = {},
   accessKeyId,
   secretAccessKey,
   region = "auto",
 }) {
   const payloadHash = toHex(await crypto.subtle.digest("SHA-256", body));
+  const canonicalHeaders = {
+    ...headers,
+    "x-amz-content-sha256": payloadHash,
+  };
   const { authorization, amzDate } = await signCanonical({
     method: "PUT",
     url,
-    headers: { "x-amz-content-sha256": payloadHash },
+    headers: canonicalHeaders,
     payloadHash,
     accessKeyId,
     secretAccessKey,
@@ -150,6 +155,7 @@ export async function signR2Put({
     Authorization: authorization,
     "x-amz-date": amzDate,
     "x-amz-content-sha256": payloadHash,
+    ...headers,
   };
 }
 

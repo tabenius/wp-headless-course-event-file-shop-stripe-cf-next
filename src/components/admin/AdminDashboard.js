@@ -1868,6 +1868,7 @@ export default function AdminDashboard() {
             uploadFile={uploadFile}
             uploadingField={uploadingField}
             uploadBackend={uploadBackend}
+            uploadInfo={uploadInfo}
             runtime={runtime}
             showImageGen={showImageGen}
             setShowImageGen={setShowImageGen}

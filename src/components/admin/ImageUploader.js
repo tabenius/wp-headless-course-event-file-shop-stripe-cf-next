@@ -23,6 +23,24 @@ const ASPECT_LABEL_KEYS = {
 
 const PREVIEW_MAX = 320;
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // 20 MB
+const DEFAULT_OUTPUT_FORMAT = "webp";
+const OUTPUT_FORMATS = ["webp", "avif", "raw"];
+const OUTPUT_VARIANT_KINDS = ["compressed", "derived-work"];
+const OUTPUT_EXTENSIONS = {
+  webp: "webp",
+  avif: "avif",
+  raw: "png",
+};
+const OUTPUT_MIME_TYPES = {
+  webp: "image/webp",
+  avif: "image/avif",
+  raw: "image/png",
+};
+const OUTPUT_QUALITY = {
+  webp: 0.86,
+  avif: 0.82,
+  raw: 1,
+};
 
 function resolveAspectSize(key) {
   return SIZE_PRESETS[key] || SIZE_PRESETS[DEFAULT_ASPECT_KEY] || SIZE_PRESETS.square;
@@ -71,6 +89,17 @@ function drawCroppedImage({
   ctx.drawImage(image, x, y, drawW, drawH);
 }
 
+function toHex(buffer) {
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function sha256Hex(data) {
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return toHex(hash);
+}
+
 /**
  * Image uploader with crop & scale preview.
  * Props:
@@ -86,12 +115,51 @@ export default function ImageUploader({
   onError,
   className = "",
   renderTrigger,
-  uploadBackend = "",
+  uploadBackend = "wordpress",
+  uploadOptions = [],
 }) {
+  const availableUploadOptions = (
+    Array.isArray(uploadOptions) && uploadOptions.length > 0
+      ? uploadOptions
+      : [
+          {
+            id: "wordpress",
+            label: t("admin.uploadTargetWordpress"),
+            enabled: true,
+          },
+          ...(uploadBackend && uploadBackend !== "wordpress"
+            ? [
+                {
+                  id: uploadBackend,
+                  label:
+                    uploadBackend === "r2"
+                      ? t("admin.uploadTargetR2")
+                      : uploadBackend === "s3"
+                        ? t("admin.uploadTargetS3")
+                        : uploadBackend,
+                  enabled: true,
+                },
+              ]
+            : []),
+        ]
+  )
+    .filter((opt) => opt && typeof opt.id === "string")
+    .filter((opt) => opt.enabled !== false);
+  const preferredUploadBackend =
+    availableUploadOptions.find((opt) => opt.id === "wordpress")?.id ||
+    availableUploadOptions[0]?.id ||
+    "wordpress";
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  const [selectedUploadBackend, setSelectedUploadBackend] = useState(
+    preferredUploadBackend,
+  );
+  const [outputFormat, setOutputFormat] = useState(DEFAULT_OUTPUT_FORMAT);
+  const [variantKind, setVariantKind] = useState("compressed");
+  const [copyrightHolder, setCopyrightHolder] = useState("");
+  const [license, setLicense] = useState("");
   const [scale, setScale] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
@@ -101,6 +169,26 @@ export default function ImageUploader({
   const imgRef = useRef(null);
   const selectedSize = resolveAspectSize(aspectKey);
   const previewFrame = computePreviewFrame(selectedSize);
+  const outputFormatOptions = OUTPUT_FORMATS.map((format) => ({
+    id: format,
+    label:
+      format === "webp"
+        ? t("admin.imageOutputFormatWebp")
+        : format === "avif"
+          ? t("admin.imageOutputFormatAvif")
+          : t("admin.imageOutputFormatRaw"),
+  }));
+  const variantKindOptions = OUTPUT_VARIANT_KINDS.map((kind) => ({
+    id: kind,
+    label:
+      kind === "derived-work"
+        ? t("admin.imageVariantKindDerivedWork")
+        : t("admin.imageVariantKindCompressed"),
+  }));
+
+  useEffect(() => {
+    setSelectedUploadBackend(preferredUploadBackend);
+  }, [preferredUploadBackend]);
 
   const emitError = useCallback(
     (message) => {
@@ -142,11 +230,16 @@ export default function ImageUploader({
       setOffsetX(0);
       setOffsetY(0);
       setAspectKey(DEFAULT_ASPECT_KEY);
+      setSelectedUploadBackend(preferredUploadBackend);
+      setOutputFormat(DEFAULT_OUTPUT_FORMAT);
+      setVariantKind("compressed");
+      setCopyrightHolder("");
+      setLicense("");
       const url = URL.createObjectURL(picked);
       setPreview(url);
       setShowEditor(true);
     },
-    [emitError],
+    [emitError, preferredUploadBackend],
   );
 
   const openFilePicker = useCallback(() => {
@@ -250,13 +343,88 @@ export default function ImageUploader({
     window.addEventListener("touchend", onEnd);
   }
 
+  async function canvasToBlob(canvas, mimeType, quality = 1) {
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob((value) => resolve(value), mimeType, quality),
+    );
+    return blob || null;
+  }
+
+  async function uploadAssetStep({
+    fileBlob,
+    fileName,
+    assetId,
+    assetRole,
+    assetFormat,
+    variantKind = "",
+    originalUrl = "",
+    originalId = "",
+    sourceHash = "",
+    copyrightHolder = "",
+    license = "",
+    width = null,
+    height = null,
+  }) {
+    const formData = new FormData();
+    formData.append("file", fileBlob, fileName);
+    formData.append("assetId", assetId);
+    formData.append("assetRole", assetRole);
+    formData.append("assetFormat", assetFormat);
+    if (variantKind) formData.append("variantKind", variantKind);
+    if (originalUrl) formData.append("originalUrl", originalUrl);
+    if (originalId) formData.append("originalId", String(originalId));
+    if (sourceHash) formData.append("sourceHash", sourceHash);
+    if (copyrightHolder) formData.append("copyrightHolder", copyrightHolder);
+    if (license) formData.append("license", license);
+    if (Number.isFinite(width)) formData.append("width", String(width));
+    if (Number.isFinite(height)) formData.append("height", String(height));
+
+    const query = new URLSearchParams({ kind: "image" });
+    if (selectedUploadBackend) {
+      query.set("backend", selectedUploadBackend);
+    }
+    const res = await fetch(`/api/admin/upload?${query.toString()}`, {
+      method: "POST",
+      body: formData,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json?.ok) {
+      const msg = json?.error || t("admin.uploadFailed");
+      throw new Error(msg);
+    }
+    return json;
+  }
+
   async function handleUpload() {
     const previewCanvas = canvasRef.current;
     const img = imgRef.current;
-    if (!previewCanvas || !img || !img.complete) return;
+    if (!previewCanvas || !img || !img.complete || !file) return;
 
     setUploading(true);
     try {
+      const assetId =
+        typeof crypto?.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `asset-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+      const sourceHash = await sha256Hex(await file.arrayBuffer());
+      const fileBaseName = file.name?.replace(/\.[^.]+$/, "") || "image";
+
+      // Step 1: always upload untouched original first.
+      const originalUpload = await uploadAssetStep({
+        fileBlob: file,
+        fileName: file.name || `${fileBaseName}-original`,
+        assetId,
+        assetRole: "original",
+        assetFormat: "raw",
+        variantKind: "original",
+        sourceHash,
+        copyrightHolder,
+        license,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      });
+
+      // Step 2: upload processed output linked to the original.
       const exportCanvas = document.createElement("canvas");
       const exportWidth = selectedSize.width;
       const exportHeight = selectedSize.height;
@@ -272,61 +440,73 @@ export default function ImageUploader({
         offsetY: offsetY * scaleY,
       });
 
-      const blob = await new Promise((resolve, reject) =>
-        exportCanvas.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error("Canvas toBlob failed"))),
-          "image/jpeg",
-          0.9,
-        ),
+      let requestedFormat = outputFormat;
+      let exportMime = OUTPUT_MIME_TYPES[requestedFormat] || "image/webp";
+      let exportBlob = await canvasToBlob(
+        exportCanvas,
+        exportMime,
+        OUTPUT_QUALITY[requestedFormat] ?? 0.86,
       );
-      const formData = new FormData();
-      const name = file?.name?.replace(/\.[^.]+$/, "") || "image";
-      formData.append("file", blob, `${name}.jpg`);
 
-      const query = new URLSearchParams({ kind: "image" });
-      if (uploadBackend) {
-        query.set("backend", uploadBackend);
-      }
-      const res = await fetch(`/api/admin/upload?${query.toString()}`, {
-        method: "POST",
-        body: formData,
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.ok) {
-        console.error("Image upload failed", {
-          backend: uploadBackend || "default",
-          status: res.status,
-          error: json?.error || null,
-        });
-        const msg = json?.error || t("admin.uploadFailed");
-        emitError(
-          uploadBackend ? `${msg} (${uploadBackend})` : msg,
+      if (!exportBlob && requestedFormat === "avif") {
+        requestedFormat = "webp";
+        exportMime = OUTPUT_MIME_TYPES.webp;
+        exportBlob = await canvasToBlob(
+          exportCanvas,
+          exportMime,
+          OUTPUT_QUALITY.webp,
         );
-        setShowEditor(false);
-        setPreview(null);
-        setFile(null);
-        return;
       }
+      if (!exportBlob) {
+        requestedFormat = "raw";
+        exportMime = OUTPUT_MIME_TYPES.raw;
+        exportBlob = await canvasToBlob(exportCanvas, exportMime, 1);
+      }
+      if (!exportBlob) {
+        throw new Error("Canvas export failed");
+      }
+
+      const variantFileName = `${fileBaseName}-${requestedFormat}.${OUTPUT_EXTENSIONS[requestedFormat] || "bin"}`;
+      const variantUpload = await uploadAssetStep({
+        fileBlob: exportBlob,
+        fileName: variantFileName,
+        assetId,
+        assetRole: "variant",
+        assetFormat: requestedFormat,
+        variantKind,
+        originalUrl: originalUpload?.url || "",
+        originalId: originalUpload?.id || "",
+        sourceHash,
+        copyrightHolder,
+        license,
+        width: exportWidth,
+        height: exportHeight,
+      });
+
       setShowEditor(false);
       setPreview(null);
       setFile(null);
+      setVariantKind("compressed");
+      setCopyrightHolder("");
+      setLicense("");
       try {
-        onUploaded?.(json.url);
+        onUploaded?.(variantUpload.url, variantUpload.asset);
       } catch (error) {
         console.error("ImageUploader onUploaded callback failed:", error);
       }
     } catch (error) {
       console.error("Image upload exception", {
-        backend: uploadBackend || "default",
+        backend: selectedUploadBackend || "default",
         error,
       });
       const msg = t("admin.uploadFailed");
-      emitError(
-        uploadBackend ? `${msg} (${uploadBackend})` : msg,
-      );
+      emitError(selectedUploadBackend ? `${msg} (${selectedUploadBackend})` : msg);
       setShowEditor(false);
       setPreview(null);
       setFile(null);
+      setVariantKind("compressed");
+      setCopyrightHolder("");
+      setLicense("");
     } finally {
       setUploading(false);
     }
@@ -336,6 +516,9 @@ export default function ImageUploader({
     setShowEditor(false);
     setPreview(null);
     setFile(null);
+    setVariantKind("compressed");
+    setCopyrightHolder("");
+    setLicense("");
   }
 
   return (
@@ -406,6 +589,93 @@ export default function ImageUploader({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {availableUploadOptions.length > 1 && (
+              <div className="space-y-1">
+                <label className="text-xs text-gray-600">
+                  {t("admin.uploadDestinationTitle")}
+                </label>
+                <select
+                  value={selectedUploadBackend}
+                  onChange={(event) =>
+                    setSelectedUploadBackend(event.target.value)
+                  }
+                  className="w-full border rounded px-2 py-1 text-sm"
+                >
+                  {availableUploadOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600">
+                {t("admin.imageOutputFormatLabel")}
+              </label>
+              <select
+                value={outputFormat}
+                onChange={(event) => setOutputFormat(event.target.value)}
+                className="w-full border rounded px-2 py-1 text-sm"
+              >
+                {outputFormatOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-500">
+                {t("admin.imageOutputFormatHint")}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600">
+                {t("admin.imageVariantKindLabel")}
+              </label>
+              <select
+                value={variantKind}
+                onChange={(event) => setVariantKind(event.target.value)}
+                className="w-full border rounded px-2 py-1 text-sm"
+              >
+                {variantKindOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-500">
+                {t("admin.imageVariantKindHint")}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600">
+                {t("admin.imageCopyrightHolderLabel")}
+              </label>
+              <input
+                type="text"
+                value={copyrightHolder}
+                onChange={(event) => setCopyrightHolder(event.target.value)}
+                className="w-full border rounded px-2 py-1 text-sm"
+                placeholder={t("admin.imageCopyrightHolderPlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600">
+                {t("admin.imageLicenseLabel")}
+              </label>
+              <input
+                type="text"
+                value={license}
+                onChange={(event) => setLicense(event.target.value)}
+                className="w-full border rounded px-2 py-1 text-sm"
+                placeholder={t("admin.imageLicensePlaceholder")}
+              />
             </div>
 
             {/* Hidden image for drawing */}

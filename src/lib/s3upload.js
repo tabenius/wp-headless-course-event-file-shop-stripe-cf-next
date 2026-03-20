@@ -9,6 +9,7 @@ import {
 
 const _clients = new Map();
 let _awsSdkPromise = null;
+const S3_ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const isNodeRuntime =
   typeof process !== "undefined" &&
   process.versions?.node &&
@@ -16,6 +17,15 @@ const isNodeRuntime =
 const isEdgeRuntime =
   typeof EdgeRuntime !== "undefined" || process.env.NEXT_RUNTIME === "edge";
 export const EDGE_R2_MAX_BYTES = 100 * 1024 * 1024; // 100 MB cap for edge uploads
+
+function isS3Enabled() {
+  const raw = String(
+    process.env.ENABLE_S3_UPLOAD || process.env.S3_UPLOAD_ENABLED || "",
+  )
+    .trim()
+    .toLowerCase();
+  return S3_ENABLED_VALUES.has(raw);
+}
 
 async function loadAwsSdk() {
   if (!_awsSdkPromise) {
@@ -31,7 +41,14 @@ async function loadAwsSdk() {
 }
 
 function resolveBackend(preferred) {
-  return (preferred || process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
+  const requested = String(
+    preferred || process.env.UPLOAD_BACKEND || "wordpress",
+  )
+    .trim()
+    .toLowerCase();
+  if (requested === "wordpress" || requested === "r2") return requested;
+  if (requested === "s3" && isS3Enabled()) return "s3";
+  return "wordpress";
 }
 
 /**
@@ -141,7 +158,43 @@ function assertEdgeR2Support() {
   }
 }
 
-async function uploadToR2Edge(buffer, fileName, contentType) {
+function normalizeStorageMetadata(metadata) {
+  if (!metadata || typeof metadata !== "object") return {};
+  const normalized = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    const safeKey = String(key || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "")
+      .slice(0, 64);
+    if (!safeKey) continue;
+    const safeValue = String(value ?? "").trim().slice(0, 1024);
+    if (!safeValue) continue;
+    normalized[safeKey] = safeValue;
+  }
+  return normalized;
+}
+
+function toR2MetadataHeaders(metadata) {
+  const safe = normalizeStorageMetadata(metadata);
+  const headers = {};
+  for (const [key, value] of Object.entries(safe)) {
+    headers[`x-amz-meta-${key}`] = value;
+  }
+  return headers;
+}
+
+function encodeS3CopySource(bucket, key) {
+  const safeBucket = String(bucket || "").trim();
+  const safeKey = String(key || "");
+  const encodedKey = safeKey
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+  return `${safeBucket}/${encodedKey}`;
+}
+
+async function uploadToR2Edge(buffer, fileName, contentType, metadata = {}) {
   assertEdgeR2Support();
   if (buffer.byteLength > EDGE_R2_MAX_BYTES) {
     throw new Error(
@@ -161,10 +214,16 @@ async function uploadToR2Edge(buffer, fileName, contentType) {
   ).replace(/\/+$/, "");
   const key = `uploads/${Date.now()}-${fileName}`;
   const url = buildR2Url({ accountId, bucket, key });
+  const metadataHeaders = toR2MetadataHeaders(metadata);
+  const requestHeaders = {
+    "content-type": contentType || "application/octet-stream",
+    ...metadataHeaders,
+  };
 
   const signedHeaders = await signR2Put({
     url,
     body: buffer,
+    headers: requestHeaders,
     accessKeyId,
     secretAccessKey,
     region: "auto",
@@ -172,10 +231,7 @@ async function uploadToR2Edge(buffer, fileName, contentType) {
 
   const res = await fetch(url, {
     method: "PUT",
-    headers: {
-      ...signedHeaders,
-      "content-type": contentType || "application/octet-stream",
-    },
+    headers: signedHeaders,
     body: buffer,
   });
   if (!res.ok) {
@@ -194,9 +250,11 @@ export async function uploadToS3(
   fileName,
   contentType,
   backend = resolveBackend(),
+  options = {},
 ) {
+  const metadata = normalizeStorageMetadata(options?.metadata);
   if (backend === "r2" && isEdgeRuntime) {
-    return uploadToR2Edge(buffer, fileName, contentType);
+    return uploadToR2Edge(buffer, fileName, contentType, metadata);
   }
   assertNodeS3Support(backend);
   const { PutObjectCommand } = await loadAwsSdk();
@@ -212,6 +270,7 @@ export async function uploadToS3(
       Key: key,
       Body: buffer,
       ContentType: contentType || "application/octet-stream",
+      ...(Object.keys(metadata).length > 0 ? { Metadata: metadata } : {}),
     }),
   );
 
@@ -515,12 +574,17 @@ export function getUploadBackend(preferred) {
 
 export function isS3Upload(preferred) {
   const backend = resolveBackend(preferred);
-  return backend === "r2" || backend === "s3";
+  return backend === "r2" || (backend === "s3" && isS3Enabled());
+}
+
+export function isS3BackendEnabled() {
+  return isS3Enabled();
 }
 
 export function isS3Configured(preferred) {
   const backend = resolveBackend(preferred);
   if (backend !== "r2" && backend !== "s3") return false;
+  if (backend === "s3" && !isS3Enabled()) return false;
   const accessKeyId =
     process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
   const secretAccessKey =
@@ -581,4 +645,90 @@ export async function listBucketObjects({
       if (!b.lastModified) return -1;
       return b.lastModified.localeCompare(a.lastModified);
     });
+}
+
+export async function headBucketObject({ key, backend } = {}) {
+  const safeKey = String(key || "").trim();
+  if (!safeKey) throw new Error("Object key is required.");
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse === "wordpress") {
+    throw new Error("Object metadata is not available for the WordPress backend.");
+  }
+  assertNodeS3Support(backendToUse);
+  const { HeadObjectCommand } = await loadAwsSdk();
+  const client = await getS3Client(backendToUse);
+  const bucket = getBucket();
+  const result = await client.send(
+    new HeadObjectCommand({
+      Bucket: bucket,
+      Key: safeKey,
+    }),
+  );
+  return {
+    metadata: normalizeStorageMetadata(result?.Metadata || {}),
+    contentType: result?.ContentType || "",
+    cacheControl: result?.CacheControl || "",
+    contentDisposition: result?.ContentDisposition || "",
+    contentEncoding: result?.ContentEncoding || "",
+    contentLanguage: result?.ContentLanguage || "",
+    expires: result?.Expires
+      ? new Date(result.Expires).toISOString()
+      : result?.ExpiresString || "",
+  };
+}
+
+export async function replaceBucketObjectMetadata({
+  key,
+  metadata = {},
+  backend,
+  replaceKeys = [],
+} = {}) {
+  const safeKey = String(key || "").trim();
+  if (!safeKey) throw new Error("Object key is required.");
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse === "wordpress") {
+    throw new Error("Object metadata replacement is not available for WordPress.");
+  }
+  assertNodeS3Support(backendToUse);
+  const bucket = getBucket();
+  const client = await getS3Client(backendToUse);
+  const current = await headBucketObject({ key: safeKey, backend: backendToUse });
+  const incoming = normalizeStorageMetadata(metadata);
+  const replaced = { ...current.metadata };
+  for (const rawKey of Array.isArray(replaceKeys) ? replaceKeys : []) {
+    const safeMetaKey = String(rawKey || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "")
+      .slice(0, 64);
+    if (!safeMetaKey) continue;
+    delete replaced[safeMetaKey];
+  }
+  for (const [metaKey, metaValue] of Object.entries(incoming)) {
+    replaced[metaKey] = metaValue;
+  }
+
+  const { CopyObjectCommand } = await loadAwsSdk();
+  await client.send(
+    new CopyObjectCommand({
+      Bucket: bucket,
+      Key: safeKey,
+      CopySource: encodeS3CopySource(bucket, safeKey),
+      MetadataDirective: "REPLACE",
+      Metadata: replaced,
+      ...(current.contentType ? { ContentType: current.contentType } : {}),
+      ...(current.cacheControl ? { CacheControl: current.cacheControl } : {}),
+      ...(current.contentDisposition
+        ? { ContentDisposition: current.contentDisposition }
+        : {}),
+      ...(current.contentEncoding ? { ContentEncoding: current.contentEncoding } : {}),
+      ...(current.contentLanguage ? { ContentLanguage: current.contentLanguage } : {}),
+    }),
+  );
+
+  return {
+    key: safeKey,
+    metadata: replaced,
+    contentType: current.contentType || "",
+  };
 }

@@ -1,14 +1,30 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 
-const ALLOWED_BACKENDS = new Set(["wordpress", "r2", "s3"]);
+const S3_ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
+
+function isS3BackendEnabled() {
+  const raw = String(
+    process.env.ENABLE_S3_UPLOAD || process.env.S3_UPLOAD_ENABLED || "",
+  )
+    .trim()
+    .toLowerCase();
+  return S3_ENABLED_VALUES.has(raw);
+}
+
+function allowedBackends() {
+  return isS3BackendEnabled()
+    ? new Set(["wordpress", "r2", "s3"])
+    : new Set(["wordpress", "r2"]);
+}
 
 function resolveBackend(request) {
+  const allowed = allowedBackends();
   const url = new URL(request.url);
   const requested = (url.searchParams.get("backend") || "").toLowerCase();
-  if (ALLOWED_BACKENDS.has(requested)) return requested;
+  if (allowed.has(requested)) return requested;
   const envBackend = (process.env.UPLOAD_BACKEND || "wordpress").toLowerCase();
-  return ALLOWED_BACKENDS.has(envBackend) ? envBackend : "wordpress";
+  return allowed.has(envBackend) ? envBackend : "wordpress";
 }
 
 function buildR2Endpoint() {
@@ -22,6 +38,7 @@ export async function GET(request) {
   if (auth.error) return auth.error;
 
   const backend = resolveBackend(request);
+  const s3Enabled = isS3BackendEnabled();
   const bucket =
     process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
   const publicUrl = (
@@ -40,6 +57,7 @@ export async function GET(request) {
     return NextResponse.json({
       ok: true,
       backend,
+      s3Enabled,
       message: "Using WordPress media library. No S3/R2 settings required.",
     });
   }
@@ -53,6 +71,7 @@ export async function GET(request) {
     ok: true,
     backend,
     isR2,
+    s3Enabled,
     endpoint: endpoint || null,
     bucket: bucket || null,
     region: isR2 ? "auto" : process.env.S3_REGION || "us-east-1",

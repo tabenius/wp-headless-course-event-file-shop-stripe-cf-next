@@ -3,7 +3,17 @@ function normalizeEnv(value) {
 }
 
 function encodeBasicCredentials(username, password) {
-  return Buffer.from(`${username}:${password}`, "utf8").toString("base64");
+  const value = `${username}:${password}`;
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(value, "utf8").toString("base64");
+  }
+  if (typeof btoa === "function") {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary);
+  }
+  throw new Error("Unable to encode WordPress credentials in this runtime.");
 }
 
 function looksLikeApplicationPassword(value) {

@@ -13,11 +13,13 @@ export default function AdminStorageTab({
   const [showSecret, setShowSecret] = useState(false);
   const [copiedField, setCopiedField] = useState("");
   const clientDetails = uploadInfoDetails || {};
+  const s3Enabled = Boolean(uploadInfo?.s3Enabled || clientDetails.s3Enabled);
   const backendMode = (() => {
-    if (uploadBackend === "r2" || uploadBackend === "s3") return uploadBackend;
+    if (uploadBackend === "r2") return "r2";
+    if (uploadBackend === "s3" && s3Enabled) return "s3";
     if (clientDetails.isR2) return "r2";
     if (uploadInfo?.r2) return "r2";
-    if (uploadInfo?.s3) return "s3";
+    if (s3Enabled && uploadInfo?.s3) return "s3";
     return null;
   })();
   const showR2Docs = backendMode === "r2";
@@ -119,7 +121,9 @@ export default function AdminStorageTab({
   const uploadTargets = [
     { id: "wordpress", label: t("admin.uploadTargetWordpress"), enabled: true },
     { id: "r2", label: t("admin.uploadTargetR2"), enabled: uploadInfo?.r2 },
-    { id: "s3", label: t("admin.uploadTargetS3"), enabled: uploadInfo?.s3 },
+    ...(s3Enabled
+      ? [{ id: "s3", label: t("admin.uploadTargetS3"), enabled: uploadInfo?.s3 }]
+      : []),
   ];
 
   return (

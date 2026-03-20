@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
-import { isS3Configured, listBucketObjects } from "@/lib/s3upload";
+import {
+  headBucketObject,
+  isS3Configured,
+  listBucketObjects,
+  replaceBucketObjectMetadata,
+} from "@/lib/s3upload";
+import { decodeEntities } from "@/lib/decodeEntities";
 
 export const runtime = "nodejs";
 
@@ -9,6 +15,8 @@ const DEFAULT_LIMIT = 40;
 const MAX_LIMIT = 120;
 const PROBE_CONCURRENCY = 6;
 const PROBE_IMAGE_LIMIT = 24;
+const PROBE_METADATA_LIMIT = 32;
+const MAX_METADATA_TEXT = 600;
 
 const MIME_BY_EXTENSION = {
   png: "image/png",
@@ -84,6 +92,43 @@ function normalizeInt(value) {
   const number = Number(value);
   if (!Number.isFinite(number) || number < 0) return null;
   return Math.round(number);
+}
+
+function sanitizeText(value, max = MAX_METADATA_TEXT) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+function htmlToText(value, max = MAX_METADATA_TEXT) {
+  const raw = typeof value === "string" ? value : "";
+  if (!raw) return "";
+  const withoutTags = raw
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ");
+  return sanitizeText(decodeEntities(withoutTags), max);
+}
+
+function normalizeWordPressText(value, max = MAX_METADATA_TEXT) {
+  if (typeof value === "string") {
+    return htmlToText(value, max);
+  }
+  if (!value || typeof value !== "object") return "";
+  const objectValue =
+    value.raw ??
+    value.rendered ??
+    value.value ??
+    value.text ??
+    value.label ??
+    "";
+  return normalizeWordPressText(objectValue, max);
+}
+
+function readWordPressMeta(meta, key, max = MAX_METADATA_TEXT) {
+  if (!meta || typeof meta !== "object") return "";
+  return sanitizeText(meta[key], max);
 }
 
 function isImageMime(mimeType, fileName) {
@@ -292,29 +337,52 @@ function normalizeWordPressUrl() {
 
 function normalizeWordPressMediaRow(row) {
   const details = row?.media_details || {};
-  const width = normalizeInt(details?.width);
-  const height = normalizeInt(details?.height);
+  const rowMeta = row?.meta && typeof row.meta === "object" ? row.meta : {};
+  const width =
+    normalizeInt(details?.width) || normalizeInt(readWordPressMeta(rowMeta, "ragbaz_asset_width"));
+  const height =
+    normalizeInt(details?.height) ||
+    normalizeInt(readWordPressMeta(rowMeta, "ragbaz_asset_height"));
   const sizeBytes =
     normalizeInt(details?.filesize) ||
     normalizeInt(details?.sizes?.full?.filesize) ||
+    normalizeInt(readWordPressMeta(rowMeta, "ragbaz_asset_size")) ||
     normalizeInt(row?.filesize);
   const mimeType =
     typeof row?.mime_type === "string" && row.mime_type.trim()
       ? row.mime_type
       : mimeFromName(row?.source_url || "");
-  const title =
-    row?.title?.rendered ||
-    row?.title ||
-    row?.slug ||
-    row?.source_url ||
+  const titleText =
+    normalizeWordPressText(row?.title, 200) ||
+    sanitizeText(row?.slug, 200) ||
+    sanitizeText(row?.source_url, 200) ||
     `Media #${row?.id || "?"}`;
+  const caption = normalizeWordPressText(row?.caption);
+  const description = normalizeWordPressText(row?.description);
+  const altText = sanitizeText(row?.alt_text, 300);
+  const tooltip = readWordPressMeta(rowMeta, "ragbaz_asset_tooltip", 300) || caption;
+  const assetId = readWordPressMeta(rowMeta, "ragbaz_asset_id", 96);
+  const assetRole = readWordPressMeta(rowMeta, "ragbaz_asset_role", 40);
+  const assetFormat = readWordPressMeta(rowMeta, "ragbaz_asset_format", 40);
+  const variantKind =
+    readWordPressMeta(rowMeta, "ragbaz_asset_variant_kind", 80) ||
+    (assetRole === "original" ? "original" : "");
+  const sourceHash = readWordPressMeta(rowMeta, "ragbaz_asset_hash", 180);
+  const originalUrl = readWordPressMeta(rowMeta, "ragbaz_asset_original_url", 1024);
+  const originalId = readWordPressMeta(rowMeta, "ragbaz_asset_original_id", 96);
+  const copyrightHolder = readWordPressMeta(
+    rowMeta,
+    "ragbaz_asset_copyright_holder",
+    180,
+  );
+  const license = readWordPressMeta(rowMeta, "ragbaz_asset_license", 180);
 
   return {
     id: `wordpress:${row?.id ?? Math.random().toString(36).slice(2)}`,
     source: "wordpress",
     sourceId: row?.id ?? null,
     key: null,
-    title: String(title),
+    title: titleText,
     url: row?.source_url || "",
     mimeType: mimeType || "",
     fileType: typeLabelFromMime(mimeType, row?.source_url || ""),
@@ -322,6 +390,26 @@ function normalizeWordPressMediaRow(row) {
     width,
     height,
     updatedAt: asIsoDate(row?.date_gmt || row?.date),
+    metadata: {
+      title: titleText,
+      caption,
+      description,
+      altText,
+      tooltip,
+    },
+    rights: {
+      copyrightHolder,
+      license,
+    },
+    asset: {
+      assetId: assetId || null,
+      role: assetRole || null,
+      format: assetFormat || null,
+      variantKind: variantKind || null,
+      sourceHash: sourceHash || null,
+      originalUrl: originalUrl || null,
+      originalId: originalId || null,
+    },
   };
 }
 
@@ -337,7 +425,7 @@ async function fetchWordPressMedia({ limit, search }) {
     orderby: "date",
     order: "desc",
     _fields:
-      "id,date,date_gmt,source_url,mime_type,slug,title,media_type,media_details",
+      "id,date,date_gmt,source_url,mime_type,slug,title,media_type,media_details,alt_text,caption,description,meta",
   });
   if (search) params.set("search", search);
   const response = await fetch(`${baseUrl}/wp-json/wp/v2/media?${params.toString()}`, {
@@ -378,19 +466,41 @@ async function fetchR2Media({ limit, prefix, search }) {
 
   const rows = objects.slice(0, limit).map((object) => {
     const mimeType = mimeFromName(object?.key || object?.url || "");
+    const key = object?.key || "";
+    const title = key || object?.url || "R2 object";
     return {
-      id: `r2:${object?.key || Math.random().toString(36).slice(2)}`,
+      id: `r2:${key || Math.random().toString(36).slice(2)}`,
       source: "r2",
       sourceId: null,
-      key: object?.key || "",
-      title: object?.key || object?.url || "R2 object",
+      key,
+      title,
       url: object?.url || "",
       mimeType: mimeType || "",
-      fileType: typeLabelFromMime(mimeType, object?.key || ""),
+      fileType: typeLabelFromMime(mimeType, key),
       sizeBytes: normalizeInt(object?.size),
       width: null,
       height: null,
       updatedAt: asIsoDate(object?.lastModified),
+      metadata: {
+        title: title,
+        caption: "",
+        description: "",
+        altText: "",
+        tooltip: "",
+      },
+      rights: {
+        copyrightHolder: "",
+        license: "",
+      },
+      asset: {
+        assetId: null,
+        role: null,
+        format: null,
+        variantKind: null,
+        sourceHash: null,
+        originalUrl: null,
+        originalId: null,
+      },
     };
   });
 
@@ -408,6 +518,48 @@ async function fetchR2Media({ limit, prefix, search }) {
     row.height = normalizeInt(dimensions.height);
   });
 
+  const metadataRows = rows
+    .filter((row) => row.key)
+    .slice(0, Math.min(limit, PROBE_METADATA_LIMIT));
+  await runWithConcurrency(metadataRows, PROBE_CONCURRENCY, async (row) => {
+    try {
+      const head = await headBucketObject({ key: row.key, backend: "r2" });
+      if (head.contentType && !row.mimeType) {
+        row.mimeType = head.contentType;
+        row.fileType = typeLabelFromMime(head.contentType, row.key);
+      }
+      const meta = head.metadata || {};
+      const title = sanitizeText(meta.asset_title || row.title, 200);
+      row.title = title || row.title;
+      row.metadata = {
+        title: title || row.title,
+        caption: sanitizeText(meta.asset_caption, 300),
+        description: sanitizeText(meta.asset_description),
+        altText: sanitizeText(meta.asset_alt_text, 300),
+        tooltip: sanitizeText(meta.asset_tooltip, 300),
+      };
+      row.rights = {
+        copyrightHolder: sanitizeText(meta.asset_copyright_holder, 180),
+        license: sanitizeText(meta.asset_license, 180),
+      };
+      const metaWidth = normalizeInt(meta.asset_width);
+      const metaHeight = normalizeInt(meta.asset_height);
+      if (!row.width && metaWidth) row.width = metaWidth;
+      if (!row.height && metaHeight) row.height = metaHeight;
+      row.asset = {
+        assetId: sanitizeText(meta.asset_id, 96) || null,
+        role: sanitizeText(meta.asset_role, 40) || null,
+        format: sanitizeText(meta.asset_format, 40) || null,
+        variantKind: sanitizeText(meta.asset_variant_kind, 80) || null,
+        sourceHash: sanitizeText(meta.asset_hash, 180) || null,
+        originalUrl: sanitizeText(meta.asset_original_url, 1024) || null,
+        originalId: sanitizeText(meta.asset_original_id, 96) || null,
+      };
+    } catch {
+      // Keep base list row if metadata probe fails.
+    }
+  });
+
   return rows;
 }
 
@@ -419,6 +571,118 @@ function sortByNewest(items) {
     const rightTs = Number.isFinite(rightParsed) ? rightParsed : 0;
     if (rightTs !== leftTs) return rightTs - leftTs;
     return String(left.title || "").localeCompare(String(right.title || ""));
+  });
+}
+
+const R2_MANAGED_METADATA_KEYS = [
+  "asset_title",
+  "asset_caption",
+  "asset_description",
+  "asset_alt_text",
+  "asset_tooltip",
+  "asset_copyright_holder",
+  "asset_license",
+];
+
+function toPatchPayload(body) {
+  const source = sanitizeText(body?.source, 24).toLowerCase();
+  if (source !== "wordpress" && source !== "r2") {
+    const error = new Error("Invalid media source.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const sourceIdRaw = body?.sourceId;
+  const sourceId =
+    source === "wordpress" ? normalizeInt(sourceIdRaw) : null;
+  if (source === "wordpress" && !sourceId) {
+    const error = new Error("WordPress attachment id is required.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const key = source === "r2" ? sanitizeText(body?.key, 512) : "";
+  if (source === "r2" && !key) {
+    const error = new Error("R2 object key is required.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const metadata = body?.metadata || {};
+  const rights = body?.rights || {};
+  return {
+    source,
+    sourceId,
+    key,
+    metadata: {
+      title: sanitizeText(metadata?.title, 200),
+      caption: sanitizeText(metadata?.caption, 300),
+      description: sanitizeText(metadata?.description),
+      altText: sanitizeText(metadata?.altText, 300),
+      tooltip: sanitizeText(metadata?.tooltip, 300),
+    },
+    rights: {
+      copyrightHolder: sanitizeText(rights?.copyrightHolder, 180),
+      license: sanitizeText(rights?.license, 180),
+    },
+  };
+}
+
+async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights }) {
+  const baseUrl = normalizeWordPressUrl();
+  if (!baseUrl) throw new Error("WordPress URL is not configured.");
+  const auth = getWordPressGraphqlAuth();
+  const payload = {
+    title: metadata.title,
+    caption: metadata.caption,
+    description: metadata.description,
+    alt_text: metadata.altText,
+    meta: {
+      ragbaz_asset_title: metadata.title,
+      ragbaz_asset_caption: metadata.caption,
+      ragbaz_asset_description: metadata.description,
+      ragbaz_asset_alt_text: metadata.altText,
+      ragbaz_asset_tooltip: metadata.tooltip,
+      ragbaz_asset_copyright_holder: rights.copyrightHolder,
+      ragbaz_asset_license: rights.license,
+    },
+  };
+  const response = await fetch(`${baseUrl}/wp-json/wp/v2/media/${sourceId}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(auth?.authorization ? { Authorization: auth.authorization } : {}),
+      ...(auth?.headers || {}),
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `WordPress attachment update failed (${response.status}) ${body.slice(0, 160)}`.trim(),
+    );
+  }
+  const row = await response.json().catch(() => null);
+  if (!row || typeof row !== "object") return null;
+  return normalizeWordPressMediaRow(row);
+}
+
+async function updateR2ObjectMetadata({ key, metadata, rights }) {
+  if (!isS3Configured("r2")) {
+    throw new Error("R2 is not configured.");
+  }
+  await replaceBucketObjectMetadata({
+    backend: "r2",
+    key,
+    metadata: {
+      asset_title: metadata.title,
+      asset_caption: metadata.caption,
+      asset_description: metadata.description,
+      asset_alt_text: metadata.altText,
+      asset_tooltip: metadata.tooltip,
+      asset_copyright_holder: rights.copyrightHolder,
+      asset_license: rights.license,
+    },
+    replaceKeys: R2_MANAGED_METADATA_KEYS,
   });
 }
 
@@ -478,4 +742,25 @@ export async function GET(request) {
     warnings,
     sources,
   });
+}
+
+export async function POST(request) {
+  const auth = await requireAdmin(request);
+  if (auth.error) return auth.error;
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const patch = toPatchPayload(body);
+    if (patch.source === "wordpress") {
+      const item = await updateWordPressAttachmentMetadata(patch);
+      return NextResponse.json({ ok: true, item });
+    }
+    await updateR2ObjectMetadata(patch);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const status = Number(error?.statusCode) || 500;
+    const message =
+      error instanceof Error ? error.message : "Failed to update media metadata.";
+    return NextResponse.json({ ok: false, error: message }, { status });
+  }
 }

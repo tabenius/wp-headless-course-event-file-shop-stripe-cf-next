@@ -50,6 +50,27 @@ function canPreviewImage(item) {
   return /\.(png|jpe?g|gif|webp|bmp|avif|svg)$/i.test(url);
 }
 
+function normalizeEditorValue(value, max = 600) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+function toEditorState(item) {
+  const metadata = item?.metadata || {};
+  const rights = item?.rights || {};
+  return {
+    title: normalizeEditorValue(metadata.title || item?.title || "", 200),
+    caption: normalizeEditorValue(metadata.caption || "", 300),
+    description: normalizeEditorValue(metadata.description || "", 600),
+    altText: normalizeEditorValue(metadata.altText || "", 300),
+    tooltip: normalizeEditorValue(metadata.tooltip || "", 300),
+    copyrightHolder: normalizeEditorValue(rights.copyrightHolder || "", 180),
+    license: normalizeEditorValue(rights.license || "", 180),
+  };
+}
+
 export default function AdminMediaLibraryTab() {
   const [items, setItems] = useState([]);
   const [sources, setSources] = useState(null);
@@ -61,6 +82,11 @@ export default function AdminMediaLibraryTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
   const [copiedUrl, setCopiedUrl] = useState("");
+  const [selectedId, setSelectedId] = useState("");
+  const [editor, setEditor] = useState(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
 
   const loadLibrary = useCallback(async () => {
     setLoading(true);
@@ -99,6 +125,15 @@ export default function AdminMediaLibraryTab() {
   }, [loadLibrary, refreshToken]);
 
   const rows = useMemo(() => items, [items]);
+  const selectedItem = useMemo(
+    () => rows.find((item) => item.id === selectedId) || null,
+    [rows, selectedId],
+  );
+
+  useEffect(() => {
+    if (!selectedItem) return;
+    setEditor((current) => current || toEditorState(selectedItem));
+  }, [selectedItem]);
 
   async function copyUrl(url) {
     if (!url || !navigator?.clipboard?.writeText) return;
@@ -108,6 +143,96 @@ export default function AdminMediaLibraryTab() {
       window.setTimeout(() => setCopiedUrl(""), 1100);
     } catch {
       // Ignore clipboard errors in restricted environments.
+    }
+  }
+
+  function openEditor(item) {
+    setSelectedId(item.id);
+    setEditor(toEditorState(item));
+    setSaveError("");
+    setSaveSuccess("");
+  }
+
+  function closeEditor() {
+    setSelectedId("");
+    setEditor(null);
+    setSaveError("");
+    setSaveSuccess("");
+  }
+
+  function suggestAnnotations() {
+    setEditor((current) => {
+      if (!current) return current;
+      const seed = normalizeEditorValue(
+        current.caption ||
+          current.description ||
+          current.title ||
+          selectedItem?.title ||
+          "",
+        300,
+      );
+      if (!seed) return current;
+      return {
+        ...current,
+        altText: current.altText || seed,
+        tooltip: current.tooltip || seed,
+      };
+    });
+  }
+
+  async function saveAnnotations() {
+    if (!selectedItem || !editor || saveLoading) return;
+    setSaveLoading(true);
+    setSaveError("");
+    setSaveSuccess("");
+    try {
+      const payload = {
+        source: selectedItem.source,
+        sourceId: selectedItem.sourceId,
+        key: selectedItem.key,
+        metadata: {
+          title: normalizeEditorValue(editor.title, 200),
+          caption: normalizeEditorValue(editor.caption, 300),
+          description: normalizeEditorValue(editor.description, 600),
+          altText: normalizeEditorValue(editor.altText, 300),
+          tooltip: normalizeEditorValue(editor.tooltip, 300),
+        },
+        rights: {
+          copyrightHolder: normalizeEditorValue(editor.copyrightHolder, 180),
+          license: normalizeEditorValue(editor.license, 180),
+        },
+      };
+      const response = await fetch("/api/admin/media-library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(
+          json?.error || t("admin.mediaMetaSaveFailed", "Failed to save media metadata."),
+        );
+      }
+      setSaveSuccess(t("admin.mediaMetaSaved", "Metadata saved."));
+      await loadLibrary();
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: t("admin.mediaMetaSaved", "Metadata saved.") },
+        }),
+      );
+    } catch (saveMetadataError) {
+      const message =
+        saveMetadataError instanceof Error
+          ? saveMetadataError.message
+          : t("admin.mediaMetaSaveFailed", "Failed to save media metadata.");
+      setSaveError(message);
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "error", message },
+        }),
+      );
+    } finally {
+      setSaveLoading(false);
     }
   }
 
@@ -235,6 +360,9 @@ export default function AdminMediaLibraryTab() {
                 <th className="text-left px-3 py-2">{t("admin.bucketSize", "Size")}</th>
                 <th className="text-left px-3 py-2">{t("admin.resolution", "Resolution")}</th>
                 <th className="text-left px-3 py-2">{t("admin.bucketLastModified", "Updated")}</th>
+                <th className="text-left px-3 py-2">
+                  {t("admin.mediaMetadata", "Metadata")}
+                </th>
                 <th className="text-left px-3 py-2">{t("admin.fileUrl", "URL")}</th>
               </tr>
             </thead>
@@ -282,6 +410,29 @@ export default function AdminMediaLibraryTab() {
                     {formatUpdatedAt(item.updatedAt)}
                   </td>
                   <td className="px-3 py-2">
+                    <div className="space-y-1 text-xs">
+                      {(item.metadata?.altText || item.metadata?.caption) && (
+                        <p className="text-gray-700 line-clamp-2">
+                          {item.metadata?.altText || item.metadata?.caption}
+                        </p>
+                      )}
+                      {(item.rights?.copyrightHolder || item.rights?.license) && (
+                        <p className="text-gray-500 line-clamp-2">
+                          {[item.rights?.copyrightHolder, item.rights?.license]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => openEditor(item)}
+                        className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                      >
+                        {t("admin.mediaAnnotate", "Annotate")}
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
                     <div className="space-y-1">
                       <a
                         href={item.url}
@@ -306,6 +457,166 @@ export default function AdminMediaLibraryTab() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {selectedItem && editor && (
+        <div className="rounded border bg-gray-50 p-4 space-y-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800">
+                {t("admin.mediaAnnotate", "Annotate")}
+              </h3>
+              <p className="text-xs text-gray-500 break-all">
+                {selectedItem.title || selectedItem.url}
+              </p>
+              <p className="text-xs text-gray-500">
+                {t(
+                  "admin.mediaAnnotateHint",
+                  "Manage caption, alt text, tooltip, and rights metadata for this asset.",
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={closeEditor}
+              className="px-3 py-1.5 rounded border text-xs hover:bg-gray-100"
+            >
+              {t("common.close", "Close")}
+            </button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-1 text-xs text-gray-600">
+              <span>{t("common.name", "Name")}</span>
+              <input
+                type="text"
+                value={editor.title}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600">
+              <span>{t("admin.imageLicenseLabel", "License")}</span>
+              <input
+                type="text"
+                value={editor.license}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    license: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
+              <span>{t("admin.imageCaption", "Caption")}</span>
+              <input
+                type="text"
+                value={editor.caption}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    caption: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600">
+              <span>{t("admin.imageAltText", "Alt text")}</span>
+              <input
+                type="text"
+                value={editor.altText}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    altText: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600">
+              <span>{t("admin.imageTooltip", "Tooltip")}</span>
+              <input
+                type="text"
+                value={editor.tooltip}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    tooltip: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
+              <span>{t("admin.imageDescription", "Description")}</span>
+              <textarea
+                value={editor.description}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
+                rows={3}
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600">
+              <span>{t("admin.imageCopyrightHolderLabel", "Copyright holder")}</span>
+              <input
+                type="text"
+                value={editor.copyrightHolder}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    copyrightHolder: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+          </div>
+
+          {saveError && (
+            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+              {saveError}
+            </p>
+          )}
+          {saveSuccess && (
+            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5">
+              {saveSuccess}
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={suggestAnnotations}
+              className="px-3 py-1.5 rounded border text-xs hover:bg-gray-100"
+            >
+              {t("admin.mediaSuggestAlt", "Suggest alt/tooltip")}
+            </button>
+            <button
+              type="button"
+              onClick={saveAnnotations}
+              disabled={saveLoading}
+              className="px-3 py-1.5 rounded bg-gray-800 text-white text-xs hover:bg-gray-700 disabled:opacity-50"
+            >
+              {saveLoading
+                ? t("admin.mediaSavingMetadata", "Saving…")
+                : t("admin.mediaSaveMetadata", "Save metadata")}
+            </button>
+          </div>
         </div>
       )}
     </div>

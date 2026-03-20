@@ -478,8 +478,14 @@ body:has(.admin-layout)::before {
 .admin-gruvbox .hover\:bg-indigo-50\/40:hover {
   background-color: rgba(69, 133, 136, 0.12) !important;
 }
+.admin-gruvbox .hover\:bg-gray-50:hover {
+  background-color: var(--grv-bg2) !important;
+}
 .admin-gruvbox .bg-gray-50\/50 {
   background-color: rgba(40, 40, 40, 0.6) !important;
+}
+.admin-gruvbox .bg-gray-50\/70 {
+  background-color: rgba(40, 40, 40, 0.72) !important;
 }
 
 /* Links */
