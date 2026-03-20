@@ -101,10 +101,6 @@ function SafeProductImage({ src, alt = "", className, fallbackClassName }) {
 function InnerTabs({ active, onChange }) {
   const tabs = [
     { key: "access", label: t("admin.productsTabAll", "All products") },
-    {
-      key: "products",
-      label: t("admin.productsTabDigital", "Digital products"),
-    },
     { key: "settings", label: t("admin.visibleTypesTab", "Visible types") },
   ];
   return (
@@ -974,7 +970,14 @@ function AccessTab({
   selectedShopProduct,
   shopIndex,
   showDetail,
+  updateProduct,
+  removeShopProduct,
+  uploadFile,
+  uploadingField,
   uploadBackend,
+  runtime,
+  showImageGen,
+  setShowImageGen,
   setWpEvents,
   setWcProducts,
   setWpCourses,
@@ -1628,50 +1631,198 @@ function AccessTab({
                 );
               })()}
 
-            {/* Shop product mini-info */}
+            {/* Shop product full details (merged from Digital Downloads tab) */}
             {isShopSelection && selectedShopProduct && (
-              <div className="flex items-center gap-3 mb-2">
-                {selectedShopProduct.imageUrl ? (
-                  <SafeProductImage
-                    src={selectedShopProduct.imageUrl}
-                    alt=""
-                    className="w-10 h-10 rounded object-cover"
-                    fallbackClassName="w-10 h-10 rounded bg-rose-50 flex items-center justify-center text-rose-400"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded border border-gray-700 bg-amber-50 flex items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="w-5 h-5 text-amber-300"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M1 5.25A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25v9.5A2.25 2.25 0 0116.75 17H3.25A2.25 2.25 0 011 14.75v-9.5zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75v-2.69l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L2.5 11.06zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+              <div className="mb-4 space-y-4 rounded-lg border border-gray-200 bg-gray-50/70 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <ImagePickerButton
+                      imgUrl={selectedShopProduct.imageUrl}
+                      uploadBackend={uploadBackend}
+                      onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
+                      onError={setError}
+                    />
+                    <div className="min-w-0">
+                      <p className="admin-product-title text-sm font-bold break-words">
+                        {selectedShopProduct.name || `Product ${shopIndex + 1}`}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {t(
+                          "admin.shopProductInlineHint",
+                          "Shop product — edit details below in this panel.",
+                        )}
+                      </p>
+                      {selectedShopCategories.length > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {t("admin.categoryLabel")}:{" "}
+                          {selectedShopCategories.join(", ")}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => removeShopProduct(shopIndex)}
+                    className="text-xs text-red-600 hover:underline shrink-0"
+                  >
+                    {t("common.remove")}
+                  </button>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedShopProduct.name}
+                      onChange={(e) =>
+                        updateProduct(shopIndex, "name", e.target.value)
+                      }
+                      className="w-full border rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedShopProduct.slug}
+                      onChange={(e) =>
+                        updateProduct(shopIndex, "slug", e.target.value)
+                      }
+                      className="w-full border rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Type
+                    </label>
+                    <select
+                      value={selectedShopProduct.type}
+                      onChange={(e) =>
+                        updateProduct(shopIndex, "type", e.target.value)
+                      }
+                      className="w-full border rounded px-3 py-2 text-sm"
+                    >
+                      <option value="digital_file">{t("admin.digitalFile")}</option>
+                      <option value="course">{t("admin.courseProduct")}</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer pb-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedShopProduct.active !== false}
+                        onChange={(e) =>
+                          updateProduct(shopIndex, "active", e.target.checked)
+                        }
+                        className="accent-purple-600"
+                      />
+                      <span className="text-gray-700">
+                        {t("admin.activeProduct")}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
                 <div>
-                  <p className="admin-product-title text-sm font-bold break-words">
-                    {selectedShopProduct.name || `Product ${shopIndex + 1}`}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {t(
-                      "admin.shopProductInlineHint",
-                      "Shop product — edit details below in this panel.",
-                    )}
-                  </p>
-                  {selectedShopCategories.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t("admin.categoryLabel")}:{" "}
-                      {selectedShopCategories.join(", ")}
-                    </p>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    rows="3"
+                    value={selectedShopProduct.description}
+                    onChange={(e) =>
+                      updateProduct(shopIndex, "description", e.target.value)
+                    }
+                    className="w-full border rounded px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowImageGen((v) => !v)}
+                    className="mt-1 text-xs px-2.5 py-1 rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {t("admin.generateImages")}
+                  </button>
+                  {showImageGen && (
+                    <div className="mt-2">
+                      <ImageGenerationPanel
+                        description={
+                          selectedShopProduct.description ||
+                          selectedShopProduct.name ||
+                          ""
+                        }
+                        onSave={(url) => updateProduct(shopIndex, "imageUrl", url)}
+                        context="editor"
+                        uploadBackend={uploadBackend}
+                      />
+                    </div>
                   )}
                 </div>
-                <hr className="mt-2" />
+
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    {selectedShopProduct.type === "digital_file"
+                      ? "File"
+                      : "Course URI"}
+                  </p>
+                  {selectedShopProduct.type === "digital_file" ? (
+                    <>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={selectedShopProduct.fileUrl}
+                          onChange={(e) =>
+                            updateProduct(shopIndex, "fileUrl", e.target.value)
+                          }
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => uploadFile(shopIndex, "fileUrl")}
+                          disabled={!!uploadingField}
+                          className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap disabled:opacity-50"
+                        >
+                          {uploadingField === "fileUrl"
+                            ? t("common.loading")
+                            : t("admin.uploadFile")}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Backend:{" "}
+                        <strong className="text-gray-700">
+                          {uploadBackend === "wordpress"
+                            ? "WordPress Media"
+                            : uploadBackend === "r2"
+                              ? "Cloudflare R2"
+                              : "S3/Spaces"}
+                        </strong>
+                        .{" "}
+                        {runtime === "edge"
+                          ? t(
+                              "admin.uploadEdgeLimit",
+                              "Single PUT ≤100 MB, multipart for larger.",
+                            )
+                          : t(
+                              "admin.uploadNodeLimit",
+                              "Multipart upload for large files.",
+                            )}
+                      </p>
+                    </>
+                  ) : (
+                    <input
+                      type="text"
+                      value={selectedShopProduct.courseUri}
+                      onChange={(e) =>
+                        updateProduct(shopIndex, "courseUri", e.target.value)
+                      }
+                      className="w-full border rounded px-3 py-2 text-sm"
+                    />
+                  )}
+                </div>
               </div>
             )}
 
@@ -2069,7 +2220,14 @@ export default function AdminProductsTab(props) {
             selectedShopProduct={selectedShopProduct}
             shopIndex={shopIndex}
             showDetail={showDetail}
+            updateProduct={updateProduct}
+            removeShopProduct={removeShopProduct}
+            uploadFile={uploadFile}
+            uploadingField={uploadingField}
             uploadBackend={uploadBackend}
+            runtime={runtime}
+            showImageGen={showImageGen}
+            setShowImageGen={setShowImageGen}
             setWpEvents={setWpEvents}
             setWcProducts={setWcProducts}
             setWpCourses={setWpCourses}

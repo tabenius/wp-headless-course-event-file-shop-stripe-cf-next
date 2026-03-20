@@ -11,6 +11,23 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-20 (cont. 75)
+
+### Codex — merge direction: All Products absorbs Digital Downloads editor fields
+
+- Implemented first-pass merge in `AdminProductsTab`:
+  - removed `Digital products` inner-tab from `InnerTabs` navigation (All Products + Visible types remain),
+  - expanded Access-tab shop-selection panel from “mini info” to full editable shop-product details.
+- New shop fields now available directly in All Products detail pane:
+  - image picker/upload,
+  - name, slug, type, active toggle,
+  - description + image generator toggle,
+  - digital file URL + upload button + backend/runtime hint,
+  - course URI input for course-type products,
+  - remove button for selected shop product.
+- Goal: reduce mode switching and keep one canonical editor for product operations.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-20 (cont. 74)
 
 ### Codex — revert backend pin, keep diagnostics + modal close behavior
