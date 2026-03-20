@@ -25,7 +25,6 @@ const PREVIEW_MAX = 320;
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // 20 MB
 const DEFAULT_OUTPUT_FORMAT = "webp";
 const OUTPUT_FORMATS = ["webp", "avif", "raw"];
-const OUTPUT_VARIANT_KINDS = ["compressed", "derived-work"];
 const OUTPUT_EXTENSIONS = {
   webp: "webp",
   avif: "avif",
@@ -58,6 +57,13 @@ function computePreviewFrame(size) {
     width: Math.max(1, Math.round((size.width / size.height) * PREVIEW_MAX)),
     height: PREVIEW_MAX,
   };
+}
+
+function isImageMediaItem(item) {
+  const mime = String(item?.mimeType || "").toLowerCase();
+  if (mime.startsWith("image/")) return true;
+  const url = String(item?.url || "");
+  return /\.(png|jpe?g|gif|webp|bmp|avif|svg)$/i.test(url);
 }
 
 function drawCroppedImage({
@@ -153,11 +159,18 @@ export default function ImageUploader({
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  const [showSourceChooser, setShowSourceChooser] = useState(false);
+  const [showMediaBrowser, setShowMediaBrowser] = useState(false);
+  const [mediaItems, setMediaItems] = useState([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState("");
+  const [mediaSearchInput, setMediaSearchInput] = useState("");
+  const [mediaSearchTerm, setMediaSearchTerm] = useState("");
   const [selectedUploadBackend, setSelectedUploadBackend] = useState(
     preferredUploadBackend,
   );
   const [outputFormat, setOutputFormat] = useState(DEFAULT_OUTPUT_FORMAT);
-  const [variantKind, setVariantKind] = useState("compressed");
+  const [isDerivedWork, setIsDerivedWork] = useState(false);
   const [copyrightHolder, setCopyrightHolder] = useState("");
   const [license, setLicense] = useState("");
   const [scale, setScale] = useState(1);
@@ -177,13 +190,6 @@ export default function ImageUploader({
         : format === "avif"
           ? t("admin.imageOutputFormatAvif")
           : t("admin.imageOutputFormatRaw"),
-  }));
-  const variantKindOptions = OUTPUT_VARIANT_KINDS.map((kind) => ({
-    id: kind,
-    label:
-      kind === "derived-work"
-        ? t("admin.imageVariantKindDerivedWork")
-        : t("admin.imageVariantKindCompressed"),
   }));
 
   useEffect(() => {
@@ -232,7 +238,7 @@ export default function ImageUploader({
       setAspectKey(DEFAULT_ASPECT_KEY);
       setSelectedUploadBackend(preferredUploadBackend);
       setOutputFormat(DEFAULT_OUTPUT_FORMAT);
-      setVariantKind("compressed");
+      setIsDerivedWork(false);
       setCopyrightHolder("");
       setLicense("");
       const url = URL.createObjectURL(picked);
@@ -242,7 +248,7 @@ export default function ImageUploader({
     [emitError, preferredUploadBackend],
   );
 
-  const openFilePicker = useCallback(() => {
+  const openLocalUploadPicker = useCallback(() => {
     const input = fileInputRef.current;
     if (!input) return;
     input.value = "";
@@ -250,6 +256,111 @@ export default function ImageUploader({
     // without throwing on some platforms.
     input.click();
   }, []);
+
+  const openFilePicker = useCallback(() => {
+    setShowSourceChooser(true);
+  }, []);
+
+  const loadMediaLibrary = useCallback(async () => {
+    setMediaLoading(true);
+    setMediaError("");
+    try {
+      const params = new URLSearchParams({ limit: "80", source: "all" });
+      if (mediaSearchTerm.trim()) params.set("search", mediaSearchTerm.trim());
+      const response = await fetch(`/api/admin/media-library?${params.toString()}`);
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(
+          json?.error ||
+            t("admin.imageBrowseLibraryLoadFailed", "Failed to load media library."),
+        );
+      }
+      const rows = Array.isArray(json.items) ? json.items : [];
+      setMediaItems(rows.filter((item) => isImageMediaItem(item)));
+    } catch (error) {
+      setMediaItems([]);
+      setMediaError(
+        error instanceof Error
+          ? error.message
+          : t("admin.imageBrowseLibraryLoadFailed", "Failed to load media library."),
+      );
+    } finally {
+      setMediaLoading(false);
+    }
+  }, [mediaSearchTerm]);
+
+  useEffect(() => {
+    if (!showMediaBrowser) return;
+    loadMediaLibrary();
+  }, [showMediaBrowser, loadMediaLibrary]);
+
+  const chooseUploadNew = useCallback(() => {
+    setShowSourceChooser(false);
+    openLocalUploadPicker();
+  }, [openLocalUploadPicker]);
+
+  const chooseBrowseLibrary = useCallback(() => {
+    setShowSourceChooser(false);
+    setShowMediaBrowser(true);
+  }, []);
+
+  const closeMediaBrowser = useCallback(() => {
+    setShowMediaBrowser(false);
+    setMediaSearchInput("");
+    setMediaSearchTerm("");
+    setMediaError("");
+    setMediaItems([]);
+  }, []);
+
+  const selectMediaImage = useCallback(
+    (item) => {
+      if (!item?.url) return;
+      setShowMediaBrowser(false);
+      setMediaSearchInput("");
+      setMediaSearchTerm("");
+      setMediaError("");
+      setMediaItems([]);
+      try {
+        onUploaded?.(item.url, item.asset || null);
+      } catch (error) {
+        console.error("ImageUploader media selection callback failed:", error);
+      }
+    },
+    [onUploaded],
+  );
+
+  useEffect(() => {
+    if (!showEditor && !showMediaBrowser && !showSourceChooser) return undefined;
+    function handleEscape(event) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+
+      if (showEditor) {
+        setShowEditor(false);
+        setPreview(null);
+        setFile(null);
+        setIsDerivedWork(false);
+        setCopyrightHolder("");
+        setLicense("");
+        return;
+      }
+      if (showMediaBrowser) {
+        closeMediaBrowser();
+        return;
+      }
+      if (showSourceChooser) {
+        setShowSourceChooser(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [
+    showEditor,
+    showMediaBrowser,
+    showSourceChooser,
+    closeMediaBrowser,
+  ]);
 
   // Draw image on canvas whenever crop controls change.
   useEffect(() => {
@@ -466,6 +577,7 @@ export default function ImageUploader({
         throw new Error("Canvas export failed");
       }
 
+      const variantKind = isDerivedWork ? "derived-work" : "original";
       const variantFileName = `${fileBaseName}-${requestedFormat}.${OUTPUT_EXTENSIONS[requestedFormat] || "bin"}`;
       const variantUpload = await uploadAssetStep({
         fileBlob: exportBlob,
@@ -486,7 +598,7 @@ export default function ImageUploader({
       setShowEditor(false);
       setPreview(null);
       setFile(null);
-      setVariantKind("compressed");
+      setIsDerivedWork(false);
       setCopyrightHolder("");
       setLicense("");
       try {
@@ -504,7 +616,7 @@ export default function ImageUploader({
       setShowEditor(false);
       setPreview(null);
       setFile(null);
-      setVariantKind("compressed");
+      setIsDerivedWork(false);
       setCopyrightHolder("");
       setLicense("");
     } finally {
@@ -516,7 +628,7 @@ export default function ImageUploader({
     setShowEditor(false);
     setPreview(null);
     setFile(null);
-    setVariantKind("compressed");
+    setIsDerivedWork(false);
     setCopyrightHolder("");
     setLicense("");
   }
@@ -562,120 +674,173 @@ export default function ImageUploader({
         </div>
       )}
 
+      {showSourceChooser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowSourceChooser(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-4 space-y-4">
+            <h3 className="font-semibold text-sm">
+              {t("admin.imageSourceChooserTitle", "Choose image source")}
+            </h3>
+            <p className="text-xs text-gray-500">
+              {t(
+                "admin.imageSourceChooserHint",
+                "Start by browsing the media library or uploading a new image.",
+              )}
+            </p>
+            <div className="grid gap-2">
+              <button
+                type="button"
+                onClick={chooseBrowseLibrary}
+                className="w-full rounded border px-3 py-2 text-sm text-left hover:bg-gray-50"
+              >
+                {t("admin.imageSourceBrowseLibrary", "Browse media library")}
+              </button>
+              <button
+                type="button"
+                onClick={chooseUploadNew}
+                className="w-full rounded border px-3 py-2 text-sm text-left hover:bg-gray-50"
+              >
+                {t("admin.imageSourceUploadNew", "Upload new image")}
+              </button>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowSourceChooser(false)}
+                className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMediaBrowser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeMediaBrowser();
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-4 sm:p-5 space-y-3 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-sm">
+                  {t("admin.imageBrowseLibraryTitle", "Browse media library")}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {t(
+                    "admin.imageBrowseLibraryHint",
+                    "Select an existing image from WordPress media library or R2.",
+                  )}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeMediaBrowser}
+                className="px-3 py-1.5 rounded border hover:bg-gray-50 text-xs"
+              >
+                {t("common.close", "Close")}
+              </button>
+            </div>
+
+            <form
+              className="flex flex-col gap-2 sm:flex-row"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setMediaSearchTerm(mediaSearchInput.trim());
+              }}
+            >
+              <input
+                type="search"
+                value={mediaSearchInput}
+                onChange={(event) => setMediaSearchInput(event.target.value)}
+                placeholder={t(
+                  "admin.imageBrowseLibrarySearchPlaceholder",
+                  "Search by filename, key, or URL",
+                )}
+                className="flex-1 border rounded px-3 py-2 text-sm"
+              />
+              <button
+                type="submit"
+                className="px-3 py-2 rounded border hover:bg-gray-50 text-sm"
+              >
+                {t("admin.mediaSearch", "Search")}
+              </button>
+              <button
+                type="button"
+                onClick={loadMediaLibrary}
+                className="px-3 py-2 rounded border hover:bg-gray-50 text-sm"
+              >
+                {t("admin.mediaRefresh", "Refresh")}
+              </button>
+            </form>
+
+            {mediaLoading && (
+              <p className="text-xs text-gray-500">{t("common.loading", "Loading…")}</p>
+            )}
+
+            {mediaError && (
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+                {mediaError}
+              </p>
+            )}
+
+            {!mediaLoading && !mediaError && mediaItems.length === 0 && (
+              <p className="text-xs text-gray-500">
+                {t(
+                  "admin.imageBrowseLibraryEmpty",
+                  "No images matched this filter.",
+                )}
+              </p>
+            )}
+
+            {mediaItems.length > 0 && (
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {mediaItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selectMediaImage(item)}
+                    className="rounded border bg-white p-2 text-left hover:bg-gray-50"
+                  >
+                    <div className="aspect-video rounded border bg-gray-100 overflow-hidden flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs font-medium text-gray-800 line-clamp-2 break-all">
+                      {item.title || item.key || item.url}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      {item.source === "wordpress" ? "WordPress" : item.source === "r2" ? "R2" : "—"}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Crop/scale editor modal */}
       {showEditor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-4 space-y-4">
-            <h3 className="font-semibold text-sm">{t("admin.cropAndScale")}</h3>
-            <p className="text-xs text-gray-500">{t("admin.cropHint")}</p>
-
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600">
-                {t("admin.cropAspectLabel")}
-              </label>
-              <select
-                value={aspectKey}
-                onChange={(e) => {
-                  setAspectKey(e.target.value);
-                  setScale(1);
-                  setOffsetX(0);
-                  setOffsetY(0);
-                }}
-                className="w-full border rounded px-2 py-1 text-sm"
-              >
-                {UPLOADER_ASPECT_KEYS.map((key) => (
-                  <option key={key} value={key}>
-                    {t(ASPECT_LABEL_KEYS[key])}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {availableUploadOptions.length > 1 && (
-              <div className="space-y-1">
-                <label className="text-xs text-gray-600">
-                  {t("admin.uploadDestinationTitle")}
-                </label>
-                <select
-                  value={selectedUploadBackend}
-                  onChange={(event) =>
-                    setSelectedUploadBackend(event.target.value)
-                  }
-                  className="w-full border rounded px-2 py-1 text-sm"
-                >
-                  {availableUploadOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600">
-                {t("admin.imageOutputFormatLabel")}
-              </label>
-              <select
-                value={outputFormat}
-                onChange={(event) => setOutputFormat(event.target.value)}
-                className="w-full border rounded px-2 py-1 text-sm"
-              >
-                {outputFormatOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[11px] text-gray-500">
-                {t("admin.imageOutputFormatHint")}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600">
-                {t("admin.imageVariantKindLabel")}
-              </label>
-              <select
-                value={variantKind}
-                onChange={(event) => setVariantKind(event.target.value)}
-                className="w-full border rounded px-2 py-1 text-sm"
-              >
-                {variantKindOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[11px] text-gray-500">
-                {t("admin.imageVariantKindHint")}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600">
-                {t("admin.imageCopyrightHolderLabel")}
-              </label>
-              <input
-                type="text"
-                value={copyrightHolder}
-                onChange={(event) => setCopyrightHolder(event.target.value)}
-                className="w-full border rounded px-2 py-1 text-sm"
-                placeholder={t("admin.imageCopyrightHolderPlaceholder")}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600">
-                {t("admin.imageLicenseLabel")}
-              </label>
-              <input
-                type="text"
-                value={license}
-                onChange={(event) => setLicense(event.target.value)}
-                className="w-full border rounded px-2 py-1 text-sm"
-                placeholder={t("admin.imageLicensePlaceholder")}
-              />
+          <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full p-4 sm:p-5 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div>
+              <h3 className="font-semibold text-sm">{t("admin.cropAndScale")}</h3>
+              <p className="text-xs text-gray-500">{t("admin.cropHint")}</p>
             </div>
 
             {/* Hidden image for drawing */}
@@ -688,38 +853,174 @@ export default function ImageUploader({
               onLoad={handleImgLoad}
             />
 
-            {/* Canvas with drag */}
-            <div className="flex justify-center">
-              <canvas
-                ref={canvasRef}
-                width={previewFrame.width}
-                height={previewFrame.height}
-                className="border rounded cursor-move"
-                style={{
-                  width: previewFrame.width,
-                  height: previewFrame.height,
-                  touchAction: "none",
-                }}
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
-              />
-            </div>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-600">
+                      {t("admin.cropAspectLabel")}
+                    </label>
+                    <select
+                      value={aspectKey}
+                      onChange={(e) => {
+                        setAspectKey(e.target.value);
+                        setScale(1);
+                        setOffsetX(0);
+                        setOffsetY(0);
+                      }}
+                      className="w-full border rounded px-2 py-1 text-sm"
+                    >
+                      {UPLOADER_ASPECT_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {t(ASPECT_LABEL_KEYS[key])}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-600">
+                      {t("admin.imageOutputResolutionLabel", "Output resolution")}
+                    </label>
+                    <div className="w-full border rounded px-2 py-1.5 text-sm text-gray-700 bg-gray-50">
+                      {selectedSize.width} × {selectedSize.height}
+                    </div>
+                  </div>
+                </div>
 
-            {/* Scale slider */}
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600 flex justify-between">
-                <span>{t("admin.scaleLabel")}</span>
-                <span>{Math.round(scale * 100)}%</span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="3"
-                step="0.05"
-                value={scale}
-                onChange={(e) => setScale(Number.parseFloat(e.target.value))}
-                className="w-full"
-              />
+                {/* Canvas with drag */}
+                <div className="rounded border bg-gray-50 p-2 flex justify-center overflow-auto">
+                  <canvas
+                    ref={canvasRef}
+                    width={previewFrame.width}
+                    height={previewFrame.height}
+                    className="border rounded cursor-move bg-white"
+                    style={{
+                      width: previewFrame.width,
+                      height: previewFrame.height,
+                      touchAction: "none",
+                    }}
+                    onMouseDown={handleMouseDown}
+                    onTouchStart={handleTouchStart}
+                  />
+                </div>
+
+                {/* Scale slider */}
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600 flex justify-between">
+                    <span>{t("admin.scaleLabel")}</span>
+                    <span>{Math.round(scale * 100)}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="0.05"
+                    value={scale}
+                    onChange={(e) => setScale(Number.parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">
+                    {t("admin.imageOutputFormatLabel")}
+                  </label>
+                  <select
+                    value={outputFormat}
+                    onChange={(event) => setOutputFormat(event.target.value)}
+                    className="w-full border rounded px-2 py-1 text-sm"
+                  >
+                    {outputFormatOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-gray-500">
+                    {t("admin.imageOutputFormatHint")}
+                  </p>
+                </div>
+
+                <details className="rounded border bg-gray-50 px-3 py-2">
+                  <summary className="cursor-pointer select-none text-xs font-semibold text-gray-700">
+                    {t("admin.imageMoreOptions", "More")}
+                  </summary>
+                  <div className="mt-2 space-y-3">
+                    <label className="flex items-start gap-2 text-xs text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={isDerivedWork}
+                        onChange={(event) => setIsDerivedWork(event.target.checked)}
+                        className="mt-0.5"
+                      />
+                      <span>{t("admin.imageDerivedWorkToggle", "Mark as derived work")}</span>
+                    </label>
+                    <p className="text-[11px] text-gray-500">
+                      {t(
+                        "admin.imageVariantCurrent",
+                        "Current variant type: {kind}",
+                        {
+                          kind: isDerivedWork
+                            ? t("admin.imageVariantKindDerivedWork")
+                            : t("admin.imageVariantKindOriginal"),
+                        },
+                      )}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      {t("admin.imageVariantKindHint")}
+                    </p>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-600">
+                        {t("admin.imageCopyrightHolderLabel")}
+                      </label>
+                      <input
+                        type="text"
+                        value={copyrightHolder}
+                        onChange={(event) => setCopyrightHolder(event.target.value)}
+                        className="w-full border rounded px-2 py-1 text-sm"
+                        placeholder={t("admin.imageCopyrightHolderPlaceholder")}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-600">
+                        {t("admin.imageLicenseLabel")}
+                      </label>
+                      <input
+                        type="text"
+                        value={license}
+                        onChange={(event) => setLicense(event.target.value)}
+                        className="w-full border rounded px-2 py-1 text-sm"
+                        placeholder={t("admin.imageLicensePlaceholder")}
+                      />
+                    </div>
+                  </div>
+                </details>
+
+                {availableUploadOptions.length > 1 && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-600">
+                      {t("admin.uploadDestinationTitle")}
+                    </label>
+                    <select
+                      value={selectedUploadBackend}
+                      onChange={(event) =>
+                        setSelectedUploadBackend(event.target.value)
+                      }
+                      className="w-full border rounded px-2 py-1 text-sm"
+                    >
+                      {availableUploadOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Actions */}

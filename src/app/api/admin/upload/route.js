@@ -8,7 +8,7 @@ const DEFAULT_MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
 const EDGE_R2_MAX_BYTES = 100 * 1024 * 1024;
 const S3_ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const ALLOWED_ASSET_FORMATS = new Set(["raw", "webp", "avif"]);
-const ALLOWED_VARIANT_KINDS = new Set(["original", "compressed", "derived-work"]);
+const ALLOWED_VARIANT_KINDS = new Set(["original", "derived-work"]);
 
 function isS3BackendEnabled() {
   const raw = String(
@@ -147,7 +147,7 @@ function parseAssetContext(formData, file, sizeBytes) {
       ? "original"
       : ALLOWED_VARIANT_KINDS.has(rawVariantKind)
         ? rawVariantKind
-        : "compressed";
+        : "original";
   const ownerUri = normalizeOwnerUri(formData.get("ownerUri"));
   const assetSlug = sanitizeAssetSlug(formData.get("assetSlug"));
   const assetUri = buildAssetIdUri(assetId);
