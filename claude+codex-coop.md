@@ -13,6 +13,35 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
 
+## 2026-03-20 (cont. 82)
+
+### Codex — image uploader UX compacted + source chooser + Escape cancel
+
+- Reworked `ImageUploader` modal layout to reduce vertical stack usage:
+  - image/canvas now lives on the left,
+  - controls live on the right,
+  - aspect + output resolution are now positioned close to the visual crop area.
+- Added first-step image source chooser:
+  - option 1: browse media library,
+  - option 2: upload a new image.
+- Added in-uploader media-library browser modal (image-only selection from WP + R2 via `/api/admin/media-library`) so users can assign existing assets directly.
+- Moved upload destination selector to the end of the control list.
+- Collapsed advanced metadata controls under a `More` accordion:
+  - derived-work toggle,
+  - copyright holder,
+  - license.
+- Updated variant semantics:
+  - uploader now uses `original` or `derived-work` variant kind (no `compressed` option in UI/default parsing path).
+- Added universal Escape-to-cancel behavior for uploader-related modals:
+  - source chooser,
+  - media browser,
+  - crop/upload editor.
+- Updated EN/SV/ES i18n for the new chooser/browser/accordion/resolution labels and variant copy.
+- Verification:
+  - `npm run lint` (passes; existing 3 `@next/next/no-img-element` warnings unchanged),
+  - `npm test` (passes: `144` pass, `0` fail, `3` skipped),
+  - `npm run build` (passes; route generation successful, with known intermittent WordPress/GraphQL fetch noise during static generation).
+
 ## 2026-03-20 (cont. 81)
 
 ### Codex — owner URI inheritance groundwork for asset records
