@@ -293,8 +293,15 @@ export default function ImageUploader({
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) {
+        console.error("Image upload failed", {
+          backend: uploadBackend || "default",
+          status: res.status,
+          error: json?.error || null,
+        });
         const msg = json?.error || t("admin.uploadFailed");
-        emitError(msg);
+        emitError(
+          uploadBackend ? `${msg} (${uploadBackend})` : msg,
+        );
         setShowEditor(false);
         setPreview(null);
         setFile(null);
@@ -308,9 +315,15 @@ export default function ImageUploader({
       } catch (error) {
         console.error("ImageUploader onUploaded callback failed:", error);
       }
-    } catch {
+    } catch (error) {
+      console.error("Image upload exception", {
+        backend: uploadBackend || "default",
+        error,
+      });
       const msg = t("admin.uploadFailed");
-      emitError(msg);
+      emitError(
+        uploadBackend ? `${msg} (${uploadBackend})` : msg,
+      );
       setShowEditor(false);
       setPreview(null);
       setFile(null);

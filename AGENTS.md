@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-20 (Codex)**: Reverted temporary Access-tab image-backend pin to preserve backend flexibility (`uploadBackend={uploadBackend}` restored for WP-item image edits), and added explicit image-upload diagnostics in `ImageUploader` (logs/status + backend-tagged error text) while keeping modal auto-close on upload failure.
 - **2026-03-20 (Codex)**: Addressed All-Products image upload regression by forcing WP-item image uploads to use `wordpress` backend in Access tab (`ImagePickerButton uploadBackend=\"wordpress\"`), and updated `ImageUploader` to auto-close/reset the crop modal on upload errors so failed saves do not leave the dialog stuck open.
 - **2026-03-20 (Codex)**: Investigated product image-picker regression timeline and restored the near-working click path from ~`2026-03-19 20:43 UTC` (`cb8bc56`) by reverting to plain `onClick={openPicker}` in `ImagePickerButton` and plain `input.click()` in `ImageUploader.openFilePicker` (no extra event interception).
 - **2026-03-20 (Codex)**: Fixed product-editor image picker click reliability by removing fragile `showPicker()` usage in `ImageUploader` (use direct `input.click()`), and hardening `ImagePickerButton` click handling with explicit `preventDefault`/`stopPropagation` plus `pointer-events-auto` on the trigger surface.

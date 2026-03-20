@@ -11,6 +11,20 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-20 (cont. 74)
+
+### Codex — revert backend pin, keep diagnostics + modal close behavior
+
+- Reverted temporary All-Products Access-tab backend override:
+  - changed WP item image picker from `uploadBackend=\"wordpress\"` back to `uploadBackend={uploadBackend}`.
+  - rationale: keep consistent backend behavior across Products/Access tabs as requested.
+- Added better failure diagnostics to `ImageUploader` save path:
+  - console error now includes `{ backend, status, error }` on non-OK responses,
+  - thrown exceptions are logged with backend context,
+  - emitted error text now appends backend marker (e.g. `(...backend...)`) for operator clarity.
+- Preserved prior UX fix: crop modal auto-closes/reset on failed save.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-20 (cont. 73)
 
 ### Codex — All Products image upload backend safety + modal-close-on-error
