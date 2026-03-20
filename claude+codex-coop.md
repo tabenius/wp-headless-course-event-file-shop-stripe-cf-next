@@ -13,6 +13,28 @@ TODO [P3 | Medium]: Post-implementation code review — run a full quality/usabi
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
 
+## 2026-03-20 (cont. 81)
+
+### Codex — owner URI inheritance groundwork for asset records
+
+- Added owner-scoped asset metadata fields in upload + media-library flows:
+  - `ownerUri` (defaults to `/`),
+  - asset-ID-based URI (`/asset/<asset-id>`),
+  - optional `slug`.
+- Upload pipeline now persists these fields to both storage backends:
+  - WordPress attachment meta (`ragbaz_asset_owner_uri`, `ragbaz_asset_uri`, `ragbaz_asset_slug`),
+  - R2 object metadata (`asset_owner_uri`, `asset_uri`, `asset_slug`).
+- Media-library listing normalization now surfaces owner/access context in each `asset` record:
+  - `ownerUri`,
+  - `uri`,
+  - `slug`,
+  - `accessInheritance: "owner"`.
+- Media annotation save flow now carries `asset` fields so owner/URI metadata survives metadata edits (no accidental key drop on R2 metadata replacement).
+- Added admin UI annotation inputs for owner URI, optional asset slug, and asset URI base to support the evolving URI protocol.
+- Verification:
+  - `npm run lint` (passes; existing 3 `@next/next/no-img-element` warnings unchanged),
+  - `npm test` (passes: `144` pass, `0` fail, `3` skipped).
+
 ## 2026-03-20 (cont. 80)
 
 ### Codex — media library extended to structured assets + in-app viewers
