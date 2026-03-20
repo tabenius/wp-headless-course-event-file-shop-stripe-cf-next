@@ -1858,3 +1858,42 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npm run plugin:copy` (pass; zip rebuilt and copied to both destinations).
   - Verified resulting files exist in both target paths.
+
+---
+
+## 2026-03-20 (cont. 37)
+
+### Codex — `ragbaz.xyz` now serves tenant draft previews on gifted hex subdomains
+
+- Implemented host-based tenant routing in the nested `ragbaz.xyz` Cloudflare Worker app:
+  - `register` (`POST /api/v1/home`) now mints a per-peer `giftKey` (hex) and returns:
+    - `account.giftKey`
+    - `account.tenantPreviewUrl` (`https://{giftKey}.ragbaz.xyz`)
+  - Added persistent gift-key lookup mapping in storage:
+    - `home:gift:{giftKey} -> accountId`
+  - Host router now resolves `https://{giftKey}.ragbaz.xyz/` to the mapped peer and renders a draft frontend page.
+
+- Added new tenant draft page renderer:
+  - File: `ragbaz.xyz/src/lib/pages.js`
+  - New export: `renderGiftDraftPage(...)`
+  - Draft view includes:
+    - Source WordPress URL known from onboarding/heartbeat payload
+    - Capability matrix (WPGraphQL, Ragbaz WP plugin bridge, Smart Cache, object cache)
+    - Suggested page blueprint for an optimized frontend
+    - Generated draft manifest JSON
+    - Priority actions based on current runtime/performance recommendations
+
+- Configuration/docs updates in nested repo:
+  - `ragbaz.xyz/wrangler.toml` adds `RAGBAZ_TENANT_BASE_DOMAIN`.
+  - `ragbaz.xyz/README.md` documents gifted subdomain behavior and API response fields.
+  - `ragbaz.xyz/.gitignore` now ignores generated `release/` artifacts.
+
+- Validation:
+  - `cd ragbaz.xyz && npm test` (pass, 4/4).
+  - Extended test in `ragbaz.xyz/tests/home-api.test.js` now verifies:
+    - Gift key + tenant preview URL are returned
+    - `https://{gift}.ragbaz.xyz/` returns tenant draft HTML
+  - `node -e "import('./src/index.js')..."` smoke check (pass).
+
+- Nested repo commit pushed:
+  - `ragbaz.xyz` `master`: `3e54194` — `feat: serve gifted tenant drafts on hex.ragbaz.xyz`
