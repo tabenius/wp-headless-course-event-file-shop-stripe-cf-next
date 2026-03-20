@@ -83,12 +83,22 @@ function ragbaz_get_wp_runtime_status() {
   $query_monitor_active = ragbaz_is_plugin_active_anywhere('query-monitor/query-monitor.php');
   $xdebug_active = extension_loaded('xdebug');
   $opcache_enabled = extension_loaded('Zend OPcache') || extension_loaded('opcache');
+  $object_cache_dropin_present = defined('WP_CONTENT_DIR')
+    ? file_exists(WP_CONTENT_DIR . '/object-cache.php')
+    : false;
   $object_cache_enabled = function_exists('wp_using_ext_object_cache')
     ? (bool) wp_using_ext_object_cache()
     : false;
+  $redis_plugin_active = ragbaz_is_plugin_active_anywhere('redis-cache/redis-cache.php');
+  $memcached_plugin_active =
+    ragbaz_is_plugin_active_anywhere('memcached/memcached.php') ||
+    ragbaz_is_plugin_active_anywhere('wp-memcached/object-cache.php');
 
   $debug_flags_ok = !$wp_debug && !$wp_debug_log && !$script_debug && !$savequeries && !$graphql_debug;
   $debug_tools_ok = !$query_monitor_active && !$xdebug_active;
+  $cache_readiness_ok =
+    $opcache_enabled &&
+    ($object_cache_enabled || $object_cache_dropin_present || $redis_plugin_active || $memcached_plugin_active);
 
   return [
     'pluginVersion' => RAGBAZ_VERSION,
@@ -100,10 +110,14 @@ function ragbaz_get_wp_runtime_status() {
     'graphqlDebug' => $graphql_debug,
     'queryMonitorActive' => $query_monitor_active,
     'xdebugActive' => $xdebug_active,
+    'objectCacheDropInPresent' => $object_cache_dropin_present,
+    'redisPluginActive' => $redis_plugin_active,
+    'memcachedPluginActive' => $memcached_plugin_active,
     'opcacheEnabled' => $opcache_enabled,
     'objectCacheEnabled' => $object_cache_enabled,
     'debugFlagsOk' => $debug_flags_ok,
     'debugToolsOk' => $debug_tools_ok,
+    'cacheReadinessOk' => $cache_readiness_ok,
     'okForProduction' => $debug_flags_ok && $debug_tools_ok,
   ];
 }
@@ -165,6 +179,27 @@ function ragbaz_get_wp_runtime_checks() {
       'value' => $status['objectCacheEnabled'],
       'recommended' => true,
       'ok' => $status['objectCacheEnabled'],
+      'required' => false,
+    ],
+    [
+      'label' => 'Object cache drop-in present',
+      'value' => $status['objectCacheDropInPresent'],
+      'recommended' => true,
+      'ok' => $status['objectCacheDropInPresent'],
+      'required' => false,
+    ],
+    [
+      'label' => 'Redis plugin active',
+      'value' => $status['redisPluginActive'],
+      'recommended' => false,
+      'ok' => true,
+      'required' => false,
+    ],
+    [
+      'label' => 'Memcached plugin active',
+      'value' => $status['memcachedPluginActive'],
+      'recommended' => false,
+      'ok' => true,
       'required' => false,
     ],
     [
@@ -620,6 +655,7 @@ function ragbaz_render_info_page() {
     pluginVersion
     checkedAt
     okForProduction
+    cacheReadinessOk
     wpDebug
     wpDebugLog
     scriptDebug
@@ -627,6 +663,9 @@ function ragbaz_render_info_page() {
     graphqlDebug
     queryMonitorActive
     xdebugActive
+    objectCacheDropInPresent
+    redisPluginActive
+    memcachedPluginActive
     objectCacheEnabled
     opcacheEnabled
   }
@@ -844,10 +883,14 @@ add_action('graphql_register_types', function () {
       'graphqlDebug' => ['type' => 'Boolean'],
       'queryMonitorActive' => ['type' => 'Boolean'],
       'xdebugActive' => ['type' => 'Boolean'],
+      'objectCacheDropInPresent' => ['type' => 'Boolean'],
+      'redisPluginActive' => ['type' => 'Boolean'],
+      'memcachedPluginActive' => ['type' => 'Boolean'],
       'objectCacheEnabled' => ['type' => 'Boolean'],
       'opcacheEnabled' => ['type' => 'Boolean'],
       'debugFlagsOk' => ['type' => 'Boolean'],
       'debugToolsOk' => ['type' => 'Boolean'],
+      'cacheReadinessOk' => ['type' => 'Boolean'],
       'okForProduction' => ['type' => 'Boolean'],
     ],
   ]);

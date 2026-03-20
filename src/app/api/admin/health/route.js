@@ -108,14 +108,16 @@ async function checkRagbazPlugin() {
   const auth = getWordPressGraphqlAuth();
   if (!url || !auth.authorization)
     return { ok: false, message: t("health.ragbazUnknown") };
+  const endpoint = `${url.replace(/\/$/, "")}/graphql`;
+  const headers = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    Authorization: auth.authorization,
+  };
   try {
-    const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
+    const response = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: auth.authorization,
-      },
+      headers,
       body: JSON.stringify({
         query: `
           query RagbazCheck {
@@ -131,12 +133,104 @@ async function checkRagbazPlugin() {
       return { ok: false, message: t("health.ragbazMissing") };
     const info = json.data.ragbazInfo;
     if (!info) return { ok: false, message: t("health.ragbazMissing") };
+
+    const details = {
+      version: info.version || "unknown",
+      hasLearnPress: Boolean(info.hasLearnPress),
+      hasEventsPlugin: Boolean(info.hasEventsPlugin),
+      pluginVersion: info.version || "unknown",
+      runtime: null,
+      availability: {
+        ragbazInfo: true,
+        ragbazPluginVersion: false,
+        ragbazWpRuntime: false,
+        ragbazInfoWpRuntime: false,
+      },
+    };
+
+    try {
+      const runtimeResponse = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          query: `
+            query RagbazRuntimeProbe {
+              ragbazPluginVersion
+              ragbazWpRuntime {
+                pluginVersion
+                checkedAt
+                okForProduction
+                cacheReadinessOk
+                wpDebug
+                wpDebugLog
+                scriptDebug
+                saveQueries
+                graphqlDebug
+                queryMonitorActive
+                xdebugActive
+                objectCacheDropInPresent
+                redisPluginActive
+                memcachedPluginActive
+                objectCacheEnabled
+                opcacheEnabled
+              }
+              ragbazInfo {
+                wpRuntime {
+                  pluginVersion
+                  checkedAt
+                  okForProduction
+                  cacheReadinessOk
+                  wpDebug
+                  wpDebugLog
+                  scriptDebug
+                  saveQueries
+                  graphqlDebug
+                  queryMonitorActive
+                  xdebugActive
+                  objectCacheDropInPresent
+                  redisPluginActive
+                  memcachedPluginActive
+                  objectCacheEnabled
+                  opcacheEnabled
+                }
+              }
+            }
+          `,
+        }),
+        cache: "no-store",
+      });
+
+      const runtimeJson = await runtimeResponse.json().catch(() => null);
+      if (runtimeResponse.ok && runtimeJson?.data) {
+        const explicitVersion = runtimeJson.data.ragbazPluginVersion || null;
+        const directRuntime = runtimeJson.data.ragbazWpRuntime || null;
+        const nestedRuntime = runtimeJson.data.ragbazInfo?.wpRuntime || null;
+
+        if (explicitVersion) {
+          details.pluginVersion = explicitVersion;
+          details.availability.ragbazPluginVersion = true;
+        }
+        if (directRuntime) {
+          details.runtime = directRuntime;
+          details.availability.ragbazWpRuntime = true;
+        } else if (nestedRuntime) {
+          details.runtime = nestedRuntime;
+          details.availability.ragbazInfoWpRuntime = true;
+        }
+      }
+    } catch (runtimeError) {
+      console.info(
+        "[health] ragbaz runtime probe unavailable:",
+        runtimeError?.message || runtimeError,
+      );
+    }
+
     const msg = t("health.ragbazOk", {
       version: info.version || "unknown",
       learnpress: info.hasLearnPress ? "yes" : "no",
       events: info.hasEventsPlugin ? "yes" : "no",
     });
-    return { ok: true, message: msg };
+    return { ok: true, message: msg, details };
   } catch (error) {
     console.error("RAGBAZ health check failed:", error);
     return { ok: false, message: t("health.ragbazMissing") };
@@ -206,6 +300,25 @@ export async function GET(request) {
     backend === "wordpress"
       ? await checkRagbazPlugin()
       : { ok: true, message: t("health.wpModeNotEnabled") };
+  const ragbazRuntimeCheck =
+    backend === "wordpress"
+      ? {
+          ok: Boolean(ragbazCheck?.ok),
+          message: ragbazCheck?.ok
+            ? ragbazCheck?.details?.runtime
+              ? "Runtime probe available."
+              : "Runtime probe not exposed by installed plugin version."
+            : t("health.ragbazMissing"),
+          details: {
+            pluginVersion:
+              ragbazCheck?.details?.pluginVersion ||
+              ragbazCheck?.details?.version ||
+              null,
+            runtime: ragbazCheck?.details?.runtime || null,
+            availability: ragbazCheck?.details?.availability || null,
+          },
+        }
+      : { ok: true, message: t("health.wpModeNotEnabled") };
   const stripeCheck = await checkStripe();
   const kvCheck = await checkKvStorage();
 
@@ -253,6 +366,7 @@ export async function GET(request) {
       wordpressGraphQL: wordpressCheck,
       wordpressSchema: wpSchemaCheck,
       ragbaz: ragbazCheck,
+      ragbazWpRuntime: ragbazRuntimeCheck,
       stripe: stripeCheck,
       stripeWebhook: {
         ok: stripeWebhookConfigured,

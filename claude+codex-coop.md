@@ -1802,3 +1802,39 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npx eslint src/components/admin/AdminWelcomeTab.js` (pass)
   - `php -l` could not run in this environment (`php: command not found`), so PHP syntax check is pending runtime validation in WP environment.
+
+---
+
+## 2026-03-20 (cont. 35)
+
+### Codex — Info tab now surfaces WP runtime safety + cache-readiness with measures
+
+- Extended WP plugin runtime probe to include cache-readiness detail signals:
+  - Added fields in `ragbazWpRuntime`:
+    - `objectCacheDropInPresent`
+    - `redisPluginActive`
+    - `memcachedPluginActive`
+    - `cacheReadinessOk`
+  - Kept existing runtime safety fields (`WP_DEBUG`, `WP_DEBUG_LOG`, `SCRIPT_DEBUG`, `SAVEQUERIES`, `GRAPHQL_DEBUG`, Query Monitor, Xdebug, OPcache, object cache).
+  - Updated the wp-admin plugin info screen GraphQL snippet to include the new cache fields.
+
+- Extended `/api/admin/health` runtime probe payload:
+  - Health route now requests and forwards the richer runtime object through `checks.ragbazWpRuntime.details.runtime`.
+  - Keeps graceful behavior if runtime fields are unavailable on older plugin versions.
+
+- Added a new runtime panel in Admin Info → Overview:
+  - File: `src/components/admin/AdminInfoHubTab.js`
+  - New section: **WordPress runtime posture**
+  - Shows:
+    - Plugin version
+    - Runtime safety score (`x/7 safe`)
+    - Cache readiness score (`x/5 signals`)
+    - Detailed breakdown rows for runtime safety flags and cache signals
+    - Availability matrix of GraphQL fields (`ragbazInfo`, `ragbazPluginVersion`, `ragbazWpRuntime`, `ragbazInfo.wpRuntime`)
+    - Actionable **Measures and next actions** text based on current readings
+  - Added “Run check” action directly in this panel.
+  - Overview now auto-triggers health check when needed so readings appear without first opening the Health subtab.
+
+- Validation:
+  - `npm run lint` (pass; existing unrelated `<img>` warnings remain).
+  - PHP runtime lint unavailable in this environment (`php` binary missing).
