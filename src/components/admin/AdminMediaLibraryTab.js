@@ -2,8 +2,28 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_DATA_ASSET_BYTES = 100 * 1024 * 1024;
+const DATA_ASSET_EXTENSIONS = new Set([
+  "json",
+  "yaml",
+  "yml",
+  "csv",
+  "md",
+  "markdown",
+  "sqlite",
+  "sqlite3",
+  "db",
+]);
+
+function extFromFileName(name) {
+  const safe = String(name || "").toLowerCase();
+  const match = safe.match(/\.([a-z0-9]+)$/i);
+  return match ? match[1] : "";
+}
 
 function formatBytes(bytes) {
   const value = Number(bytes);
@@ -60,9 +80,53 @@ function isImageFile(file) {
   return /\.(png|jpe?g|gif|webp|bmp|avif|svg)$/i.test(name);
 }
 
+function detectAssetKind(file) {
+  if (!(file instanceof File)) return "";
+  if (isImageFile(file)) return "image";
+  const extension = extFromFileName(file.name);
+  if (extension === "json") return "json";
+  if (extension === "csv") return "csv";
+  if (extension === "yaml" || extension === "yml") return "yaml";
+  if (extension === "md" || extension === "markdown") return "markdown";
+  if (extension === "sqlite" || extension === "sqlite3" || extension === "db") {
+    return "sqlite";
+  }
+  return "";
+}
+
+function isSupportedUploadFile(file) {
+  const kind = detectAssetKind(file);
+  return kind === "image" || DATA_ASSET_EXTENSIONS.has(extFromFileName(file?.name));
+}
+
+function canOpenDataViewer(item) {
+  const name = String(item?.title || item?.key || item?.url || "");
+  const ext = extFromFileName(name);
+  const mime = String(item?.mimeType || "").toLowerCase();
+  if (["json", "csv"].includes(ext)) return true;
+  if (["yaml", "yml"].includes(ext)) return true;
+  if (["md", "markdown"].includes(ext)) return true;
+  if (["sqlite", "sqlite3", "db"].includes(ext)) return true;
+  if (mime.includes("json")) return true;
+  if (mime.includes("csv")) return true;
+  if (mime.includes("yaml")) return true;
+  if (mime.includes("markdown")) return true;
+  if (mime.includes("sqlite")) return true;
+  return false;
+}
+
 function normalizeEditorValue(value, max = 600) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+function normalizeEditorMultiline(value, max = 1200) {
+  return String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\u0000/g, "")
     .trim()
     .slice(0, max);
 }
@@ -76,6 +140,9 @@ function toEditorState(item) {
     description: normalizeEditorValue(metadata.description || "", 600),
     altText: normalizeEditorValue(metadata.altText || "", 300),
     tooltip: normalizeEditorValue(metadata.tooltip || "", 300),
+    usageNotes: normalizeEditorMultiline(metadata.usageNotes || "", 1200),
+    structuredMeta: normalizeEditorMultiline(metadata.structuredMeta || "", 1800),
+    schemaRef: normalizeEditorValue(metadata.schemaRef || "", 400),
     copyrightHolder: normalizeEditorValue(rights.copyrightHolder || "", 180),
     license: normalizeEditorValue(rights.license || "", 180),
   };
@@ -106,6 +173,10 @@ export default function AdminMediaLibraryTab({
   const [uploadStatus, setUploadStatus] = useState("");
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedUploadBackend, setSelectedUploadBackend] = useState("wordpress");
+  const [viewerItem, setViewerItem] = useState(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
+  const [viewerError, setViewerError] = useState("");
+  const [viewerData, setViewerData] = useState(null);
   const uploadInputRef = useRef(null);
   const dragDepthRef = useRef(0);
 
@@ -265,6 +336,9 @@ export default function AdminMediaLibraryTab({
           description: normalizeEditorValue(editor.description, 600),
           altText: normalizeEditorValue(editor.altText, 300),
           tooltip: normalizeEditorValue(editor.tooltip, 300),
+          usageNotes: normalizeEditorMultiline(editor.usageNotes, 1200),
+          structuredMeta: normalizeEditorMultiline(editor.structuredMeta, 1800),
+          schemaRef: normalizeEditorValue(editor.schemaRef, 400),
         },
         rights: {
           copyrightHolder: normalizeEditorValue(editor.copyrightHolder, 180),
@@ -312,36 +386,53 @@ export default function AdminMediaLibraryTab({
     input.click();
   }
 
-  function extractImageFiles(sourceData) {
+  function extractUploadFiles(sourceData) {
     if (!sourceData) return [];
     const fromFiles = Array.from(sourceData.files || []);
     if (fromFiles.length > 0) {
-      return fromFiles.filter((file) => isImageFile(file));
+      return fromFiles.filter((file) => file instanceof File);
     }
     const files = [];
     const items = Array.from(sourceData.items || []);
     for (const item of items) {
       if (!item || item.kind !== "file") continue;
       const file = item.getAsFile?.();
-      if (!isImageFile(file)) continue;
+      if (!(file instanceof File)) continue;
       files.push(file);
     }
     return files;
   }
 
-  async function uploadImageFiles(files) {
+  async function uploadAssetFiles(files) {
     if (uploading) return;
     const list = Array.from(files || []).filter((file) => file instanceof File);
     if (list.length === 0) return;
 
-    const oversized = list.filter((file) => file.size > MAX_IMAGE_BYTES);
-    const valid = list.filter((file) => file.size <= MAX_IMAGE_BYTES);
+    const unsupported = list.filter((file) => !isSupportedUploadFile(file));
+    const oversized = list.filter((file) => {
+      const kind = detectAssetKind(file);
+      const maxBytes = kind === "image" ? MAX_IMAGE_BYTES : MAX_DATA_ASSET_BYTES;
+      return file.size > maxBytes;
+    });
+    const valid = list.filter((file) => {
+      if (!isSupportedUploadFile(file)) return false;
+      const kind = detectAssetKind(file);
+      const maxBytes = kind === "image" ? MAX_IMAGE_BYTES : MAX_DATA_ASSET_BYTES;
+      return file.size <= maxBytes;
+    });
     if (valid.length === 0) {
       setUploadStatus("");
       setUploadError(
-        oversized.length > 0
-          ? t("admin.mediaUploadTooLarge", { mb: 20 })
-          : t("admin.uploadImageTypeInvalid"),
+        unsupported.length > 0
+          ? t(
+              "admin.mediaUploadUnsupported",
+              "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
+            )
+          : t(
+              "admin.mediaUploadTooLargeMixed",
+              "Some files exceeded size limits (images: {imageMb} MB, data files: {dataMb} MB).",
+              { imageMb: 20, dataMb: 100 },
+            ),
       );
       return;
     }
@@ -356,8 +447,11 @@ export default function AdminMediaLibraryTab({
     for (const file of valid) {
       try {
         const formData = new FormData();
-        formData.append("file", file, file.name || "media-image.png");
-        const query = new URLSearchParams({ kind: "image" });
+        formData.append("file", file, file.name || "media-asset");
+        const kind = detectAssetKind(file);
+        const query = new URLSearchParams({
+          kind: kind === "image" ? "image" : "asset",
+        });
         if (selectedUploadBackend) {
           query.set("backend", selectedUploadBackend);
         }
@@ -379,7 +473,7 @@ export default function AdminMediaLibraryTab({
       }
     }
 
-    const skipped = oversized.length;
+    const skipped = oversized.length + unsupported.length;
     const failed = errors.length;
     const total = valid.length + skipped;
 
@@ -408,7 +502,23 @@ export default function AdminMediaLibraryTab({
         parts.push(t("admin.mediaUploadFailed"));
       }
       if (skipped > 0) {
-        parts.push(t("admin.mediaUploadTooLarge", { mb: 20 }));
+        if (unsupported.length > 0) {
+          parts.push(
+            t(
+              "admin.mediaUploadUnsupported",
+              "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
+            ),
+          );
+        }
+        if (oversized.length > 0) {
+          parts.push(
+            t(
+              "admin.mediaUploadTooLargeMixed",
+              "Some files exceeded size limits (images: {imageMb} MB, data files: {dataMb} MB).",
+              { imageMb: 20, dataMb: 100 },
+            ),
+          );
+        }
       }
       if (errors[0]) {
         parts.push(errors[0]);
@@ -429,15 +539,15 @@ export default function AdminMediaLibraryTab({
   }
 
   function handleUploadInputChange(event) {
-    const files = extractImageFiles(event.currentTarget);
-    uploadImageFiles(files);
+    const files = extractUploadFiles(event.currentTarget);
+    uploadAssetFiles(files);
   }
 
   function handleDropZonePaste(event) {
-    const files = extractImageFiles(event.clipboardData);
+    const files = extractUploadFiles(event.clipboardData);
     if (files.length === 0) return;
     event.preventDefault();
-    uploadImageFiles(files);
+    uploadAssetFiles(files);
   }
 
   function handleDropZoneDragEnter(event) {
@@ -469,12 +579,55 @@ export default function AdminMediaLibraryTab({
     event.stopPropagation();
     dragDepthRef.current = 0;
     setIsDragActive(false);
-    const files = extractImageFiles(event.dataTransfer);
+    const files = extractUploadFiles(event.dataTransfer);
     if (files.length === 0) {
-      setUploadError(t("admin.uploadImageTypeInvalid"));
+      setUploadError(
+        t(
+          "admin.mediaUploadUnsupported",
+          "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
+        ),
+      );
       return;
     }
-    uploadImageFiles(files);
+    uploadAssetFiles(files);
+  }
+
+  function closeViewer() {
+    setViewerItem(null);
+    setViewerData(null);
+    setViewerError("");
+    setViewerLoading(false);
+  }
+
+  async function openViewer(item) {
+    if (!item?.url || viewerLoading) return;
+    setViewerItem(item);
+    setViewerLoading(true);
+    setViewerError("");
+    setViewerData(null);
+    try {
+      const params = new URLSearchParams({
+        url: item.url,
+        name: item.title || item.key || "asset",
+      });
+      if (item.mimeType) params.set("mimeType", item.mimeType);
+      const response = await fetch(`/api/admin/media-library/view?${params.toString()}`);
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(
+          json?.error || t("admin.mediaViewerLoadFailed", "Could not load file viewer."),
+        );
+      }
+      setViewerData(json);
+    } catch (viewerLoadError) {
+      setViewerError(
+        viewerLoadError instanceof Error
+          ? viewerLoadError.message
+          : t("admin.mediaViewerLoadFailed", "Could not load file viewer."),
+      );
+    } finally {
+      setViewerLoading(false);
+    }
   }
 
   return (
@@ -550,7 +703,7 @@ export default function AdminMediaLibraryTab({
       <input
         ref={uploadInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.json,.yaml,.yml,.csv,.md,.markdown,.sqlite,.sqlite3,.db"
         multiple
         onChange={handleUploadInputChange}
         className="absolute -left-[10000px] top-auto h-px w-px opacity-0"
@@ -581,20 +734,26 @@ export default function AdminMediaLibraryTab({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
               <p className="text-sm font-semibold text-gray-800">
-                {t("admin.mediaDropzoneTitle", "Upload new images")}
+                {t("admin.mediaDropzoneTitle", "Upload media assets")}
               </p>
               <p className="text-xs text-gray-600">
                 {isDragActive
-                  ? t("admin.mediaDropzoneActive", "Drop image files to upload now.")
+                  ? t("admin.mediaDropzoneActive", "Drop files to upload now.")
                   : t(
                       "admin.mediaDropzoneHint",
-                      "Drag and drop image files here, or click to select files.",
+                      "Drag and drop files here, or click to select files.",
                     )}
               </p>
               <p className="text-xs text-gray-500">
                 {t(
+                  "admin.mediaDropzoneSupportedHint",
+                  "Supported: images, JSON, YAML, CSV, Markdown, and SQLite files.",
+                )}
+              </p>
+              <p className="text-xs text-gray-500">
+                {t(
                   "admin.mediaDropzonePasteHint",
-                  "Paste also works: click this area and press Ctrl/Cmd+V.",
+                  "Paste also works for images: click this area and press Ctrl/Cmd+V.",
                 )}
               </p>
             </div>
@@ -607,7 +766,7 @@ export default function AdminMediaLibraryTab({
               disabled={uploading}
               className="px-3 py-1.5 rounded border text-xs hover:bg-gray-100 disabled:opacity-50"
             >
-              {t("admin.mediaChooseFiles", "Choose images")}
+              {t("admin.mediaChooseFiles", "Choose files")}
             </button>
           </div>
         </div>
@@ -761,6 +920,15 @@ export default function AdminMediaLibraryTab({
                             .join(" · ")}
                         </p>
                       )}
+                      {canOpenDataViewer(item) && (
+                        <button
+                          type="button"
+                          onClick={() => openViewer(item)}
+                          className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                        >
+                          {t("admin.mediaViewFile", "View")}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => openEditor(item)}
@@ -795,6 +963,203 @@ export default function AdminMediaLibraryTab({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {viewerItem && (
+        <div className="rounded border bg-white p-4 space-y-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800">
+                {t("admin.mediaViewerTitle", "Asset viewer")}
+              </h3>
+              <p className="text-xs text-gray-500 break-all">
+                {viewerItem.title || viewerItem.key || viewerItem.url}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={closeViewer}
+              className="px-3 py-1.5 rounded border text-xs hover:bg-gray-100"
+            >
+              {t("common.close", "Close")}
+            </button>
+          </div>
+
+          {viewerLoading && (
+            <p className="text-xs text-gray-500">
+              {t("admin.mediaViewerLoading", "Loading viewer…")}
+            </p>
+          )}
+
+          {viewerError && (
+            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+              {viewerError}
+            </p>
+          )}
+
+          {viewerData?.truncated && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+              {t(
+                "admin.mediaViewerTruncated",
+                "Viewer output is truncated for performance.",
+              )}
+            </p>
+          )}
+
+          {viewerData?.viewerType === "json" && (
+            <div className="space-y-2">
+              {viewerData.summary && (
+                <p className="text-xs text-gray-600">
+                  {t("admin.mediaJsonSummary", "Root: {type}, keys: {count}", {
+                    type: viewerData.summary.rootType || "unknown",
+                    count:
+                      viewerData.summary.keyCount === null
+                        ? "—"
+                        : String(viewerData.summary.keyCount),
+                  })}
+                </p>
+              )}
+              {viewerData.parseError && (
+                <p className="text-xs text-amber-700">
+                  {t("admin.mediaJsonParseError", "JSON parse warning")}:{" "}
+                  {viewerData.parseError}
+                </p>
+              )}
+              <pre className="max-h-96 overflow-auto rounded bg-gray-100 p-3 text-xs text-gray-800">
+                {viewerData.pretty || ""}
+              </pre>
+            </div>
+          )}
+
+          {viewerData?.viewerType === "yaml" && (
+            <div className="space-y-2">
+              {Array.isArray(viewerData.topLevelKeys) &&
+                viewerData.topLevelKeys.length > 0 && (
+                  <p className="text-xs text-gray-600">
+                    {t("admin.mediaYamlKeys", "Top-level keys")}:{" "}
+                    {viewerData.topLevelKeys.join(", ")}
+                  </p>
+                )}
+              <pre className="max-h-96 overflow-auto rounded bg-gray-100 p-3 text-xs text-gray-800">
+                {viewerData.text || ""}
+              </pre>
+            </div>
+          )}
+
+          {viewerData?.viewerType === "csv" && (
+            <div className="space-y-3">
+              {Array.isArray(viewerData.csv?.columns) &&
+                viewerData.csv.columns.length > 0 && (
+                  <div className="overflow-auto border rounded">
+                    <table className="min-w-full text-xs">
+                      <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide">
+                        <tr>
+                          <th className="text-left px-2 py-1">#</th>
+                          <th className="text-left px-2 py-1">
+                            {t("common.name", "Name")}
+                          </th>
+                          <th className="text-left px-2 py-1">
+                            {t("admin.mediaAnnotatedType", "Annotated type")}
+                          </th>
+                          <th className="text-left px-2 py-1">
+                            {t("admin.mediaInferredType", "Inferred type")}
+                          </th>
+                          <th className="text-left px-2 py-1">
+                            {t("admin.mediaSample", "Sample")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewerData.csv.columns.map((column) => (
+                          <tr key={`${column.index}-${column.name}`} className="border-t">
+                            <td className="px-2 py-1">{column.index}</td>
+                            <td className="px-2 py-1">{column.name}</td>
+                            <td className="px-2 py-1">
+                              {column.annotatedType || "—"}
+                            </td>
+                            <td className="px-2 py-1">
+                              {column.inferredType || "—"}
+                            </td>
+                            <td className="px-2 py-1 break-all">
+                              {column.sample || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              {Array.isArray(viewerData.csv?.rows) && viewerData.csv.rows.length > 0 && (
+                <div className="overflow-auto border rounded">
+                  <table className="min-w-full text-xs">
+                    <tbody>
+                      {viewerData.csv.rows.map((row, rowIndex) => (
+                        <tr key={`row-${rowIndex}`} className="border-t">
+                          {row.map((cell, cellIndex) => (
+                            <td key={`cell-${rowIndex}-${cellIndex}`} className="px-2 py-1">
+                              {cell || "—"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {viewerData?.viewerType === "markdown" && (
+            <div className="space-y-3">
+              {Array.isArray(viewerData.headings) && viewerData.headings.length > 0 && (
+                <div className="text-xs text-gray-600">
+                  {t("admin.mediaMarkdownHeadings", "Headings")}:{" "}
+                  {viewerData.headings.map((item) => item.text).join(" · ")}
+                </div>
+              )}
+              <article className="prose prose-sm max-w-none rounded border bg-white p-3">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {viewerData.text || ""}
+                </ReactMarkdown>
+              </article>
+            </div>
+          )}
+
+          {viewerData?.viewerType === "sqlite" && (
+            <div className="space-y-2 text-xs text-gray-700">
+              <p>
+                {t(
+                  "admin.mediaSqliteHint",
+                  "SQLite header view is shown below. Add schema-specific semantics in annotations.",
+                )}
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <p>
+                  Page size: <strong>{viewerData.sqlite?.pageSize ?? "—"}</strong>
+                </p>
+                <p>
+                  Encoding: <strong>{viewerData.sqlite?.textEncoding ?? "—"}</strong>
+                </p>
+                <p>
+                  Page count: <strong>{viewerData.sqlite?.pageCount ?? "—"}</strong>
+                </p>
+                <p>
+                  User version: <strong>{viewerData.sqlite?.userVersion ?? "—"}</strong>
+                </p>
+                <p>
+                  Schema cookie:{" "}
+                  <strong>{viewerData.sqlite?.schemaCookie ?? "—"}</strong>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {viewerData?.viewerType === "text" && (
+            <pre className="max-h-96 overflow-auto rounded bg-gray-100 p-3 text-xs text-gray-800">
+              {viewerData.text || ""}
+            </pre>
+          )}
         </div>
       )}
 
@@ -907,6 +1272,60 @@ export default function AdminMediaLibraryTab({
                 }
                 rows={3}
                 className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
+              <span>{t("admin.mediaUsageNotes", "Usage notes")}</span>
+              <textarea
+                value={editor.usageNotes}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    usageNotes: event.target.value,
+                  }))
+                }
+                rows={3}
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+                placeholder={t(
+                  "admin.mediaUsageNotesPlaceholder",
+                  "How should this asset be used, and by which systems?",
+                )}
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
+              <span>{t("admin.mediaStructuredMeta", "Structured metadata (JSON/YAML)")}</span>
+              <textarea
+                value={editor.structuredMeta}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    structuredMeta: event.target.value,
+                  }))
+                }
+                rows={5}
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800 font-mono"
+                placeholder={t(
+                  "admin.mediaStructuredMetaPlaceholder",
+                  "Example: columns with types, schema version, table semantics, etc.",
+                )}
+              />
+            </label>
+            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
+              <span>{t("admin.mediaSchemaRef", "Schema reference")}</span>
+              <input
+                type="text"
+                value={editor.schemaRef}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    schemaRef: event.target.value,
+                  }))
+                }
+                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
+                placeholder={t(
+                  "admin.mediaSchemaRefPlaceholder",
+                  "URL or key to external schema/contract documentation",
+                )}
               />
             </label>
             <label className="space-y-1 text-xs text-gray-600">

@@ -361,6 +361,13 @@ function normalizeWordPressMediaRow(row) {
   const description = normalizeWordPressText(row?.description);
   const altText = sanitizeText(row?.alt_text, 300);
   const tooltip = readWordPressMeta(rowMeta, "ragbaz_asset_tooltip", 300) || caption;
+  const usageNotes = readWordPressMeta(rowMeta, "ragbaz_asset_usage_notes", 1200);
+  const structuredMeta = readWordPressMeta(
+    rowMeta,
+    "ragbaz_asset_structured_meta",
+    1800,
+  );
+  const schemaRef = readWordPressMeta(rowMeta, "ragbaz_asset_schema_ref", 400);
   const assetId = readWordPressMeta(rowMeta, "ragbaz_asset_id", 96);
   const assetRole = readWordPressMeta(rowMeta, "ragbaz_asset_role", 40);
   const assetFormat = readWordPressMeta(rowMeta, "ragbaz_asset_format", 40);
@@ -396,6 +403,9 @@ function normalizeWordPressMediaRow(row) {
       description,
       altText,
       tooltip,
+      usageNotes,
+      structuredMeta,
+      schemaRef,
     },
     rights: {
       copyrightHolder,
@@ -487,6 +497,9 @@ async function fetchR2Media({ limit, prefix, search }) {
         description: "",
         altText: "",
         tooltip: "",
+        usageNotes: "",
+        structuredMeta: "",
+        schemaRef: "",
       },
       rights: {
         copyrightHolder: "",
@@ -537,6 +550,9 @@ async function fetchR2Media({ limit, prefix, search }) {
         description: sanitizeText(meta.asset_description),
         altText: sanitizeText(meta.asset_alt_text, 300),
         tooltip: sanitizeText(meta.asset_tooltip, 300),
+        usageNotes: sanitizeText(meta.asset_usage_notes, 1200),
+        structuredMeta: sanitizeText(meta.asset_structured_meta, 1800),
+        schemaRef: sanitizeText(meta.asset_schema_ref, 400),
       };
       row.rights = {
         copyrightHolder: sanitizeText(meta.asset_copyright_holder, 180),
@@ -580,6 +596,9 @@ const R2_MANAGED_METADATA_KEYS = [
   "asset_description",
   "asset_alt_text",
   "asset_tooltip",
+  "asset_usage_notes",
+  "asset_structured_meta",
+  "asset_schema_ref",
   "asset_copyright_holder",
   "asset_license",
 ];
@@ -617,6 +636,9 @@ function toPatchPayload(body) {
       description: sanitizeText(metadata?.description),
       altText: sanitizeText(metadata?.altText, 300),
       tooltip: sanitizeText(metadata?.tooltip, 300),
+      usageNotes: sanitizeText(metadata?.usageNotes, 1200),
+      structuredMeta: sanitizeText(metadata?.structuredMeta, 1800),
+      schemaRef: sanitizeText(metadata?.schemaRef, 400),
     },
     rights: {
       copyrightHolder: sanitizeText(rights?.copyrightHolder, 180),
@@ -640,6 +662,9 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights })
       ragbaz_asset_description: metadata.description,
       ragbaz_asset_alt_text: metadata.altText,
       ragbaz_asset_tooltip: metadata.tooltip,
+      ragbaz_asset_usage_notes: metadata.usageNotes,
+      ragbaz_asset_structured_meta: metadata.structuredMeta,
+      ragbaz_asset_schema_ref: metadata.schemaRef,
       ragbaz_asset_copyright_holder: rights.copyrightHolder,
       ragbaz_asset_license: rights.license,
     },
@@ -704,6 +729,9 @@ async function updateR2ObjectMetadata({ key, metadata, rights }) {
       asset_description: metadata.description,
       asset_alt_text: metadata.altText,
       asset_tooltip: metadata.tooltip,
+      asset_usage_notes: metadata.usageNotes,
+      asset_structured_meta: metadata.structuredMeta,
+      asset_schema_ref: metadata.schemaRef,
       asset_copyright_holder: rights.copyrightHolder,
       asset_license: rights.license,
     },
