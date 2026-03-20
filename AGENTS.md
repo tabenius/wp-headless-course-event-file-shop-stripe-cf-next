@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-20 (Codex)**: Fixed product-editor image picker click reliability by removing fragile `showPicker()` usage in `ImageUploader` (use direct `input.click()`), and hardening `ImagePickerButton` click handling with explicit `preventDefault`/`stopPropagation` plus `pointer-events-auto` on the trigger surface.
 - **2026-03-19 (Codex)**: Increased admin menu-bar chroma toward red-orange by shifting header/control hues from ~33° to ~22° and raising saturation/brightness across bar, hamburger/status controls, drawer/tooltip, and language selector surfaces.
 - **2026-03-19 (Codex)**: Temporarily disabled Info-banner Sierpinski background layers and pendulum motion via explicit feature flags in `TorusBanner` (`ENABLE_SIERPINSKI_LAYERS=false`, `ENABLE_PENDULUM_MOVEMENT=false`) while keeping all rendering code intact for quick re-enable.
 - **2026-03-19 (Codex)**: Retuned admin header contrast/saturation (more saturated amber bar and brighter/saturated `RAGBAZ` cyan), changed sun/moon hover behavior to outline-only emphasis (fill remains yellow, outline expands on hover), and set Info torus to `24x24` granularity with a fixed `20vh` canvas banner height.

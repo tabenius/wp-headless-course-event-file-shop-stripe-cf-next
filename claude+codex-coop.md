@@ -11,6 +11,17 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-20 (cont. 71)
+
+### Codex — product image picker clickable-area reliability fix
+
+- Fixed product editor image-picker trigger reliability in two places:
+  - `ImageUploader.openFilePicker` now uses direct `input.click()` only (removed `showPicker()` path that can no-op on some browsers without throwing).
+  - `ImagePickerButton` trigger now enforces click ownership via `preventDefault()` + `stopPropagation()` and forwards the event into `openPicker`.
+- Added `pointer-events-auto` to the image trigger button class to ensure the trigger surface remains clickable even under layered UI overlays.
+- Result: clicking the product image tile/pen area should consistently open the file chooser in the product editor.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-19 (cont. 70)
 
 ### Codex — menu bar shifted to stronger saturated red-orange

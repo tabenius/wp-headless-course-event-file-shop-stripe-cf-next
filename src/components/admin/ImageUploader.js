@@ -149,18 +149,14 @@ export default function ImageUploader({
     [emitError],
   );
 
-  const openFilePicker = useCallback(() => {
+  const openFilePicker = useCallback((event) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
     const input = fileInputRef.current;
     if (!input) return;
     input.value = "";
-    if (typeof input.showPicker === "function") {
-      try {
-        input.showPicker();
-        return;
-      } catch (_err) {
-        // Fallback for browsers rejecting showPicker in some contexts.
-      }
-    }
+    // Use direct click for cross-browser reliability; showPicker can no-op
+    // without throwing on some platforms.
     input.click();
   }, []);
 

@@ -144,8 +144,12 @@ function ImagePickerButton({
       renderTrigger={(openPicker) => (
         <button
           type="button"
-          onClick={openPicker}
-          className="group relative z-10 flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 shadow-[inset_0_0_0_2px_rgba(17,24,39,0.35),0_1px_2px_rgba(0,0,0,0.18)] transition-colors hover:border-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPicker(event);
+          }}
+          className="group relative z-10 pointer-events-auto flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 shadow-[inset_0_0_0_2px_rgba(17,24,39,0.35),0_1px_2px_rgba(0,0,0,0.18)] transition-colors hover:border-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
           title={t("admin.uploadImage")}
           aria-label={t("admin.uploadImage")}
         >
