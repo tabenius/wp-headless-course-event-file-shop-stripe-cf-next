@@ -1725,3 +1725,20 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `npx eslint` (targeted touched files)
   - `npm test` (pass)
   - `npm run build` (pass)
+
+---
+
+## 2026-03-20 (cont. 32)
+
+### Codex — GraphQL debug default-off + WP production tuning docs
+
+- Switched local runtime default to non-verbose GraphQL logging by setting `.env` `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=0`.
+- Extended `.env.example` with explicit production-safe GraphQL defaults:
+  - `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=0`
+  - `WORDPRESS_GRAPHQL_DEBUG=0`
+  - `GRAPHQL_DELAY_MS=0`
+- Updated docs to clarify debugging vs production mode:
+  - `docs/README.en.md`: expanded Debugging table and added `wp-config.php` production flags (`WP_DEBUG`, `WP_DEBUG_LOG`, `SCRIPT_DEBUG`, `SAVEQUERIES`, `GRAPHQL_DEBUG` all `false`).
+  - `docs/README.sv.md`: same guidance in Swedish.
+- Validation:
+  - Reviewed targeted diffs only for `.env.example`, `docs/README.en.md`, `docs/README.sv.md`.

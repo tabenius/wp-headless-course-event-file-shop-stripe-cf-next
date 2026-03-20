@@ -343,9 +343,25 @@ flowchart TD
 
 ## Debugging
 
-| Variable                                | What it shows                                                                          |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` | Every GraphQL request: auth mode, endpoint URL, HTTP status, request/response payloads |
+| Variable                                | What it shows                                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` | Verbose GraphQL client logs (auth mode, endpoint URL, HTTP status, request/response payloads)         |
+| `WORDPRESS_GRAPHQL_DEBUG=1`             | Server-side GraphQL debug logs where this flag is checked                                               |
+| `GRAPHQL_DELAY_MS`                      | Adds artificial delay to every GraphQL request (diagnostics only; keep `0` in production)              |
+
+**Production recommendation:** keep `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=0`, `WORDPRESS_GRAPHQL_DEBUG=0`, and `GRAPHQL_DELAY_MS=0` unless you are actively troubleshooting.
+
+### WordPress Production Flags
+
+In `wp-config.php` (production), keep these disabled:
+
+```php
+define('WP_DEBUG', false);
+define('WP_DEBUG_LOG', false);
+define('SCRIPT_DEBUG', false);
+define('SAVEQUERIES', false);
+define('GRAPHQL_DEBUG', false);
+```
 
 On Cloudflare Workers, use `npx wrangler tail --format pretty` to stream live production logs.
 

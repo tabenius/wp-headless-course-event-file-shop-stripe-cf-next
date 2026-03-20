@@ -326,9 +326,25 @@ flowchart TD
 
 ## Felsökning
 
-| Variabel                                | Vad den visar                                                                        |
-| --------------------------------------- | ------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` | Varje GraphQL-anrop: autentiseringsläge, endpoint-URL, HTTP-status, request/response |
+| Variabel                                | Vad den visar                                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=1` | Utförliga GraphQL-klientloggar (auth-läge, endpoint-URL, HTTP-status, request/response)             |
+| `WORDPRESS_GRAPHQL_DEBUG=1`             | Server-side GraphQL-felsökningsloggar där flaggan används                                             |
+| `GRAPHQL_DELAY_MS`                      | Lägger artificiell fördröjning på varje GraphQL-anrop (endast felsökning; håll `0` i produktion)     |
+
+**Rekommendation för produktion:** håll `NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG=0`, `WORDPRESS_GRAPHQL_DEBUG=0` och `GRAPHQL_DELAY_MS=0` om du inte aktivt felsöker.
+
+### WordPress-flaggor för produktion
+
+I `wp-config.php` (produktion), håll dessa avstängda:
+
+```php
+define('WP_DEBUG', false);
+define('WP_DEBUG_LOG', false);
+define('SCRIPT_DEBUG', false);
+define('SAVEQUERIES', false);
+define('GRAPHQL_DEBUG', false);
+```
 
 På Cloudflare Workers: `npx wrangler tail --format pretty` strömmar produktionsloggar i realtid.
 
