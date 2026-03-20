@@ -1838,3 +1838,23 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npm run lint` (pass; existing unrelated `<img>` warnings remain).
   - PHP runtime lint unavailable in this environment (`php` binary missing).
+
+---
+
+## 2026-03-20 (cont. 36)
+
+### Codex — Root build now copies plugin zip into `ragbaz.xyz/release`
+
+- Updated root build pipeline in `package.json`:
+  - Added `postbuild` hook: `npm run plugin:copy` (so `npm run build` now also emits plugin artifacts).
+  - Refactored `plugin:copy` to use a dedicated Node script instead of inline shell copy.
+
+- Added `scripts/copy-plugin-zip.mjs`:
+  - Verifies source zip exists at `packages/ragbaz-articulate-plugin/dist/Ragbaz-Articulate.zip`.
+  - Copies the artifact to both destinations:
+    - `public/downloads/ragbaz-articulate/Ragbaz-Articulate.zip`
+    - `ragbaz.xyz/release/Ragbaz-Articulate.zip`
+
+- Validation:
+  - `npm run plugin:copy` (pass; zip rebuilt and copied to both destinations).
+  - Verified resulting files exist in both target paths.
