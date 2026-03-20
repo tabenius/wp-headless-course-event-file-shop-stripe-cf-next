@@ -629,7 +629,7 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights })
   const baseUrl = normalizeWordPressUrl();
   if (!baseUrl) throw new Error("WordPress URL is not configured.");
   const auth = getWordPressGraphqlAuth();
-  const payload = {
+  const payloadWithMeta = {
     title: metadata.title,
     caption: metadata.caption,
     description: metadata.description,
@@ -644,24 +644,49 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights })
       ragbaz_asset_license: rights.license,
     },
   };
-  const response = await fetch(`${baseUrl}/wp-json/wp/v2/media/${sourceId}`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(auth?.authorization ? { Authorization: auth.authorization } : {}),
-      ...(auth?.headers || {}),
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
+  const payloadWithoutMeta = {
+    title: metadata.title,
+    caption: metadata.caption,
+    description: metadata.description,
+    alt_text: metadata.altText,
+  };
+
+  async function postUpdate(payload) {
+    const response = await fetch(`${baseUrl}/wp-json/wp/v2/media/${sourceId}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(auth?.authorization ? { Authorization: auth.authorization } : {}),
+        ...(auth?.headers || {}),
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+    const text = await response.text().catch(() => "");
+    return {
+      ok: response.ok,
+      status: response.status,
+      text,
+    };
+  }
+
+  let result = await postUpdate(payloadWithMeta);
+  if (!result.ok && result.status === 400) {
+    result = await postUpdate(payloadWithoutMeta);
+  }
+  if (!result.ok) {
     throw new Error(
-      `WordPress attachment update failed (${response.status}) ${body.slice(0, 160)}`.trim(),
+      `WordPress attachment update failed (${result.status}) ${result.text.slice(0, 160)}`.trim(),
     );
   }
-  const row = await response.json().catch(() => null);
+
+  let row = null;
+  try {
+    row = JSON.parse(result.text || "null");
+  } catch {
+    row = null;
+  }
   if (!row || typeof row !== "object") return null;
   return normalizeWordPressMediaRow(row);
 }
