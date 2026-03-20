@@ -1690,3 +1690,38 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `npm run lint` (warnings only)
   - `npm test` (pass)
   - `npm run build` (pass)
+
+---
+
+## 2026-03-20 (cont. 31)
+
+### Codex — public storefront performance pass (caching + latency)
+
+- Refactored shared public header auth path to remove server-side session reads from `Header`:
+  - Added `HeaderNavClient` to resolve user session on the client via `/api/auth/session`.
+  - Kept inventory link behavior for logged-in users and preserved desktop/mobile auth controls.
+  - Added memoized menu fetch (`cache(...)`) in `src/lib/menu.js`.
+- Catch-all content route performance:
+  - Removed explicit `force-dynamic` on `src/app/[...uri]/page.js`.
+  - Added cached shared node resolver (`resolveNodeByUri`) used by both `generateMetadata` and page render to avoid duplicate upstream content fetches.
+  - Parallelized fallback lookups (`fetchRestFallback` + `fetchCourseFallback`) after `nodeByUri` miss.
+- GraphQL request overhead:
+  - Changed default `GRAPHQL_DELAY_MS` fallback from `150` to `0` in `src/lib/client.js` and `src/lib/courseAccess.js` (still env-configurable).
+  - Expanded debug toggle to support server-side `WORDPRESS_GRAPHQL_DEBUG=1` (with existing `NEXT_PUBLIC_*` fallback).
+- Shop latency reduction:
+  - Added `listAccessibleCourseUris(...)` in `src/lib/courseAccess.js` to batch access checks.
+  - Replaced per-item `hasCourseAccess(...)` fan-out in `src/app/shop/page.js` with the new batched call.
+- Media delivery + bootstrap fetch:
+  - Re-enabled image optimization in storefront cards/detail by removing `unoptimized` and adding `sizes` in `ShopIndex` and `ShopProductDetail`.
+  - Changed layout site-style bootstrap fetch from `cache: 'no-store'` to default cache behavior (`/api/site-style` already serves public cache headers).
+- Build output hardening:
+  - Made `productionBrowserSourceMaps` opt-in (`PRODUCTION_BROWSER_SOURCEMAPS=1`).
+
+- Local verification snapshots (post-change, `next start`):
+  - `/`, `/courses`, `/events`, `/blog` now return `x-nextjs-cache: HIT` with `Cache-Control: s-maxage=1800, stale-while-revalidate=31534200`.
+  - `TTFB` for cached public routes dropped to low milliseconds locally (~2–7ms after warmup); `/shop` remains dynamic as expected.
+
+- Validation:
+  - `npx eslint` (targeted touched files)
+  - `npm test` (pass)
+  - `npm run build` (pass)
