@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-20 (Codex)**: Investigated product image-picker regression timeline and restored the near-working click path from ~`2026-03-19 20:43 UTC` (`cb8bc56`) by reverting to plain `onClick={openPicker}` in `ImagePickerButton` and plain `input.click()` in `ImageUploader.openFilePicker` (no extra event interception).
 - **2026-03-20 (Codex)**: Fixed product-editor image picker click reliability by removing fragile `showPicker()` usage in `ImageUploader` (use direct `input.click()`), and hardening `ImagePickerButton` click handling with explicit `preventDefault`/`stopPropagation` plus `pointer-events-auto` on the trigger surface.
 - **2026-03-19 (Codex)**: Increased admin menu-bar chroma toward red-orange by shifting header/control hues from ~33° to ~22° and raising saturation/brightness across bar, hamburger/status controls, drawer/tooltip, and language selector surfaces.
 - **2026-03-19 (Codex)**: Temporarily disabled Info-banner Sierpinski background layers and pendulum motion via explicit feature flags in `TorusBanner` (`ENABLE_SIERPINSKI_LAYERS=false`, `ENABLE_PENDULUM_MOVEMENT=false`) while keeping all rendering code intact for quick re-enable.

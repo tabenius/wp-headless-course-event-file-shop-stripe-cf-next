@@ -11,6 +11,17 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
 TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
 
+## 2026-03-20 (cont. 72)
+
+### Codex — regression timeline check + revert to near-working picker interaction
+
+- Reviewed image-picker history around ~4 hours prior (`2026-03-19 20:30–21:30 UTC`) and identified `cb8bc56` (`20:43 UTC`) as the closest “almost working” baseline for trigger behavior.
+- Reverted current interaction wiring to match that baseline:
+  - `ImagePickerButton`: back to straightforward `onClick={openPicker}` (removed pointer-down/keyboard event-interception layer).
+  - `ImageUploader.openFilePicker`: plain `input.click()` path with no extra event handling.
+- Kept visual affordance improvements in place while simplifying click flow to reduce Brave-specific gesture blocking risk.
+- Verification: `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only).
+
 ## 2026-03-20 (cont. 71)
 
 ### Codex — product image picker clickable-area reliability fix

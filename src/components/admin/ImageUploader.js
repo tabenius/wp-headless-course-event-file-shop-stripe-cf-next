@@ -149,9 +149,7 @@ export default function ImageUploader({
     [emitError],
   );
 
-  const openFilePicker = useCallback((event) => {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
+  const openFilePicker = useCallback(() => {
     const input = fileInputRef.current;
     if (!input) return;
     input.value = "";
