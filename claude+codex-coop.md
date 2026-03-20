@@ -37,6 +37,7 @@ TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose 
   - per-item annotate panel for title/caption/description/alt/tooltip + copyright/license,
   - quick “suggest alt/tooltip” helper from existing metadata seed,
   - save flow with success/error toasts and refresh.
+- Follow-up hardening: when a WordPress install rejects unknown attachment `meta` keys, the media-library save route now retries the update without custom meta so title/caption/description/alt edits still persist.
 - Added/updated EN/SV/ES i18n keys for media tab + annotation labels and uploader variant/rights controls.
 - Verification:
   - `npm run lint` passes (existing non-blocking `@next/next/no-img-element` warnings only),
