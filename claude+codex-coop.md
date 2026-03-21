@@ -42,6 +42,13 @@ TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose 
   - `npm test` (passes: `144` pass, `0` fail, `3` skipped),
   - `npm run build` (passes; route generation successful, with known intermittent WordPress/GraphQL fetch noise during static generation).
 
+## 2026-03-21 (Codex)
+
+### Codex — derivation preview matrix + parameter guardrails (in progress)
+
+- Added derivation summary badges/screens in the Media tab: pseudo-name, concrete vs abstract state, unbound-parameter chips, and an operation matrix table that highlights which parameters are preset and which are left open.
+- Prevented `Apply derivation` from running while parameters remain unbound and documented the requirement in README/AGENTS to keep abstract chains reusable until a concrete asset is chosen.
+
 ## 2026-03-20 (cont. 81)
 
 ### Codex — owner URI inheritance groundwork for asset records

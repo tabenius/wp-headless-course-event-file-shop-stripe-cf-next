@@ -4,9 +4,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  OPERATION_SCHEMAS,
+  cloneOperations,
+  bindOperationsToAsset,
+} from "@/lib/derivationEngine";
 
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const MAX_DATA_ASSET_BYTES = 100 * 1024 * 1024;
+const MAX_IMAGE_MB = Math.round(MAX_IMAGE_BYTES / 1024 / 1024);
+const MAX_DATA_MB = Math.round(MAX_DATA_ASSET_BYTES / 1024 / 1024);
+const HISTORY_MAX_ENTRIES = 6;
 const DATA_ASSET_EXTENSIONS = new Set([
   "json",
   "yaml",
@@ -65,6 +73,55 @@ function sourceBadgeClass(source) {
   return "bg-gray-100 text-gray-700";
 }
 
+const PRESET_CROP_OPTIONS = [
+  { value: "4:5", label: "4:5 portrait" },
+  { value: "1:1", label: "Instagram square" },
+  { value: "9:16", label: "Stories (9:16)" },
+  { value: "3:4", label: "Tower" },
+  { value: "16:9", label: "Banner" },
+  { value: "2:1", label: "Hero (2:1)" },
+  { value: "21:9", label: "Ultra-wide (21:9)" },
+];
+
+function buildPseudoDerivationName(operations) {
+  if (!Array.isArray(operations) || operations.length === 0) return "empty";
+  return operations
+    .map((operation) => OPERATION_SCHEMAS[operation.type]?.label || operation.type)
+    .map((label) => label.toLowerCase())
+    .join(" · ");
+}
+
+function getUnboundParameters(operations) {
+  if (!Array.isArray(operations)) return [];
+  return operations.flatMap((operation) => {
+    if (operation.type === "source") return [];
+    const schema = OPERATION_SCHEMAS[operation.type];
+    return (schema?.parameters || [])
+      .filter((param) => operation.params?.[param.key] == null)
+      .map((param) => ({
+        operator: schema?.label || operation.type,
+        param: param.key,
+      }));
+  });
+}
+
+function describeOperationParameters(operation) {
+  const schema = OPERATION_SCHEMAS[operation.type];
+  return (schema?.parameters || []).map((param) => {
+    if (param.key === "assetId") return null;
+    const value = operation.params?.[param.key];
+    return value == null ? param.key : `${param.key}=${value}`;
+  }).filter(Boolean);
+}
+
+function formatParameterValue(value) {
+  if (value == null) return "";
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value.toString() : String(value);
+  }
+  return String(value);
+}
+
 function canPreviewImage(item) {
   const mime = String(item?.mimeType || "").toLowerCase();
   if (mime.startsWith("image/")) return true;
@@ -113,6 +170,35 @@ function canOpenDataViewer(item) {
   if (mime.includes("markdown")) return true;
   if (mime.includes("sqlite")) return true;
   return false;
+}
+
+function resolveAssetType(item) {
+  if (!item || typeof item !== "object") return "other";
+  if (canPreviewImage(item)) return "image";
+  if (canOpenDataViewer(item)) return "data";
+  return "other";
+}
+
+function parseTimestamp(value) {
+  const parsed = Date.parse(String(value || ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseSize(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function buildUploadHistoryEntry({ name, status, detail, url, backend }) {
+  return {
+    id: `${status}-${name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    name: String(name || "untitled"),
+    status: String(status || "info"),
+    detail: String(detail || ""),
+    url: String(url || ""),
+    backend: String(backend || ""),
+    timestamp: Date.now(),
+  };
 }
 
 function normalizeEditorValue(value, max = 600) {
@@ -184,6 +270,8 @@ export default function AdminMediaLibraryTab({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("updated-desc");
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
@@ -197,12 +285,29 @@ export default function AdminMediaLibraryTab({
   const [uploadCount, setUploadCount] = useState(0);
   const [uploadError, setUploadError] = useState("");
   const [uploadStatus, setUploadStatus] = useState("");
+  const [uploadHistory, setUploadHistory] = useState([]);
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedUploadBackend, setSelectedUploadBackend] = useState("wordpress");
+  const [focusedItemId, setFocusedItemId] = useState("");
   const [viewerItem, setViewerItem] = useState(null);
   const [viewerLoading, setViewerLoading] = useState(false);
   const [viewerError, setViewerError] = useState("");
   const [viewerData, setViewerData] = useState(null);
+  const [derivations, setDerivations] = useState([]);
+  const [selectedDerivationId, setSelectedDerivationId] = useState("");
+  const [customOperations, setCustomOperations] = useState([]);
+  const [derivationError, setDerivationError] = useState("");
+  const [applyingDerivation, setApplyingDerivation] = useState(false);
+  const [showAllDerivations, setShowAllDerivations] = useState(false);
+  const [editorId, setEditorId] = useState("");
+  const [editorName, setEditorName] = useState("");
+  const [editorDescription, setEditorDescription] = useState("");
+  const [editorAssetTypes, setEditorAssetTypes] = useState([]);
+  const [newOperationType, setNewOperationType] = useState(Object.keys(OPERATION_SCHEMAS)[0] || "");
+  const [derivationSaveStatus, setDerivationSaveStatus] = useState("");
+  const [derivationSaveError, setDerivationSaveError] = useState("");
+  const [lastDerivedAsset, setLastDerivedAsset] = useState(null);
+  const [savedDerivedAssets, setSavedDerivedAssets] = useState([]);
   const uploadInputRef = useRef(null);
   const dragDepthRef = useRef(0);
 
@@ -290,16 +395,272 @@ export default function AdminMediaLibraryTab({
     loadLibrary();
   }, [loadLibrary, refreshToken]);
 
-  const rows = useMemo(() => items, [items]);
-  const selectedItem = useMemo(
-    () => rows.find((item) => item.id === selectedId) || null,
-    [rows, selectedId],
+  async function loadDerivations() {
+    try {
+      const response = await fetch("/api/admin/derivations");
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || t("admin.mediaDerivationsLoadFailed", "Could not load derivations."));
+      }
+      setDerivations(Array.isArray(json.derivations) ? json.derivations : []);
+    } catch (derivationLoadError) {
+      setDerivationError(
+        derivationLoadError instanceof Error
+          ? derivationLoadError.message
+          : t("admin.mediaDerivationsLoadFailed", "Could not load derivations."),
+      );
+    }
+  }
+
+  useEffect(() => {
+    loadDerivations();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem("savedDerivedAssets");
+      if (stored) {
+        setSavedDerivedAssets(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("savedDerivedAssets", JSON.stringify(savedDerivedAssets));
+  }, [savedDerivedAssets]);
+
+  useEffect(() => {
+    if (!selectedDerivationId && derivations.length > 0) {
+      setSelectedDerivationId(derivations[0].id);
+    }
+  }, [derivations, selectedDerivationId]);
+
+  const rows = useMemo(() => {
+    let nextRows = Array.isArray(items) ? [...items] : [];
+    if (typeFilter === "image") {
+      nextRows = nextRows.filter((item) => resolveAssetType(item) === "image");
+    } else if (typeFilter === "data") {
+      nextRows = nextRows.filter((item) => resolveAssetType(item) === "data");
+    } else if (typeFilter === "other") {
+      nextRows = nextRows.filter((item) => resolveAssetType(item) === "other");
+    }
+
+    nextRows.sort((left, right) => {
+      if (sortOrder === "name-asc") {
+        return String(left?.title || "").localeCompare(String(right?.title || ""));
+      }
+      if (sortOrder === "name-desc") {
+        return String(right?.title || "").localeCompare(String(left?.title || ""));
+      }
+      if (sortOrder === "size-desc") {
+        return parseSize(right?.sizeBytes) - parseSize(left?.sizeBytes);
+      }
+      if (sortOrder === "size-asc") {
+        return parseSize(left?.sizeBytes) - parseSize(right?.sizeBytes);
+      }
+      if (sortOrder === "updated-asc") {
+        return parseTimestamp(left?.updatedAt) - parseTimestamp(right?.updatedAt);
+      }
+      return parseTimestamp(right?.updatedAt) - parseTimestamp(left?.updatedAt);
+    });
+
+    return nextRows;
+  }, [items, sortOrder, typeFilter]);
+
+  const focusedItem = useMemo(
+    () => rows.find((item) => item.id === focusedItemId) || null,
+    [rows, focusedItemId],
   );
+  useEffect(() => {
+    if (focusedItemId && !focusedItem) {
+      setFocusedItemId("");
+    }
+  }, [focusedItem, focusedItemId]);
+
+  const selectedItem = useMemo(
+    () => items.find((item) => item.id === selectedId) || null,
+    [items, selectedId],
+  );
+
+  const selectedDerivation = useMemo(
+    () => derivations.find((entry) => entry.id === selectedDerivationId) || null,
+    [derivations, selectedDerivationId],
+  );
+
+  const focusedAssetType = useMemo(
+    () => (focusedItem ? resolveAssetType(focusedItem) : null),
+    [focusedItem],
+  );
+
+  const focusedAssetTypeLabel = useMemo(() => {
+    if (!focusedAssetType) return "";
+    if (focusedAssetType === "image") return t("admin.mediaTypeImage", "Images");
+    if (focusedAssetType === "data") return t("admin.mediaTypeData", "Data files");
+    return t("admin.mediaTypeOther", "Other");
+  }, [focusedAssetType]);
+
+  const filteredDerivations = useMemo(() => {
+    if (showAllDerivations || !focusedAssetType) return derivations;
+    return derivations.filter((entry) => {
+      const assetTypes = Array.isArray(entry.assetTypes) ? entry.assetTypes : [];
+      return assetTypes.length === 0 || assetTypes.includes(focusedAssetType);
+    });
+  }, [derivations, focusedAssetType, showAllDerivations]);
+
+  const availableDerivations = showAllDerivations ? derivations : filteredDerivations;
+
+  useEffect(() => {
+    if (availableDerivations.length === 0) {
+      setSelectedDerivationId("");
+      return;
+    }
+    if (
+      !selectedDerivationId ||
+      !availableDerivations.some((entry) => entry.id === selectedDerivationId)
+    ) {
+      setSelectedDerivationId(availableDerivations[0].id);
+    }
+  }, [availableDerivations, selectedDerivationId]);
+
+  const derivationUnboundParameters = useMemo(
+    () => getUnboundParameters(customOperations),
+    [customOperations],
+  );
+  const derivationPseudoName = useMemo(
+    () => buildPseudoDerivationName(customOperations),
+    [customOperations],
+  );
+  const derivationMatrixRows = useMemo(() => {
+    return customOperations.map((operation, index) => {
+      const schema = OPERATION_SCHEMAS[operation.type];
+      const params = (schema?.parameters || []).map((param) => {
+        const value = operation.params?.[param.key];
+        return {
+          key: param.key,
+          label: param.label,
+          bound: value != null,
+          value,
+        };
+      });
+      return {
+        index,
+        operation,
+        schema,
+        params,
+      };
+    });
+  }, [customOperations]);
+  const derivationIsConcrete = derivationUnboundParameters.length === 0;
+
+  useEffect(() => {
+    if (!selectedDerivation) {
+      setCustomOperations([]);
+      return;
+    }
+    setCustomOperations(cloneOperations(selectedDerivation.operations));
+    setEditorId(selectedDerivation.id || "");
+    setEditorName(selectedDerivation.name || "");
+    setEditorDescription(selectedDerivation.description || "");
+    setEditorAssetTypes(Array.isArray(selectedDerivation.assetTypes) ? [...selectedDerivation.assetTypes] : []);
+  }, [selectedDerivation]);
+
+  useEffect(() => {
+    if (!focusedItem) return;
+    setCustomOperations((current) => {
+      const hasSource = current.some((operation) => operation.type === "source");
+      if (!hasSource) return current;
+      let updated = null;
+      const targetId = focusedItem.id || "";
+      updated = current.map((operation) => {
+        if (operation.type !== "source") return operation;
+        if (operation.params?.assetId === targetId) return operation;
+        return {
+          ...operation,
+          params: {
+            ...operation.params,
+            assetId: targetId,
+          },
+        };
+      });
+      return updated;
+    });
+  }, [focusedItem]);
+
+  const rowStats = useMemo(() => {
+    let imageCount = 0;
+    let dataCount = 0;
+    let otherCount = 0;
+    let totalBytes = 0;
+    for (const row of rows) {
+      const type = resolveAssetType(row);
+      if (type === "image") imageCount += 1;
+      else if (type === "data") dataCount += 1;
+      else otherCount += 1;
+      totalBytes += parseSize(row?.sizeBytes);
+    }
+    return {
+      shownCount: rows.length,
+      totalCount: Array.isArray(items) ? items.length : 0,
+      totalBytes,
+      imageCount,
+      dataCount,
+      otherCount,
+    };
+  }, [items, rows]);
+
+  const historyStatusLabel = (status) => {
+    if (status === "uploaded") {
+      return t("admin.mediaHistoryStatusUploaded", "Uploaded");
+    }
+    if (status === "error") {
+      return t("admin.mediaHistoryStatusError", "Error");
+    }
+    if (status === "skipped") {
+      return t("admin.mediaHistoryStatusSkipped", "Skipped");
+    }
+    return String(status || "info");
+  };
+
+  const openHistoryUrl = (url) => {
+    if (!url) return;
+    window.open(url, "_blank", "noreferrer");
+  };
+
+  const formatHistoryTimestamp = (value) => {
+    if (!value) return "";
+    const time = Number(value);
+    if (!Number.isFinite(time)) return "";
+    return new Date(time).toLocaleTimeString("sv-SE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   useEffect(() => {
     if (!selectedItem) return;
     setEditor((current) => current || toEditorState(selectedItem));
   }, [selectedItem]);
+
+  useEffect(() => {
+    if (!selectedItem && !viewerItem) return undefined;
+    function handleEscape(event) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      if (viewerItem) {
+        closeViewer();
+        return;
+      }
+      if (selectedItem) {
+        closeEditor();
+      }
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [selectedItem, viewerItem, closeEditor, closeViewer]);
 
   async function copyUrl(url) {
     if (!url || !navigator?.clipboard?.writeText) return;
@@ -319,12 +680,19 @@ export default function AdminMediaLibraryTab({
     setSaveSuccess("");
   }
 
-  function closeEditor() {
+  const closeEditor = useCallback(() => {
     setSelectedId("");
     setEditor(null);
     setSaveError("");
     setSaveSuccess("");
-  }
+  }, []);
+
+  const closeViewer = useCallback(() => {
+    setViewerItem(null);
+    setViewerData(null);
+    setViewerError("");
+    setViewerLoading(false);
+  }, []);
 
   function suggestAnnotations() {
     setEditor((current) => {
@@ -452,20 +820,41 @@ export default function AdminMediaLibraryTab({
       const maxBytes = kind === "image" ? MAX_IMAGE_BYTES : MAX_DATA_ASSET_BYTES;
       return file.size <= maxBytes;
     });
+
+    const unsupportedMessage = t(
+      "admin.mediaUploadUnsupported",
+      "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
+    );
+    const oversizedMessage = t(
+      "admin.mediaUploadTooLargeMixed",
+      "Some files exceeded size limits (images: {imageMb} MB, data files: {dataMb} MB).",
+      { imageMb: 20, dataMb: 100 },
+    );
+    const skippedEntries = [
+      ...unsupported.map((file) =>
+        buildUploadHistoryEntry({
+          name: file.name,
+          status: "skipped",
+          detail: unsupportedMessage,
+          backend: selectedUploadBackend,
+        }),
+      ),
+      ...oversized.map((file) =>
+        buildUploadHistoryEntry({
+          name: file.name,
+          status: "skipped",
+          detail: oversizedMessage,
+          backend: selectedUploadBackend,
+        }),
+      ),
+    ];
+
     if (valid.length === 0) {
-      setUploadStatus("");
-      setUploadError(
-        unsupported.length > 0
-          ? t(
-              "admin.mediaUploadUnsupported",
-              "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
-            )
-          : t(
-              "admin.mediaUploadTooLargeMixed",
-              "Some files exceeded size limits (images: {imageMb} MB, data files: {dataMb} MB).",
-              { imageMb: 20, dataMb: 100 },
-            ),
+      setUploadHistory((prev) =>
+        [...skippedEntries, ...prev].slice(0, HISTORY_MAX_ENTRIES),
       );
+      setUploadStatus("");
+      setUploadError(unsupported.length > 0 ? unsupportedMessage : oversizedMessage);
       return;
     }
 
@@ -475,8 +864,14 @@ export default function AdminMediaLibraryTab({
     setUploadStatus(t("admin.mediaUploadUploading", { n: valid.length }));
     let succeeded = 0;
     const errors = [];
+    const attemptEntries = [];
 
     for (const file of valid) {
+      const entry = buildUploadHistoryEntry({
+        name: file.name,
+        status: "pending",
+        backend: selectedUploadBackend,
+      });
       try {
         const formData = new FormData();
         formData.append("file", file, file.name || "media-asset");
@@ -495,13 +890,21 @@ export default function AdminMediaLibraryTab({
         if (!response.ok || !json?.ok) {
           throw new Error(json?.error || t("admin.mediaUploadFailed"));
         }
+        entry.status = "uploaded";
+        entry.url = json?.url || entry.url;
+        entry.detail = json?.title || "";
+        entry.backend = json?.backend || entry.backend;
         succeeded += 1;
       } catch (uploadSingleError) {
-        errors.push(
+        entry.status = "error";
+        const message =
           uploadSingleError instanceof Error
             ? uploadSingleError.message
-            : t("admin.mediaUploadFailed"),
-        );
+            : t("admin.mediaUploadFailed");
+        entry.detail = message;
+        errors.push(message);
+      } finally {
+        attemptEntries.push(entry);
       }
     }
 
@@ -529,33 +932,16 @@ export default function AdminMediaLibraryTab({
     }
 
     if (failed > 0 || skipped > 0) {
-      const parts = [];
+      const summaryParts = [];
       if (failed > 0) {
-        parts.push(t("admin.mediaUploadFailed"));
+        summaryParts.push(t("admin.mediaUploadFailed"));
       }
       if (skipped > 0) {
-        if (unsupported.length > 0) {
-          parts.push(
-            t(
-              "admin.mediaUploadUnsupported",
-              "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
-            ),
-          );
-        }
-        if (oversized.length > 0) {
-          parts.push(
-            t(
-              "admin.mediaUploadTooLargeMixed",
-              "Some files exceeded size limits (images: {imageMb} MB, data files: {dataMb} MB).",
-              { imageMb: 20, dataMb: 100 },
-            ),
-          );
-        }
+        if (unsupported.length > 0) summaryParts.push(unsupportedMessage);
+        if (oversized.length > 0) summaryParts.push(oversizedMessage);
       }
-      if (errors[0]) {
-        parts.push(errors[0]);
-      }
-      const message = parts.filter(Boolean).join(" ");
+      if (errors[0]) summaryParts.push(errors[0]);
+      const message = summaryParts.filter(Boolean).join(" ");
       setUploadError(message);
       window.dispatchEvent(
         new CustomEvent("toast", {
@@ -564,6 +950,13 @@ export default function AdminMediaLibraryTab({
       );
     } else {
       setUploadError("");
+    }
+
+    const combinedHistory = [...attemptEntries, ...skippedEntries];
+    if (combinedHistory.length > 0) {
+      setUploadHistory((prev) =>
+        [...combinedHistory, ...prev].slice(0, HISTORY_MAX_ENTRIES),
+      );
     }
 
     setUploading(false);
@@ -624,11 +1017,177 @@ export default function AdminMediaLibraryTab({
     uploadAssetFiles(files);
   }
 
-  function closeViewer() {
-    setViewerItem(null);
-    setViewerData(null);
-    setViewerError("");
-    setViewerLoading(false);
+  function handleOperationParamChange(operationIndex, key, rawValue) {
+    setCustomOperations((current) =>
+      current.map((operation, index) => {
+        if (index !== operationIndex) return operation;
+        const schemaParam = OPERATION_SCHEMAS[operation.type]?.parameters?.find(
+          (param) => param.key === key,
+        );
+        let value = rawValue;
+        if (typeof rawValue === "string" && rawValue.trim() === "") {
+          value = undefined;
+        } else if (schemaParam?.type === "number") {
+          const parsed = Number(rawValue);
+          value = Number.isFinite(parsed) ? parsed : rawValue;
+        }
+        const nextParams = { ...operation.params };
+        if (value === undefined) {
+          delete nextParams[key];
+        } else {
+          nextParams[key] = value;
+        }
+        return {
+          ...operation,
+          params: nextParams,
+        };
+      }),
+    );
+  }
+
+  function handleAddOperation() {
+    if (!newOperationType) return;
+    const schema = OPERATION_SCHEMAS[newOperationType];
+    const defaultParams = {};
+    schema?.parameters?.forEach((param) => {
+      if (param.type === "number") {
+        if (param.key === "x" || param.key === "y") {
+          defaultParams[param.key] = 0.5;
+        } else if (param.key === "size") {
+          defaultParams[param.key] = 24;
+        } else {
+          defaultParams[param.key] = typeof param.min === "number" ? param.min : 0;
+        }
+      } else if (param.key === "preset") {
+        defaultParams[param.key] = PRESET_CROP_OPTIONS[0]?.value || "";
+      } else if (param.key === "typeface") {
+        defaultParams[param.key] = "Inter";
+      } else if (param.key === "text") {
+        defaultParams[param.key] = "Caption";
+      } else {
+        defaultParams[param.key] = "";
+      }
+    });
+    setCustomOperations((current) => [...current, { type: newOperationType, params: defaultParams }]);
+  }
+
+  function handleRemoveOperation(operationIndex) {
+    setCustomOperations((current) => current.filter((_, index) => index !== operationIndex));
+  }
+
+  function handleToggleAssetType(type) {
+    setEditorAssetTypes((current) =>
+      current.includes(type) ? current.filter((value) => value !== type) : [...current, type],
+    );
+  }
+
+  async function saveDerivationTemplate() {
+    if (!editorId.trim() || !editorName.trim() || customOperations.length === 0) {
+      setDerivationSaveStatus("error");
+      setDerivationSaveError(
+        t(
+          "admin.mediaDerivationSaveValidation",
+          "Derivation id, name, and at least one operation are required.",
+        ),
+      );
+      return;
+    }
+    setDerivationSaveStatus("saving");
+    setDerivationSaveError("");
+    try {
+      const response = await fetch("/api/admin/derivations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editorId.trim(),
+          name: editorName.trim(),
+          description: editorDescription.trim(),
+          assetTypes: editorAssetTypes,
+          operations: customOperations,
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || t("admin.mediaDerivationSaveFailed", "Could not save derivation."));
+      }
+      setDerivationSaveStatus("saved");
+      loadDerivations();
+      setSelectedDerivationId(json.derivation?.id || editorId.trim());
+    } catch (saveError) {
+      setDerivationSaveStatus("error");
+      setDerivationSaveError(
+        saveError instanceof Error
+          ? saveError.message
+          : t("admin.mediaDerivationSaveFailed", "Could not save derivation."),
+      );
+    }
+  }
+
+  function handleSaveDerivedAsset() {
+    if (!lastDerivedAsset) return;
+    const entry = {
+      id: lastDerivedAsset.id || `${selectedDerivationId || "derived"}-${Date.now()}`,
+      title: lastDerivedAsset.title || selectedDerivation?.name || "Derived asset",
+      url: lastDerivedAsset.url || "",
+      operations: Array.isArray(lastDerivedAsset.operations) ? lastDerivedAsset.operations : [],
+      timestamp: Date.now(),
+    };
+    setSavedDerivedAssets((current) => {
+      const filtered = current.filter((item) => item.id !== entry.id);
+      return [entry, ...filtered].slice(0, 20);
+    });
+  }
+
+  async function applySelectedDerivation() {
+    if (!selectedDerivation || !focusedItem) {
+      setDerivationError(t("admin.mediaDerivationRequiresSelection", "Select a derivation and an asset first."));
+      return;
+    }
+    if (derivationUnboundParameters.length > 0) {
+      setDerivationError(
+        t(
+          "admin.mediaDerivationFillParameters",
+          "Fill all operation parameters before applying the derivation.",
+        ),
+      );
+      return;
+    }
+    const operationsToApply = bindOperationsToAsset(customOperations, focusedItem?.id);
+    setApplyingDerivation(true);
+    setDerivationError("");
+    try {
+      const response = await fetch("/api/admin/derivations/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          derivationId: selectedDerivation.id,
+          asset: focusedItem,
+          operations: operationsToApply,
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || t("admin.mediaDerivationFailed", "Could not apply derivation."));
+      }
+      setLastDerivedAsset(json.derived || null);
+      const entry = buildUploadHistoryEntry({
+        name: json.derived?.title || selectedDerivation.name,
+        status: "uploaded",
+        detail: t("admin.mediaDerivationApplied", "Derived asset created"),
+        url: json.derived?.url,
+        backend: "derived",
+      });
+      setUploadHistory((prev) => [entry, ...prev].slice(0, HISTORY_MAX_ENTRIES));
+      setFocusedItemId(json.derived?.id || entry.id);
+    } catch (applyError) {
+      setDerivationError(
+        applyError instanceof Error
+          ? applyError.message
+          : t("admin.mediaDerivationFailed", "Could not apply derivation."),
+      );
+    } finally {
+      setApplyingDerivation(false);
+    }
   }
 
   async function openViewer(item) {
@@ -661,6 +1220,13 @@ export default function AdminMediaLibraryTab({
       setViewerLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!focusedItem) return;
+    window.dispatchEvent(
+      new CustomEvent("mediaAssetSelected", { detail: focusedItem }),
+    );
+  }, [focusedItem]);
 
   return (
     <div className="border rounded p-5 space-y-4 bg-white min-w-0">
@@ -705,6 +1271,88 @@ export default function AdminMediaLibraryTab({
             {option.label}
           </button>
         ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-xs text-gray-600">
+          <span>{t("admin.mediaTypeFilter", "Asset type")}</span>
+          <select
+            value={typeFilter}
+            onChange={(event) => setTypeFilter(event.target.value)}
+            className="border rounded px-2 py-1 text-xs bg-white"
+          >
+            <option value="all">{t("admin.mediaTypeAll", "All")}</option>
+            <option value="image">{t("admin.mediaTypeImage", "Images")}</option>
+            <option value="data">{t("admin.mediaTypeData", "Data files")}</option>
+            <option value="other">{t("admin.mediaTypeOther", "Other")}</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-xs text-gray-600">
+          <span>{t("admin.mediaSortBy", "Sort by")}</span>
+          <select
+            value={sortOrder}
+            onChange={(event) => setSortOrder(event.target.value)}
+            className="border rounded px-2 py-1 text-xs bg-white"
+          >
+            <option value="updated-desc">
+              {t("admin.mediaSortUpdatedDesc", "Newest first")}
+            </option>
+            <option value="updated-asc">
+              {t("admin.mediaSortUpdatedAsc", "Oldest first")}
+            </option>
+            <option value="size-desc">
+              {t("admin.mediaSortSizeDesc", "Largest size")}
+            </option>
+            <option value="size-asc">
+              {t("admin.mediaSortSizeAsc", "Smallest size")}
+            </option>
+            <option value="name-asc">
+              {t("admin.mediaSortNameAsc", "Name A–Z")}
+            </option>
+            <option value="name-desc">
+              {t("admin.mediaSortNameDesc", "Name Z–A")}
+            </option>
+          </select>
+        </label>
+        {(sourceFilter !== "all" ||
+          typeFilter !== "all" ||
+          sortOrder !== "updated-desc" ||
+          searchTerm) && (
+          <button
+            type="button"
+            onClick={() => {
+              setSourceFilter("all");
+              setTypeFilter("all");
+              setSortOrder("updated-desc");
+              setSearchInput("");
+              setSearchTerm("");
+            }}
+            className="px-2 py-1 rounded border text-xs hover:bg-gray-50"
+          >
+            {t("admin.mediaClearFilters", "Clear filters")}
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
+        <span>
+          {t("admin.mediaResultsSummary", "{shown} shown / {total} total", {
+            shown: rowStats.shownCount,
+            total: rowStats.totalCount,
+          })}
+        </span>
+        <span>
+          {t("admin.mediaResultsSize", "Size: {size}", {
+            size: formatBytes(rowStats.totalBytes),
+          })}
+        </span>
+        <span>
+          {t("admin.mediaResultsBreakdown", "Images: {images} · Data: {data} · Other: {other}", {
+            images: rowStats.imageCount,
+            data: rowStats.dataCount,
+            other: rowStats.otherCount,
+          })}
+        </span>
       </div>
 
       <form
@@ -788,6 +1436,16 @@ export default function AdminMediaLibraryTab({
                   "Paste also works for images: click this area and press Ctrl/Cmd+V.",
                 )}
               </p>
+              <p className="text-[11px] text-gray-500">
+                {t(
+                  "admin.mediaUploadLimits",
+                  "Images under {imageMb} MB and other assets under {dataMb} MB. WordPress uploads may cap these further.",
+                  {
+                    imageMb: MAX_IMAGE_MB,
+                    dataMb: MAX_DATA_MB,
+                  },
+                )}
+              </p>
             </div>
             <button
               type="button"
@@ -828,6 +1486,66 @@ export default function AdminMediaLibraryTab({
             <span className="text-xs text-emerald-700">{uploadStatus}</span>
           )}
         </div>
+        {uploadHistory.length > 0 && (
+          <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-gray-700">
+                {t("admin.mediaRecentUploads", "Recent uploads")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setUploadHistory([])}
+                className="text-[11px] text-gray-500 hover:text-gray-700"
+              >
+                {t("admin.mediaRecentUploadsClear", "Clear")}
+              </button>
+            </div>
+            <div className="space-y-1">
+              {uploadHistory.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex flex-wrap items-start justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-800 break-all">
+                      {entry.name}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      <span className="font-semibold">
+                        {historyStatusLabel(entry.status)}
+                      </span>
+                      {entry.detail && ` · ${entry.detail}`}
+                      {entry.backend && ` · ${sourceLabel(entry.backend)}`}
+                    </p>
+                    <p className="text-[10px] text-gray-400">
+                      {formatHistoryTimestamp(entry.timestamp)}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    {entry.url && (
+                      <button
+                        type="button"
+                        onClick={() => copyUrl(entry.url)}
+                        className="px-2 py-0.5 rounded border text-[11px] text-gray-600 hover:bg-gray-100"
+                      >
+                        {t("admin.bucketCopyUrl", "Copy URL")}
+                      </button>
+                    )}
+                    {entry.url && (
+                      <button
+                        type="button"
+                        onClick={() => openHistoryUrl(entry.url)}
+                        className="px-2 py-0.5 rounded border text-[11px] text-gray-600 hover:bg-gray-100"
+                      >
+                        {t("admin.mediaHistoryView", "Open")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {uploadError && (
           <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
             {uploadError}
@@ -897,7 +1615,12 @@ export default function AdminMediaLibraryTab({
             </thead>
             <tbody>
               {rows.map((item) => (
-                <tr key={item.id} className="border-t align-top">
+              <tr
+                key={item.id}
+                className={`border-t align-top ${
+                  focusedItemId === item.id ? "bg-purple-50" : ""
+                }`}
+              >
                   <td className="px-3 py-2">
                     {canPreviewImage(item) ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -968,6 +1691,16 @@ export default function AdminMediaLibraryTab({
                       >
                         {t("admin.mediaAnnotate", "Annotate")}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setFocusedItemId(item.id)}
+                        className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                        aria-pressed={focusedItemId === item.id}
+                      >
+                        {focusedItemId === item.id
+                          ? t("admin.mediaSelected", "Selected")
+                          : t("admin.mediaSelect", "Select")}
+                      </button>
                     </div>
                   </td>
                   <td className="px-3 py-2">
@@ -995,6 +1728,465 @@ export default function AdminMediaLibraryTab({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {focusedItem && (
+        <div className="rounded border border-purple-200 bg-purple-50 p-4 text-xs space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold text-purple-800">
+                {t("admin.mediaSelectedAsset", "Selected asset")}
+              </p>
+              <p className="text-[11px] text-purple-700 break-all">
+                {focusedItem.title || focusedItem.key || focusedItem.url}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFocusedItemId("")}
+              className="px-3 py-1 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+            >
+              {t("common.clear", "Clear")}
+            </button>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <p className="text-purple-700">
+              {t("admin.mediaTypeLabel", "Type")}: {resolveAssetType(focusedItem)}
+            </p>
+            <p className="text-purple-700">
+              {t("admin.source", "Source")}: {sourceLabel(focusedItem.source)}
+            </p>
+            <p className="text-purple-700">
+              {t("admin.bucketSize", "Size")}: {formatBytes(focusedItem.sizeBytes)}
+            </p>
+            <p className="text-purple-700">
+              {t("admin.resolution", "Resolution")}:{" "}
+              {formatResolution(focusedItem.width, focusedItem.height)}
+            </p>
+            <p className="text-purple-700">
+              {t("admin.bucketLastModified", "Updated")}: {formatUpdatedAt(focusedItem.updatedAt)}
+            </p>
+            {focusedItem.source === "wordpress" && focusedItem.sourceId && (
+              <p className="text-purple-700">
+                {t("admin.mediaWordPressId", "WordPress ID")}: {focusedItem.sourceId}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => copyUrl(focusedItem.url)}
+              className="px-3 py-1.5 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+            >
+              {t("admin.bucketCopyUrl", "Copy URL")}
+            </button>
+            {(canOpenDataViewer(focusedItem) || canPreviewImage(focusedItem)) && (
+              <button
+                type="button"
+                onClick={() => openViewer(focusedItem)}
+                className="px-3 py-1.5 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+              >
+                {t("admin.mediaViewFile", "View")}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => openEditor(focusedItem)}
+              className="px-3 py-1.5 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+            >
+              {t("admin.mediaAnnotate", "Annotate")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {derivations.length > 0 && (
+        <div className="rounded border border-indigo-200 bg-indigo-50 p-4 text-xs space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold text-indigo-800">
+                {t("admin.mediaDerivationsTitle", "Derivation templates")}
+              </p>
+              <p className="text-[11px] text-indigo-700">
+                {t(
+                  "admin.mediaDerivationsHint",
+                  "Choose an operation chain and tweak parameters before applying the derivation to the selected asset.",
+                )}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAllDerivations((current) => !current)}
+                className="px-3 py-1 rounded border text-[11px] bg-white"
+              >
+                {showAllDerivations
+                  ? t("admin.mediaDerivationShowMatching", "Show matching derivations")
+                  : t("admin.mediaDerivationShowAll", "Show all derivations")}
+              </button>
+              <select
+                className="border rounded px-2 py-1 text-xs bg-white"
+                value={selectedDerivationId}
+                onChange={(event) => setSelectedDerivationId(event.target.value)}
+              >
+                {availableDerivations.map((derivation) => (
+                  <option key={derivation.id} value={derivation.id}>
+                    {derivation.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="text-[11px] text-indigo-700">
+            {showAllDerivations
+              ? t("admin.mediaDerivationShowAllHint", "Showing all derivations.")
+              : focusedAssetType
+                ? t(
+                    "admin.mediaDerivationMatchingHint",
+                    "Showing derivations for {type} assets.",
+                    { type: focusedAssetTypeLabel },
+                  )
+                : t(
+                    "admin.mediaDerivationSelectAssetHint",
+                    "Select an asset to narrow derivation suggestions.",
+                  )}
+          </p>
+          <div className="space-y-3">
+            <div className="grid gap-3 lg:grid-cols-3">
+              <label className="space-y-1 text-[11px] text-gray-700">
+                <span>{t("admin.mediaDerivationId", "Derivation ID")}</span>
+                <input
+                  type="text"
+                  value={editorId}
+                  onChange={(event) => setEditorId(event.target.value)}
+                  className="w-full border rounded px-2 py-1 text-xs"
+                />
+              </label>
+              <label className="space-y-1 text-[11px] text-gray-700">
+                <span>{t("admin.mediaDerivationName", "Name")}</span>
+                <input
+                  type="text"
+                  value={editorName}
+                  onChange={(event) => setEditorName(event.target.value)}
+                  className="w-full border rounded px-2 py-1 text-xs"
+                />
+              </label>
+              <label className="space-y-1 text-[11px] text-gray-700 lg:col-span-3">
+                <span>{t("admin.mediaDerivationDescription", "Description")}</span>
+                <input
+                  type="text"
+                  value={editorDescription}
+                  onChange={(event) => setEditorDescription(event.target.value)}
+                  className="w-full border rounded px-2 py-1 text-xs"
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-700">
+              <span>{t("admin.mediaDerivationAssetTypes", "Applicable asset types")}</span>
+              {[
+                { key: "image", label: t("admin.mediaTypeImage", "Images") },
+                { key: "data", label: t("admin.mediaTypeData", "Data files") },
+                { key: "other", label: t("admin.mediaTypeOther", "Other") },
+              ].map((option) => (
+                <label key={option.key} className="flex items-center gap-1 text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={editorAssetTypes.includes(option.key)}
+                    onChange={() => handleToggleAssetType(option.key)}
+                    className="h-4 w-4"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          {customOperations.length > 0 && (
+            <div className="space-y-3 rounded border border-indigo-100 bg-indigo-50 p-3 text-[11px] text-indigo-700">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <p className="text-[11px] font-semibold text-indigo-800">
+                    {t("admin.mediaDerivationSummaryTitle", "Derivation preview")}
+                  </p>
+                  <p className="text-sm font-semibold text-indigo-900 truncate">
+                    {editorName?.trim() || derivationPseudoName}
+                  </p>
+                  <p className="text-[11px] text-indigo-600">
+                    {t(
+                      "admin.mediaDerivationPseudoName",
+                      "Pseudo name: {name}",
+                      { name: derivationPseudoName },
+                    )}
+                  </p>
+                </div>
+                <span
+                  className={`rounded px-2 py-0.5 text-[11px] font-semibold ${
+                    derivationIsConcrete
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {derivationIsConcrete
+                    ? t("admin.mediaDerivationStatusConcrete", "Concrete derivation")
+                    : t("admin.mediaDerivationStatusAbstract", "Abstract derivation")}
+                </span>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-indigo-800">
+                  {t("admin.mediaDerivationUnboundLabel", "Unbound parameters")}
+                </p>
+                {derivationUnboundParameters.length === 0 ? (
+                  <p className="text-[11px] text-indigo-600">
+                    {t("admin.mediaDerivationAllBound", "All operation parameters are bound.")}
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {derivationUnboundParameters.map((entry, entryIndex) => (
+                      <span
+                        key={`${entry.operator}-${entry.param}-${entryIndex}`}
+                        className="rounded border border-indigo-200 bg-white px-2 py-0.5 text-[11px] text-indigo-700"
+                      >
+                        {entry.operator}: {entry.param}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="rounded border border-indigo-100 bg-white p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-indigo-700">
+                    {t("admin.mediaDerivationMatrixTitle", "Operation matrix")}
+                  </p>
+                </div>
+                <div className="overflow-auto">
+                  <table className="min-w-full text-[11px] text-gray-600">
+                    <thead>
+                      <tr>
+                        <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
+                          {t("admin.mediaDerivationMatrixStepHeader", "Step")}
+                        </th>
+                        <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
+                          {t("admin.mediaDerivationMatrixOperatorHeader", "Operator")}
+                        </th>
+                        <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
+                          {t("admin.mediaDerivationMatrixParametersHeader", "Parameters")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {derivationMatrixRows.map((row) => (
+                        <tr key={`${row.operation.type}-${row.index}`}>
+                          <td className="px-2 py-1 text-[11px] font-semibold text-indigo-800">
+                            {row.index + 1}
+                          </td>
+                          <td className="px-2 py-1">
+                            <p className="font-semibold text-indigo-800">
+                              {row.schema?.label || row.operation.type}
+                            </p>
+                            {row.operation.type === "source" && (
+                              <p className="text-[10px] text-gray-500">
+                                {row.operation.params?.assetId
+                                  ? row.operation.params.assetId
+                                  : t("admin.mediaDerivationSourceUnbound", "Source is unbound")}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-2 py-1">
+                            {row.params.length === 0 ? (
+                              <span className="text-[10px] text-gray-500">—</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-1">
+                                {row.params.map((param) => (
+                                  <span
+                                    key={`${row.index}-${param.key}`}
+                                    className={`rounded-full px-2 py-0.5 border text-[10px] ${
+                                      param.bound
+                                        ? "border-indigo-200 bg-indigo-50 text-indigo-800"
+                                        : "border-amber-200 bg-amber-50 text-amber-800"
+                                    }`}
+                                  >
+                                    {param.bound
+                                      ? `${param.key}=${formatParameterValue(param.value)}`
+                                      : param.key}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+          {customOperations.length === 0 && (
+            <p className="text-[11px] text-indigo-700">
+              {t("admin.mediaDerivationNoOperations", "Select a derivation to edit its operations.")}
+            </p>
+          )}
+          {customOperations.map((operation, index) => {
+            const schema = OPERATION_SCHEMAS[operation.type];
+            return (
+              <div
+                key={`${operation.type}-${index}`}
+                className="rounded border border-indigo-100 bg-white p-3 space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-[13px] font-semibold text-indigo-800">
+                    {schema?.label || operation.type}
+                  </p>
+                  <span className="text-[11px] text-indigo-600">
+                    {t("admin.mediaDerivationStep", "Step {n}", { n: index + 1 })}
+                  </span>
+                </div>
+                {operation.type === "source" && (
+                  <p className="text-[11px] text-indigo-600">
+                    {t(
+                      "admin.mediaDerivationSourceHint",
+                      "The source step tracks the asset you select in the table above.",
+                    )}
+                  </p>
+                )}
+                {schema?.parameters?.map((param) => (
+                  <label key={param.key} className="flex flex-col text-[11px] text-gray-700">
+                    <span>{param.label}</span>
+                    <input
+                      type={param.type}
+                      min={param.min}
+                      max={param.max}
+                      step={param.step}
+                      value={operation.params?.[param.key] ?? ""}
+                      onChange={(event) =>
+                        handleOperationParamChange(index, param.key, event.target.value)
+                      }
+                      className="border rounded px-2 py-1 text-xs"
+                    />
+                  </label>
+                ))}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOperation(index)}
+                    className="text-[11px] text-red-600 hover:underline"
+                  >
+                    {t("admin.mediaDerivationRemoveStep", "Remove step")}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-[11px] text-gray-700">
+              <span>{t("admin.mediaDerivationAddOperationLabel", "Add operation")}</span>
+              <select
+                className="border rounded px-2 py-1 text-xs bg-white"
+                value={newOperationType}
+                onChange={(event) => setNewOperationType(event.target.value)}
+              >
+                {Object.entries(OPERATION_SCHEMAS).map(([type, schema]) => (
+                  <option key={type} value={type}>
+                    {schema?.label || type}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={handleAddOperation}
+              className="px-3 py-1 rounded border text-[11px] bg-white"
+            >
+              {t("admin.mediaDerivationAddOperation", "Add operation")}
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={saveDerivationTemplate}
+              className="px-3 py-1.5 rounded bg-indigo-700 text-white text-xs hover:bg-indigo-600"
+            >
+              {t("admin.mediaDerivationSave", "Save derivation")}
+            </button>
+            <button
+              type="button"
+              onClick={applySelectedDerivation}
+              disabled={applyingDerivation || !focusedItem}
+              className="px-3 py-1.5 rounded bg-indigo-700 text-white text-xs hover:bg-indigo-600 disabled:opacity-50"
+            >
+              {applyingDerivation
+                ? t("admin.mediaDerivationApplying", "Applying…")
+                : t("admin.mediaApplyDerivation", "Apply derivation")}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveDerivedAsset}
+              disabled={!lastDerivedAsset}
+              className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
+            >
+              {t("admin.mediaSaveDerivedAsset", "Save derived asset")}
+            </button>
+            {!focusedItem && (
+              <span className="text-[11px] text-indigo-600">
+                {t("admin.mediaDerivationRequiresAsset", "Select an asset first.")}
+              </span>
+            )}
+          </div>
+          {derivationSaveStatus === "saved" && (
+            <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+              {t("admin.mediaDerivationSaveSuccess", "Derivation saved.")}
+            </p>
+          )}
+          {(derivationSaveError || derivationError) && (
+            <p className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1">
+              {derivationSaveError || derivationError}
+            </p>
+          )}
+          {savedDerivedAssets.length > 0 && (
+            <div className="rounded border border-indigo-100 bg-white p-3 space-y-2 text-[11px] text-gray-700">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-indigo-800">
+                  {t("admin.mediaDerivedAssetsHeading", "Saved derived assets")}
+                </p>
+              </div>
+              <div className="space-y-2">
+                {savedDerivedAssets.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex flex-wrap items-center justify-between gap-2 border rounded p-2 bg-indigo-50"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-semibold text-indigo-800 truncate">
+                        {entry.title}
+                      </p>
+                      <p className="text-[11px] text-gray-600">
+                        {t("admin.mediaDerivedAssetSavedOn", "Saved on {time}", {
+                          time: new Date(entry.timestamp).toLocaleString("sv-SE"),
+                        })}
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        {t(
+                          "admin.mediaDerivedAssetOperations",
+                          "Operations: {count}",
+                          { count: entry.operations?.length || 0 },
+                        )}
+                      </p>
+                    </div>
+                    {entry.url && (
+                      <a
+                        href={entry.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-purple-700 hover:underline"
+                      >
+                        {t("admin.mediaDerivedAssetOpen", "Open")}
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
