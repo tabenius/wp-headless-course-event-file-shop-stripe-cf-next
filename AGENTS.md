@@ -185,19 +185,15 @@ Full list in `.env.example`.
 
 ### Ranked backlog (see coop file for full detail)
 
-1. **P2 / Medium** — Add an admin-header scrolling stats ticker (revenue, users, bought products, sales/user %, weekly average hits/day) backed by one aggregated admin endpoint with resilient fallbacks.
-2. **P3 / Medium** — Full code review pass focused on code quality, maintainability, and admin UI usability improvements.
-3. **Follow-up / Monitoring** — Watch new P0/P1/P2/P3 changes (image diagnostics, receipt fallback trace, VAT propagation, dead-link scanner, doc refresh) for regressions.
+**All tracked backlog items are DONE as of 2026-03-21.** Add new items to `claude+codex-coop.md` as they arise.
+
+**Follow-up / Monitoring** — Watch recent changes (Photon pipeline + WASM derivation blob flow, admin header stats ticker, security audit fixes, WP plugin asset metadata + health integration) for regressions.
 
 ### Working rules for this backlog
 
 - Execute in listed order unless a production regression interrupts.
 - Keep TODO ownership/status in `claude+codex-coop.md` top section.
 - Run targeted lint/tests after each backlog item lands.
-
-## Joint coordination plan
-
-- Coordinate the ongoing code review with Claude: add findings/blockers to `claude+codex-coop.md` using `TODO:` when either agent pauses or hits a regression, and align on next steps (tests, follow-up fixes, documentation) before closing the review. Keep this file and `AGENTS.md` updated per the shared-doc protocol so the plan is visible to both agents.
 
 ---
 
