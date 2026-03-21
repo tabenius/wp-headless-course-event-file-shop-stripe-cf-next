@@ -306,8 +306,10 @@ export default function AdminMediaLibraryTab({
   const [newOperationType, setNewOperationType] = useState(Object.keys(OPERATION_SCHEMAS)[0] || "");
   const [derivationSaveStatus, setDerivationSaveStatus] = useState("");
   const [derivationSaveError, setDerivationSaveError] = useState("");
-  const [lastDerivedAsset, setLastDerivedAsset] = useState(null);
-  const [savedDerivedAssets, setSavedDerivedAssets] = useState([]);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+  const [previewBlob, setPreviewBlob] = useState(null);
+  const [savingPreview, setSavingPreview] = useState(false);
+  const [savePreviewError, setSavePreviewError] = useState("");
   const uploadInputRef = useRef(null);
   const dragDepthRef = useRef(0);
 
@@ -416,22 +418,12 @@ export default function AdminMediaLibraryTab({
     loadDerivations();
   }, []);
 
+  // Revoke blob URL when component unmounts or a new preview replaces it
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const stored = window.localStorage.getItem("savedDerivedAssets");
-      if (stored) {
-        setSavedDerivedAssets(JSON.parse(stored));
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("savedDerivedAssets", JSON.stringify(savedDerivedAssets));
-  }, [savedDerivedAssets]);
+    return () => {
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+    };
+  }, [previewBlobUrl]);
 
   useEffect(() => {
     if (!selectedDerivationId && derivations.length > 0) {
@@ -1123,19 +1115,42 @@ export default function AdminMediaLibraryTab({
     }
   }
 
-  function handleSaveDerivedAsset() {
-    if (!lastDerivedAsset) return;
-    const entry = {
-      id: lastDerivedAsset.id || `${selectedDerivationId || "derived"}-${Date.now()}`,
-      title: lastDerivedAsset.title || selectedDerivation?.name || "Derived asset",
-      url: lastDerivedAsset.url || "",
-      operations: Array.isArray(lastDerivedAsset.operations) ? lastDerivedAsset.operations : [],
-      timestamp: Date.now(),
-    };
-    setSavedDerivedAssets((current) => {
-      const filtered = current.filter((item) => item.id !== entry.id);
-      return [entry, ...filtered].slice(0, 20);
-    });
+  async function savePreviewToLibrary() {
+    if (!previewBlob) return;
+    setSavingPreview(true);
+    setSavePreviewError("");
+    try {
+      const ext = previewBlob.type === "image/png" ? "png" : previewBlob.type === "image/webp" ? "webp" : "jpg";
+      const filename = `derived-${selectedDerivationId || "asset"}-${Date.now()}.${ext}`;
+      const formData = new FormData();
+      formData.append("file", previewBlob, filename);
+      formData.append("backend", selectedUploadBackend);
+      const response = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || t("admin.mediaDerivationSaveFailed", "Could not save derived asset."));
+      }
+      const entry = buildUploadHistoryEntry({
+        name: filename,
+        status: "uploaded",
+        detail: t("admin.mediaDerivationApplied", "Derived asset saved to library"),
+        url: json.url || "",
+        backend: selectedUploadBackend,
+      });
+      setUploadHistory((prev) => [entry, ...prev].slice(0, HISTORY_MAX_ENTRIES));
+      setRefreshToken((n) => n + 1);
+    } catch (saveError) {
+      setSavePreviewError(
+        saveError instanceof Error
+          ? saveError.message
+          : t("admin.mediaDerivationSaveFailed", "Could not save derived asset."),
+      );
+    } finally {
+      setSavingPreview(false);
+    }
   }
 
   async function applySelectedDerivation() {
@@ -1155,6 +1170,15 @@ export default function AdminMediaLibraryTab({
     const operationsToApply = bindOperationsToAsset(customOperations, focusedItem?.id);
     setApplyingDerivation(true);
     setDerivationError("");
+    setSavePreviewError("");
+
+    // Revoke previous blob URL before creating a new one
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+      setPreviewBlobUrl(null);
+      setPreviewBlob(null);
+    }
+
     try {
       const response = await fetch("/api/admin/derivations/apply", {
         method: "POST",
@@ -1165,20 +1189,16 @@ export default function AdminMediaLibraryTab({
           operations: operationsToApply,
         }),
       });
-      const json = await response.json().catch(() => ({}));
-      if (!response.ok || !json?.ok) {
+
+      if (!response.ok) {
+        const json = await response.json().catch(() => ({}));
         throw new Error(json?.error || t("admin.mediaDerivationFailed", "Could not apply derivation."));
       }
-      setLastDerivedAsset(json.derived || null);
-      const entry = buildUploadHistoryEntry({
-        name: json.derived?.title || selectedDerivation.name,
-        status: "uploaded",
-        detail: t("admin.mediaDerivationApplied", "Derived asset created"),
-        url: json.derived?.url,
-        backend: "derived",
-      });
-      setUploadHistory((prev) => [entry, ...prev].slice(0, HISTORY_MAX_ENTRIES));
-      setFocusedItemId(json.derived?.id || entry.id);
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setPreviewBlob(blob);
+      setPreviewBlobUrl(blobUrl);
     } catch (applyError) {
       setDerivationError(
         applyError instanceof Error
@@ -2120,11 +2140,13 @@ export default function AdminMediaLibraryTab({
             </button>
             <button
               type="button"
-              onClick={handleSaveDerivedAsset}
-              disabled={!lastDerivedAsset}
+              onClick={savePreviewToLibrary}
+              disabled={!previewBlob || savingPreview}
               className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
             >
-              {t("admin.mediaSaveDerivedAsset", "Save derived asset")}
+              {savingPreview
+                ? t("admin.mediaSavingDerivedAsset", "Saving…")
+                : t("admin.mediaSaveDerivedAsset", "Save to library")}
             </button>
             {!focusedItem && (
               <span className="text-[11px] text-indigo-600">
@@ -2142,49 +2164,21 @@ export default function AdminMediaLibraryTab({
               {derivationSaveError || derivationError}
             </p>
           )}
-          {savedDerivedAssets.length > 0 && (
-            <div className="rounded border border-indigo-100 bg-white p-3 space-y-2 text-[11px] text-gray-700">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-indigo-800">
-                  {t("admin.mediaDerivedAssetsHeading", "Saved derived assets")}
-                </p>
-              </div>
-              <div className="space-y-2">
-                {savedDerivedAssets.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex flex-wrap items-center justify-between gap-2 border rounded p-2 bg-indigo-50"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-semibold text-indigo-800 truncate">
-                        {entry.title}
-                      </p>
-                      <p className="text-[11px] text-gray-600">
-                        {t("admin.mediaDerivedAssetSavedOn", "Saved on {time}", {
-                          time: new Date(entry.timestamp).toLocaleString("sv-SE"),
-                        })}
-                      </p>
-                      <p className="text-[11px] text-gray-500">
-                        {t(
-                          "admin.mediaDerivedAssetOperations",
-                          "Operations: {count}",
-                          { count: entry.operations?.length || 0 },
-                        )}
-                      </p>
-                    </div>
-                    {entry.url && (
-                      <a
-                        href={entry.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] text-purple-700 hover:underline"
-                      >
-                        {t("admin.mediaDerivedAssetOpen", "Open")}
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {previewBlobUrl && (
+            <div className="rounded border border-indigo-100 bg-white p-3 space-y-2">
+              <p className="text-[11px] font-semibold text-indigo-800">
+                {t("admin.mediaDerivationPreview", "Preview")}
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewBlobUrl}
+                alt={t("admin.mediaDerivationPreviewAlt", "Derived image preview")}
+                className="max-w-full rounded border"
+                style={{ maxHeight: "260px", objectFit: "contain" }}
+              />
+              {savePreviewError && (
+                <p className="text-[11px] text-red-600">{savePreviewError}</p>
+              )}
             </div>
           )}
         </div>
