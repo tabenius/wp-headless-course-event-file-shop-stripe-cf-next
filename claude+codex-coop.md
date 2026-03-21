@@ -8,11 +8,37 @@ DONE [P1 | High]: VAT/Moms completion across all product sources — per-item VA
 DONE [P2 | Medium]: Welcome story data realism — replaced the mock image-generator slide with live quota + latest-run snapshot state and a read-only fallback when live API state is unavailable.
 DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a href>` extraction + internal/pseudo-external/external classification + reachability checks) and surfaced it in Support with filters and source traces.
 DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key sections, reordered operator instructions for average-user relevance, and synced wording with current tab names/flows.
-TODO [P2 | Medium]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
-TODO [P3 | Medium]: Post-implementation code review — run a full quality/usability review pass and capture prioritized improvements.
+IN PROGRESS [P2 | Medium | Claude]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
+DONE [P3 | Medium]: Post-implementation code review — full quality/usability audit completed 2026-03-21 (Claude); top-priority fixes implemented same session (see audit-fixes commit 1cb27ff).
 TODO [P2 | Medium]: Admin UX polish follow-up (Codex review for Claude) — add focus trap + initial focus for hamburger drawer, prevent global `Ctrl+Alt` actions while typing in form controls, make media table rows keyboard-selectable (`Up/Down`, `Enter`, `Space`), and hard-validate numeric derivation params before enabling apply.
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
+
+## 2026-03-21 (Claude)
+
+### Claude — Photon pipeline + full admin audit + top-priority fixes
+
+**Photon image pipeline (landed earlier this session):**
+- Implemented `src/lib/photonPipeline.js` — edge-compatible WASM pipeline with pure helpers (`resolveOutputFormat`, `parsePresetCrop`, `guardSourceSize`, `clampSaturation`, `isAvifSource`), pixel mask (`applyCircleMask`), operator executor (`executeOperations`), and serializer (`serializeImage`).
+- Rewrote `src/app/api/admin/derivations/apply/route.js` to fetch source → AVIF guard → size guard → Photon pipeline → return binary image blob.
+- Added 10 predefined derivations to `src/config/image-derivations.json` and `config/image-derivations.json`.
+- Added 25-test suite in `tests/photon-pipeline.test.js` (all pass).
+
+**Full admin UI audit + top-priority fixes (commit 1cb27ff):**
+- SECURITY: Added `requireAdmin` to `GET /api/admin/derivations` (was publicly accessible).
+- SECURITY: Added SSRF protection to `/api/admin/derivations/apply` (https-only + origin/WP/R2 host allowlist).
+- RELIABILITY: `executeOperations` now frees intermediate PhotonImage on throw.
+- RELIABILITY: `cropCircle` diameter clamped to `min(srcW, srcH)`.
+- BUG: `crop` operator now respects caller `x1`/`y1`; falls back to center-crop.
+- BUG: `applySelectedDerivation` now consumes binary blob response + creates object URL inline preview.
+- BUG: `savePreviewToLibrary` uploads blob to `/api/admin/upload?backend=` (query string fix).
+- BUG: `loadDerivations` wrapped in `useCallback`; stale closure + blob URL memory leak fixed.
+- SCHEMA: Removed phantom `amount` from `sharpen` schema, `intensity` from `sepia` schema.
+- CONFIG: `og-image` preset corrected from `2:1` to `191:100`.
+- DX: Removed duplicate `MAX_SOURCE_BYTES` from apply route.
+- i18n: Added 4 missing `welcomeSlideNBody` keys to en/sv; all 909 keys in sync.
+
+**Now starting:** Admin header stats ticker (P2, checked out by Claude).
 
 ## 2026-03-20 (cont. 82)
 
