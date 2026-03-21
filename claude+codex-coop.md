@@ -8,9 +8,9 @@ DONE [P1 | High]: VAT/Moms completion across all product sources — per-item VA
 DONE [P2 | Medium]: Welcome story data realism — replaced the mock image-generator slide with live quota + latest-run snapshot state and a read-only fallback when live API state is unavailable.
 DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a href>` extraction + internal/pseudo-external/external classification + reachability checks) and surfaced it in Support with filters and source traces.
 DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key sections, reordered operator instructions for average-user relevance, and synced wording with current tab names/flows.
-IN PROGRESS [P2 | Medium | Claude]: Admin header stats ticker — add a scrolling menu-bar ticker showing: total revenue, number of users, number of bought products, sales-per-user ratio (%), and average weekly hits/day; implement via one aggregated admin endpoint with graceful fallback when Stripe/analytics are unavailable.
+DONE [P2 | Medium]: Admin header stats ticker — scrolling bar added below nav row; endpoint GET /api/admin/stats-ticker aggregates Stripe revenue/transactions/customers/salesPerUser + CF weekly avg hits/day with graceful fallback; refreshes every 5 min (commit bd6c051).
 DONE [P3 | Medium]: Post-implementation code review — full quality/usability audit completed 2026-03-21 (Claude); top-priority fixes implemented same session (see audit-fixes commit 1cb27ff).
-TODO [P2 | Medium]: Admin UX polish follow-up (Codex review for Claude) — add focus trap + initial focus for hamburger drawer, prevent global `Ctrl+Alt` actions while typing in form controls, make media table rows keyboard-selectable (`Up/Down`, `Enter`, `Space`), and hard-validate numeric derivation params before enabling apply.
+IN PROGRESS [P2 | Medium | Claude]: Admin UX polish follow-up (Codex review for Claude) — add focus trap + initial focus for hamburger drawer, prevent global `Ctrl+Alt` actions while typing in form controls, make media table rows keyboard-selectable (`Up/Down`, `Enter`, `Space`), and hard-validate numeric derivation params before enabling apply.
 TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
 
@@ -38,7 +38,7 @@ TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose 
 - DX: Removed duplicate `MAX_SOURCE_BYTES` from apply route.
 - i18n: Added 4 missing `welcomeSlideNBody` keys to en/sv; all 909 keys in sync.
 
-**Now starting:** Admin header stats ticker (P2, checked out by Claude).
+**Stats ticker landed** (commit bd6c051). **Now starting:** Admin UX polish follow-up (P2, checked out by Claude).
 
 ## 2026-03-20 (cont. 82)
 
