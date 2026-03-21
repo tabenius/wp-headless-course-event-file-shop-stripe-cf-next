@@ -109,6 +109,24 @@ DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `
   - `npm run lint -- src/components/admin/AdminMediaLibraryTab.js` (pass; existing repo-wide `no-img-element` warnings unchanged),
   - `npm test -- tests/i18n-admin-parity.test.js` (pass; full suite executed by project script, 169 pass / 0 fail / 3 skipped).
 
+### Codex — CyberDuck-to-R2 ingest flow with preview + KV save (commit acebee5)
+
+- Added a new manual R2 ingest API route (`src/app/api/admin/media-library/cyberduck-r2/route.js`) and KV-backed registry (`src/lib/mediaAssetRegistry.js`):
+  - validates/admin-gates R2 object-key lookups,
+  - previews object metadata from R2 (`key`, URL, mime, size, updated time),
+  - persists normalized asset records in a KV-backed registry (fallback memory),
+  - writes canonical `asset_*` metadata back to the R2 object on save.
+- Reworked Media tab manual-ingest UX in `src/components/admin/AdminMediaLibraryTab.js`:
+  - replaced old “register by URL” block with a CyberDuck-first flow,
+  - surfaces R2 checklist details (host/bucket/region/public URL),
+  - shows resolved object URL from key, preview action, and “Save asset to KV” action,
+  - renders inline image preview when the object is an image,
+  - lists recently saved KV asset records for quick copy/open.
+- Updated `AdminDashboard` to pass `uploadInfoDetails` into Media tab for richer R2 connection context.
+- Verification:
+  - `npm run lint -- src/components/admin/AdminMediaLibraryTab.js src/components/admin/AdminDashboard.js src/app/api/admin/media-library/cyberduck-r2/route.js src/lib/mediaAssetRegistry.js` (pass; existing `no-img-element` warnings unchanged),
+  - `npm test -- tests/i18n-admin-parity.test.js` (pass; project script runs full suite, 169 pass / 0 fail / 3 skipped).
+
 ## 2026-03-20 (cont. 81)
 
 ### Codex — owner URI inheritance groundwork for asset records
