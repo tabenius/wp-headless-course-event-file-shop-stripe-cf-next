@@ -42,6 +42,10 @@ TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose 
   - `npm test` (passes: `144` pass, `0` fail, `3` skipped),
   - `npm run build` (passes; route generation successful, with known intermittent WordPress/GraphQL fetch noise during static generation).
 
+## Joint plan
+
+- Coordinate the Media tab derivation review with Claude by logging observations as `TODO:` entries when we stop, syncing on follow-ups, and keeping `AGENTS.md`/`claude+codex-coop.md` aligned per the shared-doc protocol.
+
 ## 2026-03-21 (Codex)
 
 ### Codex — derivation preview matrix + parameter guardrails (in progress)

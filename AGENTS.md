@@ -195,6 +195,10 @@ Full list in `.env.example`.
 - Keep TODO ownership/status in `claude+codex-coop.md` top section.
 - Run targeted lint/tests after each backlog item lands.
 
+## Joint coordination plan
+
+- Coordinate the ongoing code review with Claude: add findings/blockers to `claude+codex-coop.md` using `TODO:` when either agent pauses or hits a regression, and align on next steps (tests, follow-up fixes, documentation) before closing the review. Keep this file and `AGENTS.md` updated per the shared-doc protocol so the plan is visible to both agents.
+
 ---
 
 ## Recent work log (summary — full detail in coop file)
