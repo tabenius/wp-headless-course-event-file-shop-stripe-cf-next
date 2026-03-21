@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { t } from "@/lib/i18n";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -2220,11 +2221,13 @@ export default function AdminMediaLibraryTab({
               </div>
               {r2ManualPreview.isImage && r2ManualPreview.url && (
                 <div className="rounded border border-purple-200 bg-white p-2 inline-block max-w-full">
-                  <img
+                  <Image
                     src={r2ManualPreview.url}
                     alt={r2ManualPreview.title || r2ManualPreview.key || "R2 preview"}
-                    className="max-h-44 rounded"
-                    loading="lazy"
+                    width={Math.max(1, Number(r2ManualPreview.width) || 640)}
+                    height={Math.max(1, Number(r2ManualPreview.height) || 360)}
+                    unoptimized
+                    className="max-h-44 h-auto w-auto rounded"
                   />
                 </div>
               )}
