@@ -1,0 +1,116 @@
+[
+  {
+    "id": "hero-resize",
+    "name": "Hero banner",
+    "description": "Large 16:9 hero variant for page banners. Resizes and sharpens.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "resize", "params": { "width": 1600, "height": 900 } },
+      { "type": "sharpen", "params": { "amount": 0.4 } }
+    ]
+  },
+  {
+    "id": "social-square",
+    "name": "Social square",
+    "description": "1080×1080 square crop with a colour boost — Instagram / Facebook feed.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "presetCrop", "params": { "preset": "1:1", "scale": 1.0 } },
+      { "type": "resize", "params": { "width": 1080, "height": 1080 } },
+      { "type": "colorBoost", "params": { "vibrance": 0.25, "contrast": 0.15 } }
+    ]
+  },
+  {
+    "id": "story-portrait",
+    "name": "Stories portrait",
+    "description": "9:16 vertical crop at 1080×1920 for Instagram / TikTok stories.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "presetCrop", "params": { "preset": "9:16", "scale": 1.0 } },
+      { "type": "resize", "params": { "width": 1080, "height": 1920 } },
+      { "type": "sharpen", "params": { "amount": 0.3 } }
+    ]
+  },
+  {
+    "id": "thumbnail-sm",
+    "name": "Small thumbnail",
+    "description": "300×300 square thumbnail for product grids and course listings.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "presetCrop", "params": { "preset": "1:1", "scale": 1.0 } },
+      { "type": "resize", "params": { "width": 300, "height": 300 } }
+    ]
+  },
+  {
+    "id": "avatar-circle",
+    "name": "Round avatar",
+    "description": "400 px circular crop — user avatars and speaker portraits.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "resize", "params": { "width": 400, "height": 400 } },
+      { "type": "cropCircle", "params": { "diameter": 400, "centerX": 50, "centerY": 50 } }
+    ]
+  },
+  {
+    "id": "sepia-vintage",
+    "name": "Sepia vintage",
+    "description": "Warm sepia tone with a slight contrast lift for a vintage look.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "sepia", "params": {} },
+      { "type": "colorBoost", "params": { "vibrance": 0.0, "contrast": 0.1 } }
+    ]
+  },
+  {
+    "id": "grayscale-print",
+    "name": "Greyscale print",
+    "description": "Desaturated with a sharpness boost — suitable for print or editorial layouts.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "saturation", "params": { "amount": -1.0 } },
+      { "type": "sharpen", "params": { "amount": 0.5 } }
+    ]
+  },
+  {
+    "id": "og-image",
+    "name": "Open Graph image",
+    "description": "1200×630 for Open Graph / Twitter cards. Crops to 1.91:1 and sharpens.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "presetCrop", "params": { "preset": "2:1", "scale": 1.0 } },
+      { "type": "resize", "params": { "width": 1200, "height": 630 } },
+      { "type": "sharpen", "params": { "amount": 0.35 } }
+    ]
+  },
+  {
+    "id": "wide-banner",
+    "name": "Ultra-wide banner",
+    "description": "21:9 panoramic strip for site headers and email headers at 1920×823.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "presetCrop", "params": { "preset": "21:9", "scale": 1.0 } },
+      { "type": "resize", "params": { "width": 1920, "height": 823 } },
+      { "type": "sharpen", "params": { "amount": 0.3 } }
+    ]
+  },
+  {
+    "id": "vibrant-boost",
+    "name": "Vibrant boost",
+    "description": "Strong colour and contrast lift for hero images that need to pop.",
+    "assetTypes": ["image"],
+    "operations": [
+      { "type": "source", "params": { "assetId": "" } },
+      { "type": "colorBoost", "params": { "vibrance": 0.5, "contrast": 0.25 } },
+      { "type": "sharpen", "params": { "amount": 0.3 } }
+    ]
+  }
+]
