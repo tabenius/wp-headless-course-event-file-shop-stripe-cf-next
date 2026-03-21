@@ -126,6 +126,8 @@ DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `
 - Verification:
   - `npm run lint -- src/components/admin/AdminMediaLibraryTab.js src/components/admin/AdminDashboard.js src/app/api/admin/media-library/cyberduck-r2/route.js src/lib/mediaAssetRegistry.js` (pass; existing `no-img-element` warnings unchanged),
   - `npm test -- tests/i18n-admin-parity.test.js` (pass; project script runs full suite, 169 pass / 0 fail / 3 skipped).
+- Follow-up polish (commit `543f698`):
+  - switched the new manual-ingest image preview from raw `<img>` to `next/image` (`unoptimized`) so lint warning count stays at the prior baseline (no additional `no-img-element` warnings from this feature).
 
 ## 2026-03-20 (cont. 81)
 
