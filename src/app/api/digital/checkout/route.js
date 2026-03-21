@@ -39,8 +39,18 @@ export async function POST(request) {
     }
 
     const baseUrl = new URL(request.url).origin;
-    const successUrl = `${baseUrl}/shop?checkout=success&product_id=${encodeURIComponent(product.id)}&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${baseUrl}/shop?checkout=cancel&product_id=${encodeURIComponent(product.id)}`;
+    const buyablePath =
+      product.productMode === "asset" && product.assetId
+        ? `/shop/${encodeURIComponent(product.assetId)}`
+        : `/shop/${encodeURIComponent(product.slug)}`;
+    const successUrl = `${baseUrl}${buyablePath}?checkout=success&product_id=${encodeURIComponent(product.id)}&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${baseUrl}${buyablePath}?checkout=cancel&product_id=${encodeURIComponent(product.id)}`;
+    const purchaseKind =
+      product.productMode === "asset"
+        ? "asset_product"
+        : product.type === "course"
+          ? "course_product"
+          : "digital_file";
 
     const checkout = await createStripePaymentSession({
       itemName: product.name,
@@ -51,10 +61,10 @@ export async function POST(request) {
       successUrl,
       cancelUrl,
       metadata: {
-        purchase_kind:
-          product.type === "course" ? "course_product" : "digital_file",
+        purchase_kind: purchaseKind,
         digital_product_id: product.id,
         product_name: product.name || "",
+        ...(product.assetId ? { asset_id: product.assetId } : {}),
         ...(typeof product.vatPercent === "number" &&
         Number.isFinite(product.vatPercent)
           ? { vat_percent: String(product.vatPercent) }

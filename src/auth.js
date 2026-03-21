@@ -136,6 +136,8 @@ export async function createSessionToken(user) {
     id: user?.id || "",
     email: user?.email || "",
     name: user?.name || "",
+    username: user?.username || "",
+    avatarPublic: user?.avatarPublic === true,
   };
   const sessionPayload = {
     user: safeUser,

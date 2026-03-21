@@ -56,6 +56,7 @@ export async function POST(request) {
       const purchaseKind = session?.metadata?.purchase_kind || "course";
       const courseUri = session?.metadata?.course_uri || "";
       const digitalProductId = session?.metadata?.digital_product_id || "";
+      const assetId = session?.metadata?.asset_id || "";
       const email = (
         session?.customer_details?.email ||
         session?.metadata?.user_email ||
@@ -65,7 +66,8 @@ export async function POST(request) {
       if (paymentStatus === "paid" && email) {
         if (
           (purchaseKind === "digital_file" ||
-            purchaseKind === "course_product") &&
+            purchaseKind === "course_product" ||
+            purchaseKind === "asset_product") &&
           digitalProductId
         ) {
           await grantDigitalAccess(digitalProductId, email);
@@ -95,6 +97,8 @@ export async function POST(request) {
           let productUrl = origin;
           if (courseUri) {
             productUrl = `${origin}${courseUri}`;
+          } else if (assetId) {
+            productUrl = `${origin}/inventory/${encodeURIComponent(assetId)}`;
           } else if (digitalProductId) {
             productUrl = `${origin}/shop`;
           }

@@ -273,7 +273,15 @@ export async function listAllShopItems() {
 
   // Digital products (from admin / KV)
   for (const d of digitalProducts) {
-    const normalizedType = d.type === "course" ? "digital_course" : "digital_file";
+    const mode =
+      d.productMode ||
+      (d.type === "course" ? "manual_uri" : "digital_file");
+    const normalizedType =
+      mode === "manual_uri" ? "digital_course" : "digital_file";
+    const buyableUri =
+      mode === "asset" && d.assetId
+        ? `/shop/${encodeURIComponent(d.assetId)}`
+        : `/shop/${d.slug}`;
     const digitalCategories = deriveDigitalProductCategories({
       ...d,
       type: normalizedType,
@@ -289,7 +297,9 @@ export async function listAllShopItems() {
       currency: d.currency || defaultCurrency,
       type: normalizedType,
       source: "digital",
-      uri: `/shop/${d.slug}`,
+      uri: buyableUri,
+      productMode: mode,
+      assetId: mode === "asset" ? d.assetId || "" : "",
       vatPercent:
         typeof d.vatPercent === "number" && Number.isFinite(d.vatPercent)
           ? d.vatPercent
