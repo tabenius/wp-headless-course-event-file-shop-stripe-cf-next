@@ -525,6 +525,17 @@ export default function AdminMediaLibraryTab({
     [focusedItemId, rows],
   );
 
+  const wordpressRowsBySourceId = useMemo(() => {
+    const mapping = new Map();
+    rows.forEach((item) => {
+      if (item?.source !== "wordpress") return;
+      const sourceId = Number.parseInt(String(item?.sourceId ?? ""), 10);
+      if (!Number.isFinite(sourceId)) return;
+      mapping.set(String(sourceId), item);
+    });
+    return mapping;
+  }, [rows]);
+
   const registerMediaRowRef = useCallback((id, node) => {
     if (!id) return;
     if (node) {
@@ -548,6 +559,14 @@ export default function AdminMediaLibraryTab({
     [rows],
   );
 
+  const focusItemById = useCallback((itemId) => {
+    if (!itemId) return;
+    setFocusedItemId(itemId);
+    mediaRowsRef.current.get(itemId)?.scrollIntoView?.({
+      block: "nearest",
+    });
+  }, []);
+
   const selectedItem = useMemo(
     () => items.find((item) => item.id === selectedId) || null,
     [items, selectedId],
@@ -569,6 +588,55 @@ export default function AdminMediaLibraryTab({
     if (focusedAssetType === "data") return t("admin.mediaTypeData", "Data files");
     return t("admin.mediaTypeOther", "Other");
   }, [focusedAssetType]);
+
+  const focusedAssetLineage = useMemo(() => {
+    const asset = focusedItem?.asset;
+    if (!asset || typeof asset !== "object") {
+      return { hasLineage: false, original: null, variants: [] };
+    }
+    const parsedOriginalId = Number.parseInt(String(asset.originalId ?? ""), 10);
+    const originalSourceId = Number.isFinite(parsedOriginalId) ? parsedOriginalId : null;
+    const originalItem =
+      originalSourceId != null
+        ? wordpressRowsBySourceId.get(String(originalSourceId)) || null
+        : null;
+    const variants = (Array.isArray(asset.variants) ? asset.variants : [])
+      .map((variant, index) => {
+        const parsedVariantId = Number.parseInt(String(variant?.sourceId ?? ""), 10);
+        const sourceId = Number.isFinite(parsedVariantId) ? parsedVariantId : null;
+        const linkedItem =
+          sourceId != null
+            ? wordpressRowsBySourceId.get(String(sourceId)) || null
+            : null;
+        return {
+          key: sourceId != null ? `wp:${sourceId}` : `idx:${index}`,
+          sourceId,
+          linkedItem,
+          variantKind:
+            normalizeEditorValue(variant?.variantKind || "", 80) || null,
+          format: normalizeEditorValue(variant?.format || "", 40) || null,
+          url: normalizeEditorValue(variant?.url || "", 1024) || null,
+        };
+      })
+      .filter((variant) => variant.sourceId != null || variant.url);
+
+    const hasLineage = Boolean(
+      normalizeEditorValue(asset.assetId || "", 96) ||
+        originalSourceId != null ||
+        normalizeEditorValue(asset.originalUrl || "", 1024) ||
+        variants.length > 0,
+    );
+
+    return {
+      hasLineage,
+      original: {
+        sourceId: originalSourceId,
+        item: originalItem,
+        url: normalizeEditorValue(asset.originalUrl || "", 1024) || null,
+      },
+      variants,
+    };
+  }, [focusedItem, wordpressRowsBySourceId]);
 
   const filteredDerivations = useMemo(() => {
     if (showAllDerivations || !focusedAssetType) return derivations;
@@ -1947,6 +2015,121 @@ export default function AdminMediaLibraryTab({
               </p>
             )}
           </div>
+          {focusedAssetLineage.hasLineage && (
+            <div className="rounded border border-purple-200 bg-white/70 p-2 space-y-2">
+              <div>
+                <p className="text-[11px] font-semibold text-purple-800">
+                  {t("admin.mediaAssetLineageTitle", "Asset lineage")}
+                </p>
+                <p className="text-[11px] text-purple-700">
+                  {t(
+                    "admin.mediaAssetLineageHint",
+                    "Jump between original and variant attachments that share the same asset ID.",
+                  )}
+                </p>
+              </div>
+              {(focusedAssetLineage.original?.item ||
+                focusedAssetLineage.original?.url) && (
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold text-purple-800">
+                    {t("admin.mediaAssetOriginal", "Original")}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {focusedAssetLineage.original.item ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          focusItemById(focusedAssetLineage.original.item.id)
+                        }
+                        className="px-2 py-1 rounded border text-[11px] bg-white text-purple-700 hover:bg-purple-100"
+                      >
+                        {focusedAssetLineage.original.item.title ||
+                          `${t("admin.mediaWordPressId", "WordPress ID")} #${focusedAssetLineage.original.item.sourceId}`}
+                      </button>
+                    ) : (
+                      <a
+                        href={focusedAssetLineage.original.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-purple-700 hover:underline break-all"
+                      >
+                        {focusedAssetLineage.original.url}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+              {focusedAssetLineage.variants.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold text-purple-800">
+                    {t("admin.mediaAssetVariants", "Variants")} (
+                    {focusedAssetLineage.variants.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {focusedAssetLineage.variants.map((variant) => {
+                      const isCurrent =
+                        variant.sourceId != null &&
+                        Number(variant.sourceId) === Number(focusedItem.sourceId);
+                      const labelParts = [
+                        variant.variantKind || t("admin.mediaVariant", "Variant"),
+                        variant.format || "",
+                        variant.sourceId != null
+                          ? `#${variant.sourceId}`
+                          : "",
+                        isCurrent ? t("admin.mediaCurrent", "current") : "",
+                      ].filter(Boolean);
+                      const label = labelParts.join(" · ");
+                      if (variant.linkedItem) {
+                        return (
+                          <button
+                            key={variant.key}
+                            type="button"
+                            onClick={() => focusItemById(variant.linkedItem.id)}
+                            className={`px-2 py-1 rounded border text-[11px] ${
+                              isCurrent
+                                ? "bg-purple-200 text-purple-900 border-purple-400"
+                                : "bg-white text-purple-700 hover:bg-purple-100"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      }
+                      if (variant.url) {
+                        return (
+                          <a
+                            key={variant.key}
+                            href={variant.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`px-2 py-1 rounded border text-[11px] ${
+                              isCurrent
+                                ? "bg-purple-200 text-purple-900 border-purple-400"
+                                : "bg-white text-purple-700 hover:bg-purple-100"
+                            }`}
+                          >
+                            {label}
+                          </a>
+                        );
+                      }
+                      return (
+                        <span
+                          key={variant.key}
+                          className={`px-2 py-1 rounded border text-[11px] ${
+                            isCurrent
+                              ? "bg-purple-200 text-purple-900 border-purple-400"
+                              : "bg-white text-purple-700"
+                          }`}
+                        >
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
