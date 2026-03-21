@@ -85,9 +85,9 @@
     "assetTypes": ["image"],
     "operations": [
       { "type": "source", "params": { "assetId": "" } },
-      { "type": "presetCrop", "params": { "preset": "2:1", "scale": 1.0 } },
+      { "type": "presetCrop", "params": { "preset": "191:100", "scale": 1.0 } },
       { "type": "resize", "params": { "width": 1200, "height": 630 } },
-      { "type": "sharpen", "params": { "amount": 0.35 } }
+      { "type": "sharpen", "params": {} }
     ]
   },
   {

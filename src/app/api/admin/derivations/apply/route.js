@@ -9,7 +9,34 @@ import {
   serializeImage,
 } from "@/lib/photonPipeline";
 
-const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
+function buildAllowedHosts(request) {
+  const hosts = new Set();
+  const toHost = (value) => {
+    try { return new URL(value).hostname.toLowerCase(); } catch { return ""; }
+  };
+  const originHost = toHost(request?.nextUrl?.origin || "");
+  if (originHost) hosts.add(originHost);
+  const wpHost = toHost(process.env.NEXT_PUBLIC_WORDPRESS_URL || process.env.WORDPRESS_API_URL || "");
+  if (wpHost) hosts.add(wpHost);
+  const r2Host = toHost(process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "");
+  if (r2Host) hosts.add(r2Host);
+  return hosts;
+}
+
+function validateAssetUrl(rawUrl, request) {
+  let parsed;
+  try { parsed = new URL(rawUrl); } catch {
+    return "Invalid asset URL.";
+  }
+  if (parsed.protocol !== "https:") {
+    return "Asset URL must use HTTPS.";
+  }
+  const allowed = buildAllowedHosts(request);
+  if (allowed.size > 0 && !allowed.has(parsed.hostname.toLowerCase())) {
+    return `Asset host '${parsed.hostname}' is not in the allowed list.`;
+  }
+  return null;
+}
 
 function jsonError(message, status = 400) {
   return new Response(JSON.stringify({ ok: false, error: message }), {
@@ -33,6 +60,8 @@ export async function POST(request) {
   if (!derivationId || !asset?.url) {
     return jsonError("derivationId and asset (with url) are required.");
   }
+  const urlError = validateAssetUrl(asset.url, request);
+  if (urlError) return jsonError(urlError);
 
   const derivation = await getDerivationById(derivationId);
   if (!derivation) {
@@ -65,7 +94,7 @@ export async function POST(request) {
       );
     }
     const buffer = await sourceResponse.arrayBuffer();
-    guardSourceSize(buffer.byteLength, MAX_SOURCE_BYTES);
+    guardSourceSize(buffer.byteLength);
     sourceBytes = new Uint8Array(buffer);
   } catch (fetchError) {
     return jsonError(fetchError?.message || "Failed to fetch source image.");
