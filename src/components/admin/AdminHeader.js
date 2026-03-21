@@ -257,6 +257,7 @@ export default function AdminHeader({ logoUrl }) {
     if (!menuOpen) return undefined;
     lastFocusedBeforeMenuRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const fallbackFocus = menuToggleButtonRef.current;
     const drawer = menuDrawerRef.current;
     const focusable = getFocusableElements(drawer);
     (focusable[0] || drawer)?.focus?.();
@@ -293,7 +294,7 @@ export default function AdminHeader({ logoUrl }) {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       const restoreTarget =
-        lastFocusedBeforeMenuRef.current || menuToggleButtonRef.current;
+        lastFocusedBeforeMenuRef.current || fallbackFocus;
       restoreTarget?.focus?.();
     };
   }, [menuOpen]);

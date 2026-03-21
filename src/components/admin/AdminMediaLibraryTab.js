@@ -439,7 +439,7 @@ export default function AdminMediaLibraryTab({
           : t("admin.mediaDerivationsLoadFailed", "Could not load derivations."),
       );
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     loadDerivations();
@@ -710,6 +710,49 @@ export default function AdminMediaLibraryTab({
       minute: "2-digit",
     });
   };
+
+  function handleMediaTableKeyDown(event) {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      const start = focusedRowIndex >= 0 ? focusedRowIndex + 1 : 0;
+      focusRowByIndex(start);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      const start =
+        focusedRowIndex >= 0 ? focusedRowIndex - 1 : rows.length - 1;
+      focusRowByIndex(start);
+      return;
+    }
+    if (event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      focusRowByIndex(focusedRowIndex >= 0 ? focusedRowIndex : 0);
+      return;
+    }
+    const activeItem =
+      focusedRowIndex >= 0 ? rows[focusedRowIndex] : rows[0] || null;
+    if (!activeItem) return;
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (canOpenDataViewer(activeItem) || canPreviewImage(activeItem)) {
+        openViewer(activeItem);
+      } else {
+        openEditor(activeItem);
+      }
+      return;
+    }
+    if (event.key.toLowerCase() === "a") {
+      event.preventDefault();
+      openEditor(activeItem);
+      return;
+    }
+    if (event.key.toLowerCase() === "c") {
+      event.preventDefault();
+      copyUrl(activeItem.url);
+    }
+  }
 
   useEffect(() => {
     if (!selectedItem) return;
@@ -1214,6 +1257,15 @@ export default function AdminMediaLibraryTab({
       setDerivationError(t("admin.mediaDerivationRequiresSelection", "Select a derivation and an asset first."));
       return;
     }
+    if (derivationInvalidParameters.length > 0) {
+      setDerivationError(
+        t(
+          "admin.mediaDerivationFixInvalidNumeric",
+          "Fix invalid numeric parameters before applying the derivation.",
+        ),
+      );
+      return;
+    }
     if (derivationUnboundParameters.length > 0) {
       setDerivationError(
         t(
@@ -1703,7 +1755,20 @@ export default function AdminMediaLibraryTab({
       )}
 
       {rows.length > 0 && (
-        <div className="overflow-auto border rounded">
+        <div
+          className="overflow-auto border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+          tabIndex={0}
+          onFocus={() => {
+            if (!focusedItemId && rows.length > 0) {
+              setFocusedItemId(rows[0].id);
+            }
+          }}
+          onKeyDown={handleMediaTableKeyDown}
+          aria-label={t(
+            "admin.mediaTableAriaLabel",
+            "Asset table. Use arrow keys to move, Enter to open, A to annotate, C to copy URL.",
+          )}
+        >
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600">
               <tr>
@@ -1724,6 +1789,8 @@ export default function AdminMediaLibraryTab({
               {rows.map((item) => (
               <tr
                 key={item.id}
+                ref={(node) => registerMediaRowRef(item.id, node)}
+                onClick={() => setFocusedItemId(item.id)}
                 className={`border-t align-top ${
                   focusedItemId === item.id ? "bg-purple-50" : ""
                 }`}
@@ -2059,6 +2126,33 @@ export default function AdminMediaLibraryTab({
                   </div>
                 )}
               </div>
+              <div>
+                <p className="text-[11px] font-semibold text-indigo-800">
+                  {t(
+                    "admin.mediaDerivationInvalidNumericLabel",
+                    "Invalid numeric parameters",
+                  )}
+                </p>
+                {derivationInvalidParameters.length === 0 ? (
+                  <p className="text-[11px] text-indigo-600">
+                    {t(
+                      "admin.mediaDerivationAllNumericValid",
+                      "All numeric parameters are valid.",
+                    )}
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {derivationInvalidParameters.map((entry, entryIndex) => (
+                      <span
+                        key={`${entry.operator}-${entry.param}-invalid-${entryIndex}`}
+                        className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] text-red-700"
+                      >
+                        {entry.operator}: {entry.param}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="rounded border border-indigo-100 bg-white p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-semibold text-indigo-700">
@@ -2159,17 +2253,28 @@ export default function AdminMediaLibraryTab({
                 {schema?.parameters?.map((param) => (
                   <label key={param.key} className="flex flex-col text-[11px] text-gray-700">
                     <span>{param.label}</span>
-                    <input
-                      type={param.type}
-                      min={param.min}
-                      max={param.max}
-                      step={param.step}
-                      value={operation.params?.[param.key] ?? ""}
-                      onChange={(event) =>
-                        handleOperationParamChange(index, param.key, event.target.value)
-                      }
-                      className="border rounded px-2 py-1 text-xs"
-                    />
+                    {(() => {
+                      const currentValue = operation.params?.[param.key];
+                      const isInvalid = isInvalidNumericParam(param, currentValue);
+                      return (
+                        <input
+                          type={param.type}
+                          min={param.min}
+                          max={param.max}
+                          step={param.step}
+                          value={currentValue ?? ""}
+                          onChange={(event) =>
+                            handleOperationParamChange(index, param.key, event.target.value)
+                          }
+                          aria-invalid={isInvalid || undefined}
+                          className={`border rounded px-2 py-1 text-xs ${
+                            isInvalid
+                              ? "border-red-400 bg-red-50 text-red-900"
+                              : ""
+                          }`}
+                        />
+                      );
+                    })()}
                   </label>
                 ))}
                 <div className="flex justify-end">
@@ -2219,7 +2324,12 @@ export default function AdminMediaLibraryTab({
             <button
               type="button"
               onClick={applySelectedDerivation}
-              disabled={applyingDerivation || !focusedItem}
+              disabled={
+                applyingDerivation ||
+                !focusedItem ||
+                derivationUnboundParameters.length > 0 ||
+                derivationInvalidParameters.length > 0
+              }
               className="px-3 py-1.5 rounded bg-indigo-700 text-white text-xs hover:bg-indigo-600 disabled:opacity-50"
             >
               {applyingDerivation
@@ -2239,6 +2349,22 @@ export default function AdminMediaLibraryTab({
             {!focusedItem && (
               <span className="text-[11px] text-indigo-600">
                 {t("admin.mediaDerivationRequiresAsset", "Select an asset first.")}
+              </span>
+            )}
+            {focusedItem && derivationUnboundParameters.length > 0 && (
+              <span className="text-[11px] text-amber-700">
+                {t(
+                  "admin.mediaDerivationFillParameters",
+                  "Fill all operation parameters before applying the derivation.",
+                )}
+              </span>
+            )}
+            {focusedItem && derivationInvalidParameters.length > 0 && (
+              <span className="text-[11px] text-red-700">
+                {t(
+                  "admin.mediaDerivationFixInvalidNumeric",
+                  "Fix invalid numeric parameters before applying the derivation.",
+                )}
               </span>
             )}
           </div>
