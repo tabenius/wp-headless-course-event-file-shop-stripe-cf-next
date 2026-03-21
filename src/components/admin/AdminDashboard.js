@@ -1995,6 +1995,7 @@ export default function AdminDashboard() {
           <AdminMediaLibraryTab
             uploadBackend={uploadBackend}
             uploadInfo={uploadInfo}
+            uploadInfoDetails={uploadInfoDetails}
           />
         </Suspense>
       )}
