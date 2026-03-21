@@ -400,14 +400,26 @@ function normalizeWordPressUrl() {
 function normalizeWordPressMediaRow(row) {
   const details = row?.media_details || {};
   const rowMeta = row?.meta && typeof row.meta === "object" ? row.meta : {};
+  const rowAsset =
+    row?.ragbaz_asset && typeof row.ragbaz_asset === "object"
+      ? row.ragbaz_asset
+      : null;
+  const rowAssetDimensions =
+    rowAsset?.dimensions && typeof rowAsset.dimensions === "object"
+      ? rowAsset.dimensions
+      : {};
   const width =
-    normalizeInt(details?.width) || normalizeInt(readWordPressMeta(rowMeta, "ragbaz_asset_width"));
+    normalizeInt(details?.width) ||
+    normalizeInt(rowAssetDimensions?.width) ||
+    normalizeInt(readWordPressMeta(rowMeta, "ragbaz_asset_width"));
   const height =
     normalizeInt(details?.height) ||
+    normalizeInt(rowAssetDimensions?.height) ||
     normalizeInt(readWordPressMeta(rowMeta, "ragbaz_asset_height"));
   const sizeBytes =
     normalizeInt(details?.filesize) ||
     normalizeInt(details?.sizes?.full?.filesize) ||
+    normalizeInt(rowAsset?.size) ||
     normalizeInt(readWordPressMeta(rowMeta, "ragbaz_asset_size")) ||
     normalizeInt(row?.filesize);
   const mimeType =
@@ -430,21 +442,45 @@ function normalizeWordPressMediaRow(row) {
     1800,
   );
   const schemaRef = readWordPressMeta(rowMeta, "ragbaz_asset_schema_ref", 400);
-  const assetId = sanitizeAssetId(readWordPressMeta(rowMeta, "ragbaz_asset_id", 96));
+  const assetId = sanitizeAssetId(
+    rowAsset?.assetId || readWordPressMeta(rowMeta, "ragbaz_asset_id", 96),
+  );
   const ownerUri = normalizeOwnerUri(
-    readWordPressMeta(rowMeta, "ragbaz_asset_owner_uri", 320) || "/",
+    rowAsset?.ownerUri || readWordPressMeta(rowMeta, "ragbaz_asset_owner_uri", 320) || "/",
   );
   const assetUri =
-    sanitizeText(rowMeta.ragbaz_asset_uri, 400) || buildAssetIdUri(assetId);
-  const assetSlug = sanitizeAssetSlug(readWordPressMeta(rowMeta, "ragbaz_asset_slug", 120));
-  const assetRole = readWordPressMeta(rowMeta, "ragbaz_asset_role", 40);
-  const assetFormat = readWordPressMeta(rowMeta, "ragbaz_asset_format", 40);
+    sanitizeText(rowAsset?.uri, 400) ||
+    sanitizeText(rowMeta.ragbaz_asset_uri, 400) ||
+    buildAssetIdUri(assetId);
+  const assetSlug = sanitizeAssetSlug(
+    rowAsset?.slug || readWordPressMeta(rowMeta, "ragbaz_asset_slug", 120),
+  );
+  const assetRole = sanitizeText(
+    rowAsset?.role || readWordPressMeta(rowMeta, "ragbaz_asset_role", 40),
+    40,
+  );
+  const assetFormat = sanitizeText(
+    rowAsset?.format || readWordPressMeta(rowMeta, "ragbaz_asset_format", 40),
+    40,
+  );
   const variantKind =
-    readWordPressMeta(rowMeta, "ragbaz_asset_variant_kind", 80) ||
+    sanitizeText(
+      rowAsset?.variantKind || readWordPressMeta(rowMeta, "ragbaz_asset_variant_kind", 80),
+      80,
+    ) ||
     (assetRole === "original" ? "original" : "");
-  const sourceHash = readWordPressMeta(rowMeta, "ragbaz_asset_hash", 180);
-  const originalUrl = readWordPressMeta(rowMeta, "ragbaz_asset_original_url", 1024);
-  const originalId = readWordPressMeta(rowMeta, "ragbaz_asset_original_id", 96);
+  const sourceHash = sanitizeText(
+    rowAsset?.hash || readWordPressMeta(rowMeta, "ragbaz_asset_hash", 180),
+    180,
+  );
+  const originalUrl = sanitizeText(
+    rowAsset?.original?.url || readWordPressMeta(rowMeta, "ragbaz_asset_original_url", 1024),
+    1024,
+  );
+  const originalId = sanitizeText(
+    rowAsset?.original?.id || readWordPressMeta(rowMeta, "ragbaz_asset_original_id", 96),
+    96,
+  );
   const authorType = normalizeAuthorType(
     readWordPressMeta(rowMeta, "ragbaz_asset_author_type", 24),
   );
@@ -459,6 +495,22 @@ function normalizeWordPressMediaRow(row) {
     180,
   );
   const license = readWordPressMeta(rowMeta, "ragbaz_asset_license", 180);
+  const variants = Array.isArray(rowAsset?.variants)
+    ? rowAsset.variants.map((variant) => ({
+        sourceId: normalizeInt(variant?.sourceId),
+        url: sanitizeText(variant?.url, 1024) || null,
+        mime: sanitizeText(variant?.mime, 120) || null,
+        size: normalizeInt(variant?.size),
+        width: normalizeInt(variant?.width),
+        height: normalizeInt(variant?.height),
+        format: sanitizeText(variant?.format, 40) || null,
+        role: sanitizeText(variant?.role, 40) || null,
+        variantKind: sanitizeText(variant?.variantKind, 80) || null,
+        hash: sanitizeText(variant?.hash, 180) || null,
+        originalId: sanitizeText(variant?.originalId, 96) || null,
+        originalUrl: sanitizeText(variant?.originalUrl, 1024) || null,
+      }))
+    : [];
 
   return {
     id: `wordpress:${row?.id ?? Math.random().toString(36).slice(2)}`,
@@ -499,6 +551,7 @@ function normalizeWordPressMediaRow(row) {
       sourceHash: sourceHash || null,
       originalUrl: originalUrl || null,
       originalId: originalId || null,
+      variants,
       author: {
         type: authorType,
         id: authorId,
@@ -519,7 +572,7 @@ async function fetchWordPressMedia({ limit, search }) {
     orderby: "date",
     order: "desc",
     _fields:
-      "id,date,date_gmt,source_url,mime_type,slug,title,media_type,media_details,alt_text,caption,description,meta",
+      "id,date,date_gmt,source_url,mime_type,slug,title,media_type,media_details,alt_text,caption,description,meta,ragbaz_asset",
   });
   if (search) params.set("search", search);
   const response = await fetch(`${baseUrl}/wp-json/wp/v2/media?${params.toString()}`, {

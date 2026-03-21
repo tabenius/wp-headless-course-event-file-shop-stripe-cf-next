@@ -139,12 +139,15 @@ async function checkRagbazPlugin() {
       hasLearnPress: Boolean(info.hasLearnPress),
       hasEventsPlugin: Boolean(info.hasEventsPlugin),
       pluginVersion: info.version || "unknown",
+      pluginSemver: null,
+      capabilities: null,
       runtime: null,
       availability: {
         ragbazInfo: true,
         ragbazPluginVersion: false,
         ragbazWpRuntime: false,
         ragbazInfoWpRuntime: false,
+        ragbazCapabilities: false,
       },
     };
 
@@ -194,6 +197,14 @@ async function checkRagbazPlugin() {
                   opcacheEnabled
                 }
               }
+              ragbazCapabilities {
+                pluginPresent
+                pluginVersion
+                pluginSemver
+                assetMetaSchemaVersion
+                assetMetaRestField
+                assetMetaGraphqlField
+              }
             }
           `,
         }),
@@ -205,6 +216,7 @@ async function checkRagbazPlugin() {
         const explicitVersion = runtimeJson.data.ragbazPluginVersion || null;
         const directRuntime = runtimeJson.data.ragbazWpRuntime || null;
         const nestedRuntime = runtimeJson.data.ragbazInfo?.wpRuntime || null;
+        const capabilities = runtimeJson.data.ragbazCapabilities || null;
 
         if (explicitVersion) {
           details.pluginVersion = explicitVersion;
@@ -216,6 +228,21 @@ async function checkRagbazPlugin() {
         } else if (nestedRuntime) {
           details.runtime = nestedRuntime;
           details.availability.ragbazInfoWpRuntime = true;
+        }
+        if (capabilities && typeof capabilities === "object") {
+          details.capabilities = capabilities;
+          details.pluginSemver =
+            typeof capabilities.pluginSemver === "string" &&
+            capabilities.pluginSemver.trim()
+              ? capabilities.pluginSemver.trim()
+              : null;
+          if (
+            typeof capabilities.pluginVersion === "string" &&
+            capabilities.pluginVersion.trim()
+          ) {
+            details.pluginVersion = capabilities.pluginVersion.trim();
+          }
+          details.availability.ragbazCapabilities = true;
         }
       }
     } catch (runtimeError) {

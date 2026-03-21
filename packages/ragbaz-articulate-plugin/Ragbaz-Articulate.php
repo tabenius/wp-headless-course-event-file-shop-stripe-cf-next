@@ -60,6 +60,63 @@ function ragbaz_normalize_vat_percent($value) {
   return round($numeric, 2);
 }
 
+function ragbaz_sanitize_text($value, $max = 600) {
+  $safe = trim(preg_replace('/\s+/', ' ', (string) $value));
+  if (!is_int($max) || $max <= 0) return $safe;
+  if (function_exists('mb_substr')) {
+    return mb_substr($safe, 0, $max);
+  }
+  return substr($safe, 0, $max);
+}
+
+function ragbaz_sanitize_asset_id($value, $max = 96) {
+  $safe = strtolower(ragbaz_sanitize_text($value, $max));
+  if ($safe === '') return '';
+  return preg_replace('/[^a-z0-9._:-]/', '', $safe);
+}
+
+function ragbaz_sanitize_asset_slug($value, $max = 120) {
+  $safe = strtolower(ragbaz_sanitize_text($value, $max));
+  if ($safe === '') return '';
+  $safe = preg_replace('/[^a-z0-9._\/-]+/', '-', $safe);
+  $safe = preg_replace('/-+/', '-', $safe);
+  $safe = trim($safe, '-/');
+  return substr($safe, 0, $max);
+}
+
+function ragbaz_normalize_owner_uri($value, $max = 320) {
+  $raw = trim((string) $value);
+  if ($raw === '' || $raw === '/') return '/';
+  $path = $raw;
+  if (preg_match('#^https?://#i', $raw) === 1) {
+    $parsed = wp_parse_url($raw);
+    if (is_array($parsed) && !empty($parsed['path'])) {
+      $path = $parsed['path'];
+    }
+  }
+  $safe = preg_replace('/\s+/', '', $path);
+  $safe = preg_replace('#/{2,}#', '/', $safe);
+  if ($safe === '') return '/';
+  if (strpos($safe, '/') !== 0) $safe = '/' . $safe;
+  if (strlen($safe) > 1) {
+    $safe = rtrim($safe, '/');
+  }
+  return substr($safe, 0, $max);
+}
+
+function ragbaz_normalize_positive_int($value) {
+  if ($value === '' || is_null($value)) return null;
+  if (!is_numeric($value)) return null;
+  $int = intval(round(floatval($value)));
+  return $int >= 0 ? $int : null;
+}
+
+function ragbaz_build_asset_uri($asset_id) {
+  $safe = ragbaz_sanitize_asset_id($asset_id);
+  if ($safe === '') return '';
+  return '/asset/' . rawurlencode($safe);
+}
+
 function ragbaz_is_plugin_active_anywhere($plugin_basename) {
   $active = get_option('active_plugins', []);
   if (is_array($active) && in_array($plugin_basename, $active, true)) {
@@ -543,6 +600,242 @@ function ragbaz_detect_events_plugin() {
   return false;
 }
 
+function ragbaz_get_attachment_asset_meta_keys() {
+  return [
+    'ragbaz_asset_id' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetId'],
+    'ragbaz_asset_owner_uri' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetOwnerUri'],
+    'ragbaz_asset_uri' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetUri'],
+    'ragbaz_asset_slug' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetSlug'],
+    'ragbaz_asset_role' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetRole'],
+    'ragbaz_asset_format' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetFormat'],
+    'ragbaz_asset_variant_kind' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetVariantKind'],
+    'ragbaz_asset_hash' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetHash'],
+    'ragbaz_asset_original_url' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetOriginalUrl'],
+    'ragbaz_asset_original_id' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetOriginalId'],
+    'ragbaz_asset_mime' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetMime'],
+    'ragbaz_asset_author_type' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetAuthorType'],
+    'ragbaz_asset_author_id' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetAuthorId'],
+    'ragbaz_asset_copyright_holder' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetCopyrightHolder'],
+    'ragbaz_asset_license' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetLicense'],
+    'ragbaz_asset_tooltip' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetTooltip'],
+    'ragbaz_asset_usage_notes' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetUsageNotes'],
+    'ragbaz_asset_structured_meta' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetStructuredMeta'],
+    'ragbaz_asset_schema_ref' => ['type' => 'string', 'graphql_field_name' => 'ragbazAssetSchemaRef'],
+    'ragbaz_asset_size' => ['type' => 'integer', 'graphql_field_name' => 'ragbazAssetSize'],
+    'ragbaz_asset_width' => ['type' => 'integer', 'graphql_field_name' => 'ragbazAssetWidth'],
+    'ragbaz_asset_height' => ['type' => 'integer', 'graphql_field_name' => 'ragbazAssetHeight'],
+  ];
+}
+
+function ragbaz_register_attachment_asset_meta() {
+  if (!function_exists('register_post_meta')) return;
+  $meta_keys = ragbaz_get_attachment_asset_meta_keys();
+  foreach ($meta_keys as $meta_key => $config) {
+    $is_integer = $config['type'] === 'integer';
+    register_post_meta('attachment', $meta_key, [
+      'type' => $config['type'],
+      'single' => true,
+      'show_in_rest' => true,
+      'show_in_graphql' => true,
+      'graphql_field_name' => $config['graphql_field_name'],
+      'sanitize_callback' => $is_integer ? 'absint' : 'sanitize_text_field',
+      'auth_callback' => '__return_true',
+    ]);
+  }
+}
+add_action('init', 'ragbaz_register_attachment_asset_meta');
+
+function ragbaz_get_attachment_asset_record($attachment_id) {
+  $id = intval($attachment_id);
+  if ($id <= 0) return null;
+
+  $asset_id = ragbaz_sanitize_asset_id(get_post_meta($id, 'ragbaz_asset_id', true));
+  $owner_uri = ragbaz_normalize_owner_uri(get_post_meta($id, 'ragbaz_asset_owner_uri', true));
+  $asset_uri = ragbaz_sanitize_text(get_post_meta($id, 'ragbaz_asset_uri', true), 400);
+  $asset_slug = ragbaz_sanitize_asset_slug(get_post_meta($id, 'ragbaz_asset_slug', true));
+  $role = ragbaz_sanitize_text(get_post_meta($id, 'ragbaz_asset_role', true), 40);
+  $format = ragbaz_sanitize_text(get_post_meta($id, 'ragbaz_asset_format', true), 40);
+  $variant_kind = ragbaz_sanitize_text(get_post_meta($id, 'ragbaz_asset_variant_kind', true), 80);
+  $source_hash = ragbaz_sanitize_text(get_post_meta($id, 'ragbaz_asset_hash', true), 180);
+  $original_url = esc_url_raw(get_post_meta($id, 'ragbaz_asset_original_url', true));
+  $original_id = ragbaz_sanitize_text(get_post_meta($id, 'ragbaz_asset_original_id', true), 96);
+  $mime_type = ragbaz_sanitize_text(get_post_meta($id, 'ragbaz_asset_mime', true), 120);
+  if ($mime_type === '') {
+    $mime_type = ragbaz_sanitize_text(get_post_mime_type($id), 120);
+  }
+  $metadata = wp_get_attachment_metadata($id);
+  $width = ragbaz_normalize_positive_int(get_post_meta($id, 'ragbaz_asset_width', true));
+  if (is_null($width) && is_array($metadata) && isset($metadata['width'])) {
+    $width = ragbaz_normalize_positive_int($metadata['width']);
+  }
+  $height = ragbaz_normalize_positive_int(get_post_meta($id, 'ragbaz_asset_height', true));
+  if (is_null($height) && is_array($metadata) && isset($metadata['height'])) {
+    $height = ragbaz_normalize_positive_int($metadata['height']);
+  }
+  $size = ragbaz_normalize_positive_int(get_post_meta($id, 'ragbaz_asset_size', true));
+  if (is_null($size) && is_array($metadata) && isset($metadata['filesize'])) {
+    $size = ragbaz_normalize_positive_int($metadata['filesize']);
+  }
+  if (is_null($size)) {
+    $file = get_attached_file($id);
+    if (is_string($file) && $file !== '' && file_exists($file)) {
+      $size = ragbaz_normalize_positive_int(filesize($file));
+    }
+  }
+
+  if ($asset_uri === '' && $asset_id !== '') {
+    $asset_uri = ragbaz_build_asset_uri($asset_id);
+  }
+  if ($variant_kind === '' && $role === 'original') {
+    $variant_kind = 'original';
+  }
+  if ($original_id === '' && $variant_kind === 'original') {
+    $original_id = (string) $id;
+  }
+  if ($original_url === '' && $variant_kind === 'original') {
+    $own_url = wp_get_attachment_url($id);
+    if (is_string($own_url) && $own_url !== '') {
+      $original_url = esc_url_raw($own_url);
+    }
+  }
+
+  return [
+    'attachmentId' => $id,
+    'assetId' => $asset_id,
+    'ownerUri' => $owner_uri,
+    'uri' => $asset_uri,
+    'slug' => $asset_slug,
+    'role' => $role,
+    'format' => $format,
+    'variantKind' => $variant_kind,
+    'hash' => $source_hash,
+    'originalUrl' => $original_url,
+    'originalId' => $original_id,
+    'mime' => $mime_type,
+    'size' => $size,
+    'width' => $width,
+    'height' => $height,
+    'url' => esc_url_raw(wp_get_attachment_url($id)),
+  ];
+}
+
+function ragbaz_get_attachment_variants($asset_id) {
+  static $variants_cache = [];
+  $safe_asset_id = ragbaz_sanitize_asset_id($asset_id);
+  if ($safe_asset_id === '') return [];
+  if (array_key_exists($safe_asset_id, $variants_cache)) {
+    return $variants_cache[$safe_asset_id];
+  }
+
+  $attachment_ids = get_posts([
+    'post_type' => 'attachment',
+    'post_status' => 'inherit',
+    'fields' => 'ids',
+    'posts_per_page' => 200,
+    'orderby' => 'ID',
+    'order' => 'ASC',
+    'meta_key' => 'ragbaz_asset_id',
+    'meta_value' => $safe_asset_id,
+    'no_found_rows' => true,
+    'suppress_filters' => false,
+  ]);
+
+  $rows = [];
+  foreach ((array) $attachment_ids as $attachment_id) {
+    $record = ragbaz_get_attachment_asset_record($attachment_id);
+    if (!$record) continue;
+    $rows[] = [
+      'sourceId' => intval($record['attachmentId']),
+      'url' => $record['url'] !== '' ? $record['url'] : null,
+      'mime' => $record['mime'] !== '' ? $record['mime'] : null,
+      'size' => is_null($record['size']) ? null : intval($record['size']),
+      'width' => is_null($record['width']) ? null : intval($record['width']),
+      'height' => is_null($record['height']) ? null : intval($record['height']),
+      'format' => $record['format'] !== '' ? $record['format'] : null,
+      'role' => $record['role'] !== '' ? $record['role'] : null,
+      'variantKind' => $record['variantKind'] !== '' ? $record['variantKind'] : null,
+      'hash' => $record['hash'] !== '' ? $record['hash'] : null,
+      'originalId' => $record['originalId'] !== '' ? $record['originalId'] : null,
+      'originalUrl' => $record['originalUrl'] !== '' ? $record['originalUrl'] : null,
+    ];
+  }
+
+  usort($rows, function ($a, $b) {
+    $left_original = isset($a['variantKind']) && $a['variantKind'] === 'original';
+    $right_original = isset($b['variantKind']) && $b['variantKind'] === 'original';
+    if ($left_original !== $right_original) {
+      return $left_original ? -1 : 1;
+    }
+    return intval($a['sourceId']) <=> intval($b['sourceId']);
+  });
+
+  $variants_cache[$safe_asset_id] = $rows;
+  return $rows;
+}
+
+function ragbaz_get_attachment_asset_payload($attachment_id) {
+  $record = ragbaz_get_attachment_asset_record($attachment_id);
+  if (!$record) return null;
+  $variants = $record['assetId'] !== '' ? ragbaz_get_attachment_variants($record['assetId']) : [];
+  $original = [
+    'id' => $record['originalId'] !== '' ? $record['originalId'] : null,
+    'url' => $record['originalUrl'] !== '' ? $record['originalUrl'] : null,
+  ];
+  return [
+    'assetId' => $record['assetId'] !== '' ? $record['assetId'] : null,
+    'ownerUri' => $record['ownerUri'] !== '' ? $record['ownerUri'] : '/',
+    'uri' => $record['uri'] !== '' ? $record['uri'] : null,
+    'slug' => $record['slug'] !== '' ? $record['slug'] : null,
+    'role' => $record['role'] !== '' ? $record['role'] : null,
+    'format' => $record['format'] !== '' ? $record['format'] : null,
+    'variantKind' => $record['variantKind'] !== '' ? $record['variantKind'] : null,
+    'hash' => $record['hash'] !== '' ? $record['hash'] : null,
+    'mime' => $record['mime'] !== '' ? $record['mime'] : null,
+    'size' => is_null($record['size']) ? null : intval($record['size']),
+    'dimensions' => [
+      'width' => is_null($record['width']) ? null : intval($record['width']),
+      'height' => is_null($record['height']) ? null : intval($record['height']),
+    ],
+    'original' => $original,
+    'variants' => $variants,
+  ];
+}
+
+function ragbaz_register_attachment_asset_rest_field() {
+  if (!function_exists('register_rest_field')) return;
+  register_rest_field('attachment', 'ragbaz_asset', [
+    'get_callback' => function ($object) {
+      $id = 0;
+      if (is_array($object) && isset($object['id'])) {
+        $id = intval($object['id']);
+      } elseif (is_object($object) && isset($object->ID)) {
+        $id = intval($object->ID);
+      }
+      if ($id <= 0) return null;
+      return ragbaz_get_attachment_asset_payload($id);
+    },
+    'schema' => [
+      'description' => 'Normalized RAGBAZ asset metadata for this attachment.',
+      'type' => ['object', 'null'],
+      'context' => ['view', 'edit'],
+    ],
+  ]);
+}
+add_action('rest_api_init', 'ragbaz_register_attachment_asset_rest_field');
+
+function ragbaz_get_capabilities() {
+  $version = RAGBAZ_VERSION;
+  $is_semver = preg_match('/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/', $version) === 1;
+  return [
+    'pluginPresent' => true,
+    'pluginVersion' => $version,
+    'pluginSemver' => $is_semver ? $version : null,
+    'assetMetaSchemaVersion' => '1.0.0',
+    'assetMetaRestField' => true,
+    'assetMetaGraphqlField' => true,
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Admin UI: surface storefront link in plugin row + lightweight notice
 // ---------------------------------------------------------------------------
@@ -872,6 +1165,17 @@ add_action('graphql_register_types', function () {
   ]);
 
   // --- RAGBAZ info probe (for storefront detection) ---
+  register_graphql_object_type('RagbazCapabilities', [
+    'fields' => [
+      'pluginPresent' => ['type' => 'Boolean'],
+      'pluginVersion' => ['type' => 'String'],
+      'pluginSemver' => ['type' => 'String'],
+      'assetMetaSchemaVersion' => ['type' => 'String'],
+      'assetMetaRestField' => ['type' => 'Boolean'],
+      'assetMetaGraphqlField' => ['type' => 'Boolean'],
+    ],
+  ]);
+
   register_graphql_object_type('RagbazWpRuntime', [
     'fields' => [
       'pluginVersion' => ['type' => 'String'],
@@ -898,23 +1202,84 @@ add_action('graphql_register_types', function () {
   register_graphql_object_type('RagbazInfo', [
     'fields' => [
       'version' => ['type' => 'String'],
+      'pluginSemver' => ['type' => 'String'],
       'hasLearnPress' => ['type' => 'Boolean'],
       'hasEventsPlugin' => ['type' => 'Boolean'],
       'wpRuntime' => ['type' => 'RagbazWpRuntime'],
+      'capabilities' => ['type' => 'RagbazCapabilities'],
+    ],
+  ]);
+
+  register_graphql_object_type('RagbazAttachmentAssetDimensions', [
+    'fields' => [
+      'width' => ['type' => 'Int'],
+      'height' => ['type' => 'Int'],
+    ],
+  ]);
+
+  register_graphql_object_type('RagbazAttachmentAssetOriginal', [
+    'fields' => [
+      'id' => ['type' => 'String'],
+      'url' => ['type' => 'String'],
+    ],
+  ]);
+
+  register_graphql_object_type('RagbazAttachmentAssetVariant', [
+    'fields' => [
+      'sourceId' => ['type' => 'Int'],
+      'url' => ['type' => 'String'],
+      'mime' => ['type' => 'String'],
+      'size' => ['type' => 'Int'],
+      'width' => ['type' => 'Int'],
+      'height' => ['type' => 'Int'],
+      'format' => ['type' => 'String'],
+      'role' => ['type' => 'String'],
+      'variantKind' => ['type' => 'String'],
+      'hash' => ['type' => 'String'],
+      'originalId' => ['type' => 'String'],
+      'originalUrl' => ['type' => 'String'],
+    ],
+  ]);
+
+  register_graphql_object_type('RagbazAttachmentAsset', [
+    'fields' => [
+      'assetId' => ['type' => 'String'],
+      'ownerUri' => ['type' => 'String'],
+      'uri' => ['type' => 'String'],
+      'slug' => ['type' => 'String'],
+      'role' => ['type' => 'String'],
+      'format' => ['type' => 'String'],
+      'variantKind' => ['type' => 'String'],
+      'hash' => ['type' => 'String'],
+      'mime' => ['type' => 'String'],
+      'size' => ['type' => 'Int'],
+      'dimensions' => ['type' => 'RagbazAttachmentAssetDimensions'],
+      'original' => ['type' => 'RagbazAttachmentAssetOriginal'],
+      'variants' => ['type' => ['list_of' => 'RagbazAttachmentAssetVariant']],
     ],
   ]);
 
   register_graphql_field('RootQuery', 'ragbazInfo', [
     'type' => 'RagbazInfo',
     'resolve' => function () {
+      $capabilities = ragbaz_get_capabilities();
       return [
         'version' => RAGBAZ_VERSION,
+        'pluginSemver' => $capabilities['pluginSemver'],
         'hasLearnPress' => function_exists('learn_press_get_user'),
         'hasEventsPlugin' => ragbaz_detect_events_plugin(),
         'wpRuntime' => current_user_can('manage_options')
           ? ragbaz_get_wp_runtime_status()
           : null,
+        'capabilities' => $capabilities,
       ];
+    },
+  ]);
+
+  register_graphql_field('RootQuery', 'ragbazCapabilities', [
+    'type' => 'RagbazCapabilities',
+    'resolve' => function () {
+      return ragbaz_get_capabilities();
     },
   ]);
 
@@ -930,6 +1295,17 @@ add_action('graphql_register_types', function () {
     'type' => 'String',
     'resolve' => function () {
       return RAGBAZ_VERSION;
+    },
+  ]);
+
+  register_graphql_field('MediaItem', 'ragbazAsset', [
+    'type' => 'RagbazAttachmentAsset',
+    'resolve' => function ($media_item) {
+      $attachment_id = isset($media_item->databaseId)
+        ? intval($media_item->databaseId)
+        : (isset($media_item->ID) ? intval($media_item->ID) : 0);
+      if ($attachment_id <= 0) return null;
+      return ragbaz_get_attachment_asset_payload($attachment_id);
     },
   ]);
 
