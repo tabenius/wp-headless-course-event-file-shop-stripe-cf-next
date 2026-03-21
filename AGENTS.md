@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-21 (Codex)**: Added Media-tab asset-lineage navigation (commit `4b84551`): selected-asset panel now shows original + variant chain controls from `asset.variants`, supports one-click jump back to related WP attachments, highlights current variant chip, and includes EN/SV/ES locale parity keys for the new lineage UI copy.
 - **2026-03-21 (Codex)**: Completed WordPress attachment-asset metadata surfacing and compatibility signaling (commit `3e3d361`): plugin now registers `ragbaz_asset_*` meta for REST/GraphQL, exposes normalized `ragbaz_asset` payloads including `original` + `variants`, adds GraphQL `ragbazCapabilities`/`MediaItem.ragbazAsset`, and admin now consumes those signals in `/api/admin/media-library` and `/api/admin/health` for capability-aware metadata flows.
 - **2026-03-21 (Codex)**: Added derivation preview badges, the operation matrix table, and the concrete/abstract guard in the Media tab plus README/AGENTS notes so the workflow is documented before saving derived assets.
 - **2026-03-21 (Codex)**: Documented the multi-repo codebase map in `README.md`, spelled out the KV-backed derivation contract, and taught the media tab to keep the `source` operation bound to the selected asset, surface upload limits, and send the bound chain to `/api/admin/derivations/apply`.

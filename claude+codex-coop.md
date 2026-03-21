@@ -75,7 +75,7 @@ DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `
 
 ## 2026-03-21 (Codex)
 
-### Codex — derivation preview matrix + parameter guardrails (in progress)
+### Codex — derivation preview matrix + parameter guardrails
 
 - Added derivation summary badges/screens in the Media tab: pseudo-name, concrete vs abstract state, unbound-parameter chips, and an operation matrix table that highlights which parameters are preset and which are left open.
 - Prevented `Apply derivation` from running while parameters remain unbound and documented the requirement in README/AGENTS to keep abstract chains reusable until a concrete asset is chosen.
@@ -95,6 +95,19 @@ DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `
 - Verification:
   - `npm run lint -- src/app/api/admin/media-library/route.js src/app/api/admin/health/route.js` (pass; existing `no-img-element` warnings unchanged),
   - `php -l` unavailable in this environment (`php: command not found`), so plugin syntax must be linted on a machine/container with PHP installed.
+
+### Codex — asset-lineage UI for faster sourcing (commit 4b84551)
+
+- Improved Media tab selected-asset UX by surfacing lineage controls directly in the purple detail panel:
+  - shows an `Asset lineage` block when attachment lineage metadata is available,
+  - shows `Original` attachment jump action (or fallback URL when the original row is not in current list),
+  - lists all known variants with compact chips (`variantKind · format · sourceId`) and highlights the current selection.
+- Added one-click variant/original navigation:
+  - selecting lineage chips re-focuses the corresponding table row and keeps keyboard-flow continuity (no manual re-search required).
+- Added locale strings for the new lineage block in EN/SV/ES (`mediaAssetLineage*`, `mediaVariant`, `mediaCurrent`), keeping admin i18n parity intact.
+- Verification:
+  - `npm run lint -- src/components/admin/AdminMediaLibraryTab.js` (pass; existing repo-wide `no-img-element` warnings unchanged),
+  - `npm test -- tests/i18n-admin-parity.test.js` (pass; full suite executed by project script, 169 pass / 0 fail / 3 skipped).
 
 ## 2026-03-20 (cont. 81)
 
