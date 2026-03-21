@@ -8,6 +8,7 @@ import {
   ADMIN_ACTION_HOTKEYS,
   getAdminTabHotkeyLabel,
   isAdminActionHotkey,
+  shouldIgnoreAdminHotkeys,
 } from "@/lib/adminHotkeys";
 import RagbazLogo from "./RagbazLogo";
 
@@ -150,6 +151,27 @@ function buildIconOutline(color, radius) {
 const THEME_ICON_OUTLINE_NORMAL = buildIconOutline("#2f2f2f", 1);
 const THEME_ICON_OUTLINE_HOVER = buildIconOutline("#000000", 3);
 
+function getFocusableElements(container) {
+  if (!container || typeof container.querySelectorAll !== "function") return [];
+  return Array.from(
+    container.querySelectorAll(
+      [
+        "a[href]",
+        "button:not([disabled])",
+        "input:not([disabled]):not([type='hidden'])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        "[tabindex]:not([tabindex='-1'])",
+      ].join(","),
+    ),
+  ).filter((node) => {
+    if (!(node instanceof HTMLElement)) return false;
+    if (node.hasAttribute("disabled")) return false;
+    if (node.getAttribute("aria-hidden") === "true") return false;
+    return true;
+  });
+}
+
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -165,6 +187,9 @@ export default function AdminHeader({ logoUrl }) {
   const [themeToggleHovered, setThemeToggleHovered] = useState(false);
   const ragbazWordmarkRef = useRef(null);
   const subtitleRef = useRef(null);
+  const menuDrawerRef = useRef(null);
+  const menuToggleButtonRef = useRef(null);
+  const lastFocusedBeforeMenuRef = useRef(null);
   const [subtitleScaleX, setSubtitleScaleX] = useState(1);
   const log = (...args) => console.info("[AdminHeader]", ...args);
   const toggleTheme = useCallback(() => {
@@ -230,17 +255,52 @@ export default function AdminHeader({ logoUrl }) {
 
   useEffect(() => {
     if (!menuOpen) return undefined;
+    lastFocusedBeforeMenuRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const drawer = menuDrawerRef.current;
+    const focusable = getFocusableElements(drawer);
+    (focusable[0] || drawer)?.focus?.();
+
     function onKeyDown(event) {
       if (event.key === "Escape") {
+        event.preventDefault();
         setMenuOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const scope = menuDrawerRef.current;
+      const nodes = getFocusableElements(scope);
+      if (nodes.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !scope?.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+      if (active === last || !scope?.contains(active)) {
+        event.preventDefault();
+        first.focus();
       }
     }
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      const restoreTarget =
+        lastFocusedBeforeMenuRef.current || menuToggleButtonRef.current;
+      restoreTarget?.focus?.();
+    };
   }, [menuOpen]);
 
   useEffect(() => {
     function onGlobalHotkey(event) {
+      if (shouldIgnoreAdminHotkeys(event)) return;
       if (isAdminActionHotkey(event, "menuToggle")) {
         event.preventDefault();
         setMenuOpen((prev) => !prev);
@@ -328,6 +388,7 @@ export default function AdminHeader({ logoUrl }) {
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-center leading-none">
               <button
+                ref={menuToggleButtonRef}
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
                 className="p-2 rounded-lg bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
@@ -446,7 +507,11 @@ export default function AdminHeader({ logoUrl }) {
                 className="fixed inset-0 top-14 z-40 bg-slate-950/55 backdrop-blur-[1px]"
                 onClick={() => setMenuOpen(false)}
               />
-              <aside className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(22_52%_20%/0.98)] p-4 shadow-2xl">
+              <aside
+                ref={menuDrawerRef}
+                tabIndex={-1}
+                className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(22_52%_20%/0.98)] p-4 shadow-2xl"
+              >
                 <div className="space-y-2">
                   {tabItems.map((item) => {
                     const keyLabel = item.hotkey

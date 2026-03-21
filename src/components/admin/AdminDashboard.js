@@ -22,6 +22,7 @@ import { adminFetch } from "@/lib/adminFetch";
 import {
   isAdminActionHotkey,
   resolveAdminTabHotkey,
+  shouldIgnoreAdminHotkeys,
 } from "@/lib/adminHotkeys";
 import {
   deriveWelcomeRevisionState,
@@ -749,11 +750,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     function onKey(e) {
-      const tag = (e.target && e.target.tagName) || "";
-      const isFormField =
-        ["INPUT", "TEXTAREA", "SELECT"].includes(tag) ||
-        e.target?.isContentEditable;
-      if (isFormField) return;
+      if (shouldIgnoreAdminHotkeys(e)) return;
       const tab = resolveAdminTabHotkey(e);
       if (tab) {
         e.preventDefault();

@@ -33,6 +33,20 @@ export const ADMIN_ACTION_HOTKEYS = {
   search: { combo: "Ctrl+Alt+/", match: { code: "Slash", key: "/" } },
 };
 
+function isEditableTarget(target) {
+  if (!target || typeof target !== "object") return false;
+  if (target.isContentEditable) return true;
+  const tag = String(target.tagName || "").toUpperCase();
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (typeof target.closest === "function") {
+    const editableAncestor = target.closest(
+      "input, textarea, select, [contenteditable='true'], [contenteditable='']",
+    );
+    if (editableAncestor) return true;
+  }
+  return false;
+}
+
 function isCtrlAltChord(event) {
   if (event?.getModifierState?.("AltGraph")) return false;
   return Boolean(event?.ctrlKey && event?.altKey);
@@ -59,6 +73,10 @@ export function isAdminActionHotkey(event, action) {
   const rule = ADMIN_ACTION_HOTKEYS[action];
   const matchers = Array.isArray(rule?.match) ? rule.match : [rule?.match];
   return matchers.some((matcher) => matchesChord(event, matcher));
+}
+
+export function shouldIgnoreAdminHotkeys(event) {
+  return isEditableTarget(event?.target);
 }
 
 export function getAdminTabHotkeyLabel(tab) {
