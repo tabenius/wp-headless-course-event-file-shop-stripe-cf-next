@@ -10,8 +10,8 @@ DONE [P2 | Medium]: Dead-link finder panel — added admin scanner (content `<a 
 DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key sections, reordered operator instructions for average-user relevance, and synced wording with current tab names/flows.
 DONE [P2 | Medium]: Admin header stats ticker — scrolling bar added below nav row; endpoint GET /api/admin/stats-ticker aggregates Stripe revenue/transactions/customers/salesPerUser + CF weekly avg hits/day with graceful fallback; refreshes every 5 min (commit bd6c051).
 DONE [P3 | Medium]: Post-implementation code review — full quality/usability audit completed 2026-03-21 (Claude); top-priority fixes implemented same session (see audit-fixes commit 1cb27ff).
-IN PROGRESS [P2 | Medium | Claude]: Admin UX polish follow-up (Codex review for Claude) — add focus trap + initial focus for hamburger drawer, prevent global `Ctrl+Alt` actions while typing in form controls, make media table rows keyboard-selectable (`Up/Down`, `Enter`, `Space`), and hard-validate numeric derivation params before enabling apply.
-TODO [P2 | Medium]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
+DONE [P2 | Medium]: Admin UX polish follow-up — all 4 items already implemented by Codex: focus trap in hamburger drawer (AdminHeader.js:257-298), Ctrl+Alt guard while typing (shouldIgnoreAdminHotkeys/isEditableTarget), media table keyboard nav (handleMediaTableKeyDown), numeric param hard-validation (derivationInvalidParameters disables Apply). Verified by Claude 2026-03-21.
+IN PROGRESS [P2 | Medium | Claude]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
 TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
 
 ## 2026-03-21 (Claude)
@@ -38,7 +38,7 @@ TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose 
 - DX: Removed duplicate `MAX_SOURCE_BYTES` from apply route.
 - i18n: Added 4 missing `welcomeSlideNBody` keys to en/sv; all 909 keys in sync.
 
-**Stats ticker landed** (commit bd6c051). **Now starting:** Admin UX polish follow-up (P2, checked out by Claude).
+**Stats ticker landed** (commit bd6c051). **UX polish verified already done by Codex.** Now starting: WordPress plugin media metadata surface (P2).
 
 ## 2026-03-20 (cont. 82)
 
