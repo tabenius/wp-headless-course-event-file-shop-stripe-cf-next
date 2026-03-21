@@ -191,6 +191,7 @@ export default function AdminHeader({ logoUrl }) {
   const menuToggleButtonRef = useRef(null);
   const lastFocusedBeforeMenuRef = useRef(null);
   const [subtitleScaleX, setSubtitleScaleX] = useState(1);
+  const [tickerStats, setTickerStats] = useState(null);
   const log = (...args) => console.info("[AdminHeader]", ...args);
   const toggleTheme = useCallback(() => {
     const next = adminTheme === "gruvbox" ? "light" : "gruvbox";
@@ -342,7 +343,56 @@ export default function AdminHeader({ logoUrl }) {
     };
   }, [localeState]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTicker() {
+      try {
+        const response = await fetch("/api/admin/stats-ticker");
+        if (!response.ok) return;
+        const json = await response.json().catch(() => null);
+        if (!cancelled && json?.ok) setTickerStats(json.stats);
+      } catch {
+        // Silently ignore — ticker is best-effort
+      }
+    }
+    loadTicker();
+    const interval = setInterval(loadTicker, 5 * 60 * 1000); // refresh every 5 min
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
   if (pathname === "/admin/login") return null;
+
+  function buildTickerText(stats) {
+    if (!stats) return t("admin.statsTickerUnavailable", "Stats unavailable");
+    const parts = [];
+    const currency = stats.currency || "SEK";
+
+    if (stats.revenue && typeof stats.revenue === "object") {
+      const revEntry = stats.revenue[currency];
+      if (revEntry != null) {
+        const amount = Math.round(revEntry / 100);
+        parts.push(`${t("admin.statsTickerRevenue", "Revenue")}: ${amount.toLocaleString()} ${currency}`);
+      }
+    }
+    if (stats.transactions != null) {
+      parts.push(`${t("admin.statsTickerTransactions", "Sales")}: ${stats.transactions}`);
+    }
+    if (stats.customers != null) {
+      parts.push(`${t("admin.statsTickerCustomers", "Customers")}: ${stats.customers}`);
+    }
+    if (stats.salesPerUser != null) {
+      parts.push(`${t("admin.statsTickerSalesPerUser", "Sales/user")}: ${stats.salesPerUser.toFixed(1)}×`);
+    }
+    if (stats.weeklyAvgHitsPerDay != null) {
+      parts.push(`${t("admin.statsTickerHitsPerDay", "Avg hits/day")}: ${stats.weeklyAvgHitsPerDay.toLocaleString()}`);
+    }
+    return parts.length > 0
+      ? parts.join("  ·  ")
+      : t("admin.statsTickerUnavailable", "Stats unavailable");
+  }
 
   async function logoutAdmin() {
     await fetch("/api/admin/logout", { method: "POST" });
@@ -584,6 +634,26 @@ export default function AdminHeader({ logoUrl }) {
               </aside>
             </>
           )}
+        </div>
+      </div>
+      {/* Stats ticker — thin scrolling bar below the main nav row */}
+      <div
+        className="w-full overflow-hidden border-t border-[hsl(22_56%_31%)] bg-[hsl(22_56%_35%)]"
+        style={{ height: "1.4rem" }}
+        aria-label={t("admin.statsTicker", "Stats")}
+      >
+        <div
+          className="flex whitespace-nowrap text-[10px] font-medium text-[hsl(39_62%_93%)] select-none"
+          style={{
+            animation: "admin-ticker-scroll 60s linear infinite",
+            willChange: "transform",
+            paddingTop: "2px",
+          }}
+        >
+          {/* Duplicate text for seamless loop */}
+          <span className="px-8">{buildTickerText(tickerStats)}</span>
+          <span className="px-8" aria-hidden="true">{buildTickerText(tickerStats)}</span>
+          <span className="px-8" aria-hidden="true">{buildTickerText(tickerStats)}</span>
         </div>
       </div>
     </header>

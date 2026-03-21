@@ -637,3 +637,9 @@ body:has(.admin-layout)::before {
 .dark-mode .bg-gray-50 {
   background-color: #222 !important;
 }
+
+/* Admin header stats ticker scroll animation */
+@keyframes admin-ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
