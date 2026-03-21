@@ -11,8 +11,8 @@ DONE [P3 | Medium]: Documentation UX pass — added GUI visuals alongside key se
 DONE [P2 | Medium]: Admin header stats ticker — scrolling bar added below nav row; endpoint GET /api/admin/stats-ticker aggregates Stripe revenue/transactions/customers/salesPerUser + CF weekly avg hits/day with graceful fallback; refreshes every 5 min (commit bd6c051).
 DONE [P3 | Medium]: Post-implementation code review — full quality/usability audit completed 2026-03-21 (Claude); top-priority fixes implemented same session (see audit-fixes commit 1cb27ff).
 DONE [P2 | Medium]: Admin UX polish follow-up — all 4 items already implemented by Codex: focus trap in hamburger drawer (AdminHeader.js:257-298), Ctrl+Alt guard while typing (shouldIgnoreAdminHotkeys/isEditableTarget), media table keyboard nav (handleMediaTableKeyDown), numeric param hard-validation (derivationInvalidParameters disables Apply). Verified by Claude 2026-03-21.
-IN PROGRESS [P2 | Medium | Claude]: WordPress plugin media metadata surface — update `packages/ragbaz-articulate-plugin` to expose attachment asset metadata (`assetId`, `original`, `variants`, `size`, `dimensions`, `mime`, `hash`) so admin/storefront pipelines can resolve original↔compressed relationships consistently across WP media and R2.
-TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose plugin presence + semantic version over GraphQL so admin health/info views can detect compatibility before running attachment-asset metadata flows.
+DONE [P2 | Medium]: WordPress plugin media metadata surface — plugin now registers attachment `ragbaz_asset_*` meta for REST/GraphQL, exposes normalized `ragbaz_asset` on `/wp/v2/media`, and resolves `original` + `variants` chains (`assetId`, `size`, `dimensions`, `mime`, `hash`) for WP attachment assets (commit `3e3d361`).
+DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `ragbazCapabilities` query (`pluginPresent`, `pluginVersion`, `pluginSemver`, asset-meta capability flags/schema version) and wired admin health runtime probe to ingest that signal before metadata-dependent flows (commit `3e3d361`).
 
 ## 2026-03-21 (Claude)
 
@@ -79,6 +79,22 @@ TODO [P2 | Medium]: WordPress plugin presence/version GraphQL signal — expose 
 
 - Added derivation summary badges/screens in the Media tab: pseudo-name, concrete vs abstract state, unbound-parameter chips, and an operation matrix table that highlights which parameters are preset and which are left open.
 - Prevented `Apply derivation` from running while parameters remain unbound and documented the requirement in README/AGENTS to keep abstract chains reusable until a concrete asset is chosen.
+
+### Codex — WP attachment asset metadata + capability signal (commit 3e3d361)
+
+- Extended the WordPress plugin (`packages/ragbaz-articulate-plugin/Ragbaz-Articulate.php`) with attachment-asset metadata registration and normalization:
+  - registers `ragbaz_asset_*` attachment meta keys for REST and GraphQL,
+  - adds REST field `ragbaz_asset` with normalized asset record (`assetId`, `uri`, `ownerUri`, `variantKind`, `hash`, `mime`, `size`, `dimensions`, `original`, `variants`),
+  - resolves variant lists by shared `ragbaz_asset_id` so original↔derived chains are queryable per attachment.
+- Added GraphQL capability probe:
+  - `ragbazCapabilities` query and `RagbazCapabilities` type expose `pluginPresent`, `pluginVersion`, `pluginSemver`, and asset-meta surface flags/schema version,
+  - `MediaItem.ragbazAsset` exposes normalized attachment asset metadata directly in WPGraphQL.
+- Updated admin integration:
+  - `src/app/api/admin/media-library/route.js` now requests `ragbaz_asset` from WordPress REST and prefers it over raw `meta` when present,
+  - `src/app/api/admin/health/route.js` runtime probe now reads `ragbazCapabilities` and stores availability/capability details for compatibility checks.
+- Verification:
+  - `npm run lint -- src/app/api/admin/media-library/route.js src/app/api/admin/health/route.js` (pass; existing `no-img-element` warnings unchanged),
+  - `php -l` unavailable in this environment (`php: command not found`), so plugin syntax must be linted on a machine/container with PHP installed.
 
 ## 2026-03-20 (cont. 81)
 
