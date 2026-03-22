@@ -289,6 +289,35 @@ function toEditorState(item) {
   };
 }
 
+const LS_LAST_OPENED_KEY = "mediaLibraryLastOpenedAt";
+
+/**
+ * Record "now" as the current open time and return the *previous* open time.
+ * The NEW badge compares asset.updatedAt against that previous time so that
+ * anything uploaded since the last visit shows as new.
+ * Returns null on first visit or if localStorage is unavailable.
+ */
+function stampOpenAndGetPrevious() {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const prev = localStorage.getItem(LS_LAST_OPENED_KEY);
+    localStorage.setItem(LS_LAST_OPENED_KEY, new Date().toISOString());
+    return prev || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Return true when an asset was uploaded/modified after the last library open. */
+function isNewAsset(updatedAt, lastOpenedAt) {
+  if (!updatedAt || !lastOpenedAt) return false;
+  try {
+    return new Date(updatedAt) > new Date(lastOpenedAt);
+  } catch {
+    return false;
+  }
+}
+
 export default function AdminMediaLibraryTab({
   uploadBackend = "wordpress",
   uploadInfo = null,
@@ -357,6 +386,7 @@ export default function AdminMediaLibraryTab({
   const [r2ManualPending, setR2ManualPending] = useState(false);
   const [r2ManualError, setR2ManualError] = useState("");
   const [r2ManualStatus, setR2ManualStatus] = useState("");
+  const [lastOpenedAt] = useState(() => stampOpenAndGetPrevious());
   const previewBlobUrlRef = useRef(null);
   const uploadInputRef = useRef(null);
   const dragDepthRef = useRef(0);
@@ -2375,8 +2405,13 @@ export default function AdminMediaLibraryTab({
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    <p className="font-medium text-gray-800 break-all">
-                      {item.title || "—"}
+                    <p className="font-medium text-gray-800 break-all flex flex-wrap items-baseline gap-1.5">
+                      <span>{item.title || "—"}</span>
+                      {isNewAsset(item.updatedAt, lastOpenedAt) && (
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700 leading-none">
+                          {t("admin.mediaNewBadge", "New")}
+                        </span>
+                      )}
                     </p>
                     {item.key && (
                       <p className="text-xs text-gray-500 break-all">{item.key}</p>

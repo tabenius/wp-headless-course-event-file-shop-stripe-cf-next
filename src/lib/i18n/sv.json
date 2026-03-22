@@ -423,6 +423,7 @@
     "mediaRegisterButton": "Registrera",
     "mediaRegisterFailed": "Det gick inte att registrera tillgången.",
     "mediaRegisterSuccess": "Tillgången är registrerad och visas i biblioteket.",
+    "mediaNewBadge": "Ny",
     "mediaTableAriaLabel": "Resurstabell. Använd piltangenter för att flytta, Enter för att öppna, A för att annotera, C för att kopiera URL.",
     "mediaJsonSummary": "Rot: {type}, nycklar: {count}",
     "mediaJsonParseError": "JSON-tolkningsvarning",

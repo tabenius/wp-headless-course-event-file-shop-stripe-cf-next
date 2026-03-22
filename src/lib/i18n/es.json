@@ -423,6 +423,7 @@
     "mediaRegisterButton": "Registrar",
     "mediaRegisterFailed": "No se pudo registrar el activo.",
     "mediaRegisterSuccess": "Activo registrado y visible en la biblioteca.",
+    "mediaNewBadge": "Nuevo",
     "mediaTableAriaLabel": "Tabla de activos. Usa las flechas para moverte, Enter para abrir, A para anotar, C para copiar URL.",
     "mediaJsonSummary": "Raíz: {type}, claves: {count}",
     "mediaJsonParseError": "Advertencia de análisis JSON",
