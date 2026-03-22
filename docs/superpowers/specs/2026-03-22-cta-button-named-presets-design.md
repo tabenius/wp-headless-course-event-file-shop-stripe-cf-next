@@ -14,7 +14,7 @@ Extends the typography system with: (1) a full CTA button visual style (`ctaStyl
 
 - **Color fields** (`background`, `foreground`, `primary`, etc.): value `"upstream"` → CSS variable is omitted from `theme.generated.css` and the inline runtime script
 - **Font roles** (`fontDisplay`, `fontHeading`, etc.): `{ type: "upstream" }` → `--font-{role}` variable is omitted
-- **`ctaStyle`**: `{ type: "upstream" }` → all nine `--btn-*` variables are omitted
+- **`ctaStyle`**: `{ type: "upstream" }` → all ten `--btn-*` variables are omitted
 - **`linkStyle`**: `{ type: "upstream" }` → no link hover CSS is written
 - **`typographyPalette`**: `["upstream"]` sentinel → no `--font-color-*` variables are written
 
@@ -34,7 +34,7 @@ siteStyle: {
     textCustom?:   string,
     borderRadius:  "none" | "sm" | "md" | "lg" | "full",
     border:        "none" | "solid",
-    borderColor?:  "primary" | "secondary" | "foreground" | "custom",
+    borderColor?:  "primary" | "secondary" | "foreground" | "custom",  // required when border === "solid"; defaults to "primary" in normalizeCtaStyle
     borderCustom?: string,
     shadow:        "none" | "sm" | "md",
     fontWeight:    "normal" | "medium" | "semibold" | "bold",
@@ -65,6 +65,8 @@ siteStyle: {
 
 Upstream is always shown first and is not a style object — selecting it sets `ctaStyle: { type: "upstream" }`.
 
+> **Note — Secondary preset contrast:** The Secondary preset pairs `secondary` background with `foreground` text. Because both colors are user-defined, contrast is not guaranteed. The UI does not validate this; admins should verify contrast after choosing custom secondary/foreground values.
+
 ### Named preset library (KV key `style-presets`)
 
 ```js
@@ -89,6 +91,7 @@ Upstream is always shown first and is not a style object — selecting it sets `
         fontButton: { /* font role object */ },
         typographyPalette: string[],
         linkStyle: { /* link style object */ },
+        // ctaStyle is NOT included — it is saved/managed separately via the CTA preset strip
       }
     }
   ]
@@ -96,6 +99,8 @@ Upstream is always shown first and is not a style object — selecting it sets `
 ```
 
 IDs are generated with `crypto.randomUUID()` on save. User-created presets are deletable; built-in CTA presets and the five built-in typography themes are not. A missing or null `style-presets` key is treated as `{ cta: [], typography: [] }`.
+
+**Typography preset vs built-in themes:** Built-in themes (Clean, Editorial, Technical, Warm, Haute) specify only font roles and `typographyPalette` — they leave `linkStyle` and `ctaStyle` at their current values when applied. User-saved typography presets capture and restore the full typography state: all five font roles + `typographyPalette` + `linkStyle`. Applying a user preset overwrites `linkStyle` in the style editor state. `ctaStyle` is never included in typography presets.
 
 ### Migration defaults
 
@@ -121,12 +126,14 @@ All three methods require admin auth.
 **`POST /api/admin/style-presets`**
 - Body: `{ type: "cta" | "typography", name: string, style: object }`
 - Validates: `name` is a non-empty string (max 80 chars); `type` is one of the two values; `style` is present
+- For CTA presets: runs `style` through `normalizeCtaStyle()` before storing — invalid fields are clamped, missing `borderColor` defaults to `"primary"`. Rejects if `normalizeCtaStyle()` returns `{ type: "upstream" }` (cannot save upstream as a named preset)
+- For typography presets: stores `style` as-is (the client sends already-normalized font role objects)
 - Generates `id: crypto.randomUUID()`
 - Read-modify-write on `style-presets` KV key — appends to the matching array
 - Returns `{ ok: true, preset: { id, name, style } }`
 
 **`DELETE /api/admin/style-presets`**
-- Body: `{ id: string, type: "cta" | "typography" }`
+- Body: `{ id: string, type: "cta" | "typography" }` — `id` must be a non-empty string, max 64 chars
 - Read-modify-write — filters out the matching entry by id from the matching array
 - Returns `{ ok: true }` (idempotent — no error if id not found)
 
@@ -149,7 +156,7 @@ JSON.stringify(a.ctaStyle) === JSON.stringify(b.ctaStyle)
 
 ### CSS variable generation (`theme.generated.css`)
 
-When `ctaStyle.type === "upstream"`, write nothing. Otherwise write nine variables:
+When `ctaStyle.type === "upstream"`, write nothing. Otherwise write ten variables (always in this order, for stable `JSON.stringify` comparison in `areSiteStylesEqual`):
 
 ```css
 --btn-bg:           <resolved color>;
@@ -180,7 +187,7 @@ For existing color fields (`background`, `foreground`, `primary`, etc.) — when
 ### `globals.css` additions
 
 ```css
-button, .btn, [role="button"], input[type="submit"] {
+:where(button, .btn, [role="button"], input[type="submit"]) {
   background-color: var(--btn-bg, var(--color-primary));
   color:            var(--btn-color, var(--color-bg));
   border-radius:    var(--btn-radius, 8px);
@@ -192,7 +199,7 @@ button, .btn, [role="button"], input[type="submit"] {
 }
 ```
 
-The nested fallbacks mean: if `--btn-bg` is not set (upstream ctaStyle), the declaration falls through to `var(--color-primary)` — which itself may be unset if that color is upstream — so WordPress's own button CSS applies uncontested. No explicit upstream logic is needed in CSS.
+**Specificity strategy:** The rule uses `:where()`, which has zero specificity. This means any WordPress theme button rule (even a plain `button { }`) will override it at equal or higher specificity. When `--btn-bg` is unset (upstream ctaStyle) and `--color-primary` is also unset (upstream color), the fallback chain produces an invalid value and the declaration is dropped — the WP theme rule wins. No explicit upstream logic is needed in CSS.
 
 ### Concrete value mappings
 
@@ -257,7 +264,7 @@ Added to the existing themes strip:
 
 ```
 Themes
-  [Inter] [Editorial] [Startup] [Warm] [Luxury]
+  [Clean] [Editorial] [Technical] [Warm] [Haute]
   [fontpair-elegant-sofia ×]  [Save current…]
 ```
 
@@ -275,7 +282,7 @@ Themes
 
 **Modified files:**
 - `src/lib/shopSettings.js` — add `normalizeCtaStyle()`, extend `normalizeSiteStyle()` and `areSiteStylesEqual()`, handle upstream for all fields
-- `src/app/globals.css` — add nine `--btn-*` bindings to button elements
-- `src/app/theme.generated.css` — add `--btn-*` variable defaults; skip upstream fields
-- `src/lib/typographyThemes.js` — add `ctaStyle` to each built-in theme object (optional — themes may leave ctaStyle unchanged)
+- `src/app/globals.css` — add ten `--btn-*` bindings (with fallback values) to button elements via `:where()` rule
+- `src/app/theme.generated.css` — write `--btn-*` variables when `ctaStyle` is non-upstream; write nothing for upstream fields. Fallback/default values live exclusively in the `globals.css` `var()` fallback chain — not here.
+- `src/lib/typographyThemes.js` — no changes required; built-in themes do not set `ctaStyle` (each theme applies only its font/palette fields; ctaStyle is left at whatever the current value is)
 - `src/components/admin/AdminDashboard.js` — add Button Style section, preset strip, Save current… for typography
