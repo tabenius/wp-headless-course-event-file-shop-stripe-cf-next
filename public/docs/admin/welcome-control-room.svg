@@ -49,17 +49,17 @@
   <text x="412" y="384" fill="#334155" font-family="Arial, sans-serif" font-size="16" font-weight="700">Latest sales snapshot</text>
   <g fill="#0f172a" font-family="Arial, sans-serif" font-size="14">
     <text x="412" y="430">ch_3Q82Az2x</text>
-    <text x="624" y="430">emma@xtas.nu</text>
+    <text x="624" y="430">alex@example.com</text>
     <text x="860" y="430">1490 SEK</text>
     <text x="1034" y="430">Succeeded</text>
 
     <text x="412" y="468">ch_3Q7xWn7p</text>
-    <text x="624" y="468">leo@xtas.nu</text>
+    <text x="624" y="468">casey@example.com</text>
     <text x="860" y="468">990 SEK</text>
     <text x="1034" y="468">Succeeded</text>
 
     <text x="412" y="506">ch_3Q7uT89q</text>
-    <text x="624" y="506">nina@xtas.nu</text>
+    <text x="624" y="506">sam@example.com</text>
     <text x="860" y="506">490 SEK</text>
     <text x="1034" y="506">Pending</text>
   </g>

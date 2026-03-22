@@ -1,4 +1,5 @@
 import config from "../../site.json";
+import { tenantConfig } from "@/lib/tenantConfig";
 
 /**
  * Lazily resolve the base URL so Cloudflare Workers secrets/vars
@@ -7,8 +8,10 @@ import config from "../../site.json";
 function getBaseUrl() {
   return (
     process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    tenantConfig.siteUrl ||
     config.url ||
-    "https://www.xtas.nu"
+    "https://www.example.com"
   ).replace(/\/$/, "");
 }
 
@@ -26,6 +29,11 @@ export function wpAsset(assetPath) {
  */
 const staticSite = {
   ...config,
+  url: tenantConfig.siteUrl || config.url,
+  contact: {
+    ...(config.contact || {}),
+    email: tenantConfig.supportEmail || config?.contact?.email,
+  },
   logoUrl: wpAsset(config.logo.path),
   bgImageUrl: wpAsset(config.backgroundImage),
   faviconUrl: wpAsset(config.icons.favicon),

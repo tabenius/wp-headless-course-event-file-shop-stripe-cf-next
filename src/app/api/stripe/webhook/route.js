@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { grantCourseAccess } from "@/lib/courseAccess";
 import { grantDigitalAccess } from "@/lib/digitalAccessStore";
 import { sendEmail } from "@/lib/email";
+import { tenantConfig } from "@/lib/tenantConfig";
 
 function parseSignature(headerValue) {
   if (typeof headerValue !== "string") return {};
@@ -81,7 +82,10 @@ export async function POST(request) {
         // Send purchase confirmation email
         try {
           const origin =
-            process.env.NEXT_PUBLIC_SITE_URL || "https://www.xtas.nu";
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+            tenantConfig.siteUrl ||
+            "https://www.example.com";
           const productName =
             session?.metadata?.product_name ||
             session?.metadata?.course_title ||
@@ -113,7 +117,7 @@ export async function POST(request) {
               `<p><strong>Produkt:</strong> ${productName}</p>`,
               `<p><a href="${productUrl}" style="display:inline-block;padding:12px 24px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:6px;">Öppna ${courseUri ? "kursen" : "produkten"}</a></p>`,
               `<p style="color:#888;font-size:13px;">Logga in med ${email} för att komma åt ditt innehåll.</p>`,
-              `<br><p style="color:#888;font-size:13px;">– Xtas.nu</p>`,
+              `<br><p style="color:#888;font-size:13px;">– ${tenantConfig.brandSignature || "Support Team"}</p>`,
             ].join(""),
           });
         } catch (emailErr) {

@@ -3,7 +3,7 @@
   "shortName": "Xtas",
   "tagline": "Närvaro, kontakt och äkta tantriska möten utan prestation och krav.",
   "description": "Närvaro, kontakt och äkta tantriska möten utan prestation och krav. Kurser, events och sessioner med Sofia Cerne.",
-  "url": "https://www.xtas.nu",
+  "url": "https://www.example.com",
   "locale": "sv_SE",
   "lang": "sv",
   "copyright": "XTAS / Sofias Academy",
@@ -20,7 +20,7 @@
   },
   "backgroundImage": "/img/bg.webp",
   "contact": {
-    "email": "info@xtas.nu",
+    "email": "support@example.com",
     "phone": "+46705274940",
     "phoneDisplay": "070-527 49 40"
   },

@@ -1,7 +1,9 @@
 /**
  * Send an email via the Resend API.
- * Always BCC info@xtas.nu on all outgoing emails.
+ * Optionally BCC tenant-defined notification inboxes.
  */
+import { tenantConfig } from "@/lib/tenantConfig";
+
 export async function sendEmail({ to, subject, html }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
@@ -9,10 +11,22 @@ export async function sendEmail({ to, subject, html }) {
     throw new Error("Email service is not configured");
   }
 
+  const bcc = Array.from(
+    new Set(
+      [
+        ...tenantConfig.notificationBcc,
+        ...String(process.env.NOTIFICATION_BCC || "")
+          .split(",")
+          .map((entry) => entry.trim())
+          .filter(Boolean),
+      ].filter(Boolean)
+    )
+  );
+
   const payload = {
     from,
     to: Array.isArray(to) ? to : [to],
-    bcc: ["info@xtas.nu"],
+    ...(bcc.length ? { bcc } : {}),
     subject,
     html,
   };

@@ -1,5 +1,7 @@
 "use client";
 
+import { tenantConfig } from "@/lib/tenantConfig";
+
 const boxBase =
   "rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold shadow-sm min-w-[140px]";
 
@@ -155,7 +157,7 @@ export default function ArchitectureDiagram() {
             <div className="mt-2 text-[11px] text-gray-500 text-center space-y-0.5">
               <p>Purchase receipts</p>
               <p>Password reset</p>
-              <p>BCC to info@xtas.nu</p>
+              <p>BCC to {tenantConfig.supportEmail}</p>
             </div>
           </div>
         </div>
@@ -264,7 +266,7 @@ export default function ArchitectureDiagram() {
             <li>
               Workers verifies the webhook signature, writes access grants to{" "}
               <strong>Cloudflare KV</strong>, and sends a purchase receipt via{" "}
-              <strong>Resend</strong> (with BCC to info@xtas.nu).
+              <strong>Resend</strong> (with BCC to {tenantConfig.supportEmail}).
             </li>
             <li>
               User is redirected back to the content page and can now view the

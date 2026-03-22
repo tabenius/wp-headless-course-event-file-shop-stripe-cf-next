@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
+import { tenantConfig } from "@/lib/tenantConfig";
 
 const IMPRESS_SCRIPT_ID = "impress-js-1.1.0";
 const BASE_SLIDE_WIDTH = 940;
@@ -432,24 +433,25 @@ function PerformanceGainsSlide() {
 }
 
 function SalesMockScreen() {
+  const demoEmails = tenantConfig.demoCustomerEmails || [];
   const rows = [
     {
       id: "ch_3Q82Az2x",
-      customer: "emma@xtas.nu",
+      customer: demoEmails[0] || "alex@example.com",
       amount: "1 490 SEK",
       status: "Succeeded",
       date: "2026-03-17",
     },
     {
       id: "ch_3Q7xWn7p",
-      customer: "leo@xtas.nu",
+      customer: demoEmails[1] || "casey@example.com",
       amount: "990 SEK",
       status: "Succeeded",
       date: "2026-03-16",
     },
     {
       id: "ch_3Q7uT89q",
-      customer: "nina@xtas.nu",
+      customer: demoEmails[2] || "sam@example.com",
       amount: "490 SEK",
       status: "Pending",
       date: "2026-03-15",
@@ -679,6 +681,8 @@ function ImagePromptMockScreen() {
 }
 
 function ChatMockScreen() {
+  const sampleEmail =
+    tenantConfig.demoCustomerEmails?.[0] || "alex@example.com";
   return (
     <div className="h-full rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-slate-100 p-5 shadow-xl">
       <h3 className="text-lg font-semibold text-gray-900">
@@ -704,7 +708,7 @@ function ChatMockScreen() {
         <div className="rounded-xl border border-cyan-100 bg-white p-3 text-sm">
           <p className="text-xs uppercase tracking-wider text-gray-700">User</p>
           <p className="mt-1">
-            Show latest payment receipts for emma@xtas.nu in a table.
+            Show latest payment receipts for {sampleEmail} in a table.
           </p>
         </div>
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm">

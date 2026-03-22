@@ -3,6 +3,7 @@ import { z } from "zod";
 import site from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { tenantConfig } from "@/lib/tenantConfig";
 
 const ContactSchema = z.object({
   name: z.string().trim().min(2, t("authErrors.nameTooShort")),
@@ -15,7 +16,8 @@ function getTargetEmail() {
     site?.contact?.email ||
     process.env.CONTACT_EMAIL ||
     process.env.SUPPORT_EMAIL ||
-    "info@xtas.nu"
+    tenantConfig.supportEmail ||
+    "support@example.com"
   );
 }
 
