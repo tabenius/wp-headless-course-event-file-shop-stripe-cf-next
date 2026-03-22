@@ -1,6 +1,7 @@
 "use client";
 
 import { t } from "@/lib/i18n";
+import { tenantConfig } from "@/lib/tenantConfig";
 import DebugLogPanel from "./DebugLogPanel";
 import TorusBanner from "./TorusBanner";
 
@@ -12,9 +13,7 @@ export default function AdminSandboxTab({
   analyticsMode,
   analyticsConfigured,
   purging,
-  purgeMessage,
   deploying,
-  deployMessage,
   lastDeployAt,
   commits,
   commitsError,
@@ -55,12 +54,6 @@ export default function AdminSandboxTab({
             </button>
           </div>
         </div>
-        {purgeMessage && (
-          <p className="text-green-700 text-sm">{purgeMessage}</p>
-        )}
-        {deployMessage && (
-          <p className="text-green-700 text-sm">{deployMessage}</p>
-        )}
         {buildTimestamp && (
           <p className="text-xs text-gray-500">
             Build: {new Date(buildTimestamp).toLocaleString("sv-SE")}
@@ -143,7 +136,7 @@ export default function AdminSandboxTab({
               </div>
               {analyticsMode === "workers" && (
                 <p className="text-[10px] text-gray-400 mt-1">
-                  Add a custom domain (e.g. xtas.nu) to Cloudflare, route your
+                  Add a custom domain (e.g. {tenantConfig.customDomainExample}) to Cloudflare, route your
                   Worker through it, and set CF_ZONE_ID to unlock referrers,
                   page views, unique visitors, and bandwidth.
                 </p>

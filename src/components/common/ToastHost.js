@@ -33,13 +33,21 @@ export default function ToastHost() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] space-y-2 w-80 max-w-[90vw]">
+    <div className="fixed top-[4.9rem] inset-x-0 z-[9999] pointer-events-none flex flex-col items-center gap-2 px-4 pt-1">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`shadow-lg rounded px-4 py-3 text-sm ${bg[toast.type] || bg.info}`}
+          className={`pointer-events-auto flex items-center justify-between gap-3 w-full max-w-lg shadow-lg rounded px-4 py-3 text-sm ${bg[toast.type] || bg.info}`}
         >
-          {toast.message}
+          <span>{toast.message}</span>
+          <button
+            type="button"
+            onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+            className="shrink-0 opacity-70 hover:opacity-100 text-base leading-none"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
         </div>
       ))}
     </div>

@@ -427,7 +427,6 @@ function AccessTab({
   shopVatByCategory,
   updateShopVatByCategory,
   shopSettingsSaving,
-  shopSettingsMessage,
   loading,
   editFormRef,
 }) {
@@ -1452,10 +1451,6 @@ function AccessTab({
                     : t("admin.vatMapSave")}
                 </button>
               </div>
-              {shopSettingsMessage && (
-                <p className="text-xs text-green-700">{shopSettingsMessage}</p>
-              )}
-
               {selectedCategories.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {selectedCategories.map((category) => {
@@ -1582,7 +1577,6 @@ function SettingsTab({
   shopVisibleTypes,
   toggleShopType,
   shopSettingsSaving,
-  shopSettingsMessage,
 }) {
   const types = [
     {
@@ -1642,9 +1636,6 @@ function SettingsTab({
           {t("common.saving", "Sparar…")}
         </p>
       )}
-      {shopSettingsMessage && (
-        <p className="text-xs text-green-700">{shopSettingsMessage}</p>
-      )}
     </div>
   );
 }
@@ -1660,7 +1651,6 @@ export default function AdminProductsTab(props) {
     shopVatByCategory,
     updateShopVatByCategory,
     shopSettingsSaving,
-    shopSettingsMessage,
     wcProducts,
     wpCourses,
     wpEvents,
@@ -1778,7 +1768,6 @@ export default function AdminProductsTab(props) {
             shopVatByCategory={shopVatByCategory}
             updateShopVatByCategory={updateShopVatByCategory}
             shopSettingsSaving={shopSettingsSaving}
-            shopSettingsMessage={shopSettingsMessage}
             loading={loading}
             editFormRef={editFormRef}
           />
@@ -1807,7 +1796,6 @@ export default function AdminProductsTab(props) {
           shopVisibleTypes={shopVisibleTypes}
           toggleShopType={toggleShopType}
           shopSettingsSaving={shopSettingsSaving}
-          shopSettingsMessage={shopSettingsMessage}
         />
       )}
     </div>

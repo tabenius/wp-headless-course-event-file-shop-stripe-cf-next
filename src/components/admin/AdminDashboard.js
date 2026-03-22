@@ -773,14 +773,19 @@ export default function AdminDashboard() {
       }
       const scopedTab = normalizeAdminTab(tabOverride || activeTab) || "global";
       setErrorState({ message, tab: scopedTab });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("toast", {
+            detail: { type: "error", message, duration: 8000 },
+          }),
+        );
+      }
     },
     [activeTab],
   );
   const [welcomeStoryVisible, setWelcomeStoryVisible] = useState(true);
   const [purging, setPurging] = useState(false);
-  const [purgeMessage, setPurgeMessage] = useState("");
   const [deploying, setDeploying] = useState(false);
-  const [deployMessage, setDeployMessage] = useState("");
   const [lastDeployAt, setLastDeployAt] = useState(null);
   const [userSearch, setUserSearch] = useState("");
   const [analytics, setAnalytics] = useState(null);
@@ -807,7 +812,6 @@ export default function AdminDashboard() {
     "digital_course",
   ]);
   const [shopSettingsSaving, setShopSettingsSaving] = useState(false);
-  const [shopSettingsMessage, setShopSettingsMessage] = useState("");
   const [shopVatByCategory, setShopVatByCategory] = useState({});
   const [siteStyleTokens, setSiteStyleTokens] = useState(() =>
     readSiteStyleTokensFromDom(SITE_STYLE_DEFAULTS),
@@ -1349,8 +1353,11 @@ export default function AdminDashboard() {
       if (Array.isArray(json.settings?.siteStyleHistory)) {
         setSiteStyleHistory(json.settings.siteStyleHistory);
       }
-      setShopSettingsMessage(t(successMessageKey || "admin.shopVisibilitySaved"));
-      setTimeout(() => setShopSettingsMessage(""), 3000);
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: t(successMessageKey || "admin.shopVisibilitySaved") },
+        }),
+      );
     } catch (err) {
       console.error("Failed to save shop settings:", err);
       setError(err.message || t("admin.shopSettingsSaveFailed"));
@@ -2088,13 +2095,16 @@ export default function AdminDashboard() {
 
   async function purgeCache() {
     setPurging(true);
-    setPurgeMessage("");
     try {
       const res = await fetch("/api/admin/purge-cache", { method: "POST" });
       const json = await res.json();
       if (!res.ok || !json?.ok)
         throw new Error(json?.error || t("admin.purgeFailed"));
-      setPurgeMessage(t("admin.cachePurged"));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: t("admin.cachePurged") },
+        }),
+      );
     } catch (err) {
       setError(err.message || t("admin.purgeFailed"));
     } finally {
@@ -2104,13 +2114,16 @@ export default function AdminDashboard() {
 
   async function triggerDeploy() {
     setDeploying(true);
-    setDeployMessage("");
     try {
       const res = await fetch("/api/admin/deploy", { method: "POST" });
       const json = await res.json();
       if (!res.ok || !json?.ok)
         throw new Error(json?.error || t("admin.deployFailed"));
-      setDeployMessage(t("admin.deployTriggered"));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: t("admin.deployTriggered") },
+        }),
+      );
     } catch (err) {
       setError(err.message || t("admin.deployFailed"));
     } finally {
@@ -2162,7 +2175,6 @@ export default function AdminDashboard() {
             shopVatByCategory={shopVatByCategory}
             updateShopVatByCategory={updateShopVatByCategory}
             shopSettingsSaving={shopSettingsSaving}
-            shopSettingsMessage={shopSettingsMessage}
             wcProducts={wcProducts}
             wpCourses={wpCourses}
             wpEvents={wpEvents}
@@ -2484,11 +2496,6 @@ export default function AdminDashboard() {
               >
                 {t("admin.styleSiteResetDefaults", "Reset to defaults")}
               </button>
-              {shopSettingsMessage && (
-                <span className="text-xs text-emerald-700">
-                  {shopSettingsMessage}
-                </span>
-              )}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div
@@ -2994,9 +3001,7 @@ export default function AdminDashboard() {
             ragbazDownloadUrl={ragbazDownloadUrl}
             runHealthCheck={runHealthCheck}
             purging={purging}
-            purgeMessage={purgeMessage}
             deploying={deploying}
-            deployMessage={deployMessage}
             lastDeployAt={lastDeployAt}
             commits={commits}
             commitsError={commitsError}
@@ -3131,12 +3136,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-      {error ? (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-3">
-          <p className="text-red-800 font-medium">{t("admin.saveFailed")}</p>
-          <p className="text-red-600 text-sm mt-1">{error}</p>
-        </div>
-      ) : null}
     </section>
   );
 }
