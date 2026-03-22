@@ -23,6 +23,10 @@ const ASPECT_LABEL_KEYS = {
 
 const PREVIEW_MAX = 320;
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // 20 MB
+const MIN_SCALE = 1;
+const MAX_SCALE = 3;
+const SCALE_STEP = 0.05;
+const KEYBOARD_PAN_STEP = 14;
 const DEFAULT_OUTPUT_FORMAT = "webp";
 const OUTPUT_FORMATS = ["webp", "avif", "raw"];
 const OUTPUT_EXTENSIONS = {
@@ -57,6 +61,44 @@ function computePreviewFrame(size) {
     width: Math.max(1, Math.round((size.width / size.height) * PREVIEW_MAX)),
     height: PREVIEW_MAX,
   };
+}
+
+function greatestCommonDivisor(a, b) {
+  const left = Math.abs(Number(a) || 0);
+  const right = Math.abs(Number(b) || 0);
+  if (!left || !right) return 1;
+  let x = left;
+  let y = right;
+  while (y) {
+    const temp = y;
+    y = x % y;
+    x = temp;
+  }
+  return x || 1;
+}
+
+function formatAspectRatio(size) {
+  const width = Number(size?.width || 0);
+  const height = Number(size?.height || 0);
+  if (!width || !height) return "—";
+  const divisor = greatestCommonDivisor(width, height);
+  return `${Math.round(width / divisor)}:${Math.round(height / divisor)}`;
+}
+
+function clampScale(value) {
+  if (!Number.isFinite(value)) return MIN_SCALE;
+  if (value < MIN_SCALE) return MIN_SCALE;
+  if (value > MAX_SCALE) return MAX_SCALE;
+  return value;
+}
+
+function isTypingTarget(target) {
+  if (!target || typeof target !== "object") return false;
+  const nodeName = String(target.nodeName || "").toLowerCase();
+  if (nodeName === "input" || nodeName === "textarea" || nodeName === "select") {
+    return true;
+  }
+  return Boolean(target.isContentEditable);
 }
 
 function isImageMediaItem(item) {
@@ -178,6 +220,7 @@ export default function ImageUploader({
   const [offsetY, setOffsetY] = useState(0);
   const [aspectKey, setAspectKey] = useState(DEFAULT_ASPECT_KEY);
   const fileInputRef = useRef(null);
+  const browseLibraryButtonRef = useRef(null);
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const selectedSize = resolveAspectSize(aspectKey);
@@ -199,14 +242,43 @@ export default function ImageUploader({
   const emitError = useCallback(
     (message) => {
       onError?.(message);
-      window.dispatchEvent(
-        new CustomEvent("toast", {
-          detail: { type: "error", message },
-        }),
-      );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("toast", {
+            detail: { type: "error", message },
+          }),
+        );
+      }
     },
     [onError],
   );
+
+  const resetCropTransform = useCallback(() => {
+    setScale(MIN_SCALE);
+    setOffsetX(0);
+    setOffsetY(0);
+  }, []);
+
+  const resetEditorState = useCallback(() => {
+    setShowEditor(false);
+    setPreview(null);
+    setFile(null);
+    setIsDerivedWork(false);
+    setCopyrightHolder("");
+    setLicense("");
+    setAspectKey(DEFAULT_ASPECT_KEY);
+    setOutputFormat(DEFAULT_OUTPUT_FORMAT);
+    resetCropTransform();
+  }, [resetCropTransform]);
+
+  const resetSourceBrowserState = useCallback(() => {
+    setShowSourceChooser(false);
+    setShowMediaBrowser(false);
+    setMediaSearchInput("");
+    setMediaSearchTerm("");
+    setMediaError("");
+    setMediaItems([]);
+  }, []);
 
   // Revoke blob URLs when preview changes or component unmounts.
   useEffect(
@@ -232,9 +304,7 @@ export default function ImageUploader({
         return;
       }
       setFile(picked);
-      setScale(1);
-      setOffsetX(0);
-      setOffsetY(0);
+      resetCropTransform();
       setAspectKey(DEFAULT_ASPECT_KEY);
       setSelectedUploadBackend(preferredUploadBackend);
       setOutputFormat(DEFAULT_OUTPUT_FORMAT);
@@ -245,7 +315,7 @@ export default function ImageUploader({
       setPreview(url);
       setShowEditor(true);
     },
-    [emitError, preferredUploadBackend],
+    [emitError, preferredUploadBackend, resetCropTransform],
   );
 
   const openLocalUploadPicker = useCallback(() => {
@@ -312,21 +382,22 @@ export default function ImageUploader({
     setMediaItems([]);
   }, []);
 
+  useEffect(() => {
+    if (!showSourceChooser) return;
+    browseLibraryButtonRef.current?.focus();
+  }, [showSourceChooser]);
+
   const selectMediaImage = useCallback(
     (item) => {
       if (!item?.url) return;
-      setShowMediaBrowser(false);
-      setMediaSearchInput("");
-      setMediaSearchTerm("");
-      setMediaError("");
-      setMediaItems([]);
+      resetSourceBrowserState();
       try {
         onUploaded?.(item.url, item.asset || null);
       } catch (error) {
         console.error("ImageUploader media selection callback failed:", error);
       }
     },
-    [onUploaded],
+    [onUploaded, resetSourceBrowserState],
   );
 
   useEffect(() => {
@@ -336,12 +407,7 @@ export default function ImageUploader({
       event.preventDefault();
 
       if (showEditor) {
-        setShowEditor(false);
-        setPreview(null);
-        setFile(null);
-        setIsDerivedWork(false);
-        setCopyrightHolder("");
-        setLicense("");
+        resetEditorState();
         return;
       }
       if (showMediaBrowser) {
@@ -349,7 +415,7 @@ export default function ImageUploader({
         return;
       }
       if (showSourceChooser) {
-        setShowSourceChooser(false);
+        resetSourceBrowserState();
       }
     }
 
@@ -360,7 +426,57 @@ export default function ImageUploader({
     showMediaBrowser,
     showSourceChooser,
     closeMediaBrowser,
+    resetEditorState,
+    resetSourceBrowserState,
   ]);
+
+  useEffect(() => {
+    if (!showEditor) return undefined;
+    function handleEditorHotkeys(event) {
+      if (event.defaultPrevented || isTypingTarget(event.target)) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setOffsetX((value) => value - KEYBOARD_PAN_STEP);
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setOffsetX((value) => value + KEYBOARD_PAN_STEP);
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setOffsetY((value) => value - KEYBOARD_PAN_STEP);
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setOffsetY((value) => value + KEYBOARD_PAN_STEP);
+        return;
+      }
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        setScale((value) =>
+          clampScale(Math.round((value + SCALE_STEP) * 100) / 100),
+        );
+        return;
+      }
+      if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        setScale((value) =>
+          clampScale(Math.round((value - SCALE_STEP) * 100) / 100),
+        );
+        return;
+      }
+      if (event.key === "0") {
+        event.preventDefault();
+        resetCropTransform();
+      }
+    }
+
+    window.addEventListener("keydown", handleEditorHotkeys);
+    return () => window.removeEventListener("keydown", handleEditorHotkeys);
+  }, [showEditor, resetCropTransform]);
 
   // Draw image on canvas whenever crop controls change.
   useEffect(() => {
@@ -595,12 +711,7 @@ export default function ImageUploader({
         height: exportHeight,
       });
 
-      setShowEditor(false);
-      setPreview(null);
-      setFile(null);
-      setIsDerivedWork(false);
-      setCopyrightHolder("");
-      setLicense("");
+      resetEditorState();
       try {
         onUploaded?.(variantUpload.url, variantUpload.asset);
       } catch (error) {
@@ -613,24 +724,14 @@ export default function ImageUploader({
       });
       const msg = t("admin.uploadFailed");
       emitError(selectedUploadBackend ? `${msg} (${selectedUploadBackend})` : msg);
-      setShowEditor(false);
-      setPreview(null);
-      setFile(null);
-      setIsDerivedWork(false);
-      setCopyrightHolder("");
-      setLicense("");
+      resetEditorState();
     } finally {
       setUploading(false);
     }
   }
 
   function handleCancel() {
-    setShowEditor(false);
-    setPreview(null);
-    setFile(null);
-    setIsDerivedWork(false);
-    setCopyrightHolder("");
-    setLicense("");
+    resetEditorState();
   }
 
   return (
@@ -680,7 +781,7 @@ export default function ImageUploader({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
-              setShowSourceChooser(false);
+              resetSourceBrowserState();
             }
           }}
         >
@@ -696,6 +797,7 @@ export default function ImageUploader({
             </p>
             <div className="grid gap-2">
               <button
+                ref={browseLibraryButtonRef}
                 type="button"
                 onClick={chooseBrowseLibrary}
                 className="w-full rounded border px-3 py-2 text-sm text-left hover:bg-gray-50"
@@ -713,7 +815,7 @@ export default function ImageUploader({
             <div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowSourceChooser(false)}
+                onClick={resetSourceBrowserState}
                 className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm"
               >
                 {t("common.cancel")}
@@ -860,35 +962,37 @@ export default function ImageUploader({
 
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
               <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-600">
-                      {t("admin.cropAspectLabel")}
-                    </label>
-                    <select
-                      value={aspectKey}
-                      onChange={(e) => {
-                        setAspectKey(e.target.value);
-                        setScale(1);
-                        setOffsetX(0);
-                        setOffsetY(0);
-                      }}
-                      className="w-full border rounded px-2 py-1 text-sm"
-                    >
-                      {UPLOADER_ASPECT_KEYS.map((key) => (
-                        <option key={key} value={key}>
-                          {t(ASPECT_LABEL_KEYS[key])}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-600">
-                      {t("admin.imageOutputResolutionLabel", "Output resolution")}
-                    </label>
-                    <div className="w-full border rounded px-2 py-1.5 text-sm text-gray-700 bg-gray-50">
-                      {selectedSize.width} × {selectedSize.height}
-                    </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">
+                    {t("admin.cropAspectLabel")}
+                  </label>
+                  <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+                    {UPLOADER_ASPECT_KEYS.map((key) => {
+                      const size = resolveAspectSize(key);
+                      const active = key === aspectKey;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => {
+                            setAspectKey(key);
+                            resetCropTransform();
+                          }}
+                          className={`rounded border px-2 py-1.5 text-left transition-colors ${
+                            active
+                              ? "border-purple-500 bg-purple-50 text-purple-800"
+                              : "border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <span className="block text-[11px] font-semibold leading-tight">
+                            {t(ASPECT_LABEL_KEYS[key])}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] text-gray-500">
+                            {size.width}×{size.height} · {formatAspectRatio(size)}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -917,17 +1021,41 @@ export default function ImageUploader({
                   </label>
                   <input
                     type="range"
-                    min="1"
-                    max="3"
-                    step="0.05"
+                    min={String(MIN_SCALE)}
+                    max={String(MAX_SCALE)}
+                    step={String(SCALE_STEP)}
                     value={scale}
-                    onChange={(e) => setScale(Number.parseFloat(e.target.value))}
+                    onChange={(e) =>
+                      setScale(clampScale(Number.parseFloat(e.target.value)))
+                    }
                     className="w-full"
                   />
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] text-gray-500">
+                      {t(
+                        "admin.imageEditorKeyboardHint",
+                        "Drag to pan. Arrows move, +/- zoom, 0 resets.",
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={resetCropTransform}
+                      className="shrink-0 rounded border px-2 py-1 text-[11px] hover:bg-gray-50"
+                    >
+                      {t("admin.imageResetCrop", "Reset")}
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-3">
+                <div className="rounded border bg-gray-50 px-2 py-1.5 text-xs text-gray-700">
+                  <span className="font-semibold">
+                    {t("admin.imageOutputResolutionLabel", "Output resolution")}:
+                  </span>{" "}
+                  {selectedSize.width} × {selectedSize.height} (
+                  {formatAspectRatio(selectedSize)})
+                </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
                     {t("admin.imageOutputFormatLabel")}
