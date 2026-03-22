@@ -357,6 +357,8 @@ export default function AdminMediaLibraryTab({
   const [customOperations, setCustomOperations] = useState([]);
   const [derivationError, setDerivationError] = useState("");
   const [applyingDerivation, setApplyingDerivation] = useState(false);
+  const [applyProgress, setApplyProgress] = useState(0);
+  const [applyProgressLabel, setApplyProgressLabel] = useState("");
   const [showAllDerivations, setShowAllDerivations] = useState(false);
   const [editorId, setEditorId] = useState("");
   const [editorName, setEditorName] = useState("");
@@ -1540,6 +1542,39 @@ export default function AdminMediaLibraryTab({
     });
   }
 
+  // Maps op type / progress label keys to human-readable strings
+  const APPLY_LABELS = {
+    fetch:       t("admin.mediaDerivationStepFetch",      "Fetching image…"),
+    load:        t("admin.mediaDerivationStepLoad",       "Loading image…"),
+    decode_avif: t("admin.mediaDerivationStepDecodeAvif", "Decoding AVIF source…"),
+    encode_avif: t("admin.mediaDerivationStepEncodeAvif", "Encoding AVIF output…"),
+    encode:      t("admin.mediaDerivationStepEncode",     "Encoding output…"),
+    pipeline:    t("admin.mediaDerivationStepPipeline",   "Processing…"),
+    // op types
+    resize:      t("admin.mediaDerivationOpResize",       "Resizing…"),
+    crop:        t("admin.mediaDerivationOpCrop",         "Cropping…"),
+    blur:        t("admin.mediaDerivationOpBlur",         "Blurring…"),
+    sharpen:     t("admin.mediaDerivationOpSharpen",      "Sharpening…"),
+    brightness:  t("admin.mediaDerivationOpBrightness",   "Adjusting brightness…"),
+    grayscale:   t("admin.mediaDerivationOpGrayscale",    "Converting to grayscale…"),
+    saturation:  t("admin.mediaDerivationOpSaturation",   "Adjusting saturation…"),
+    sepia:       t("admin.mediaDerivationOpSepia",        "Applying sepia…"),
+    colorBoost:  t("admin.mediaDerivationOpColorBoost",   "Boosting colors…"),
+    hueRotate:   t("admin.mediaDerivationOpHueRotate",    "Rotating hue…"),
+    tint:        t("admin.mediaDerivationOpTint",         "Tinting…"),
+    invert:      t("admin.mediaDerivationOpInvert",       "Inverting…"),
+    solarize:    t("admin.mediaDerivationOpSolarize",     "Solarizing…"),
+    flip:        t("admin.mediaDerivationOpFlip",         "Flipping…"),
+    rotate:      t("admin.mediaDerivationOpRotate",       "Rotating…"),
+    padding:     t("admin.mediaDerivationOpPadding",      "Adding padding…"),
+    pixelize:    t("admin.mediaDerivationOpPixelize",     "Pixelizing…"),
+    duotone:     t("admin.mediaDerivationOpDuotone",      "Applying duotone…"),
+    oil:         t("admin.mediaDerivationOpOil",          "Painting oil effect…"),
+    presetCrop:  t("admin.mediaDerivationOpPresetCrop",   "Cropping to ratio…"),
+    cropCircle:  t("admin.mediaDerivationOpCropCircle",   "Cropping to circle…"),
+    textOverlay: t("admin.mediaDerivationOpTextOverlay",  "Adding text overlay…"),
+  };
+
   async function applySelectedDerivation() {
     if (!selectedDerivation || !focusedItem) {
       setDerivationError(t("admin.mediaDerivationRequiresSelection", "Select a derivation and an asset first."));
@@ -1565,6 +1600,8 @@ export default function AdminMediaLibraryTab({
     }
     const operationsToApply = bindOperationsToAsset(customOperations, focusedItem?.id);
     setApplyingDerivation(true);
+    setApplyProgress(0);
+    setApplyProgressLabel(t("admin.mediaDerivationStepFetch", "Fetching image…"));
     setDerivationError("");
     setSavePreviewError("");
     setPreviewBlobUrl(null);
@@ -1579,14 +1616,45 @@ export default function AdminMediaLibraryTab({
           operations: operationsToApply,
         }),
       });
-      if (!response.ok) {
+
+      if (!response.ok || !response.body) {
         const json = await response.json().catch(() => ({}));
         throw new Error(json?.error || t("admin.mediaDerivationFailed", "Could not apply derivation."));
       }
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      setPreviewBlob(blob);
-      setPreviewBlobUrl(blobUrl);
+
+      // Read NDJSON stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop(); // keep any incomplete trailing line
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let evt;
+          try { evt = JSON.parse(line); } catch { continue; }
+
+          if (evt.type === "progress") {
+            setApplyProgress(evt.pct ?? 0);
+            setApplyProgressLabel(APPLY_LABELS[evt.label] ?? evt.label ?? "");
+          } else if (evt.type === "done") {
+            // Decode base64 → Blob
+            const byteString = atob(evt.data);
+            const bytes = new Uint8Array(byteString.length);
+            for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
+            const blob = new Blob([bytes], { type: evt.contentType });
+            setPreviewBlob(blob);
+            setPreviewBlobUrl(URL.createObjectURL(blob));
+            setApplyProgress(100);
+          } else if (evt.type === "error") {
+            throw new Error(evt.message || t("admin.mediaDerivationFailed", "Could not apply derivation."));
+          }
+        }
+      }
     } catch (applyError) {
       setDerivationError(
         applyError instanceof Error
@@ -1603,7 +1671,7 @@ export default function AdminMediaLibraryTab({
     setSavingPreview(true);
     setSavePreviewError("");
     try {
-      const ext = previewBlob.type === "image/png" ? "png" : previewBlob.type === "image/webp" ? "webp" : "jpg";
+      const ext = previewBlob.type === "image/png" ? "png" : previewBlob.type === "image/webp" ? "webp" : previewBlob.type === "image/avif" ? "avif" : "jpg";
       const filename = `${selectedDerivation?.id || "derived"}-${Date.now()}.${ext}`;
       const formData = new FormData();
       formData.append("file", previewBlob, filename);
@@ -3049,6 +3117,7 @@ export default function AdminMediaLibraryTab({
               {applyingDerivation
                 ? t("admin.mediaDerivationApplying", "Applying…")
                 : t("admin.mediaApplyDerivation", "Apply derivation")}
+
             </button>
             <button
               type="button"
@@ -3082,6 +3151,19 @@ export default function AdminMediaLibraryTab({
               </span>
             )}
           </div>
+          {applyingDerivation && (
+            <div className="space-y-1 py-1">
+              <div className="h-1.5 w-full rounded-full bg-indigo-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-indigo-500 transition-all duration-500 ease-out"
+                  style={{ width: `${applyProgress}%` }}
+                />
+              </div>
+              {applyProgressLabel && (
+                <p className="text-[10px] text-indigo-400">{applyProgressLabel}</p>
+              )}
+            </div>
+          )}
           {derivationSaveStatus === "saved" && (
             <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
               {t("admin.mediaDerivationSaveSuccess", "Derivation saved.")}
