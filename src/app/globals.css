@@ -36,16 +36,24 @@ h4,
 h5,
 h6 {
   color: var(--foreground);
-  font-family: var(--font-heading);
   font-weight: 700;
   line-height: 1.3125;
   margin: 0.75em 0;
 }
 
 h1 {
+  font-family: var(--font-display, var(--font-heading));
+  color: var(--font-color-display, var(--foreground));
   font-size: 1.75rem;
   font-weight: 900;
   line-height: 1.25;
+}
+
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  color: var(--font-color-heading, var(--foreground));
 }
 
 h2 {
@@ -65,6 +73,12 @@ h4 {
   font-weight: 700;
   letter-spacing: 0.140625em;
   line-height: 1.3125;
+}
+
+h5,
+h6 {
+  font-family: var(--font-subheading, var(--font-heading));
+  color: var(--font-color-subheading, var(--font-color-heading, var(--foreground)));
 }
 
 h5 {
@@ -168,7 +182,7 @@ a:focus {
 .wp-element-button {
   display: inline-block;
   padding: 0.75em 1.5em;
-  font-family: var(--font-heading);
+  font-family: var(--font-button, var(--font-heading));
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.5;
@@ -725,4 +739,83 @@ body:has(.admin-layout)::before {
   font-weight:      var(--btn-font-weight, 600);
   text-transform:   var(--btn-text-transform, none);
   padding:          var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
+}
+
+/* ── Link hover variants ─────────────────────────────────────────────────── */
+
+/* Base link state controlled by underlineDefault */
+[data-link-underline="always"] a {
+  text-decoration: underline;
+}
+[data-link-underline="hover"] a,
+[data-link-underline="never"] a {
+  text-decoration: none;
+}
+
+/* Hover variants */
+[data-link-style="underline"] a:hover {
+  text-decoration: underline;
+}
+[data-link-style="highlight"] a:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0 0.15em;
+  text-decoration: none;
+}
+[data-link-style="inverse"] a:hover {
+  background: var(--color-primary);
+  color: var(--color-background);
+  border-radius: 2px;
+  padding: 0 0.15em;
+  text-decoration: none;
+}
+[data-link-style="pill"] a:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 9999px;
+  padding: 0 0.35em;
+  text-decoration: none;
+}
+[data-link-style="slide"] a {
+  position: relative;
+}
+[data-link-style="slide"] a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+[data-link-style="slide"] a:hover::after {
+  transform: scaleX(1);
+}
+[data-link-style="box"] a:hover {
+  outline: 2px solid var(--color-primary);
+  border-radius: 2px;
+  text-decoration: none;
+}
+/* suppress underline on underline variant when underlineDefault=never */
+[data-link-underline="never"][data-link-style="underline"] a:hover {
+  text-decoration: none;
+}
+[data-link-underline="never"][data-link-style="underline"] a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+[data-link-underline="never"][data-link-style="underline"] a:hover::after {
+  transform: scaleX(1);
 }
