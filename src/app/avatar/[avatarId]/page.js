@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getAvatarForProfileHandle, getOwnAvatar } from "@/lib/avatarStore";
-import { canAvatarReadFeed, listAvatarFeeds } from "@/lib/avatarFeedStore";
 
 export const metadata = {
   title: "Avatar Profile",
@@ -33,21 +32,6 @@ export default async function AvatarPage({ params: paramsPromise }) {
   if (requestedHandle !== avatar.uriId) {
     redirect(`/avatar/${encodeURIComponent(avatar.uriId)}`);
   }
-
-  const feeds = await listAvatarFeeds(avatar.id);
-  const viewerAvatarId = ownAvatar?.id || "";
-  const feedRows = await Promise.all(
-    feeds.map(async (feed) => {
-      const canRead = viewerAvatarId
-        ? await canAvatarReadFeed({
-            viewerAvatarId,
-            targetAvatarId: avatar.id,
-            feedSlug: feed.slug,
-          })
-        : false;
-      return { ...feed, canRead };
-    }),
-  );
 
   return (
     <section className="max-w-4xl mx-auto px-6 py-16 space-y-6">
@@ -83,32 +67,6 @@ export default async function AvatarPage({ params: paramsPromise }) {
         ) : null}
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-3">
-        <h2 className="text-lg font-semibold">Feeds</h2>
-        <p className="text-sm text-gray-700">
-          Feeds are private for now. Access is granted to the avatar owner and
-          avatars following specific feeds.
-        </p>
-        <ul className="space-y-2">
-          {feedRows.map((feed) => (
-            <li
-              key={feed.slug}
-              className="flex flex-wrap items-center gap-2 text-sm text-gray-700"
-            >
-              <span className="font-semibold">{feed.title}</span>
-              <span className="text-gray-500">({feed.slug})</span>
-              {feed.canRead ? (
-                <Link href={feed.uri} className="text-teal-700 hover:underline">
-                  Open feed
-                </Link>
-              ) : (
-                <span className="text-gray-500">Access requires avatar follow</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-
       <div className="flex flex-wrap gap-3">
         {avatar.isOwner ? (
           <Link
@@ -123,14 +81,14 @@ export default async function AvatarPage({ params: paramsPromise }) {
             href="/me"
             className="inline-block px-4 py-2 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
           >
-            Manage avatar/feed settings
+            Manage avatar settings
           </Link>
         ) : (
           <Link
             href={`/auth/signin?callbackUrl=${encodeURIComponent(`/avatar/${avatar.uriId}`)}`}
             className="inline-block px-4 py-2 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
           >
-            Sign in to access feeds
+            Sign in
           </Link>
         )}
       </div>
