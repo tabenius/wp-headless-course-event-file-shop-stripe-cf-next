@@ -817,6 +817,9 @@ export default function AdminDashboard() {
   const [userCtaPresets, setUserCtaPresets] = useState([]);
   const [ctaSaveName, setCtaSaveName] = useState("");
   const [ctaSaveExpanded, setCtaSaveExpanded] = useState(false);
+  const [userTypographyPresets, setUserTypographyPresets] = useState([]);
+  const [typographySaveName, setTypographySaveName] = useState("");
+  const [typographySaveExpanded, setTypographySaveExpanded] = useState(false);
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [ticketsError, setTicketsError] = useState("");
@@ -1145,8 +1148,9 @@ export default function AdminDashboard() {
       adminFetch("/api/admin/style-presets")
         .then((res) => res.ok ? res.json() : null)
         .then((data) => {
-          if (data?.ok && Array.isArray(data.cta)) {
-            setUserCtaPresets(data.cta);
+          if (data?.ok) {
+            if (Array.isArray(data.cta)) setUserCtaPresets(data.cta);
+            if (Array.isArray(data.typography)) setUserTypographyPresets(data.typography);
           }
         })
         .catch(() => {});
@@ -2310,6 +2314,122 @@ export default function AdminDashboard() {
                 </label>
               ))}
             </div>
+            {/* ── Themes strip ───────────────────────────────────────────── */}
+            <div className="flex flex-wrap gap-2 items-center">
+              {[
+                { id: "clean", name: "Clean" },
+                { id: "editorial", name: "Editorial" },
+                { id: "technical", name: "Technical" },
+                { id: "warm", name: "Warm" },
+                { id: "haute", name: "Haute" },
+              ].map((theme) => (
+                <button
+                  key={theme.id}
+                  className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
+                >
+                  {theme.name}
+                </button>
+              ))}
+
+              {/* User typography presets */}
+              {userTypographyPresets.map((preset) => (
+                <div key={preset.id} className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      // Apply all fields from the preset — mirrors how built-in themes are applied
+                      const s = preset.style;
+                      const next = {
+                        ...siteStyleTokens,
+                        fontDisplay: s.fontDisplay || siteStyleTokens.fontDisplay,
+                        fontHeading: s.fontHeading || siteStyleTokens.fontHeading,
+                        fontSubheading: s.fontSubheading || siteStyleTokens.fontSubheading,
+                        fontBody: s.fontBody || siteStyleTokens.fontBody,
+                        fontButton: s.fontButton || siteStyleTokens.fontButton,
+                        typographyPalette: s.typographyPalette || siteStyleTokens.typographyPalette,
+                        linkStyle: s.linkStyle || siteStyleTokens.linkStyle,
+                      };
+                      setSiteStyleTokens(next);
+                      applySiteStyleTokensToDom(next);
+                    }}
+                    className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
+                  >
+                    {preset.name}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await adminFetch("/api/admin/style-presets", {
+                        method: "DELETE",
+                        body: JSON.stringify({ id: preset.id, type: "typography" }),
+                      });
+                      setUserTypographyPresets((prev) => prev.filter((p) => p.id !== preset.id));
+                    }}
+                    className="text-gray-400 hover:text-red-500 text-xs leading-none"
+                    title="Delete preset"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              {/* Save current typography preset */}
+              {!typographySaveExpanded ? (
+                <button
+                  onClick={() => setTypographySaveExpanded(true)}
+                  className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
+                >
+                  Save current…
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={typographySaveName}
+                    onChange={(e) => setTypographySaveName(e.target.value)}
+                    placeholder="Preset name"
+                    className="text-xs border border-gray-300 rounded px-2 py-1 w-44"
+                    autoFocus
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!typographySaveName.trim()) return;
+                      const style = {
+                        fontDisplay: siteStyleTokens.fontDisplay,
+                        fontHeading: siteStyleTokens.fontHeading,
+                        fontSubheading: siteStyleTokens.fontSubheading,
+                        fontBody: siteStyleTokens.fontBody,
+                        fontButton: siteStyleTokens.fontButton,
+                        typographyPalette: siteStyleTokens.typographyPalette,
+                        linkStyle: siteStyleTokens.linkStyle,
+                      };
+                      const res = await adminFetch("/api/admin/style-presets", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          type: "typography",
+                          name: typographySaveName.trim(),
+                          style,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data?.ok && data.preset) {
+                        setUserTypographyPresets((prev) => [data.preset, ...prev]);
+                        setTypographySaveName("");
+                        setTypographySaveExpanded(false);
+                      }
+                    }}
+                    className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => { setTypographySaveExpanded(false); setTypographySaveName(""); }}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-1 text-xs text-gray-600">
                 <span>{t("admin.styleHeadingFontLabel")}</span>
