@@ -42,6 +42,8 @@ const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
 const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
 const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
 const AdminInfoHubTab = lazy(() => import("./AdminInfoHubTab"));
+import AdminFontBrowserModal from "./AdminFontBrowserModal";
+import { TYPOGRAPHY_THEMES } from "@/lib/typographyThemes";
 
 const ADMIN_TABS = [
   "welcome",
@@ -374,6 +376,47 @@ function applySiteStyleTokensToDom(tokens) {
   } else {
     // Upstream — remove overrides so WP theme styles apply
     ["--btn-bg","--btn-color","--btn-radius","--btn-border-width","--btn-border-color","--btn-shadow","--btn-font-weight","--btn-text-transform","--btn-padding-x","--btn-padding-y"].forEach(v => root.style.removeProperty(v));
+  }
+}
+
+function applyFontRolesToDom(roles, palette, ls) {
+  if (typeof window === "undefined") return;
+  const root = document.documentElement;
+  const body = document.body;
+
+  function fontFamilyValue(role) {
+    if (!role || typeof role !== "object") return null;
+    if (role.type === "preset") return role.stack || null;
+    if (role.type === "google") return `'${role.family}', system-ui, sans-serif`;
+    return null;
+  }
+
+  const cssVarMap = {
+    fontDisplay: "--font-display",
+    fontHeading: "--font-heading",
+    fontSubheading: "--font-subheading",
+    fontBody: "--font-body",
+    fontButton: "--font-button",
+  };
+  for (const [key, cssVar] of Object.entries(cssVarMap)) {
+    const fv = fontFamilyValue(roles[key]);
+    if (fv) root.style.setProperty(cssVar, fv);
+  }
+
+  const colorVarMap = {
+    fontDisplay: "--font-color-display",
+    fontHeading: "--font-color-heading",
+    fontSubheading: "--font-color-subheading",
+  };
+  for (const [key, cssVar] of Object.entries(colorVarMap)) {
+    const slot = roles[key]?.colorSlot;
+    const hex = slot && palette[slot - 1] ? palette[slot - 1] : null;
+    if (hex) root.style.setProperty(cssVar, hex);
+  }
+
+  if (ls) {
+    body.setAttribute("data-link-style", ls.hoverVariant || "underline");
+    body.setAttribute("data-link-underline", ls.underlineDefault || "hover");
   }
 }
 
@@ -823,6 +866,19 @@ export default function AdminDashboard() {
   const [userTypographyPresets, setUserTypographyPresets] = useState([]);
   const [typographySaveName, setTypographySaveName] = useState("");
   const [typographySaveExpanded, setTypographySaveExpanded] = useState(false);
+  // Font role state (new system)
+  const [fontRoles, setFontRoles] = useState({
+    fontDisplay: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+    fontHeading: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+    fontSubheading: { type: "inherit" },
+    fontBody: { type: "preset", stack: "Georgia, serif" },
+    fontButton: { type: "preset", stack: "system-ui, sans-serif" },
+  });
+  const [typographyPalette, setTypographyPalette] = useState(["#111111"]);
+  const [linkStyle, setLinkStyle] = useState({ hoverVariant: "underline", underlineDefault: "hover" });
+  const [fontBrowserRole, setFontBrowserRole] = useState(null);
+  const [downloadedFamilies] = useState([]);
+  const [downloadingRole, setDownloadingRole] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [ticketsError, setTicketsError] = useState("");
@@ -1141,6 +1197,19 @@ export default function AdminDashboard() {
       );
       setSiteStyleTokens(nextSiteStyle);
       applySiteStyleTokensToDom(nextSiteStyle);
+      // Load new font role state from API
+      if (json?.settings?.siteStyle) {
+        const s = json.settings.siteStyle;
+        setFontRoles((prev) => ({
+          fontDisplay: s.fontDisplay || prev.fontDisplay,
+          fontHeading: s.fontHeading && typeof s.fontHeading === "object" ? s.fontHeading : prev.fontHeading,
+          fontSubheading: s.fontSubheading || prev.fontSubheading,
+          fontBody: s.fontBody && typeof s.fontBody === "object" ? s.fontBody : prev.fontBody,
+          fontButton: s.fontButton || prev.fontButton,
+        }));
+        if (s.typographyPalette) setTypographyPalette(s.typographyPalette);
+        if (s.linkStyle) setLinkStyle(s.linkStyle);
+      }
       setSiteStyleHistory(
         Array.isArray(json?.settings?.siteStyleHistory)
           ? json.settings.siteStyleHistory
@@ -1421,7 +1490,14 @@ export default function AdminDashboard() {
     const safe = sanitizeSiteStyleTokens(siteStyleTokens, SITE_STYLE_DEFAULTS);
     setSiteStyleTokens(safe);
     applySiteStyleTokensToDom(safe);
-    await saveShopSettings({ siteStyle: safe }, "admin.styleSiteSaved");
+    await saveShopSettings({
+      siteStyle: {
+        ...safe,
+        ...fontRoles,
+        typographyPalette,
+        linkStyle,
+      },
+    }, "admin.styleSiteSaved");
   }
 
   async function restoreSiteStyleRevision(revision) {
@@ -2328,155 +2404,292 @@ export default function AdminDashboard() {
                 </label>
               ))}
             </div>
-            {/* ── Themes strip ───────────────────────────────────────────── */}
-            <div className="flex flex-wrap gap-2 items-center">
+            {/* ── Typography ───────────────────────────────────────────── */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Typography</h3>
+
+              {/* Built-in themes strip */}
+              <div>
+                <div className="text-xs text-gray-500 mb-2">Themes</div>
+                <div className="flex flex-wrap gap-2">
+                  {TYPOGRAPHY_THEMES.map((theme) => (
+                    <button
+                      key={theme.id}
+                      onClick={() => {
+                        const roles = {
+                          fontDisplay: theme.fontDisplay,
+                          fontHeading: theme.fontHeading,
+                          fontSubheading: theme.fontSubheading,
+                          fontBody: theme.fontBody,
+                          fontButton: theme.fontButton,
+                        };
+                        setFontRoles(roles);
+                        setTypographyPalette(theme.typographyPalette);
+                        applyFontRolesToDom(roles, theme.typographyPalette, linkStyle);
+                      }}
+                      className="px-3 py-1.5 text-xs border rounded-full hover:bg-gray-100 hover:border-gray-400"
+                      title={theme.description}
+                    >
+                      {theme.name}
+                    </button>
+                  ))}
+
+                  {/* User typography presets */}
+                  {userTypographyPresets.map((preset) => (
+                    <div key={preset.id} className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          const s = preset.style;
+                          const roles = {
+                            fontDisplay: s.fontDisplay || fontRoles.fontDisplay,
+                            fontHeading: s.fontHeading && typeof s.fontHeading === "object" ? s.fontHeading : fontRoles.fontHeading,
+                            fontSubheading: s.fontSubheading || fontRoles.fontSubheading,
+                            fontBody: s.fontBody && typeof s.fontBody === "object" ? s.fontBody : fontRoles.fontBody,
+                            fontButton: s.fontButton || fontRoles.fontButton,
+                          };
+                          const pal = s.typographyPalette || typographyPalette;
+                          const ls = s.linkStyle || linkStyle;
+                          setFontRoles(roles);
+                          setTypographyPalette(pal);
+                          setLinkStyle(ls);
+                          applyFontRolesToDom(roles, pal, ls);
+                        }}
+                        className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
+                      >
+                        {preset.name}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await adminFetch("/api/admin/style-presets", {
+                            method: "DELETE",
+                            body: JSON.stringify({ id: preset.id, type: "typography" }),
+                          });
+                          setUserTypographyPresets((prev) => prev.filter((p) => p.id !== preset.id));
+                        }}
+                        className="text-gray-400 hover:text-red-500 text-xs leading-none"
+                        title="Delete preset"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Save current typography preset */}
+                  {!typographySaveExpanded ? (
+                    <button
+                      onClick={() => setTypographySaveExpanded(true)}
+                      className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
+                    >
+                      Save current…
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={typographySaveName}
+                        onChange={(e) => setTypographySaveName(e.target.value)}
+                        placeholder="Preset name"
+                        className="text-xs border border-gray-300 rounded px-2 py-1 w-44"
+                        autoFocus
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!typographySaveName.trim()) return;
+                          const style = {
+                            ...fontRoles,
+                            typographyPalette,
+                            linkStyle,
+                          };
+                          const res = await adminFetch("/api/admin/style-presets", {
+                            method: "POST",
+                            body: JSON.stringify({
+                              type: "typography",
+                              name: typographySaveName.trim(),
+                              style,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data?.ok && data.preset) {
+                            setUserTypographyPresets((prev) => [data.preset, ...prev]);
+                            setTypographySaveName("");
+                            setTypographySaveExpanded(false);
+                          }
+                        }}
+                        className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => { setTypographySaveExpanded(false); setTypographySaveName(""); }}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Typography color palette */}
+              <div>
+                <div className="text-xs text-gray-500 mb-2">Typography Colors</div>
+                <div className="flex items-center gap-3">
+                  {typographyPalette.map((color, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={(e) => {
+                          const next = [...typographyPalette];
+                          next[idx] = e.target.value;
+                          setTypographyPalette(next);
+                          applyFontRolesToDom(fontRoles, next, linkStyle);
+                        }}
+                        className="w-8 h-8 rounded cursor-pointer border"
+                      />
+                      <span className="text-xs font-mono text-gray-500">{color}</span>
+                    </div>
+                  ))}
+                  {typographyPalette.length < 2 ? (
+                    <button
+                      onClick={() => setTypographyPalette([...typographyPalette, "#4682b4"])}
+                      className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
+                    >
+                      + Second color
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        const next = [typographyPalette[0]];
+                        const updated = { ...fontRoles };
+                        for (const key of ["fontDisplay", "fontHeading", "fontSubheading"]) {
+                          if (updated[key]?.colorSlot === 2) updated[key] = { ...updated[key], colorSlot: 1 };
+                        }
+                        setTypographyPalette(next);
+                        setFontRoles(updated);
+                        applyFontRolesToDom(updated, next, linkStyle);
+                      }}
+                      className="px-2 py-1 text-xs border rounded hover:bg-red-50 hover:border-red-300 text-red-600"
+                    >
+                      − Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Font role cards */}
               {[
-                { id: "clean", name: "Clean" },
-                { id: "editorial", name: "Editorial" },
-                { id: "technical", name: "Technical" },
-                { id: "warm", name: "Warm" },
-                { id: "haute", name: "Haute" },
-              ].map((theme) => (
-                <button
-                  key={theme.id}
-                  className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
-                >
-                  {theme.name}
-                </button>
-              ))}
+                { key: "fontDisplay", label: "Display", elements: "h1", hasColor: true },
+                { key: "fontHeading", label: "Heading", elements: "h2, h3, h4", hasColor: true },
+                { key: "fontSubheading", label: "Subheading", elements: "h5, h6", hasColor: true },
+                { key: "fontBody", label: "Body", elements: "body, p", hasColor: false },
+                { key: "fontButton", label: "Button", elements: "button", hasColor: false },
+              ].map(({ key, label, elements, hasColor }) => {
+                const role = fontRoles[key];
+                const fontLabel =
+                  role?.type === "google" ? `${role.family}${role.isVariable ? " Variable" : ""}` :
+                  role?.type === "inherit" ? "(inherits Heading)" :
+                  role?.type === "preset" ? "Preset" : "—";
+                const weightLabel =
+                  role?.isVariable ? `${role.weightRange?.[0]}–${role.weightRange?.[1]}` :
+                  role?.weights ? role.weights.join(", ") : "";
+                const slot = role?.colorSlot;
 
-              {/* User typography presets */}
-              {userTypographyPresets.map((preset) => (
-                <div key={preset.id} className="flex items-center gap-1">
-                  <button
-                    onClick={() => {
-                      // Apply all fields from the preset — mirrors how built-in themes are applied
-                      const s = preset.style;
-                      const next = {
-                        ...siteStyleTokens,
-                        fontDisplay: s.fontDisplay || siteStyleTokens.fontDisplay,
-                        fontHeading: s.fontHeading || siteStyleTokens.fontHeading,
-                        fontSubheading: s.fontSubheading || siteStyleTokens.fontSubheading,
-                        fontBody: s.fontBody || siteStyleTokens.fontBody,
-                        fontButton: s.fontButton || siteStyleTokens.fontButton,
-                        typographyPalette: s.typographyPalette || siteStyleTokens.typographyPalette,
-                        linkStyle: s.linkStyle || siteStyleTokens.linkStyle,
-                      };
-                      setSiteStyleTokens(next);
-                      applySiteStyleTokensToDom(next);
-                    }}
-                    className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
-                  >
-                    {preset.name}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await adminFetch("/api/admin/style-presets", {
-                        method: "DELETE",
-                        body: JSON.stringify({ id: preset.id, type: "typography" }),
-                      });
-                      setUserTypographyPresets((prev) => prev.filter((p) => p.id !== preset.id));
-                    }}
-                    className="text-gray-400 hover:text-red-500 text-xs leading-none"
-                    title="Delete preset"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+                return (
+                  <div key={key} className="border rounded-lg p-3 flex items-center gap-3">
+                    {hasColor && typographyPalette.length > 0 ? (
+                      <button
+                        onClick={() => {
+                          if (typographyPalette.length < 2) return;
+                          const nextSlot = slot === 2 ? 1 : 2;
+                          const updated = { ...fontRoles, [key]: { ...role, colorSlot: nextSlot } };
+                          setFontRoles(updated);
+                          applyFontRolesToDom(updated, typographyPalette, linkStyle);
+                        }}
+                        className="w-5 h-5 rounded-full border-2 border-white ring-1 ring-gray-300 shrink-0 cursor-pointer"
+                        style={{ backgroundColor: typographyPalette[(slot || 1) - 1] || "#111" }}
+                        title={typographyPalette.length < 2 ? "Add second color to enable slot switching" : `Color slot ${slot || 1}`}
+                      />
+                    ) : (
+                      <div className="w-5 h-5 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-800">{label}</div>
+                      <div className="text-xs text-gray-500">{elements}</div>
+                      <div className="text-xs text-gray-700 mt-0.5">
+                        {fontLabel}
+                        {weightLabel && <span className="ml-2 text-gray-400">{weightLabel}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {role?.type !== "preset" && role?.type !== "inherit" && (
+                        <button
+                          onClick={() => {
+                            const defaults = {
+                              fontDisplay: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+                              fontHeading: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+                              fontSubheading: { type: "inherit" },
+                              fontBody: { type: "preset", stack: "Georgia, serif" },
+                              fontButton: { type: "preset", stack: "system-ui, sans-serif" },
+                            };
+                            const updated = { ...fontRoles, [key]: defaults[key] };
+                            setFontRoles(updated);
+                            applyFontRolesToDom(updated, typographyPalette, linkStyle);
+                          }}
+                          className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                          title="Reset to preset"
+                        >×</button>
+                      )}
+                      <button
+                        onClick={() => setFontBrowserRole(key)}
+                        disabled={downloadingRole === key}
+                        className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait"
+                      >
+                        {downloadingRole === key ? "Downloading…" : "Browse"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
 
-              {/* Save current typography preset */}
-              {!typographySaveExpanded ? (
-                <button
-                  onClick={() => setTypographySaveExpanded(true)}
-                  className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
-                >
-                  Save current…
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={typographySaveName}
-                    onChange={(e) => setTypographySaveName(e.target.value)}
-                    placeholder="Preset name"
-                    className="text-xs border border-gray-300 rounded px-2 py-1 w-44"
-                    autoFocus
-                  />
-                  <button
-                    onClick={async () => {
-                      if (!typographySaveName.trim()) return;
-                      const style = {
-                        fontDisplay: siteStyleTokens.fontDisplay,
-                        fontHeading: siteStyleTokens.fontHeading,
-                        fontSubheading: siteStyleTokens.fontSubheading,
-                        fontBody: siteStyleTokens.fontBody,
-                        fontButton: siteStyleTokens.fontButton,
-                        typographyPalette: siteStyleTokens.typographyPalette,
-                        linkStyle: siteStyleTokens.linkStyle,
-                      };
-                      const res = await adminFetch("/api/admin/style-presets", {
-                        method: "POST",
-                        body: JSON.stringify({
-                          type: "typography",
-                          name: typographySaveName.trim(),
-                          style,
-                        }),
-                      });
-                      const data = await res.json();
-                      if (data?.ok && data.preset) {
-                        setUserTypographyPresets((prev) => [data.preset, ...prev]);
-                        setTypographySaveName("");
-                        setTypographySaveExpanded(false);
-                      }
-                    }}
-                    className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => { setTypographySaveExpanded(false); setTypographySaveName(""); }}
-                    className="text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1 text-xs text-gray-600">
-                <span>{t("admin.styleHeadingFontLabel")}</span>
-                <select
-                  value={siteStyleTokens.fontHeading}
-                  onChange={(event) =>
-                    updateSiteStyleFont("fontHeading", event.target.value)
-                  }
-                  className="w-full border rounded px-2 py-1.5 text-sm"
-                >
-                  {SITE_STYLE_FONT_PRESETS.map((value) => (
-                    <option key={`heading-${value}`} value={value}>
-                      {value}
-                    </option>
+              {/* Link style */}
+              <div className="border rounded-lg p-3 space-y-3">
+                <div className="text-sm font-medium text-gray-800">Link Style</div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-gray-600">Underline:</span>
+                  {["always", "hover", "never"].map((v) => (
+                    <label key={v} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input
+                        type="radio"
+                        name="underlineDefault"
+                        value={v}
+                        checked={linkStyle.underlineDefault === v}
+                        onChange={() => {
+                          const next = { ...linkStyle, underlineDefault: v };
+                          setLinkStyle(next);
+                          applyFontRolesToDom(fontRoles, typographyPalette, next);
+                        }}
+                      />
+                      {v.charAt(0).toUpperCase() + v.slice(1)}
+                    </label>
                   ))}
-                </select>
-              </label>
-              <label className="space-y-1 text-xs text-gray-600">
-                <span>{t("admin.styleBodyFontLabel")}</span>
-                <select
-                  value={siteStyleTokens.fontBody}
-                  onChange={(event) =>
-                    updateSiteStyleFont("fontBody", event.target.value)
-                  }
-                  className="w-full border rounded px-2 py-1.5 text-sm"
-                >
-                  {SITE_STYLE_FONT_PRESETS.map((value) => (
-                    <option key={`body-${value}`} value={value}>
-                      {value}
-                    </option>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["none", "underline", "highlight", "inverse", "pill", "slide", "box"].map((variant) => (
+                    <button
+                      key={variant}
+                      onClick={() => {
+                        const next = { ...linkStyle, hoverVariant: variant };
+                        setLinkStyle(next);
+                        applyFontRolesToDom(fontRoles, typographyPalette, next);
+                      }}
+                      className={`px-3 py-1.5 text-xs border rounded-full ${linkStyle.hoverVariant === variant ? "bg-indigo-100 border-indigo-400 text-indigo-700" : "hover:bg-gray-100"}`}
+                    >
+                      {variant}
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -2496,62 +2709,6 @@ export default function AdminDashboard() {
               >
                 {t("admin.styleSiteResetDefaults", "Reset to defaults")}
               </button>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div
-                className="border rounded p-5 space-y-1"
-                style={{
-                  background: siteStyleTokens.background,
-                  color: siteStyleTokens.foreground,
-                }}
-              >
-                <div
-                  className="text-xs uppercase tracking-wide font-semibold"
-                  style={{ color: siteStyleTokens.muted }}
-                >
-                  {t("admin.styleHeadingFontLabel")}
-                </div>
-                <p
-                  className="text-lg font-semibold"
-                  style={{
-                    fontFamily: siteStyleTokens.fontHeading,
-                  }}
-                >
-                  {t("admin.styleHeadingFontSample")}
-                </p>
-                <p
-                  className="text-xs font-mono"
-                  style={{ color: siteStyleTokens.muted }}
-                >
-                  {t("admin.styleHeadingFontToken")}
-                </p>
-              </div>
-              <div
-                className="border rounded p-5 space-y-1"
-                style={{
-                  background: siteStyleTokens.background,
-                  color: siteStyleTokens.foreground,
-                }}
-              >
-                <div
-                  className="text-xs uppercase tracking-wide font-semibold"
-                  style={{ color: siteStyleTokens.muted }}
-                >
-                  {t("admin.styleBodyFontLabel")}
-                </div>
-                <p
-                  className="text-base"
-                  style={{ fontFamily: siteStyleTokens.fontBody }}
-                >
-                  {t("admin.styleBodyFontSample")}
-                </p>
-                <p
-                  className="text-xs font-mono"
-                  style={{ color: siteStyleTokens.muted }}
-                >
-                  {t("admin.styleBodyFontToken")}
-                </p>
-              </div>
             </div>
             <div className="flex gap-3 flex-wrap">
               <button
@@ -2960,6 +3117,24 @@ export default function AdminDashboard() {
             <p className="text-xs text-gray-500">{t("admin.styleNote")}</p>
           </div>
         </div>
+      )}
+
+      {/* Font browser modal */}
+      {fontBrowserRole && (
+        <AdminFontBrowserModal
+          role={fontBrowserRole}
+          currentFamily={fontRoles[fontBrowserRole]?.family}
+          downloadedFamilies={downloadedFamilies}
+          onSelect={(roleObj) => {
+            const updated = { ...fontRoles, [fontBrowserRole]: roleObj };
+            setFontRoles(updated);
+            applyFontRolesToDom(updated, typographyPalette, linkStyle);
+            setFontBrowserRole(null);
+          }}
+          onClose={() => setFontBrowserRole(null)}
+          onDownloadStart={() => setDownloadingRole(fontBrowserRole)}
+          onDownloadEnd={() => setDownloadingRole(null)}
+        />
       )}
 
       {/* ── Storage tab ── */}
