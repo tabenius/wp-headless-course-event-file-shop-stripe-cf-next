@@ -83,6 +83,29 @@ describe("normalizeCtaStyle", () => {
     assert.equal(result.borderColor, undefined);
   });
 
+  it("includes textCustom only when textColor is custom", () => {
+    const result = normalizeCtaStyle({
+      bgColor: "primary",
+      textColor: "custom",
+      textCustom: "#123456",
+    });
+    assert.equal(result.textCustom, "#123456");
+    const noCustom = normalizeCtaStyle({ bgColor: "primary", textColor: "background" });
+    assert.equal(noCustom.textCustom, undefined);
+  });
+
+  it("includes borderCustom only when borderColor is custom", () => {
+    const result = normalizeCtaStyle({
+      bgColor: "primary",
+      textColor: "background",
+      border: "solid",
+      borderColor: "custom",
+      borderCustom: "#abcdef",
+    });
+    assert.equal(result.borderColor, "custom");
+    assert.equal(result.borderCustom, "#abcdef");
+  });
+
   it("produces identical JSON.stringify for same logical input", () => {
     const a = normalizeCtaStyle({ bgColor: "secondary", textColor: "foreground", border: "solid", borderColor: "secondary" });
     const b = normalizeCtaStyle({ bgColor: "secondary", textColor: "foreground", border: "solid", borderColor: "secondary" });

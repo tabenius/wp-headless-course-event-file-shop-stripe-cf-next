@@ -47,6 +47,7 @@ const DEFAULT_SITE_STYLE = {
   muted: "#686868",
   fontHeading: SITE_FONT_STACKS.heading[0],
   fontBody: SITE_FONT_STACKS.body[0],
+  ctaStyle: { type: "upstream" },
 };
 
 const DEFAULTS = {
