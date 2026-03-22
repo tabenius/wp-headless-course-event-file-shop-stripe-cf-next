@@ -11,17 +11,18 @@ const JPEG_QUALITY = 85;
 /**
  * Resolves the output image format.
  * - cropCircle requires transparency → always PNG regardless of requestedFormat
- * - "webp" and "png" are accepted as requestedFormat overrides
- * - anything else (including "avif") falls back to "jpeg"
+ * - "avif", "webp", and "png" are accepted as requestedFormat overrides
+ * - anything else falls back to "jpeg"
  *
  * @param {Array}  operations
- * @param {string} [requestedFormat]  optional caller override: "webp"|"png"|"jpeg"
- * @returns {"jpeg"|"png"|"webp"}
+ * @param {string} [requestedFormat]  optional caller override: "avif"|"webp"|"png"|"jpeg"
+ * @returns {"jpeg"|"png"|"webp"|"avif"}
  */
 export function resolveOutputFormat(operations, requestedFormat) {
   if (Array.isArray(operations) && operations.some((op) => op.type === "cropCircle")) {
     return "png";
   }
+  if (requestedFormat === "avif") return "avif";
   if (requestedFormat === "webp") return "webp";
   if (requestedFormat === "png") return "png";
   return "jpeg";
@@ -133,15 +134,19 @@ function applyCircleMask(rawPixels, width, height, centerX, centerY, radius) {
  * Executes derivation operations sequentially against a PhotonImage.
  * Where Photon returns a new instance (resize, crop) the old one is freed.
  *
- * @param {object} photon      The @cf-wasm/photon module
- * @param {object} img         PhotonImage instance
- * @param {Array}  operations  Derivation operation list
- * @returns {object}           PhotonImage (may differ from input)
+ * @param {object}   photon      The @cf-wasm/photon module
+ * @param {object}   img         PhotonImage instance
+ * @param {Array}    operations  Derivation operation list
+ * @param {Function} [onProgress]  Called after each op: (doneCount, totalCount, opType)
+ * @returns {object}             PhotonImage (may differ from input)
  */
-export function executeOperations(photon, img, operations) {
+export function executeOperations(photon, img, operations, onProgress) {
   if (!Array.isArray(operations)) return img;
 
   let current = img;
+
+  const total = Array.isArray(operations) ? operations.filter((op) => op.type !== "source").length : 0;
+  let done = 0;
 
   try {
   for (const op of operations) {
@@ -246,9 +251,114 @@ export function executeOperations(photon, img, operations) {
         break;
       }
 
+      case "brightness": {
+        const amount = Math.round(Math.min(255, Math.max(-255, Number(p.amount) || 0)));
+        photon.adjust_brightness(current, amount);
+        break;
+      }
+
+      case "grayscale": {
+        photon.grayscale_human_corrected(current);
+        break;
+      }
+
+      case "flip": {
+        const dir = String(p.direction || "h").toLowerCase();
+        if (dir === "v") {
+          photon.flipv(current);
+        } else {
+          photon.fliph(current);
+        }
+        break;
+      }
+
+      case "rotate": {
+        const degrees = Number(p.degrees) || 0;
+        const next = photon.rotate(current, degrees);
+        if (next !== current) { current.free(); current = next; }
+        break;
+      }
+
+      case "blur": {
+        const radius = Math.max(1, Math.round(Number(p.radius) || 1));
+        photon.gaussian_blur(current, radius);
+        break;
+      }
+
+      case "padding": {
+        const pad = Math.max(0, Math.round(Number(p.padding) || 0));
+        if (pad === 0) break;
+        const r = Math.round(Math.min(255, Math.max(0, Number(p.r ?? 255))));
+        const g = Math.round(Math.min(255, Math.max(0, Number(p.g ?? 255))));
+        const b = Math.round(Math.min(255, Math.max(0, Number(p.b ?? 255))));
+        const a = Math.round(Math.min(255, Math.max(0, Number(p.a ?? 255))));
+        const rgba = new photon.Rgba(r, g, b, a);
+        const next = photon.padding_uniform(current, pad, rgba);
+        if (next !== current) { current.free(); current = next; }
+        break;
+      }
+
+      case "tint": {
+        const r = Math.round(Math.min(255, Math.max(-255, Number(p.r) || 0)));
+        const g = Math.round(Math.min(255, Math.max(-255, Number(p.g) || 0)));
+        const b = Math.round(Math.min(255, Math.max(-255, Number(p.b) || 0)));
+        photon.tint(current, r, g, b);
+        break;
+      }
+
+      case "hueRotate": {
+        const degrees = Number(p.degrees) || 0;
+        photon.hue_rotate_hsl(current, degrees);
+        break;
+      }
+
+      case "invert": {
+        photon.invert(current);
+        break;
+      }
+
+      case "solarize": {
+        photon.solarize(current);
+        break;
+      }
+
+      case "pixelize": {
+        const size = Math.max(2, Math.round(Number(p.size) || 8));
+        photon.pixelize(current, size);
+        break;
+      }
+
+      case "duotone": {
+        // color1/color2: {r, g, b} each 0–255
+        const c1 = p.color1 || {};
+        const c2 = p.color2 || {};
+        const rgb1 = new photon.Rgb(
+          Math.round(Math.min(255, Math.max(0, Number(c1.r) || 0))),
+          Math.round(Math.min(255, Math.max(0, Number(c1.g) || 0))),
+          Math.round(Math.min(255, Math.max(0, Number(c1.b) || 0))),
+        );
+        const rgb2 = new photon.Rgb(
+          Math.round(Math.min(255, Math.max(0, Number(c2.r) || 0))),
+          Math.round(Math.min(255, Math.max(0, Number(c2.g) || 0))),
+          Math.round(Math.min(255, Math.max(0, Number(c2.b) || 0))),
+        );
+        photon.duotone(current, rgb1, rgb2);
+        break;
+      }
+
+      case "oil": {
+        const radius = Math.max(1, Math.min(5, Math.round(Number(p.radius) || 2)));
+        const intensity = Math.min(60, Math.max(10, Number(p.intensity) || 30));
+        photon.oil(current, radius, intensity);
+        break;
+      }
+
       default:
         // Unknown operator — skip silently to keep pipeline resilient
         break;
+    }
+    if (op.type !== "source" && onProgress) {
+      onProgress(++done, total, op.type);
     }
   }
   } catch (err) {

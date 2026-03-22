@@ -8,6 +8,7 @@ import {
   executeOperations,
   serializeImage,
 } from "@/lib/photonPipeline";
+import { encodeAvif, decodeAvif } from "@/lib/avifEncode";
 
 function buildAllowedHosts(request) {
   const hosts = new Set();
@@ -45,6 +46,16 @@ function jsonError(message, status = 400) {
   });
 }
 
+/** Encode a Uint8Array to base64 without hitting call-stack limits. */
+function toBase64(bytes) {
+  let binary = "";
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 export async function POST(request) {
   const auth = await requireAdmin(request);
   if (auth?.error) return auth.error;
@@ -68,62 +79,122 @@ export async function POST(request) {
     return jsonError("Derivation not found.", 404);
   }
 
-  // Caller-supplied operations override derivation defaults
   const baseOperations =
     Array.isArray(operations) && operations.length > 0
       ? operations
       : derivation.operations;
   const finalOperations = bindOperationsToAsset(baseOperations, asset.id);
 
-  // Determine output format (cropCircle → PNG; webp if requested; else JPEG)
   const format = resolveOutputFormat(finalOperations, requestedFormat);
   const contentType =
-    format === "png" ? "image/png" : format === "webp" ? "image/webp" : "image/jpeg";
+    format === "avif"
+      ? "image/avif"
+      : format === "png"
+        ? "image/png"
+        : format === "webp"
+          ? "image/webp"
+          : "image/jpeg";
 
-  // Fetch source image
-  let sourceBytes;
-  try {
-    const sourceResponse = await fetch(asset.url);
-    if (!sourceResponse.ok) {
-      return jsonError(`Could not fetch source image (HTTP ${sourceResponse.status}).`);
-    }
-    const sourceContentType = sourceResponse.headers.get("content-type") || "";
-    if (isAvifSource(sourceContentType)) {
-      return jsonError(
-        "AVIF source images are not supported — convert to JPEG, PNG, or WebP first.",
-      );
-    }
-    const buffer = await sourceResponse.arrayBuffer();
-    guardSourceSize(buffer.byteLength);
-    sourceBytes = new Uint8Array(buffer);
-  } catch (fetchError) {
-    return jsonError(fetchError?.message || "Failed to fetch source image.");
-  }
+  // ── Streaming NDJSON response ──────────────────────────────────────────────
+  // Each line is a JSON object: { type: "progress"|"done"|"error", … }
+  // progress: { pct: 0-99, label: string }
+  // done:     { contentType, data: base64 }
+  // error:    { message }
 
-  // Run Photon pipeline
-  let outputBytes;
-  try {
-    const photon = await import("@cf-wasm/photon");
-    const img = photon.PhotonImage.new_from_byteslice(sourceBytes);
-    let processed = img;
-    try {
-      processed = executeOperations(photon, img, finalOperations);
-      outputBytes = serializeImage(processed, format);
-    } finally {
-      if (processed !== img) processed.free();
-      img.free();
-    }
-  } catch (photonError) {
-    return jsonError(photonError?.message || "Image processing failed.");
-  }
+  const enc = new TextEncoder();
 
-  return new Response(outputBytes, {
+  const stream = new ReadableStream({
+    async start(ctrl) {
+      const send = (obj) => ctrl.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+
+      try {
+        // ── Fetch source ────────────────────────────────────────────────────
+        send({ type: "progress", pct: 5, label: "fetch" });
+        const sourceResponse = await fetch(asset.url);
+        if (!sourceResponse.ok) throw new Error(`Could not fetch source image (HTTP ${sourceResponse.status}).`);
+        const sourceContentType = sourceResponse.headers.get("content-type") || "";
+        const sourceIsAvif = isAvifSource(sourceContentType);
+        const buffer = await sourceResponse.arrayBuffer();
+        guardSourceSize(buffer.byteLength);
+        const sourceBytes = new Uint8Array(buffer);
+
+        // ── Load into Photon ───────────────────────────────────────────────
+        if (sourceIsAvif) {
+          send({ type: "progress", pct: 12, label: "decode_avif" });
+        } else {
+          send({ type: "progress", pct: 12, label: "load" });
+        }
+
+        const photon = await import("@cf-wasm/photon");
+
+        let img;
+        if (sourceIsAvif) {
+          const imageData = await decodeAvif(sourceBytes);
+          const raw = new Uint8Array(imageData.data.buffer, imageData.data.byteOffset, imageData.data.byteLength);
+          img = new photon.PhotonImage(raw, imageData.width, imageData.height);
+        } else {
+          img = photon.PhotonImage.new_from_byteslice(sourceBytes);
+        }
+
+        // ── Pipeline ────────────────────────────────────────────────────────
+        // WASM ops are synchronous — per-op events arrive in a burst after
+        // all ops complete, but still animate smoothly via CSS transitions.
+        const nonSourceOps = finalOperations.filter((op) => op.type !== "source");
+        const opCount = nonSourceOps.length;
+        // Operations occupy 12 %→80 % of the bar (68 ppts).
+        const PCT_OPS_START = 12;
+        const PCT_OPS_END = 80;
+
+        send({ type: "progress", pct: PCT_OPS_START, label: "pipeline" });
+
+        let processed = img;
+        try {
+          processed = executeOperations(photon, img, finalOperations, (done, total, opType) => {
+            const pct = opCount > 0
+              ? Math.round(PCT_OPS_START + (done / total) * (PCT_OPS_END - PCT_OPS_START))
+              : PCT_OPS_END;
+            send({ type: "progress", pct, label: opType });
+          });
+
+          // ── Encode output ───────────────────────────────────────────────
+          let outputBytes;
+          if (format === "avif") {
+            send({ type: "progress", pct: 82, label: "encode_avif" });
+            outputBytes = await encodeAvif(
+              processed.get_raw_pixels(),
+              processed.get_width(),
+              processed.get_height(),
+            );
+          } else {
+            send({ type: "progress", pct: 82, label: "encode" });
+            outputBytes = serializeImage(processed, format);
+          }
+
+          send({
+            type: "done",
+            contentType,
+            derivationId: String(derivationId),
+            derivationFormat: format,
+            data: toBase64(outputBytes),
+          });
+        } finally {
+          if (processed !== img) processed.free();
+          img.free();
+        }
+      } catch (err) {
+        send({ type: "error", message: err?.message || "Image processing failed." });
+      }
+
+      ctrl.close();
+    },
+  });
+
+  return new Response(stream, {
     status: 200,
     headers: {
-      "Content-Type": contentType,
+      "Content-Type": "application/x-ndjson; charset=utf-8",
       "Cache-Control": "no-store",
-      "X-Derivation-Id": String(derivationId),
-      "X-Derivation-Format": format,
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }
