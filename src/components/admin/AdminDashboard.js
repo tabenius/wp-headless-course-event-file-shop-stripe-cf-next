@@ -45,15 +45,15 @@ const AdminInfoHubTab = lazy(() => import("./AdminInfoHubTab"));
 const AdminStyleTab = lazy(() => import("./AdminStyleTab"));
 
 const ADMIN_TABS = [
-  "welcome",
   "sales",
   "media",
-  "storage",
   "products",
-  "chat",
-  "style",
-  "info",
   "support",
+  "style",
+  "storage",
+  "chat",
+  "info",
+  "welcome",
 ];
 const ADMIN_TAB_SET = new Set(ADMIN_TABS);
 
@@ -2336,16 +2336,6 @@ export default function AdminDashboard() {
             createSupportTicket={createSupportTicket}
             updateSupportTicket={updateSupportTicket}
             ticketSaving={ticketSaving}
-            payments={payments}
-            paymentsEmail={paymentsEmail}
-            setPaymentsEmail={setPaymentsEmail}
-            loadPayments={loadPayments}
-            paymentsLoading={paymentsLoading}
-            paymentsError={paymentsError}
-            paymentsErrorCode={paymentsErrorCode}
-            paymentsStripeConfigured={paymentsStripeConfigured}
-            downloadReceipt={downloadReceipt}
-            downloading={downloading}
           />
         </Suspense>
       )}

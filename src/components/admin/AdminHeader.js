@@ -84,11 +84,6 @@ function hashForTabRoute(value) {
 function getNavItems() {
   return [
     {
-      label: t("admin.navWelcome", "Welcome"),
-      tab: "welcome",
-      hotkey: getAdminTabHotkeyLabel("welcome"),
-    },
-    {
       label: t("admin.navSales", "Sales"),
       tab: "sales",
       hotkey: getAdminTabHotkeyLabel("sales"),
@@ -99,19 +94,14 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("media"),
     },
     {
-      label: t("admin.navStorage"),
-      tab: "storage",
-      hotkey: getAdminTabHotkeyLabel("storage"),
-    },
-    {
       label: t("admin.navProducts"),
       tab: "products",
       hotkey: getAdminTabHotkeyLabel("products"),
     },
     {
-      label: t("admin.navChat"),
-      tab: "chat",
-      hotkey: getAdminTabHotkeyLabel("chat"),
+      label: t("admin.navSupport"),
+      tab: "support",
+      hotkey: getAdminTabHotkeyLabel("support"),
     },
     {
       label: t("admin.navStyle"),
@@ -119,14 +109,24 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("style"),
     },
     {
-      label: t("admin.navSandbox"),
+      label: t("admin.navStorage"),
+      tab: "storage",
+      hotkey: getAdminTabHotkeyLabel("storage"),
+    },
+    {
+      label: t("admin.navChat"),
+      tab: "chat",
+      hotkey: getAdminTabHotkeyLabel("chat"),
+    },
+    {
+      label: t("admin.navSystem", "System"),
       tab: "info",
       hotkey: getAdminTabHotkeyLabel("info"),
     },
     {
-      label: t("admin.navSupport"),
-      tab: "support",
-      hotkey: getAdminTabHotkeyLabel("support"),
+      label: t("admin.navWelcome", "Welcome"),
+      tab: "welcome",
+      hotkey: getAdminTabHotkeyLabel("welcome"),
     },
   ];
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
+import { tenantConfig } from "@/lib/tenantConfig";
 import AdminConnectorsTab from "./AdminConnectorsTab";
 import AdminSandboxTab from "./AdminSandboxTab";
 import AdminStatsTab from "./AdminStatsTab";
@@ -11,6 +12,7 @@ function normalizeSection(value) {
   const safe = String(value || "").trim().toLowerCase();
   if (safe === "health") return "health";
   if (safe === "stats" || safe === "statistics") return "stats";
+  if (safe === "links" || safe === "dead-links" || safe === "deadlinks") return "links";
   if (safe === "docs" || safe === "documentation") return "docs";
   return "overview";
 }
@@ -23,6 +25,7 @@ function sectionFromHash(hashValue) {
   const parts = normalized.split("/").filter(Boolean);
   if (parts[0] === "health") return "health";
   if (parts[0] === "stats") return "stats";
+  if (parts[0] === "links" || parts[0] === "dead-links") return "links";
   if (parts[0] === "docs" || parts[0] === "documentation") return "docs";
   if (parts[0] !== "info") return "overview";
   return normalizeSection(parts[1] || "overview");
@@ -31,6 +34,7 @@ function sectionFromHash(hashValue) {
 function hashForSection(section) {
   if (section === "health") return "#/info/health";
   if (section === "stats") return "#/info/stats";
+  if (section === "links") return "#/info/links";
   if (section === "docs") return "#/info/docs";
   return "#/info";
 }
@@ -306,6 +310,236 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
   );
 }
 
+function DeadLinksPanel() {
+  const [deadLinks, setDeadLinks] = useState([]);
+  const [deadLinksTotals, setDeadLinksTotals] = useState(null);
+  const [deadLinksLoading, setDeadLinksLoading] = useState(false);
+  const [deadLinksError, setDeadLinksError] = useState("");
+  const [deadLinksFilter, setDeadLinksFilter] = useState("all");
+  const [deadLinksGeneratedAt, setDeadLinksGeneratedAt] = useState("");
+
+  const loadDeadLinks = useCallback(async () => {
+    setDeadLinksLoading(true);
+    setDeadLinksError("");
+    try {
+      const res = await fetch("/api/admin/dead-links?limit=120");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || "dead_links_scan_failed");
+      }
+      setDeadLinks(Array.isArray(json.links) ? json.links : []);
+      setDeadLinksTotals(json.totals || null);
+      setDeadLinksGeneratedAt(json.generatedAt || "");
+    } catch (error) {
+      setDeadLinksError(
+        error?.message || t("admin.deadLinksScanFailed", "Failed to scan links."),
+      );
+    } finally {
+      setDeadLinksLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDeadLinks().catch(() => {});
+  }, [loadDeadLinks]);
+
+  const filteredDeadLinks = useMemo(() => {
+    if (deadLinksFilter === "all") return deadLinks;
+    if (deadLinksFilter === "broken") {
+      return deadLinks.filter((link) => link.reachability === "broken");
+    }
+    return deadLinks.filter((link) => link.kind === deadLinksFilter);
+  }, [deadLinks, deadLinksFilter]);
+
+  function kindLabel(kind) {
+    if (kind === "internal") return t("admin.deadLinksKindInternal", "Internal");
+    if (kind === "pseudo-external") return t("admin.deadLinksKindPseudo", "Pseudo external");
+    if (kind === "external") return t("admin.deadLinksKindExternal", "External");
+    if (kind === "invalid") return t("admin.deadLinksKindInvalid", "Invalid");
+    if (kind === "unsupported") return t("admin.deadLinksKindUnsupported", "Unsupported");
+    return kind || "—";
+  }
+
+  return (
+    <div className="border rounded p-4 space-y-3 bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">
+            {t("admin.deadLinksTitle", "Dead-link finder")}
+          </h3>
+          <p className="text-xs text-gray-500">
+            {t(
+              "admin.deadLinksHint",
+              `Scans content anchor tags and classifies internal, pseudo-external (${tenantConfig.customDomainExample}) and external links.`,
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={deadLinksFilter}
+            onChange={(event) => setDeadLinksFilter(event.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="all">{t("admin.deadLinksFilterAll", "All")}</option>
+            <option value="broken">{t("admin.deadLinksFilterBroken", "Broken")}</option>
+            <option value="internal">{t("admin.deadLinksFilterInternal", "Internal")}</option>
+            <option value="pseudo-external">
+              {t("admin.deadLinksFilterPseudo", "Pseudo external")}
+            </option>
+            <option value="external">{t("admin.deadLinksFilterExternal", "External")}</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => loadDeadLinks()}
+            disabled={deadLinksLoading}
+            className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50 disabled:opacity-50"
+          >
+            {deadLinksLoading
+              ? t("admin.running", "Running…")
+              : t("admin.deadLinksRescan", "Rescan")}
+          </button>
+        </div>
+      </div>
+
+      {deadLinksTotals && (
+        <div className="grid gap-2 text-xs sm:grid-cols-3 lg:grid-cols-6">
+          <div className="rounded border border-gray-200 bg-gray-50 px-2 py-1.5">
+            {t("admin.deadLinksTotal", "Total")}:{" "}
+            <span className="font-semibold">{deadLinksTotals.total ?? 0}</span>
+          </div>
+          <div className="rounded border border-indigo-200 bg-indigo-50 px-2 py-1.5">
+            {t("admin.deadLinksKindInternal", "Internal")}:{" "}
+            <span className="font-semibold">{deadLinksTotals.internal ?? 0}</span>
+          </div>
+          <div className="rounded border border-cyan-200 bg-cyan-50 px-2 py-1.5">
+            {t("admin.deadLinksKindPseudo", "Pseudo external")}:{" "}
+            <span className="font-semibold">{deadLinksTotals.pseudoExternal ?? 0}</span>
+          </div>
+          <div className="rounded border border-violet-200 bg-violet-50 px-2 py-1.5">
+            {t("admin.deadLinksKindExternal", "External")}:{" "}
+            <span className="font-semibold">{deadLinksTotals.external ?? 0}</span>
+          </div>
+          <div className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1.5">
+            {t("admin.deadLinksReachable", "Reachable")}:{" "}
+            <span className="font-semibold">{deadLinksTotals.ok ?? 0}</span>
+          </div>
+          <div className="rounded border border-rose-200 bg-rose-50 px-2 py-1.5">
+            {t("admin.deadLinksBroken", "Broken")}:{" "}
+            <span className="font-semibold">{deadLinksTotals.broken ?? 0}</span>
+          </div>
+        </div>
+      )}
+
+      {deadLinksGeneratedAt && (
+        <p className="text-xs text-gray-500">
+          {t("admin.deadLinksLastScan", "Last scan")}:{" "}
+          {new Date(deadLinksGeneratedAt).toLocaleString("sv-SE")}
+        </p>
+      )}
+
+      {deadLinksError && <p className="text-sm text-red-600">{deadLinksError}</p>}
+
+      {!deadLinksError && filteredDeadLinks.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          {t("admin.deadLinksEmpty", "No links matched this filter.")}
+        </p>
+      ) : !deadLinksError ? (
+        <div className="max-h-96 overflow-auto border rounded">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 text-gray-600">
+              <tr>
+                <th className="px-3 py-2 text-left">
+                  {t("admin.deadLinksColumnType", "Type")}
+                </th>
+                <th className="px-3 py-2 text-left">
+                  {t("admin.deadLinksColumnLink", "Link")}
+                </th>
+                <th className="px-3 py-2 text-left">
+                  {t("admin.deadLinksColumnStatus", "Status")}
+                </th>
+                <th className="px-3 py-2 text-left">
+                  {t("admin.deadLinksColumnSources", "Sources")}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filteredDeadLinks.map((link) => (
+                <tr key={`${link.kind}:${link.href}`} className="hover:bg-gray-50">
+                  <td className="px-3 py-2">
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                      {kindLabel(link.kind)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="break-all text-purple-700 underline"
+                    >
+                      {link.href}
+                    </a>
+                    {link.kind === "pseudo-external" && link.translatedPath && (
+                      <div className="mt-1 text-xs text-cyan-700">
+                        {t("admin.deadLinksTranslatedTo", "Translated to")}:{" "}
+                        <code>{link.translatedPath}</code>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    {link.reachability === "ok" ? (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
+                        {t("admin.deadLinksStatusOk", "Reachable")}
+                      </span>
+                    ) : link.reachability === "broken" ? (
+                      <div className="space-y-1">
+                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
+                          {t("admin.deadLinksStatusBroken", "Broken")}
+                        </span>
+                        <div className="text-xs text-rose-700">
+                          {link.statusCode || link.error || "error"}
+                        </div>
+                      </div>
+                    ) : link.reachability === "unchecked" ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                        {t("admin.deadLinksStatusUnchecked", "Unchecked")}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                        {t("admin.deadLinksStatusSkipped", "Skipped")}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <div className="space-y-1 text-xs text-gray-700">
+                      <div>
+                        {t("admin.deadLinksOccurrences", "Occurrences")}:{" "}
+                        <span className="font-semibold">{link.occurrences || 0}</span>
+                      </div>
+                      {(link.sources || []).slice(0, 3).map((source) => (
+                        <a
+                          key={`${source.kind}:${source.uri}`}
+                          href={source.uri}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block break-all text-gray-600 underline"
+                          title={source.title}
+                        >
+                          {source.kind}: {source.title || source.uri}
+                        </a>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DocsPanel() {
   return (
     <div className="border rounded p-5 bg-white space-y-4">
@@ -375,6 +609,7 @@ export default function AdminInfoHubTab({
     { id: "overview", label: t("admin.infoOverview", "Overview") },
     { id: "stats", label: t("admin.navStats", "Stats") },
     { id: "health", label: t("admin.healthCheck", "Health check") },
+    { id: "links", label: t("admin.deadLinksTitle", "Dead-link finder") },
     { id: "docs", label: t("admin.documentation", "Documentation") },
   ];
 
@@ -460,6 +695,8 @@ export default function AdminInfoHubTab({
           />
         </div>
       )}
+
+      {section === "links" && <DeadLinksPanel />}
 
       {section === "docs" && <DocsPanel />}
     </div>
