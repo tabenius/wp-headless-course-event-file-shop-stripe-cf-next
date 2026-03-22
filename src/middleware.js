@@ -10,7 +10,39 @@ function shouldTag(request) {
   );
 }
 
-export function middleware(request) {
+/**
+ * WebDAV clients use non-standard HTTP methods (PROPFIND, MKCOL) that Next.js
+ * App Router does not natively route.  Intercept them here and forward as POST
+ * to the same URL with an `x-dav-method` header so the route handler can pick
+ * up the real intent.  A `x-dav-forwarded` guard prevents re-entry loops.
+ */
+async function forwardDavMethod(request) {
+  const headers = new Headers(request.headers);
+  headers.set("x-dav-method", request.method.toUpperCase());
+  headers.set("x-dav-forwarded", "1");
+  return fetch(request.nextUrl.href, {
+    method: "POST",
+    headers,
+    // MKCOL has no body; PROPFIND has an XML body (usually small).
+    body: request.body,
+    // @ts-expect-error – duplex is required by some runtimes for streaming bodies
+    duplex: "half",
+  });
+}
+
+export async function middleware(request) {
+  const { pathname } = request.nextUrl;
+  const method = request.method.toUpperCase();
+
+  // Forward WebDAV extension methods to the route handler via POST.
+  if (
+    pathname.startsWith("/webdav") &&
+    (method === "PROPFIND" || method === "MKCOL") &&
+    !request.headers.get("x-dav-forwarded")
+  ) {
+    return forwardDavMethod(request);
+  }
+
   if (!shouldTag(request)) return NextResponse.next();
 
   const reqId = crypto.randomUUID();
@@ -34,5 +66,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/__maps/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/__maps/:path*", "/webdav/:path*"],
 };

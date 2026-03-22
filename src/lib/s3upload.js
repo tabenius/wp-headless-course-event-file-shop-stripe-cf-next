@@ -732,3 +732,119 @@ export async function replaceBucketObjectMetadata({
     contentType: current.contentType || "",
   };
 }
+
+/**
+ * List objects in a "directory" using a `/` delimiter.
+ * Returns { dirs: [{key, isDirectory}], files: [{key, url, size, lastModified}] }
+ * so callers can distinguish virtual subdirectories from actual objects.
+ */
+export async function listBucketDirectory({ prefix = "", backend } = {}) {
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse === "wordpress") {
+    throw new Error("Directory listing is not available for the WordPress backend.");
+  }
+  assertNodeS3Support(backendToUse);
+  const { ListObjectsV2Command } = await loadAwsSdk();
+  const client = await getS3Client(backendToUse);
+  const bucket = getBucket();
+  const publicBaseUrl = getPublicUrl();
+  const safePrefix = String(prefix || "");
+  const result = await client.send(
+    new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: safePrefix,
+      Delimiter: "/",
+      MaxKeys: 1000,
+    }),
+  );
+  const dirs = (result.CommonPrefixes ?? []).map((cp) => ({
+    key: cp.Prefix,
+    isDirectory: true,
+    size: 0,
+    lastModified: null,
+  }));
+  const files = (result.Contents ?? [])
+    .filter((item) => item.Key !== safePrefix) // skip the dir placeholder itself
+    .map((item) => ({
+      key: item.Key,
+      url: item.Key ? `${publicBaseUrl}/${item.Key}` : null,
+      size: item.Size ?? 0,
+      lastModified: item.LastModified ? item.LastModified.toISOString() : null,
+      isDirectory: false,
+    }));
+  return { dirs, files };
+}
+
+/**
+ * Put an object at a specific key (bypasses the auto-prefixed path in uploadToS3).
+ * Returns the public URL.
+ */
+export async function putBucketObject({
+  key,
+  body,
+  contentType,
+  metadata = {},
+  backend,
+} = {}) {
+  const safeKey = String(key || "").trim();
+  if (!safeKey) throw new Error("Object key is required.");
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse === "wordpress") {
+    throw new Error("Direct object put is not available for the WordPress backend.");
+  }
+  assertNodeS3Support(backendToUse);
+  const { PutObjectCommand } = await loadAwsSdk();
+  const client = await getS3Client(backendToUse);
+  const bucket = getBucket();
+  const publicBaseUrl = getPublicUrl();
+  const safeMetadata = normalizeStorageMetadata(metadata);
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: safeKey,
+      Body: body,
+      ContentType: contentType || "application/octet-stream",
+      ...(Object.keys(safeMetadata).length > 0 ? { Metadata: safeMetadata } : {}),
+    }),
+  );
+  return `${publicBaseUrl}/${safeKey}`;
+}
+
+/** Delete a specific object by key. */
+export async function deleteBucketObject({ key, backend } = {}) {
+  const safeKey = String(key || "").trim();
+  if (!safeKey) throw new Error("Object key is required.");
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse === "wordpress") {
+    throw new Error("Object deletion is not available for the WordPress backend.");
+  }
+  assertNodeS3Support(backendToUse);
+  const { DeleteObjectCommand } = await loadAwsSdk();
+  const client = await getS3Client(backendToUse);
+  const bucket = getBucket();
+  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: safeKey }));
+}
+
+/**
+ * Stream an object's content from S3/R2.
+ * Returns { body: ReadableStream, contentType, contentLength }.
+ */
+export async function getBucketObjectStream({ key, backend } = {}) {
+  const safeKey = String(key || "").trim();
+  if (!safeKey) throw new Error("Object key is required.");
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse === "wordpress") {
+    throw new Error("Object streaming is not available for the WordPress backend.");
+  }
+  assertNodeS3Support(backendToUse);
+  const { GetObjectCommand } = await loadAwsSdk();
+  const client = await getS3Client(backendToUse);
+  const bucket = getBucket();
+  const result = await client.send(new GetObjectCommand({ Bucket: bucket, Key: safeKey }));
+  return {
+    body: result.Body.transformToWebStream(),
+    contentType: result.ContentType || "application/octet-stream",
+    contentLength: result.ContentLength ?? null,
+    lastModified: result.LastModified ? result.LastModified.toISOString() : null,
+  };
+}
