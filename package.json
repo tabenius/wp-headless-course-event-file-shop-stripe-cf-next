@@ -32,6 +32,7 @@
     "@aws-sdk/client-s3": "^3.1004.0",
     "@aws-sdk/s3-request-presigner": "^3.1009.0",
     "@cf-wasm/photon": "^0.3.4",
+    "@jsquash/avif": "^2.1.1",
     "next": "^16.2.0",
     "prettier": "^3.5.3",
     "react": "^19.0.0",
