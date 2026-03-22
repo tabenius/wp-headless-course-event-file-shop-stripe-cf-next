@@ -643,3 +643,15 @@ body:has(.admin-layout)::before {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-33.333%); }
 }
+
+/* CTA button style — zero specificity so WP theme rules always win */
+:where(button, .btn, [role="button"], input[type="submit"]) {
+  background-color: var(--btn-bg, var(--color-primary));
+  color:            var(--btn-color, var(--color-background));
+  border-radius:    var(--btn-radius, 8px);
+  border:           var(--btn-border-width, 0px) solid var(--btn-border-color, transparent);
+  box-shadow:       var(--btn-shadow, none);
+  font-weight:      var(--btn-font-weight, 600);
+  text-transform:   var(--btn-text-transform, none);
+  padding:          var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
+}
