@@ -38,6 +38,111 @@ const SITE_FONT_SET = new Set(
 
 const HEX_COLOR_RE = /^#(?:[0-9a-f]{3}){1,2}$/i;
 
+const VALID_HOVER_VARIANTS = new Set([
+  "none",
+  "underline",
+  "highlight",
+  "inverse",
+  "pill",
+  "slide",
+  "box",
+]);
+
+const VALID_UNDERLINE_DEFAULTS = new Set(["always", "hover", "never"]);
+
+const DEFAULT_LINK_STYLE = {
+  hoverVariant: "underline",
+  underlineDefault: "hover",
+};
+
+const DEFAULT_FONT_ROLES = {
+  fontDisplay: {
+    type: "preset",
+    stack: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+    colorSlot: 1,
+  },
+  fontHeading: {
+    type: "preset",
+    stack: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+    colorSlot: 1,
+  },
+  fontSubheading: { type: "inherit" },
+  fontBody: { type: "preset", stack: "Georgia, 'Times New Roman', serif" },
+  fontButton: {
+    type: "preset",
+    stack: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+  },
+};
+
+export function normalizeFontRole(input, fallback) {
+  // Backward compat: old string format → preset object
+  if (typeof input === "string") {
+    const trimmed = input.trim();
+    if (trimmed) return { type: "preset", stack: trimmed };
+    return { ...fallback };
+  }
+  if (!input || typeof input !== "object") return { ...fallback };
+
+  const type = String(input.type || "");
+  if (!["preset", "google", "inherit"].includes(type)) return { ...fallback };
+
+  if (type === "inherit") return { type: "inherit" };
+
+  if (type === "preset") {
+    const stack = String(input.stack || "").trim();
+    if (!stack) return { ...fallback };
+    const result = { type: "preset", stack };
+    if (input.colorSlot === 1 || input.colorSlot === 2)
+      result.colorSlot = input.colorSlot;
+    return result;
+  }
+
+  // type === "google"
+  const family = String(input.family || "").trim();
+  if (!family) return { ...fallback };
+  const result = { type: "google", family };
+  result.isVariable = Boolean(input.isVariable);
+  if (result.isVariable) {
+    const [min, max] = Array.isArray(input.weightRange)
+      ? input.weightRange
+      : [100, 900];
+    result.weightRange = [Number(min) || 100, Number(max) || 900];
+  } else {
+    result.weights = Array.isArray(input.weights)
+      ? input.weights.map(Number).filter((w) => w > 0)
+      : [400];
+  }
+  if (input.colorSlot === 1 || input.colorSlot === 2)
+    result.colorSlot = input.colorSlot;
+  return result;
+}
+
+export function normalizeTypographyPalette(input) {
+  const DEFAULT = ["#111111"];
+  if (!Array.isArray(input) || input.length === 0) return DEFAULT;
+  const validated = input
+    .slice(0, 2)
+    .map((c) =>
+      HEX_COLOR_RE.test(String(c || "").trim())
+        ? String(c).trim().toLowerCase()
+        : null,
+    )
+    .filter(Boolean);
+  return validated.length > 0 ? validated : DEFAULT;
+}
+
+export function normalizeLinkStyle(input) {
+  const source = input && typeof input === "object" ? input : {};
+  return {
+    hoverVariant: VALID_HOVER_VARIANTS.has(source.hoverVariant)
+      ? source.hoverVariant
+      : DEFAULT_LINK_STYLE.hoverVariant,
+    underlineDefault: VALID_UNDERLINE_DEFAULTS.has(source.underlineDefault)
+      ? source.underlineDefault
+      : DEFAULT_LINK_STYLE.underlineDefault,
+  };
+}
+
 const DEFAULT_SITE_STYLE = {
   background: "#fff1f1",
   foreground: "#1a1a1a",
@@ -45,8 +150,13 @@ const DEFAULT_SITE_STYLE = {
   secondary: "#ffb606",
   tertiary: "#442e66",
   muted: "#686868",
-  fontHeading: SITE_FONT_STACKS.heading[0],
-  fontBody: SITE_FONT_STACKS.body[0],
+  fontDisplay: { ...DEFAULT_FONT_ROLES.fontDisplay },
+  fontHeading: { ...DEFAULT_FONT_ROLES.fontHeading },
+  fontSubheading: { ...DEFAULT_FONT_ROLES.fontSubheading },
+  fontBody: { ...DEFAULT_FONT_ROLES.fontBody },
+  fontButton: { ...DEFAULT_FONT_ROLES.fontButton },
+  typographyPalette: ["#111111"],
+  linkStyle: { ...DEFAULT_LINK_STYLE },
   ctaStyle: { type: "upstream" },
 };
 
@@ -140,14 +250,34 @@ export function normalizeCtaStyle(source) {
 function normalizeSiteStyle(input, fallback = DEFAULT_SITE_STYLE) {
   const source = input && typeof input === "object" ? input : {};
   return {
+    // Color fields — unchanged
     background: normalizeHexColor(source.background, fallback.background),
     foreground: normalizeHexColor(source.foreground, fallback.foreground),
     primary: normalizeHexColor(source.primary, fallback.primary),
     secondary: normalizeHexColor(source.secondary, fallback.secondary),
     tertiary: normalizeHexColor(source.tertiary, fallback.tertiary),
     muted: normalizeHexColor(source.muted, fallback.muted),
-    fontHeading: normalizeSiteFont(source.fontHeading, fallback.fontHeading),
-    fontBody: normalizeSiteFont(source.fontBody, fallback.fontBody),
+    // Font role objects — normalizeFontRole coerces legacy strings to preset objects
+    fontDisplay: normalizeFontRole(
+      source.fontDisplay,
+      DEFAULT_FONT_ROLES.fontDisplay,
+    ),
+    fontHeading: normalizeFontRole(
+      source.fontHeading,
+      DEFAULT_FONT_ROLES.fontHeading,
+    ),
+    fontSubheading: normalizeFontRole(
+      source.fontSubheading,
+      DEFAULT_FONT_ROLES.fontSubheading,
+    ),
+    fontBody: normalizeFontRole(source.fontBody, DEFAULT_FONT_ROLES.fontBody),
+    fontButton: normalizeFontRole(
+      source.fontButton,
+      DEFAULT_FONT_ROLES.fontButton,
+    ),
+    // Palette and link style
+    typographyPalette: normalizeTypographyPalette(source.typographyPalette),
+    linkStyle: normalizeLinkStyle(source.linkStyle),
     ctaStyle: normalizeCtaStyle(source.ctaStyle),
   };
 }
@@ -206,8 +336,14 @@ function areSiteStylesEqual(left, right) {
     a.secondary === b.secondary &&
     a.tertiary === b.tertiary &&
     a.muted === b.muted &&
-    a.fontHeading === b.fontHeading &&
-    a.fontBody === b.fontBody &&
+    JSON.stringify(a.fontDisplay) === JSON.stringify(b.fontDisplay) &&
+    JSON.stringify(a.fontHeading) === JSON.stringify(b.fontHeading) &&
+    JSON.stringify(a.fontSubheading) === JSON.stringify(b.fontSubheading) &&
+    JSON.stringify(a.fontBody) === JSON.stringify(b.fontBody) &&
+    JSON.stringify(a.fontButton) === JSON.stringify(b.fontButton) &&
+    JSON.stringify(a.typographyPalette) ===
+      JSON.stringify(b.typographyPalette) &&
+    JSON.stringify(a.linkStyle) === JSON.stringify(b.linkStyle) &&
     JSON.stringify(a.ctaStyle) === JSON.stringify(b.ctaStyle)
   );
 }
