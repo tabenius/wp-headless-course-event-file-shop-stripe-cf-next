@@ -38,27 +38,27 @@ describe("normalizePresets", () => {
 describe("validatePresetInput", () => {
   it("rejects missing type", () => {
     const err = validatePresetInput(null, "My preset", {});
-    assert.ok(err);
+    assert.equal(err, "type must be 'cta' or 'typography'");
   });
 
   it("rejects invalid type", () => {
     const err = validatePresetInput("button", "My preset", {});
-    assert.ok(err);
+    assert.equal(err, "type must be 'cta' or 'typography'");
   });
 
   it("rejects empty name", () => {
     const err = validatePresetInput("cta", "", {});
-    assert.ok(err);
+    assert.equal(err, "name is required");
   });
 
   it("rejects name over 80 chars", () => {
     const err = validatePresetInput("cta", "a".repeat(81), {});
-    assert.ok(err);
+    assert.equal(err, "name must be 80 characters or fewer");
   });
 
   it("rejects missing style", () => {
     const err = validatePresetInput("cta", "My preset", null);
-    assert.ok(err);
+    assert.equal(err, "style is required");
   });
 
   it("accepts valid cta input", () => {

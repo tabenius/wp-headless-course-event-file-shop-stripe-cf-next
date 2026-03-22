@@ -19,7 +19,9 @@ export function normalizePresets(raw) {
         typeof entry.id === "string" &&
         entry.id.trim() &&
         typeof entry.name === "string" &&
-        entry.name.trim(),
+        entry.name.trim() &&
+        entry.style !== null &&
+        entry.style !== undefined,
     );
   };
   return {
