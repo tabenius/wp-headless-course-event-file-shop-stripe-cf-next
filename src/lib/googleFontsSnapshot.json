@@ -1,0 +1,22 @@
+{
+  "fonts": [
+    {"family":"Roboto","category":"sans-serif","axes":[{"tag":"wght","start":100,"end":900}],"variants":["100","300","regular","500","700","900"]},
+    {"family":"Open Sans","category":"sans-serif","axes":[{"tag":"wdth","start":75,"end":100},{"tag":"wght","start":300,"end":800}],"variants":["300","regular","500","600","700","800"]},
+    {"family":"Lato","category":"sans-serif","axes":[],"variants":["100","300","regular","700","900"]},
+    {"family":"Montserrat","category":"sans-serif","axes":[{"tag":"wght","start":100,"end":900}],"variants":["100","200","300","regular","500","600","700","800","900"]},
+    {"family":"Raleway","category":"sans-serif","axes":[{"tag":"wght","start":100,"end":900}],"variants":["100","200","300","regular","500","600","700","800","900"]},
+    {"family":"Nunito","category":"sans-serif","axes":[{"tag":"wght","start":200,"end":900}],"variants":["200","300","regular","500","600","700","800","900"]},
+    {"family":"Inter","category":"sans-serif","axes":[{"tag":"wght","start":100,"end":900}],"variants":["100","200","300","regular","500","600","700","800","900"]},
+    {"family":"Playfair Display","category":"serif","axes":[{"tag":"wght","start":400,"end":900}],"variants":["regular","500","600","700","800","900"]},
+    {"family":"Merriweather","category":"serif","axes":[],"variants":["300","regular","700","900"]},
+    {"family":"Lora","category":"serif","axes":[{"tag":"wght","start":400,"end":700}],"variants":["regular","500","600","700"]},
+    {"family":"Crimson Pro","category":"serif","axes":[{"tag":"wght","start":200,"end":900}],"variants":["200","300","regular","500","600","700","800","900"]},
+    {"family":"Cormorant Garamond","category":"serif","axes":[],"variants":["300","regular","500","600","700"]},
+    {"family":"DM Sans","category":"sans-serif","axes":[{"tag":"opsz","start":9,"end":40},{"tag":"wght","start":100,"end":700}],"variants":["100","200","300","regular","500","600","700"]},
+    {"family":"Space Grotesk","category":"sans-serif","axes":[{"tag":"wght","start":300,"end":700}],"variants":["300","regular","500","600","700"]},
+    {"family":"IBM Plex Sans","category":"sans-serif","axes":[],"variants":["100","200","300","regular","500","600","700"]},
+    {"family":"Fraunces","category":"serif","axes":[{"tag":"SOFT","start":0,"end":100},{"tag":"WONK","start":0,"end":1},{"tag":"opsz","start":9,"end":144},{"tag":"wght","start":100,"end":900}],"variants":["100","200","300","regular","500","600","700","800","900"]},
+    {"family":"Josefin Sans","category":"sans-serif","axes":[{"tag":"wght","start":100,"end":700}],"variants":["100","200","300","regular","500","600","700"]},
+    {"family":"Poppins","category":"sans-serif","axes":[],"variants":["100","200","300","regular","500","600","700","800","900"]}
+  ]
+}
