@@ -393,10 +393,15 @@ async function getState() {
       return await readCloudflareState();
     } catch (error) {
       console.error(
-        "Cloudflare avatar feed store read failed; falling back to local store:",
+        "Cloudflare avatar feed store read failed; using in-memory fallback:",
         error,
       );
+      return sanitizeState(inMemoryState);
     }
+  }
+  // Local file I/O is not available in edge/Cloudflare Workers runtime
+  if (process.env.NEXT_RUNTIME === "edge") {
+    return sanitizeState(inMemoryState);
   }
   return readLocalState();
 }
@@ -409,10 +414,17 @@ async function saveState(state) {
       if (wrote) return safe;
     } catch (error) {
       console.error(
-        "Cloudflare avatar feed store write failed; falling back to local store:",
+        "Cloudflare avatar feed store write failed; updating in-memory fallback:",
         error,
       );
+      inMemoryState = safe;
+      return safe;
     }
+  }
+  // Local file I/O is not available in edge/Cloudflare Workers runtime
+  if (process.env.NEXT_RUNTIME === "edge") {
+    inMemoryState = safe;
+    return safe;
   }
   await writeLocalState(safe);
   return safe;

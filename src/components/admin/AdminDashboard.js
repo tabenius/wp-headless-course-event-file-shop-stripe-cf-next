@@ -741,7 +741,6 @@ export default function AdminDashboard() {
   const [vatPercent, setVatPercent] = useState("");
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [manualEmail, setManualEmail] = useState("");
-  const [message, setMessage] = useState("");
   const [errorState, setErrorState] = useState({ message: "", tab: null });
   const [loading, setLoading] = useState(false);
   const [healthChecks, setHealthChecks] = useState(null);
@@ -1818,7 +1817,6 @@ export default function AdminDashboard() {
   // Unified save: handles both shop products and content access
   async function saveUnified() {
     setError("");
-    setMessage("");
 
     const uri = accessUri;
     const nextPriceCents = toCents(price);
@@ -1943,7 +1941,11 @@ export default function AdminDashboard() {
         }
       }
 
-      setMessage(t("admin.courseAccessUpdated"));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "success", message: t("admin.courseAccessUpdated") },
+        }),
+      );
     } catch (err) {
       setError(err.message || t("admin.saveFailed"));
     } finally {
@@ -3129,7 +3131,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-      {message ? <p className="text-green-700">{message}</p> : null}
       {error ? (
         <div className="rounded-lg border border-red-300 bg-red-50 p-3">
           <p className="text-red-800 font-medium">{t("admin.saveFailed")}</p>

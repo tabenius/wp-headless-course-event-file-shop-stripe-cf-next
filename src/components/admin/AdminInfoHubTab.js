@@ -400,7 +400,7 @@ export default function AdminInfoHubTab({
 
   useEffect(() => {
     if (section !== "health" && section !== "overview") return;
-    if (section === "overview" && healthChecks) return;
+    if (healthChecks) return;
     runHealthCheck?.();
   }, [section, healthChecks, runHealthCheck]);
 

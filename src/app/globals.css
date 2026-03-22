@@ -517,6 +517,77 @@ body:has(.admin-layout)::before {
   color: var(--grv-accent) !important;
 }
 
+/* Purple — asset library source filter, badges, links (Bugs 2 & 3) */
+.admin-gruvbox .text-purple-700,
+.admin-gruvbox .text-purple-800 {
+  color: var(--grv-accent) !important;
+}
+.admin-gruvbox .bg-purple-50.border-purple-500,
+.admin-gruvbox .border-purple-500 {
+  border-color: var(--grv-accent) !important;
+}
+.admin-gruvbox .border-purple-200,
+.admin-gruvbox .border-purple-100 {
+  border-color: var(--grv-bg3) !important;
+}
+/* Active filter button / nav button with explicit bg-purple-700 */
+.admin-gruvbox .bg-purple-600,
+.admin-gruvbox .bg-purple-700 {
+  background-color: var(--grv-bg3) !important;
+  color: var(--grv-accent) !important;
+  border-color: var(--grv-bg4) !important;
+}
+.admin-gruvbox .hover\:bg-purple-700:hover,
+.admin-gruvbox .border-purple-700 {
+  border-color: var(--grv-bg4) !important;
+}
+/* Asset library info panels with bg-purple-50 + colored text */
+.admin-gruvbox .text-purple-800,
+.admin-gruvbox .text-purple-900 {
+  color: var(--grv-fg) !important;
+}
+
+/* Blue — links, info boxes (connector tab stripe link, runtime tip box) */
+.admin-gruvbox .text-blue-700,
+.admin-gruvbox .text-blue-900 {
+  color: var(--grv-accent) !important;
+}
+.admin-gruvbox .bg-blue-50 {
+  background-color: var(--grv-bg2) !important;
+}
+.admin-gruvbox .border-blue-200 {
+  border-color: var(--grv-bg4) !important;
+}
+
+/* Amber — warning banners in info hub */
+.admin-gruvbox .text-amber-900,
+.admin-gruvbox .text-amber-800 {
+  color: var(--grv-yellow) !important;
+}
+.admin-gruvbox .border-amber-300 {
+  border-color: var(--grv-yellow) !important;
+}
+
+/* Status badges — emerald (pass) and red (fail) in health check */
+.admin-gruvbox .bg-emerald-100 {
+  background-color: rgba(152, 151, 26, 0.18) !important;
+}
+.admin-gruvbox .text-emerald-800 {
+  color: #b8bb26 !important;
+}
+.admin-gruvbox .border-emerald-300 {
+  border-color: rgba(152, 151, 26, 0.4) !important;
+}
+.admin-gruvbox .bg-red-100 {
+  background-color: rgba(204, 36, 29, 0.18) !important;
+}
+.admin-gruvbox .text-red-800 {
+  color: #fb4934 !important;
+}
+.admin-gruvbox .border-red-300 {
+  border-color: rgba(204, 36, 29, 0.4) !important;
+}
+
 /* Dark mode — content area only (header, footer, menus stay light) */
 .dark-mode {
   --color-background: #1a1a1a;
