@@ -14,7 +14,7 @@ export async function GET(request) {
 
   try {
     const presets = await getStylePresets();
-    return NextResponse.json({ ok: true, ...presets });
+    return NextResponse.json({ ok: true, cta: presets.cta, typography: presets.typography });
   } catch (error) {
     console.error("style-presets GET failed:", error);
     return NextResponse.json(
