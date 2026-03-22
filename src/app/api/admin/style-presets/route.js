@@ -36,12 +36,16 @@ export async function POST(request) {
   }
 
   const { type, name, style } = body || {};
-  const result = await addStylePreset(type, name, style);
-  if (!result.ok) {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+  try {
+    const result = await addStylePreset(type, name, style);
+    if (!result.ok) {
+      return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+    }
+    return NextResponse.json({ ok: true, preset: result.preset });
+  } catch (error) {
+    console.error("style-presets POST failed:", error);
+    return NextResponse.json({ ok: false, error: "Failed to save preset" }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true, preset: result.preset });
 }
 
 export async function DELETE(request) {
@@ -65,10 +69,14 @@ export async function DELETE(request) {
     );
   }
 
-  const result = await removeStylePreset(type, rawId);
-  if (!result.ok) {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+  try {
+    const result = await removeStylePreset(type, rawId);
+    if (!result.ok) {
+      return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("style-presets DELETE failed:", error);
+    return NextResponse.json({ ok: false, error: "Failed to delete preset" }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }
