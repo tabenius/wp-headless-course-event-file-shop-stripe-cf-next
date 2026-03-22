@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
 
 // ─── CyberDuck bookmark generator ────────────────────────────────────────────
@@ -78,8 +78,9 @@ export default function AdminStorageTab({
   const [revealedSecrets, setRevealedSecrets] = useState(new Set());
   const [copiedEnv, setCopiedEnv] = useState("");
 
-  useEffect(() => {
+  const loadEnvStatus = useCallback(() => {
     setEnvLoading(true);
+    setEnvError("");
     fetch("/api/admin/env-status")
       .then((r) => r.json())
       .then((json) => {
@@ -89,6 +90,10 @@ export default function AdminStorageTab({
       .catch(() => setEnvError("Failed to load env status."))
       .finally(() => setEnvLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadEnvStatus();
+  }, [loadEnvStatus]);
   const clientDetails = uploadInfoDetails || {};
   const s3Enabled = Boolean(uploadInfo?.s3Enabled || clientDetails.s3Enabled);
   const backendMode = (() => {
@@ -537,7 +542,16 @@ export default function AdminStorageTab({
           <p className="text-xs text-gray-400">{t("common.loading", "Loading…")}</p>
         )}
         {envError && (
-          <p className="text-xs text-red-600">{envError}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-red-600">{envError}</p>
+            <button
+              type="button"
+              onClick={loadEnvStatus}
+              className="text-xs text-indigo-600 hover:underline"
+            >
+              {t("common.retry", "Retry")}
+            </button>
+          </div>
         )}
         {envGroups && envGroups.map((group) => (
           <details

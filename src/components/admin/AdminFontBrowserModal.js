@@ -50,24 +50,35 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
     () => (typeof localStorage !== "undefined" && localStorage.getItem(PREVIEW_TEXT_KEY)) || DEFAULT_PREVIEW
   );
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [catalogError, setCatalogError] = useState(null);
   const [downloading, setDownloading] = useState(new Set()); // families currently downloading
   const [downloaded, setDownloaded] = useState(new Set(downloadedFamilies || []));
+  const [downloadErrors, setDownloadErrors] = useState({}); // family → error message
   const [weightPickerFamily, setWeightPickerFamily] = useState(null); // for non-variable download
   const [selectedWeights, setSelectedWeights] = useState([400, 700]);
   const sentinelRef = useRef(null);
   const { previewFont, cleanup } = useGoogleFontsPreview();
 
   // Fetch catalog
-  useEffect(() => {
+  const fetchCatalog = useCallback(() => {
+    setLoading(true);
+    setCatalogError(null);
     fetch("/api/admin/fonts/catalog")
       .then((r) => r.json())
       .then((data) => {
         setCatalog(data.fonts || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        setCatalogError(err?.message || "Failed to load fonts");
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    fetchCatalog();
     return () => cleanup();
-  }, [cleanup]);
+  }, [fetchCatalog, cleanup]);
 
   // Infinite scroll sentinel
   useEffect(() => {
@@ -97,6 +108,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
 
   async function downloadFont(family, weights) {
     setDownloading((d) => new Set([...d, family]));
+    setDownloadErrors((e) => { const next = { ...e }; delete next[family]; return next; });
     if (onDownloadStart) onDownloadStart();
     try {
       const res = await fetch("/api/admin/fonts/download", {
@@ -104,7 +116,14 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ family, weights }),
       });
-      if (res.ok) setDownloaded((d) => new Set([...d, family]));
+      if (res.ok) {
+        setDownloaded((d) => new Set([...d, family]));
+      } else {
+        const msg = await res.text().catch(() => `HTTP ${res.status}`);
+        setDownloadErrors((e) => ({ ...e, [family]: msg || `HTTP ${res.status}` }));
+      }
+    } catch (err) {
+      setDownloadErrors((e) => ({ ...e, [family]: err?.message || "Download failed" }));
     } finally {
       setDownloading((d) => { const s = new Set(d); s.delete(family); return s; });
       setWeightPickerFamily(null);
@@ -181,7 +200,18 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
         {/* Font list */}
         <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
           {loading && <div className="p-8 text-center text-gray-400">Loading fonts…</div>}
-          {!loading && visible.length === 0 && (
+          {!loading && catalogError && (
+            <div className="p-8 text-center">
+              <p className="text-red-600 text-sm mb-3">{catalogError}</p>
+              <button
+                onClick={fetchCatalog}
+                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          {!loading && !catalogError && visible.length === 0 && (
             <div className="p-8 text-center text-gray-400">No fonts found.</div>
           )}
           {visible.map((font) => {
@@ -189,6 +219,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
             const isDl = downloaded.has(font.family);
             const isDling = downloading.has(font.family);
             const isCurrent = font.family === currentFamily;
+            const dlError = downloadErrors[font.family];
 
             // Trigger CDN preview when font becomes visible
             // (IntersectionObserver on individual rows is overkill; trigger on render)
@@ -211,7 +242,11 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                     {previewText}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  {dlError && (
+                    <span className="text-xs text-red-500" title={dlError}>Download failed</span>
+                  )}
+                  <div className="flex items-center gap-2">
                   {isDl ? (
                     <span className="text-xs text-green-600 font-medium">◉ Downloaded</span>
                   ) : isVar ? (
@@ -220,7 +255,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                       disabled={isDling}
                       className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-100 disabled:opacity-50"
                     >
-                      {isDling ? "…" : "Download"}
+                      {isDling ? "…" : dlError ? "Retry" : "Download"}
                     </button>
                   ) : (
                     <button
@@ -228,7 +263,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                       disabled={isDling}
                       className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-100 disabled:opacity-50"
                     >
-                      {isDling ? "…" : "Download"}
+                      {isDling ? "…" : dlError ? "Retry" : "Download"}
                     </button>
                   )}
                   <button
@@ -237,6 +272,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                   >
                     Select
                   </button>
+                  </div>
                 </div>
               </div>
             );

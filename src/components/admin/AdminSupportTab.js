@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
+import { tenantConfig } from "@/lib/tenantConfig";
 
 export default function AdminSupportTab({
   tickets,
@@ -15,6 +16,7 @@ export default function AdminSupportTab({
   setCommentText,
   createSupportTicket,
   updateSupportTicket,
+  ticketSaving,
   payments,
   paymentsEmail,
   setPaymentsEmail,
@@ -368,9 +370,9 @@ export default function AdminSupportTab({
                         updateSupportTicket({ comment: commentText })
                       }
                       className="px-4 py-2 rounded bg-purple-700 text-white hover:bg-purple-800 text-sm disabled:opacity-50"
-                      disabled={!commentText.trim()}
+                      disabled={!commentText.trim() || ticketSaving}
                     >
-                      {t("admin.addComment")}
+                      {ticketSaving ? "…" : t("admin.addComment")}
                     </button>
                   </div>
                 </div>
@@ -481,7 +483,7 @@ export default function AdminSupportTab({
             <p className="text-xs text-gray-500">
               {t(
                 "admin.deadLinksHint",
-                "Scans content anchor tags and classifies internal, pseudo-external (xtas.nu) and external links.",
+                `Scans content anchor tags and classifies internal, pseudo-external (${tenantConfig.customDomainExample}) and external links.`,
               )}
             </p>
           </div>

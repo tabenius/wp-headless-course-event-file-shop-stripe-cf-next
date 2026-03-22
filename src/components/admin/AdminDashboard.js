@@ -893,6 +893,7 @@ export default function AdminDashboard() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const chatAbortRef = useRef(null);
   const [loaded, setLoaded] = useState({
     courseAccess: false,
     products: false,
@@ -1566,6 +1567,10 @@ export default function AdminDashboard() {
       await rebuildIndex();
       return;
     }
+    // Cancel any in-flight request
+    chatAbortRef.current?.abort();
+    const controller = new AbortController();
+    chatAbortRef.current = controller;
     const history = [...chatMessages, { role: "user", content: message }];
     setChatMessages(history);
     setChatLoading(true);
@@ -1574,6 +1579,7 @@ export default function AdminDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
+        signal: controller.signal,
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) throw new Error(json?.error || "Chat failed");
@@ -1593,6 +1599,7 @@ export default function AdminDashboard() {
         ]);
       }
     } catch (err) {
+      if (err?.name === "AbortError") return;
       setChatMessages((prev) => [
         ...prev,
         {
@@ -1700,13 +1707,19 @@ export default function AdminDashboard() {
     }
   }
 
+  const [ticketSaving, setTicketSaving] = useState(false);
+
   async function updateSupportTicket({ status, comment }) {
     if (!selectedTicket) return;
+    setTicketSaving(true);
     try {
+      const payload = { id: selectedTicket.id };
+      if (status !== undefined) payload.status = status;
+      if (comment !== undefined) payload.comment = comment;
       const res = await fetch("/api/admin/tickets", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selectedTicket.id, status, comment }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok || !json?.ok)
@@ -1727,6 +1740,8 @@ export default function AdminDashboard() {
           },
         }),
       );
+    } finally {
+      setTicketSaving(false);
     }
   }
 
@@ -2067,7 +2082,7 @@ export default function AdminDashboard() {
     fetch("/api/admin/commits")
       .then(async (res) => {
         const json = await res.json();
-        if (json?.ok) setCommits(json.commits);
+        if (json?.ok) { setCommits(json.commits); setCommitsError(""); }
         else setCommitsError(json?.error || "Failed to load commits");
       })
       .catch(() => setCommitsError("Failed to load commits"));
@@ -2321,6 +2336,7 @@ export default function AdminDashboard() {
             setCommentText={setCommentText}
             createSupportTicket={createSupportTicket}
             updateSupportTicket={updateSupportTicket}
+            ticketSaving={ticketSaving}
             payments={payments}
             paymentsEmail={paymentsEmail}
             setPaymentsEmail={setPaymentsEmail}

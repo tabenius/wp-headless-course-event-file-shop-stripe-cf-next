@@ -617,7 +617,11 @@ function AccessTab({
     if (!slug) return;
     const parsed = parseVatPercent(vatRateDraft);
     if (parsed === null) {
-      setError(t("admin.vatInvalidRate"));
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "error", message: t("admin.vatInvalidRate") },
+        }),
+      );
       return;
     }
     setVatDraft((prev) => ({ ...prev, [slug]: parsed }));
