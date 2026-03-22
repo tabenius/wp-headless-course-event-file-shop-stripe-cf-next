@@ -1,3 +1,5 @@
+import { getPseudoExternalHosts } from "./tenantConfig.js";
+
 const HREF_PATTERN =
   /<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi;
 
@@ -28,7 +30,10 @@ export function extractAnchorsFromHtml(html) {
   return anchors;
 }
 
-export function classifyHref(href, { siteHost, origin } = {}) {
+export function classifyHref(
+  href,
+  { siteHost, origin, pseudoExternalHosts = [] } = {}
+) {
   const rawHref = normalizeText(href);
   if (!rawHref) {
     return {
@@ -41,6 +46,7 @@ export function classifyHref(href, { siteHost, origin } = {}) {
 
   const normalizedSiteHost = normalizeHost(siteHost);
   const normalizedOrigin = normalizeText(origin);
+  const pseudoHosts = getPseudoExternalHosts(pseudoExternalHosts);
   const lowerHref = rawHref.toLowerCase();
 
   if (lowerHref.startsWith("mailto:") || lowerHref.startsWith("tel:")) {
@@ -115,13 +121,17 @@ export function classifyHref(href, { siteHost, origin } = {}) {
     };
   }
 
-  if (host === "xtas.nu" || host.endsWith(".xtas.nu")) {
-    return {
-      href: rawHref,
-      kind: "pseudo-external",
-      translatedPath: path,
-      checkUrl: normalizedOrigin ? new URL(path, normalizedOrigin).toString() : parsed.toString(),
-    };
+  for (const pseudoHost of pseudoHosts) {
+    if (host === pseudoHost || host.endsWith(`.${pseudoHost}`)) {
+      return {
+        href: rawHref,
+        kind: "pseudo-external",
+        translatedPath: path,
+        checkUrl: normalizedOrigin
+          ? new URL(path, normalizedOrigin).toString()
+          : parsed.toString(),
+      };
+    }
   }
 
   return {

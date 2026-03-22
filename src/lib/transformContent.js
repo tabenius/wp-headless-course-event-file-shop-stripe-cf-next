@@ -1,5 +1,6 @@
 import site from "@/lib/site";
 import { decodeEntities } from "@/lib/decodeEntities";
+import { tenantConfig } from "@/lib/tenantConfig";
 
 /**
  * Transform WordPress HTML content:
@@ -66,7 +67,8 @@ export function transformContent(html) {
     site?.contact?.email ||
     process.env.CONTACT_EMAIL ||
     process.env.SUPPORT_EMAIL ||
-    "info@xtas.nu";
+    tenantConfig.supportEmail ||
+    "support@example.com";
   const formHtml = `
     <form class="contact-form space-y-3 bg-gray-50 border border-gray-200 p-4 rounded" method="POST" action="/api/contact">
       <input type="hidden" name="to" value="${contactEmail}" />

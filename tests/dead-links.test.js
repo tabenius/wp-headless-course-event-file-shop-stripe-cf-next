@@ -9,10 +9,10 @@ import {
 test("extractAnchorsFromHtml returns unique href values", () => {
   const html = `
     <p><a href="/alpha">A</a></p>
-    <a class="x" href='https://xtas.nu/docs'>B</a>
+    <a class="x" href='https://legacy.example/docs'>B</a>
     <a href="/alpha">dup</a>
   `;
-  assert.deepEqual(extractAnchorsFromHtml(html), ["/alpha", "https://xtas.nu/docs"]);
+  assert.deepEqual(extractAnchorsFromHtml(html), ["/alpha", "https://legacy.example/docs"]);
 });
 
 test("classifyHref handles internal, pseudo-external and external urls", () => {
@@ -21,7 +21,10 @@ test("classifyHref handles internal, pseudo-external and external urls", () => {
     origin: "https://store.example",
   };
   const internal = classifyHref("/shop", context);
-  const pseudo = classifyHref("https://xtas.nu/course/a", context);
+  const pseudo = classifyHref("https://legacy.example/course/a", {
+    ...context,
+    pseudoExternalHosts: ["legacy.example"],
+  });
   const external = classifyHref("https://example.org/path", context);
 
   assert.equal(internal.kind, "internal");
