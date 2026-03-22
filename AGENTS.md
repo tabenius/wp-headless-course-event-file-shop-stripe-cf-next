@@ -185,9 +185,9 @@ Full list in `.env.example`.
 
 ### Ranked backlog (see coop file for full detail)
 
-**All tracked backlog items are DONE as of 2026-03-21.** Add new items to `claude+codex-coop.md` as they arise.
+**Font browser feature in progress (2026-03-22, Claude).** Tasks 1–12 of `docs/superpowers/plans/2026-03-22-font-browser.md` are complete and pushed. The plan is fully implemented; no further tasks remain.
 
-**Follow-up / Monitoring** — Watch recent changes (Photon pipeline + WASM derivation blob flow, admin header stats ticker, security audit fixes, WP plugin asset metadata + health integration) for regressions.
+**Follow-up / Monitoring** — Watch recent changes (Photon pipeline + WASM derivation blob flow, admin header stats ticker, security audit fixes, WP plugin asset metadata + health integration, font browser / typography system) for regressions.
 
 ### Working rules for this backlog
 
@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-22 (Claude)**: Completed full font browser implementation (Tasks 1–12 of `docs/superpowers/plans/2026-03-22-font-browser.md`): Google Fonts catalog (API + snapshot fallback), R2 font download + storage, `@font-face` CSS serving via `/api/site-fonts`, 5 font roles (display/heading/subheading/body/button) with per-role color slots, typography palette (1–2 colors), link hover variants (7 styles), 5 built-in typography themes (Clean/Editorial/Technical/Warm/Haute), `AdminFontBrowserModal` with live CDN preview + infinite scroll + weight picker, admin typography UI with role cards + palette strip + theme strip + link style panel, inline layout.js script handling new font role object format, and i18n keys in en/sv/es.
 - **2026-03-21 (Codex)**: Follow-up polish for the CyberDuck ingest flow (commit `543f698`): switched the new manual-ingest preview renderer to `next/image` (`unoptimized`) so the feature does not add extra `no-img-element` lint warnings beyond the existing baseline.
 - **2026-03-21 (Codex)**: Added a CyberDuck-to-R2 ingest flow in Media (commit `acebee5`): admins now get a manual object-key workflow with R2 connection checklist + resolved public URL, preview metadata/image directly from R2, and save a normalized asset record into a KV-backed registry via `/api/admin/media-library/cyberduck-r2` + `src/lib/mediaAssetRegistry.js` (with fallback memory mode when KV is unavailable).
 - **2026-03-21 (Codex)**: Added Media-tab asset-lineage navigation (commit `4b84551`): selected-asset panel now shows original + variant chain controls from `asset.variants`, supports one-click jump back to related WP attachments, highlights current variant chip, and includes EN/SV/ES locale parity keys for the new lineage UI copy.

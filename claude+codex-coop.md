@@ -2,6 +2,7 @@
 
 ## Active TODO Backlog (priority x impact)
 
+DONE [P1 | High]: Font browser + typography system — Google Fonts catalog (API + KV-cached snapshot), R2 font download, `@font-face` CSS serving, 5 font roles with palette color slots, link hover variants, 5 built-in themes, AdminFontBrowserModal, admin role-card UI. Plan: `docs/superpowers/plans/2026-03-22-font-browser.md`. All 12 tasks complete (Claude, 2026-03-22).
 DONE [P0 | Very High]: Image generation runtime reliability — `/api/admin/generate-image` now returns classified diagnostics (`code`, `hint`, `requestId`) with timeout handling, provider error classification, partial-success warnings, and improved admin toast reporting.
 DONE [P0 | Very High]: Receipt PDF validity — Stripe receipt proxy now enforces HTTPS Stripe-host allowlist, verifies `%PDF`, traces response provenance (status/content-type/final URL/elapsed), extracts embedded PDF URLs from HTML wrappers, and falls back to invoice PDF URLs.
 DONE [P1 | High]: VAT/Moms completion across all product sources — per-item VAT override persists through admin save/API/store/WordPress backend, checkout metadata now carries VAT, and sales VAT/net use tax-inclusive math with metadata/product/category VAT precedence.
@@ -13,6 +14,27 @@ DONE [P3 | Medium]: Post-implementation code review — full quality/usability a
 DONE [P2 | Medium]: Admin UX polish follow-up — all 4 items already implemented by Codex: focus trap in hamburger drawer (AdminHeader.js:257-298), Ctrl+Alt guard while typing (shouldIgnoreAdminHotkeys/isEditableTarget), media table keyboard nav (handleMediaTableKeyDown), numeric param hard-validation (derivationInvalidParameters disables Apply). Verified by Claude 2026-03-21.
 DONE [P2 | Medium]: WordPress plugin media metadata surface — plugin now registers attachment `ragbaz_asset_*` meta for REST/GraphQL, exposes normalized `ragbaz_asset` on `/wp/v2/media`, and resolves `original` + `variants` chains (`assetId`, `size`, `dimensions`, `mime`, `hash`) for WP attachment assets (commit `3e3d361`).
 DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `ragbazCapabilities` query (`pluginPresent`, `pluginVersion`, `pluginSemver`, asset-meta capability flags/schema version) and wired admin health runtime probe to ingest that signal before metadata-dependent flows (commit `3e3d361`).
+
+## 2026-03-22 (Claude)
+
+### Claude — Font browser + typography system (all 12 tasks)
+
+**Plan:** `docs/superpowers/plans/2026-03-22-font-browser.md`
+
+**Delivered:**
+- `src/lib/downloadedFonts.js` + tests — KV CRUD for downloaded font records + `getAllFontFaceCss()`.
+- `src/lib/googleFontsCatalog.js` + `googleFontsSnapshot.json` — catalog fetch with KV cache, API, and 18-font snapshot fallback; `scripts/fetch-fonts-snapshot.mjs` for refresh.
+- `src/lib/fontDownload.js` — Google Fonts CSS fetch → woff2 parse → R2 upload → record return.
+- `src/lib/shopSettings.js` extended — `normalizeFontRole`, `normalizeTypographyPalette`, `normalizeLinkStyle`, backward compat for legacy string font values.
+- `/api/admin/fonts/catalog` (GET) and `/api/admin/fonts/download` (POST).
+- `/api/site-fonts` (public GET) — serves `@font-face` CSS for downloaded fonts.
+- `src/app/globals.css` — h1–h6 per-role CSS vars, button font, 7 link hover variant styles.
+- `src/app/theme.generated.css` — new CSS var defaults for display/subheading/button/color roles.
+- `src/app/layout.js` — inline `<link>` to `/api/site-fonts`, new inline script handling font role objects + legacy strings + palette + link style + CTA.
+- `src/lib/typographyThemes.js` — 5 built-in themes: Clean, Editorial, Technical, Warm, Haute.
+- `src/components/admin/AdminFontBrowserModal.js` — full-screen modal with catalog search/filter, CDN preview, infinite scroll, download + weight picker, select.
+- `src/components/admin/AdminDashboard.js` — replaced 2-dropdown font UI with 5 role cards + palette strip + themes strip + link style panel + modal integration; updated user preset save/apply to new state.
+- i18n: 40 new keys added to en/sv/es (all in sync, 1002 keys each).
 
 ## 2026-03-21 (Claude)
 
