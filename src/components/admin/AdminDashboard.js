@@ -2665,7 +2665,7 @@ export default function AdminDashboard() {
               {CTA_BUILTIN_PRESETS.map((preset) => {
                 const isActive = preset.id === "upstream"
                   ? siteStyleTokens.ctaStyle?.type === "upstream"
-                  : JSON.stringify(siteStyleTokens.ctaStyle) === JSON.stringify(preset.style);
+                  : JSON.stringify(normalizeCtaStyleClient(siteStyleTokens.ctaStyle)) === JSON.stringify(normalizeCtaStyleClient(preset.style));
                 return (
                   <button
                     key={preset.id}
