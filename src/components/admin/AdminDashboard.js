@@ -1393,35 +1393,41 @@ export default function AdminDashboard() {
   async function downloadReceipt(chargeId) {
     setDownloading(chargeId);
     try {
+      // First try: proxy the Stripe invoice PDF (works for invoice-backed charges).
       const res = await fetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chargeId }),
       });
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        const message =
-          json?.error ||
-          t("admin.receiptDownloadFailed", "Failed to download receipt");
-        const requestRef = json?.requestId
-          ? ` (${t("admin.errorRef", "ref")}: ${json.requestId.slice(0, 8)})`
-          : "";
-        throw new Error(`${message}${requestRef}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `receipt-${chargeId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        return;
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `receipt-${chargeId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // Fallback: open the generated HTML receipt (always works, printable as PDF).
+      const receiptUrl = `/api/admin/payments/receipt?chargeId=${encodeURIComponent(chargeId)}`;
+      window.open(receiptUrl, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(
-        err.message ||
-          t("admin.receiptDownloadFailed", "Failed to download receipt"),
-      );
+      // Network-level failure — open HTML receipt as last resort.
+      try {
+        window.open(
+          `/api/admin/payments/receipt?chargeId=${encodeURIComponent(chargeId)}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
+      } catch {
+        setError(
+          err.message ||
+            t("admin.receiptDownloadFailed", "Failed to download receipt"),
+        );
+      }
     } finally {
       setDownloading(null);
     }
