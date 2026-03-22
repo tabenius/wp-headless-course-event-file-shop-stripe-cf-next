@@ -153,6 +153,106 @@ const SITE_STYLE_DEFAULTS = {
   fontBody: "var(--font-merriweather), Georgia, serif",
 };
 
+// ── CTA button style ──────────────────────────────────────────────────────────
+
+const CTA_BG_COLORS = ["primary", "secondary", "foreground", "background", "custom"];
+const CTA_TEXT_COLORS = ["background", "foreground", "primary", "secondary", "custom"];
+const CTA_BORDER_RADII = ["none", "sm", "md", "lg", "full"];
+const CTA_BORDERS = ["none", "solid"];
+const CTA_BORDER_COLORS = ["primary", "secondary", "foreground", "custom"];
+const CTA_SHADOWS = ["none", "sm", "md"];
+const CTA_FONT_WEIGHTS = ["normal", "medium", "semibold", "bold"];
+const CTA_TEXT_TRANSFORMS = ["none", "uppercase", "capitalize"];
+const CTA_PADDING_SIZES = ["sm", "md", "lg"];
+
+const CTA_RADIUS_MAP = { none: "0px", sm: "4px", md: "8px", lg: "16px", full: "9999px" };
+const CTA_PADDING_MAP = {
+  sm: { x: "0.875rem", y: "0.375rem" },
+  md: { x: "1.25rem", y: "0.625rem" },
+  lg: { x: "1.75rem", y: "0.875rem" },
+};
+const CTA_SHADOW_MAP = {
+  none: "none",
+  sm: "0 1px 2px rgba(0,0,0,.08)",
+  md: "0 4px 6px rgba(0,0,0,.10)",
+};
+const CTA_FONT_WEIGHT_MAP = { normal: 400, medium: 500, semibold: 600, bold: 700 };
+
+const CTA_UPSTREAM = { type: "upstream" };
+const CTA_DEFAULT_STYLE = {
+  bgColor: "primary", textColor: "background", borderRadius: "md",
+  border: "none", shadow: "none", fontWeight: "semibold",
+  textTransform: "none", paddingSize: "md",
+};
+
+const CTA_BUILTIN_PRESETS = [
+  { id: "upstream", name: "Upstream", style: CTA_UPSTREAM },
+  { id: "filled",   name: "Filled",   style: { ...CTA_DEFAULT_STYLE } },
+  { id: "outline",  name: "Outline",  style: { bgColor: "background", textColor: "primary", borderRadius: "md", border: "solid", borderColor: "primary", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
+  { id: "pill",     name: "Pill",     style: { bgColor: "primary", textColor: "background", borderRadius: "full", border: "none", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
+  { id: "secondary",name: "Secondary",style: { bgColor: "secondary", textColor: "foreground", borderRadius: "md", border: "none", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
+];
+
+/** Client-side mirror of normalizeCtaStyle from shopSettings.js */
+function normalizeCtaStyleClient(source) {
+  if (!source || typeof source !== "object") return { type: "upstream" };
+  if (source.type === "upstream") return { type: "upstream" };
+  const validBg = new Set(CTA_BG_COLORS);
+  const validText = new Set(CTA_TEXT_COLORS);
+  const validRadius = new Set(CTA_BORDER_RADII);
+  const validBorder = new Set(CTA_BORDERS);
+  const validBorderColor = new Set(CTA_BORDER_COLORS);
+  const validShadow = new Set(CTA_SHADOWS);
+  const validWeight = new Set(CTA_FONT_WEIGHTS);
+  const validTransform = new Set(CTA_TEXT_TRANSFORMS);
+  const validPadding = new Set(CTA_PADDING_SIZES);
+  if (!validBg.has(source.bgColor)) return { type: "upstream" };
+  const bgColor = source.bgColor;
+  const textColor = validText.has(source.textColor) ? source.textColor : "background";
+  const borderRadius = validRadius.has(source.borderRadius) ? source.borderRadius : "md";
+  const border = validBorder.has(source.border) ? source.border : "none";
+  const shadow = validShadow.has(source.shadow) ? source.shadow : "none";
+  const fontWeight = validWeight.has(source.fontWeight) ? source.fontWeight : "semibold";
+  const textTransform = validTransform.has(source.textTransform) ? source.textTransform : "none";
+  const paddingSize = validPadding.has(source.paddingSize) ? source.paddingSize : "md";
+  const result = { bgColor, textColor, borderRadius, border, shadow, fontWeight, textTransform, paddingSize };
+  if (bgColor === "custom") result.bgCustom = source.bgCustom || "#000000";
+  if (textColor === "custom") result.textCustom = source.textCustom || "#ffffff";
+  if (border === "solid") {
+    result.borderColor = validBorderColor.has(source.borderColor) ? source.borderColor : "primary";
+    if (result.borderColor === "custom") result.borderCustom = source.borderCustom || "#000000";
+  }
+  return result;
+}
+
+/** Resolve a color slot to a hex string using current siteStyleTokens. */
+function resolveCtaColor(slot, customValue, tokens) {
+  if (slot === "custom") return customValue || "#000000";
+  return tokens[slot] || "";
+}
+
+/** Compute inline style for the Button Style live preview button. */
+function ctaPreviewStyle(cta, tokens) {
+  if (!cta || cta.type === "upstream") return {};
+  const bg = resolveCtaColor(cta.bgColor, cta.bgCustom, tokens);
+  const color = resolveCtaColor(cta.textColor, cta.textCustom, tokens);
+  const borderColor = cta.border === "solid" ? resolveCtaColor(cta.borderColor, cta.borderCustom, tokens) : "transparent";
+  const pad = CTA_PADDING_MAP[cta.paddingSize] || CTA_PADDING_MAP.md;
+  return {
+    backgroundColor: bg,
+    color,
+    borderRadius: CTA_RADIUS_MAP[cta.borderRadius] || "8px",
+    border: `${cta.border === "solid" ? "1px" : "0px"} solid ${borderColor}`,
+    boxShadow: CTA_SHADOW_MAP[cta.shadow] || "none",
+    fontWeight: CTA_FONT_WEIGHT_MAP[cta.fontWeight] || 600,
+    textTransform: cta.textTransform || "none",
+    padding: `${pad.y} ${pad.x}`,
+    cursor: "default",
+    fontSize: "0.875rem",
+    display: "inline-block",
+  };
+}
+
 const SITE_STYLE_COLOR_FIELDS = [
   {
     key: "background",
@@ -211,6 +311,7 @@ function sanitizeSiteStyleTokens(input, fallback = SITE_STYLE_DEFAULTS) {
     muted: normalizeStyleColor(source.muted, fallback.muted),
     fontHeading: normalizeStyleFont(source.fontHeading, fallback.fontHeading),
     fontBody: normalizeStyleFont(source.fontBody, fallback.fontBody),
+    ctaStyle: normalizeCtaStyleClient(source.ctaStyle),
   };
 }
 
@@ -248,6 +349,29 @@ function applySiteStyleTokensToDom(tokens) {
   root.style.setProperty("--font-body", safe.fontBody);
   root.style.setProperty("--background", "var(--color-background)");
   root.style.setProperty("--foreground", "var(--color-foreground)");
+  // Apply --btn-* CSS vars for CTA button style
+  const cta = safe.ctaStyle;
+  if (cta && cta.type !== "upstream" && cta.bgColor) {
+    const resolve = (slot, custom) => {
+      if (slot === "custom") return custom || "";
+      const varMap = { primary: "var(--color-primary)", secondary: "var(--color-secondary)", foreground: "var(--color-foreground)", background: "var(--color-background)" };
+      return varMap[slot] || "";
+    };
+    root.style.setProperty("--btn-bg", resolve(cta.bgColor, cta.bgCustom));
+    root.style.setProperty("--btn-color", resolve(cta.textColor, cta.textCustom));
+    root.style.setProperty("--btn-radius", CTA_RADIUS_MAP[cta.borderRadius] || "8px");
+    root.style.setProperty("--btn-border-width", cta.border === "solid" ? "1px" : "0px");
+    root.style.setProperty("--btn-border-color", cta.border === "solid" ? resolve(cta.borderColor, cta.borderCustom) : "transparent");
+    root.style.setProperty("--btn-shadow", CTA_SHADOW_MAP[cta.shadow] || "none");
+    root.style.setProperty("--btn-font-weight", String(CTA_FONT_WEIGHT_MAP[cta.fontWeight] || 600));
+    root.style.setProperty("--btn-text-transform", cta.textTransform || "none");
+    const pad = CTA_PADDING_MAP[cta.paddingSize] || CTA_PADDING_MAP.md;
+    root.style.setProperty("--btn-padding-x", pad.x);
+    root.style.setProperty("--btn-padding-y", pad.y);
+  } else {
+    // Upstream — remove overrides so WP theme styles apply
+    ["--btn-bg","--btn-color","--btn-radius","--btn-border-width","--btn-border-color","--btn-shadow","--btn-font-weight","--btn-text-transform","--btn-padding-x","--btn-padding-y"].forEach(v => root.style.removeProperty(v));
+  }
 }
 
 /** Alternating row background for product lists (purple hues). */
@@ -687,6 +811,9 @@ export default function AdminDashboard() {
     readSiteStyleTokensFromDom(SITE_STYLE_DEFAULTS),
   );
   const [siteStyleHistory, setSiteStyleHistory] = useState([]);
+  const [userCtaPresets, setUserCtaPresets] = useState([]);
+  const [ctaSaveName, setCtaSaveName] = useState("");
+  const [ctaSaveExpanded, setCtaSaveExpanded] = useState(false);
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [ticketsError, setTicketsError] = useState("");
@@ -1011,6 +1138,15 @@ export default function AdminDashboard() {
           : [],
       );
       setLoaded((s) => ({ ...s, shopSettings: true }));
+      // Load style presets
+      adminFetch("/api/admin/style-presets")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data?.ok && Array.isArray(data.cta)) {
+            setUserCtaPresets(data.cta);
+          }
+        })
+        .catch(() => {});
     } catch (err) {
       console.error("AdminDashboard: failed to load shop settings", err);
     }
@@ -2393,6 +2529,218 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+          </div>
+
+          <hr className="border-gray-200" />
+
+          {/* ── Button Style ─────────────────────────────────────────────── */}
+          <div className="space-y-4">
+            <div className="text-sm font-semibold text-gray-800">Button Style</div>
+
+            {/* Preset strip */}
+            <div className="flex flex-wrap gap-2 items-center">
+              {CTA_BUILTIN_PRESETS.map((preset) => {
+                const isActive = preset.id === "upstream"
+                  ? siteStyleTokens.ctaStyle?.type === "upstream"
+                  : JSON.stringify(normalizeCtaStyleClient(siteStyleTokens.ctaStyle)) === JSON.stringify(preset.style);
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => {
+                      const next = { ...siteStyleTokens, ctaStyle: preset.style };
+                      setSiteStyleTokens(next);
+                      applySiteStyleTokensToDom(next);
+                    }}
+                    className={`px-3 py-1 text-xs rounded border ${isActive ? "bg-purple-100 border-purple-400 text-purple-700 font-semibold" : "border-gray-300 text-gray-600 hover:border-gray-400"}`}
+                  >
+                    {preset.name}{preset.id === "upstream" && isActive ? " ●" : ""}
+                  </button>
+                );
+              })}
+
+              {userCtaPresets.map((preset) => (
+                <div key={preset.id} className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      const next = { ...siteStyleTokens, ctaStyle: preset.style };
+                      setSiteStyleTokens(next);
+                      applySiteStyleTokensToDom(next);
+                    }}
+                    className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
+                  >
+                    {preset.name}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await adminFetch("/api/admin/style-presets", {
+                        method: "DELETE",
+                        body: JSON.stringify({ id: preset.id, type: "cta" }),
+                      });
+                      setUserCtaPresets((prev) => prev.filter((p) => p.id !== preset.id));
+                    }}
+                    className="text-gray-400 hover:text-red-500 text-xs leading-none"
+                    title="Delete preset"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              {/* Save current… */}
+              {!ctaSaveExpanded ? (
+                <button
+                  onClick={() => setCtaSaveExpanded(true)}
+                  className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
+                >
+                  Save current…
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={ctaSaveName}
+                    onChange={(e) => setCtaSaveName(e.target.value)}
+                    placeholder="Preset name"
+                    className="text-xs border border-gray-300 rounded px-2 py-1 w-36"
+                    autoFocus
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!ctaSaveName.trim()) return;
+                      const res = await adminFetch("/api/admin/style-presets", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          type: "cta",
+                          name: ctaSaveName.trim(),
+                          style: siteStyleTokens.ctaStyle,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data?.ok && data.preset) {
+                        setUserCtaPresets((prev) => [data.preset, ...prev]);
+                        setCtaSaveName("");
+                        setCtaSaveExpanded(false);
+                      }
+                    }}
+                    className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => { setCtaSaveExpanded(false); setCtaSaveName(""); }}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Live preview */}
+            {siteStyleTokens.ctaStyle?.type === "upstream" ? (
+              <div className="text-xs text-gray-400 italic">Using WordPress default button styles</div>
+            ) : (
+              <div>
+                <button
+                  style={ctaPreviewStyle(siteStyleTokens.ctaStyle, siteStyleTokens)}
+                >
+                  Shop Now →
+                </button>
+              </div>
+            )}
+
+            {/* Controls — disabled when upstream */}
+            {siteStyleTokens.ctaStyle?.type !== "upstream" && (
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: "Background", field: "bgColor", options: CTA_BG_COLORS },
+                  { label: "Text Color", field: "textColor", options: CTA_TEXT_COLORS },
+                  { label: "Border", field: "border", options: CTA_BORDERS },
+                  { label: "Shadow", field: "shadow", options: CTA_SHADOWS },
+                  { label: "Radius", field: "borderRadius", options: CTA_BORDER_RADII },
+                  { label: "Font Weight", field: "fontWeight", options: CTA_FONT_WEIGHTS },
+                  { label: "Text Case", field: "textTransform", options: CTA_TEXT_TRANSFORMS },
+                  { label: "Padding", field: "paddingSize", options: CTA_PADDING_SIZES },
+                ].map(({ label, field, options }) => (
+                  <div key={field} className="flex items-center justify-between gap-2">
+                    <label className="text-xs text-gray-600 w-24 shrink-0">{label}</label>
+                    <select
+                      value={siteStyleTokens.ctaStyle?.[field] || ""}
+                      onChange={(e) => {
+                        const next = {
+                          ...siteStyleTokens,
+                          ctaStyle: normalizeCtaStyleClient({ ...siteStyleTokens.ctaStyle, [field]: e.target.value }),
+                        };
+                        setSiteStyleTokens(next);
+                        applySiteStyleTokensToDom(next);
+                      }}
+                      className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                    >
+                      {options.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+
+                {/* Border color — only when border === solid */}
+                {siteStyleTokens.ctaStyle?.border === "solid" && (
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs text-gray-600 w-24 shrink-0">Border Color</label>
+                    <select
+                      value={siteStyleTokens.ctaStyle?.borderColor || "primary"}
+                      onChange={(e) => {
+                        const next = {
+                          ...siteStyleTokens,
+                          ctaStyle: normalizeCtaStyleClient({ ...siteStyleTokens.ctaStyle, borderColor: e.target.value }),
+                        };
+                        setSiteStyleTokens(next);
+                        applySiteStyleTokensToDom(next);
+                      }}
+                      className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
+                    >
+                      {CTA_BORDER_COLORS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* bgColor custom hex input */}
+                {siteStyleTokens.ctaStyle?.bgColor === "custom" && (
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs text-gray-600 w-24 shrink-0">BG Hex</label>
+                    <input
+                      type="color"
+                      value={siteStyleTokens.ctaStyle?.bgCustom || "#000000"}
+                      onChange={(e) => {
+                        const next = { ...siteStyleTokens, ctaStyle: { ...siteStyleTokens.ctaStyle, bgCustom: e.target.value } };
+                        setSiteStyleTokens(next);
+                        applySiteStyleTokensToDom(next);
+                      }}
+                      className="h-7 w-16 border border-gray-300 rounded cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                {/* textColor custom hex input */}
+                {siteStyleTokens.ctaStyle?.textColor === "custom" && (
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs text-gray-600 w-24 shrink-0">Text Hex</label>
+                    <input
+                      type="color"
+                      value={siteStyleTokens.ctaStyle?.textCustom || "#ffffff"}
+                      onChange={(e) => {
+                        const next = { ...siteStyleTokens, ctaStyle: { ...siteStyleTokens.ctaStyle, textCustom: e.target.value } };
+                        setSiteStyleTokens(next);
+                        applySiteStyleTokensToDom(next);
+                      }}
+                      className="h-7 w-16 border border-gray-300 rounded cursor-pointer"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <hr className="border-gray-200" />
