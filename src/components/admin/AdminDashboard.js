@@ -37,7 +37,6 @@ const WELCOME_REVISION =
 
 const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
 const AdminSupportTab = lazy(() => import("./AdminSupportTab"));
-const AdminStorageTab = lazy(() => import("./AdminStorageTab"));
 const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
 const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
 const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
@@ -50,7 +49,6 @@ const ADMIN_TABS = [
   "products",
   "support",
   "style",
-  "storage",
   "chat",
   "info",
   "welcome",
@@ -1366,7 +1364,7 @@ export default function AdminDashboard() {
     if (activeTab === "support") {
       loadTickets();
     }
-    if (activeTab === "storage") {
+    if (activeTab === "media" || activeTab === "info") {
       loadUploadInfo();
     }
     if (activeTab === "info") {
@@ -2404,21 +2402,6 @@ export default function AdminDashboard() {
         </Suspense>
       )}
 
-      {/* ── Storage tab ── */}
-      {activeTab === "storage" && (
-        <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
-        >
-          <AdminStorageTab
-            storage={storage}
-            uploadInfo={uploadInfo}
-            uploadBackend={uploadBackend}
-            setUploadBackend={setUploadBackend}
-            uploadInfoDetails={uploadInfoDetails}
-          />
-        </Suspense>
-      )}
-
       {/* ── Info hub tab ── */}
       {activeTab === "info" && (
         <Suspense
@@ -2427,7 +2410,11 @@ export default function AdminDashboard() {
           <AdminInfoHubTab
             buildTimestamp={buildTimestamp}
             gitRevision={gitRevision}
+            storage={storage}
+            uploadInfo={uploadInfo}
             uploadBackend={uploadBackend}
+            setUploadBackend={setUploadBackend}
+            uploadInfoDetails={uploadInfoDetails}
             resendConfigured={resendConfigured}
             wcProducts={wcProducts}
             wpCourses={wpCourses}

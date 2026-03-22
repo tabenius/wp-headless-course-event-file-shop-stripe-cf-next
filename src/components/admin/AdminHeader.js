@@ -16,7 +16,6 @@ const ADMIN_TAB_SET = new Set([
   "welcome",
   "sales",
   "media",
-  "storage",
   "products",
   "chat",
   "style",
@@ -107,11 +106,6 @@ function getNavItems() {
       label: t("admin.navStyle"),
       tab: "style",
       hotkey: getAdminTabHotkeyLabel("style"),
-    },
-    {
-      label: t("admin.navStorage"),
-      tab: "storage",
-      hotkey: getAdminTabHotkeyLabel("storage"),
     },
     {
       label: t("admin.navChat"),

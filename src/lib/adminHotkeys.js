@@ -4,10 +4,9 @@ export const ADMIN_TAB_HOTKEYS = [
   { tab: "products", combo: "Ctrl+Alt+3", match: { code: "Digit3", key: "3" } },
   { tab: "support", combo: "Ctrl+Alt+4", match: { code: "Digit4", key: "4" } },
   { tab: "style", combo: "Ctrl+Alt+5", match: { code: "Digit5", key: "5" } },
-  { tab: "storage", combo: "Ctrl+Alt+6", match: { code: "Digit6", key: "6" } },
-  { tab: "chat", combo: "Ctrl+Alt+7", match: { code: "Digit7", key: "7" } },
-  { tab: "info", combo: "Ctrl+Alt+8", match: { code: "Digit8", key: "8" } },
-  { tab: "welcome", combo: "Ctrl+Alt+9", match: { code: "Digit9", key: "9" } },
+  { tab: "chat", combo: "Ctrl+Alt+6", match: { code: "Digit6", key: "6" } },
+  { tab: "info", combo: "Ctrl+Alt+7", match: { code: "Digit7", key: "7" } },
+  { tab: "welcome", combo: "Ctrl+Alt+8", match: { code: "Digit8", key: "8" } },
   { tab: "health", combo: "Ctrl+Alt+0", match: { code: "Digit0", key: "0" } },
 ];
 
