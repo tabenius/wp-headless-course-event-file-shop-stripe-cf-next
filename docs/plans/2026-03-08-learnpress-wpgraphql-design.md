@@ -2,7 +2,7 @@
 
 ## Goal
 
-Expose LearnPress courses natively via WPGraphQL so the Next.js app can list and render courses with its own auth/paywall instead of linking externally to xtas.nu/courses/.
+Expose LearnPress courses natively via WPGraphQL so the Next.js app can list and render courses with its own auth/paywall instead of linking externally to the tenant's WordPress `/courses/`.
 
 ## WordPress Side — mu-plugin extension
 
@@ -38,7 +38,7 @@ New fragment for LpCourse: title, content, featuredImage, price, duration.
 
 ### 4. Navigation
 
-Change Onlinekurser link from external `xtas.nu/courses/` back to internal `/courses`.
+Change Onlinekurser link from external tenant `/courses/` back to internal `/courses`.
 
 ### 5. Opt-in env var
 
