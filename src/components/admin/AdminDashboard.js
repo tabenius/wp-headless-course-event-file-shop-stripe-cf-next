@@ -165,6 +165,16 @@ const CTA_FONT_WEIGHTS = ["normal", "medium", "semibold", "bold"];
 const CTA_TEXT_TRANSFORMS = ["none", "uppercase", "capitalize"];
 const CTA_PADDING_SIZES = ["sm", "md", "lg"];
 
+const _CTA_BG_SET = new Set(CTA_BG_COLORS);
+const _CTA_TEXT_SET = new Set(CTA_TEXT_COLORS);
+const _CTA_RADII_SET = new Set(CTA_BORDER_RADII);
+const _CTA_BORDERS_SET = new Set(CTA_BORDERS);
+const _CTA_BORDER_COLOR_SET = new Set(CTA_BORDER_COLORS);
+const _CTA_SHADOWS_SET = new Set(CTA_SHADOWS);
+const _CTA_WEIGHTS_SET = new Set(CTA_FONT_WEIGHTS);
+const _CTA_TRANSFORMS_SET = new Set(CTA_TEXT_TRANSFORMS);
+const _CTA_PADDING_SET = new Set(CTA_PADDING_SIZES);
+
 const CTA_RADIUS_MAP = { none: "0px", sm: "4px", md: "8px", lg: "16px", full: "9999px" };
 const CTA_PADDING_MAP = {
   sm: { x: "0.875rem", y: "0.375rem" },
@@ -197,29 +207,20 @@ const CTA_BUILTIN_PRESETS = [
 function normalizeCtaStyleClient(source) {
   if (!source || typeof source !== "object") return { type: "upstream" };
   if (source.type === "upstream") return { type: "upstream" };
-  const validBg = new Set(CTA_BG_COLORS);
-  const validText = new Set(CTA_TEXT_COLORS);
-  const validRadius = new Set(CTA_BORDER_RADII);
-  const validBorder = new Set(CTA_BORDERS);
-  const validBorderColor = new Set(CTA_BORDER_COLORS);
-  const validShadow = new Set(CTA_SHADOWS);
-  const validWeight = new Set(CTA_FONT_WEIGHTS);
-  const validTransform = new Set(CTA_TEXT_TRANSFORMS);
-  const validPadding = new Set(CTA_PADDING_SIZES);
-  if (!validBg.has(source.bgColor)) return { type: "upstream" };
+  if (!_CTA_BG_SET.has(source.bgColor)) return { type: "upstream" };
   const bgColor = source.bgColor;
-  const textColor = validText.has(source.textColor) ? source.textColor : "background";
-  const borderRadius = validRadius.has(source.borderRadius) ? source.borderRadius : "md";
-  const border = validBorder.has(source.border) ? source.border : "none";
-  const shadow = validShadow.has(source.shadow) ? source.shadow : "none";
-  const fontWeight = validWeight.has(source.fontWeight) ? source.fontWeight : "semibold";
-  const textTransform = validTransform.has(source.textTransform) ? source.textTransform : "none";
-  const paddingSize = validPadding.has(source.paddingSize) ? source.paddingSize : "md";
+  const textColor = _CTA_TEXT_SET.has(source.textColor) ? source.textColor : "background";
+  const borderRadius = _CTA_RADII_SET.has(source.borderRadius) ? source.borderRadius : "md";
+  const border = _CTA_BORDERS_SET.has(source.border) ? source.border : "none";
+  const shadow = _CTA_SHADOWS_SET.has(source.shadow) ? source.shadow : "none";
+  const fontWeight = _CTA_WEIGHTS_SET.has(source.fontWeight) ? source.fontWeight : "semibold";
+  const textTransform = _CTA_TRANSFORMS_SET.has(source.textTransform) ? source.textTransform : "none";
+  const paddingSize = _CTA_PADDING_SET.has(source.paddingSize) ? source.paddingSize : "md";
   const result = { bgColor, textColor, borderRadius, border, shadow, fontWeight, textTransform, paddingSize };
   if (bgColor === "custom") result.bgCustom = source.bgCustom || "#000000";
   if (textColor === "custom") result.textCustom = source.textCustom || "#ffffff";
   if (border === "solid") {
-    result.borderColor = validBorderColor.has(source.borderColor) ? source.borderColor : "primary";
+    result.borderColor = _CTA_BORDER_COLOR_SET.has(source.borderColor) ? source.borderColor : "primary";
     if (result.borderColor === "custom") result.borderCustom = source.borderCustom || "#000000";
   }
   return result;
@@ -349,6 +350,8 @@ function applySiteStyleTokensToDom(tokens) {
   root.style.setProperty("--font-body", safe.fontBody);
   root.style.setProperty("--background", "var(--color-background)");
   root.style.setProperty("--foreground", "var(--color-foreground)");
+  // Note: `resolve` here emits CSS var() references so the cascade resolves them.
+  // ctaPreviewStyle() uses resolveCtaColor() for hex values for inline React styles.
   // Apply --btn-* CSS vars for CTA button style
   const cta = safe.ctaStyle;
   if (cta && cta.type !== "upstream" && cta.bgColor) {
@@ -2542,7 +2545,7 @@ export default function AdminDashboard() {
               {CTA_BUILTIN_PRESETS.map((preset) => {
                 const isActive = preset.id === "upstream"
                   ? siteStyleTokens.ctaStyle?.type === "upstream"
-                  : JSON.stringify(normalizeCtaStyleClient(siteStyleTokens.ctaStyle)) === JSON.stringify(preset.style);
+                  : JSON.stringify(siteStyleTokens.ctaStyle) === JSON.stringify(preset.style);
                 return (
                   <button
                     key={preset.id}
@@ -2607,6 +2610,7 @@ export default function AdminDashboard() {
                   <button
                     onClick={async () => {
                       if (!ctaSaveName.trim()) return;
+                      if (siteStyleTokens.ctaStyle?.type === "upstream") return; // can't save upstream as preset
                       const res = await adminFetch("/api/admin/style-presets", {
                         method: "POST",
                         body: JSON.stringify({
@@ -2732,6 +2736,23 @@ export default function AdminDashboard() {
                       value={siteStyleTokens.ctaStyle?.textCustom || "#ffffff"}
                       onChange={(e) => {
                         const next = { ...siteStyleTokens, ctaStyle: { ...siteStyleTokens.ctaStyle, textCustom: e.target.value } };
+                        setSiteStyleTokens(next);
+                        applySiteStyleTokensToDom(next);
+                      }}
+                      className="h-7 w-16 border border-gray-300 rounded cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                {/* borderColor custom hex input */}
+                {siteStyleTokens.ctaStyle?.border === "solid" && siteStyleTokens.ctaStyle?.borderColor === "custom" && (
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs text-gray-600 w-24 shrink-0">Border Hex</label>
+                    <input
+                      type="color"
+                      value={siteStyleTokens.ctaStyle?.borderCustom || "#000000"}
+                      onChange={(e) => {
+                        const next = { ...siteStyleTokens, ctaStyle: { ...siteStyleTokens.ctaStyle, borderCustom: e.target.value } };
                         setSiteStyleTokens(next);
                         applySiteStyleTokensToDom(next);
                       }}
