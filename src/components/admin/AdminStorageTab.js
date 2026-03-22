@@ -1,7 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
+
+// ─── CyberDuck bookmark generator ────────────────────────────────────────────
+
+function escXml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function generateCyberduckBookmark({ endpoint, bucket, region, accessKeyId }) {
+  const hostname = String(endpoint || "").replace(/^https?:\/\//, "").split("/")[0];
+  const safeBucket = String(bucket || "");
+  const safeRegion = String(region || "auto");
+  const safeKey = String(accessKeyId || "");
+  const nickname = safeBucket ? `R2 · ${safeBucket}` : "R2 bucket";
+  const uuid = typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>Protocol</key>
+\t<string>s3</string>
+\t<key>Nickname</key>
+\t<string>${escXml(nickname)}</string>
+\t<key>Hostname</key>
+\t<string>${escXml(hostname)}</string>
+\t<key>Port</key>
+\t<string>443</string>
+\t<key>Region</key>
+\t<string>${escXml(safeRegion)}</string>
+\t<key>Username</key>
+\t<string>${escXml(safeKey)}</string>
+\t<key>Path</key>
+\t<string>${safeBucket ? `/${escXml(safeBucket)}` : ""}</string>
+\t<key>Anonymous Login</key>
+\t<false/>
+\t<key>UUID</key>
+\t<string>${escXml(uuid)}</string>
+</dict>
+</plist>`;
+}
+
+function downloadCyberduckBookmark(details) {
+  const xml = generateCyberduckBookmark(details);
+  const blob = new Blob([xml], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${(details.bucket || "r2-bucket").replace(/[^a-z0-9._-]/gi, "-")}.duck`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 export default function AdminStorageTab({
   storage,
@@ -12,6 +72,23 @@ export default function AdminStorageTab({
 }) {
   const [showSecret, setShowSecret] = useState(false);
   const [copiedField, setCopiedField] = useState("");
+  const [envGroups, setEnvGroups] = useState(null);
+  const [envLoading, setEnvLoading] = useState(false);
+  const [envError, setEnvError] = useState("");
+  const [revealedSecrets, setRevealedSecrets] = useState(new Set());
+  const [copiedEnv, setCopiedEnv] = useState("");
+
+  useEffect(() => {
+    setEnvLoading(true);
+    fetch("/api/admin/env-status")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json?.ok) setEnvGroups(json.groups || []);
+        else setEnvError(json?.error || "Failed to load env status.");
+      })
+      .catch(() => setEnvError("Failed to load env status."))
+      .finally(() => setEnvLoading(false));
+  }, []);
   const clientDetails = uploadInfoDetails || {};
   const s3Enabled = Boolean(uploadInfo?.s3Enabled || clientDetails.s3Enabled);
   const backendMode = (() => {
@@ -32,6 +109,17 @@ export default function AdminStorageTab({
         ? t("admin.pathStyleEnabled")
         : t("admin.pathStyleDisabled")
       : t("common.noDetails");
+
+  async function copyEnvValue(key, value) {
+    if (!value || typeof navigator === "undefined" || !navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedEnv(key);
+      setTimeout(() => setCopiedEnv(""), 1200);
+    } catch {
+      // ignore
+    }
+  }
 
   async function copyValue(fieldId, value) {
     const text = typeof value === "string" ? value.trim() : "";
@@ -415,7 +503,128 @@ export default function AdminStorageTab({
             <p>{t("admin.cyberduckStepAuth")}</p>
             <p>{t("admin.cyberduckStepPath")}</p>
           </div>
+          {clientDetails.endpoint && (
+            <div className="mt-3 pt-3 border-t border-amber-200">
+              <p className="text-[11px] text-gray-500 mb-2">
+                {t("admin.cyberduckProfileHint", "Download a pre-filled bookmark file. Double-click it to open directly in CyberDuck. You will be prompted for the secret key on first connect.")}
+              </p>
+              <button
+                type="button"
+                onClick={() => downloadCyberduckBookmark(clientDetails)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-700"
+              >
+                <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                  <path d="M8 12l-5-5h3V2h4v5h3L8 12z"/>
+                  <rect x="2" y="13" width="12" height="1.5" rx=".75"/>
+                </svg>
+                {t("admin.cyberduckDownloadProfile", "Download .duck bookmark")}
+              </button>
+            </div>
+          )}
         </details>
+      </div>
+
+      {/* ── Environment variables reference ─────────────────────────────── */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-700">
+          {t("admin.envVarsTitle", "Environment variables")}
+        </h3>
+        <p className="text-xs text-gray-500">
+          {t("admin.envVarsHint", "All env vars the app reads, grouped by service. Secret values are masked.")}
+        </p>
+
+        {envLoading && (
+          <p className="text-xs text-gray-400">{t("common.loading", "Loading…")}</p>
+        )}
+        {envError && (
+          <p className="text-xs text-red-600">{envError}</p>
+        )}
+        {envGroups && envGroups.map((group) => (
+          <details
+            key={group.id}
+            className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-purple-300 open:bg-purple-50/20"
+          >
+            <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
+              <span className="font-medium text-sm text-gray-800">{group.label}</span>
+              <span className="text-[11px] text-gray-400">
+                {group.vars.filter((v) => v.set).length}/{group.vars.length} set
+              </span>
+            </summary>
+            <div className="mt-3 space-y-1">
+              {group.vars.map((v) => {
+                const key = `${group.id}:${v.names[0]}`;
+                const isRevealed = revealedSecrets.has(key);
+                const displayValue = v.secret
+                  ? isRevealed
+                    ? "(secret — not available client-side)"
+                    : "••••••••"
+                  : (v.value || "");
+                return (
+                  <div
+                    key={key}
+                    className="grid grid-cols-[minmax(0,180px)_minmax(0,1fr)_auto] gap-2 items-center bg-white border rounded px-2 py-1.5 text-[11px]"
+                  >
+                    <div className="min-w-0">
+                      <span className={`font-mono ${v.set ? "text-gray-700" : "text-gray-400"}`}>
+                        {v.names[0]}
+                      </span>
+                      {v.names.length > 1 && (
+                        <span className="block text-[10px] text-gray-400">
+                          or {v.names.slice(1).join(", ")}
+                        </span>
+                      )}
+                      {v.hint && (
+                        <span className="block text-[10px] text-gray-400">{v.hint}</span>
+                      )}
+                    </div>
+                    <span
+                      className={`font-mono break-all ${
+                        !v.set
+                          ? "text-red-400 italic"
+                          : v.secret && !isRevealed
+                          ? "text-gray-300 tracking-widest"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {!v.set
+                        ? t("admin.envVarNotSet", "not set")
+                        : displayValue}
+                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {v.set && v.secret && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRevealedSecrets((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(key)) next.delete(key);
+                              else next.add(key);
+                              return next;
+                            })
+                          }
+                          className="text-[10px] text-purple-700 hover:underline"
+                        >
+                          {isRevealed ? t("admin.hideSecret", "Hide") : t("admin.showSecret", "Show")}
+                        </button>
+                      )}
+                      {v.set && !v.secret && v.value && (
+                        <button
+                          type="button"
+                          onClick={() => copyEnvValue(key, v.value)}
+                          className="text-[10px] px-1.5 py-0.5 rounded border border-purple-200 text-purple-700 hover:bg-purple-50"
+                        >
+                          {copiedEnv === key
+                            ? t("admin.clientCopied", "Copied")
+                            : t("common.copy", "Copy")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        ))}
       </div>
     </div>
   );
