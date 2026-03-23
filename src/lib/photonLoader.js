@@ -40,12 +40,22 @@ async function _init() {
     typeof process !== "undefined" && Boolean(process.versions?.node);
 
   if (isNode) {
-    // Node.js: read the WASM binary from the package's own dist directory.
+    // Node.js: read the WASM binary from the known dist path.
+    // We deliberately avoid req.resolve("@cf-wasm/photon/photon.wasm") here —
+    // Turbopack statically analyzes string literals passed to require.resolve()
+    // and would try to bundle the .wasm file, which always fails at build time.
     const { readFileSync } = await import("node:fs");
-    const { createRequire } = await import("node:module");
-    const req = createRequire(import.meta.url);
-    const binary = readFileSync(req.resolve("@cf-wasm/photon/photon.wasm"));
-    await photon.initPhoton(new WebAssembly.Module(binary));
+    const { join } = await import("node:path");
+    const wasmPath = join(
+      process.cwd(),
+      "node_modules",
+      "@cf-wasm",
+      "photon",
+      "dist",
+      "lib",
+      "photon_rs_bg.wasm",
+    );
+    await photon.initPhoton(new WebAssembly.Module(readFileSync(wasmPath)));
   } else {
     // CF Workers: the WASM must be pre-uploaded to the R2 bucket.
     // See scripts/upload-wasm-to-r2.sh for the one-time setup.

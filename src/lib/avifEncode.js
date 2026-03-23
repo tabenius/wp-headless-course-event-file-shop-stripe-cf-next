@@ -27,18 +27,20 @@ const AVIF_SPEED = 6; // 0 (slowest/best) – 10 (fastest/worst)
 /**
  * Returns a compiled WebAssembly.Module for the given @jsquash/avif codec.
  *
- * @param {string} nodeModulePath  Resolvable path for createRequire (Node.js)
- * @param {string} r2Key           Key under S3_PUBLIC_URL/_wasm/ (CF Workers)
+ * @param {string} cwdRelPath  Path relative to process.cwd() (Node.js)
+ * @param {string} r2Key       Key under S3_PUBLIC_URL/_wasm/ (CF Workers)
  */
-async function loadAvifWasm(nodeModulePath, r2Key) {
+async function loadAvifWasm(cwdRelPath, r2Key) {
   const isNode =
     typeof process !== "undefined" && Boolean(process.versions?.node);
 
   if (isNode) {
+    // Use process.cwd()-based path construction rather than req.resolve() with
+    // a string literal — Turbopack statically analyzes require.resolve() args
+    // and would try to bundle .wasm files found that way.
     const { readFileSync } = await import("node:fs");
-    const { createRequire } = await import("node:module");
-    const req = createRequire(import.meta.url);
-    const binary = readFileSync(req.resolve(nodeModulePath));
+    const { join } = await import("node:path");
+    const binary = readFileSync(join(process.cwd(), cwdRelPath));
     return new WebAssembly.Module(binary);
   }
 
@@ -59,7 +61,7 @@ let encInitPromise = null;
 async function ensureEncInit() {
   if (!encInitPromise) {
     encInitPromise = loadAvifWasm(
-      "@jsquash/avif/codec/enc/avif_enc.wasm",
+      "node_modules/@jsquash/avif/codec/enc/avif_enc.wasm",
       "avif_enc.wasm",
     ).then((wasm) => initEnc(wasm));
   }
@@ -97,7 +99,7 @@ let decInitPromise = null;
 async function ensureDecInit() {
   if (!decInitPromise) {
     decInitPromise = loadAvifWasm(
-      "@jsquash/avif/codec/dec/avif_dec.wasm",
+      "node_modules/@jsquash/avif/codec/dec/avif_dec.wasm",
       "avif_dec.wasm",
     ).then((wasm) => initDec(wasm));
   }
