@@ -14,7 +14,22 @@ DONE [P3 | Medium]: Post-implementation code review — full quality/usability a
 DONE [P2 | Medium]: Admin UX polish follow-up — all 4 items already implemented by Codex: focus trap in hamburger drawer (AdminHeader.js:257-298), Ctrl+Alt guard while typing (shouldIgnoreAdminHotkeys/isEditableTarget), media table keyboard nav (handleMediaTableKeyDown), numeric param hard-validation (derivationInvalidParameters disables Apply). Verified by Claude 2026-03-21.
 DONE [P2 | Medium]: WordPress plugin media metadata surface — plugin now registers attachment `ragbaz_asset_*` meta for REST/GraphQL, exposes normalized `ragbaz_asset` on `/wp/v2/media`, and resolves `original` + `variants` chains (`assetId`, `size`, `dimensions`, `mime`, `hash`) for WP attachment assets (commit `3e3d361`).
 DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `ragbazCapabilities` query (`pluginPresent`, `pluginVersion`, `pluginSemver`, asset-meta capability flags/schema version) and wired admin health runtime probe to ingest that signal before metadata-dependent flows (commit `3e3d361`).
+DONE [P2 | Medium]: AdminMediaLibraryTab.js refactor (phase 1) — extracted utility functions to `mediaLibraryHelpers.js`, `R2ConnectionPanel`, `MediaViewerPanel`; main file 3942 → 3205 lines (Claude, 2026-03-23). See entry below.
 DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf logging + chat beta gate — commit `356a96f` (Claude, 2026-03-23). See entry below.
+
+## 2026-03-23 (Claude) — AdminMediaLibraryTab refactor phase 1
+
+### Claude — AdminMediaLibraryTab.js modularization (commits 858403d, 3e6722e, f1dc7ba)
+
+**Delivered:**
+- `src/lib/mediaLibraryHelpers.js` — all 30+ pure utility functions and constants extracted from AdminMediaLibraryTab (extFromFileName, formatBytes, formatResolution, formatUpdatedAt, sourceLabel, sourceBadgeClass, PRESET_CROP_OPTIONS, buildPseudoDerivationName, getUnboundParameters, describeOperationParameters, formatParameterValue, isInvalidNumericParam, getInvalidOperationParameters, canPreviewImage, isImageFile, detectAssetKind, isSupportedUploadFile, canOpenDataViewer, resolveAssetType, parseTimestamp, parseSize, buildUploadHistoryEntry, defaultR2ObjectKey, normalizeEditorValue, normalizeEditorMultiline, normalizeOwnerUri, normalizeAssetSlug, toEditorState, stampOpenAndGetPrevious, isNewAsset, escXml, generateCyberduckBookmark, downloadCyberduckBookmark, LS_LAST_OPENED_KEY, plus size/history constants).
+- `src/components/admin/R2ConnectionPanel.js` — S3/R2 connection checklist + GUI client guides (WinSCP/CyberDuck accordion); owns `showSecret`/`copiedField` state and all derived connection logic (uploadBackend/clientDetails/backendMode/checklistRows/copyValue).
+- `src/components/admin/MediaViewerPanel.js` — asset data viewer (JSON/YAML/CSV/Markdown/SQLite/text); accepts viewerItem/viewerLoading/viewerError/viewerData/onClose props; owns ReactMarkdown/remarkGfm imports.
+- `AdminMediaLibraryTab.js` shrank from **3942 → 3205 lines** (−737 lines). All three cf:build passes.
+
+**Remaining in AdminMediaLibraryTab:** upload zone, media table, focused-item/editor panel, derivation panel, R2 manual ingest panel, metadata editor — these are deeply interlinked and will be extracted in a follow-up.
+
+---
 
 ## 2026-03-23 (Claude)
 

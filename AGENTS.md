@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-23 (Claude)**: AdminMediaLibraryTab refactor phase 1 — extracted `mediaLibraryHelpers.js` (30+ pure util functions), `R2ConnectionPanel` (S3/R2 connection checklist + GUI clients, 240 lines), `MediaViewerPanel` (asset data viewer, 195 lines). Main file: 3942 → 3205 lines. Commits `858403d`, `3e6722e`, `f1dc7ba`.
 - **2026-03-23 (Claude)**: WP setup page + 429 rate-limit UX + opt-in GraphQL availability/page-performance logging (KV) + chat tab beta gate + dead-link finder moved to Beta & monitoring section. Commit `356a96f`. i18n: 7 new keys (1010 total, all in sync).
 
 - **2026-03-22 (Claude)**: Admin UI refactor + bug fixes: extracted `AdminStyleTab.js` (955 lines) from `AdminDashboard.js` (3316 → 2593 lines); fixed 8 bugs: `AdminFontBrowserModal` catalog fetch error + retry, per-font download error display, `updateSupportTicket` `ticketSaving` state (comment button disables), `sendChat` AbortController race condition, `commitsError` clearing on success, VAT validation now uses toast, `AdminStorageTab` env-status retry button with error clearing.
