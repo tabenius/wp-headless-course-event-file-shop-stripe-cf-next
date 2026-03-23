@@ -5,26 +5,39 @@ import { adminFetch } from "@/lib/adminFetch";
 
 const API = "/api/admin/page-performance";
 
-function avg(arr, key) {
-  const vals = arr.map((d) => d[key]).filter((v) => v != null && !isNaN(v));
+function getVals(log, key) {
+  return log.map((d) => d[key]).filter((v) => v != null && !isNaN(v));
+}
+
+function stats(vals) {
   if (!vals.length) return null;
-  return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+  const sorted = [...vals].sort((a, b) => a - b);
+  const n = sorted.length;
+  const min = sorted[0];
+  const max = sorted[n - 1];
+  const mean = Math.round(vals.reduce((s, v) => s + v, 0) / n);
+  const mid = n % 2 === 0
+    ? Math.round((sorted[n / 2 - 1] + sorted[n / 2]) / 2)
+    : sorted[Math.floor(n / 2)];
+  return { min, avg: mean, median: mid, max };
 }
 
-function latencyLabel(ms) {
-  if (ms == null) return "—";
-  if (ms < 200) return { text: `${ms} ms`, cls: "text-emerald-600" };
-  if (ms < 500) return { text: `${ms} ms`, cls: "text-yellow-600" };
-  return { text: `${ms} ms`, cls: "text-red-600" };
+function colorCls(ms) {
+  if (ms == null) return "text-gray-400";
+  if (ms < 200) return "text-emerald-600";
+  if (ms < 500) return "text-yellow-600";
+  return "text-red-600";
 }
 
-function StatCard({ label, value, cls }) {
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-center">
-      <div className={`text-xl font-bold ${cls || "text-gray-800"}`}>{value ?? "—"}</div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
-    </div>
-  );
+const METRICS = [
+  { key: "ttfb", label: "TTFB" },
+  { key: "domComplete", label: "DOM complete" },
+  { key: "lcp", label: "LCP" },
+  { key: "fcp", label: "FCP" },
+];
+
+function ms(v) {
+  return v != null ? `${v} ms` : "—";
 }
 
 export default function PagePerformancePanel() {
@@ -71,15 +84,11 @@ export default function PagePerformancePanel() {
     return <div className="text-sm text-gray-400 py-4">Loading performance data…</div>;
   }
 
-  const avgTtfb = avg(log, "ttfb");
-  const avgDomComplete = avg(log, "domComplete");
-  const avgLcp = avg(log, "lcp");
-  const avgFcp = avg(log, "fcp");
-
-  const ttfbLbl = latencyLabel(avgTtfb);
-  const domLbl = latencyLabel(avgDomComplete);
-  const lcpLbl = latencyLabel(avgLcp);
-  const fcpLbl = latencyLabel(avgFcp);
+  const metricStats = METRICS.map(({ key, label }) => ({
+    label,
+    key,
+    s: stats(getVals(log, key)),
+  }));
 
   const recent = log.slice(0, 50);
 
@@ -135,35 +144,53 @@ export default function PagePerformancePanel() {
 
       {log.length > 0 && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard
-              label="Avg TTFB"
-              value={typeof ttfbLbl === "object" ? ttfbLbl.text : ttfbLbl}
-              cls={typeof ttfbLbl === "object" ? ttfbLbl.cls : undefined}
-            />
-            <StatCard
-              label="Avg DOM complete"
-              value={typeof domLbl === "object" ? domLbl.text : domLbl}
-              cls={typeof domLbl === "object" ? domLbl.cls : undefined}
-            />
-            <StatCard
-              label="Avg LCP"
-              value={typeof lcpLbl === "object" ? lcpLbl.text : lcpLbl}
-              cls={typeof lcpLbl === "object" ? lcpLbl.cls : undefined}
-            />
-            <StatCard
-              label="Avg FCP"
-              value={typeof fcpLbl === "object" ? fcpLbl.text : fcpLbl}
-              cls={typeof fcpLbl === "object" ? fcpLbl.cls : undefined}
-            />
+          {/* Summary: min / avg / median / max per metric */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Summary — {log.length} samples
+              </span>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="min-w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">Metric</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">Min</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">Avg</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">Median</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">Max</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {metricStats.map(({ label, s }) => (
+                    <tr key={label} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-700">{label}</td>
+                      <td className="px-3 py-2 text-right text-emerald-600">
+                        {s ? ms(s.min) : "—"}
+                      </td>
+                      <td className={`px-3 py-2 text-right font-semibold ${s ? colorCls(s.avg) : "text-gray-400"}`}>
+                        {s ? ms(s.avg) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-700">
+                        {s ? ms(s.median) : "—"}
+                      </td>
+                      <td className={`px-3 py-2 text-right ${s ? colorCls(s.max) : "text-gray-400"}`}>
+                        {s ? ms(s.max) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
+          {/* Recent page loads */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Recent page loads
               </span>
-              <span className="text-xs text-gray-400">{log.length} recorded</span>
             </div>
             <div className="overflow-x-auto rounded-lg border border-gray-200">
               <table className="min-w-full text-xs">
@@ -180,26 +207,24 @@ export default function PagePerformancePanel() {
                 <tbody className="divide-y divide-gray-100">
                   {recent.map((d, i) => {
                     const date = new Date(d.ts);
-                    const dateStr = date.toLocaleDateString();
-                    const timeStr = date.toLocaleTimeString();
                     return (
                       <tr key={i} className="hover:bg-gray-50">
                         <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                          {dateStr} {timeStr}
+                          {date.toLocaleDateString()} {date.toLocaleTimeString()}
                         </td>
                         <td className="px-3 py-2 text-gray-700 font-mono truncate max-w-[180px]">
                           {d.url || "—"}
                         </td>
-                        <td className="px-3 py-2 text-right text-gray-700">
+                        <td className={`px-3 py-2 text-right ${colorCls(d.ttfb)}`}>
                           {d.ttfb != null ? `${d.ttfb} ms` : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right text-gray-700">
+                        <td className={`px-3 py-2 text-right ${colorCls(d.domComplete)}`}>
                           {d.domComplete != null ? `${d.domComplete} ms` : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right text-gray-700">
+                        <td className={`px-3 py-2 text-right ${colorCls(d.lcp)}`}>
                           {d.lcp != null ? `${d.lcp} ms` : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right text-gray-700">
+                        <td className={`px-3 py-2 text-right ${colorCls(d.fcp)}`}>
                           {d.fcp != null ? `${d.fcp} ms` : "—"}
                         </td>
                       </tr>
