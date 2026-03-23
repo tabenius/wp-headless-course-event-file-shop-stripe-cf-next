@@ -76,9 +76,12 @@ export function getWordPressGraphqlAuthOptions() {
 
   const faustSecret = getFaustSecret();
   if (faustSecret) {
+    // Do NOT send the secret as a Bearer token — wp-graphql-headless-login
+    // validates Bearer values as JWTs and rejects plain UUIDs with
+    // "Wrong number of segments".  The custom headers are the correct channel.
     options.push({
       mode: "faust",
-      authorization: `Bearer ${faustSecret}`,
+      authorization: "",
       headers: {
         "X-Headless-Secret": faustSecret,
         "X-Faust-Secret": faustSecret,
