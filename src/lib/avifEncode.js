@@ -2,12 +2,16 @@
  * avifEncode.js — AVIF encoding and decoding via @jsquash/avif
  *
  * Works in two environments:
- *  - Node.js (next dev): loads the WASM binaries from the filesystem
- *  - CF Workers / wrangler: the `import(…avif_enc/dec.wasm)` calls are bundled
- *    at build time by wrangler/esbuild into compiled WebAssembly.Module objects
+ *  - Node.js (next dev): reads the WASM binaries from node_modules via the
+ *    filesystem (same pattern as photonLoader).
+ *  - CF Workers: fetches avif_enc.wasm / avif_dec.wasm from the R2 public URL
+ *    (S3_PUBLIC_URL).  The WASM files must be pre-uploaded; see
+ *    scripts/upload-wasm-to-r2.sh.  Compiled modules are cached at module
+ *    scope for the lifetime of the worker instance.
  *
- * The `webpackIgnore` comments prevent webpack from analysing the .wasm
- * dynamic imports (they are never reached in Node.js anyway).
+ * The MT (multi-threaded) encoder is intentionally excluded — CF Workers does
+ * not support SharedArrayBuffer-based WASM threads, and including avif_enc_mt
+ * added a redundant 3.4 MB to the bundle for no benefit.
  */
 
 import { encode } from "@jsquash/avif";
@@ -16,24 +20,36 @@ import { decode } from "@jsquash/avif";
 import { init as initDec } from "@jsquash/avif/decode.js";
 
 const AVIF_QUALITY = 60;
-const AVIF_SPEED = 6; // 0 (slowest/best) – 10 (fastest/worst); 6 is a good middle
+const AVIF_SPEED = 6; // 0 (slowest/best) – 10 (fastest/worst)
 
 // ── WASM loading helper ────────────────────────────────────────────────────
 
-async function loadWasm(nodeModulePath, cfWorkersPath) {
-  if (typeof process !== "undefined" && process.versions?.node) {
-    // Node.js (local dev): read from filesystem
+/**
+ * Returns a compiled WebAssembly.Module for the given @jsquash/avif codec.
+ *
+ * @param {string} nodeModulePath  Resolvable path for createRequire (Node.js)
+ * @param {string} r2Key           Key under S3_PUBLIC_URL/_wasm/ (CF Workers)
+ */
+async function loadAvifWasm(nodeModulePath, r2Key) {
+  const isNode =
+    typeof process !== "undefined" && Boolean(process.versions?.node);
+
+  if (isNode) {
     const { readFileSync } = await import("node:fs");
     const { createRequire } = await import("node:module");
     const req = createRequire(import.meta.url);
     const binary = readFileSync(req.resolve(nodeModulePath));
     return new WebAssembly.Module(binary);
   }
-  // CF Workers: wrangler bundles the .wasm as a compiled WebAssembly.Module.
-  // webpackIgnore tells webpack to leave these imports alone — they are never
-  // reached in Node.js, so webpack never needs to process them.
-  const { default: wasm } = await import(/* webpackIgnore: true */ cfWorkersPath);
-  return wasm instanceof WebAssembly.Module ? wasm : new WebAssembly.Module(wasm);
+
+  // CF Workers: fetch from R2 and compile via streaming.
+  const base = (process.env.S3_PUBLIC_URL || "").replace(/\/$/, "");
+  if (!base) {
+    throw new Error(
+      "avifEncode: S3_PUBLIC_URL is not set — cannot fetch avif WASM from R2.",
+    );
+  }
+  return WebAssembly.compileStreaming(fetch(`${base}/_wasm/${r2Key}`));
 }
 
 // ── Encoder ───────────────────────────────────────────────────────────────
@@ -42,9 +58,9 @@ let encInitPromise = null;
 
 async function ensureEncInit() {
   if (!encInitPromise) {
-    encInitPromise = loadWasm(
+    encInitPromise = loadAvifWasm(
       "@jsquash/avif/codec/enc/avif_enc.wasm",
-      "@jsquash/avif/codec/enc/avif_enc.wasm",
+      "avif_enc.wasm",
     ).then((wasm) => initEnc(wasm));
   }
   return encInitPromise;
@@ -80,9 +96,9 @@ let decInitPromise = null;
 
 async function ensureDecInit() {
   if (!decInitPromise) {
-    decInitPromise = loadWasm(
+    decInitPromise = loadAvifWasm(
       "@jsquash/avif/codec/dec/avif_dec.wasm",
-      "@jsquash/avif/codec/dec/avif_dec.wasm",
+      "avif_dec.wasm",
     ).then((wasm) => initDec(wasm));
   }
   return decInitPromise;

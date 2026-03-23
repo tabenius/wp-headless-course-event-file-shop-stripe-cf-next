@@ -9,6 +9,7 @@ import {
   serializeImage,
 } from "@/lib/photonPipeline";
 import { encodeAvif, decodeAvif } from "@/lib/avifEncode";
+import { getPhoton } from "@/lib/photonLoader";
 
 function buildAllowedHosts(request) {
   const hosts = new Set();
@@ -125,7 +126,7 @@ export async function POST(request) {
           send({ type: "progress", pct: 12, label: "load" });
         }
 
-        const photon = await import("@cf-wasm/photon");
+        const photon = await getPhoton();
 
         let img;
         if (sourceIsAvif) {
