@@ -10,7 +10,8 @@ import Event from "@/components/single/Event";
 import Product from "@/components/single/Product";
 import Course from "@/components/single/Course";
 import Paywall from "@/components/single/Paywall";
-import { fetchGraphQL } from "@/lib/client";
+import { fetchGraphQL, RateLimitError } from "@/lib/client";
+import RateLimitPage from "@/components/common/RateLimitPage";
 import { auth } from "@/auth";
 import {
   getCourseAccessConfig,
@@ -120,7 +121,7 @@ async function fetchRestFallback(uri) {
   if (!wp) return null;
   const slug = uri.split("/").filter(Boolean).pop();
   if (!slug) return null;
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   const endpoints = [
     `${wp}/wp-json/wp/v2/pages?slug=${encodeURIComponent(slug)}`,
     `${wp}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}`,
@@ -165,7 +166,7 @@ async function fetchCourseFallback(uri) {
   const slug = uri.split("/").filter(Boolean).pop();
   if (!slug) return null;
   const wp = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   const query = `
     ${fragment}
     query LpCourseByUri($uri: ID!) {
@@ -350,7 +351,21 @@ export default async function ContentPage({
     .filter(Boolean);
   const uri =
     normalizedSegments.length > 0 ? `/${normalizedSegments.join("/")}` : "/";
-  const node = await resolveNodeByUri(uri);
+  let node;
+  try {
+    node = await resolveNodeByUri(uri);
+  } catch (err) {
+    if (err instanceof RateLimitError) {
+      return (
+        <RateLimitPage
+          responseBody={err.responseBody}
+          history={err.history}
+          status={err.status}
+        />
+      );
+    }
+    throw err;
+  }
   if (!node) {
     console.warn("No nodeByUri data found, returning 404");
     notFound();

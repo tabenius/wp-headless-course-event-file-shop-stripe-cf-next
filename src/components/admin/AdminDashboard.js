@@ -43,17 +43,19 @@ const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
 const AdminInfoHubTab = lazy(() => import("./AdminInfoHubTab"));
 const AdminStyleTab = lazy(() => import("./AdminStyleTab"));
 
-const ADMIN_TABS = [
+const ADMIN_TABS_BASE = [
   "sales",
   "media",
   "products",
   "support",
   "style",
-  "chat",
   "info",
   "welcome",
 ];
-const ADMIN_TAB_SET = new Set(ADMIN_TABS);
+// "chat" is a beta feature — shown only when the admin has enabled it via
+// Admin → Info → Beta features.
+const CHAT_BETA_STORAGE_KEY = "ragbaz_chat_beta_enabled";
+const ADMIN_TAB_SET = new Set([...ADMIN_TABS_BASE, "chat"]);
 
 function normalizeAdminTab(value) {
   const normalized = String(value || "")
@@ -793,11 +795,25 @@ export default function AdminDashboard() {
     Boolean(WELCOME_REVISION),
   );
   const [products, setProducts] = useState([]);
+  const [chatBetaEnabled, setChatBetaEnabledState] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(CHAT_BETA_STORAGE_KEY) === "true";
+  });
+  const setChatBetaEnabled = useCallback((val) => {
+    const next = Boolean(val);
+    setChatBetaEnabledState(next);
+    try { localStorage.setItem(CHAT_BETA_STORAGE_KEY, String(next)); } catch {}
+  }, []);
+
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window === "undefined") return "welcome";
     return parseTabFromHash(window.location.hash) || "welcome";
   });
   const activeTabRef = useRef(activeTab);
+  // If chat beta gets disabled while on the chat tab, redirect to info
+  useEffect(() => {
+    if (activeTab === "chat" && !chatBetaEnabled) setActiveTab("info");
+  }, [chatBetaEnabled, activeTab]);
   const error = errorState.message;
   const showErrorBanner =
     Boolean(error) &&
@@ -961,9 +977,9 @@ export default function AdminDashboard() {
       if (isAdminActionHotkey(e, "menuNext")) {
         e.preventDefault();
         const current = normalizeAdminTab(activeTabRef.current) || "welcome";
-        const currentIndex = Math.max(0, ADMIN_TABS.indexOf(current));
-        const nextIndex = (currentIndex + 1) % ADMIN_TABS.length;
-        const nextTab = ADMIN_TABS[nextIndex];
+        const currentIndex = Math.max(0, ADMIN_TABS_BASE.indexOf(current));
+        const nextIndex = (currentIndex + 1) % ADMIN_TABS_BASE.length;
+        const nextTab = ADMIN_TABS_BASE[nextIndex];
         setActiveTab(nextTab);
         window.dispatchEvent(
           new CustomEvent("admin:switchTab", { detail: nextTab }),
@@ -973,10 +989,10 @@ export default function AdminDashboard() {
       if (isAdminActionHotkey(e, "menuPrev")) {
         e.preventDefault();
         const current = normalizeAdminTab(activeTabRef.current) || "welcome";
-        const currentIndex = Math.max(0, ADMIN_TABS.indexOf(current));
+        const currentIndex = Math.max(0, ADMIN_TABS_BASE.indexOf(current));
         const prevIndex =
-          (currentIndex - 1 + ADMIN_TABS.length) % ADMIN_TABS.length;
-        const prevTab = ADMIN_TABS[prevIndex];
+          (currentIndex - 1 + ADMIN_TABS_BASE.length) % ADMIN_TABS_BASE.length;
+        const prevTab = ADMIN_TABS_BASE[prevIndex];
         setActiveTab(prevTab);
         window.dispatchEvent(
           new CustomEvent("admin:switchTab", { detail: prevTab }),
@@ -2441,6 +2457,8 @@ export default function AdminDashboard() {
             clientLogs={clientLogs}
             setClientLogs={setClientLogs}
             debugLogs={debugLogs}
+            chatBetaEnabled={chatBetaEnabled}
+            setChatBetaEnabled={setChatBetaEnabled}
           />
         </Suspense>
       )}

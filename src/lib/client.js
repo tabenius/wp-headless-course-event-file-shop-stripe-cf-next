@@ -1,11 +1,41 @@
-import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
+import {
+  getWordPressGraphqlAuthOptions,
+  invalidateSiteTokenCache,
+} from "@/lib/wordpressGraphqlAuth";
 import { appendServerLog } from "@/lib/serverLog";
+import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
 
 const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
 const GRAPHQL_TIMEOUT_MS =
   Number.parseInt(process.env.GRAPHQL_TIMEOUT_MS || "8000", 10) || 8000;
 let lastCallTs = 0;
+
+// ── Request history ───────────────────────────────────────────────────────────
+/** @type {{ ts: number, endpoint: string, status: number|string, ok: boolean }[]} */
+const _requestHistory = [];
+const MAX_HISTORY = 20;
+
+function recordAttempt(endpoint, status, ok) {
+  _requestHistory.unshift({ ts: Date.now(), endpoint, status, ok });
+  if (_requestHistory.length > MAX_HISTORY) _requestHistory.pop();
+}
+
+/** Returns a snapshot of the last GraphQL request attempts (newest first). */
+export function getRequestHistory() {
+  return [..._requestHistory];
+}
+
+// ── RateLimitError ────────────────────────────────────────────────────────────
+export class RateLimitError extends Error {
+  constructor(body, status = 429) {
+    super(`GraphQL rate limited (HTTP ${status})`);
+    this.name = "RateLimitError";
+    this.status = status;
+    this.responseBody = body;
+    this.history = getRequestHistory();
+  }
+}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -44,29 +74,61 @@ export async function hasGraphQLType(typeName) {
   }
 }
 
+/**
+ * Resolve the WordPress base URL.
+ * Prefers NEXT_PUBLIC_WORDPRESS_URL; falls back to the ragbaz_wp_config cookie
+ * (set by the setup page) so the app works when the env var is absent.
+ * The dynamic cookie lookup only runs when the env var is missing, keeping
+ * ISR/SSG intact for fully-configured deployments.
+ */
+async function resolveWordPressUrl() {
+  const envUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").trim();
+  if (envUrl) return envUrl.replace(/\/+$/, "");
+
+  try {
+    // Dynamic import keeps `cookies()` out of the module-level scope so it
+    // doesn't force all routes to be dynamic when the env var is present.
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const raw = cookieStore.get("ragbaz_wp_config")?.value;
+    if (raw) {
+      const { wpUrl } = JSON.parse(
+        Buffer.from(raw, "base64").toString("utf8"),
+      );
+      if (wpUrl) return wpUrl.replace(/\/+$/, "");
+    }
+  } catch {
+    // Not in a request context (e.g. build-time static generation) — ignore.
+  }
+  return null;
+}
+
 export async function fetchGraphQL(query, variables = {}, revalidate = null) {
   if (typeof query !== "string" || query.trim().length === 0) {
     console.error("fetchGraphQL called with an invalid query");
     return {};
   }
 
-  const wordpressUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL;
+  const wordpressUrl = await resolveWordPressUrl();
   if (!wordpressUrl) {
-    console.error("NEXT_PUBLIC_WORDPRESS_URL is not set");
+    // Silently skip — no WP host configured (setup page will handle this).
     return {};
   }
-  const graphqlEndpoint = `${wordpressUrl.replace(/\/+$/, "")}/graphql`;
+  const graphqlEndpoint = `${wordpressUrl}/graphql`;
 
   const debugGraphQL =
     process.env.WORDPRESS_GRAPHQL_DEBUG === "1" ||
     process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
+
+  // Captured if we hit a 429; thrown after the outer try/catch so it escapes.
+  let rateLimitInfo = null;
 
   try {
     if (debugGraphQL) {
       console.debug("[GraphQL Debug] Query:", query);
       console.debug("[GraphQL Debug] Variables:", variables);
     }
-    const authOptions = getWordPressGraphqlAuthOptions();
+    const authOptions = await getWordPressGraphqlAuthOptions();
     let lastError = null;
 
     for (const auth of authOptions) {
@@ -104,6 +166,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       const controller = new AbortController();
       const tid = setTimeout(() => controller.abort(), GRAPHQL_TIMEOUT_MS);
       let response;
+      const attemptStart = Date.now();
       try {
         response = await fetch(graphqlEndpoint, {
           ...fetchOptions,
@@ -111,16 +174,28 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         });
       } catch (fetchErr) {
         clearTimeout(tid);
+        const latencyMs = Date.now() - attemptStart;
+        recordAttempt(graphqlEndpoint, "network-error", false);
+        recordAvailabilityDatapoint({
+          ok: false,
+          status: "network-error",
+          endpoint: graphqlEndpoint,
+          latencyMs,
+        }).catch(() => {});
         if (fetchErr.name === "AbortError") {
           const msg = `GraphQL timeout after ${GRAPHQL_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
           console.error(msg);
           appendServerLog({ level: "error", msg }).catch(() => {});
           return {};
         }
-        throw fetchErr;
+        lastError = `GraphQL fetch error (auth=${auth.mode}): ${fetchErr.message}`;
+        if (debugGraphQL) console.error(lastError);
+        continue;
       }
       clearTimeout(tid);
       lastCallTs = Date.now();
+      const latencyMs = lastCallTs - attemptStart;
+      recordAttempt(graphqlEndpoint, response.status, response.ok);
       const contentType = response.headers.get("content-type") || "";
       if (debugGraphQL) {
         console.debug("[GraphQL Debug] Auth mode:", auth.mode);
@@ -139,6 +214,23 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         const varnishHit = /varnish|too many/i.test(text) || statusTooMany;
         lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${firstLines(text)}`;
         if (debugGraphQL) console.error(lastError);
+        if (response.status === 429) {
+          // Capture and break — no point trying other auth options for rate limits.
+          recordAvailabilityDatapoint({
+            ok: false,
+            status: 429,
+            endpoint: graphqlEndpoint,
+            latencyMs,
+          }).catch(() => {});
+          rateLimitInfo = { body: text, status: 429 };
+          break;
+        }
+        recordAvailabilityDatapoint({
+          ok: false,
+          status: response.status,
+          endpoint: graphqlEndpoint,
+          latencyMs,
+        }).catch(() => {});
         if (varnishHit) await sleep(250);
         else await sleep(DEFAULT_DELAY_MS || 100);
         continue;
@@ -149,11 +241,30 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         console.debug("[GraphQL Debug] Response payload:", result);
       }
       if (Array.isArray(result?.errors) && result.errors.length > 0) {
-        lastError = `GraphQL Error: ${JSON.stringify(result.errors)}`;
-        if (debugGraphQL) console.error(lastError);
+        const isAuthError = result.errors.some(
+          (e) =>
+            typeof e?.message === "string" &&
+            /without authentication|not authorized|forbidden/i.test(e.message),
+        );
+        lastError = `GraphQL Error (auth=${auth.mode}${isAuthError ? ", auth-rejected" : ""}): ${JSON.stringify(result.errors)}`;
+        if (debugGraphQL || isAuthError) console.error(lastError);
+        if (isAuthError && auth.mode === "sitetoken") invalidateSiteTokenCache();
+        recordAvailabilityDatapoint({
+          ok: false,
+          status: `graphql-error`,
+          endpoint: graphqlEndpoint,
+          latencyMs,
+        }).catch(() => {});
         continue;
       }
 
+      // Successful response — record availability
+      recordAvailabilityDatapoint({
+        ok: true,
+        status: response.status,
+        endpoint: graphqlEndpoint,
+        latencyMs,
+      }).catch(() => {});
       return result?.data || {};
     }
 
@@ -166,4 +277,12 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
     console.error("Error fetching from WordPress:", error);
     return {};
   }
+
+  // Throw outside the try/catch so callers (page components) receive it.
+  // Build-time callers (sitemap.js, homeEvents.js) already have their own
+  // try/catch and will catch this gracefully.
+  if (rateLimitInfo) {
+    throw new RateLimitError(rateLimitInfo.body, rateLimitInfo.status);
+  }
+  return {};
 }

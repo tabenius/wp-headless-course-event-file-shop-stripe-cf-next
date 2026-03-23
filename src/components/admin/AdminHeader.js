@@ -12,6 +12,8 @@ import {
 } from "@/lib/adminHotkeys";
 import RagbazLogo from "./RagbazLogo";
 
+const CHAT_BETA_STORAGE_KEY = "ragbaz_chat_beta_enabled";
+
 const ADMIN_TAB_SET = new Set([
   "welcome",
   "sales",
@@ -80,8 +82,8 @@ function hashForTabRoute(value) {
   return `#/${tab}`;
 }
 
-function getNavItems() {
-  return [
+function getNavItems(chatBetaEnabled) {
+  const items = [
     {
       label: t("admin.navSales", "Sales"),
       tab: "sales",
@@ -107,11 +109,15 @@ function getNavItems() {
       tab: "style",
       hotkey: getAdminTabHotkeyLabel("style"),
     },
-    {
-      label: t("admin.navChat"),
-      tab: "chat",
-      hotkey: getAdminTabHotkeyLabel("chat"),
-    },
+    ...(chatBetaEnabled
+      ? [
+          {
+            label: t("admin.navChat"),
+            tab: "chat",
+            hotkey: getAdminTabHotkeyLabel("chat"),
+          },
+        ]
+      : []),
     {
       label: t("admin.navSystem", "System"),
       tab: "info",
@@ -123,6 +129,7 @@ function getNavItems() {
       hotkey: getAdminTabHotkeyLabel("welcome"),
     },
   ];
+  return items;
 }
 
 const healthDotColor = {
@@ -186,6 +193,10 @@ export default function AdminHeader({ logoUrl }) {
   const lastFocusedBeforeMenuRef = useRef(null);
   const [subtitleScaleX, setSubtitleScaleX] = useState(1);
   const [tickerStats, setTickerStats] = useState(null);
+  const [chatBetaEnabled, setChatBetaEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(CHAT_BETA_STORAGE_KEY) === "true";
+  });
   const log = (...args) => console.info("[AdminHeader]", ...args);
   const toggleTheme = useCallback(() => {
     const next = adminTheme === "gruvbox" ? "light" : "gruvbox";
@@ -229,6 +240,16 @@ export default function AdminHeader({ logoUrl }) {
     }
     window.addEventListener("admin:healthStatus", onHealthStatus);
     return () => window.removeEventListener("admin:healthStatus", onHealthStatus);
+  }, []);
+
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key === CHAT_BETA_STORAGE_KEY) {
+        setChatBetaEnabled(e.newValue === "true");
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   useEffect(() => {
@@ -415,7 +436,7 @@ export default function AdminHeader({ logoUrl }) {
     setMenuOpen(false);
   }
 
-  const navItems = getNavItems();
+  const navItems = getNavItems(chatBetaEnabled);
   const tabItems = navItems.filter((item) => item.tab);
   const healthHotkey = getAdminTabHotkeyLabel("health")
     .split("+")

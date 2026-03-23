@@ -1,9 +1,11 @@
-import { notFound } from "next/navigation";
 import { SinglePageFragment } from "@/lib/fragments/SinglePageFragment";
 import Page from "@/components/single/Page";
 import EventCalendar from "@/components/home/EventCalendar";
-import { fetchGraphQL } from "@/lib/client";
+import { fetchGraphQL, RateLimitError } from "@/lib/client";
 import { fetchHomeEvents } from "@/lib/homeEvents";
+import RateLimitPage from "@/components/common/RateLimitPage";
+import WordPressSetupPage from "@/components/setup/WordPressSetupPage";
+import { notFound } from "next/navigation";
 
 const GET_CONTENT_QUERY = `
 ${SinglePageFragment}
@@ -16,10 +18,31 @@ query GetNodeByUri($uri: String!) {
 `;
 
 export default async function HomePage() {
-  const [data, { events, hasDates }] = await Promise.all([
-    fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800),
-    fetchHomeEvents(),
-  ]);
+  // If no WordPress host is configured (env var or cookie), show the setup page.
+  // This also makes the build succeed without a live WordPress instance.
+  const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL;
+  if (!wpUrl) {
+    return <WordPressSetupPage />;
+  }
+
+  let data, events, hasDates;
+  try {
+    [data, { events, hasDates }] = await Promise.all([
+      fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800),
+      fetchHomeEvents(),
+    ]);
+  } catch (err) {
+    if (err instanceof RateLimitError) {
+      return (
+        <RateLimitPage
+          responseBody={err.responseBody}
+          history={err.history}
+          status={err.status}
+        />
+      );
+    }
+    throw err;
+  }
 
   if (!data?.nodeByUri) {
     console.warn("No nodeByUri data found, returning 404");
@@ -40,7 +63,7 @@ export default async function HomePage() {
   notFound();
 }
 
-// Note: We could generate static params for the pages you want to pre-render (optional) for things like popular posts etc
+// No static params — pages are rendered on-demand (ISR via revalidate in fetchGraphQL)
 export async function generateStaticParams() {
   return [];
 }

@@ -7,14 +7,17 @@ import { tenantConfig } from "@/lib/tenantConfig";
 import AdminConnectorsTab from "./AdminConnectorsTab";
 import AdminSandboxTab from "./AdminSandboxTab";
 import AdminStatsTab from "./AdminStatsTab";
+import GraphqlAvailabilityPanel from "./GraphqlAvailabilityPanel";
+import PagePerformancePanel from "./PagePerformancePanel";
 
 function normalizeSection(value) {
   const safe = String(value || "").trim().toLowerCase();
   if (safe === "health") return "health";
   if (safe === "stats" || safe === "statistics") return "stats";
-  if (safe === "links" || safe === "dead-links" || safe === "deadlinks") return "links";
+  if (safe === "links" || safe === "dead-links" || safe === "deadlinks") return "beta";
   if (safe === "storage" || safe === "infrastructure") return "storage";
   if (safe === "docs" || safe === "documentation") return "docs";
+  if (safe === "beta" || safe === "beta-features" || safe === "monitoring") return "beta";
   return "overview";
 }
 
@@ -26,19 +29,21 @@ function sectionFromHash(hashValue) {
   const parts = normalized.split("/").filter(Boolean);
   if (parts[0] === "health") return "health";
   if (parts[0] === "stats") return "stats";
-  if (parts[0] === "links" || parts[0] === "dead-links") return "links";
+  if (parts[0] === "links" || parts[0] === "dead-links") return "beta";
   if (parts[0] === "storage") return "storage";
   if (parts[0] === "docs" || parts[0] === "documentation") return "docs";
+  if (parts[0] === "beta") return "beta";
   if (parts[0] !== "info") return "overview";
-  return normalizeSection(parts[1] || "overview");
+  const sub = parts[1] || "overview";
+  return normalizeSection(sub);
 }
 
 function hashForSection(section) {
   if (section === "health") return "#/info/health";
   if (section === "stats") return "#/info/stats";
-  if (section === "links") return "#/info/links";
   if (section === "storage") return "#/info/storage";
   if (section === "docs") return "#/info/docs";
+  if (section === "beta") return "#/info/beta";
   return "#/info";
 }
 
@@ -828,6 +833,8 @@ export default function AdminInfoHubTab({
   analytics,
   analyticsMode,
   analyticsConfigured,
+  chatBetaEnabled,
+  setChatBetaEnabled,
   ...sandboxProps
 }) {
   const [section, setSection] = useState(() => {
@@ -840,8 +847,8 @@ export default function AdminInfoHubTab({
     { id: "stats", label: t("admin.navStats", "Stats") },
     { id: "health", label: t("admin.healthCheck", "Health check") },
     { id: "storage", label: t("admin.navStorage", "Storage") },
-    { id: "links", label: t("admin.deadLinksTitle", "Dead-link finder") },
     { id: "docs", label: t("admin.documentation", "Documentation") },
+    { id: "beta", label: t("admin.betaFeatures", "Beta & monitoring") },
   ];
 
   const setSectionAndHash = useCallback((nextSection) => {
@@ -937,9 +944,72 @@ export default function AdminInfoHubTab({
         />
       )}
 
-      {section === "links" && <DeadLinksPanel />}
-
       {section === "docs" && <DocsPanel />}
+
+      {section === "beta" && (
+        <div className="space-y-6">
+          {/* Chat beta toggle */}
+          <div className="border rounded p-5 bg-white">
+            <h2 className="text-lg font-semibold text-gray-800 mb-1">
+              {t("admin.betaFeaturesTitle", "Beta features")}
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              {t(
+                "admin.betaFeaturesHint",
+                "These features are experimental and may change. Enable them here before they appear in the main navigation.",
+              )}
+            </p>
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  {t("admin.chatFeatureLabel", "AI Chat assistant")}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {t(
+                    "admin.chatFeatureHint",
+                    "Shows the Chat tab in the main navigation. Requires an AI API key to be configured.",
+                  )}
+                </p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none ml-4 shrink-0">
+                <span className="text-sm text-gray-600">
+                  {chatBetaEnabled
+                    ? t("admin.enabled", "Enabled")
+                    : t("admin.disabled", "Disabled")}
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={Boolean(chatBetaEnabled)}
+                  onClick={() => setChatBetaEnabled?.(!chatBetaEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                    chatBetaEnabled ? "bg-purple-600" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      chatBetaEnabled ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </label>
+            </div>
+          </div>
+
+          {/* GraphQL availability monitoring */}
+          <div className="border rounded p-5 bg-white">
+            <GraphqlAvailabilityPanel />
+          </div>
+
+          {/* Page performance monitoring */}
+          <div className="border rounded p-5 bg-white">
+            <PagePerformancePanel />
+          </div>
+
+          {/* Dead-link finder */}
+          <DeadLinksPanel />
+        </div>
+      )}
     </div>
   );
 }
