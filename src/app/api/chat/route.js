@@ -1,32 +1,57 @@
 export const runtime = "nodejs";
 
+/**
+ * CHAT_ENABLED controls whether the AI RAG chat feature is active.
+ *
+ * Set CHAT_ENABLED=true in .env (local dev) or wrangler.jsonc vars (CF Workers)
+ * to enable.  Absent or any other value → 503 Service Unavailable.
+ *
+ * All AI / RAG imports are dynamic so they are only evaluated when the flag
+ * is on, preventing their module graphs from being traced at build time.
+ */
+
 import { NextResponse } from "next/server";
-import { embedTexts, chatWithContext } from "@/lib/ai";
 import { requireAdmin } from "@/lib/adminRoute";
-import { buildIndex, cosine, getIndexedItems } from "@/lib/chat/rag";
-import { detectLanguage } from "@/lib/chat/detect";
-import {
-  saveChatHistory,
-  getChatHistory,
-  deleteCloudflareKv,
-} from "@/lib/cloudflareKv";
-import {
-  IMAGE_SYSTEM_PROMPT,
-  handleSales,
-  handleWhoBought,
-  handleGrantAccess,
-  handleRevokeAccess,
-  handleRefund,
-  handleTopProducts,
-  handleRevenueTotal,
-  handleListContent,
-  handleProducts,
-  handleAccess,
-  handlePayments,
-  handleImageGen,
-} from "@/lib/chat/intents";
+
+function chatDisabled() {
+  return NextResponse.json(
+    { ok: false, error: "Chat is not enabled in this environment." },
+    { status: 503 },
+  );
+}
 
 export async function POST(request) {
+  if (process.env.CHAT_ENABLED !== "true") return chatDisabled();
+
+  // Dynamic imports — only resolved (and traced by the bundler) when CHAT_ENABLED=true
+  const [
+    { embedTexts, chatWithContext },
+    { buildIndex, cosine, getIndexedItems },
+    { detectLanguage },
+    { saveChatHistory, getChatHistory, deleteCloudflareKv: _del },
+    {
+      IMAGE_SYSTEM_PROMPT,
+      handleSales,
+      handleWhoBought,
+      handleGrantAccess,
+      handleRevokeAccess,
+      handleRefund,
+      handleTopProducts,
+      handleRevenueTotal,
+      handleListContent,
+      handleProducts,
+      handleAccess,
+      handlePayments,
+      handleImageGen,
+    },
+  ] = await Promise.all([
+    import("@/lib/ai"),
+    import("@/lib/chat/rag"),
+    import("@/lib/chat/detect"),
+    import("@/lib/cloudflareKv"),
+    import("@/lib/chat/intents"),
+  ]);
+
   try {
     const body = await request.json();
 
@@ -174,8 +199,12 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
+  if (process.env.CHAT_ENABLED !== "true") return chatDisabled();
+
   const auth = await requireAdmin(request);
   if (auth?.error) return auth.error;
+
+  const { deleteCloudflareKv } = await import("@/lib/cloudflareKv");
   try {
     await deleteCloudflareKv("chat_history:admin");
   } catch (err) {
