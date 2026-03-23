@@ -32,9 +32,9 @@ export async function getPhoton() {
 
 async function _init() {
   // "others" re-exports every photon function + initPhoton, but does NOT embed
-  // the WASM binary inline.  The dynamic import keeps it in a separate chunk so
-  // the main server bundle stays clean regardless of bundler.
-  const photon = await import("@cf-wasm/photon/others");
+  // the WASM binary inline.  webpackIgnore prevents Turbopack from tracing into
+  // the package and bundling the 1.7 MB WASM file into the CF Workers handler.
+  const photon = await import(/* webpackIgnore: true */ "@cf-wasm/photon/others");
 
   const isNode =
     typeof process !== "undefined" && Boolean(process.versions?.node);
