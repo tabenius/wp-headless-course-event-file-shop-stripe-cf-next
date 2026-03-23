@@ -30,8 +30,8 @@ function isS3Enabled() {
 async function loadAwsSdk() {
   if (!_awsSdkPromise) {
     _awsSdkPromise = Promise.all([
-      import("@aws-sdk/client-s3"),
-      import("@aws-sdk/s3-request-presigner"),
+      import(/* webpackIgnore: true */ "@aws-sdk/client-s3"),
+      import(/* webpackIgnore: true */ "@aws-sdk/s3-request-presigner"),
     ]).then(([s3, presigner]) => ({
       ...s3,
       getSignedUrl: presigner.getSignedUrl,

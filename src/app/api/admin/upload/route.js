@@ -482,7 +482,15 @@ async function uploadToR2(arrayBuffer, file, metadata = {}) {
   };
 }
 
+function uploadDisabled() {
+  return NextResponse.json(
+    { ok: false, error: "Upload is not enabled in this environment. Set UPLOAD_ENABLED=1." },
+    { status: 503 },
+  );
+}
+
 export async function POST(request) {
+  if (process.env.UPLOAD_ENABLED !== "1") return uploadDisabled();
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 

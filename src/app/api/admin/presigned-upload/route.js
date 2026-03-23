@@ -9,6 +9,11 @@ import {
 import { t } from "@/lib/i18n";
 
 export async function POST(request) {
+  if (process.env.UPLOAD_ENABLED !== "1")
+    return NextResponse.json(
+      { ok: false, error: "Upload is not enabled in this environment. Set UPLOAD_ENABLED=1." },
+      { status: 503 },
+    );
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 

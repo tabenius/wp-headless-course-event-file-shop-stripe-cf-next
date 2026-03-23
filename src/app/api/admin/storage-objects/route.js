@@ -13,6 +13,11 @@ function clampLimit(value) {
 }
 
 export async function GET(request) {
+  if (process.env.UPLOAD_ENABLED !== "1")
+    return NextResponse.json(
+      { ok: false, error: "Upload is not enabled in this environment. Set UPLOAD_ENABLED=1." },
+      { status: 503 },
+    );
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
