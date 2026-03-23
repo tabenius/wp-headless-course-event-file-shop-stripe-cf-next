@@ -40,7 +40,7 @@ async function loadAvifWasm(cwdRelPath, r2Key) {
     // and would try to bundle .wasm files found that way.
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const binary = readFileSync(join(process.cwd(), cwdRelPath));
+    const binary = readFileSync(join(/*turbopackIgnore: true*/ process.cwd(), cwdRelPath));
     return new WebAssembly.Module(binary);
   }
 

@@ -47,7 +47,7 @@ async function _init() {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const wasmPath = join(
-      process.cwd(),
+      /*turbopackIgnore: true*/ process.cwd(),
       "node_modules",
       "@cf-wasm",
       "photon",
