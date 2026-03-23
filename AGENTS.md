@@ -7,7 +7,7 @@ Both agents MUST read this at session start and update it whenever priorities sh
 
 ## Agent status
 
-- **Claude** has handed the active backlog to Codex. Codex now owns the current iteration of the storefront/admin story until Claude resumes. Continue using the existing protocols (docs lock, AGENTS/coop updates, build lock) and flag any handoff reversals via the coop log so we keep the transition documented.
+- **Claude** is active (2026-03-23). Resuming from handoff; Codex previously held backlog. Both agents may work concurrently — coordinate via coop file and docs lock as usual.
 
 ## Project overview
 
@@ -198,6 +198,8 @@ Full list in `.env.example`.
 ---
 
 ## Recent work log (summary — full detail in coop file)
+
+- **2026-03-23 (Claude)**: WP setup page + 429 rate-limit UX + opt-in GraphQL availability/page-performance logging (KV) + chat tab beta gate + dead-link finder moved to Beta & monitoring section. Commit `356a96f`. i18n: 7 new keys (1010 total, all in sync).
 
 - **2026-03-22 (Claude)**: Admin UI refactor + bug fixes: extracted `AdminStyleTab.js` (955 lines) from `AdminDashboard.js` (3316 → 2593 lines); fixed 8 bugs: `AdminFontBrowserModal` catalog fetch error + retry, per-font download error display, `updateSupportTicket` `ticketSaving` state (comment button disables), `sendChat` AbortController race condition, `commitsError` clearing on success, VAT validation now uses toast, `AdminStorageTab` env-status retry button with error clearing.
 - **2026-03-22 (Claude)**: Completed full font browser implementation (Tasks 1–12 of `docs/superpowers/plans/2026-03-22-font-browser.md`): Google Fonts catalog (API + snapshot fallback), R2 font download + storage, `@font-face` CSS serving via `/api/site-fonts`, 5 font roles (display/heading/subheading/body/button) with per-role color slots, typography palette (1–2 colors), link hover variants (7 styles), 5 built-in typography themes (Clean/Editorial/Technical/Warm/Haute), `AdminFontBrowserModal` with live CDN preview + infinite scroll + weight picker, admin typography UI with role cards + palette strip + theme strip + link style panel, inline layout.js script handling new font role object format, and i18n keys in en/sv/es.

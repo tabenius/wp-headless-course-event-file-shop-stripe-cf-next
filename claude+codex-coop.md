@@ -14,6 +14,24 @@ DONE [P3 | Medium]: Post-implementation code review — full quality/usability a
 DONE [P2 | Medium]: Admin UX polish follow-up — all 4 items already implemented by Codex: focus trap in hamburger drawer (AdminHeader.js:257-298), Ctrl+Alt guard while typing (shouldIgnoreAdminHotkeys/isEditableTarget), media table keyboard nav (handleMediaTableKeyDown), numeric param hard-validation (derivationInvalidParameters disables Apply). Verified by Claude 2026-03-21.
 DONE [P2 | Medium]: WordPress plugin media metadata surface — plugin now registers attachment `ragbaz_asset_*` meta for REST/GraphQL, exposes normalized `ragbaz_asset` on `/wp/v2/media`, and resolves `original` + `variants` chains (`assetId`, `size`, `dimensions`, `mime`, `hash`) for WP attachment assets (commit `3e3d361`).
 DONE [P2 | Medium]: WordPress plugin presence/version GraphQL signal — added `ragbazCapabilities` query (`pluginPresent`, `pluginVersion`, `pluginSemver`, asset-meta capability flags/schema version) and wired admin health runtime probe to ingest that signal before metadata-dependent flows (commit `3e3d361`).
+DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf logging + chat beta gate — commit `356a96f` (Claude, 2026-03-23). See entry below.
+
+## 2026-03-23 (Claude)
+
+### Claude — WP setup page, 429 UX, availability logging, chat beta gate (commit 356a96f)
+
+**Delivered:**
+- `WordPressSetupPage` shown at `/` and `/setup` when `NEXT_PUBLIC_WORDPRESS_URL` is not set; saves WP URL + secret to localStorage and sets `ragbaz_wp_config` cookie for SSR via `POST /api/config`.
+- `RateLimitPage` shown on HTTP 429 from GraphQL: raw response body in `<pre>`, color-coded request history table with date/time/status per attempt, reload button.
+- Build resilience: `page.js` + `[...uri]/page.js` guard all GraphQL calls with `RateLimitError` try/catch; `fetchGraphQL` returns `{}` when WP URL is absent; build never requires a live GraphQL server.
+- `src/lib/graphqlAvailability.js` — opt-in KV-backed logging for GraphQL availability + page performance (shared toggle, 500-entry cap, 7-day TTL).
+- `GET/POST/DELETE /api/admin/graphql-availability` and `POST/GET/DELETE /api/admin/page-performance`.
+- `GraphqlAvailabilityPanel` — toggle switch, 4 stat cards, 120-bucket timeseries dots (green/orange/red), recent-requests table.
+- `PagePerformancePanel` — avg TTFB/DOM/LCP/FCP cards, recent page loads table.
+- `usePagePerformanceLogger` hook — Navigation Timing API + PerformanceObserver (LCP/FCP); sends via `sendBeacon`/`fetch keepalive` 1.5s post-load.
+- Chat tab beta-gated: hidden from nav by default; toggle in Admin → Info → Beta & monitoring; `AdminHeader` syncs via localStorage storage event.
+- Dead-link finder moved from its own section into Beta & monitoring.
+- i18n: 7 new keys added to en/sv/es (all in sync, 1010 keys each).
 
 ## 2026-03-22 (Claude)
 
