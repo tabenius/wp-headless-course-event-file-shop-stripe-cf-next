@@ -1,85 +1,15 @@
-export const OPERATION_SCHEMAS = {
-  crop: {
-    label: "Crop",
-    parameters: [
-      { key: "width", label: "Width", type: "number", min: 32, max: 4000, step: 1 },
-      { key: "height", label: "Height", type: "number", min: 32, max: 4000, step: 1 },
-    ],
-  },
-  resize: {
-    label: "Resize",
-    parameters: [
-      { key: "width", label: "Width", type: "number", min: 64, max: 4000, step: 1 },
-      { key: "height", label: "Height", type: "number", min: 64, max: 4000, step: 1 },
-    ],
-  },
-  sharpen: {
-    label: "Sharpen",
-    parameters: [],
-  },
-  colorBoost: {
-    label: "Color boost",
-    parameters: [
-      { key: "vibrance", label: "Vibrance", type: "number", min: -1, max: 1, step: 0.05 },
-      { key: "contrast", label: "Contrast", type: "number", min: -1, max: 1, step: 0.05 },
-    ],
-  },
-  saturation: {
-    label: "Saturation",
-    parameters: [
-      { key: "amount", label: "Amount", type: "number", min: -1, max: 1, step: 0.05 },
-    ],
-  },
-  sepia: {
-    label: "Sepia",
-    parameters: [],
-  },
-  cropCircle: {
-    label: "Circle crop",
-    parameters: [
-      { key: "diameter", label: "Diameter", type: "number", min: 32, max: 4000, step: 1 },
-      { key: "centerX", label: "Center X (%)", type: "number", min: 0, max: 100, step: 1 },
-      { key: "centerY", label: "Center Y (%)", type: "number", min: 0, max: 100, step: 1 },
-    ],
-  },
-  presetCrop: {
-    label: "Preset crop",
-    parameters: [
-      {
-        key: "preset",
-        label: "Aspect",
-        type: "text",
-      },
-      {
-        key: "scale",
-        label: "Scale",
-        type: "number",
-        min: 0.5,
-        max: 1,
-        step: 0.05,
-      },
-    ],
-  },
-  textOverlay: {
-    label: "Text overlay",
-    parameters: [
-      { key: "text", label: "Text", type: "text" },
-      { key: "x", label: "X (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
-      { key: "y", label: "Y (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
-      { key: "typeface", label: "Typeface", type: "text" },
-      { key: "size", label: "Size (pt)", type: "number", min: 6, max: 200, step: 1 },
-    ],
-  },
-  source: {
-    label: "Source asset",
-    parameters: [
-      {
-        key: "assetId",
-        label: "Asset ID",
-        type: "text",
-      },
-    ],
-  },
+import { OPERATION_REGISTRY } from "@/components/admin/DerivationEditor/operationRegistry";
+
+// Re-export in the legacy shape for backward compat (route.js, helpers, etc.)
+export const OPERATION_SCHEMAS = Object.fromEntries(
+  Object.entries(OPERATION_REGISTRY).map(([type, { label, parameters }]) => [
+    type, { label, parameters },
+  ])
+);
+// Also include source (internal, not in registry)
+OPERATION_SCHEMAS.source = {
+  label: "Source asset",
+  parameters: [{ key: "assetId", label: "Asset ID", type: "text" }],
 };
 
 export function cloneOperations(operations) {
