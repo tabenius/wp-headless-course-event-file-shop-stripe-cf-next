@@ -1,5 +1,29 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-25 (Claude) — Bundle size reduction + Derivation editor redesign
+
+### Claude — CF Workers bundle size reduction (commits pending push)
+
+**Delivered:**
+- `src/lib/r2Bindings.js` — R2 bucket binding accessor via `getCloudflareContext()`, falls back to null for local dev
+- `src/lib/s3upload.js` — full rewrite: every operation tries R2 binding → edge R2 signing → AWS SDK fallback
+- `scripts/patch-opennext.mjs` — added Patch 2: externalize `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` from esbuild bundle
+- `scripts/patch-cf-worker.mjs` — added Section 4: i18n JSON dedup (3 copies × 3 locales → 1 copy each, ~323 KB raw saved)
+- `wrangler.jsonc` — added R2 bucket binding (`R2_BUCKET` → `sofiacerne`)
+- Bundle size: 2993 KB gz → 1886 KB gz (1186 KB headroom under 3072 KB free-tier limit)
+
+### Claude — Derivation editor redesign (in progress)
+
+**Spec:** `docs/superpowers/specs/2026-03-25-derivation-editor-redesign-design.md` (committed)
+- Extract DerivationEditor from AdminMediaLibraryTab into 7 focused components
+- Visual grid picker with 22 categorized operations (Transform, Color & Tone, Effects, Artistic)
+- Slider parameter controls with deferred preview
+- Drag-and-drop pipeline reordering (HTML5 DnD, zero dependencies)
+- Wire up 12 missing photon operations + intensity blending for sepia/grayscale/invert
+- Implementation plan being written now
+
+---
+
 ## Active TODO Backlog (priority x impact)
 
 DONE [P1 | High]: Font browser + typography system — Google Fonts catalog (API + KV-cached snapshot), R2 font download, `@font-face` CSS serving, 5 font roles with palette color slots, link hover variants, 5 built-in themes, AdminFontBrowserModal, admin role-card UI. Plan: `docs/superpowers/plans/2026-03-22-font-browser.md`. All 12 tasks complete (Claude, 2026-03-22).

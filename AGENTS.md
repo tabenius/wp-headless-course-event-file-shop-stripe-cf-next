@@ -7,7 +7,7 @@ Both agents MUST read this at session start and update it whenever priorities sh
 
 ## Agent status
 
-- **Claude** is active (2026-03-23). Resuming from handoff; Codex previously held backlog. Both agents may work concurrently — coordinate via coop file and docs lock as usual.
+- **Claude** is active (2026-03-25). Working on: (1) CF Workers bundle size reduction (R2 bindings, i18n dedup, AWS SDK externalization — landed), (2) Derivation editor redesign — visual grid picker with 22 operations, sliders, drag-and-drop pipeline (spec done, writing implementation plan).
 
 ## Project overview
 
