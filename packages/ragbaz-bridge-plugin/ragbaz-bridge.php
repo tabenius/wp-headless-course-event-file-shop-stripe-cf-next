@@ -1407,11 +1407,11 @@ function ragbaz_render_info_page() {
   <div class="wrap" style="max-width:980px">
     <div style="display:flex;align-items:center;gap:14px;margin:16px 0 4px">
       <img src="data:image/png;base64,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"
-           alt="RAGBAZ" style="height:40px;width:auto;display:block">
+           alt="RAGBAZ" style="height:40px;width:auto;display:block;filter:sepia(1) saturate(1.4) hue-rotate(338deg) contrast(1.06)">
       <div>
-        <span style="font-size:20px;font-weight:700;color:#1e3a5f;letter-spacing:-.01em">Bridge</span>
-        <span style="margin-left:8px;color:#64748b;font-size:13px">v<?php echo esc_html(RAGBAZ_VERSION); ?></span>
-        <div style="font-size:12px;color:#94a3b8;margin-top:1px">GraphQL Events, Courses, WooCommerce &amp; Downloads StoreFront</div>
+        <span style="font-size:20px;font-weight:700;color:#7a4b1b;letter-spacing:-.01em">Bridge</span>
+        <span style="margin-left:8px;color:#8f6b42;font-size:13px">v<?php echo esc_html(RAGBAZ_VERSION); ?></span>
+        <div style="font-size:12px;color:#9a7a52;margin-top:1px">GraphQL Events, Courses, WooCommerce &amp; Downloads StoreFront</div>
       </div>
     </div>
 
@@ -1672,24 +1672,46 @@ function ragbaz_render_info_page() {
     $tenant_info = $site_host !== '' ? $home_base . '/tenant/' . rawurlencode($site_host) : '';
     $gift_info = $home_creds['gift_key'] !== '' ? $home_base . '/articulate/sites/' . rawurlencode($home_creds['gift_key']) : '';
     ?>
-    <h2>Connect to RAGBAZ SaaS</h2>
-    <p style="color:#475569;max-width:640px">
-      Connect this WordPress site to the RAGBAZ home service and send call-home heartbeat/event data.
-      This panel saves credentials, sends manual snapshots, and provides direct links to tenant/site info screens.
-    </p>
+    <?php
+    $has_account = $home_creds['account_id'] !== '';
+    $has_passkey = $home_creds['passkey'] !== '';
+    $has_gift = $home_creds['gift_key'] !== '';
+    $can_phone_home = $has_account && $has_passkey;
+    $connect_result = !empty($_GET['ragbaz_connect_result']) ? sanitize_key(wp_unslash($_GET['ragbaz_connect_result'])) : '';
+    $connect_notice_map = [
+      'saved' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Connection settings saved.'],
+      'heartbeat_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Phone-home heartbeat sent successfully.'],
+      'event_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Call-home event sent successfully.'],
+      'heartbeat_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Heartbeat failed. Check credentials and endpoint URL.'],
+      'event_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Event send failed. Check credentials and endpoint URL.'],
+    ];
+    $notice = isset($connect_notice_map[$connect_result]) ? $connect_notice_map[$connect_result] : null;
+    ?>
 
-    <?php if (!empty($_GET['ragbaz_connect_result'])) : ?>
-      <div style="background:#eff6ff;border:1px solid #93c5fd;padding:10px 12px;border-radius:6px;max-width:720px;margin-bottom:16px">
-        <strong>Connect status:</strong> <?php echo esc_html(sanitize_text_field(wp_unslash($_GET['ragbaz_connect_result']))); ?>
+    <h2>Connect &amp; Phone Home</h2>
+    <div style="max-width:820px;background:#fff7ed;border:1px solid #e2c9a7;padding:14px 16px;border-radius:10px;margin-bottom:14px">
+      <p style="margin:0 0 8px;color:#5b3a1f;font-size:13px">
+        Connect this WordPress site to <strong>ragbaz.xyz</strong> and push diagnostics snapshots.
+      </p>
+      <ol style="margin:0;padding-left:18px;color:#7a4b1b;font-size:13px;line-height:1.5">
+        <li>Save connection settings (account ID + passkey + optional gift key).</li>
+        <li>Click <strong>Phone home now</strong> to send a heartbeat snapshot.</li>
+        <li>Open tenant/site info links to verify ingestion and status pages.</li>
+      </ol>
+    </div>
+
+    <?php if ($notice) : ?>
+      <div style="background:<?php echo esc_attr($notice['bg']); ?>;border:1px solid <?php echo esc_attr($notice['border']); ?>;padding:10px 12px;border-radius:8px;max-width:820px;margin-bottom:14px;color:<?php echo esc_attr($notice['tone']); ?>">
+        <strong>Connect status:</strong> <?php echo esc_html($notice['message']); ?>
       </div>
     <?php endif; ?>
 
     <div style="display:grid;grid-template-columns:1fr;gap:14px;max-width:820px;margin-bottom:20px">
-      <form method="post" style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:8px">
+      <form method="post" style="background:#fff;border:1px solid #d8c2a4;padding:16px;border-radius:10px;box-shadow:0 1px 0 rgba(122,75,27,0.04)">
         <?php wp_nonce_field('ragbaz_connect_action'); ?>
         <input type="hidden" name="ragbaz_connect_action" value="save_settings" />
-        <h3 style="margin:0 0 12px">Connection settings</h3>
-        <p style="margin:0 0 12px;color:#475569;font-size:13px">
+        <h3 style="margin:0 0 12px;color:#5b3a1f">Connection settings</h3>
+        <p style="margin:0 0 12px;color:#7a4b1b;font-size:13px">
           Use the account credentials returned by <code>POST /api/v1/home</code> registration.
         </p>
         <table class="form-table" role="presentation" style="margin:0">
@@ -1715,27 +1737,46 @@ function ragbaz_render_info_page() {
         <p><button class="button button-primary">Save connection settings</button></p>
       </form>
 
-      <form method="post" style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:8px">
+      <form method="post" style="background:#fff;border:1px solid #d8c2a4;padding:16px;border-radius:10px;box-shadow:0 1px 0 rgba(122,75,27,0.04)">
         <?php wp_nonce_field('ragbaz_connect_action'); ?>
-        <h3 style="margin:0 0 12px">Manual call-home actions</h3>
-        <p style="margin:0 0 12px;color:#475569;font-size:13px">
+        <h3 style="margin:0 0 12px;color:#5b3a1f">Manual call-home actions</h3>
+        <p style="margin:0 0 12px;color:#7a4b1b;font-size:13px">
           Send a full snapshot heartbeat or a compact event payload to <code><?php echo esc_html($home_base); ?></code>.
         </p>
         <p>
-          <button class="button button-primary" name="ragbaz_connect_action" value="send_heartbeat">Send heartbeat snapshot</button>
+          <button class="button button-primary button-large" name="ragbaz_connect_action" value="send_heartbeat" <?php disabled(!$can_phone_home); ?>>
+            Phone home now (send heartbeat)
+          </button>
         </p>
+        <?php if (!$can_phone_home) : ?>
+          <p style="margin:0 0 12px;color:#b45309;font-size:12px">
+            Add Account ID and Passkey in Connection settings before sending heartbeat/events.
+          </p>
+        <?php endif; ?>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:720px;align-items:end">
-          <label>Type<br><input name="ragbaz_event_type" class="regular-text code" value="manual_ping" /></label>
-          <label>Severity<br><input name="ragbaz_event_severity" class="regular-text code" value="good" /></label>
+          <label>Type<br><input name="ragbaz_event_type" class="regular-text code" value="manual_ping" placeholder="manual_ping" /></label>
+          <label>Severity<br>
+            <select name="ragbaz_event_severity" class="regular-text">
+              <option value="good">good</option>
+              <option value="warn">warn</option>
+              <option value="bad">bad</option>
+            </select>
+          </label>
           <label>Message<br><input name="ragbaz_event_message" class="regular-text" value="Manual event from Connect panel" /></label>
         </div>
         <p style="margin-top:12px">
-          <button class="button" name="ragbaz_connect_action" value="send_event">Send event</button>
+          <button class="button" name="ragbaz_connect_action" value="send_event" <?php disabled(!$can_phone_home); ?>>Send call-home event</button>
         </p>
       </form>
 
-      <div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:8px">
-        <h3 style="margin:0 0 10px">Connected site links</h3>
+      <div style="background:#fff;border:1px solid #d8c2a4;padding:16px;border-radius:10px;box-shadow:0 1px 0 rgba(122,75,27,0.04)">
+        <h3 style="margin:0 0 10px;color:#5b3a1f">Connected site links</h3>
+        <p style="margin:0 0 8px;color:#7a4b1b;font-size:12px">
+          Readiness:
+          <strong style="color:<?php echo esc_attr($has_account ? '#14532d' : '#991b1b'); ?>">Account <?php echo esc_html($has_account ? 'set' : 'missing'); ?></strong> ·
+          <strong style="color:<?php echo esc_attr($has_passkey ? '#14532d' : '#991b1b'); ?>">Passkey <?php echo esc_html($has_passkey ? 'set' : 'missing'); ?></strong> ·
+          <strong style="color:<?php echo esc_attr($has_gift ? '#14532d' : '#92400e'); ?>">Gift key <?php echo esc_html($has_gift ? 'set' : 'optional'); ?></strong>
+        </p>
         <ul style="margin:0;padding-left:18px;line-height:1.9">
           <?php if ($tenant_preview) : ?>
             <li><a href="<?php echo esc_url($tenant_preview); ?>" target="_blank" rel="noopener noreferrer">Tenant preview</a>: <code><?php echo esc_html($tenant_preview); ?></code></li>

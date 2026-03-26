@@ -480,17 +480,18 @@ export default function AdminHeader({ logoUrl }) {
                   wordmarkOnly
                   noLetterSpacing
                   scale={1.75}
-                  color="#00ecff"
-                  outlineColor="#000000"
+                  color="#c59052"
+                  outlineColor="#2b1a0e"
                   outlineWidth={1}
                 />
               </span>
               <span
                 ref={subtitleRef}
-                className="whitespace-nowrap font-semibold uppercase tracking-[0.11em] leading-none text-black"
+                className="whitespace-nowrap font-semibold uppercase tracking-[0.11em] leading-none"
                 style={{
                   marginLeft: "1.5rem",
                   marginTop: "2px",
+                  color: "#3e2611",
                   fontSize: "9.5px",
                   transform: `scaleX(${subtitleScaleX})`,
                   transformOrigin: "left center",
