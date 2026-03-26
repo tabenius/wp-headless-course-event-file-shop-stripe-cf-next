@@ -2,6 +2,30 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — fixed tenant draft route base-pathing for `/tenant/{domain}` pages
+
+**Delivered:**
+- Fixed tenant draft route generation in `ragbaz.xyz` so draft navigation no longer escapes to root when opened from `/tenant/{domain}`.
+- Draft links now stay under domain route namespace:
+  - `/tenant/{domain}/`
+  - `/tenant/{domain}/shop`
+  - `/tenant/{domain}/inventory`
+  - `/tenant/{domain}/profile`
+- Extended tenant route matching in worker router to support nested draft paths (`/tenant/{domain}/*`) while keeping existing `/tenant/{domain}/admin` and `/tenant/{domain}/api/admin/*` proxy paths intact.
+- Updated tests to assert:
+  - domain draft page emits namespaced links,
+  - nested route `/tenant/xtas.nu/shop` resolves and renders draft content.
+- Deployed `ragbaz.xyz` worker and verified live:
+  - `/tenant/xtas.nu` outputs links to `/tenant/xtas.nu/{shop,inventory,profile}`,
+  - `/tenant/xtas.nu/shop` returns `200`.
+
+**Commit:**
+- `ragbaz.xyz` `b6396fd` — `Fix tenant draft routes to stay under /tenant/{domain}`
+
+**Verification run:**
+- `ragbaz.xyz`: `npm test` (pass, 13/13)
+- live check: `curl https://ragbaz.xyz/tenant/xtas.nu` link assertions + `curl -w "%{http_code}" https://ragbaz.xyz/tenant/xtas.nu/shop` = `200`
+
 ### Codex — bridge plugin 1.2.1 released, connect-first tab order, explicit slug-claim step
 
 **Delivered:**
