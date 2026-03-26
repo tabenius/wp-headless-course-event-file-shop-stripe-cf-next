@@ -2,6 +2,54 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — emergency storefront 500 hotfix for WP URI pages
+
+**Delivered:**
+- Resolved live `500 Internal Server Error` regressions on WP-URI storefront pages (example: `/kursen-rora-och-berora/`) by ensuring the catch-all route is fully dynamic at runtime.
+- In `src/app/[...uri]/page.js`:
+  - enforced runtime rendering (`dynamic = "force-dynamic"`, `revalidate = 0`),
+  - removed `generateStaticParams()` export that kept route behavior in static mode.
+- Preserved diagnostic logging while avoiding render-time KV/static conflicts:
+  - added `persist` option to `appendServerLog` (`src/lib/serverLog.js`),
+  - switched storefront render-path log calls to `persist: false` (memory-only/failsafe),
+  - switched core GraphQL client error logs to `persist: false` for render-safe behavior.
+- Deployed storefront worker after fix and rechecked affected URLs.
+
+**Commit:**
+- `main` `3f017e8` — `Fix storefront URI 500 by forcing dynamic route and render-safe server logs`
+
+**Verification run:**
+- `npx eslint src/app/[...uri]/page.js src/lib/serverLog.js src/lib/client.js` (pass)
+- `npm run build` (pass; route table shows `ƒ /[...uri]`)
+- `npm run cf:deploy` (pass; current deployed version `3b511d92-bfe1-476f-8841-09dcb3e645a1`)
+- live checks:
+  - `https://xtas.ragbaz.xyz/` → `200`
+  - `https://xtas.ragbaz.xyz/kursen-rora-och-berora/` → `200`
+  - `https://xtas.ragbaz.xyz/om-xtas/` → `404` (no longer `500`)
+  - `https://xtas.ragbaz.xyz/kontakt/` → `404` (no longer `500`)
+
+### Codex — validated menu links before render to suppress stale internal URLs
+
+**Delivered:**
+- Added pre-render navigation filtering in `src/lib/menu.js` so menu items are validated before render instead of blindly emitted.
+- Added URI-existence probing against WP `nodeByUri` for internal links with:
+  - URI normalization + trailing-slash variant checks,
+  - in-memory TTL cache (`MENU_URI_CHECK_TTL_MS`, default `300000ms`),
+  - fail-open behavior when upstream is unavailable (to avoid collapsing nav on transient `503/429`).
+- Added frontend-route allowlist to keep known app routes (admin/auth/profile/shop, etc.) from false negatives.
+- Added pure helper module `src/lib/menuFilter.js` and unit tests `tests/menu.test.js` for stale-link filtering behavior (including parent-with-children fallback to non-clickable group).
+- Deployed storefront worker and verified stale links were removed from live nav output while valid links remained.
+
+**Verification run:**
+- `npx eslint src/lib/menu.js src/lib/menuFilter.js tests/menu.test.js` (pass)
+- `node --test tests/menu.test.js` (pass)
+- `npm run cf:deploy` (pass; current deployed version `3969fb6a-e6e7-4409-afa4-bee1482a3a75`)
+- live HTML checks:
+  - `/kontakt` absent
+  - `/om-xtas` absent
+  - `/shop` present
+  - `/blog` present
+
 ### Codex — fixed tenant draft route base-pathing for `/tenant/{domain}` pages
 
 **Delivered:**
