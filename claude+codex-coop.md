@@ -1,5 +1,16 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-26 (Codex)
+
+### Codex — admin header health-state sync fix (commit 069119f)
+
+**Delivered:**
+- Fixed a regression where the main menu-bar health badge stayed `amber` even after successful health checks by wiring `healthChecks` updates to `emitHealthStatus(deriveHealthStatus(...))` in `AdminDashboard`.
+- Marked the corresponding BUG entry as done in `BUGS.md` (`main menu bar status showed partial despite green integration checks`).
+- Verification run:
+  - `npm run lint` (fails due pre-existing issue in `src/components/setup/WordPressSetupPage.jsx`: `@next/next/no-html-link-for-pages`).
+  - `npm test` (fails due existing suite issues unrelated to this patch: `admin-hotkeys` expectation drift, `mock.module` availability in several font tests, and one `photon-pipeline` expectation mismatch).
+
 ## 2026-03-25 (Claude) — Bundle size reduction + Derivation editor redesign
 
 ### Claude — CF Workers bundle size reduction (commits pending push)
