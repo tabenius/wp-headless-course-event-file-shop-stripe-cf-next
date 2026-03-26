@@ -42,4 +42,10 @@ describe("decodeEntities", () => {
   it("decodes multiple entities in one string", () => {
     assert.equal(decodeEntities("&lt;b&gt;bold&lt;/b&gt;"), "<b>bold</b>");
   });
+
+  it("keeps invalid numeric entities unchanged instead of throwing", () => {
+    assert.equal(decodeEntities("&#x110000;"), "&#x110000;");
+    assert.equal(decodeEntities("&#55296;"), "&#55296;");
+    assert.equal(decodeEntities("&#xD800;"), "&#xD800;");
+  });
 });
