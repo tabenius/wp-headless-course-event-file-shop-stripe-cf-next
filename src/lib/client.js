@@ -120,9 +120,6 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
     process.env.WORDPRESS_GRAPHQL_DEBUG === "1" ||
     process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
 
-  // Captured if we hit a 429; thrown after the outer try/catch so it escapes.
-  let rateLimitInfo = null;
-
   try {
     if (debugGraphQL) {
       console.debug("[GraphQL Debug] Query:", query);
@@ -215,15 +212,14 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${firstLines(text)}`;
         if (debugGraphQL) console.error(lastError);
         if (response.status === 429) {
-          // Capture and break — no point trying other auth options for rate limits.
+          // Stop immediately for 429 — callers can render dedicated rate-limit UI.
           recordAvailabilityDatapoint({
             ok: false,
             status: 429,
             endpoint: graphqlEndpoint,
             latencyMs,
           }).catch(() => {});
-          rateLimitInfo = { body: text, status: 429 };
-          break;
+          throw new RateLimitError(text, 429);
         }
         recordAvailabilityDatapoint({
           ok: false,
@@ -274,15 +270,10 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
     }
     return {};
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      throw error;
+    }
     console.error("Error fetching from WordPress:", error);
     return {};
   }
-
-  // Throw outside the try/catch so callers (page components) receive it.
-  // Build-time callers (sitemap.js, homeEvents.js) already have their own
-  // try/catch and will catch this gracefully.
-  if (rateLimitInfo) {
-    throw new RateLimitError(rateLimitInfo.body, rateLimitInfo.status);
-  }
-  return {};
 }

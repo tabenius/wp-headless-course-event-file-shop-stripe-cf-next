@@ -106,90 +106,102 @@ function getContentQuery() {
   return _queryPromise;
 }
 
-/*
-async function fetchContent(uri) {
-  const query = await getContentQuery();
-  const data = await fetchGraphQL(query, { uri }, 1800);
-  // WPGraphQL sometimes requires trailing slash — retry if first attempt found nothing
-  if (!data?.nodeByUri && !uri.endsWith("/")) {
-    return await fetchGraphQL(query, { uri: `${uri}/` }, 1800);
-  }
-  return data;
+function normalizeUriForLookup(uri) {
+  const raw = typeof uri === "string" ? uri.trim() : "";
+  if (!raw || raw === "/") return "/";
+  const withoutQuery = raw.split("?")[0].split("#")[0];
+  const ensuredLeading = withoutQuery.startsWith("/")
+    ? withoutQuery
+    : `/${withoutQuery}`;
+  const collapsed = ensuredLeading.replace(/\/{2,}/g, "/");
+  if (collapsed === "/") return "/";
+  return collapsed.replace(/\/+$/, "");
 }
-  */
+
+function buildUriLookupAttempts(uri) {
+  const normalized = normalizeUriForLookup(uri);
+  if (normalized === "/") return ["/"];
+  return [normalized, `${normalized}/`];
+}
 
 /**
  * Fail-safe fetcher for WPGraphQL nodes.
- * Improvements: 
- * 1. Granular logging for 404 debugging.
- * 2. Proper handling of the Root/Home path.
- * 3. Bidirectional trailing-slash retry.
+ * Retries with both trailing-slash variants because nodeByUri can be strict
+ * depending on permalink and plugin behavior.
  */
 async function fetchContent(uri) {
   const query = await getContentQuery();
-  
-  // Normalize the URI for the first attempt
-  const firstAttemptUri = uri === "" ? "/" : uri;
-  
-  let data = await fetchGraphQL(query, { uri: firstAttemptUri }, 1800);
+  const attempts = buildUriLookupAttempts(uri);
+  let lastData = null;
+  let lastError = null;
 
-  // If nodeByUri is null, try the "Opposite" trailing slash strategy
-  if (!data?.nodeByUri) {
-    const toggledUri = firstAttemptUri.endsWith("/") 
-      ? firstAttemptUri.slice(0, -1) 
-      : `${firstAttemptUri}/`;
-    
-    // Don't toggle if it results in an empty string (already handled by root check)
-    if (toggledUri) {
-      console.log(`[WP-Proxy] Node not found for ${firstAttemptUri}. Retrying with: ${toggledUri}`);
-      data = await fetchGraphQL(query, { uri: toggledUri }, 1800);
+  for (const candidateUri of attempts) {
+    try {
+      const data = await fetchGraphQL(query, { uri: candidateUri }, 1800);
+      lastData = data;
+      if (data?.nodeByUri) return data;
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        throw err;
+      }
+      lastError = err;
+      appendServerLog({
+        level: "warn",
+        msg: `WPGraphQL lookup failed for ${candidateUri}: ${err?.message || err}`,
+      }).catch(() => {});
     }
   }
 
-  // Final validation before returning
-  if (!data?.nodeByUri) {
+  if (!lastData?.nodeByUri) {
+    const detail = lastError ? ` (last error: ${lastError.message || lastError})` : "";
     appendServerLog({
       level: "info",
-      msg: `WPGraphQL nodeByUri returned null for both variants of: ${uri}`
+      msg: `WPGraphQL nodeByUri returned null for all variants of: ${normalizeUriForLookup(uri)}${detail}`,
     }).catch(() => {});
   }
 
-  return data;
+  return lastData || {};
 }
 
 /**
  * Enhanced Resolver with Parallel Fallbacks
  */
 const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
-  console.log(`[WP-Resolve] Attempting to resolve: ${uri}`);
+  const normalizedUri = normalizeUriForLookup(uri);
+  console.log(`[WP-Resolve] Attempting to resolve: ${normalizedUri}`);
   
   try {
-    const data = await fetchContent(uri);
+    const data = await fetchContent(normalizedUri);
     if (data?.nodeByUri) {
-      console.log(`[WP-Resolve] Success: Found ${data.nodeByUri.__typename} for ${uri}`);
+      console.log(`[WP-Resolve] Success: Found ${data.nodeByUri.__typename} for ${normalizedUri}`);
       return data.nodeByUri;
     }
   } catch (err) {
-    console.error(`[WP-Resolve] GraphQL Error for ${uri}:`, err.message);
+    if (err instanceof RateLimitError) {
+      throw err;
+    }
+    console.error(`[WP-Resolve] GraphQL Error for ${normalizedUri}:`, err?.message || err);
   }
 
   // If GraphQL fails, try REST and Course fallbacks
-  console.log(`[WP-Resolve] GraphQL failed for ${uri}. Entering Fallback mode...`);
+  console.log(`[WP-Resolve] GraphQL failed for ${normalizedUri}. Entering Fallback mode...`);
   
   const [restNode, courseNode] = await Promise.all([
-    fetchRestFallback(uri).catch(e => {
-      console.error("[WP-Resolve] REST Fallback error:", e.message);
+    fetchRestFallback(normalizedUri).catch(e => {
+      if (e instanceof RateLimitError) throw e;
+      console.error("[WP-Resolve] REST Fallback error:", e?.message || e);
       return null;
     }),
-    fetchCourseFallback(uri).catch(e => {
-      console.error("[WP-Resolve] Course Fallback error:", e.message);
+    fetchCourseFallback(normalizedUri).catch(e => {
+      if (e instanceof RateLimitError) throw e;
+      console.error("[WP-Resolve] Course Fallback error:", e?.message || e);
       return null;
     }),
   ]);
 
   const finalResult = restNode || courseNode;
   if (!finalResult) {
-    console.warn(`[WP-Resolve] 404: No data found for ${uri} in GraphQL or REST.`);
+    console.warn(`[WP-Resolve] 404: No data found for ${normalizedUri} in GraphQL or REST.`);
   }
 
   return finalResult;
@@ -294,19 +306,6 @@ async function fetchCourseFallback(uri) {
     priceRendered: "",
   };
 }
-/*
-const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
-  const data = await fetchContent(uri);
-  if (data?.nodeByUri) return data.nodeByUri;
-
-  // Fallback lookups can run in parallel because neither depends on the other.
-  const [restNode, courseNode] = await Promise.all([
-    fetchRestFallback(uri),
-    fetchCourseFallback(uri),
-  ]);
-  return restNode || courseNode || null;
-});
-*/
 function makeExcerpt(content, maxLen = 160) {
   const text = stripHtml(content);
   if (text.length <= maxLen) return text;
