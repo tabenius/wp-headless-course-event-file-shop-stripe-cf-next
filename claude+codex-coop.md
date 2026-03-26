@@ -2,6 +2,24 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — storefront Web Vitals relay to ragbaz.xyz + event-to-report ingestion (commits `be2d2bb` in `main`, `f977604` in `ragbaz.xyz`)
+
+**Delivered:**
+- Added privileged GraphQL home-connection exposure in bridge plugin (`RootQuery.ragbazHomeConnection`) so server-side storefront code can read `baseUrl/accountId/passkey/giftKey` when authenticated as `manage_options`.
+- Added storefront relay path from `POST /api/admin/page-performance` to ragbaz home events:
+  - new helper `src/lib/ragbazHomeRelay.js`,
+  - emits `storefront_web_vitals` events to `/api/v1/home/events`,
+  - includes `ttfb/lcp/inp/cls/fcp/domComplete`, URL, host, UA, and severity classification.
+- Extended client vitals collection to include INP + CLS in `usePagePerformanceLogger`.
+- Extended local perf logging shape (`graphqlAvailability` store) to persist INP + CLS.
+- Updated `ragbaz.xyz` event ingestion so vitals events now patch `peer.latestReport.payload.performance`, recompute insights, append report history entry, and persist to D1 snapshot/history.
+- Added/updated automated coverage in `ragbaz.xyz/tests/home-api.test.js` for vitals event -> latestReport performance propagation.
+- Verification run:
+  - `main`: `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass), targeted eslint on touched files (pass).
+  - `ragbaz.xyz`: `npm test` (pass, 2/2).
+- Deployment:
+  - `ragbaz.xyz` deployed after merge, Worker version `238f88fd-da7b-4f89-ae07-1ceb452314c0`.
+
 ### Codex — ragbaz-bridge plugin auto onboarding flow for ragbaz.xyz (commit e5af4da)
 
 **Delivered:**
