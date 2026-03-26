@@ -2,6 +2,36 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — claimed/reserved tenant slug aliases (gift-key interchangeable) in plugin + ragbaz.xyz
+
+**Delivered:**
+- Added authenticated slug-claim endpoint in `ragbaz.xyz`:
+  - `POST /api/v1/home/slug-claim`
+  - validates slug format (`a-z`, `0-9`, `-`; no dots),
+  - blocks reserved route slugs (`api`, `admin`, `articulate`, etc.),
+  - enforces uniqueness (returns `409 slug_already_claimed` for cross-tenant conflicts),
+  - stores alias mapping so slug and gift key can be used interchangeably in site-info/admin routes.
+- Extended `ragbaz.xyz` API descriptor with `claimSlug`.
+- Added end-to-end tests for:
+  - successful slug reservation,
+  - slug-based site-info lookup parity with gift-key lookup,
+  - conflict on second tenant claiming same slug.
+- Added bridge-plugin Connect UI + action for slug reservation:
+  - new `Tenant slug alias` setting (explicit no-dot guidance),
+  - `Claim / reserve slug` action button,
+  - auto-onboard now attempts slug claim when a slug is preset,
+  - slug-based preview/info links shown alongside gift-key links.
+- Plugin now emits preferred slug in home payload and exposes `tenantSlug` in `ragbazHomeConnection` GraphQL type.
+
+**Commits:**
+- `ragbaz.xyz` `9d209f9` — `Add unique tenant slug claim API and alias reservation flow`
+- `main` `5f08037` — `Add bridge UI/action for claiming reserved tenant slug aliases`
+
+**Verification run:**
+- `main`: `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass)
+- `main`: `npm run plugin:copy` (pass; plugin zip refreshed/copied)
+- `ragbaz.xyz`: `npm test` (pass, 2/2)
+
 ### Codex — relay-secret onboarding/auth lane landed in `main` (commit `b33ad91`)
 
 **Delivered:**
