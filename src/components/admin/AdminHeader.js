@@ -150,7 +150,7 @@ function buildIconOutline(color, radius) {
 }
 
 const THEME_ICON_OUTLINE_NORMAL = buildIconOutline("#2f2f2f", 1);
-const THEME_ICON_OUTLINE_HOVER = buildIconOutline("#000000", 3);
+const THEME_ICON_OUTLINE_HOVER = buildIconOutline("#000000", 2);
 
 function getFocusableElements(container) {
   if (!container || typeof container.querySelectorAll !== "function") return [];
