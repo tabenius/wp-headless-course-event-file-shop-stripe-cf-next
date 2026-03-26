@@ -796,56 +796,44 @@ body:has(.admin-layout)::before {
   filter: brightness(0.25);
 }
 
-/* Header and footer stay light — ensure icons and toggles remain visible */
+/* Dark mode text policy: headlines + normal text are white everywhere */
 .dark-mode header,
 .dark-mode footer {
-  color: #1a1a1a;
+  background-color: rgba(22, 22, 22, 0.92);
+  color: #fff;
 }
 .dark-mode header svg,
-.dark-mode header button {
-  color: var(--btn-color, #fff7ed);
-}
-.dark-mode header a {
-  color: #1a1a1a;
+.dark-mode header button,
+.dark-mode header a,
+.dark-mode footer a {
+  color: #fff !important;
 }
 
-/* Content area text and links */
 .dark-mode article,
 .dark-mode .wp-content,
 .dark-mode main,
-.dark-mode section {
-  color: var(--color-foreground);
-}
-.dark-mode article a,
-.dark-mode .wp-content a {
-  color: var(--color-secondary);
-}
-.dark-mode article a:hover,
-.dark-mode .wp-content a:hover {
-  color: #ffd966;
-}
-
-/* Headings in content */
-.dark-mode article h1,
-.dark-mode article h2,
-.dark-mode article h3,
-.dark-mode article h4,
-.dark-mode article h5,
-.dark-mode article h6,
-.dark-mode section h1,
-.dark-mode section h2 {
-  color: #f5eeee;
-}
-
-/* Paragraphs and prose */
-.dark-mode article p,
-.dark-mode section p,
-.dark-mode .text-gray-800 {
-  color: var(--color-foreground) !important;
-}
+.dark-mode section,
+.dark-mode a,
+.dark-mode p,
+.dark-mode li,
+.dark-mode span,
+.dark-mode label,
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6,
+.dark-mode .text-gray-900,
+.dark-mode .text-gray-800,
+.dark-mode .text-gray-700,
 .dark-mode .text-gray-600,
-.dark-mode .text-gray-700 {
-  color: #bbb !important;
+.dark-mode .text-gray-500,
+.dark-mode .text-slate-900,
+.dark-mode .text-slate-800,
+.dark-mode .text-slate-700,
+.dark-mode .text-slate-600 {
+  color: #fff !important;
 }
 
 /* Gray/dark buttons — improve contrast in both modes */
