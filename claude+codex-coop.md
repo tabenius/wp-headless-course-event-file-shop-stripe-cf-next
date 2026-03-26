@@ -2,6 +2,26 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — BUGS.md items complete: earth/lollipop admin themes + 4-step cycle (commit ea355d4)
+
+**Delivered:**
+- Extended admin theme state from 2 to 4 steps (`light -> gruvbox -> earth -> lollipop`) in:
+  - `src/components/admin/AdminHeader.js` (cycle logic, icon mapping, aria label text),
+  - `src/components/admin/AdminThemeWrapper.js` (theme normalization, persistence, wrapper class assignment).
+- Added requested theme icons in cycle UI:
+  - Earth uses globe icon (`🌍`),
+  - Lollipop uses star icon (`⭐`).
+- Implemented new visual theme classes in `src/app/globals.css`:
+  - `admin-earth` (sepia/umbra palette),
+  - `admin-lollipop` (pink/purple palette),
+  with dedicated header chrome overrides (`admin-header-shell/control/popover/drawer/ticker/select`) and content surface/border/text tuning.
+- Added i18n labels for cycle naming in EN/SV/ES (`themeCycleTo`, `themeNameLight`, `themeNameGruvbox`, `themeNameEarth`, `themeNameLollipop`).
+- Marked both related BUGS lines as done in `BUGS.md` (earth and lollipop theme feature lines).
+- Verification run:
+  - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminThemeWrapper.js` (pass).
+  - JSON parse check for EN/SV/ES i18n files (pass).
+  - `node --test tests/i18n-admin-parity.test.js` (pass).
+
 ### Codex — BUGS.md item complete: advanced WP URL override is now honored (commit ec2cd42)
 
 **Delivered:**
