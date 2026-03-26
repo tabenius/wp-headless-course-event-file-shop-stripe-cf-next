@@ -2,6 +2,17 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — peer recommendations wording clarity (commit `aad43d0` in `ragbaz.xyz`)
+
+**Delivered:**
+- Reworked failed-check recommendation titles in `ragbaz.xyz/src/lib/payload.js` so they state the actual failure condition instead of the expected-good phrasing.
+  - Example: `Persistent object cache is not enabled` (instead of ambiguous positive-title wording).
+- Added `observed` telemetry passthrough for failed runtime/cache checks into recommendation objects.
+- Updated `ragbaz.xyz/src/lib/pages.js` recommendations renderer to display `Observed` values when available.
+- Added regression assertions in `ragbaz.xyz/tests/payload.test.js` to lock in unambiguous recommendation titles for cache/runtime failure paths.
+- Verification run:
+  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+
 ### Codex — GraphQL history strict 200/non-200 coloring + expandable rows
 
 **Delivered:**
