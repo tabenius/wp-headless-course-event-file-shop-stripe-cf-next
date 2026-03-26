@@ -2,6 +2,19 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — storefront-first GraphQL ragbaz probe + Wrangler-tail URI logging (commit 3984ab8)
+
+**Delivered:**
+- Added `src/lib/storefrontGraphqlProbe.js` with a dedicated first-query probe:
+  - Runs an introspection query focused on ragbaz plugin surface (`RootQuery` ragbaz-prefixed fields + `RagbazInfo` type fields).
+  - Emits structured log lines to `console.log` (visible in `wrangler tail`) under `[StorefrontGraphQLProbe]`.
+  - Log payload includes `intendedUri` (requested URI target before content lookup), plus ragbaz field availability.
+- Wired the probe as the first storefront GraphQL call before `nodeByUri` lookups:
+  - Home route: `src/app/page.js` probes before the existing `nodeByUri("/")` + home-events fetch.
+  - Catch-all route: `src/app/[...uri]/page.js` probes before query construction and `nodeByUri` variant attempts.
+- Verification run:
+  - `npx eslint src/lib/storefrontGraphqlProbe.js src/app/page.js src/app/[...uri]/page.js` (pass).
+
 ### Codex — BUGS.md items complete: welcome story fullscreen flow + high-contrast flow diagram (commit 9a3cbbc)
 
 **Delivered:**
