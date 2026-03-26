@@ -2,6 +2,18 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — ragbaz-bridge connect UX polish + sepia branding alignment (commits a4ac1bc / 4c6ffc6 / 06a6772)
+
+**Delivered:**
+- Improved `main/packages/ragbaz-bridge-plugin/ragbaz-bridge.php` Connect tab UX with clearer “Connect & Phone Home” framing, a primary `Phone home now (send heartbeat)` CTA, credential readiness indicators, friendlier status notices, and cleaned event severity controls.
+- Applied sepia branding to the plugin settings header logo/title treatment and switched the storefront admin wordmark palette to sepia in `main/src/components/admin/AdminHeader.js` (plus matching change in `wp-cf-front-oss/src/components/admin/AdminHeader.js`).
+- Expanded `ragbaz.xyz` front-page themes in `ragbaz.xyz/src/lib/pages.js` to elemental `air/fire/earth/water/aether`, added keyboard rotation via `Ctrl+Alt+T`, persisted theme migration from legacy `light/dark`, and added sepia wordmark styling.
+- Added `ragbaz.xyz/tests/home-api.test.js` coverage for elemental theme controls and hotkey marker text.
+- Verification run:
+  - `ragbaz.xyz`: `npm test` (pass, 2/2).
+  - `main`: `npx eslint src/components/admin/AdminHeader.js` (pass), `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (no syntax errors).
+  - `wp-cf-front-oss`: `npx eslint src/components/admin/AdminHeader.js` could not be completed due local dependency/config mismatch (`eslint-config-next/core-web-vitals` not resolvable in this environment).
+
 ### Codex — GraphQL/REST `nodeByUri` stability hardening for `src/app/[...uri]/page.js` (commit 4e3e078)
 
 **Delivered:**
