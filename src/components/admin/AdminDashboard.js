@@ -1369,6 +1369,10 @@ export default function AdminDashboard() {
   }, [setError]);
 
   useEffect(() => {
+    emitHealthStatus(deriveHealthStatus(healthChecks));
+  }, [healthChecks]);
+
+  useEffect(() => {
     loadCourseAccess();
     loadProducts();
   }, [loadCourseAccess, loadProducts]);
