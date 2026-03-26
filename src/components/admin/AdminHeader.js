@@ -151,6 +151,32 @@ function buildIconOutline(color, radius) {
 
 const THEME_ICON_OUTLINE_NORMAL = buildIconOutline("#2f2f2f", 1);
 const THEME_ICON_OUTLINE_HOVER = buildIconOutline("#000000", 2);
+const ADMIN_THEME_SEQUENCE = ["light", "gruvbox", "earth", "lollipop"];
+const ADMIN_THEME_ICONS = Object.freeze({
+  light: "☀",
+  gruvbox: "🌙",
+  earth: "🌍",
+  lollipop: "⭐",
+});
+const ADMIN_THEME_ICON_COLORS = Object.freeze({
+  light: "#ffff00",
+  gruvbox: "#ffff00",
+  earth: "#d4a15d",
+  lollipop: "#ff78d8",
+});
+
+function normalizeAdminTheme(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return ADMIN_THEME_SEQUENCE.includes(normalized) ? normalized : "light";
+}
+
+function getNextAdminTheme(currentTheme) {
+  const index = ADMIN_THEME_SEQUENCE.indexOf(normalizeAdminTheme(currentTheme));
+  if (index === -1) return ADMIN_THEME_SEQUENCE[0];
+  return ADMIN_THEME_SEQUENCE[(index + 1) % ADMIN_THEME_SEQUENCE.length];
+}
 
 function getFocusableElements(container) {
   if (!container || typeof container.querySelectorAll !== "function") return [];
@@ -199,7 +225,7 @@ export default function AdminHeader({ logoUrl }) {
   });
   const log = (...args) => console.info("[AdminHeader]", ...args);
   const toggleTheme = useCallback(() => {
-    const next = adminTheme === "gruvbox" ? "light" : "gruvbox";
+    const next = getNextAdminTheme(adminTheme);
     setAdminTheme(next);
     window.dispatchEvent(new CustomEvent("admin:setTheme", { detail: next }));
   }, [adminTheme]);
@@ -211,7 +237,7 @@ export default function AdminHeader({ logoUrl }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("ragbaz-admin-theme");
-    if (saved) setAdminTheme(saved);
+    if (saved) setAdminTheme(normalizeAdminTheme(saved));
   }, []);
 
   useEffect(() => {
@@ -446,9 +472,18 @@ export default function AdminHeader({ logoUrl }) {
     .split("+")
     .pop()
     .toUpperCase();
+  const currentTheme = normalizeAdminTheme(adminTheme);
+  const nextTheme = getNextAdminTheme(currentTheme);
+  const themeName = {
+    light: t("admin.themeNameLight", "Light"),
+    gruvbox: t("admin.themeNameGruvbox", "Gruvbox"),
+    earth: t("admin.themeNameEarth", "Earth"),
+    lollipop: t("admin.themeNameLollipop", "Lollipop"),
+  };
+  const themeIconColor = ADMIN_THEME_ICON_COLORS[currentTheme] || "#ffff00";
 
   return (
-    <header className="admin-header-concrete relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(22_62%_42%)] border-b border-[hsl(22_56%_31%)]">
+    <header className="admin-header-concrete admin-header-shell relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(22_62%_42%)] border-b border-[hsl(22_56%_31%)]">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -457,7 +492,7 @@ export default function AdminHeader({ logoUrl }) {
                 ref={menuToggleButtonRef}
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="p-2 rounded-lg bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
+                className="admin-header-control p-2 rounded-lg bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
@@ -509,21 +544,17 @@ export default function AdminHeader({ logoUrl }) {
               onMouseEnter={() => setThemeToggleHovered(true)}
               onMouseLeave={() => setThemeToggleHovered(false)}
               className="appearance-none bg-transparent hover:bg-transparent active:bg-transparent border-0 shadow-none rounded-none px-1 text-[1.35rem] leading-none text-[#ffff00] transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
-              aria-label={
-                adminTheme === "gruvbox"
-                  ? t("admin.themeLight", "Switch to light theme")
-                  : t("admin.themeDark", "Switch to gruvbox theme")
-              }
+              aria-label={`${t("admin.themeCycleTo", "Switch theme to")} ${themeName[nextTheme]}`}
             >
               <span
                 style={{
-                  color: "#ffff00",
+                  color: themeIconColor,
                   textShadow: themeToggleHovered
                     ? THEME_ICON_OUTLINE_HOVER
                     : THEME_ICON_OUTLINE_NORMAL,
                 }}
               >
-                {adminTheme === "gruvbox" ? "☀" : "🌙"}
+                {ADMIN_THEME_ICONS[currentTheme]}
               </span>
             </button>
 
@@ -534,7 +565,7 @@ export default function AdminHeader({ logoUrl }) {
               onMouseLeave={() => setShowHealthTooltip(false)}
               onFocus={() => setShowHealthTooltip(true)}
               onBlur={() => setShowHealthTooltip(false)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
+              className="admin-header-control flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
               aria-label={t("admin.healthCheck", "Control check")}
               title={healthLabelMap[healthState]}
             >
@@ -545,7 +576,7 @@ export default function AdminHeader({ logoUrl }) {
               />
             </button>
             {showHealthTooltip && (
-              <div className="absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(22_52%_20%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
+              <div className="admin-header-popover absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(22_52%_20%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
                 <p className="font-semibold text-white">
                   {healthLabelMap[healthState]}
                 </p>
@@ -577,7 +608,7 @@ export default function AdminHeader({ logoUrl }) {
               <aside
                 ref={menuDrawerRef}
                 tabIndex={-1}
-                className="fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(22_52%_20%/0.98)] p-4 shadow-2xl"
+                className="admin-header-drawer fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(22_52%_20%/0.98)] p-4 shadow-2xl"
               >
                 <div className="space-y-2">
                   {tabItems.map((item) => {
@@ -619,7 +650,7 @@ export default function AdminHeader({ logoUrl }) {
                         router.refresh();
                         setMenuOpen(false);
                       }}
-                      className="rounded border border-white/20 bg-[hsl(22_66%_36%)] px-2 py-1 text-xs text-white"
+                      className="admin-header-select rounded border border-white/20 bg-[hsl(22_66%_36%)] px-2 py-1 text-xs text-white"
                     >
                       <option value="sv">Svenska</option>
                       <option value="en">English</option>
@@ -654,12 +685,12 @@ export default function AdminHeader({ logoUrl }) {
       </div>
       {/* Stats ticker — thin scrolling bar below the main nav row */}
       <div
-        className="w-full overflow-hidden border-t border-[hsl(22_56%_31%)] bg-[hsl(22_56%_35%)]"
+        className="admin-header-ticker w-full overflow-hidden border-t border-[hsl(22_56%_31%)] bg-[hsl(22_56%_35%)]"
         style={{ height: "1.4rem" }}
         aria-label={t("admin.statsTicker", "Stats")}
       >
         <div
-          className="flex whitespace-nowrap text-[10px] font-medium text-[hsl(39_62%_93%)] select-none"
+          className="admin-header-ticker-text flex whitespace-nowrap text-[10px] font-medium text-[hsl(39_62%_93%)] select-none"
           style={{
             animation: "admin-ticker-scroll 60s linear infinite",
             willChange: "transform",

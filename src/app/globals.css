@@ -602,6 +602,161 @@ body:has(.admin-layout)::before {
   border-color: rgba(204, 36, 29, 0.4) !important;
 }
 
+/* ── Admin Earth and Lollipop themes ─────────────────────────────────────── */
+.admin-earth {
+  --earth-bg: #f3e8d4;
+  --earth-surface: #fff7ea;
+  --earth-panel: #e9d6b8;
+  --earth-line: #c9a777;
+  --earth-text: #4a3118;
+  --earth-muted: #7d5b33;
+  --earth-header: #b47a37;
+  --earth-header-border: #8b5c24;
+  --earth-header-control: rgba(91, 59, 23, 0.9);
+  --earth-header-control-hover: #7b4f1c;
+  --earth-drawer: rgba(79, 51, 20, 0.98);
+  background-color: var(--earth-bg);
+  color: var(--earth-text);
+}
+
+.admin-earth .admin-header-shell {
+  background: var(--earth-header) !important;
+  border-color: var(--earth-header-border) !important;
+}
+.admin-earth .admin-header-control {
+  background: var(--earth-header-control) !important;
+  border-color: rgba(255, 235, 209, 0.44) !important;
+  color: #fff4e4 !important;
+}
+.admin-earth .admin-header-control:hover {
+  background: var(--earth-header-control-hover) !important;
+}
+.admin-earth .admin-header-popover,
+.admin-earth .admin-header-drawer {
+  background: var(--earth-drawer) !important;
+  border-color: var(--earth-line) !important;
+  color: #ffeed8 !important;
+}
+.admin-earth .admin-header-select {
+  background: #a86d2d !important;
+  border-color: #e1bf97 !important;
+  color: #fff6ea !important;
+}
+.admin-earth .admin-header-ticker {
+  background: #a0682a !important;
+  border-top-color: var(--earth-header-border) !important;
+}
+.admin-earth .admin-header-ticker-text {
+  color: #fff0dc !important;
+}
+.admin-earth .bg-white {
+  background-color: var(--earth-surface) !important;
+  color: var(--earth-text) !important;
+}
+.admin-earth .bg-gray-50 {
+  background-color: var(--earth-bg) !important;
+}
+.admin-earth .bg-gray-100 {
+  background-color: var(--earth-panel) !important;
+}
+.admin-earth .border,
+.admin-earth .border-gray-200,
+.admin-earth .border-gray-100,
+.admin-earth .divide-gray-100 > * + * {
+  border-color: var(--earth-line) !important;
+}
+.admin-earth .text-gray-900,
+.admin-earth .text-gray-800,
+.admin-earth .text-slate-900,
+.admin-earth .text-slate-800 {
+  color: var(--earth-text) !important;
+}
+.admin-earth .text-gray-700,
+.admin-earth .text-gray-600,
+.admin-earth .text-gray-500,
+.admin-earth .text-gray-400,
+.admin-earth .text-slate-700,
+.admin-earth .text-slate-600 {
+  color: var(--earth-muted) !important;
+}
+
+.admin-lollipop {
+  --lollipop-bg: #25132e;
+  --lollipop-surface: #371a45;
+  --lollipop-panel: #47255a;
+  --lollipop-line: #9957bf;
+  --lollipop-text: #ffe7ff;
+  --lollipop-muted: #e4c4eb;
+  --lollipop-header: #a63bc8;
+  --lollipop-header-border: #7a2d95;
+  --lollipop-header-control: rgba(76, 22, 95, 0.92);
+  --lollipop-header-control-hover: #63297b;
+  --lollipop-drawer: rgba(57, 19, 72, 0.98);
+  background-color: var(--lollipop-bg);
+  color: var(--lollipop-text);
+}
+
+.admin-lollipop .admin-header-shell {
+  background: var(--lollipop-header) !important;
+  border-color: var(--lollipop-header-border) !important;
+}
+.admin-lollipop .admin-header-control {
+  background: var(--lollipop-header-control) !important;
+  border-color: rgba(255, 221, 255, 0.4) !important;
+  color: #ffe9ff !important;
+}
+.admin-lollipop .admin-header-control:hover {
+  background: var(--lollipop-header-control-hover) !important;
+}
+.admin-lollipop .admin-header-popover,
+.admin-lollipop .admin-header-drawer {
+  background: var(--lollipop-drawer) !important;
+  border-color: var(--lollipop-line) !important;
+  color: #ffe8ff !important;
+}
+.admin-lollipop .admin-header-select {
+  background: #7c3f98 !important;
+  border-color: #e7b6ff !important;
+  color: #ffe8ff !important;
+}
+.admin-lollipop .admin-header-ticker {
+  background: #9238b3 !important;
+  border-top-color: var(--lollipop-header-border) !important;
+}
+.admin-lollipop .admin-header-ticker-text {
+  color: #ffe8ff !important;
+}
+.admin-lollipop .bg-white {
+  background-color: var(--lollipop-surface) !important;
+  color: var(--lollipop-text) !important;
+}
+.admin-lollipop .bg-gray-50 {
+  background-color: var(--lollipop-bg) !important;
+}
+.admin-lollipop .bg-gray-100 {
+  background-color: var(--lollipop-panel) !important;
+}
+.admin-lollipop .border,
+.admin-lollipop .border-gray-200,
+.admin-lollipop .border-gray-100,
+.admin-lollipop .divide-gray-100 > * + * {
+  border-color: var(--lollipop-line) !important;
+}
+.admin-lollipop .text-gray-900,
+.admin-lollipop .text-gray-800,
+.admin-lollipop .text-slate-900,
+.admin-lollipop .text-slate-800 {
+  color: var(--lollipop-text) !important;
+}
+.admin-lollipop .text-gray-700,
+.admin-lollipop .text-gray-600,
+.admin-lollipop .text-gray-500,
+.admin-lollipop .text-gray-400,
+.admin-lollipop .text-slate-700,
+.admin-lollipop .text-slate-600 {
+  color: var(--lollipop-muted) !important;
+}
+
 /* Dark mode — content area only (header, footer, menus stay light) */
 .dark-mode {
   --color-background: #1a1a1a;

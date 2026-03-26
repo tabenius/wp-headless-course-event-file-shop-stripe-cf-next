@@ -3,6 +3,18 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "ragbaz-admin-theme";
+const THEME_SEQUENCE = ["light", "gruvbox", "earth", "lollipop"];
+
+function normalizeTheme(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return THEME_SEQUENCE.includes(normalized) ? normalized : "light";
+}
+
+function nextTheme(current) {
+  const index = THEME_SEQUENCE.indexOf(normalizeTheme(current));
+  if (index === -1) return THEME_SEQUENCE[0];
+  return THEME_SEQUENCE[(index + 1) % THEME_SEQUENCE.length];
+}
 
 export default function AdminThemeWrapper({ children, fontVariable }) {
   const [theme, setTheme] = useState("light");
@@ -10,13 +22,13 @@ export default function AdminThemeWrapper({ children, fontVariable }) {
   // Read from localStorage on mount (client only)
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "gruvbox") setTheme("gruvbox");
+    setTheme(normalizeTheme(saved));
   }, []);
 
   // Expose toggle to rest of admin via custom event
   useEffect(() => {
     function onToggle(e) {
-      const next = e.detail || (theme === "gruvbox" ? "light" : "gruvbox");
+      const next = normalizeTheme(e.detail || nextTheme(theme));
       setTheme(next);
       localStorage.setItem(STORAGE_KEY, next);
     }
@@ -28,6 +40,8 @@ export default function AdminThemeWrapper({ children, fontVariable }) {
     "admin-layout",
     fontVariable,
     theme === "gruvbox" ? "admin-gruvbox" : "",
+    theme === "earth" ? "admin-earth" : "",
+    theme === "lollipop" ? "admin-lollipop" : "",
   ]
     .filter(Boolean)
     .join(" ");
