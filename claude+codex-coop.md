@@ -20,6 +20,15 @@
 - Verification run:
   - `npx eslint src/app/layout.js src/app/globals.css src/components/layout/DarkModeToggle.js src/components/layout/UserMenu.js` (0 errors; warnings only: `layout.js` known manual stylesheet warning, CSS file ignored by ESLint config).
 
+### Codex — admin docs mermaid rendering fix (commit e766fa3)
+
+**Delivered:**
+- Added mermaid-code-block rendering support in `src/app/admin/docs/[slug]/page.js` by detecting `language-mermaid` fences and rendering diagram images via `https://mermaid.ink/img/<base64>`.
+- Kept non-mermaid code blocks unchanged and preserved existing markdown link rewrite behavior.
+- Marked the two docs-related BUG entries as done in `BUGS.md` (`/admin/docs/readme-sv` and broader `/admin/docs` mermaid rendering).
+- Verification run:
+  - `npx eslint src/app/admin/docs/[slug]/page.js` (pass, 0 errors/warnings).
+
 ## 2026-03-25 (Claude) — Bundle size reduction + Derivation editor redesign
 
 ### Claude — CF Workers bundle size reduction (commits pending push)
