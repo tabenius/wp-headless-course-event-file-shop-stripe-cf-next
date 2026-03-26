@@ -2,6 +2,23 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — connected-sites tenant jump + collapsible draft advanced panels (commit `cf055fb` in `ragbaz.xyz`)
+
+**Delivered:**
+- Added a domain-based tenant jump form on `/articulate/sites`:
+  - searchable domain input with datalist suggestions from connected sites,
+  - keyboard-friendly submit behavior that normalizes domain/URL input and navigates to `/tenant/{domain}`.
+- Added collapsible advanced sections on tenant draft pages:
+  - `Advanced: Priority actions`
+  - `Advanced: Draft frontend manifest`
+  These are collapsed by default to improve first-screen scan speed.
+- Added shared styling in shell CSS for jump-form controls and disclosure panels.
+- Updated tests (`ragbaz.xyz/tests/home-api.test.js`) to assert:
+  - tenant jump UI presence and navigation script,
+  - advanced collapsible sections rendered in draft pages.
+- Verification run:
+  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+
 ### Codex — tenant draft UI flow polish for domain routes (commit `c44cbf6` in `ragbaz.xyz`)
 
 **Delivered:**
