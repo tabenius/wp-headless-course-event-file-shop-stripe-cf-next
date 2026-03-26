@@ -6,6 +6,7 @@ import { fetchHomeEvents } from "@/lib/homeEvents";
 import RateLimitPage from "@/components/common/RateLimitPage";
 import WordPressSetupPage from "@/components/setup/WordPressSetupPage";
 import { notFound } from "next/navigation";
+import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 
 const GET_CONTENT_QUERY = `
 ${SinglePageFragment}
@@ -20,7 +21,7 @@ query GetNodeByUri($uri: String!) {
 export default async function HomePage() {
   // If no WordPress host is configured (env var or cookie), show the setup page.
   // This also makes the build succeed without a live WordPress instance.
-  const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL;
+  const wpUrl = await resolveWordPressUrl();
   if (!wpUrl) {
     return <WordPressSetupPage />;
   }

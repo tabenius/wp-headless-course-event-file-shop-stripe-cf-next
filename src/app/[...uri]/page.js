@@ -26,6 +26,7 @@ import { decodeEntities } from "@/lib/decodeEntities";
 import { parsePriceCents } from "@/lib/parsePrice";
 import { t } from "@/lib/i18n";
 import { appendServerLog } from "@/lib/serverLog";
+import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { cache } from "react";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
@@ -185,14 +186,15 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
 
   // If GraphQL fails, try REST and Course fallbacks
   console.log(`[WP-Resolve] GraphQL failed for ${normalizedUri}. Entering Fallback mode...`);
+  const wordpressUrl = await resolveWordPressUrl();
   
   const [restNode, courseNode] = await Promise.all([
-    fetchRestFallback(normalizedUri).catch(e => {
+    fetchRestFallback(normalizedUri, wordpressUrl).catch(e => {
       if (e instanceof RateLimitError) throw e;
       console.error("[WP-Resolve] REST Fallback error:", e?.message || e);
       return null;
     }),
-    fetchCourseFallback(normalizedUri).catch(e => {
+    fetchCourseFallback(normalizedUri, wordpressUrl).catch(e => {
       if (e instanceof RateLimitError) throw e;
       console.error("[WP-Resolve] Course Fallback error:", e?.message || e);
       return null;
@@ -207,8 +209,11 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
   return finalResult;
 });
 
-async function fetchRestFallback(uri) {
-  const wp = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+async function fetchRestFallback(uri, wordpressUrl = null) {
+  const wp =
+    typeof wordpressUrl === "string" && wordpressUrl.trim()
+      ? wordpressUrl.trim().replace(/\/+$/, "")
+      : "";
   if (!wp) return null;
   const slug = uri.split("/").filter(Boolean).pop();
   if (!slug) return null;
@@ -251,12 +256,15 @@ async function fetchRestFallback(uri) {
   return null;
 }
 
-async function fetchCourseFallback(uri) {
+async function fetchCourseFallback(uri, wordpressUrl = null) {
   const fragment = await getLpCourseFragment();
   if (!fragment) return null;
   const slug = uri.split("/").filter(Boolean).pop();
   if (!slug) return null;
-  const wp = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(/\/+$/, "");
+  const wp =
+    typeof wordpressUrl === "string" && wordpressUrl.trim()
+      ? wordpressUrl.trim().replace(/\/+$/, "")
+      : "";
   const auth = await getWordPressGraphqlAuth();
   const query = `
     ${fragment}

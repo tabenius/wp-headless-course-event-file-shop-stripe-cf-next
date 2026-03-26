@@ -4,6 +4,7 @@ import {
 } from "@/lib/wordpressGraphqlAuth";
 import { appendServerLog } from "@/lib/serverLog";
 import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
+import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 
 const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
@@ -72,35 +73,6 @@ export async function hasGraphQLType(typeName) {
     // content types until the next server restart.
     return false;
   }
-}
-
-/**
- * Resolve the WordPress base URL.
- * Prefers NEXT_PUBLIC_WORDPRESS_URL; falls back to the ragbaz_wp_config cookie
- * (set by the setup page) so the app works when the env var is absent.
- * The dynamic cookie lookup only runs when the env var is missing, keeping
- * ISR/SSG intact for fully-configured deployments.
- */
-async function resolveWordPressUrl() {
-  const envUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").trim();
-  if (envUrl) return envUrl.replace(/\/+$/, "");
-
-  try {
-    // Dynamic import keeps `cookies()` out of the module-level scope so it
-    // doesn't force all routes to be dynamic when the env var is present.
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const raw = cookieStore.get("ragbaz_wp_config")?.value;
-    if (raw) {
-      const { wpUrl } = JSON.parse(
-        Buffer.from(raw, "base64").toString("utf8"),
-      );
-      if (wpUrl) return wpUrl.replace(/\/+$/, "");
-    }
-  } catch {
-    // Not in a request context (e.g. build-time static generation) — ignore.
-  }
-  return null;
 }
 
 export async function fetchGraphQL(query, variables = {}, revalidate = null) {

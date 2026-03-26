@@ -21,7 +21,7 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG: main menu bar, status: the status color shows partial connection and tell us that even though all lights are green in the integration control
 [ ] FEATURE: /admin, add a small like thumbs up button in greater ui fields to signal that this gui is adequate, heart for good and thumbs down for needs improvement, for the admin user tobias they are read only but shown whereas when sofia interacts with the gui she may set these. Store them in KV.
 [x] FEATURE: The sun and moon theme icon I do not want that thick outline in hover, please turn it down to 1-2px tops
-[ ] FEATURE: if we change the advanced setting for wordpress url we may query that wordpress instead but the default is still xtas.nu
+[x] FEATURE: if we change the advanced setting for wordpress url we may query that wordpress instead but the default is still xtas.nu
 [ ] FEATURE: Add a yellow sepia / umbra colored theme and call it earth, therefore there are now three steps in the sun moon cycle and there will be a globe as an icon
 [ ] FEATURE: Add a pink ceris purple colored theme and call it lollipop, therefore there are now four steps in the sun moon earth cycle and there will be a star as an icon
 [x] BUG: /, buttons for theme, sun and moon icons, are not visible in the purple button. Head icon for login is not visible either.
