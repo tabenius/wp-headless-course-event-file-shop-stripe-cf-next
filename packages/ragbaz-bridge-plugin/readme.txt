@@ -4,7 +4,7 @@ Tags: graphql, wpgraphql, learnpress, events, storefront, headless
 Requires at least: 6.3
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Plugin URI: https://ragbaz.xyz/products
@@ -45,6 +45,13 @@ Call `ragbazInfo { version hasLearnPress hasEventsPlugin }`, `ragbazPluginVersio
 Email ragbaz@proton.me or visit https://ragbaz.xyz/products.
 
 == Changelog ==
+= 1.2.3 =
+* Removed hardcoded storefront GitHub URL reference (`ragbaz-bridge-storefront`) from plugin source.
+
+= 1.2.2 =
+* Updated Connect page branding to a sepia RAGBAZ logo mark.
+* Moved shared-hosting URL guidance below the recommended Quick start section.
+
 = 1.2.1 =
 * Moved **Connect to RAGBAZ** to the first tab in the admin screen for faster onboarding.
 * Kept sepia RAGBAZ branding/logo in the admin header and aligned release metadata to `1.2.1`.

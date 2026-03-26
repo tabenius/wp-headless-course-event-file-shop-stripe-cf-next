@@ -5,7 +5,7 @@
  * Description: GraphQL bridge for headless storefronts — exposes LearnPress courses, events (Event Organiser, The Events Calendar, Events Manager), WooCommerce products, and digital downloads via WPGraphQL. Includes built-in headless authentication via site-secret headers.
  * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
- * Version: 1.2.1
+ * Version: 1.2.3
  * Requires at least: 6.3
  * Tested up to: 6.5
  * Requires PHP: 7.4
@@ -23,12 +23,7 @@ if (!defined('ABSPATH')) {
 
 // Keep the legacy option name so existing rules remain intact.
 const RAGBAZ_COURSE_RULES_OPTION = 'Articulate_course_access_rules';
-const RAGBAZ_VERSION = '1.2.1';
-const RAGBAZ_STOREFRONT_URL = 'https://github.com/ragbaz/ragbaz-bridge-storefront';
-
-function ragbaz_get_storefront_url() {
-  return esc_url_raw(apply_filters('ragbaz_storefront_url', RAGBAZ_STOREFRONT_URL));
-}
+const RAGBAZ_VERSION = '1.2.3';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -898,7 +893,6 @@ function ragbaz_find_stale_dirs() {
   $legacy = [
     'ragbaz-bridge',
     'ragbaz-bridge-plugin',
-    'ragbaz-bridge-storefront',
     'articulate-learnpress-stripe',
   ];
   $own_dir = basename(dirname(__FILE__));
@@ -1760,7 +1754,11 @@ function ragbaz_render_info_page() {
   <div class="wrap" style="max-width:980px">
     <div style="display:flex;align-items:center;gap:14px;margin:16px 0 4px">
       <img src="data:image/png;base64,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"
-           alt="RAGBAZ" style="height:40px;width:auto;display:block;filter:sepia(1) saturate(1.4) hue-rotate(338deg) contrast(1.06)">
+           alt="RAGBAZ legacy" style="display:none">
+      <svg viewBox="0 0 240 54" role="img" aria-label="RAGBAZ" style="height:40px;width:auto;display:block">
+        <rect x="1" y="1" width="238" height="52" rx="10" ry="10" fill="#f7ead6" stroke="#8f6b42" stroke-width="2"></rect>
+        <text x="120" y="34" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="800" fill="#7a4b1b" letter-spacing="1.5">RAGBAZ</text>
+      </svg>
       <div>
         <span style="font-size:20px;font-weight:700;color:#7a4b1b;letter-spacing:-.01em">Bridge</span>
         <span style="margin-left:8px;color:#8f6b42;font-size:13px">v<?php echo esc_html(RAGBAZ_VERSION); ?></span>
@@ -2066,30 +2064,6 @@ function ragbaz_render_info_page() {
       </ol>
     </div>
 
-    <div style="max-width:820px;background:#eef6ff;border:1px solid #bfd7f5;padding:14px 16px;border-radius:10px;margin-bottom:14px">
-      <h3 style="margin:0 0 8px;color:#1d3d66;font-size:14px">Shared hosting URL guidance (domain vs subdomain)</h3>
-      <p style="margin:0 0 8px;color:#2a4b73;font-size:13px">
-        If your current site runs at <code>xtas.nu</code> and you want the WordPress admin/content host to be
-        <code>wp.xtas.nu</code>, keep one canonical WordPress codebase and point the new host there.
-      </p>
-      <ol style="margin:0;padding-left:18px;color:#2a4b73;font-size:13px;line-height:1.5">
-        <li>Create the DNS record for <code>wp.xtas.nu</code> (A/AAAA/CNAME according to your host).</li>
-        <li>In hosting control panel, create a web root for <code>wp.xtas.nu</code>.</li>
-        <li>Choose one path strategy:
-          <ul style="margin:6px 0 0 18px;list-style:disc">
-            <li><strong>Move strategy:</strong> move WordPress into that directory and update URLs.</li>
-            <li><strong>Symlink strategy:</strong> keep existing files and symlink the new docroot to the same code directory.</li>
-          </ul>
-        </li>
-        <li>Update <code>home</code> and <code>siteurl</code> to <code>https://wp.xtas.nu</code> (WP admin or wp-config/wp-cli).</li>
-        <li>Resave permalinks, verify <code>/graphql</code> and then update StoreFront advanced WordPress URL to the new host.</li>
-      </ol>
-      <p style="margin:8px 0 0;color:#1d3d66;font-size:12px">
-        Tip: If public pages should remain on apex domain, keep storefront front-end on <code>xtas.nu</code> and reserve
-        <code>wp.xtas.nu</code> as the canonical WordPress/GraphQL origin.
-      </p>
-    </div>
-
     <?php if ($notice) : ?>
       <div style="background:<?php echo esc_attr($notice['bg']); ?>;border:1px solid <?php echo esc_attr($notice['border']); ?>;padding:10px 12px;border-radius:8px;max-width:820px;margin-bottom:14px;color:<?php echo esc_attr($notice['tone']); ?>">
         <strong>Connect status:</strong> <?php echo esc_html($notice['message']); ?>
@@ -2168,6 +2142,30 @@ function ragbaz_render_info_page() {
           <button class="button" name="ragbaz_connect_action" value="rotate_graphql_relay_secret">Rotate relay secret</button>
         </p>
       </form>
+
+      <div style="max-width:820px;background:#eef6ff;border:1px solid #bfd7f5;padding:14px 16px;border-radius:10px">
+        <h3 style="margin:0 0 8px;color:#1d3d66;font-size:14px">Shared hosting URL guidance (domain vs subdomain)</h3>
+        <p style="margin:0 0 8px;color:#2a4b73;font-size:13px">
+          If your current site runs at <code>xtas.nu</code> and you want the WordPress admin/content host to be
+          <code>wp.xtas.nu</code>, keep one canonical WordPress codebase and point the new host there.
+        </p>
+        <ol style="margin:0;padding-left:18px;color:#2a4b73;font-size:13px;line-height:1.5">
+          <li>Create the DNS record for <code>wp.xtas.nu</code> (A/AAAA/CNAME according to your host).</li>
+          <li>In hosting control panel, create a web root for <code>wp.xtas.nu</code>.</li>
+          <li>Choose one path strategy:
+            <ul style="margin:6px 0 0 18px;list-style:disc">
+              <li><strong>Move strategy:</strong> move WordPress into that directory and update URLs.</li>
+              <li><strong>Symlink strategy:</strong> keep existing files and symlink the new docroot to the same code directory.</li>
+            </ul>
+          </li>
+          <li>Update <code>home</code> and <code>siteurl</code> to <code>https://wp.xtas.nu</code> (WP admin or wp-config/wp-cli).</li>
+          <li>Resave permalinks, verify <code>/graphql</code> and then update StoreFront advanced WordPress URL to the new host.</li>
+        </ol>
+        <p style="margin:8px 0 0;color:#1d3d66;font-size:12px">
+          Tip: If public pages should remain on apex domain, keep storefront front-end on <code>xtas.nu</code> and reserve
+          <code>wp.xtas.nu</code> as the canonical WordPress/GraphQL origin.
+        </p>
+      </div>
 
       <form method="post" style="background:#fff;border:1px solid #d8c2a4;padding:16px;border-radius:10px;box-shadow:0 1px 0 rgba(122,75,27,0.04)">
         <?php wp_nonce_field('ragbaz_connect_action'); ?>
