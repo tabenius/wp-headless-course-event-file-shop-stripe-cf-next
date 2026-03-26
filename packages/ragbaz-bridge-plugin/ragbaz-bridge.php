@@ -1700,6 +1700,30 @@ function ragbaz_render_info_page() {
       </ol>
     </div>
 
+    <div style="max-width:820px;background:#eef6ff;border:1px solid #bfd7f5;padding:14px 16px;border-radius:10px;margin-bottom:14px">
+      <h3 style="margin:0 0 8px;color:#1d3d66;font-size:14px">Shared hosting URL guidance (domain vs subdomain)</h3>
+      <p style="margin:0 0 8px;color:#2a4b73;font-size:13px">
+        If your current site runs at <code>xtas.nu</code> and you want the WordPress admin/content host to be
+        <code>wp.xtas.nu</code>, keep one canonical WordPress codebase and point the new host there.
+      </p>
+      <ol style="margin:0;padding-left:18px;color:#2a4b73;font-size:13px;line-height:1.5">
+        <li>Create the DNS record for <code>wp.xtas.nu</code> (A/AAAA/CNAME according to your host).</li>
+        <li>In hosting control panel, create a web root for <code>wp.xtas.nu</code>.</li>
+        <li>Choose one path strategy:
+          <ul style="margin:6px 0 0 18px;list-style:disc">
+            <li><strong>Move strategy:</strong> move WordPress into that directory and update URLs.</li>
+            <li><strong>Symlink strategy:</strong> keep existing files and symlink the new docroot to the same code directory.</li>
+          </ul>
+        </li>
+        <li>Update <code>home</code> and <code>siteurl</code> to <code>https://wp.xtas.nu</code> (WP admin or wp-config/wp-cli).</li>
+        <li>Resave permalinks, verify <code>/graphql</code> and then update StoreFront advanced WordPress URL to the new host.</li>
+      </ol>
+      <p style="margin:8px 0 0;color:#1d3d66;font-size:12px">
+        Tip: If public pages should remain on apex domain, keep storefront front-end on <code>xtas.nu</code> and reserve
+        <code>wp.xtas.nu</code> as the canonical WordPress/GraphQL origin.
+      </p>
+    </div>
+
     <?php if ($notice) : ?>
       <div style="background:<?php echo esc_attr($notice['bg']); ?>;border:1px solid <?php echo esc_attr($notice['border']); ?>;padding:10px 12px;border-radius:8px;max-width:820px;margin-bottom:14px;color:<?php echo esc_attr($notice['tone']); ?>">
         <strong>Connect status:</strong> <?php echo esc_html($notice['message']); ?>
