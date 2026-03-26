@@ -50,6 +50,35 @@
   - `/shop` present
   - `/blog` present
 
+### Codex — reduced build-time GraphQL pressure + guaranteed `/shop` menu + icon contrast fix
+
+**Delivered:**
+- Implemented user-requested mitigation lane:
+  - **(1 replacement)** switched menu existence checks from GraphQL `nodeByUri` to **sitemap-based validation** with TTL caching (`MENU_SITEMAP_*` settings) in `src/lib/menu.js`.
+  - **(2)** kept hard fallback so top-level nav always contains `/shop` labeled `Shop` when missing (`src/lib/menuFilter.js` + tests).
+  - **(3)** added build-phase GraphQL throttling/backoff in `src/lib/client.js`:
+    - `GRAPHQL_BUILD_DELAY_MS` (default `180ms`),
+    - `GRAPHQL_BUILD_TIMEOUT_MS` (default `15000ms`),
+    - stronger backoff on varnish/rate-limit responses during build.
+- Marked root layout runtime-dynamic (`src/app/layout.js`: `dynamic="force-dynamic"`, `revalidate=0`) to reduce expensive WP pre-render data pulls.
+- Fixed storefront header utility icon visibility against purple CTA button theming:
+  - added `storefront-icon-button` class to theme/user icon buttons,
+  - added explicit contrast override styles in `src/app/globals.css`.
+
+**Commit:**
+- `main` `f54779c` — `Reduce build-time GraphQL load and harden storefront nav controls`
+
+**Verification run:**
+- `npx eslint src/app/layout.js src/lib/client.js src/lib/menu.js src/lib/menuFilter.js src/components/layout/DarkModeToggle.js src/components/layout/UserMenu.js tests/menu.test.js` (pass, 1 existing layout warning)
+- `node --test tests/menu.test.js` (pass)
+- `npm run build` (pass; dynamic routes remain `ƒ`)
+- `npm run cf:deploy` (pass; deployed version `5ce71597-f252-4ed6-954d-fe6541ab85bb`)
+- live checks:
+  - `/shop` present in rendered nav output,
+  - `/kontakt` absent,
+  - `/om-xtas` absent,
+  - `storefront-icon-button` class present in homepage HTML.
+
 ### Codex — fixed tenant draft route base-pathing for `/tenant/{domain}` pages
 
 **Delivered:**
