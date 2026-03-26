@@ -2,6 +2,18 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — BUGS.md item complete: advanced WP URL override is now honored (commit ec2cd42)
+
+**Delivered:**
+- Added `src/lib/wordpressUrl.js` with shared URL resolution (`ragbaz_wp_config` cookie override first, env fallback to `NEXT_PUBLIC_WORDPRESS_URL`/`WORDPRESS_API_URL`) so local advanced settings can override default tenant URL while preserving default behavior when no override is set.
+- Refactored `src/lib/client.js` and `src/lib/wordpressGraphqlAuth.js` to use shared URL resolution, aligning GraphQL endpoint calls and SiteToken exchange with the same effective WordPress host.
+- Updated route resolution surfaces to use the same effective URL:
+  - `src/app/page.js` now decides setup-vs-content based on resolved URL (cookie/env), not env alone.
+  - `src/app/[...uri]/page.js` REST/LearnPress fallback paths now receive resolved URL, avoiding env-only fallback drift.
+- Marked the matching BUGS line as done in `BUGS.md` (`if we change the advanced setting for wordpress url...`).
+- Verification run:
+  - `npx eslint src/lib/wordpressUrl.js src/lib/client.js src/lib/wordpressGraphqlAuth.js src/app/page.js src/app/[...uri]/page.js` (pass, 0 errors).
+
 ### Codex — BUGS.md item complete: lighter theme-toggle hover outline (commit 5abbee2)
 
 **Delivered:**
