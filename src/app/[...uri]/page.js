@@ -29,6 +29,8 @@ import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
 import { cache } from "react";
 
+export const dynamic = "force-dynamic";
+
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 
 /** Build the content query dynamically based on which CPTs exist in the schema. */
