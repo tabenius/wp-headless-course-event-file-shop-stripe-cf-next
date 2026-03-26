@@ -2149,3 +2149,30 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Updated plugin readme/admin labels to use `RAGBAZ Bridge`.
 
 - Verified there are no remaining legacy plugin-name hits in `main`, `wp-cf-front-oss`, and `wp-cf-front` source scans.
+
+---
+
+## 2026-03-26 (cont.)
+
+### Codex — tenant claim API + connected-site screens + plugin call-home actions
+
+- Landed in `ragbaz.xyz` service:
+  - Added authenticated `POST /api/v1/home/events` endpoint for call-home event ingestion.
+  - Added authenticated `POST /api/v1/home/tenant-claim` endpoint so storefront workers can claim occupancy of a `*.ragbaz.xyz` subdomain and bind it to a connected site domain/account.
+  - Added connected-site screens/routes: `/articulate/sites`, `/articulate/sites/{gift_or_alias}`, and `/tenant/{domain}`.
+  - Added tenant alias/domain/subdomain mapping keys and logic (including hardcoded fallback mapping `xtas.nu -> xtas`).
+  - Extended tests for events, tenant claim flow, `xtas.ragbaz.xyz`, and `/tenant/xtas.nu`.
+  - Commit pushed in nested repo `ragbaz.xyz`: `2ac7f13`.
+
+- Landed in `main` plugin package:
+  - Replaced Connect-tab placeholder with operational forms/actions:
+    - save home URL + account credentials
+    - send heartbeat snapshot (`/api/v1/home/heartbeat`)
+    - send manual event (`/api/v1/home/events`)
+  - Added local last-result reporting and direct links to tenant/site info screens.
+  - Updated plugin zip copy script to publish to shared workspace `../ragbaz.xyz/release` (with local fallback).
+  - Commit pushed on `main`: `dc578ea`.
+
+- Landed in `wp-cf-front-oss`:
+  - Updated plugin zip copy script to publish to shared workspace `../ragbaz.xyz/release` (with local fallback).
+  - Commit pushed on `main`: `358df6c`.
