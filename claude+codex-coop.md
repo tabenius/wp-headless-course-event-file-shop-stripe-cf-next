@@ -2,6 +2,29 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — BUGS.md item complete: KV-backed admin UI feedback controls with Sofia/Tobias role behavior (commit 2c83588)
+
+**Delivered:**
+- Added a new admin feedback capability for major tab surfaces:
+  - UI component: `src/components/admin/AdminUiFeedbackBar.js` (three actions: 👍 adequate, ❤ good, 👎 needs improvement).
+  - Dashboard integration: `src/components/admin/AdminDashboard.js` renders a per-tab feedback bar (`tab:<activeTab>` field id), loads current feedback, and persists updates.
+- Added a new admin API endpoint:
+  - `GET/POST /api/admin/ui-feedback` in `src/app/api/admin/ui-feedback/route.js`.
+  - Data persisted via new KV-backed store `src/lib/adminUiFeedbackStore.js` (`CF_UI_FEEDBACK_KV_KEY` or default key `admin-ui-feedback`, with in-memory fallback).
+- Implemented requested edit policy:
+  - Sofia accounts can write feedback (`session.email` starts with `sofia`).
+  - Tobias (and all non-Sofia admin accounts) are read-only in the feedback UI.
+- Extended admin session identity payload:
+  - `src/auth.js` now stores/returns admin email in session token.
+  - `src/app/api/admin/login/route.js` now writes email into admin session token.
+  - `src/app/api/admin/session/route.js` fixed missing `await` on session decode and now returns full session shape reliably.
+- Added EN/SV/ES i18n keys for feedback labels/help text.
+- Marked the matching BUGS line as done in `BUGS.md` (thumbs/heart feedback feature).
+- Verification run:
+  - `npx eslint` on all touched JS routes/components/libs (pass).
+  - i18n JSON parse check for EN/SV/ES (pass).
+  - `node --test tests/i18n-admin-parity.test.js` (pass).
+
 ### Codex — BUGS.md items complete: earth/lollipop admin themes + 4-step cycle (commit ea355d4)
 
 **Delivered:**
