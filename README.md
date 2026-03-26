@@ -306,6 +306,7 @@ All settings are managed through environment variables. The most important ones 
 | Variable                                 | What it does                                                                                                                                        |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_WORDPRESS_URL`              | Your WordPress site URL (e.g., `https://mysite.com`)                                                                                                |
+| `RAGBAZ_GRAPHQL_RELAY_SECRET`            | Dedicated GraphQL relay secret from the `ragbaz-bridge` plugin (simple single-secret auth path)                                                   |
 | `WORDPRESS_GRAPHQL_USERNAME`             | WordPress admin username for API access                                                                                                             |
 | `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | WordPress Application Password (see [how to create one](docs/wordpress-learnpress-course-access.md#how-to-create-a-wordpress-application-password)) |
 | `AUTH_SECRET`                            | A random secret for encrypting sessions. Generate with: `openssl rand -base64 32`                                                                   |

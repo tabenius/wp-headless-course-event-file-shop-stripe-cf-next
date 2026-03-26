@@ -1110,6 +1110,7 @@ function ragbaz_get_plugin_inventory() {
 
 function ragbaz_get_auth_status() {
   $secret = ragbaz_get_site_secret();
+  $relay = ragbaz_get_home_graphql_relay_settings(false);
   $secret_source = '';
   if ($secret) {
     $faust = get_option('faustwp_settings', []);
@@ -1129,6 +1130,9 @@ function ragbaz_get_auth_status() {
     'headless_login_active' => ragbaz_plugin_active('wp-graphql-headless-login/wp-graphql-headless-login.php'),
     'wpgraphql_active'    => function_exists('register_graphql_field'),
     'content_restricted'  => (bool) apply_filters('graphql_require_authentication', false),
+    'graphql_relay_enabled' => (bool) $relay['enabled'],
+    'graphql_relay_header' => (string) $relay['header_name'],
+    'graphql_relay_secret_preview' => (string) $relay['secret_preview'],
   ];
 }
 
@@ -1183,9 +1187,37 @@ function ragbaz_get_home_credentials() {
   ];
 }
 
+function ragbaz_generate_home_graphql_relay_secret() {
+  try {
+    return bin2hex(random_bytes(24));
+  } catch (Throwable $e) {
+    return strtolower(wp_generate_password(48, false, false));
+  }
+}
+
+function ragbaz_get_home_graphql_relay_settings($ensure_secret = true) {
+  $enabled_raw = get_option('ragbaz_home_graphql_relay_enabled', '1');
+  $enabled = !in_array(strtolower((string) $enabled_raw), ['0', 'false', 'no', 'off'], true);
+  $secret = trim((string) get_option('ragbaz_home_graphql_relay_secret', ''));
+  if ($enabled && $ensure_secret && $secret === '') {
+    $secret = ragbaz_generate_home_graphql_relay_secret();
+    update_option('ragbaz_home_graphql_relay_secret', $secret, false);
+  }
+
+  return [
+    'enabled' => (bool) $enabled,
+    'mode' => 'secret-header',
+    'header_name' => 'x-ragbaz-relay-secret',
+    'graphql_url' => untrailingslashit(get_site_url()) . '/graphql',
+    'secret' => $secret,
+    'secret_preview' => $secret !== '' ? substr($secret, 0, 8) . '…' : '',
+  ];
+}
+
 function ragbaz_get_home_connection_graphql_payload() {
   $base_url = ragbaz_get_home_base_url();
   $creds = ragbaz_get_home_credentials();
+  $relay = ragbaz_get_home_graphql_relay_settings(false);
   $account_id = preg_replace('/[^a-z0-9]/', '', strtolower((string) $creds['account_id']));
   $passkey = preg_replace('/[^a-z0-9]/', '', strtolower((string) $creds['passkey']));
   $gift_key = preg_replace('/[^a-z0-9-]/', '', strtolower((string) $creds['gift_key']));
@@ -1196,6 +1228,12 @@ function ragbaz_get_home_connection_graphql_payload() {
     'passkey' => $passkey,
     'giftKey' => $gift_key,
     'canPhoneHome' => ($account_id !== '' && $passkey !== ''),
+    'graphqlRelay' => [
+      'enabled' => (bool) $relay['enabled'],
+      'mode' => (string) $relay['mode'],
+      'headerName' => (string) $relay['header_name'],
+      'graphqlUrl' => (string) $relay['graphql_url'],
+    ],
   ];
 }
 
@@ -1237,6 +1275,7 @@ function ragbaz_collect_installed_plugins() {
 function ragbaz_build_home_payload() {
   global $wp_version;
   $runtime = ragbaz_get_wp_runtime_status();
+  $relay = ragbaz_get_home_graphql_relay_settings(true);
   $site_url = get_site_url();
   $site_host = '';
   $parsed = wp_parse_url($site_url);
@@ -1259,6 +1298,13 @@ function ragbaz_build_home_payload() {
       'hasWpGraphql'             => function_exists('register_graphql_field'),
       'hasWpGraphqlSmartCache'   => ragbaz_plugin_active('wpgraphql-smart-cache/wpgraphql-smart-cache.php'),
       'hasRagbazGraphqlBridge'   => true,
+    ],
+    'graphqlRelay' => [
+      'enabled' => (bool) $relay['enabled'],
+      'mode' => (string) $relay['mode'],
+      'headerName' => (string) $relay['header_name'],
+      'graphqlUrl' => (string) $relay['graphql_url'],
+      'secret' => $relay['enabled'] ? (string) $relay['secret'] : '',
     ],
     'runtime' => [
       'wpDebug'                 => (bool) $runtime['wpDebug'],
@@ -1508,11 +1554,20 @@ function ragbaz_handle_connect_actions() {
     $account = strtolower(trim((string) wp_unslash($_POST['ragbaz_home_account_id'] ?? '')));
     $passkey = trim((string) wp_unslash($_POST['ragbaz_home_passkey'] ?? ''));
     $gift = strtolower(trim((string) wp_unslash($_POST['ragbaz_home_gift_key'] ?? '')));
+    $relay_enabled = !empty($_POST['ragbaz_home_graphql_relay_enabled']) ? '1' : '0';
+    $relay_secret_input = trim((string) wp_unslash($_POST['ragbaz_home_graphql_relay_secret'] ?? ''));
+    $relay_secret_clean = preg_replace('/[^a-z0-9]/', '', strtolower($relay_secret_input));
 
     update_option('ragbaz_home_base_url', $base ?: 'https://ragbaz.xyz', false);
     update_option('ragbaz_home_account_id', preg_replace('/[^a-z0-9]/', '', $account), false);
     update_option('ragbaz_home_passkey', preg_replace('/[^a-z0-9]/', '', strtolower($passkey)), false);
     update_option('ragbaz_home_gift_key', preg_replace('/[^a-z0-9-]/', '', $gift), false);
+    update_option('ragbaz_home_graphql_relay_enabled', $relay_enabled, false);
+    if ($relay_secret_clean !== '') {
+      update_option('ragbaz_home_graphql_relay_secret', $relay_secret_clean, false);
+    } elseif ($relay_enabled === '1') {
+      ragbaz_get_home_graphql_relay_settings(true);
+    }
     ragbaz_set_home_last_result('saved', 'Connection settings saved.');
     wp_redirect(add_query_arg(['ragbaz_connect_result' => 'saved'], $redirect));
     exit;
@@ -1533,6 +1588,7 @@ function ragbaz_handle_connect_actions() {
   if ($action === 'auto_onboard') {
     $result = ragbaz_auto_onboard_home();
     if (!empty($result['ok'])) {
+      ragbaz_get_home_graphql_relay_settings(true);
       ragbaz_set_home_last_result('ok', 'Auto onboarding completed and credentials were saved.', [
         'status' => $result['status'] ?? 200,
         'accountId' => $result['account']['id'] ?? '',
@@ -1547,6 +1603,17 @@ function ragbaz_handle_connect_actions() {
       'data' => isset($result['data']) && is_array($result['data']) ? $result['data'] : [],
     ]);
     wp_redirect(add_query_arg(['ragbaz_connect_result' => 'auto_onboard_failed'], $redirect));
+    exit;
+  }
+
+  if ($action === 'rotate_graphql_relay_secret') {
+    $next_secret = ragbaz_generate_home_graphql_relay_secret();
+    update_option('ragbaz_home_graphql_relay_secret', $next_secret, false);
+    update_option('ragbaz_home_graphql_relay_enabled', '1', false);
+    ragbaz_set_home_last_result('saved', 'GraphQL relay secret rotated.', [
+      'graphqlRelaySecretPreview' => substr($next_secret, 0, 8) . '…',
+    ]);
+    wp_redirect(add_query_arg(['ragbaz_connect_result' => 'relay_secret_rotated'], $redirect));
     exit;
   }
 
@@ -1845,6 +1912,7 @@ function ragbaz_render_info_page() {
     <?php
     $home_base = ragbaz_get_home_base_url();
     $home_creds = ragbaz_get_home_credentials();
+    $relay = ragbaz_get_home_graphql_relay_settings(true);
     $last_result = ragbaz_get_home_last_result();
     $site_url_raw = get_site_url();
     $site_host = '';
@@ -1860,6 +1928,7 @@ function ragbaz_render_info_page() {
     $has_account = $home_creds['account_id'] !== '';
     $has_passkey = $home_creds['passkey'] !== '';
     $has_gift = $home_creds['gift_key'] !== '';
+    $relay_enabled = !empty($relay['enabled']);
     $can_phone_home = $has_account && $has_passkey;
     $connect_result = !empty($_GET['ragbaz_connect_result']) ? sanitize_key(wp_unslash($_GET['ragbaz_connect_result'])) : '';
     $connect_notice_map = [
@@ -1867,6 +1936,7 @@ function ragbaz_render_info_page() {
       'auto_onboard_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Auto onboarding completed and credentials were saved.'],
       'heartbeat_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Phone-home heartbeat sent successfully.'],
       'event_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Call-home event sent successfully.'],
+      'relay_secret_rotated' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'GraphQL relay secret rotated and relay kept enabled.'],
       'auto_onboard_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Auto onboarding failed. Check Home base URL and network connectivity.'],
       'heartbeat_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Heartbeat failed. Check credentials and endpoint URL.'],
       'event_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Event send failed. Check credentials and endpoint URL.'],
@@ -1881,9 +1951,9 @@ function ragbaz_render_info_page() {
       </p>
       <ol style="margin:0;padding-left:18px;color:#7a4b1b;font-size:13px;line-height:1.5">
         <li>Click <strong>Auto onboard</strong> to request and save account credentials from ragbaz.xyz.</li>
-        <li>If needed, edit credentials manually in Connection settings.</li>
-        <li>Click <strong>Phone home now</strong> to send a heartbeat snapshot.</li>
-        <li>Open tenant/site info links to verify ingestion and status pages.</li>
+        <li>Keep <strong>GraphQL relay for ragbaz.xyz</strong> enabled unless you explicitly want to disable it.</li>
+        <li>Click <strong>Phone home now</strong> to send a heartbeat snapshot and update status pages.</li>
+        <li>Use <strong>Advanced settings</strong> only if you need manual endpoint/credential overrides.</li>
       </ol>
     </div>
 
@@ -1921,39 +1991,65 @@ function ragbaz_render_info_page() {
       <form method="post" style="background:#fff;border:1px solid #d8c2a4;padding:16px;border-radius:10px;box-shadow:0 1px 0 rgba(122,75,27,0.04)">
         <?php wp_nonce_field('ragbaz_connect_action'); ?>
         <input type="hidden" name="ragbaz_connect_action" value="save_settings" />
-        <h3 style="margin:0 0 12px;color:#5b3a1f">Connection settings</h3>
+        <h3 style="margin:0 0 12px;color:#5b3a1f">Quick start (recommended)</h3>
         <p style="margin:0 0 12px;color:#7a4b1b;font-size:13px">
-          Prefer <strong>Auto onboard</strong> for first-time setup. Manual credentials can still be edited here.
+          Auto onboarding is the default path. It saves keys, keeps relay auth separate from storefront auth, and requires minimal manual input.
         </p>
         <p style="margin:0 0 12px">
           <button class="button button-secondary" name="ragbaz_connect_action" value="auto_onboard">Auto onboard (request keys from ragbaz.xyz)</button>
         </p>
-        <table class="form-table" role="presentation" style="margin:0">
-          <tbody>
-            <tr>
-              <th scope="row"><label for="ragbaz_home_base_url">Home base URL</label></th>
-              <td><input id="ragbaz_home_base_url" name="ragbaz_home_base_url" type="url" class="regular-text code" value="<?php echo esc_attr($home_base); ?>" /></td>
-            </tr>
-            <tr>
-              <th scope="row"><label for="ragbaz_home_account_id">Account ID</label></th>
-              <td><input id="ragbaz_home_account_id" name="ragbaz_home_account_id" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['account_id']); ?>" /></td>
-            </tr>
-            <tr>
-              <th scope="row"><label for="ragbaz_home_passkey">Passkey</label></th>
-              <td><input id="ragbaz_home_passkey" name="ragbaz_home_passkey" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['passkey']); ?>" /></td>
-            </tr>
-            <tr>
-              <th scope="row"><label for="ragbaz_home_gift_key">Gift key / codename</label></th>
-              <td><input id="ragbaz_home_gift_key" name="ragbaz_home_gift_key" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['gift_key']); ?>" /></td>
-            </tr>
-          </tbody>
-        </table>
-        <p><button class="button button-primary">Save connection settings</button></p>
+        <div style="background:#f8fafc;border:1px solid #dbeafe;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#1e3a8a">
+            <input type="checkbox" name="ragbaz_home_graphql_relay_enabled" value="1" <?php checked($relay_enabled); ?> />
+            Allow ragbaz.xyz GraphQL relay (recommended)
+          </label>
+          <p style="margin:8px 0 0;color:#334155;font-size:12px">
+            Mode: <code><?php echo esc_html($relay['mode']); ?></code> · Header: <code><?php echo esc_html($relay['header_name']); ?></code> ·
+            Secret: <code><?php echo esc_html($relay['secret_preview'] ?: 'not generated'); ?></code>
+          </p>
+          <p style="margin:8px 0 0;font-size:12px;color:#475569">
+            This relay secret is separate from storefront auth keys and can be disabled any time.
+          </p>
+        </div>
+        <details style="margin:0 0 10px">
+          <summary style="cursor:pointer;font-weight:600;color:#7a4b1b">Advanced settings (manual overrides)</summary>
+          <table class="form-table" role="presentation" style="margin:8px 0 0">
+            <tbody>
+              <tr>
+                <th scope="row"><label for="ragbaz_home_base_url">Home base URL</label></th>
+                <td><input id="ragbaz_home_base_url" name="ragbaz_home_base_url" type="url" class="regular-text code" value="<?php echo esc_attr($home_base); ?>" /></td>
+              </tr>
+              <tr>
+                <th scope="row"><label for="ragbaz_home_account_id">Account ID</label></th>
+                <td><input id="ragbaz_home_account_id" name="ragbaz_home_account_id" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['account_id']); ?>" /></td>
+              </tr>
+              <tr>
+                <th scope="row"><label for="ragbaz_home_passkey">Passkey</label></th>
+                <td><input id="ragbaz_home_passkey" name="ragbaz_home_passkey" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['passkey']); ?>" /></td>
+              </tr>
+              <tr>
+                <th scope="row"><label for="ragbaz_home_gift_key">Gift key / codename</label></th>
+                <td><input id="ragbaz_home_gift_key" name="ragbaz_home_gift_key" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['gift_key']); ?>" /></td>
+              </tr>
+              <tr>
+                <th scope="row"><label for="ragbaz_home_graphql_relay_secret">GraphQL relay secret</label></th>
+                <td>
+                  <input id="ragbaz_home_graphql_relay_secret" name="ragbaz_home_graphql_relay_secret" type="text" class="regular-text code" placeholder="leave empty to keep current" />
+                  <p style="margin:6px 0 0;color:#64748b;font-size:12px">Optional manual override. Leave empty to preserve current secret.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+        <p style="display:flex;flex-wrap:wrap;gap:8px;margin:0">
+          <button class="button button-primary">Save settings</button>
+          <button class="button" name="ragbaz_connect_action" value="rotate_graphql_relay_secret">Rotate relay secret</button>
+        </p>
       </form>
 
       <form method="post" style="background:#fff;border:1px solid #d8c2a4;padding:16px;border-radius:10px;box-shadow:0 1px 0 rgba(122,75,27,0.04)">
         <?php wp_nonce_field('ragbaz_connect_action'); ?>
-        <h3 style="margin:0 0 12px;color:#5b3a1f">Manual call-home actions</h3>
+        <h3 style="margin:0 0 12px;color:#5b3a1f">Call-home actions</h3>
         <p style="margin:0 0 12px;color:#7a4b1b;font-size:13px">
           Send a full snapshot heartbeat or a compact event payload to <code><?php echo esc_html($home_base); ?></code>.
         </p>
@@ -1967,20 +2063,23 @@ function ragbaz_render_info_page() {
             Add Account ID and Passkey in Connection settings before sending heartbeat/events.
           </p>
         <?php endif; ?>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:720px;align-items:end">
-          <label>Type<br><input name="ragbaz_event_type" class="regular-text code" value="manual_ping" placeholder="manual_ping" /></label>
-          <label>Severity<br>
-            <select name="ragbaz_event_severity" class="regular-text">
-              <option value="good">good</option>
-              <option value="warn">warn</option>
-              <option value="bad">bad</option>
-            </select>
-          </label>
-          <label>Message<br><input name="ragbaz_event_message" class="regular-text" value="Manual event from Connect panel" /></label>
-        </div>
-        <p style="margin-top:12px">
-          <button class="button" name="ragbaz_connect_action" value="send_event" <?php disabled(!$can_phone_home); ?>>Send call-home event</button>
-        </p>
+        <details>
+          <summary style="cursor:pointer;font-weight:600;color:#7a4b1b">Advanced event payload</summary>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:720px;align-items:end;margin-top:10px">
+            <label>Type<br><input name="ragbaz_event_type" class="regular-text code" value="manual_ping" placeholder="manual_ping" /></label>
+            <label>Severity<br>
+              <select name="ragbaz_event_severity" class="regular-text">
+                <option value="good">good</option>
+                <option value="warn">warn</option>
+                <option value="bad">bad</option>
+              </select>
+            </label>
+            <label>Message<br><input name="ragbaz_event_message" class="regular-text" value="Manual event from Connect panel" /></label>
+          </div>
+          <p style="margin-top:12px">
+            <button class="button" name="ragbaz_connect_action" value="send_event" <?php disabled(!$can_phone_home); ?>>Send call-home event</button>
+          </p>
+        </details>
       </form>
 
       <div style="background:#fff;border:1px solid #d8c2a4;padding:16px;border-radius:10px;box-shadow:0 1px 0 rgba(122,75,27,0.04)">
@@ -1989,7 +2088,8 @@ function ragbaz_render_info_page() {
           Readiness:
           <strong style="color:<?php echo esc_attr($has_account ? '#14532d' : '#991b1b'); ?>">Account <?php echo esc_html($has_account ? 'set' : 'missing'); ?></strong> ·
           <strong style="color:<?php echo esc_attr($has_passkey ? '#14532d' : '#991b1b'); ?>">Passkey <?php echo esc_html($has_passkey ? 'set' : 'missing'); ?></strong> ·
-          <strong style="color:<?php echo esc_attr($has_gift ? '#14532d' : '#92400e'); ?>">Gift key <?php echo esc_html($has_gift ? 'set' : 'optional'); ?></strong>
+          <strong style="color:<?php echo esc_attr($has_gift ? '#14532d' : '#92400e'); ?>">Gift key <?php echo esc_html($has_gift ? 'set' : 'optional'); ?></strong> ·
+          <strong style="color:<?php echo esc_attr($relay_enabled ? '#14532d' : '#92400e'); ?>">GraphQL relay <?php echo esc_html($relay_enabled ? 'enabled' : 'disabled'); ?></strong>
         </p>
         <ul style="margin:0;padding-left:18px;line-height:1.9">
           <?php if ($tenant_preview) : ?>
@@ -2056,10 +2156,12 @@ function ragbaz_get_site_secret() {
 /**
  * Extracts the secret sent by the headless client from the HTTP request.
  * Accepts X-Headless-Secret, X-Faust-Secret, X-FaustWP-Secret, or
- * X-Ragbaz-Secret (PHP normalises header names to HTTP_X_* in $_SERVER).
+ * X-Ragbaz-Secret / X-Ragbaz-Relay-Secret
+ * (PHP normalises header names to HTTP_X_* in $_SERVER).
  */
 function ragbaz_get_request_secret() {
   $candidates = [
+    'HTTP_X_RAGBAZ_RELAY_SECRET',
     'HTTP_X_HEADLESS_SECRET',
     'HTTP_X_FAUST_SECRET',
     'HTTP_X_FAUSTWP_SECRET',
@@ -2071,6 +2173,12 @@ function ragbaz_get_request_secret() {
     }
   }
   return '';
+}
+
+function ragbaz_get_graphql_relay_secret() {
+  $relay = ragbaz_get_home_graphql_relay_settings(false);
+  if (empty($relay['enabled'])) return '';
+  return trim((string) $relay['secret']);
 }
 
 /**
@@ -2100,11 +2208,13 @@ function ragbaz_get_headless_user_id() {
 }
 
 /**
- * Authenticate headless requests that carry the correct site secret header.
+ * Authenticate headless requests that carry the correct secret header.
  *
- * The secret must match the value stored in FaustWP settings or the
- * `ragbaz_site_secret` option. Requests are scoped to the /graphql endpoint
- * so no other WordPress routes are affected.
+ * Accepted secrets:
+ * - Site secret (FaustWP secret_key / ragbaz_site_secret)
+ * - Optional relay secret (ragbaz_home_graphql_relay_secret when enabled)
+ *
+ * Requests are scoped to the /graphql endpoint so no other WordPress routes are affected.
  *
  * This makes the Faust/Ragbaz secret a first-class authentication method for
  * WPGraphQL without depending on wp-graphql-headless-login's JWT flow.
@@ -2117,14 +2227,24 @@ add_filter('determine_current_user', function ($user_id) {
   $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
   if (strpos($uri, '/graphql') === false) return $user_id;
 
-  $secret = ragbaz_get_site_secret();
-  if (!$secret) return $user_id;
-
   $request_secret = ragbaz_get_request_secret();
   if (!$request_secret) return $user_id;
 
-  // Constant-time comparison to prevent timing attacks.
-  if (!hash_equals($secret, $request_secret)) return $user_id;
+  $accepted_secrets = [];
+  $site_secret = ragbaz_get_site_secret();
+  if ($site_secret) $accepted_secrets[] = $site_secret;
+  $relay_secret = ragbaz_get_graphql_relay_secret();
+  if ($relay_secret) $accepted_secrets[] = $relay_secret;
+  if (empty($accepted_secrets)) return $user_id;
+
+  $matched = false;
+  foreach ($accepted_secrets as $secret) {
+    if (hash_equals($secret, $request_secret)) {
+      $matched = true;
+      break;
+    }
+  }
+  if (!$matched) return $user_id;
 
   $headless_id = ragbaz_get_headless_user_id();
   return $headless_id > 0 ? $headless_id : $user_id;
@@ -2362,6 +2482,15 @@ add_action('graphql_register_types', function () {
     ],
   ]);
 
+  register_graphql_object_type('RagbazGraphqlRelay', [
+    'fields' => [
+      'enabled' => ['type' => 'Boolean'],
+      'mode' => ['type' => 'String'],
+      'headerName' => ['type' => 'String'],
+      'graphqlUrl' => ['type' => 'String'],
+    ],
+  ]);
+
   register_graphql_object_type('RagbazHomeConnection', [
     'fields' => [
       'baseUrl' => ['type' => 'String'],
@@ -2369,6 +2498,7 @@ add_action('graphql_register_types', function () {
       'passkey' => ['type' => 'String'],
       'giftKey' => ['type' => 'String'],
       'canPhoneHome' => ['type' => 'Boolean'],
+      'graphqlRelay' => ['type' => 'RagbazGraphqlRelay'],
     ],
   ]);
 

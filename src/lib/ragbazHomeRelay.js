@@ -8,6 +8,12 @@ const CONNECTION_QUERY = `
       passkey
       giftKey
       canPhoneHome
+      graphqlRelay {
+        enabled
+        mode
+        headerName
+        graphqlUrl
+      }
     }
   }
 `;
@@ -28,7 +34,15 @@ function normalizeConnection(raw) {
   const giftKey = trimText(raw.giftKey || "").toLowerCase();
   const canPhoneHome = Boolean(raw.canPhoneHome) && accountId !== "" && passkey !== "";
   if (!canPhoneHome) return null;
-  return { baseUrl, accountId, passkey, giftKey, canPhoneHome };
+  const relay = raw.graphqlRelay && typeof raw.graphqlRelay === "object"
+    ? {
+        enabled: Boolean(raw.graphqlRelay.enabled),
+        mode: trimText(raw.graphqlRelay.mode || ""),
+        headerName: trimText(raw.graphqlRelay.headerName || ""),
+        graphqlUrl: trimText(raw.graphqlRelay.graphqlUrl || ""),
+      }
+    : null;
+  return { baseUrl, accountId, passkey, giftKey, canPhoneHome, graphqlRelay: relay };
 }
 
 function classifySeverity(metrics) {

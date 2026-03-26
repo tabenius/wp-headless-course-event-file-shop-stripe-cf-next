@@ -30,6 +30,21 @@ function getFaustSecret() {
   );
 }
 
+function getRelaySecret() {
+  return (
+    normalizeEnv(process.env.RAGBAZ_GRAPHQL_RELAY_SECRET) ||
+    normalizeEnv(process.env.WORDPRESS_GRAPHQL_RELAY_SECRET)
+  );
+}
+
+function getRelayHeaderName() {
+  return (
+    normalizeEnv(process.env.RAGBAZ_GRAPHQL_RELAY_HEADER_NAME) ||
+    normalizeEnv(process.env.WORDPRESS_GRAPHQL_RELAY_HEADER_NAME) ||
+    "x-ragbaz-relay-secret"
+  );
+}
+
 // ── SiteToken JWT cache ─────────────────────────────────────────────────────
 
 /**
@@ -147,9 +162,10 @@ async function getSiteTokenBearer() {
  *
  * Priority:
  * 1. SiteToken → JWT Bearer  (Faust secret exchanged for a short-lived JWT)
- * 2. Basic auth              (Application Password, most reliable fallback)
- * 3. Bearer JWT              (explicit WORDPRESS_GRAPHQL_AUTH_TOKEN, if JWT-shaped)
- * 4. Unauthenticated         (if nothing else is configured)
+ * 2. Relay secret header     (RAGBAZ relay lane; independent from app passwords)
+ * 3. Basic auth              (Application Password, reliable fallback)
+ * 4. Bearer JWT              (explicit WORDPRESS_GRAPHQL_AUTH_TOKEN, if JWT-shaped)
+ * 5. Unauthenticated         (if nothing else is configured)
  *
  * The SiteToken exchange is the preferred method because it:
  *   - Requires only the Faust secret (no per-user app password)
@@ -170,6 +186,18 @@ export async function getWordPressGraphqlAuthOptions() {
     }
   } catch {
     // SiteToken unavailable — continue to other options
+  }
+
+  // 2. Relay secret header (dedicated auth lane from ragbaz-bridge)
+  const relaySecret = getRelaySecret();
+  if (relaySecret) {
+    options.push({
+      mode: "relay-secret",
+      authorization: "",
+      headers: {
+        [getRelayHeaderName()]: relaySecret,
+      },
+    });
   }
 
   const bearerToken = normalizeEnv(process.env.WORDPRESS_GRAPHQL_AUTH_TOKEN);

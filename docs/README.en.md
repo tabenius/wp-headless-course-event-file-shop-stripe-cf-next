@@ -140,14 +140,15 @@ sequenceDiagram
 
 ## WordPress GraphQL Authentication
 
-Two methods are supported. The app automatically selects the right one based on which environment variables are set.
+Three methods are supported. The app automatically selects the right one based on which environment variables are set.
 
 | Method                   | Environment Variables                                                   | HTTP Header Sent                | When to use                                                                                                            |
 | ------------------------ | ----------------------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **RAGBAZ relay secret**  | `RAGBAZ_GRAPHQL_RELAY_SECRET`                                           | `x-ragbaz-relay-secret: <secret>` | Best operator flow with `ragbaz-bridge`. One dedicated secret, independent from app passwords/JWTs, and easy to rotate/disable in plugin settings. |
 | **Application Password** | `WORDPRESS_GRAPHQL_USERNAME` + `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | `Authorization: Basic <base64>` | Recommended. Works with any WordPress 5.6+ site. Generate in WordPress → Users → Your Profile → Application Passwords. |
 | **Bearer token**         | `WORDPRESS_GRAPHQL_AUTH_TOKEN`                                          | `Authorization: Bearer <token>` | Use when you have a JWT auth plugin (e.g., WPGraphQL JWT Authentication).                                              |
 
-**Priority:** If both are set, Application Password wins. The logic is in `src/lib/wordpressGraphqlAuth.js`.
+**Priority:** SiteToken JWT (if configured) → Relay secret → Application Password → Bearer token. The logic is in `src/lib/wordpressGraphqlAuth.js`.
 
 **Backwards compatibility:** If `WORDPRESS_GRAPHQL_USERNAME` is set and the bearer token looks like an Application Password (contains spaces, no dots), it's automatically treated as Basic auth.
 
