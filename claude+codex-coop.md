@@ -11,6 +11,15 @@
   - `npm run lint` (fails due pre-existing issue in `src/components/setup/WordPressSetupPage.jsx`: `@next/next/no-html-link-for-pages`).
   - `npm test` (fails due existing suite issues unrelated to this patch: `admin-hotkeys` expectation drift, `mock.module` availability in several font tests, and one `photon-pipeline` expectation mismatch).
 
+### Codex — storefront dark-mode contrast bootstrap + icon visibility (commit d755dc4)
+
+**Delivered:**
+- Added an early theme bootstrap script in `src/app/layout.js` to apply `.dark-mode` before hydration when `localStorage.theme === "dark"`, preventing initial dark-text flash in dark mode.
+- Updated dark-mode header button color behavior in `src/app/globals.css` to use `var(--btn-color, #fff7ed)`, restoring visible sun/moon and user-head icons on purple header buttons.
+- Marked the two corresponding `/` BUG entries as done in `BUGS.md`.
+- Verification run:
+  - `npx eslint src/app/layout.js src/app/globals.css src/components/layout/DarkModeToggle.js src/components/layout/UserMenu.js` (0 errors; warnings only: `layout.js` known manual stylesheet warning, CSS file ignored by ESLint config).
+
 ## 2026-03-25 (Claude) — Bundle size reduction + Derivation editor redesign
 
 ### Claude — CF Workers bundle size reduction (commits pending push)
