@@ -130,6 +130,13 @@ export default function EventCalendar({ events, hasDates }) {
   if (!events?.length) return null;
 
   const now = new Date();
+  const todayAtStart = new Date(now);
+  todayAtStart.setHours(0, 0, 0, 0);
+  const hasUpcoming = events.some((ev) => {
+    if (!ev?.startDate) return true;
+    return new Date(ev.startDate) >= todayAtStart;
+  });
+  const heading = hasUpcoming ? "Upcoming Events" : "Events";
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   // Determine which months to show (current + next, or months containing events)
@@ -162,7 +169,7 @@ export default function EventCalendar({ events, hasDates }) {
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-gray-900">
-              Upcoming Events
+              {heading}
             </h2>
             <Link
               href="/events"
@@ -193,7 +200,7 @@ export default function EventCalendar({ events, hasDates }) {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">
-            Upcoming Events
+            {heading}
           </h2>
           <Link
             href="/events"
