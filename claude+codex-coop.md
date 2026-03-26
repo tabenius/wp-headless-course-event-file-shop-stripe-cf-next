@@ -2,6 +2,14 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — BUGS.md item complete: lighter theme-toggle hover outline (commit 5abbee2)
+
+**Delivered:**
+- Reduced admin header theme icon hover outline thickness from `3px` to `2px` in `src/components/admin/AdminHeader.js` (`THEME_ICON_OUTLINE_HOVER`), matching the “1–2px tops” request.
+- Marked the matching BUGS backlog line as done in `BUGS.md` (sun/moon hover outline thickness item).
+- Verification run:
+  - `npx eslint src/components/admin/AdminHeader.js` (pass, 0 errors).
+
 ### Codex — ragbaz-bridge connect UX polish + sepia branding alignment (commits a4ac1bc / 4c6ffc6 / 06a6772)
 
 **Delivered:**
