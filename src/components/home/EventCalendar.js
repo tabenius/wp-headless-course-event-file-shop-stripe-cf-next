@@ -77,7 +77,7 @@ export default function EventCalendar({ events }) {
   if (!events?.length) return null;
 
   return (
-    <section className="border-b border-[#f0d7eb] bg-[#fffdfa] dark:border-neutral-800 dark:bg-neutral-950">
+    <section className="border-b border-[#f0d7eb] bg-transparent dark:border-neutral-800">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Events</h2>
