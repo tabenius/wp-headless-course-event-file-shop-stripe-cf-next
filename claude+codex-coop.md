@@ -2,6 +2,20 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — BUGS.md item complete: shared-hosting WP URL migration guidance in plugin Connect UI (commit aed6eda)
+
+**Delivered:**
+- Added an instructional guidance block to `packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (Connect tab) covering:
+  - moving from apex host to `wp.<domain>` in shared hosting,
+  - DNS + docroot setup,
+  - two strategies (move directory vs symlink to existing codebase),
+  - updating `home/siteurl`,
+  - permalink + `/graphql` verification,
+  - storefront advanced WordPress URL update to the new origin.
+- Marked the corresponding BUGS line as done in `BUGS.md` (shared-hosting subdirectory/subdomain instruction request).
+- Verification run:
+  - `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (no syntax errors).
+
 ### Codex — BUGS.md item complete: KV-backed admin UI feedback controls with Sofia/Tobias role behavior (commit 2c83588)
 
 **Delivered:**
