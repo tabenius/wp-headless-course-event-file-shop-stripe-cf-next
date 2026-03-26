@@ -51,7 +51,7 @@ function EventRow({ event }) {
           {title}
         </Link>
         {dateLabel && (
-          <p className="mt-1 text-xs text-purple-800/90 dark:text-white">{dateLabel}</p>
+          <p className="home-events-date mt-1 text-xs">{dateLabel}</p>
         )}
       </div>
 

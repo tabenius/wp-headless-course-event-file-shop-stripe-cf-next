@@ -892,6 +892,14 @@ body:has(.admin-layout)::before {
   background-color: #222 !important;
 }
 
+/* Homepage events date row: explicit contrast colors by theme */
+.home-events-date {
+  color: #9a6a00 !important;
+}
+.dark-mode .home-events-date {
+  color: #ffe08a !important;
+}
+
 /* Admin header stats ticker scroll animation */
 @keyframes admin-ticker-scroll {
   0%   { transform: translateX(0); }
