@@ -136,9 +136,9 @@ export async function fetchHomeEvents() {
       if (end) return end >= today;
       return true; // keep undated events as best effort
     });
-
-    const hasDates = upcoming.some((e) => e.startDate);
-    return { events: upcoming, hasDates };
+    const display = upcoming.length > 0 ? upcoming : withDates;
+    const hasDates = display.some((e) => e.startDate);
+    return { events: display, hasDates };
   } catch {
     return { events: [], hasDates: false };
   }
