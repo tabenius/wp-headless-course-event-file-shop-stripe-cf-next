@@ -2,6 +2,17 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — GraphQL/REST `nodeByUri` stability hardening for `src/app/[...uri]/page.js` (commit 4e3e078)
+
+**Delivered:**
+- Hardened URI lookup normalization in `src/app/[...uri]/page.js` (`normalizeUriForLookup` + `buildUriLookupAttempts`) so `fetchContent` consistently retries both trailing-slash variants from a canonical URI.
+- Improved `fetchContent` failure handling/logging: non-rate-limit lookup exceptions are logged per candidate URI and do not abort fallback resolution, while `RateLimitError` is rethrown immediately.
+- Updated `resolveNodeByUri` to normalize URIs up front and preserve 429 behavior by rethrowing `RateLimitError` instead of swallowing it in GraphQL/fallback catch paths.
+- Fixed `src/lib/client.js` 429 propagation so `fetchGraphQL` throws `RateLimitError` immediately on HTTP 429 and rethrows it through outer catch logic.
+- Verification run:
+  - `npx eslint src/app/[...uri]/page.js src/lib/client.js` (pass, 0 errors).
+  - `npm test` (fails due pre-existing unrelated suite issues: `admin-hotkeys` and Node `mock.module` failures in font tests).
+
 ### Codex — admin header health-state sync fix (commit 069119f)
 
 **Delivered:**
