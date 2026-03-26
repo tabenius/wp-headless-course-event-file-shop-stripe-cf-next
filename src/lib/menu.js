@@ -1,6 +1,7 @@
 import { fetchGraphQL } from "@/lib/client";
 import site from "@/lib/site";
-import { filterNavigationByExistence } from "@/lib/menuFilter";
+import { resolveWordPressUrl } from "@/lib/wordpressUrl";
+import { ensureShopMenuEntry, filterNavigationByExistence } from "@/lib/menuFilter";
 import { cache } from "react";
 
 const MENU_QUERY = `
@@ -32,17 +33,6 @@ const MENU_QUERY = `
   }
 `;
 
-const MENU_NODE_EXISTS_QUERY = `
-  query MenuNodeExists($uri: String!) {
-    nodeByUri(uri: $uri) {
-      __typename
-      ... on ContentNode {
-        id
-      }
-    }
-  }
-`;
-
 /** Remap known WordPress paths to frontend routes */
 const PATH_REWRITES = {
   "/events/event/": "/events",
@@ -56,6 +46,17 @@ const PATH_REWRITES = {
 const MENU_URI_CHECK_TTL_MS =
   Number.parseInt(process.env.MENU_URI_CHECK_TTL_MS || "300000", 10) || 300000;
 const menuUriExistenceCache = new Map();
+const MENU_SITEMAP_TTL_MS =
+  Number.parseInt(process.env.MENU_SITEMAP_TTL_MS || "600000", 10) || 600000;
+const MENU_SITEMAP_MAX_FILES =
+  Number.parseInt(process.env.MENU_SITEMAP_MAX_FILES || "24", 10) || 24;
+const MENU_SITEMAP_TIMEOUT_MS =
+  Number.parseInt(process.env.MENU_SITEMAP_TIMEOUT_MS || "8000", 10) || 8000;
+let sitemapCache = {
+  expiresAt: 0,
+  paths: null,
+  pending: null,
+};
 
 const ALWAYS_ALLOW_PATHS = new Set(["/", "/#", "#"]);
 const ALWAYS_ALLOW_PREFIXES = [
@@ -125,12 +126,6 @@ function normalizeUriForLookup(uri) {
   return collapsed.replace(/\/+$/, "");
 }
 
-function buildUriLookupAttempts(uri) {
-  const normalized = normalizeUriForLookup(uri);
-  if (normalized === "/") return ["/"];
-  return [normalized, `${normalized}/`];
-}
-
 function isHttpUrl(value) {
   return /^https?:\/\//i.test(value);
 }
@@ -142,6 +137,112 @@ function isKnownFrontendRoute(path) {
   );
 }
 
+function extractLocs(xml) {
+  if (typeof xml !== "string" || !xml.includes("<loc>")) return [];
+  const matches = [...xml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/gi)];
+  return matches.map((match) => match[1]?.trim()).filter(Boolean);
+}
+
+function decodeXmlEntities(value) {
+  return String(value || "")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
+}
+
+function locToPath(loc) {
+  const text = decodeXmlEntities(loc);
+  if (!text) return "";
+  try {
+    const url = new URL(text);
+    return normalizeUriForLookup(url.pathname);
+  } catch {
+    if (text.startsWith("/")) return normalizeUriForLookup(text);
+    return "";
+  }
+}
+
+async function fetchTextWithTimeout(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MENU_SITEMAP_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: "application/xml,text/xml,text/plain,*/*" },
+      signal: controller.signal,
+      cache: "force-cache",
+      next: { revalidate: Math.floor(MENU_SITEMAP_TTL_MS / 1000) },
+    });
+    if (!response.ok) return "";
+    return await response.text();
+  } catch {
+    return "";
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function loadSitemapPathSet() {
+  const wordpressUrl = await resolveWordPressUrl();
+  const base = String(wordpressUrl || site.url || "").replace(/\/+$/, "");
+  if (!base) return null;
+
+  const rootCandidates = [`${base}/sitemap.xml`, `${base}/wp-sitemap.xml`];
+  let rootXml = "";
+  for (const candidate of rootCandidates) {
+    rootXml = await fetchTextWithTimeout(candidate);
+    if (rootXml) break;
+  }
+  if (!rootXml) return null;
+
+  const paths = new Set();
+  const rootLocs = extractLocs(rootXml);
+  const isIndex = /<sitemapindex[\s>]/i.test(rootXml);
+
+  if (!isIndex) {
+    for (const loc of rootLocs) {
+      const path = locToPath(loc);
+      if (path) paths.add(path);
+    }
+    return paths;
+  }
+
+  const childSitemaps = rootLocs.slice(0, MENU_SITEMAP_MAX_FILES);
+  for (const sitemapLoc of childSitemaps) {
+    const xml = await fetchTextWithTimeout(sitemapLoc);
+    if (!xml) continue;
+    const locs = extractLocs(xml);
+    for (const loc of locs) {
+      const path = locToPath(loc);
+      if (path) paths.add(path);
+    }
+  }
+
+  return paths;
+}
+
+async function getSitemapPathSet() {
+  const now = Date.now();
+  if (sitemapCache.paths && sitemapCache.expiresAt > now) {
+    return sitemapCache.paths;
+  }
+  if (sitemapCache.pending) {
+    return sitemapCache.pending;
+  }
+  sitemapCache.pending = loadSitemapPathSet()
+    .then((paths) => {
+      sitemapCache.paths = paths;
+      sitemapCache.expiresAt = Date.now() + MENU_SITEMAP_TTL_MS;
+      return paths;
+    })
+    .catch(() => null)
+    .finally(() => {
+      sitemapCache.pending = null;
+    });
+  return sitemapCache.pending;
+}
+
 async function doesWordPressUriExist(path) {
   const normalized = normalizeUriForLookup(path);
   if (normalized === "/") return true;
@@ -151,23 +252,9 @@ async function doesWordPressUriExist(path) {
     return cached.exists;
   }
 
-  const attempts = buildUriLookupAttempts(normalized);
-  let gotDefinitiveNodeByUriResponse = false;
-  let exists = false;
-
-  for (const candidateUri of attempts) {
-    const data = await fetchGraphQL(MENU_NODE_EXISTS_QUERY, { uri: candidateUri }, 300);
-    if (!data || typeof data !== "object") continue;
-    if (!Object.prototype.hasOwnProperty.call(data, "nodeByUri")) continue;
-    gotDefinitiveNodeByUriResponse = true;
-    if (data.nodeByUri) {
-      exists = true;
-      break;
-    }
-  }
-
-  // Fail-open when upstream couldn't confirm nodeByUri shape (rate limit/outage).
-  const resolvedExists = gotDefinitiveNodeByUriResponse ? exists : true;
+  const sitemapPaths = await getSitemapPathSet();
+  // Fail-open when sitemap cannot be read.
+  const resolvedExists = sitemapPaths ? sitemapPaths.has(normalized) : true;
   menuUriExistenceCache.set(normalized, {
     exists: resolvedExists,
     expiresAt: Date.now() + MENU_URI_CHECK_TTL_MS,
@@ -202,7 +289,11 @@ export const getNavigation = cache(async function getNavigation() {
       data?.menus?.edges?.[0]?.node?.menuItems?.edges?.map((e) => e.node) || [];
 
     if (menuItems.length === 0) {
-      return await filterNavigationByExistence(site.navigation, canRenderMenuHref);
+      const filtered = await filterNavigationByExistence(
+        site.navigation,
+        canRenderMenuHref,
+      );
+      return ensureShopMenuEntry(filtered);
     }
 
     const mapped = menuItems.map((item) => {
@@ -213,8 +304,13 @@ export const getNavigation = cache(async function getNavigation() {
         ...(children.length > 0 ? { children } : {}),
       };
     });
-    return await filterNavigationByExistence(mapped, canRenderMenuHref);
+    const filtered = await filterNavigationByExistence(mapped, canRenderMenuHref);
+    return ensureShopMenuEntry(filtered);
   } catch {
-    return await filterNavigationByExistence(site.navigation, canRenderMenuHref);
+    const filtered = await filterNavigationByExistence(
+      site.navigation,
+      canRenderMenuHref,
+    );
+    return ensureShopMenuEntry(filtered);
   }
 });

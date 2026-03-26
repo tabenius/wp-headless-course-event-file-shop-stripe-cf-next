@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterNavigationByExistence } from "../src/lib/menuFilter.js";
+import {
+  ensureShopMenuEntry,
+  filterNavigationByExistence,
+} from "../src/lib/menuFilter.js";
 
 test("filterNavigationByExistence removes stale leaf links", async () => {
   const navigation = [
@@ -50,4 +53,24 @@ test("filterNavigationByExistence drops invalid object shapes", async () => {
 
   const result = await filterNavigationByExistence(navigation, async () => true);
   assert.deepEqual(result, [{ href: "/valid", label: "Valid" }]);
+});
+
+test("ensureShopMenuEntry appends Shop when /shop is missing", () => {
+  const input = [
+    { href: "/blog", label: "Blog" },
+    { href: "/events", label: "Events" },
+  ];
+  const result = ensureShopMenuEntry(input);
+  assert.equal(result.at(-1)?.href, "/shop");
+  assert.equal(result.at(-1)?.label, "Shop");
+});
+
+test("ensureShopMenuEntry does not duplicate existing /shop", () => {
+  const input = [
+    { href: "/shop", label: "BUTIK" },
+    { href: "/blog", label: "Blog" },
+  ];
+  const result = ensureShopMenuEntry(input);
+  assert.equal(result.filter((item) => item.href === "/shop").length, 1);
+  assert.equal(result[0].label, "BUTIK");
 });

@@ -34,7 +34,7 @@ export default function DarkModeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#f0d0d0] transition-colors"
+      className="storefront-icon-button flex items-center justify-center w-8 h-8 rounded-full transition-colors"
       aria-label={dark ? t("darkMode.lightMode") : t("darkMode.darkMode")}
       title={dark ? t("darkMode.lightMode") : t("darkMode.darkMode")}
     >
@@ -48,7 +48,7 @@ export default function DarkModeToggle() {
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="w-5 h-5"
+          className="w-[18px] h-[18px]"
         >
           <circle cx="12" cy="12" r="5" />
           <line x1="12" y1="1" x2="12" y2="3" />
@@ -70,7 +70,7 @@ export default function DarkModeToggle() {
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="w-5 h-5"
+          className="w-[18px] h-[18px]"
         >
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>

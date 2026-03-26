@@ -24,7 +24,7 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#f0d0d0] transition-colors"
+        className="storefront-icon-button flex items-center justify-center w-8 h-8 rounded-full transition-colors"
         aria-label={t("nav.userMenu")}
         aria-expanded={open}
       >
@@ -37,7 +37,7 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="w-5 h-5"
+          className="w-[18px] h-[18px]"
         >
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
           <circle cx="12" cy="7" r="4" />

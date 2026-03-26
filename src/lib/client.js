@@ -10,6 +10,22 @@ const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
 const GRAPHQL_TIMEOUT_MS =
   Number.parseInt(process.env.GRAPHQL_TIMEOUT_MS || "8000", 10) || 8000;
+const GRAPHQL_BUILD_DELAY_MS =
+  Number.parseInt(process.env.GRAPHQL_BUILD_DELAY_MS || "180", 10) || 180;
+const GRAPHQL_BUILD_TIMEOUT_MS =
+  Number.parseInt(process.env.GRAPHQL_BUILD_TIMEOUT_MS || "15000", 10) || 15000;
+const IS_BUILD_PHASE =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.npm_lifecycle_event === "build" ||
+  process.env.npm_lifecycle_event === "cf:build" ||
+  process.env.npm_lifecycle_event === "cf:deploy" ||
+  process.env.__NEXT_PRIVATE_BUILD_WORKER === "1";
+const EFFECTIVE_DELAY_MS = IS_BUILD_PHASE
+  ? Math.max(DEFAULT_DELAY_MS, GRAPHQL_BUILD_DELAY_MS)
+  : DEFAULT_DELAY_MS;
+const EFFECTIVE_TIMEOUT_MS = IS_BUILD_PHASE
+  ? Math.max(GRAPHQL_TIMEOUT_MS, GRAPHQL_BUILD_TIMEOUT_MS)
+  : GRAPHQL_TIMEOUT_MS;
 let lastCallTs = 0;
 
 // ── Request history ───────────────────────────────────────────────────────────
@@ -187,11 +203,11 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
       // Rate-limit calls to avoid overloading Varnish/GraphQL
       const now = Date.now();
       const diff = now - lastCallTs;
-      if (DEFAULT_DELAY_MS > 0 && diff < DEFAULT_DELAY_MS) {
-        await sleep(DEFAULT_DELAY_MS - diff);
+      if (EFFECTIVE_DELAY_MS > 0 && diff < EFFECTIVE_DELAY_MS) {
+        await sleep(EFFECTIVE_DELAY_MS - diff);
       }
       const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), GRAPHQL_TIMEOUT_MS);
+      const tid = setTimeout(() => controller.abort(), EFFECTIVE_TIMEOUT_MS);
       let response;
       const attemptStart = Date.now();
       try {
@@ -215,7 +231,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
           responsePreview: trimText(fetchErr?.message || "", 1200),
         }).catch(() => {});
         if (fetchErr.name === "AbortError") {
-          const msg = `GraphQL timeout after ${GRAPHQL_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
+          const msg = `GraphQL timeout after ${EFFECTIVE_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
           console.error(msg);
           appendServerLog({ level: "error", msg, persist: false }).catch(() => {});
           return {};
@@ -277,8 +293,11 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
           variables: variablesPreview,
           responsePreview: trimText(firstLines(text, 6), 1200),
         }).catch(() => {});
-        if (varnishHit) await sleep(250);
-        else await sleep(DEFAULT_DELAY_MS || 100);
+        if (varnishHit) {
+          await sleep(IS_BUILD_PHASE ? 900 : 250);
+        } else {
+          await sleep(EFFECTIVE_DELAY_MS || 100);
+        }
         continue;
       }
 

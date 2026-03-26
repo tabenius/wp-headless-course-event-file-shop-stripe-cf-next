@@ -41,3 +41,25 @@ export async function filterNavigationByExistence(items, resolver) {
 
   return resolved.filter(Boolean);
 }
+
+function normalizePath(value) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw || raw === "/") return "/";
+  const withoutQuery = raw.split("?")[0].split("#")[0];
+  const withLeading = withoutQuery.startsWith("/") ? withoutQuery : `/${withoutQuery}`;
+  const collapsed = withLeading.replace(/\/{2,}/g, "/");
+  if (collapsed === "/") return "/";
+  return collapsed.replace(/\/+$/, "");
+}
+
+export function ensureShopMenuEntry(items) {
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  const hasShop = list.some(
+    (item) =>
+      item &&
+      typeof item === "object" &&
+      normalizePath(item.href) === "/shop",
+  );
+  if (hasShop) return list;
+  return [...list, { href: "/shop", label: "Shop" }];
+}

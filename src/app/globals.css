@@ -765,6 +765,26 @@ body:has(.admin-layout)::before {
   --foreground: var(--color-foreground);
 }
 
+/* Storefront utility icon buttons (theme toggle + user menu) must never use CTA button colors */
+.storefront-icon-button {
+  background: rgba(255, 241, 241, 0.92) !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(109, 0, 62, 0.35) !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.storefront-icon-button:hover {
+  background: #f0d0d0 !important;
+  color: #1a1a1a !important;
+}
+.storefront-icon-button:focus-visible {
+  outline: 2px solid #6d003e;
+  outline-offset: 2px;
+}
+.dark-mode header button.storefront-icon-button {
+  color: #1a1a1a !important;
+}
+
 /* Darken the background image */
 .dark-mode body::before {
   filter: brightness(0.25);
