@@ -26,8 +26,8 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [ ] FEATURE: Add a pink ceris purple colored theme and call it lollipop, therefore there are now four steps in the sun moon earth cycle and there will be a star as an icon
 [x] BUG: /, buttons for theme, sun and moon icons, are not visible in the purple button. Head icon for login is not visible either.
 [x] BUG: /, dark theme have dark text initially, change to white text if there is a dark theme.
-[ ] BUG: /admin/docs/readme-sv have no generated mermaid diagrams, they are all source code.
-[ ] BUG: /admin/docs/ have a lot of not generated mermaid diagrams, they are source code only.
+[x] BUG: /admin/docs/readme-sv have no generated mermaid diagrams, they are all source code.
+[x] BUG: /admin/docs/ have a lot of not generated mermaid diagrams, they are source code only.
 [ ] FEATURE: Split /shop into static catalog shell + user ownership enrichment API. Expected gain: major TTFB reduction for anonymous traffic. Tradeoff: additional client-side state path; ownership badges become async.
 [ ] FEATURE: All environment variable in the admin ui under storage should be able to toggle visible and also fill in those that are not shown at all, put them under a new tab called secret and make the admin user to write in her password again as confirmation.
 [ ] FEATURE: review the knob and ui style of the font laboratory ../type-laboratory.html, of draft-font-editor* as inspiration and add variants as an advanced setting: vintage font style and synchronize the two font selectors range of possibilites.

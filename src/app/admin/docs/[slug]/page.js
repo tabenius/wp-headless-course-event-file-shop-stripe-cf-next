@@ -79,6 +79,13 @@ function rewriteHref(href) {
   return href;
 }
 
+function buildMermaidImageUrl(definition) {
+  const source = String(definition || "").trim();
+  if (!source) return "";
+  const encoded = Buffer.from(source, "utf8").toString("base64");
+  return `https://mermaid.ink/img/${encodeURIComponent(encoded)}`;
+}
+
 export async function generateMetadata({ params: paramsPromise }) {
   const { slug } = await paramsPromise;
   return { title: titles[slug] || "Documentation" };
@@ -129,6 +136,30 @@ export default async function DocPage({ params: paramsPromise }) {
         <a href={resolved} {...props}>
           {children}
         </a>
+      );
+    },
+    pre({ children, ...props }) {
+      const codeNode = Array.isArray(children) ? children[0] : children;
+      const className = String(codeNode?.props?.className || "");
+      const isMermaid = /\blanguage-mermaid\b/i.test(className);
+      if (!isMermaid) {
+        return <pre {...props}>{children}</pre>;
+      }
+      const source = codeNode?.props?.children;
+      const code = Array.isArray(source) ? source.join("") : String(source || "");
+      const src = buildMermaidImageUrl(code);
+      if (!src) return <pre {...props}>{children}</pre>;
+      return (
+        <figure className="my-6 rounded border border-gray-300 bg-white p-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt="Mermaid diagram"
+            className="w-full h-auto"
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
       );
     },
   };
