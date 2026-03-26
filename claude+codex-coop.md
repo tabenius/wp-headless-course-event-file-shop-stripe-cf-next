@@ -2,6 +2,26 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — tenant draft UI flow polish for domain routes (commit `c44cbf6` in `ragbaz.xyz`)
+
+**Delivered:**
+- Updated `ragbaz.xyz` tenant UI routing so domain pages now render the draft storefront view:
+  - `GET /tenant/{domain}` now resolves the tenant and renders `renderGiftDraftPage` (instead of connected-site info page).
+  - Added domain candidate fallback in tenant lookup (`domain`, `www.domain`, and stripped `www`) to reduce “not found” friction.
+- Added upstream likeness capture in worker runtime:
+  - fetches and caches upstream HTML snapshot metadata (`title`, `description`, `canonical`, final URL/status/error) for 5 minutes.
+  - wired snapshot into gift-host draft rendering and domain-route draft rendering.
+- Expanded draft UI (`renderGiftDraftPage`) with:
+  - upstream snapshot status panel,
+  - preliminary storefront likeness card based on upstream metadata,
+  - faster operator navigation actions (`Peer diagnostics`, `Connected site info`, `Open upstream site`).
+- Improved connected-site UI (`renderConnectedSitePage`) with explicit domain-route guidance and `Open draft by domain` quick action.
+- Updated docs/tests:
+  - `ragbaz.xyz/README.md` now describes `/tenant/{domain}` as a draft storefront page with score meters + upstream likeness.
+  - `tests/home-api.test.js` updated to assert draft rendering for `/tenant/xtas.nu` and `/tenant/www.xtas.nu`.
+- Verification run:
+  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+
 ### Codex — peer recommendations wording clarity (commit `aad43d0` in `ragbaz.xyz`)
 
 **Delivered:**
