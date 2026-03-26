@@ -2,6 +2,30 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — bridge plugin 1.2.1 released, connect-first tab order, explicit slug-claim step
+
+**Delivered:**
+- Bumped `ragbaz-bridge` plugin version to `1.2.1` across plugin header/constant, package metadata, and readme stable tag/changelog.
+- Reordered admin tabs so **Connect to RAGBAZ** renders first.
+- Promoted tenant slug claiming into the main recommended Connect flow (no longer hidden behind advanced settings):
+  - visible slug input with no-dot guidance,
+  - visible `Claim / reserve slug` action in-step.
+- Rebuilt plugin artifacts and refreshed published zips copied to:
+  - `main/public/downloads/ragbaz-bridge/ragbaz-bridge.zip`
+  - `ragbaz.xyz/release/ragbaz-bridge.zip`
+- Verified live deployment issue and fixed it:
+  - before deploy, `https://ragbaz.xyz/downloads/ragbaz-bridge/ragbaz-bridge.zip` served `1.2.0`,
+  - deployed `ragbaz.xyz` worker,
+  - re-verified live route now serves `1.2.1` with Connect-first tab order and slug-claim UI marker.
+
+**Commits:**
+- `main` `25f729a` — `Bump bridge to 1.2.1 and surface slug claim in Connect flow`
+
+**Verification run:**
+- `main`: `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass)
+- `main`: `npm run plugin:copy` (pass)
+- remote check: downloaded live zip and confirmed `Version: 1.2.1` + `connect` tab before `overview` (pass)
+
 ### Codex — claimed/reserved tenant slug aliases (gift-key interchangeable) in plugin + ragbaz.xyz
 
 **Delivered:**
