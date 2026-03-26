@@ -1,4 +1,4 @@
-import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
+import { fetchGraphQL } from "@/lib/client";
 import EventListItem from "@/components/cpt/EventListItem";
 
 export const metadata = {
@@ -40,18 +40,6 @@ const LIST_EVENTS_QUERY = `
 `;
 
 export default async function EventsPage() {
-  const hasEvent = await hasGraphQLType("Event");
-  if (!hasEvent) {
-    return (
-      <main className="max-w-4xl mx-auto px-6 py-24">
-        <h1 className="text-4xl font-bold mb-6">Evenemang</h1>
-        <p className="text-gray-600">
-          Evenemangssidan kräver Event Organiser med WPGraphQL-stöd.
-        </p>
-      </main>
-    );
-  }
-
   const data = await fetchGraphQL(LIST_EVENTS_QUERY, {}, 1800);
   const events = data?.events?.edges?.map((e) => e.node) || [];
 

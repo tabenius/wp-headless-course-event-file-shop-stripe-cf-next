@@ -1,4 +1,4 @@
-import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
+import { fetchGraphQL } from "@/lib/client";
 
 /**
  * RAGBAZ Bridge registers startDate and endDate on the Event type via
@@ -87,9 +87,6 @@ function sortByStartDateAsc(events) {
  */
 export async function fetchHomeEvents() {
   try {
-    const hasEvent = await hasGraphQLType("Event");
-    if (!hasEvent) return { events: [], hasDates: false };
-
     const data = await fetchGraphQL(HOME_EVENTS_QUERY, {}, 1800);
     const raw = toRenderableEvents(extractEventNodes(data));
 
