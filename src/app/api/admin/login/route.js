@@ -34,7 +34,7 @@ export async function POST(request) {
         { status: 401 },
       );
     }
-    const token = await createAdminSessionToken();
+    const token = await createAdminSessionToken(email);
     const response = NextResponse.json({ ok: true });
     response.headers.append("Set-Cookie", createAdminSessionCookie(token));
     return response;

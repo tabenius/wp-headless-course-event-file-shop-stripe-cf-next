@@ -18,6 +18,7 @@ import ProductRow from "./ProductRow";
 import ProductSection from "./ProductSection";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 import ChatPanel from "./ChatPanel";
+import AdminUiFeedbackBar from "./AdminUiFeedbackBar";
 import { adminFetch } from "@/lib/adminFetch";
 import {
   isAdminActionHotkey,
@@ -839,6 +840,58 @@ export default function AdminDashboard() {
     },
     [activeTab],
   );
+  const loadUiFeedback = useCallback(async () => {
+    setUiFeedbackLoading(true);
+    try {
+      const [sessionRes, feedbackRes] = await Promise.all([
+        adminFetch("/api/admin/session"),
+        adminFetch("/api/admin/ui-feedback"),
+      ]);
+      const sessionJson = await sessionRes.json().catch(() => ({}));
+      const feedbackJson = await feedbackRes.json().catch(() => ({}));
+
+      const email = String(sessionJson?.session?.email || "")
+        .trim()
+        .toLowerCase();
+      const editable = email.startsWith("sofia");
+      setUiFeedbackReadOnly(!editable);
+
+      if (feedbackRes.ok && feedbackJson?.ok) {
+        setUiFeedbackFields(feedbackJson.fields || {});
+      } else {
+        throw new Error(feedbackJson?.error || "Failed to load UI feedback.");
+      }
+    } catch (err) {
+      setUiFeedbackFields({});
+      setUiFeedbackReadOnly(true);
+      setError(err?.message || "Failed to load UI feedback.", "global");
+    } finally {
+      setUiFeedbackLoading(false);
+    }
+  }, [setError]);
+  const saveUiFeedback = useCallback(
+    async (fieldId, value) => {
+      if (!fieldId || uiFeedbackReadOnly) return;
+      setUiFeedbackSavingField(fieldId);
+      try {
+        const res = await adminFetch("/api/admin/ui-feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fieldId, value }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || "Failed to save UI feedback.");
+        }
+        setUiFeedbackFields(json.fields || {});
+      } catch (err) {
+        setError(err?.message || "Failed to save UI feedback.", activeTab);
+      } finally {
+        setUiFeedbackSavingField("");
+      }
+    },
+    [activeTab, setError, uiFeedbackReadOnly],
+  );
   const [welcomeStoryVisible, setWelcomeStoryVisible] = useState(true);
   const [purging, setPurging] = useState(false);
   const [deploying, setDeploying] = useState(false);
@@ -926,6 +979,10 @@ export default function AdminDashboard() {
   const [paymentsStripeConfigured, setPaymentsStripeConfigured] = useState(true);
   const [paymentsEmptyReason, setPaymentsEmptyReason] = useState(null);
   const [downloading, setDownloading] = useState(null);
+  const [uiFeedbackFields, setUiFeedbackFields] = useState({});
+  const [uiFeedbackReadOnly, setUiFeedbackReadOnly] = useState(true);
+  const [uiFeedbackLoading, setUiFeedbackLoading] = useState(true);
+  const [uiFeedbackSavingField, setUiFeedbackSavingField] = useState("");
 
   useEffect(() => {
     log("mounted");
@@ -936,6 +993,10 @@ export default function AdminDashboard() {
     log("activeTab", activeTab);
     activeTabRef.current = activeTab;
   }, [activeTab]);
+
+  useEffect(() => {
+    loadUiFeedback();
+  }, [loadUiFeedback]);
 
   useEffect(() => {
     if (
@@ -2243,9 +2304,34 @@ export default function AdminDashboard() {
     activeTab === "welcome" && welcomeStoryVisible
       ? "w-full min-w-0 px-0 py-0"
       : "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10 space-y-6 sm:space-y-8";
+  const uiFeedbackFieldId = `tab:${activeTab}`;
+  const uiFeedbackContextLabelMap = {
+    welcome: t("admin.navWelcome", "Welcome"),
+    sales: t("admin.navSales", "Sales"),
+    media: t("admin.navMedia", "Asset library"),
+    products: t("admin.navProducts", "Products"),
+    support: t("admin.navSupport", "Support"),
+    style: t("admin.navStyle", "Style"),
+    info: t("admin.navInfo", "Info"),
+    chat: t("admin.navChat", "Chat"),
+  };
+  const uiFeedbackContextLabel =
+    uiFeedbackContextLabelMap[activeTab] || activeTab;
+  const showUiFeedbackBar = !(activeTab === "welcome" && welcomeStoryVisible);
 
   return (
     <section className={dashboardSectionClass}>
+      {showUiFeedbackBar && (
+        <AdminUiFeedbackBar
+          contextLabel={uiFeedbackContextLabel}
+          fieldId={uiFeedbackFieldId}
+          entry={uiFeedbackFields[uiFeedbackFieldId]}
+          loading={uiFeedbackLoading}
+          saving={uiFeedbackSavingField === uiFeedbackFieldId}
+          readOnly={uiFeedbackReadOnly}
+          onSet={saveUiFeedback}
+        />
+      )}
       {activeTab === "welcome" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}

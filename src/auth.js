@@ -236,9 +236,11 @@ export async function validateAdminCredentials(email, password) {
   return false;
 }
 
-export async function createAdminSessionToken() {
+export async function createAdminSessionToken(email = "") {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
   return encodeSession({
     role: "admin",
+    email: normalizedEmail,
     exp: Date.now() + SESSION_TTL_SECONDS * 1000,
   });
 }
@@ -256,7 +258,10 @@ export async function adminAuth() {
   const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
   const session = await decodeSession(token);
   if (!session || session.role !== "admin") return null;
-  return { role: "admin" };
+  return {
+    role: "admin",
+    email: String(session.email || "").trim().toLowerCase(),
+  };
 }
 
 export async function getAdminSessionFromCookieHeader(cookieHeader) {
@@ -267,5 +272,10 @@ export async function getAdminSessionFromCookieHeader(cookieHeader) {
     .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`))
     ?.slice(ADMIN_COOKIE_NAME.length + 1);
   const session = await decodeSession(token);
-  return session?.role === "admin" ? { role: "admin" } : null;
+  return session?.role === "admin"
+    ? {
+        role: "admin",
+        email: String(session.email || "").trim().toLowerCase(),
+      }
+    : null;
 }
