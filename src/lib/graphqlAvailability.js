@@ -128,9 +128,9 @@ const MAX_PERF_DATAPOINTS = 300;
  * Record a page load performance datapoint.
  * Called from a client-side hook via an API route (client can't write KV directly).
  *
- * @param {{ url: string, ttfb: number, domComplete: number, lcp?: number, fcp?: number }} param
+ * @param {{ url: string, ttfb: number, domComplete: number, lcp?: number, fcp?: number, inp?: number, cls?: number }} param
  */
-export async function recordPagePerformance({ url, ttfb, domComplete, lcp, fcp }) {
+export async function recordPagePerformance({ url, ttfb, domComplete, lcp, fcp, inp, cls }) {
   if (!(await isAvailabilityLoggingEnabled())) return;
   try {
     const current = (await readCloudflareKvJson(PERF_LOG_KEY)) ?? [];
@@ -141,6 +141,8 @@ export async function recordPagePerformance({ url, ttfb, domComplete, lcp, fcp }
       domComplete: Math.round(domComplete ?? 0),
       ...(lcp != null ? { lcp: Math.round(lcp) } : {}),
       ...(fcp != null ? { fcp: Math.round(fcp) } : {}),
+      ...(inp != null ? { inp: Math.round(inp) } : {}),
+      ...(cls != null ? { cls: Number(cls) } : {}),
     };
     const next = [entry, ...current].slice(0, MAX_PERF_DATAPOINTS);
     await writeCloudflareKvJson(PERF_LOG_KEY, next, {

@@ -5,6 +5,7 @@ import {
   clearPagePerformanceLog,
 } from "@/lib/graphqlAvailability";
 import { isCloudflareKvConfigured } from "@/lib/cloudflareKv";
+import { relayStorefrontVitalsToRagbazHome } from "@/lib/ragbazHomeRelay";
 
 /** POST /api/admin/page-performance — record a page load datapoint (called from client hook) */
 export async function POST(request) {
@@ -30,7 +31,11 @@ export async function POST(request) {
     domComplete: Number(body.domComplete) || 0,
     lcp: body.lcp != null ? Number(body.lcp) : undefined,
     fcp: body.fcp != null ? Number(body.fcp) : undefined,
+    inp: body.inp != null ? Number(body.inp) : undefined,
+    cls: body.cls != null ? Number(body.cls) : undefined,
   }).catch(() => {});
+
+  relayStorefrontVitalsToRagbazHome(body, request).catch(() => {});
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 202,

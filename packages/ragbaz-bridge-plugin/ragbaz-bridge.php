@@ -1183,6 +1183,22 @@ function ragbaz_get_home_credentials() {
   ];
 }
 
+function ragbaz_get_home_connection_graphql_payload() {
+  $base_url = ragbaz_get_home_base_url();
+  $creds = ragbaz_get_home_credentials();
+  $account_id = preg_replace('/[^a-z0-9]/', '', strtolower((string) $creds['account_id']));
+  $passkey = preg_replace('/[^a-z0-9]/', '', strtolower((string) $creds['passkey']));
+  $gift_key = preg_replace('/[^a-z0-9-]/', '', strtolower((string) $creds['gift_key']));
+
+  return [
+    'baseUrl' => $base_url,
+    'accountId' => $account_id,
+    'passkey' => $passkey,
+    'giftKey' => $gift_key,
+    'canPhoneHome' => ($account_id !== '' && $passkey !== ''),
+  ];
+}
+
 function ragbaz_set_home_last_result($status, $message, $extra = []) {
   $payload = [
     'status'  => $status,
@@ -2346,6 +2362,16 @@ add_action('graphql_register_types', function () {
     ],
   ]);
 
+  register_graphql_object_type('RagbazHomeConnection', [
+    'fields' => [
+      'baseUrl' => ['type' => 'String'],
+      'accountId' => ['type' => 'String'],
+      'passkey' => ['type' => 'String'],
+      'giftKey' => ['type' => 'String'],
+      'canPhoneHome' => ['type' => 'Boolean'],
+    ],
+  ]);
+
   register_graphql_object_type('RagbazInfo', [
     'fields' => [
       'version' => ['type' => 'String'],
@@ -2435,6 +2461,14 @@ add_action('graphql_register_types', function () {
     'resolve' => function () {
       if (!current_user_can('manage_options')) return null;
       return ragbaz_get_wp_runtime_status();
+    },
+  ]);
+
+  register_graphql_field('RootQuery', 'ragbazHomeConnection', [
+    'type' => 'RagbazHomeConnection',
+    'resolve' => function () {
+      if (!current_user_can('manage_options')) return null;
+      return ragbaz_get_home_connection_graphql_payload();
     },
   ]);
 

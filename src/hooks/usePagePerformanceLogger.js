@@ -7,8 +7,8 @@ import { useEffect } from "react";
  * becomes fully interactive.
  *
  * Reads TTFB and domComplete from the Navigation Timing API and observes
- * Largest Contentful Paint (LCP) and First Contentful Paint (FCP) via
- * PerformanceObserver.
+ * Largest Contentful Paint (LCP), First Contentful Paint (FCP), Interaction to
+ * Next Paint (INP), and Cumulative Layout Shift (CLS) via PerformanceObserver.
  *
  * Only fires once per page navigation. The request is a fire-and-forget
  * `sendBeacon` / `fetch` so it does not block rendering.
@@ -19,8 +19,12 @@ export function usePagePerformanceLogger() {
 
     let lcp = null;
     let fcp = null;
+    let inp = null;
+    let cls = 0;
     let lcpObserver = null;
     let fcpObserver = null;
+    let inpObserver = null;
+    let clsObserver = null;
 
     function send() {
       const nav = performance.getEntriesByType("navigation")[0];
@@ -32,6 +36,8 @@ export function usePagePerformanceLogger() {
         domComplete: nav.domComplete,
         ...(lcp != null ? { lcp } : {}),
         ...(fcp != null ? { fcp } : {}),
+        ...(inp != null ? { inp } : {}),
+        ...(cls > 0 ? { cls } : {}),
       };
 
       // Use sendBeacon when available so the request survives page unload
@@ -57,6 +63,36 @@ export function usePagePerformanceLogger() {
         }
       });
       lcpObserver.observe({ type: "largest-contentful-paint", buffered: true });
+    } catch {
+      // Not supported in all browsers
+    }
+
+    // Observe INP candidate events
+    try {
+      inpObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const interactionId = Number(entry?.interactionId || 0);
+          const duration = Number(entry?.duration || 0);
+          if (!Number.isFinite(duration) || interactionId <= 0) continue;
+          inp = inp == null ? duration : Math.max(inp, duration);
+        }
+      });
+      inpObserver.observe({ type: "event", buffered: true, durationThreshold: 40 });
+    } catch {
+      // Not supported in all browsers
+    }
+
+    // Observe CLS
+    try {
+      clsObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!entry || entry.hadRecentInput) continue;
+          const value = Number(entry.value || 0);
+          if (!Number.isFinite(value) || value <= 0) continue;
+          cls += value;
+        }
+      });
+      clsObserver.observe({ type: "layout-shift", buffered: true });
     } catch {
       // Not supported in all browsers
     }
@@ -89,6 +125,8 @@ export function usePagePerformanceLogger() {
     return () => {
       lcpObserver?.disconnect();
       fcpObserver?.disconnect();
+      inpObserver?.disconnect();
+      clsObserver?.disconnect();
     };
   }, []); // runs once per mount (i.e. per page navigation in App Router)
 }
