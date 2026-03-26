@@ -2,6 +2,29 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — BUGS.md items complete: welcome story fullscreen flow + high-contrast flow diagram (commit 9a3cbbc)
+
+**Delivered:**
+- Completed Welcome story fullscreen behavior in `src/components/admin/AdminWelcomeTab.js`:
+  - added best-effort auto fullscreen attempt when story mode opens,
+  - added fullscreen state tracking via `fullscreenchange`,
+  - added fixed lower-right high-contrast toggle button (`Fullscreen` / `Not fullscreen`),
+  - unified story close behavior so exit paths also attempt to leave fullscreen.
+- Increased flow-slide visual contrast and scale in the same file:
+  - larger heading/body sizing,
+  - bigger and darker flow boxes/labels/connectors,
+  - increased diagram panel height and spacing for better use of surface area.
+- Added i18n keys for fullscreen control text in EN/SV/ES:
+  - `admin.welcomeEnterFullscreen`
+  - `admin.welcomeExitFullscreen`
+- Marked corresponding BUGS backlog entries as done in `BUGS.md`:
+  - fullscreen auto/exit control item,
+  - flow diagram contrast/size item.
+- Verification run:
+  - `npx eslint src/components/admin/AdminWelcomeTab.js` (pass).
+  - `node -e "..."` JSON parse for `src/lib/i18n/en.json|sv.json|es.json` (pass).
+  - `node --test tests/i18n-admin-parity.test.js` (pass).
+
 ### Codex — BUGS.md item complete: shared-hosting WP URL migration guidance in plugin Connect UI (commit aed6eda)
 
 **Delivered:**
