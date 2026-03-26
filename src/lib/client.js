@@ -47,6 +47,61 @@ function firstLines(text, lines = 3) {
   return text.split("\n").slice(0, lines).join("\n");
 }
 
+function trimText(value, maxChars = 1200) {
+  const text = typeof value === "string" ? value : "";
+  if (!text) return "";
+  return text.length > maxChars ? `${text.slice(0, maxChars)}…` : text;
+}
+
+function stringifyVariablesPreview(value, maxChars = 1200) {
+  try {
+    return trimText(JSON.stringify(value ?? {}, null, 2), maxChars);
+  } catch {
+    return "";
+  }
+}
+
+function extractOperationName(queryText) {
+  const query = typeof queryText === "string" ? queryText : "";
+  const match =
+    query.match(/\b(query|mutation|subscription)\s+([A-Za-z_][A-Za-z0-9_]*)\b/) ||
+    query.match(/\bfragment\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
+  if (!match) return "anonymous";
+  return match[2] || match[1] || "anonymous";
+}
+
+function normalizeGraphqlErrors(errors) {
+  if (!Array.isArray(errors)) return [];
+  return errors.slice(0, 8).map((error) => ({
+    message: trimText(String(error?.message || ""), 800),
+    path: Array.isArray(error?.path) ? error.path.slice(0, 12) : null,
+    extensions:
+      error?.extensions && typeof error.extensions === "object"
+        ? { code: trimText(String(error.extensions.code || ""), 120) }
+        : undefined,
+  }));
+}
+
+function detectGraphqlFailureKind(errors) {
+  const messages = normalizeGraphqlErrors(errors)
+    .map((error) => String(error?.message || ""))
+    .join("\n");
+  if (/without authentication|not authorized|forbidden/i.test(messages)) {
+    return "graphql-auth";
+  }
+  if (/syntax error|expected name|unexpected/i.test(messages)) {
+    return "graphql-syntax";
+  }
+  if (
+    /cannot query field|unknown argument|unknown fragment|cannot spread fragment|unknown type|variable .+ was not provided|is not defined by type/i.test(
+      messages,
+    )
+  ) {
+    return "graphql-validation";
+  }
+  return "graphql-error";
+}
+
 /**
  * Cache of GraphQL type existence checks.
  * Populated lazily on first call to hasGraphQLType().
@@ -91,6 +146,9 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
   const debugGraphQL =
     process.env.WORDPRESS_GRAPHQL_DEBUG === "1" ||
     process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
+  const operationName = extractOperationName(query);
+  const queryPreview = trimText(query, 2400);
+  const variablesPreview = stringifyVariablesPreview(variables, 1600);
 
   try {
     if (debugGraphQL) {
@@ -150,6 +208,11 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
           status: "network-error",
           endpoint: graphqlEndpoint,
           latencyMs,
+          operationName,
+          failureKind: fetchErr.name === "AbortError" ? "timeout" : "network-error",
+          query: queryPreview,
+          variables: variablesPreview,
+          responsePreview: trimText(fetchErr?.message || "", 1200),
         }).catch(() => {});
         if (fetchErr.name === "AbortError") {
           const msg = `GraphQL timeout after ${GRAPHQL_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
@@ -190,6 +253,11 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
             status: 429,
             endpoint: graphqlEndpoint,
             latencyMs,
+            operationName,
+            failureKind: "rate-limited",
+            query: queryPreview,
+            variables: variablesPreview,
+            responsePreview: trimText(firstLines(text, 6), 1200),
           }).catch(() => {});
           throw new RateLimitError(text, 429);
         }
@@ -198,6 +266,16 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
           status: response.status,
           endpoint: graphqlEndpoint,
           latencyMs,
+          operationName,
+          failureKind:
+            !contentType.includes("application/json")
+              ? "invalid-content-type"
+              : response.status >= 500
+                ? "upstream-5xx"
+                : "http-error",
+          query: queryPreview,
+          variables: variablesPreview,
+          responsePreview: trimText(firstLines(text, 6), 1200),
         }).catch(() => {});
         if (varnishHit) await sleep(250);
         else await sleep(DEFAULT_DELAY_MS || 100);
@@ -217,11 +295,17 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         lastError = `GraphQL Error (auth=${auth.mode}${isAuthError ? ", auth-rejected" : ""}): ${JSON.stringify(result.errors)}`;
         if (debugGraphQL || isAuthError) console.error(lastError);
         if (isAuthError && auth.mode === "sitetoken") invalidateSiteTokenCache();
+        const normalizedErrors = normalizeGraphqlErrors(result.errors);
         recordAvailabilityDatapoint({
           ok: false,
           status: `graphql-error`,
           endpoint: graphqlEndpoint,
           latencyMs,
+          operationName,
+          failureKind: detectGraphqlFailureKind(normalizedErrors),
+          query: queryPreview,
+          variables: variablesPreview,
+          errors: normalizedErrors,
         }).catch(() => {});
         continue;
       }
@@ -232,6 +316,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         status: response.status,
         endpoint: graphqlEndpoint,
         latencyMs,
+        operationName,
       }).catch(() => {});
       return result?.data || {};
     }

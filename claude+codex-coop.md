@@ -2,6 +2,30 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — dead-link scan opt-in + throttled checks + GraphQL failure diagnostics UI
+
+**Delivered:**
+- Dead-link finder no longer auto-runs on panel load (`AdminInfoHubTab`); scan now starts only from explicit button action (`Scan now`), then switches to `Rescan`.
+- Added idle-state copy and localized strings in EN/SV/ES for first-run dead-link behavior.
+- Added backend link-check pacing in `GET /api/admin/dead-links`:
+  - global paced request scheduler (`minIntervalMs=200`),
+  - reduced concurrent workers (`concurrency=4`),
+  - policy surfaced in response as `linkCheckPolicy`.
+- Expanded GraphQL availability logging payload (`src/lib/graphqlAvailability.js` + `src/lib/client.js`) for failure diagnostics:
+  - operation name,
+  - failure kind (`graphql-syntax`, `graphql-validation`, `graphql-auth`, `rate-limited`, etc.),
+  - query/variables preview,
+  - upstream response preview,
+  - normalized GraphQL errors.
+- Upgraded GraphQL history UI (`GraphqlAvailabilityPanel`) with:
+  - gruvbox-dark syntax highlighting for GraphQL query documents,
+  - per-failure inspector drawer,
+  - explicit diagnostic cards with `Should be`, `Was`, and `Recommended` guidance for missing fields, malformed fragments, unknown args, missing variables, syntax/auth/general errors.
+- Verification run:
+  - `npx eslint src/components/admin/GraphqlAvailabilityPanel.js src/lib/client.js src/lib/graphqlAvailability.js src/components/admin/AdminInfoHubTab.js src/app/api/admin/dead-links/route.js` (pass).
+  - `node --test tests/dead-links.test.js` (pass).
+  - JSON parse validation for `src/lib/i18n/en.json|sv.json|es.json` (pass).
+
 ### Codex — storefront Web Vitals relay to ragbaz.xyz + event-to-report ingestion (commits `be2d2bb` in `main`, `f977604` in `ragbaz.xyz`)
 
 **Delivered:**

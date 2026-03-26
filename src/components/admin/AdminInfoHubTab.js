@@ -544,6 +544,7 @@ function DeadLinksPanel() {
   const [deadLinks, setDeadLinks] = useState([]);
   const [deadLinksTotals, setDeadLinksTotals] = useState(null);
   const [deadLinksLoading, setDeadLinksLoading] = useState(false);
+  const [deadLinksHasScanned, setDeadLinksHasScanned] = useState(false);
   const [deadLinksError, setDeadLinksError] = useState("");
   const [deadLinksFilter, setDeadLinksFilter] = useState("all");
   const [deadLinksGeneratedAt, setDeadLinksGeneratedAt] = useState("");
@@ -560,6 +561,7 @@ function DeadLinksPanel() {
       setDeadLinks(Array.isArray(json.links) ? json.links : []);
       setDeadLinksTotals(json.totals || null);
       setDeadLinksGeneratedAt(json.generatedAt || "");
+      setDeadLinksHasScanned(true);
     } catch (error) {
       setDeadLinksError(
         error?.message || t("admin.deadLinksScanFailed", "Failed to scan links."),
@@ -568,10 +570,6 @@ function DeadLinksPanel() {
       setDeadLinksLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    loadDeadLinks().catch(() => {});
-  }, [loadDeadLinks]);
 
   const filteredDeadLinks = useMemo(() => {
     if (deadLinksFilter === "all") return deadLinks;
@@ -626,7 +624,9 @@ function DeadLinksPanel() {
           >
             {deadLinksLoading
               ? t("admin.running", "Running…")
-              : t("admin.deadLinksRescan", "Rescan")}
+              : deadLinksHasScanned
+                ? t("admin.deadLinksRescan", "Rescan")
+                : t("admin.deadLinksScan", "Scan now")}
           </button>
         </div>
       </div>
@@ -669,7 +669,14 @@ function DeadLinksPanel() {
 
       {deadLinksError && <p className="text-sm text-red-600">{deadLinksError}</p>}
 
-      {!deadLinksError && filteredDeadLinks.length === 0 ? (
+      {!deadLinksError && !deadLinksHasScanned ? (
+        <p className="text-sm text-gray-500">
+          {t(
+            "admin.deadLinksStartHint",
+            "No scan has run yet. Click “Scan now” to start.",
+          )}
+        </p>
+      ) : !deadLinksError && filteredDeadLinks.length === 0 ? (
         <p className="text-sm text-gray-500">
           {t("admin.deadLinksEmpty", "No links matched this filter.")}
         </p>

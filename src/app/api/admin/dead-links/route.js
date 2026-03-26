@@ -12,6 +12,8 @@ export const runtime = "nodejs";
 const MAX_LINK_CHECKS = 200;
 const DEFAULT_LINK_CHECKS = 100;
 const LINK_CHECK_TIMEOUT_MS = 6000;
+const LINK_CHECK_CONCURRENCY = 4;
+const MIN_LINK_CHECK_INTERVAL_MS = 200;
 
 function parseLimit(input) {
   const parsed = Number.parseInt(String(input ?? ""), 10);
@@ -161,7 +163,31 @@ function fetchWithTimeout(url, init, timeoutMs = LINK_CHECK_TIMEOUT_MS) {
     .finally(() => clearTimeout(timeout));
 }
 
-async function checkLinkReachability(entry) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
+}
+
+function createRequestPacer(minIntervalMs = MIN_LINK_CHECK_INTERVAL_MS) {
+  const minGapMs = Math.max(0, Number(minIntervalMs) || 0);
+  let nextAllowedTs = 0;
+  let queue = Promise.resolve();
+
+  return async function paceRequest() {
+    let release = null;
+    const previous = queue;
+    queue = new Promise((resolve) => {
+      release = resolve;
+    });
+    await previous;
+
+    const waitMs = Math.max(0, nextAllowedTs - Date.now());
+    if (waitMs > 0) await sleep(waitMs);
+    nextAllowedTs = Date.now() + minGapMs;
+    if (typeof release === "function") release();
+  };
+}
+
+async function checkLinkReachability(entry, paceRequest) {
   if (!entry?.checkUrl) {
     return {
       reachability: "skipped",
@@ -171,8 +197,10 @@ async function checkLinkReachability(entry) {
     };
   }
   try {
+    if (paceRequest) await paceRequest();
     let response = await fetchWithTimeout(entry.checkUrl, { method: "HEAD" });
     if (response.status === 405 || response.status === 501) {
+      if (paceRequest) await paceRequest();
       response = await fetchWithTimeout(entry.checkUrl, {
         method: "GET",
         headers: { Range: "bytes=0-0" },
@@ -236,9 +264,10 @@ export async function GET(request) {
     });
 
     const toCheck = sorted.slice(0, limit);
-    const checked = await mapWithConcurrency(toCheck, 8, async (entry) => ({
+    const paceRequest = createRequestPacer(MIN_LINK_CHECK_INTERVAL_MS);
+    const checked = await mapWithConcurrency(toCheck, LINK_CHECK_CONCURRENCY, async (entry) => ({
       ...entry,
-      ...(await checkLinkReachability(entry)),
+      ...(await checkLinkReachability(entry, paceRequest)),
     }));
     const unchecked = sorted.slice(limit).map((entry) => ({
       ...entry,
@@ -273,6 +302,11 @@ export async function GET(request) {
       scannedContentItems: nodes.length,
       limit,
       truncated: links.length > limit,
+      linkCheckPolicy: {
+        concurrency: LINK_CHECK_CONCURRENCY,
+        minIntervalMs: MIN_LINK_CHECK_INTERVAL_MS,
+        timeoutMs: LINK_CHECK_TIMEOUT_MS,
+      },
     });
   } catch (error) {
     console.error("admin dead-links error", error);

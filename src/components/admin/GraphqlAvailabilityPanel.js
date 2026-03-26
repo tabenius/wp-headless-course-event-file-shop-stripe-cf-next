@@ -1,9 +1,192 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { adminFetch } from "@/lib/adminFetch";
 
 const API = "/api/admin/graphql-availability";
+const GRAPHQL_KEYWORDS = new Set([
+  "query",
+  "mutation",
+  "subscription",
+  "fragment",
+  "on",
+  "true",
+  "false",
+  "null",
+]);
+
+function formatFailureKind(kind) {
+  const safe = String(kind || "").trim().toLowerCase();
+  if (safe === "graphql-syntax") return "GraphQL syntax error";
+  if (safe === "graphql-validation") return "GraphQL validation error";
+  if (safe === "graphql-auth") return "GraphQL auth error";
+  if (safe === "rate-limited") return "Rate limited";
+  if (safe === "timeout") return "Timeout";
+  if (safe === "network-error") return "Network error";
+  if (safe === "invalid-content-type") return "Invalid upstream payload";
+  if (safe === "upstream-5xx") return "Upstream server error";
+  if (safe === "http-error") return "HTTP error";
+  if (safe === "graphql-error") return "GraphQL execution error";
+  return "Request failure";
+}
+
+function classifyGraphqlIssue(message) {
+  const text = String(message || "").trim();
+  if (!text) {
+    return {
+      label: "GraphQL error",
+      shouldBe:
+        "The query should parse and validate against the current WPGraphQL schema.",
+      was: "No error message was returned by the upstream service.",
+      recommendation:
+        "Capture the full upstream response and retry with GraphQL debug enabled.",
+    };
+  }
+
+  let match =
+    text.match(/Cannot query field \"([^\"]+)\" on type \"([^\"]+)\"/i) ||
+    text.match(/Cannot query field '([^']+)' on type '([^']+)'/i);
+  if (match) {
+    const field = match[1];
+    const type = match[2];
+    return {
+      label: "Missing field",
+      shouldBe: `Type ${type} should expose field ${field} in WPGraphQL.`,
+      was: text,
+      recommendation:
+        `Verify WPGraphQL schema support for ${type}.${field}. Update the query to existing fields or register the field in the plugin schema.`,
+    };
+  }
+
+  match = text.match(/Unknown fragment \"([^\"]+)\"/i);
+  if (match) {
+    return {
+      label: "Unknown fragment",
+      shouldBe: `Fragment ${match[1]} should be defined once and imported in the same document.`,
+      was: text,
+      recommendation:
+        "Add or rename the fragment definition so every fragment spread resolves to an existing fragment.",
+    };
+  }
+
+  match = text.match(/Fragment \"([^\"]+)\" cannot be spread here/i);
+  if (match) {
+    return {
+      label: "Invalid fragment spread",
+      shouldBe: `Fragment ${match[1]} should target a compatible GraphQL type.`,
+      was: text,
+      recommendation:
+        "Align the fragment type condition with the receiving selection set or move the spread to a compatible type branch.",
+    };
+  }
+
+  match =
+    text.match(/Unknown argument \"([^\"]+)\" on field \"([^\"]+)\" of type \"([^\"]+)\"/i) ||
+    text.match(/Unknown argument '([^']+)' on field '([^']+)' of type '([^']+)'/i);
+  if (match) {
+    return {
+      label: "Unknown argument",
+      shouldBe: `Field ${match[3]}.${match[2]} should accept argument ${match[1]}.`,
+      was: text,
+      recommendation:
+        "Check schema introspection for valid arguments and update variable names/types to match.",
+    };
+  }
+
+  match = text.match(/Variable \"(\$[^\"]+)\" of required type \"([^\"]+)\" was not provided/i);
+  if (match) {
+    return {
+      label: "Missing variable",
+      shouldBe: `Provide required variable ${match[1]} of type ${match[2]}.`,
+      was: text,
+      recommendation:
+        "Populate the variable payload before fetchGraphQL call, or make the variable optional in the operation signature.",
+    };
+  }
+
+  if (/syntax error|expected name|unexpected/i.test(text)) {
+    return {
+      label: "Syntax error",
+      shouldBe: "The GraphQL document should be syntactically valid and parse cleanly.",
+      was: text,
+      recommendation:
+        "Fix malformed braces, fragment syntax, commas, or argument punctuation in the operation shown below.",
+    };
+  }
+
+  if (/without authentication|not authorized|forbidden/i.test(text)) {
+    return {
+      label: "Authorization error",
+      shouldBe:
+        "The GraphQL request should run under a principal with access to queried fields.",
+      was: text,
+      recommendation:
+        "Verify application password/site token permissions and avoid querying admin-only fields without authentication.",
+    };
+  }
+
+  return {
+    label: "GraphQL execution error",
+    shouldBe:
+      "Query and variables should align with schema and resolver expectations.",
+    was: text,
+    recommendation:
+      "Inspect query + variables + schema together, then update field names, variable types, or resolver/plugin implementation.",
+  };
+}
+
+function tokenizeGraphql(query) {
+  if (!query) return [{ text: "", type: "plain" }];
+  const pattern =
+    /(\.\.\.|"(?:\\.|[^"\\])*"|#[^\n]*|\$[A-Za-z_][A-Za-z0-9_]*|@[A-Za-z_][A-Za-z0-9_]*|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\]:!,=])/gm;
+  const text = String(query);
+  const tokens = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    const index = match.index;
+    if (index > lastIndex) tokens.push({ text: text.slice(lastIndex, index), type: "plain" });
+    const token = match[0];
+    let type = "identifier";
+    if (token.startsWith("#")) type = "comment";
+    else if (token.startsWith('"')) type = "string";
+    else if (GRAPHQL_KEYWORDS.has(token)) type = "keyword";
+    else if (token.startsWith("$")) type = "variable";
+    else if (token.startsWith("@")) type = "directive";
+    else if (/^[{}()[\]:!,=]$/.test(token) || token === "...") type = "punctuation";
+    tokens.push({ text: token, type });
+    lastIndex = index + token.length;
+  }
+  if (lastIndex < text.length) tokens.push({ text: text.slice(lastIndex), type: "plain" });
+  return tokens;
+}
+
+function tokenClass(type) {
+  if (type === "keyword") return "text-[#fe8019] font-semibold";
+  if (type === "variable") return "text-[#8ec07c]";
+  if (type === "directive") return "text-[#d3869b]";
+  if (type === "string") return "text-[#fabd2f]";
+  if (type === "comment") return "text-[#928374] italic";
+  if (type === "punctuation") return "text-[#a89984]";
+  if (type === "identifier") return "text-[#b8bb26]";
+  return "text-[#ebdbb2]";
+}
+
+function GraphqlHighlightedCode({ query }) {
+  const tokens = tokenizeGraphql(query);
+  return (
+    <pre className="overflow-auto rounded-md border border-[#3c3836] bg-[#282828] p-3 text-xs leading-relaxed shadow-inner">
+      <code className="font-mono">
+        {tokens.map((token, index) => (
+          <span key={`${index}:${token.text.slice(0, 20)}`} className={tokenClass(token.type)}>
+            {token.text}
+          </span>
+        ))}
+      </code>
+    </pre>
+  );
+}
 
 function computeStats(log) {
   if (!log.length) return { total: 0, ok: 0, fail: 0, pct: null };
@@ -68,6 +251,7 @@ export default function GraphqlAvailabilityPanel() {
   const [toggling, setToggling] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
+  const [expandedFailure, setExpandedFailure] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -269,6 +453,7 @@ export default function GraphqlAvailabilityPanel() {
                   <th className="px-3 py-2 font-medium hidden lg:table-cell">
                     Endpoint
                   </th>
+                  <th className="px-3 py-2 font-medium">Debug</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -285,41 +470,153 @@ export default function GraphqlAvailabilityPanel() {
                   });
                   const isRateLimit =
                     entry.status === 429 || entry.status === 503;
+                  const entryId = `${entry.ts}:${entry.status}:${i}`;
+                  const isExpanded = expandedFailure === entryId;
+                  const issues = Array.isArray(entry.errors)
+                    ? entry.errors.map((item) => classifyGraphqlIssue(item?.message))
+                    : [];
                   return (
-                    <tr
-                      key={i}
-                      className={
-                        !entry.ok
-                          ? isRateLimit
-                            ? "bg-orange-50"
-                            : "bg-red-50"
-                          : ""
-                      }
-                    >
-                      <td className="px-3 py-1.5 whitespace-nowrap text-gray-700">
-                        {dateStr}{" "}
-                        <span className="text-gray-500">{timeStr}</span>
-                      </td>
-                      <td className="px-3 py-1.5 whitespace-nowrap">
-                        <span
-                          className={
-                            isRateLimit
-                              ? "text-orange-600 font-semibold"
-                              : entry.ok
-                                ? "text-emerald-700"
-                                : "text-red-600 font-semibold"
-                          }
-                        >
-                          {String(entry.status)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-1.5 text-gray-500 hidden sm:table-cell">
-                        {entry.latencyMs != null ? `${entry.latencyMs} ms` : "—"}
-                      </td>
-                      <td className="px-3 py-1.5 text-gray-400 truncate max-w-xs hidden lg:table-cell">
-                        {entry.endpoint}
-                      </td>
-                    </tr>
+                    <Fragment key={entryId}>
+                      <tr
+                        className={
+                          !entry.ok
+                            ? isRateLimit
+                              ? "bg-orange-50"
+                              : "bg-red-50"
+                            : ""
+                        }
+                      >
+                        <td className="px-3 py-1.5 whitespace-nowrap text-gray-700">
+                          {dateStr}{" "}
+                          <span className="text-gray-500">{timeStr}</span>
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap">
+                          <span
+                            className={
+                              isRateLimit
+                                ? "text-orange-600 font-semibold"
+                                : entry.ok
+                                  ? "text-emerald-700"
+                                  : "text-red-600 font-semibold"
+                            }
+                          >
+                            {String(entry.status)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-500 hidden sm:table-cell">
+                          {entry.latencyMs != null ? `${entry.latencyMs} ms` : "—"}
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-400 truncate max-w-xs hidden lg:table-cell">
+                          {entry.endpoint}
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap">
+                          {!entry.ok ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedFailure((prev) => (prev === entryId ? null : entryId))
+                              }
+                              className="rounded border border-red-200 bg-white px-2 py-0.5 text-[11px] font-medium text-red-700 hover:bg-red-50"
+                            >
+                              {isExpanded ? "Hide" : "Inspect"}
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-gray-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                      {!entry.ok && isExpanded && (
+                        <tr className="bg-[#1d2021] text-[#ebdbb2]">
+                          <td className="px-3 py-3" colSpan={5}>
+                            <div className="space-y-3 text-xs">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded border border-[#fb4934] bg-[#3c1f1f] px-2 py-0.5 font-semibold text-[#fb4934]">
+                                  {formatFailureKind(entry.failureKind)}
+                                </span>
+                                {entry.operationName && (
+                                  <span className="rounded border border-[#504945] bg-[#282828] px-2 py-0.5 text-[#83a598]">
+                                    operation: {entry.operationName}
+                                  </span>
+                                )}
+                                <span className="rounded border border-[#504945] bg-[#282828] px-2 py-0.5 text-[#fabd2f]">
+                                  status: {String(entry.status)}
+                                </span>
+                              </div>
+
+                              {entry.query && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-[#d5c4a1]">GraphQL document</div>
+                                  <GraphqlHighlightedCode query={entry.query} />
+                                </div>
+                              )}
+
+                              {entry.variables && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-[#d5c4a1]">Variables payload</div>
+                                  <pre className="overflow-auto rounded-md border border-[#3c3836] bg-[#282828] p-3 text-xs text-[#ebdbb2]">
+                                    <code>{entry.variables}</code>
+                                  </pre>
+                                </div>
+                              )}
+
+                              {entry.responsePreview && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-[#d5c4a1]">Upstream response preview</div>
+                                  <pre className="overflow-auto rounded-md border border-[#3c3836] bg-[#282828] p-3 text-xs text-[#fb4934]">
+                                    <code>{entry.responsePreview}</code>
+                                  </pre>
+                                </div>
+                              )}
+
+                              {issues.length > 0 ? (
+                                <div className="space-y-2">
+                                  <div className="font-semibold text-[#d5c4a1]">Diagnostic guidance</div>
+                                  {issues.map((issue, issueIndex) => (
+                                    <div
+                                      key={`${entryId}:issue:${issueIndex}`}
+                                      className="rounded border border-[#504945] bg-[#282828] p-3"
+                                    >
+                                      <div className="mb-2 font-semibold text-[#fabd2f]">
+                                        {issue.label}
+                                      </div>
+                                      <div className="space-y-1 text-[#ebdbb2]">
+                                        <p>
+                                          <span className="font-semibold text-[#8ec07c]">Should be:</span>{" "}
+                                          {issue.shouldBe}
+                                        </p>
+                                        <p>
+                                          <span className="font-semibold text-[#fb4934]">Was:</span>{" "}
+                                          {issue.was}
+                                        </p>
+                                        <p>
+                                          <span className="font-semibold text-[#83a598]">Recommended:</span>{" "}
+                                          {issue.recommendation}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="rounded border border-[#504945] bg-[#282828] p-3">
+                                  <p className="font-semibold text-[#fabd2f]">
+                                    Diagnostic guidance
+                                  </p>
+                                  <p className="mt-1 text-[#ebdbb2]">
+                                    Should be: request should return valid JSON GraphQL payload without errors.
+                                  </p>
+                                  <p className="text-[#ebdbb2]">
+                                    Was: {String(entry.status)} ({formatFailureKind(entry.failureKind)}).
+                                  </p>
+                                  <p className="text-[#ebdbb2]">
+                                    Recommended: inspect endpoint health, auth credentials, and query structure, then retry.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
               </tbody>

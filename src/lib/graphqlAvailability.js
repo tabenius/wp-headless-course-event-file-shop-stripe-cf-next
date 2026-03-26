@@ -20,6 +20,10 @@ const LOG_KEY = "graphql-availability-log";
 const MAX_DATAPOINTS = 500;
 const LOG_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 const SETTINGS_CACHE_TTL = 60_000; // re-check every 60 s
+const MAX_QUERY_CHARS = 2400;
+const MAX_VARIABLES_CHARS = 1600;
+const MAX_RESPONSE_CHARS = 1600;
+const MAX_ERRORS = 8;
 
 /** @type {{ enabled: boolean } | null} */
 let _settingsCache = null;
@@ -67,23 +71,68 @@ export async function getAvailabilitySettings() {
  * No-op when logging is disabled or KV is not configured.
  * Must be called fire-and-forget (the caller should not await it).
  *
- * @param {{ ok: boolean, status: number|string, endpoint: string, latencyMs: number }} param
+ * @param {{
+ *   ok: boolean,
+ *   status: number|string,
+ *   endpoint: string,
+ *   latencyMs: number,
+ *   operationName?: string,
+ *   failureKind?: string,
+ *   query?: string,
+ *   variables?: string,
+ *   responsePreview?: string,
+ *   errors?: Array<{ message?: string, path?: string[], extensions?: { code?: string } }>
+ * }} param
  */
 export async function recordAvailabilityDatapoint({
   ok,
   status,
   endpoint,
   latencyMs,
+  operationName,
+  failureKind,
+  query,
+  variables,
+  responsePreview,
+  errors,
 }) {
   if (!(await isAvailabilityLoggingEnabled())) return;
   try {
     const current = (await readCloudflareKvJson(LOG_KEY)) ?? [];
+    const errorList = Array.isArray(errors)
+      ? errors
+          .slice(0, MAX_ERRORS)
+          .map((err) => ({
+            message: String(err?.message || "").slice(0, MAX_RESPONSE_CHARS),
+            path: Array.isArray(err?.path) ? err.path.slice(0, 12) : null,
+            code:
+              typeof err?.extensions?.code === "string"
+                ? err.extensions.code.slice(0, 120)
+                : null,
+          }))
+      : [];
     const entry = {
       ts: Date.now(),
       ok: Boolean(ok),
       status,
       endpoint,
       latencyMs: Math.round(latencyMs ?? 0),
+      ...(typeof operationName === "string" && operationName.trim() !== ""
+        ? { operationName: operationName.trim().slice(0, 120) }
+        : {}),
+      ...(typeof failureKind === "string" && failureKind.trim() !== ""
+        ? { failureKind: failureKind.trim().slice(0, 120) }
+        : {}),
+      ...(typeof query === "string" && query.trim() !== ""
+        ? { query: query.slice(0, MAX_QUERY_CHARS) }
+        : {}),
+      ...(typeof variables === "string" && variables.trim() !== ""
+        ? { variables: variables.slice(0, MAX_VARIABLES_CHARS) }
+        : {}),
+      ...(typeof responsePreview === "string" && responsePreview.trim() !== ""
+        ? { responsePreview: responsePreview.slice(0, MAX_RESPONSE_CHARS) }
+        : {}),
+      ...(errorList.length > 0 ? { errors: errorList } : {}),
     };
     const next = [entry, ...current].slice(0, MAX_DATAPOINTS);
     await writeCloudflareKvJson(LOG_KEY, next, {
