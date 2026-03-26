@@ -183,43 +183,59 @@ async function fetchTextWithTimeout(url) {
   }
 }
 
+function extractPathsFromUrlset(xml) {
+  const paths = new Set();
+  const locs = extractLocs(xml);
+  for (const loc of locs) {
+    const path = locToPath(loc);
+    if (path) paths.add(path);
+  }
+  return paths;
+}
+
+async function collectPathsFromRootCandidate(rootUrl) {
+  const rootXml = await fetchTextWithTimeout(rootUrl);
+  if (!rootXml) return null;
+
+  const rootLocs = extractLocs(rootXml);
+  if (rootLocs.length === 0) return null;
+  const isIndex = /<sitemapindex[\s>]/i.test(rootXml);
+
+  if (!isIndex) {
+    const directPaths = extractPathsFromUrlset(rootXml);
+    return directPaths.size > 0 ? directPaths : null;
+  }
+
+  const paths = new Set();
+  const childSitemaps = rootLocs.slice(0, MENU_SITEMAP_MAX_FILES);
+  for (const sitemapLoc of childSitemaps) {
+    const childXml = await fetchTextWithTimeout(sitemapLoc);
+    if (!childXml) continue;
+    const childPaths = extractPathsFromUrlset(childXml);
+    for (const path of childPaths) {
+      paths.add(path);
+    }
+  }
+  return paths.size > 0 ? paths : null;
+}
+
 async function loadSitemapPathSet() {
   const wordpressUrl = await resolveWordPressUrl();
   const base = String(wordpressUrl || site.url || "").replace(/\/+$/, "");
   if (!base) return null;
 
-  const rootCandidates = [`${base}/sitemap.xml`, `${base}/wp-sitemap.xml`];
-  let rootXml = "";
+  const rootCandidates = [
+    `${base}/sitemap_index.xml`,
+    `${base}/wp-sitemap.xml`,
+    `${base}/sitemap.xml`,
+  ];
+  let best = null;
   for (const candidate of rootCandidates) {
-    rootXml = await fetchTextWithTimeout(candidate);
-    if (rootXml) break;
+    const paths = await collectPathsFromRootCandidate(candidate);
+    if (!paths || paths.size === 0) continue;
+    if (!best || paths.size > best.size) best = paths;
   }
-  if (!rootXml) return null;
-
-  const paths = new Set();
-  const rootLocs = extractLocs(rootXml);
-  const isIndex = /<sitemapindex[\s>]/i.test(rootXml);
-
-  if (!isIndex) {
-    for (const loc of rootLocs) {
-      const path = locToPath(loc);
-      if (path) paths.add(path);
-    }
-    return paths;
-  }
-
-  const childSitemaps = rootLocs.slice(0, MENU_SITEMAP_MAX_FILES);
-  for (const sitemapLoc of childSitemaps) {
-    const xml = await fetchTextWithTimeout(sitemapLoc);
-    if (!xml) continue;
-    const locs = extractLocs(xml);
-    for (const loc of locs) {
-      const path = locToPath(loc);
-      if (path) paths.add(path);
-    }
-  }
-
-  return paths;
+  return best;
 }
 
 async function getSitemapPathSet() {
