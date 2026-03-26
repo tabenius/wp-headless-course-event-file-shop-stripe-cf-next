@@ -2,6 +2,26 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — homepage event-calendar widget hardened (render only when events exist, links to real event URIs)
+
+**Delivered:**
+- Kept the homepage event widget at the top of `/` and tightened data shaping so it only renders with valid event entries (requires non-empty `title` + normalized internal `uri`).
+- Hardened `fetchHomeEvents()` in `src/lib/homeEvents.js`:
+  - normalizes event URIs (absolute WP URLs -> internal paths),
+  - filters out malformed event rows,
+  - retains fallback query path (`events(first: 50)`) when custom date fields are unavailable,
+  - preserves widget visibility when events exist but none are upcoming (falls back to sorted known events instead of returning empty).
+- Updated `src/components/home/EventCalendar.js` heading logic:
+  - shows `Upcoming Events` when future-dated events exist,
+  - falls back to `Events` when only undated/past events are available.
+
+**Commit:**
+- `main` `e9060b2` — `Add home event calendar gating and real-event link hardening`
+
+**Verification run:**
+- `npx eslint src/lib/homeEvents.js src/components/home/EventCalendar.js src/app/page.js` (pass)
+- `npm test -- tests/menu.test.js` (suite invokes full `node --test`; existing unrelated failures remain in `admin-hotkeys`, `downloadedFonts`, `fontDownload`, `googleFontsCatalog` due `mock.module` runtime support in current Node setup)
+
 ### Codex — fixed sitemap-based menu validation to support redirects and multiple generators
 
 **Delivered:**
