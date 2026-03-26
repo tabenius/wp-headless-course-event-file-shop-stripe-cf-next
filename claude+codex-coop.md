@@ -2,6 +2,35 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — ragbaz-bridge plugin auto onboarding flow for ragbaz.xyz (commit e5af4da)
+
+**Delivered:**
+- Added first-time auto onboarding in `packages/ragbaz-bridge-plugin/ragbaz-bridge.php`:
+  - new GET/POST JSON request helper (`ragbaz_home_request_json`),
+  - canonical JSON signer (`ragbaz_canonical_json`) matching worker payload-signature expectations,
+  - `ragbaz_auto_onboard_home()` challenge -> signed register flow against `/api/v1/home`,
+  - automatic persistence of returned `accountId`, `passkey`, and `giftKey` into plugin options.
+- Extended Connect actions with `ragbaz_connect_action=auto_onboard`, including status persistence and success/failure notices.
+- Updated Connect-tab UX copy and controls to prioritize auto onboarding before manual credential entry.
+- Verification run:
+  - `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (no syntax errors).
+
+### Codex — ragbaz.xyz D1-centric control-plane foundation (commit 9e080f7, repo: `../ragbaz.xyz`)
+
+**Delivered:**
+- Implemented D1-first control-plane storage in `ragbaz.xyz`:
+  - added `src/lib/controlPlaneD1.js` and `migrations/0001_control_plane.sql`,
+  - wired register/heartbeat/events/tenant-claim to dual-write KV + D1,
+  - added D1-first peer and tenant resolution paths with KV fallback.
+- Added new JSON operational endpoints:
+  - `GET /api/v1/home/sites`
+  - `GET /api/v1/home/history`
+- Added scheduled retention prune path (`HOME_RETENTION_DAYS`, default 30d) and Wrangler cron trigger.
+- Updated `ragbaz.xyz` README + Wrangler config for D1 setup/migration instructions.
+- Added test coverage for the new `/api/v1/home/sites` and `/api/v1/home/history` routes.
+- Verification run:
+  - `ragbaz.xyz`: `npm test` (pass, 2/2).
+
 ### Codex — storefront-first GraphQL ragbaz probe + Wrangler-tail URI logging (commit 3984ab8)
 
 **Delivered:**
