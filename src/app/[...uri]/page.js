@@ -4,7 +4,6 @@ import { getSingleEventFragment } from "@/lib/fragments/SingleEventFragment";
 import { getLpCourseFragment } from "@/lib/fragments/LpCourseFragment";
 import { SinglePageFragment } from "@/lib/fragments/SinglePageFragment";
 import { SinglePostFragment } from "@/lib/fragments/SinglePostFragment";
-import Page from "@/components/single/Page";
 import Post from "@/components/single/Post";
 import Event from "@/components/single/Event";
 import Product from "@/components/single/Product";
@@ -486,7 +485,17 @@ export default async function ContentPage({
     return (
       <>
         {ldScript}
-        <Page data={node} />
+        <article className="max-w-2xl px-6 py-24 mx-auto space-y-8">
+          <h1 className="text-4xl font-bold leading-tight md:text-5xl">
+            {decodeEntities(node?.title || "")}
+          </h1>
+          <div
+            className="text-gray-800 prose prose-p:my-4 max-w-none wp-content text-xl"
+            dangerouslySetInnerHTML={{
+              __html: decodeEntities(node?.content || ""),
+            }}
+          />
+        </article>
       </>
     );
   if (isPaidAccessType) {
