@@ -16,6 +16,9 @@ const LIST_EVENTS_QUERY = `
           uri
           title
           content
+          startDate
+          endDate
+          date
           featuredImage {
             node {
               sourceUrl
@@ -39,9 +42,50 @@ const LIST_EVENTS_QUERY = `
   }
 `;
 
+const LIST_EVENTS_FALLBACK_QUERY = `
+  query ListEventsFallback {
+    events(first: 50) {
+      edges {
+        node {
+          id
+          uri
+          title
+          content
+          date
+          featuredImage {
+            node {
+              sourceUrl
+              altText
+              mediaDetails {
+                width
+                height
+              }
+            }
+          }
+          eventVenues {
+            edges {
+              node {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+function extractEvents(data) {
+  return data?.events?.edges?.map((e) => e?.node).filter(Boolean) || [];
+}
+
 export default async function EventsPage() {
   const data = await fetchGraphQL(LIST_EVENTS_QUERY, {}, 1800);
-  const events = data?.events?.edges?.map((e) => e.node) || [];
+  let events = extractEvents(data);
+  if (events.length === 0) {
+    const fallback = await fetchGraphQL(LIST_EVENTS_FALLBACK_QUERY, {}, 1800);
+    events = extractEvents(fallback);
+  }
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-24">

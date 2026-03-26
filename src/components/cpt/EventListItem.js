@@ -2,10 +2,12 @@ import Link from "next/link";
 import { FeaturedImage } from "../image/FeaturedImage";
 import { createExcerpt } from "@/lib/utils";
 import { decodeEntities } from "@/lib/decodeEntities";
+import { formatEventDateRange } from "@/lib/eventDates";
 
 export default function EventListItem({ post }) {
   if (!post) return null;
   const { content, title, uri } = post;
+  const dateLabel = formatEventDateRange(post);
 
   const venues =
     (post.eventVenues || post.location)?.edges
@@ -49,6 +51,12 @@ export default function EventListItem({ post }) {
             </svg>
             <span>{venues.join(", ")}</span>
           </div>
+        </div>
+      )}
+
+      {dateLabel && (
+        <div className="text-sm text-gray-600 mb-2" aria-label="Event date">
+          {dateLabel}
         </div>
       )}
 

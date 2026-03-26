@@ -1,4 +1,5 @@
 import { fetchGraphQL } from "@/lib/client";
+import { getEventEndIso, getEventStartIso } from "@/lib/eventDates";
 
 /**
  * RAGBAZ Bridge registers startDate and endDate on the Event type via
@@ -15,6 +16,7 @@ const HOME_EVENTS_QUERY = `
           uri
           startDate
           endDate
+          date
         }
       }
     }
@@ -29,6 +31,7 @@ const HOME_EVENTS_FALLBACK_QUERY = `
           id
           title
           uri
+          date
         }
       }
     }
@@ -62,8 +65,8 @@ function toRenderableEvents(nodes) {
         id: node.id || `${uri}:${title}`,
         title,
         uri,
-        startDate: node.startDate || null,
-        endDate: node.endDate || null,
+        startDate: getEventStartIso(node) || null,
+        endDate: getEventEndIso(node) || null,
       };
     })
     .filter(Boolean);

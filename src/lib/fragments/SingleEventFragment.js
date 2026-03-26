@@ -15,6 +15,7 @@ fragment SingleEventFragment on Event {
     uri
     title
     content
+    date
     ${editorBlocksFragment}
     featuredImage {
       node {

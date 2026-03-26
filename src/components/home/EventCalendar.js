@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { decodeEntities } from "@/lib/decodeEntities";
+import { formatEventDateRange, getEventStartIso } from "@/lib/eventDates";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -26,7 +27,7 @@ function toDateKey(dateStr) {
 function buildEventMap(events) {
   const map = new Map(); // "YYYY-MM-DD" → Event[]
   for (const ev of events) {
-    const key = toDateKey(ev.startDate);
+    const key = toDateKey(getEventStartIso(ev));
     if (!key) continue;
     if (!map.has(key)) map.set(key, []);
     map.get(key).push(ev);
@@ -110,16 +111,20 @@ function MonthGrid({ year, month, eventMap, todayKey }) {
 function EventList({ events }) {
   return (
     <ul className="divide-y divide-gray-100">
-      {events.slice(0, 8).map((ev) => (
-        <li key={ev.id} className="py-2">
-          <Link
-            href={ev.uri}
-            className="text-sm font-medium text-gray-800 hover:text-purple-700 hover:underline"
-          >
-            {decodeEntities(ev.title)}
-          </Link>
-        </li>
-      ))}
+      {events.slice(0, 8).map((ev) => {
+        const dateLabel = formatEventDateRange(ev);
+        return (
+          <li key={ev.id} className="py-2">
+            <Link
+              href={ev.uri}
+              className="text-sm font-medium text-gray-800 hover:text-purple-700 hover:underline"
+            >
+              {decodeEntities(ev.title)}
+            </Link>
+            {dateLabel && <div className="text-xs text-gray-500 mt-0.5">{dateLabel}</div>}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -133,8 +138,9 @@ export default function EventCalendar({ events, hasDates }) {
   const todayAtStart = new Date(now);
   todayAtStart.setHours(0, 0, 0, 0);
   const hasUpcoming = events.some((ev) => {
-    if (!ev?.startDate) return true;
-    return new Date(ev.startDate) >= todayAtStart;
+    const startDate = getEventStartIso(ev);
+    if (!startDate) return true;
+    return new Date(startDate) >= todayAtStart;
   });
   const heading = hasUpcoming ? "Upcoming Events" : "Events";
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
