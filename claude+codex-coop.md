@@ -2,6 +2,29 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — fixed sitemap-based menu validation to support redirects and multiple generators
+
+**Delivered:**
+- Updated sitemap discovery in `src/lib/menu.js` to be provider-agnostic and redirect-tolerant.
+- Validation now probes multiple root candidates:
+  - `/sitemap_index.xml`
+  - `/wp-sitemap.xml`
+  - `/sitemap.xml`
+- Instead of trusting the first non-empty sitemap, it now computes candidate path sets and keeps the richest valid set.
+- This prevented false-negative filtering that temporarily reduced nav to `/shop` only when one sitemap endpoint was incomplete.
+
+**Commit:**
+- `main` `1bc6e7c` — `Make sitemap menu validation provider-agnostic`
+
+**Verification run:**
+- live checks after deploy:
+  - `/shop` present
+  - `/blog` present
+  - `/events` present
+  - `/courses` present
+  - `/relationsterapi-for-par` present
+  - `/om-sofia-cerne-tantra-relationer-coachning` present
+
 ### Codex — emergency storefront 500 hotfix for WP URI pages
 
 **Delivered:**
