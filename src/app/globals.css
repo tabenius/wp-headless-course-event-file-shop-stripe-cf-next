@@ -782,7 +782,13 @@ body:has(.admin-layout)::before {
   outline-offset: 2px;
 }
 .dark-mode header button.storefront-icon-button {
-  color: #1a1a1a !important;
+  background: rgba(24, 24, 24, 0.88) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+.dark-mode header button.storefront-icon-button:hover {
+  background: rgba(40, 40, 40, 0.94) !important;
+  color: #ffffff !important;
 }
 
 /* Darken the background image */
