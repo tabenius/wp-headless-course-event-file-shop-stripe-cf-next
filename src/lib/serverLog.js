@@ -16,14 +16,19 @@ const TTL_SECONDS = 30 * 60; // 30 minutes
 
 let memLog = [];
 
-export async function appendServerLog({ level = "info", msg, reqId } = {}) {
+export async function appendServerLog({
+  level = "info",
+  msg,
+  reqId,
+  persist = true,
+} = {}) {
   const entry = {
     ts: new Date().toISOString(),
     level,
     msg: String(msg ?? "").slice(0, 500),
     ...(reqId ? { reqId } : {}),
   };
-  if (isCloudflareKvConfigured()) {
+  if (persist && isCloudflareKvConfigured()) {
     try {
       const current = (await readCloudflareKvJson(KV_KEY)) ?? [];
       const next = [entry, ...current].slice(0, MAX_ENTRIES);

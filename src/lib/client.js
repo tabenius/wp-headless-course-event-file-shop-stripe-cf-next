@@ -217,7 +217,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         if (fetchErr.name === "AbortError") {
           const msg = `GraphQL timeout after ${GRAPHQL_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
           console.error(msg);
-          appendServerLog({ level: "error", msg }).catch(() => {});
+          appendServerLog({ level: "error", msg, persist: false }).catch(() => {});
           return {};
         }
         lastError = `GraphQL fetch error (auth=${auth.mode}): ${fetchErr.message}`;
@@ -323,7 +323,7 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
 
     if (lastError) {
       console.error(lastError);
-      appendServerLog({ level: "error", msg: lastError }).catch(() => {});
+      appendServerLog({ level: "error", msg: lastError, persist: false }).catch(() => {});
     }
     return {};
   } catch (error) {

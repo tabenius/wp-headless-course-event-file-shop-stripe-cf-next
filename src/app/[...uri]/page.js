@@ -30,6 +30,7 @@ import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
 import { cache } from "react";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 
@@ -152,6 +153,7 @@ async function fetchContent(uri) {
       appendServerLog({
         level: "warn",
         msg: `WPGraphQL lookup failed for ${candidateUri}: ${err?.message || err}`,
+        persist: false,
       }).catch(() => {});
     }
   }
@@ -161,6 +163,7 @@ async function fetchContent(uri) {
     appendServerLog({
       level: "info",
       msg: `WPGraphQL nodeByUri returned null for all variants of: ${normalizeUriForLookup(uri)}${detail}`,
+      persist: false,
     }).catch(() => {});
   }
 
@@ -242,6 +245,7 @@ async function fetchRestFallback(uri, wordpressUrl = null) {
       appendServerLog({
         level: "warn",
         msg: `REST fallback fetch failed for ${uri} (${url}): ${err?.message || err}`,
+        persist: false,
       }).catch(() => {});
       continue;
     }
@@ -301,6 +305,7 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
     appendServerLog({
       level: "warn",
       msg: `Course REST fallback failed for ${uri}: ${err?.message || err}`,
+      persist: false,
     }).catch(() => {});
     return null;
   }
@@ -541,6 +546,7 @@ export default async function ContentPage({
         appendServerLog({
           level: "error",
           msg: `hasCourseAccess failed for ${uri} (user: ${userEmail}): ${err?.message || err}`,
+          persist: false,
         }).catch(() => {});
       }
     }
@@ -661,9 +667,4 @@ export default async function ContentPage({
     );
   }
   notFound();
-}
-
-// Note: We could generate static params for the pages you want to pre-render (optional) for things like popular posts etc
-export async function generateStaticParams() {
-  return [];
 }
