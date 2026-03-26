@@ -43,6 +43,32 @@
 **Verification run:**
 - `ragbaz.xyz`: `npm test` (pass, 2/2).
 
+### Codex — path-based tenant admin proxy (no subdomain required) in `ragbaz.xyz` (commit `935a9d3`)
+
+**Delivered:**
+- Added path-based admin proxy routes on `ragbaz.xyz` so storefront admin is reachable without tenant subdomain:
+  - `/tenant/{domain}/admin`
+  - `/tenant/{domain}/admin/*`
+  - `/tenant/{domain}/api/admin/*`
+  - `/articulate/sites/{gift_or_alias}/admin`
+  - `/articulate/sites/{gift_or_alias}/admin/*`
+  - `/articulate/sites/{gift_or_alias}/api/admin/*`
+- Reused existing tenant binding lookup and proxy transport path:
+  - domain-based lookup uses `resolveTenantByDomain`,
+  - gift/alias route uses existing gift/subdomain resolution logic,
+  - requests are forwarded to configured tenant admin origin with tenant context headers and proxy marker headers.
+- Extended API descriptor output with path-based admin endpoint hints:
+  - `tenantAdminByDomain`
+  - `tenantAdminBySiteKey`
+- Added regression coverage in `ragbaz.xyz/tests/home-api.test.js` for:
+  - host-based tenant admin proxy,
+  - domain-path tenant admin proxy,
+  - site-key path tenant admin proxy,
+  - `/tenant/{domain}/api/admin/*` path/query forwarding behavior.
+
+**Verification run:**
+- `ragbaz.xyz`: `npm test` (pass, 2/2).
+
 ## 2026-03-26 (Codex)
 
 ### Codex — connected-sites tenant jump + collapsible draft advanced panels (commit `cf055fb` in `ragbaz.xyz`)
