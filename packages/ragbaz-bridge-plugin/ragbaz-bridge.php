@@ -1269,15 +1269,75 @@ function ragbaz_build_home_payload() {
   ];
 }
 
-function ragbaz_home_post_json($path, $body) {
+function ragbaz_is_sequential_array($value) {
+  if (!is_array($value)) return false;
+  $index = 0;
+  foreach (array_keys($value) as $key) {
+    if ($key !== $index) return false;
+    $index++;
+  }
+  return true;
+}
+
+function ragbaz_canonical_json($value) {
+  if (is_null($value)) return 'null';
+  if (is_bool($value)) return $value ? 'true' : 'false';
+
+  if (is_int($value) || is_float($value)) {
+    if (is_float($value) && !is_finite($value)) return 'null';
+    $encoded_number = wp_json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return is_string($encoded_number) ? $encoded_number : 'null';
+  }
+
+  if (is_string($value)) {
+    $encoded_string = wp_json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return is_string($encoded_string) ? $encoded_string : '""';
+  }
+
+  if (is_array($value)) {
+    if (ragbaz_is_sequential_array($value)) {
+      $items = [];
+      foreach ($value as $item) {
+        $items[] = ragbaz_canonical_json($item);
+      }
+      return '[' . implode(',', $items) . ']';
+    }
+
+    $normalized = [];
+    foreach ($value as $k => $v) {
+      $normalized[(string) $k] = $v;
+    }
+    ksort($normalized, SORT_STRING);
+    $items = [];
+    foreach ($normalized as $k => $v) {
+      $items[] = ragbaz_canonical_json((string) $k) . ':' . ragbaz_canonical_json($v);
+    }
+    return '{' . implode(',', $items) . '}';
+  }
+
+  if (is_object($value)) {
+    return ragbaz_canonical_json(get_object_vars($value));
+  }
+
+  return 'null';
+}
+
+function ragbaz_home_request_json($method, $path, $body = null, $query = []) {
   $base = ragbaz_get_home_base_url();
   $url = $base . '/' . ltrim((string) $path, '/');
-  $response = wp_remote_post($url, [
+  if (is_array($query) && !empty($query)) {
+    $url = add_query_arg($query, $url);
+  }
+  $request_args = [
+    'method'  => strtoupper((string) $method),
     'timeout' => 20,
     'headers' => ['Content-Type' => 'application/json; charset=utf-8'],
-    'body'    => wp_json_encode($body),
-  ]);
+  ];
+  if (!is_null($body)) {
+    $request_args['body'] = wp_json_encode($body);
+  }
 
+  $response = wp_remote_request($url, $request_args);
   if (is_wp_error($response)) {
     return ['ok' => false, 'status' => 0, 'error' => $response->get_error_message()];
   }
@@ -1293,6 +1353,94 @@ function ragbaz_home_post_json($path, $body) {
     'status' => $status,
     'error' => is_array($json) && !empty($json['error']) ? $json['error'] : 'home_request_failed',
     'data' => is_array($json) ? $json : ['raw' => $raw],
+  ];
+}
+
+function ragbaz_home_post_json($path, $body) {
+  return ragbaz_home_request_json('POST', $path, $body);
+}
+
+function ragbaz_auto_onboard_home() {
+  $challenge_result = ragbaz_home_request_json('GET', '/api/v1/home', null, [
+    'site_url' => get_site_url(),
+    'plugin_version' => RAGBAZ_VERSION,
+  ]);
+  if (empty($challenge_result['ok'])) {
+    return [
+      'ok' => false,
+      'status' => isset($challenge_result['status']) ? intval($challenge_result['status']) : 0,
+      'error' => isset($challenge_result['error']) ? (string) $challenge_result['error'] : 'challenge_request_failed',
+      'data' => isset($challenge_result['data']) && is_array($challenge_result['data']) ? $challenge_result['data'] : [],
+    ];
+  }
+
+  $challenge = isset($challenge_result['data']['challenge']) && is_array($challenge_result['data']['challenge'])
+    ? $challenge_result['data']['challenge']
+    : null;
+  if (!$challenge) {
+    return ['ok' => false, 'status' => 0, 'error' => 'challenge_missing'];
+  }
+
+  $challenge_id = sanitize_text_field((string) ($challenge['id'] ?? ''));
+  $challenge_nonce = sanitize_text_field((string) ($challenge['nonce'] ?? ''));
+  $challenge_signature = sanitize_text_field((string) ($challenge['signature'] ?? ''));
+  $challenge_issued_at = sanitize_text_field((string) ($challenge['issuedAt'] ?? ''));
+  $challenge_expires_at = sanitize_text_field((string) ($challenge['expiresAt'] ?? ''));
+  if ($challenge_id === '' || $challenge_nonce === '' || $challenge_signature === '' || $challenge_issued_at === '' || $challenge_expires_at === '') {
+    return ['ok' => false, 'status' => 0, 'error' => 'challenge_shape_invalid'];
+  }
+
+  $payload = ragbaz_build_home_payload();
+  $payload_signature = hash('sha256', $challenge_id . ':' . $challenge_nonce . ':' . ragbaz_canonical_json($payload));
+  $register_result = ragbaz_home_post_json('/api/v1/home', [
+    'challenge' => [
+      'id' => $challenge_id,
+      'nonce' => $challenge_nonce,
+      'signature' => $challenge_signature,
+      'issuedAt' => $challenge_issued_at,
+      'expiresAt' => $challenge_expires_at,
+    ],
+    'payload' => $payload,
+    'payloadSignature' => $payload_signature,
+  ]);
+
+  if (empty($register_result['ok'])) {
+    return [
+      'ok' => false,
+      'status' => isset($register_result['status']) ? intval($register_result['status']) : 0,
+      'error' => isset($register_result['error']) ? (string) $register_result['error'] : 'register_failed',
+      'data' => isset($register_result['data']) && is_array($register_result['data']) ? $register_result['data'] : [],
+    ];
+  }
+
+  $account = isset($register_result['data']['account']) && is_array($register_result['data']['account'])
+    ? $register_result['data']['account']
+    : null;
+  if (!$account) {
+    return ['ok' => false, 'status' => 0, 'error' => 'account_missing'];
+  }
+
+  $account_id = preg_replace('/[^a-z0-9]/', '', strtolower((string) ($account['id'] ?? '')));
+  $passkey = preg_replace('/[^a-z0-9]/', '', strtolower((string) ($account['passkey'] ?? '')));
+  $gift_key = preg_replace('/[^a-z0-9-]/', '', strtolower((string) ($account['giftKey'] ?? '')));
+  if ($account_id === '' || $passkey === '') {
+    return ['ok' => false, 'status' => 0, 'error' => 'account_credentials_missing'];
+  }
+
+  update_option('ragbaz_home_account_id', $account_id, false);
+  update_option('ragbaz_home_passkey', $passkey, false);
+  if ($gift_key !== '') {
+    update_option('ragbaz_home_gift_key', $gift_key, false);
+  }
+
+  return [
+    'ok' => true,
+    'status' => isset($register_result['status']) ? intval($register_result['status']) : 200,
+    'data' => isset($register_result['data']) && is_array($register_result['data']) ? $register_result['data'] : [],
+    'account' => [
+      'id' => $account_id,
+      'giftKey' => $gift_key,
+    ],
   ];
 }
 
@@ -1363,6 +1511,26 @@ function ragbaz_handle_connect_actions() {
     }
     ragbaz_set_home_last_result('error', 'Heartbeat failed.', ['error' => $result['error'] ?? 'unknown']);
     wp_redirect(add_query_arg(['ragbaz_connect_result' => 'heartbeat_failed'], $redirect));
+    exit;
+  }
+
+  if ($action === 'auto_onboard') {
+    $result = ragbaz_auto_onboard_home();
+    if (!empty($result['ok'])) {
+      ragbaz_set_home_last_result('ok', 'Auto onboarding completed and credentials were saved.', [
+        'status' => $result['status'] ?? 200,
+        'accountId' => $result['account']['id'] ?? '',
+        'giftKey' => $result['account']['giftKey'] ?? '',
+      ]);
+      wp_redirect(add_query_arg(['ragbaz_connect_result' => 'auto_onboard_ok'], $redirect));
+      exit;
+    }
+    ragbaz_set_home_last_result('error', 'Auto onboarding failed.', [
+      'status' => $result['status'] ?? 0,
+      'error' => $result['error'] ?? 'unknown',
+      'data' => isset($result['data']) && is_array($result['data']) ? $result['data'] : [],
+    ]);
+    wp_redirect(add_query_arg(['ragbaz_connect_result' => 'auto_onboard_failed'], $redirect));
     exit;
   }
 
@@ -1680,8 +1848,10 @@ function ragbaz_render_info_page() {
     $connect_result = !empty($_GET['ragbaz_connect_result']) ? sanitize_key(wp_unslash($_GET['ragbaz_connect_result'])) : '';
     $connect_notice_map = [
       'saved' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Connection settings saved.'],
+      'auto_onboard_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Auto onboarding completed and credentials were saved.'],
       'heartbeat_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Phone-home heartbeat sent successfully.'],
       'event_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Call-home event sent successfully.'],
+      'auto_onboard_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Auto onboarding failed. Check Home base URL and network connectivity.'],
       'heartbeat_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Heartbeat failed. Check credentials and endpoint URL.'],
       'event_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Event send failed. Check credentials and endpoint URL.'],
     ];
@@ -1694,7 +1864,8 @@ function ragbaz_render_info_page() {
         Connect this WordPress site to <strong>ragbaz.xyz</strong> and push diagnostics snapshots.
       </p>
       <ol style="margin:0;padding-left:18px;color:#7a4b1b;font-size:13px;line-height:1.5">
-        <li>Save connection settings (account ID + passkey + optional gift key).</li>
+        <li>Click <strong>Auto onboard</strong> to request and save account credentials from ragbaz.xyz.</li>
+        <li>If needed, edit credentials manually in Connection settings.</li>
         <li>Click <strong>Phone home now</strong> to send a heartbeat snapshot.</li>
         <li>Open tenant/site info links to verify ingestion and status pages.</li>
       </ol>
@@ -1736,7 +1907,10 @@ function ragbaz_render_info_page() {
         <input type="hidden" name="ragbaz_connect_action" value="save_settings" />
         <h3 style="margin:0 0 12px;color:#5b3a1f">Connection settings</h3>
         <p style="margin:0 0 12px;color:#7a4b1b;font-size:13px">
-          Use the account credentials returned by <code>POST /api/v1/home</code> registration.
+          Prefer <strong>Auto onboard</strong> for first-time setup. Manual credentials can still be edited here.
+        </p>
+        <p style="margin:0 0 12px">
+          <button class="button button-secondary" name="ragbaz_connect_action" value="auto_onboard">Auto onboard (request keys from ragbaz.xyz)</button>
         </p>
         <table class="form-table" role="presentation" style="margin:0">
           <tbody>
