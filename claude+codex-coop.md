@@ -13,6 +13,14 @@
 - Verification run:
   - `ragbaz.xyz`: `npm test` (pass, 12/12).
 
+### Codex — peer page now recomputes insights from payload at render time (commit `5fa2d85` in `ragbaz.xyz`)
+
+**Delivered:**
+- Updated `ragbaz.xyz/src/lib/pages.js` (`renderPeerPage`) to recompute insights from `latestReport.payload` on each request instead of trusting stored `latestReport.insights` only.
+- This makes recommendation phrasing and scoring logic update immediately for older peer rows, without requiring a new plugin heartbeat.
+- Verification run:
+  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+
 ### Codex — GraphQL history strict 200/non-200 coloring + expandable rows
 
 **Delivered:**
