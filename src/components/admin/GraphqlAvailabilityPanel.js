@@ -190,7 +190,7 @@ function GraphqlHighlightedCode({ query }) {
 
 function computeStats(log) {
   if (!log.length) return { total: 0, ok: 0, fail: 0, pct: null };
-  const ok = log.filter((d) => d.ok).length;
+  const ok = log.filter((d) => isStatus200(d?.status)).length;
   const fail = log.length - ok;
   const pct = Math.round((ok / log.length) * 100);
   return { total: log.length, ok, fail, pct };
@@ -203,12 +203,12 @@ function pctColor(pct) {
   return "text-red-600";
 }
 
+function isStatus200(status) {
+  return Number.parseInt(String(status), 10) === 200;
+}
+
 function dotColor(d) {
-  if (!d.ok) {
-    if (d.status === 429 || d.status === 503) return "bg-orange-400";
-    return "bg-red-500";
-  }
-  return "bg-emerald-500";
+  return isStatus200(d?.status) ? "bg-emerald-500" : "bg-red-500";
 }
 
 function dotTitle(d) {
@@ -231,12 +231,10 @@ function bucketize(log, buckets = 120) {
       buckets - 1,
     );
     const cur = result[idx];
-    // worst status wins: fail beats ok, rate-limit beats generic fail
+    // worst status wins: non-200 beats 200.
     if (!cur) {
       result[idx] = d;
-    } else if (cur.ok && !d.ok) {
-      result[idx] = d;
-    } else if (!cur.ok && !d.ok && (d.status === 429 || d.status === 503)) {
+    } else if (isStatus200(cur?.status) && !isStatus200(d?.status)) {
       result[idx] = d;
     }
   }
@@ -251,7 +249,7 @@ export default function GraphqlAvailabilityPanel() {
   const [toggling, setToggling] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
-  const [expandedFailure, setExpandedFailure] = useState(null);
+  const [expandedEntry, setExpandedEntry] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -417,15 +415,11 @@ export default function GraphqlAvailabilityPanel() {
           <div className="flex gap-4 mt-2 text-xs text-gray-500">
             <span className="flex items-center gap-1">
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-              Success
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-orange-400" />
-              Rate-limited (429/503)
+              HTTP 200
             </span>
             <span className="flex items-center gap-1">
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-500" />
-              Error
+              Non-200
             </span>
             <span className="flex items-center gap-1">
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-gray-200" />
@@ -468,38 +462,28 @@ export default function GraphqlAvailabilityPanel() {
                     minute: "2-digit",
                     second: "2-digit",
                   });
-                  const isRateLimit =
-                    entry.status === 429 || entry.status === 503;
+                  const is200 = isStatus200(entry?.status);
+                  const rowToneClass = is200 ? "bg-emerald-50" : "bg-red-50";
+                  const statusToneClass = is200
+                    ? "text-emerald-700 font-semibold"
+                    : "text-red-700 font-semibold";
+                  const detailRowToneClass = is200
+                    ? "bg-[#1f3020] text-[#ebdbb2]"
+                    : "bg-[#1d2021] text-[#ebdbb2]";
                   const entryId = `${entry.ts}:${entry.status}:${i}`;
-                  const isExpanded = expandedFailure === entryId;
+                  const isExpanded = expandedEntry === entryId;
                   const issues = Array.isArray(entry.errors)
                     ? entry.errors.map((item) => classifyGraphqlIssue(item?.message))
                     : [];
                   return (
                     <Fragment key={entryId}>
-                      <tr
-                        className={
-                          !entry.ok
-                            ? isRateLimit
-                              ? "bg-orange-50"
-                              : "bg-red-50"
-                            : ""
-                        }
-                      >
+                      <tr className={rowToneClass}>
                         <td className="px-3 py-1.5 whitespace-nowrap text-gray-700">
                           {dateStr}{" "}
                           <span className="text-gray-500">{timeStr}</span>
                         </td>
                         <td className="px-3 py-1.5 whitespace-nowrap">
-                          <span
-                            className={
-                              isRateLimit
-                                ? "text-orange-600 font-semibold"
-                                : entry.ok
-                                  ? "text-emerald-700"
-                                  : "text-red-600 font-semibold"
-                            }
-                          >
+                          <span className={statusToneClass}>
                             {String(entry.status)}
                           </span>
                         </td>
@@ -510,28 +494,34 @@ export default function GraphqlAvailabilityPanel() {
                           {entry.endpoint}
                         </td>
                         <td className="px-3 py-1.5 whitespace-nowrap">
-                          {!entry.ok ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpandedFailure((prev) => (prev === entryId ? null : entryId))
-                              }
-                              className="rounded border border-red-200 bg-white px-2 py-0.5 text-[11px] font-medium text-red-700 hover:bg-red-50"
-                            >
-                              {isExpanded ? "Hide" : "Inspect"}
-                            </button>
-                          ) : (
-                            <span className="text-[11px] text-gray-400">—</span>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedEntry((prev) => (prev === entryId ? null : entryId))
+                            }
+                            className={`rounded border bg-white px-2 py-0.5 text-[11px] font-medium ${
+                              is200
+                                ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                : "border-red-200 text-red-700 hover:bg-red-50"
+                            }`}
+                          >
+                            {isExpanded ? "Collapse" : "Expand"}
+                          </button>
                         </td>
                       </tr>
-                      {!entry.ok && isExpanded && (
-                        <tr className="bg-[#1d2021] text-[#ebdbb2]">
+                      {isExpanded && (
+                        <tr className={detailRowToneClass}>
                           <td className="px-3 py-3" colSpan={5}>
                             <div className="space-y-3 text-xs">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="rounded border border-[#fb4934] bg-[#3c1f1f] px-2 py-0.5 font-semibold text-[#fb4934]">
-                                  {formatFailureKind(entry.failureKind)}
+                                <span
+                                  className={`rounded border px-2 py-0.5 font-semibold ${
+                                    is200
+                                      ? "border-[#8ec07c] bg-[#243225] text-[#8ec07c]"
+                                      : "border-[#fb4934] bg-[#3c1f1f] text-[#fb4934]"
+                                  }`}
+                                >
+                                  {is200 ? "HTTP 200 OK" : formatFailureKind(entry.failureKind)}
                                 </span>
                                 {entry.operationName && (
                                   <span className="rounded border border-[#504945] bg-[#282828] px-2 py-0.5 text-[#83a598]">
@@ -598,18 +588,35 @@ export default function GraphqlAvailabilityPanel() {
                                 </div>
                               ) : (
                                 <div className="rounded border border-[#504945] bg-[#282828] p-3">
-                                  <p className="font-semibold text-[#fabd2f]">
-                                    Diagnostic guidance
-                                  </p>
-                                  <p className="mt-1 text-[#ebdbb2]">
-                                    Should be: request should return valid JSON GraphQL payload without errors.
-                                  </p>
-                                  <p className="text-[#ebdbb2]">
-                                    Was: {String(entry.status)} ({formatFailureKind(entry.failureKind)}).
-                                  </p>
-                                  <p className="text-[#ebdbb2]">
-                                    Recommended: inspect endpoint health, auth credentials, and query structure, then retry.
-                                  </p>
+                                  {is200 ? (
+                                    <>
+                                      <p className="font-semibold text-[#8ec07c]">Request summary</p>
+                                      <p className="mt-1 text-[#ebdbb2]">
+                                        Should be: HTTP 200 with valid GraphQL JSON response.
+                                      </p>
+                                      <p className="text-[#ebdbb2]">
+                                        Was: HTTP 200.
+                                      </p>
+                                      <p className="text-[#ebdbb2]">
+                                        Recommended: no action needed.
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="font-semibold text-[#fabd2f]">
+                                        Diagnostic guidance
+                                      </p>
+                                      <p className="mt-1 text-[#ebdbb2]">
+                                        Should be: request should return valid JSON GraphQL payload without errors.
+                                      </p>
+                                      <p className="text-[#ebdbb2]">
+                                        Was: {String(entry.status)} ({formatFailureKind(entry.failureKind)}).
+                                      </p>
+                                      <p className="text-[#ebdbb2]">
+                                        Recommended: inspect endpoint health, auth credentials, and query structure, then retry.
+                                      </p>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>

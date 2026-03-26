@@ -2,6 +2,20 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — GraphQL history strict 200/non-200 coloring + expandable rows
+
+**Delivered:**
+- Updated `GraphqlAvailabilityPanel` status rendering to use strict HTTP status handling:
+  - `200` rows/dots render green,
+  - any non-`200` rows/dots render red.
+- Removed special orange rate-limit color path so all non-`200` responses are visually unified as failures.
+- Made every request row foldable (`Expand` / `Collapse`), not only failures.
+- Expanded detail panel now supports both outcomes:
+  - `200` entries show green success summary,
+  - non-`200` entries keep diagnostic guidance.
+- Verification run:
+  - `npx eslint src/components/admin/GraphqlAvailabilityPanel.js` (pass).
+
 ### Codex — dead-link scan opt-in + throttled checks + GraphQL failure diagnostics UI
 
 **Delivered:**
