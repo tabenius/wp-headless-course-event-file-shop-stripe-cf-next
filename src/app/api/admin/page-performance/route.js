@@ -33,6 +33,8 @@ export async function POST(request) {
     fcp: body.fcp != null ? Number(body.fcp) : undefined,
     inp: body.inp != null ? Number(body.inp) : undefined,
     cls: body.cls != null ? Number(body.cls) : undefined,
+    navigationType:
+      typeof body.navigationType === "string" ? body.navigationType.slice(0, 32) : undefined,
   }).catch(() => {});
 
   relayStorefrontVitalsToRagbazHome(body, request).catch(() => {});

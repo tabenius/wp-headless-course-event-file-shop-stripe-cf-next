@@ -17,6 +17,7 @@ export function usePagePerformanceLogger() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof performance === "undefined") return;
 
+    let sent = false;
     let lcp = null;
     let fcp = null;
     let inp = null;
@@ -27,13 +28,16 @@ export function usePagePerformanceLogger() {
     let clsObserver = null;
 
     function send() {
+      if (sent) return;
       const nav = performance.getEntriesByType("navigation")[0];
       if (!nav) return;
+      sent = true;
 
       const payload = {
-        url: window.location.pathname,
+        url: `${window.location.pathname}${window.location.search || ""}`,
         ttfb: nav.responseStart - nav.requestStart,
         domComplete: nav.domComplete,
+        navigationType: nav.type || "navigate",
         ...(lcp != null ? { lcp } : {}),
         ...(fcp != null ? { fcp } : {}),
         ...(inp != null ? { inp } : {}),
@@ -116,13 +120,23 @@ export function usePagePerformanceLogger() {
       setTimeout(send, 1500);
     }
 
+    function onPageHidden() {
+      if (document.visibilityState === "hidden") {
+        send();
+      }
+    }
+
     if (document.readyState === "complete") {
       onLoad();
     } else {
       window.addEventListener("load", onLoad, { once: true });
     }
+    document.addEventListener("visibilitychange", onPageHidden);
+    window.addEventListener("pagehide", send, { once: true });
 
     return () => {
+      document.removeEventListener("visibilitychange", onPageHidden);
+      window.removeEventListener("pagehide", send);
       lcpObserver?.disconnect();
       fcpObserver?.disconnect();
       inpObserver?.disconnect();
