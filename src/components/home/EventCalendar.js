@@ -26,48 +26,48 @@ function EventRow({ event }) {
   const badge = formatDateBadge(event);
 
   return (
-    <article className="flex flex-col gap-4 rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 dark:bg-neutral-900/95 dark:ring-purple-400/30 lg:flex-row lg:items-center lg:gap-6">
-      <div className="shrink-0 lg:w-40">
+    <article className="flex flex-col gap-3 rounded-xl bg-white p-3 ring-1 ring-purple-100 dark:bg-neutral-900/95 dark:ring-purple-400/30 lg:flex-row lg:items-center lg:gap-4">
+      <div className="shrink-0 lg:w-32">
         {badge ? (
           <div>
-            <div className="text-4xl font-black leading-none text-purple-700">
+            <div className="text-3xl font-black leading-none text-purple-700">
               {badge.day}
             </div>
-            <div className="mt-1 text-sm font-semibold tracking-[0.16em] text-purple-600">
+            <div className="mt-0.5 text-[11px] font-semibold tracking-[0.14em] text-purple-600">
               {badge.month} {badge.year}
             </div>
           </div>
         ) : (
-          <div className="text-base font-bold text-purple-700 dark:text-purple-300">UPCOMING</div>
+          <div className="text-sm font-bold text-purple-700 dark:text-purple-300">UPCOMING</div>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
         <Link
           href={event.uri}
-          className="block text-2xl font-semibold leading-tight text-gray-900 hover:text-purple-700 dark:text-white dark:hover:text-purple-300"
+          className="block text-xl font-semibold leading-tight text-gray-900 hover:text-purple-700 dark:text-white dark:hover:text-purple-300"
           title={title}
         >
           {title}
         </Link>
         {dateLabel && (
-          <p className="mt-2 text-sm text-purple-800/90 dark:text-purple-200">{dateLabel}</p>
+          <p className="mt-1 text-xs text-purple-800/90 dark:text-purple-200">{dateLabel}</p>
         )}
       </div>
 
       <Link
         href={event.uri}
-        className="block overflow-hidden rounded-xl ring-1 ring-purple-200 lg:w-64 lg:flex-none"
+        className="block overflow-hidden rounded-lg ring-1 ring-purple-200 lg:w-48 lg:flex-none"
       >
         {event.imageUrl ? (
           <img
             src={event.imageUrl}
             alt={event.imageAlt || title}
-            className="h-44 w-full object-cover lg:h-36"
+            className="h-32 w-full object-cover lg:h-24"
             loading="lazy"
           />
         ) : (
-          <div className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-purple-100 to-purple-50 text-xs font-semibold uppercase tracking-wide text-purple-600 dark:from-neutral-800 dark:to-neutral-900 dark:text-purple-200 lg:h-36">
+          <div className="flex h-32 w-full items-center justify-center bg-gradient-to-br from-purple-50 to-rose-50 text-[10px] font-semibold uppercase tracking-wide text-purple-600 dark:from-neutral-800 dark:to-neutral-900 dark:text-purple-200 lg:h-24">
             No image
           </div>
         )}
@@ -80,10 +80,10 @@ export default function EventCalendar({ events }) {
   if (!events?.length) return null;
 
   return (
-    <section className="border-b border-gray-200 bg-gray-50 dark:border-neutral-800 dark:bg-neutral-950">
-      <div className="mx-auto max-w-5xl px-5 py-8">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Upcoming Events</h2>
+    <section className="border-b border-purple-100 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+      <div className="mx-auto max-w-5xl px-4 py-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Events</h2>
           <Link
             href="/events"
             className="text-sm font-medium text-purple-700 hover:underline dark:text-purple-300"
@@ -92,9 +92,9 @@ export default function EventCalendar({ events }) {
           </Link>
         </div>
 
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-purple-400 to-transparent" />
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-purple-300 to-transparent" />
 
-        <div className="mt-5 space-y-5">
+        <div className="mt-3 space-y-3">
           {events.slice(0, 8).map((event) => (
             <EventRow key={event.id} event={event} />
           ))}
