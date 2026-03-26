@@ -17,7 +17,7 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG: Integration contol: "ragbaz: WordPress-läge är inte aktiverat.", even though the lights are green for those two: ragbaz and ragbazWpRuntime
 [x] BUG: environment variables: graphql availability logging says CF_KV_NAMESPACE_ID is not defined even though it is
 [x] BUG: environment variables: page performance also tell us about CF_KV_NAMESPACE_ID and also "Failed to load: e.json is not a function"
-[x] BUG: RAGBAZ-Articulate-plugin, names not up to date. is the file link correct?
+[x] BUG: RAGBAZ Bridge-plugin, names not up to date. is the file link correct?
 [x] BUG: main menu bar, status: the status color shows partial connection and tell us that even though all lights are green in the integration control
 [ ] FEATURE: /admin, add a small like thumbs up button in greater ui fields to signal that this gui is adequate, heart for good and thumbs down for needs improvement, for the admin user tobias they are read only but shown whereas when sofia interacts with the gui she may set these. Store them in KV.
 [ ] FEATURE: The sun and moon theme icon I do not want that thick outline in hover, please turn it down to 1-2px tops

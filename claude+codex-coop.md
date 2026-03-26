@@ -190,7 +190,7 @@ DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf loggin
 
 ### Codex — WP attachment asset metadata + capability signal (commit 3e3d361)
 
-- Extended the WordPress plugin (`packages/ragbaz-articulate-plugin/Ragbaz-Articulate.php`) with attachment-asset metadata registration and normalization:
+- Extended the WordPress plugin (`packages/ragbaz-bridge-plugin/ragbaz-bridge.php`) with attachment-asset metadata registration and normalization:
   - registers `ragbaz_asset_*` attachment meta keys for REST and GraphQL,
   - adds REST field `ragbaz_asset` with normalized asset record (`assetId`, `uri`, `ownerUri`, `variantKind`, `hash`, `mime`, `size`, `dimensions`, `original`, `variants`),
   - resolves variant lists by shared `ragbaz_asset_id` so original↔derived chains are queryable per attachment.
@@ -1080,7 +1080,7 @@ DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf loggin
 
 ### Codex — P0/P1 completion pass + verification
 
-- **WordPress plugin VAT schema parity** (`packages/ragbaz-articulate-plugin/Ragbaz-Articulate.php`):
+- **WordPress plugin VAT schema parity** (`packages/ragbaz-bridge-plugin/ragbaz-bridge.php`):
   - Added `vatPercent` to `CourseAccessRule` GraphQL object fields.
   - Added `vatPercent` to `SetCourseAccessRuleInput`.
   - Added `vatPercent` to `setCourseAccessRule` mutation input fields and threaded it into `ragbaz_set_rule(...)` so plugin-side persistence now matches storefront/admin VAT flows.
@@ -1142,7 +1142,7 @@ DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf loggin
 ### Codex — welcome slide density + hotkey placement polish
 
 - Removed the large story-mode welcome headline to reclaim vertical space for slides.
-- Moved the `Ctrl+Alt+M` hotkey hint inline next to the `RAGBAZ Articulate StoreFront` label in both welcome states.
+- Moved the `Ctrl+Alt+M` hotkey hint inline next to the `RAGBAZ Bridge StoreFront` label in both welcome states.
 - Tightened top spacing/padding in story mode and adjusted dark-theme chip/keycap colors to maintain high contrast on the blue background (no black text on dark blue).
 
 ## 2026-03-19 (cont. 16)
@@ -1303,7 +1303,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 ### Both
 
-- **Monorepo Setup**: Initialized with `packages/ragbaz-articulate-plugin/` for WordPress companion plugin.
+- **Monorepo Setup**: Initialized with `packages/ragbaz-bridge-plugin/` for WordPress companion plugin.
 - **Build System**: Added `npm run plugin:copy`, `cf:build`, `cf:deploy` scripts.
 - **Tests**: Configured `node:test` in `tests/`.
 
@@ -1436,7 +1436,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 ### Codex — control-room routing, StoreFront naming, card i18n, and order alignment
 
 - **Control-room shortcut target**: Updated the header link so clicking the logo/control-room area always lands in the control panel entry point (`/admin#/welcome`) instead of generic `/admin`.
-- **Welcome subtitle naming**: Replaced the “story/berättelse/historia” subtitle label with `RAGBAZ Articulate StoreFront` in EN/SV/ES.
+- **Welcome subtitle naming**: Replaced the “story/berättelse/historia” subtitle label with `RAGBAZ Bridge StoreFront` in EN/SV/ES.
 - **Welcome card translations completed**: Removed hardcoded English text for Storage/Support card bodies and added locale keys across all three languages:
   - `admin.cardStorageBody`
   - `admin.cardSupportBody`
@@ -1512,7 +1512,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - **Storefront guardrails for inactive configured items**:
   - Content page (`src/app/[...uri]/page.js`) now `notFound()` for configured access rules marked `active: false`.
   - Stripe checkout route blocks purchase initiation when content config is inactive.
-- **Plugin schema upgrade (`packages/ragbaz-articulate-plugin`)**:
+- **Plugin schema upgrade (`packages/ragbaz-bridge-plugin`)**:
   - Added `active` to `CourseAccessRule`, `SetCourseAccessRuleInput`, and `setCourseAccessRule` mutation input handling.
   - Version bumped to `1.0.1`.
   - Improved rules normalization and made `active` optional/preserved when omitted, so legacy clients do not unintentionally re-enable disabled items.
@@ -1792,7 +1792,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 ### Codex — welcome branding cleanup
 
-- Removed `RAGBAZ Articulate StoreFront` from Welcome-screen content chrome so the brand text is no longer repeated outside the menu bar.
+- Removed `RAGBAZ Bridge StoreFront` from Welcome-screen content chrome so the brand text is no longer repeated outside the menu bar.
 - Applied in both Welcome modes:
   - Story mode (dark-blue header row above impress frame)
   - Non-story mode (card dashboard intro header)
@@ -1976,16 +1976,16 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - WordPress plugin runtime checks + graphql essentials:
   - Updated plugin version to `1.0.3`:
-    - `packages/ragbaz-articulate-plugin/Ragbaz-Articulate.php`
-    - `packages/ragbaz-articulate-plugin/package.json`
-    - `packages/ragbaz-articulate-plugin/readme.txt` (stable tag/changelog)
+    - `packages/ragbaz-bridge-plugin/ragbaz-bridge.php`
+    - `packages/ragbaz-bridge-plugin/package.json`
+    - `packages/ragbaz-bridge-plugin/readme.txt` (stable tag/changelog)
   - Added runtime check helpers in plugin:
     - `WP_DEBUG`, `WP_DEBUG_LOG`, `SCRIPT_DEBUG`, `SAVEQUERIES`, `GRAPHQL_DEBUG`
     - Query Monitor active, Xdebug loaded
     - Persistent object cache enabled, OPcache loaded
     - Derived booleans: `debugFlagsOk`, `debugToolsOk`, `okForProduction`
   - Added wp-admin info screen:
-    - `Tools -> RAGBAZ Articulate`
+    - `Tools -> RAGBAZ Bridge`
     - Minimal table + production summary + GraphQL query snippet.
   - Added GraphQL exposure:
     - New object type: `RagbazWpRuntime`
@@ -2045,10 +2045,10 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Refactored `plugin:copy` to use a dedicated Node script instead of inline shell copy.
 
 - Added `scripts/copy-plugin-zip.mjs`:
-  - Verifies source zip exists at `packages/ragbaz-articulate-plugin/dist/Ragbaz-Articulate.zip`.
+  - Verifies source zip exists at `packages/ragbaz-bridge-plugin/dist/ragbaz-bridge.zip`.
   - Copies the artifact to both destinations:
-    - `public/downloads/ragbaz-articulate/Ragbaz-Articulate.zip`
-    - `ragbaz.xyz/release/Ragbaz-Articulate.zip`
+    - `public/downloads/ragbaz-bridge/ragbaz-bridge.zip`
+    - `ragbaz.xyz/release/ragbaz-bridge.zip`
 
 - Validation:
   - `npm run plugin:copy` (pass; zip rebuilt and copied to both destinations).
@@ -2129,3 +2129,23 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Nested repo commit pushed:
   - `ragbaz.xyz` `master`: `94b91b5` — `feat: proxy tenant hex admin paths to shared admin origin`
+
+---
+
+## 2026-03-26
+
+### Codex — plugin naming cleanup to `ragbaz-bridge` across active repos
+
+- Completed plugin naming normalization in `main`:
+  - Removed remaining legacy plugin-name references from source files.
+  - Updated package/workspace wiring to `ragbaz-bridge-plugin` and download URL/path to `/downloads/ragbaz-bridge/ragbaz-bridge.zip`.
+  - Finalized plugin package/file naming under `packages/ragbaz-bridge-plugin/` with `ragbaz-bridge.php` and `ragbaz-bridge.zip`.
+  - Updated docs and tests to the renamed plugin/download paths.
+
+- Mirrored the same rename in `wp-cf-front-oss`:
+  - Renamed legacy plugin package path to `packages/ragbaz-bridge-plugin/`.
+  - Renamed plugin entry file to `ragbaz-bridge.php`.
+  - Renamed published/downloaded zip names and paths to `ragbaz-bridge.zip`.
+  - Updated plugin readme/admin labels to use `RAGBAZ Bridge`.
+
+- Verified there are no remaining legacy plugin-name hits in `main`, `wp-cf-front-oss`, and `wp-cf-front` source scans.

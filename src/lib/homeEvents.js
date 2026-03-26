@@ -1,7 +1,7 @@
 import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
 
 /**
- * Ragbaz-Articulate registers startDate and endDate on the Event type via
+ * RAGBAZ Bridge registers startDate and endDate on the Event type via
  * register_graphql_field. When the plugin is active these fields are always
  * present, so we query them directly.
  */
@@ -26,7 +26,7 @@ const HOME_EVENTS_QUERY = `
  * Returns { events, hasDates }.
  *
  * - If Event type is not registered (plugin absent), returns empty immediately.
- * - startDate/endDate come from the ragbaz-articulate plugin; if somehow absent
+ * - startDate/endDate come from the ragbaz-bridge plugin; if somehow absent
  *   (older plugin version) we fall back gracefully without crashing.
  */
 export async function fetchHomeEvents() {

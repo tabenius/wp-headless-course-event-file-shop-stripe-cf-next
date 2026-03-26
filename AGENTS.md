@@ -20,7 +20,7 @@ WordPress-headless course/shop/events platform deployed on **Cloudflare Workers*
 - **Stripe** (payments — charges, receipts)
 - **Cloudflare Workers AI** (FLUX.1 schnell image generation, embeddings + chat RAG)
 
-Monorepo — `packages/ragbaz-articulate-plugin/` is the companion WordPress plugin.
+Monorepo — `packages/ragbaz-bridge-plugin/` is the companion WordPress plugin.
 
 ---
 
@@ -104,7 +104,7 @@ But here are natural areas of focus:
 | `src/lib/i18n/*.json`                                   | Translations — always update all three languages together        |
 | `src/lib/ai.js`, `src/lib/imageQuota.js`                | AI helpers — pure functions, well-tested                         |
 | `src/lib/cloudflareKv.js`, `src/lib/digitalProducts.js` | KV/storage layer                                                 |
-| `packages/ragbaz-articulate-plugin/`                    | WordPress plugin — independent; build with `npm run plugin:copy` |
+| `packages/ragbaz-bridge-plugin/`                    | WordPress plugin — independent; build with `npm run plugin:copy` |
 | `tests/`                                                | `node:test` tests — run with `npm test`                          |
 
 ---
@@ -199,6 +199,7 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-26 (Codex)**: Completed plugin naming normalization to `ragbaz-bridge` across `main`, including package/workspace wiring (`ragbaz-bridge-plugin`), plugin file/zip names (`ragbaz-bridge.php`, `ragbaz-bridge.zip`), download path updates (`/downloads/ragbaz-bridge/ragbaz-bridge.zip`), and docs/tests references.
 - **2026-03-23 (Claude)**: AdminMediaLibraryTab refactor phase 1 — extracted `mediaLibraryHelpers.js` (30+ pure util functions), `R2ConnectionPanel` (S3/R2 connection checklist + GUI clients, 240 lines), `MediaViewerPanel` (asset data viewer, 195 lines). Main file: 3942 → 3205 lines. Commits `858403d`, `3e6722e`, `f1dc7ba`.
 - **2026-03-23 (Claude)**: WP setup page + 429 rate-limit UX + opt-in GraphQL availability/page-performance logging (KV) + chat tab beta gate + dead-link finder moved to Beta & monitoring section. Commit `356a96f`. i18n: 7 new keys (1010 total, all in sync).
 
@@ -284,7 +285,7 @@ Full list in `.env.example`.
 - **2026-03-19 (Codex)**: Added admin navigation action hotkeys: `Ctrl+Alt+Right/Down` for next menu tab and `Ctrl+Alt+Left/Up` for previous tab (with wrap-around), plus `Ctrl+Alt+T` as a theme-toggle shortcut. Also simplified theme toggle button visuals to remove circular framing/background and use a plain moon glyph.
 - **2026-03-19 (Codex)**: Reworked admin navigation hotkeys to numeric ascending order (`Welcome=0`, then `1..9` by menu order), removed the separate drawer hotkey legend, displayed per-item numeric key badges directly on menu options, and added directional cycling shortcuts (`Ctrl+Alt+Right/Down` next, `Ctrl+Alt+Left/Up` previous) with wrap-around tab navigation.
 - **2026-03-19 (Codex)**: Updated admin menu bar palette from blue to orange (`bg-orange-*`), including hamburger/theme controls and drawer shell/hotkey surfaces, for a consistent orange navigation/header appearance.
-- **2026-03-19 (Codex)**: Removed `RAGBAZ Articulate StoreFront` text from the Welcome screen content area (story + non-story variants) so branding is only shown in the menu bar as requested.
+- **2026-03-19 (Codex)**: Removed `RAGBAZ Bridge StoreFront` text from the Welcome screen content area (story + non-story variants) so branding is only shown in the menu bar as requested.
 - **2026-03-19 (Codex)**: Fine-tuned menu lockup alignment by shifting the `RAGBAZ` wordmark ~14px to the right in `AdminHeader` (`ml-[14px]`) to better align with the `ARTICULATE STOREFRONT` subtitle line.
 - **2026-03-19 (Codex)**: Hardened admin chunk-load failure recovery in `src/app/admin/error.js`: detect `ChunkLoadError`/`Failed to load chunk`, auto-trigger a single cache-busted reload (`/admin?reload=<ts>`), and make manual reload use the same cache-busting path to avoid stale bundle loops after deploy.
 - **2026-03-19 (Codex)**: Refined menu-bar branding layout: increased `RAGBAZ` size substantially via `RagbazLogo` scale prop and moved `ARTICULATE STOREFRONT` to a second line directly beneath it to eliminate overlap and improve visual hierarchy.
@@ -306,7 +307,7 @@ Full list in `.env.example`.
 - **2026-03-19 (Codex)**: Product/Stripe reliability pass: normalized admin tab event payloads, blocked AltGraph from triggering Ctrl+Alt admin hotkeys, and tightened `/api/admin/payments` query parsing (`email` trim/lowercase, safe `limit` clamp, safe `from` parse).
 - **2026-03-19 (Codex)**: Fixed payments error UX regressions by adding missing `admin.paymentsLoadFailed`/`admin.paymentsRetryHint` and Stripe-specific error keys in EN/SV/ES; mapped backend Stripe error classes to explicit codes/messages so users no longer see raw `stripe_lookup_failed`.
 - **2026-03-19 (Codex)**: Hardened product visibility/access consistency: canonical URI normalization (strip trailing slash) in course access store + WordPress backend integration, fallback-compatible GraphQL handling for plugin versions lacking `active`, and storefront/paywall/checkout guards to hide or block inactive configured WP items.
-- **2026-03-19 (Codex)**: Extended `ragbaz-articulate` plugin course-access schema to include `active` and versioned plugin header to `1.0.1`, while preserving legacy behavior when `active` is omitted in older client mutations.
+- **2026-03-19 (Codex)**: Extended `ragbaz-bridge` plugin course-access schema to include `active` and versioned plugin header to `1.0.1`, while preserving legacy behavior when `active` is omitted in older client mutations.
 - **2026-03-19 (Codex)**: Massive bug-hunt pass: fixed chat input spacebar/key typing interference by stopping propagation in `ChatPanel`, fixed stale tab loader logic (`activeTab === "shop"` -> `products`), repaired manual URI entry flow in Access tab (input no longer self-clears on first keystroke), and wired WP/manual active-state toggling through admin save + API so disabled course-access items can be hidden from storefront listings.
 - **2026-03-19 (Codex)**: Fixed recurring admin auto-navigation by hardening hash routing against unknown fragments (including stale impress.js step hashes): header now ignores non-tab hashes, dashboard normalizes unknown hashes back to the active tab, and Welcome adds stronger impress teardown/hash stabilization while the story is active.
 - **2026-03-19 (Codex)**: Improved admin operator clarity by distinguishing payments fetch errors from empty sales data, adding explicit payments-load error state in Sales/Support, and adding safe broken-image fallbacks in product/admin previews.
@@ -323,7 +324,7 @@ Full list in `.env.example`.
 - **2026-03-19 (Codex)**: Added hash-based admin tab routing (`/admin#/welcome`, `/admin#/sales`, etc.) with backward alias `#/sandbox -> #/info`, stabilized impress.js hash behavior so welcome slides no longer pollute URL after exit, and fixed admin scroll lock by tearing down impress viewport classes/styles on exit/unmount.
 - **2026-03-19 (Codex)**: Tightened responsive admin layout containers (`min-w-0`, responsive grids, wrapped headers/toolbars) so tabs fit viewport width and remain scrollable without hidden overflow traps.
 - **2026-03-19 (Codex)**: Renamed Sandbox to Info (tab/hotkey routing/i18n), moved Info to last in tab order, simplified hamburger hotkey legend into a single prominent Ctrl+Alt block, and updated the torus banner (faster rotation, brighter orange, lower height, Info label, theme-matched background, explicit new logo usage).
-- **2026-03-19 (Codex)**: Updated the header control-room shortcut to open `/admin#/welcome`, replaced the welcome subtitle with `RAGBAZ Articulate StoreFront`, translated previously hardcoded Welcome card text (Storage/Support) in EN/SV/ES, and aligned drawer/card ordering to `Welcome → Sales → Stats → Storage → Products → Chat → Health → Style → Info → Support`.
+- **2026-03-19 (Codex)**: Updated the header control-room shortcut to open `/admin#/welcome`, replaced the welcome subtitle with `RAGBAZ Bridge StoreFront`, translated previously hardcoded Welcome card text (Storage/Support) in EN/SV/ES, and aligned drawer/card ordering to `Welcome → Sales → Stats → Storage → Products → Chat → Health → Style → Info → Support`.
 - **2026-03-19 (Codex)**: Chat modularisation, markdown rendering, i18n, and bugfixes.
 - **2026-03-19 (Claude)**: Image generator polish and chat fixes.
 - **2026-03-18 (Both)**: Admin UI, i18n, and AGENTS.md setup.

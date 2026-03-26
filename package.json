@@ -1,5 +1,5 @@
 {
-  "name": "ragbaz-articulate-storefront",
+  "name": "ragbaz-bridge-storefront",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -25,7 +25,7 @@
     "wasm:upload": "bash scripts/upload-wasm-to-r2.sh",
     "lint": "eslint .",
     "prettier": "prettier --write .",
-    "plugin:build": "npm run build --workspace ragbaz-articulate-plugin",
+    "plugin:build": "npm run build --workspace ragbaz-bridge-plugin",
     "plugin:copy": "npm run plugin:build && node scripts/copy-plugin-zip.mjs",
     "test": "node --test tests/**/*.test.js"
   },

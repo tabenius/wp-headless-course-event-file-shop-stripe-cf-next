@@ -9,13 +9,13 @@ const repoRoot = path.resolve(__dirname, "..");
 const sourceZip = path.join(
   repoRoot,
   "packages",
-  "ragbaz-articulate-plugin",
+  "ragbaz-bridge-plugin",
   "dist",
-  "Ragbaz-Articulate.zip"
+  "ragbaz-bridge.zip"
 );
 
 const destinations = [
-  path.join(repoRoot, "public", "downloads", "ragbaz-articulate"),
+  path.join(repoRoot, "public", "downloads", "ragbaz-bridge"),
   path.join(repoRoot, "ragbaz.xyz", "release"),
 ];
 
@@ -26,8 +26,7 @@ if (!existsSync(sourceZip)) {
 
 for (const destinationDir of destinations) {
   mkdirSync(destinationDir, { recursive: true });
-  const destinationZip = path.join(destinationDir, "Ragbaz-Articulate.zip");
+  const destinationZip = path.join(destinationDir, "ragbaz-bridge.zip");
   copyFileSync(sourceZip, destinationZip);
   console.log(`Copied plugin zip to ${destinationZip}`);
 }
-

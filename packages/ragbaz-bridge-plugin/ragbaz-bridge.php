@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: RAGBAZ-Articulate
+ * Plugin Name: RAGBAZ Bridge - GraphQL Events, Courses, WooCommerce & Downloads StoreFront
  * Plugin URI: https://ragbaz.xyz/products
- * Description: GraphQL helpers for headless storefronts — exposes LearnPress courses and generic event data (Event Organiser, The Events Calendar, Events Manager) via WPGraphQL without bundling third‑party code.
+ * Description: GraphQL bridge for headless storefronts — exposes LearnPress courses, events (Event Organiser, The Events Calendar, Events Manager), WooCommerce products, and digital downloads via WPGraphQL. Includes built-in headless authentication via site-secret headers.
  * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
- * Version: 1.0.3
+ * Version: 1.2.0
  * Requires at least: 6.3
  * Tested up to: 6.5
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Requires: WPGraphQL
  * Optional: LearnPress, Event Organiser, The Events Calendar, Events Manager, WooCommerce + WPGraphQL for WooCommerce
- * Text Domain: ragbaz-articulate
+ * Text Domain: ragbaz-bridge
  * Contact: ragbaz@proton.me
  */
 
@@ -23,8 +23,8 @@ if (!defined('ABSPATH')) {
 
 // Keep the legacy option name so existing rules remain intact.
 const RAGBAZ_COURSE_RULES_OPTION = 'Articulate_course_access_rules';
-const RAGBAZ_VERSION = '1.0.3';
-const RAGBAZ_STOREFRONT_URL = 'https://github.com/ragbaz/ragbaz-articulate-storefront';
+const RAGBAZ_VERSION = '1.2.0';
+const RAGBAZ_STOREFRONT_URL = 'https://github.com/ragbaz/ragbaz-bridge-storefront';
 
 function ragbaz_get_storefront_url() {
   return esc_url_raw(apply_filters('ragbaz_storefront_url', RAGBAZ_STOREFRONT_URL));
@@ -841,21 +841,21 @@ function ragbaz_get_capabilities() {
 // ---------------------------------------------------------------------------
 function ragbaz_plugin_row_links($links) {
   $links[] = sprintf(
+    '<a href="%s">%s</a>',
+    esc_url(admin_url('tools.php?page=ragbaz-bridge')),
+    esc_html__('Settings', 'ragbaz')
+  );
+  $links[] = sprintf(
     '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
-    esc_url(ragbaz_get_storefront_url()),
-    esc_html__('Use with Articulate storefront (GitHub)', 'ragbaz')
+    'https://ragbaz.xyz',
+    'ragbaz.xyz'
   );
   return $links;
 }
-
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'ragbaz_plugin_row_links');
 add_filter('plugin_row_meta', function ($links, $file) {
   if ($file === plugin_basename(__FILE__)) {
-    $links[] = sprintf(
-      '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
-      esc_url(ragbaz_get_storefront_url()),
-      esc_html__('Storefront repo', 'ragbaz')
-    );
+    $links[] = '<a href="https://ragbaz.xyz/products" target="_blank" rel="noopener noreferrer">ragbaz.xyz/products</a>';
   }
   return $links;
 }, 10, 2);
@@ -863,26 +863,147 @@ add_filter('plugin_row_meta', function ($links, $file) {
 function ragbaz_admin_notice() {
   if (!current_user_can('manage_options')) return;
   if (defined('DOING_AJAX') && DOING_AJAX) return;
-  // Avoid showing on every page load
-  if (get_transient('ragbaz_notice_shown')) return;
-  set_transient('ragbaz_notice_shown', '1', DAY_IN_SECONDS);
-  $url = esc_url(ragbaz_get_storefront_url());
+  if (get_transient('ragbaz_bridge_notice_shown')) return;
+  set_transient('ragbaz_bridge_notice_shown', '1', DAY_IN_SECONDS);
+  $url = esc_url(admin_url('tools.php?page=ragbaz-bridge'));
   echo '<div class="notice notice-info is-dismissible"><p>';
-  echo sprintf(
-    esc_html__('RAGBAZ-Articulate is active. Pair it with the Articulate storefront: %s', 'ragbaz'),
-    '<a href="' . $url . '" target="_blank" rel="noopener noreferrer">' . $url . '</a>'
+  printf(
+    __('RAGBAZ Bridge is active. <a href="%s">View settings &amp; debug info</a>.', 'ragbaz'),
+    $url
   );
   echo '</p></div>';
 }
 add_action('admin_notices', 'ragbaz_admin_notice');
 add_action('network_admin_notices', 'ragbaz_admin_notice');
 
+// ── Stale directory detection ────────────────────────────────────────────────
+
+/**
+ * Returns a list of known legacy plugin directories that are still present on disk
+ * (but are NOT this file's own directory, to avoid false positives after rename).
+ */
+function ragbaz_find_stale_dirs() {
+  if (!defined('WP_PLUGIN_DIR')) return [];
+  $legacy = [
+    'ragbaz-bridge',
+    'ragbaz-bridge-plugin',
+    'ragbaz-bridge-storefront',
+    'articulate-learnpress-stripe',
+  ];
+  $own_dir = basename(dirname(__FILE__));
+  $found = [];
+  foreach ($legacy as $dir) {
+    if ($dir === $own_dir) continue;
+    $path = WP_PLUGIN_DIR . '/' . $dir;
+    if (is_dir($path)) {
+      $found[] = $path;
+    }
+  }
+  return $found;
+}
+
+/**
+ * Recursively deletes a directory and all its contents using WP_Filesystem.
+ * Returns true on full success, false if anything could not be removed.
+ */
+function ragbaz_rmdir_recursive($path) {
+  global $wp_filesystem;
+  if (!isset($wp_filesystem)) {
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    WP_Filesystem();
+  }
+  if (!$wp_filesystem->is_dir($path)) return false;
+  // WP_Filesystem::delete() with $recursive = true removes directory trees.
+  return $wp_filesystem->delete($path, true);
+}
+
+/**
+ * Handle the "delete stale dirs" admin-POST action.
+ * Hooked early (admin_init) so it can redirect before any output.
+ */
+function ragbaz_handle_delete_stale_dirs() {
+  if (!isset($_POST['ragbaz_delete_stale_dirs'])) return;
+  check_admin_referer('ragbaz_delete_stale_dirs');
+  if (!current_user_can('manage_options')) wp_die(esc_html__('Unauthorized', 'ragbaz'));
+
+  $stale   = ragbaz_find_stale_dirs();
+  $deleted = [];
+  $failed  = [];
+  foreach ($stale as $path) {
+    if (ragbaz_rmdir_recursive($path)) {
+      $deleted[] = basename($path);
+    } else {
+      $failed[] = $path;
+    }
+  }
+
+  $msg = '';
+  if (!empty($deleted)) {
+    $msg .= 'ragbaz_deleted=' . rawurlencode(implode(',', $deleted));
+  }
+  if (!empty($failed)) {
+    $msg .= ($msg ? '&' : '') . 'ragbaz_failed=' . rawurlencode(implode(',', $failed));
+  }
+
+  $redirect = add_query_arg(
+    array_filter([
+      'page'            => isset($_POST['ragbaz_return_page']) ? sanitize_key($_POST['ragbaz_return_page']) : null,
+      'ragbaz_deleted'  => !empty($deleted) ? implode(',', $deleted) : null,
+      'ragbaz_failed'   => !empty($failed)  ? implode(',', $failed)  : null,
+    ]),
+    admin_url('tools.php')
+  );
+  wp_redirect($redirect);
+  exit;
+}
+add_action('admin_init', 'ragbaz_handle_delete_stale_dirs');
+
+function ragbaz_stale_dirs_notice() {
+  if (!current_user_can('manage_options')) return;
+
+  // Show result feedback from a just-completed deletion.
+  if (!empty($_GET['ragbaz_deleted'])) {
+    $dirs = esc_html(sanitize_text_field(wp_unslash($_GET['ragbaz_deleted'])));
+    echo '<div class="notice notice-success is-dismissible"><p>';
+    echo '<strong>RAGBAZ Bridge:</strong> Deleted legacy director' . (strpos($dirs, ',') !== false ? 'ies' : 'y') . ': <code>' . $dirs . '</code></p></div>';
+  }
+  if (!empty($_GET['ragbaz_failed'])) {
+    $dirs = esc_html(sanitize_text_field(wp_unslash($_GET['ragbaz_failed'])));
+    echo '<div class="notice notice-error"><p>';
+    echo '<strong>RAGBAZ Bridge:</strong> Could not delete (check filesystem permissions): <code>' . $dirs . '</code></p></div>';
+  }
+
+  $stale = ragbaz_find_stale_dirs();
+  if (empty($stale)) return;
+
+  $return_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+  echo '<div class="notice notice-warning"><p>';
+  echo '<strong>RAGBAZ Bridge:</strong> Legacy plugin director' . (count($stale) > 1 ? 'ies' : 'y') . ' found — no longer needed and may cause conflicts:</p>';
+  echo '<ul style="margin:.4em 0 .8em 1.4em;list-style:disc">';
+  foreach ($stale as $path) {
+    echo '<li><code>' . esc_html($path) . '</code></li>';
+  }
+  echo '</ul>';
+  echo '<form method="post" style="display:inline">';
+  wp_nonce_field('ragbaz_delete_stale_dirs');
+  echo '<input type="hidden" name="ragbaz_return_page" value="' . esc_attr($return_page) . '">';
+  echo '<input type="hidden" name="ragbaz_delete_stale_dirs" value="1">';
+  submit_button('Delete old directories', 'small', '', false, ['style' => 'margin-right:12px']);
+  echo '</form>';
+  echo '<span style="color:#92400e;font-size:13px">or via WP-CLI: <code>wp plugin delete ';
+  echo esc_html(implode(' ', array_map('basename', $stale)));
+  echo '</code></span>';
+  echo '</div>';
+}
+add_action('admin_notices', 'ragbaz_stale_dirs_notice');
+add_action('network_admin_notices', 'ragbaz_stale_dirs_notice');
+
 function ragbaz_register_info_page() {
   add_management_page(
-    'RAGBAZ Articulate Info',
-    'RAGBAZ Articulate',
+    'RAGBAZ Bridge',
+    'RAGBAZ Bridge',
     'manage_options',
-    'ragbaz-articulate-info',
+    'ragbaz-bridge',
     'ragbaz_render_info_page'
   );
 }
@@ -892,80 +1013,565 @@ function ragbaz_bool_label($value) {
   return $value ? 'on' : 'off';
 }
 
+// ── Plugin detection helpers ────────────────────────────────────────────────
+
+function ragbaz_plugin_active($basename) {
+  return ragbaz_is_plugin_active_anywhere($basename);
+}
+
+function ragbaz_get_plugin_inventory() {
+  return [
+    'required' => [
+      [
+        'name'    => 'WPGraphQL',
+        'slug'    => 'wp-graphql/wp-graphql.php',
+        'url'     => 'https://wordpress.org/plugins/wp-graphql/',
+        'purpose' => 'Core GraphQL API for WordPress. All RAGBAZ Bridge features depend on this.',
+      ],
+    ],
+    'authentication' => [
+      [
+        'name'    => 'FaustWP',
+        'slug'    => 'faustwp/faustwp.php',
+        'url'     => 'https://wordpress.org/plugins/faustwp/',
+        'purpose' => 'Stores the headless site secret (faustwp_settings[\'secret_key\']) that RAGBAZ Bridge reads for built-in auth. Install and configure the secret key here.',
+      ],
+      [
+        'name'    => 'WPGraphQL Headless Login',
+        'slug'    => 'wp-graphql-headless-login/wp-graphql-headless-login.php',
+        'url'     => 'https://wordpress.org/plugins/wp-graphql-headless-login/',
+        'purpose' => 'Adds SITETOKEN + OAuth login mutations to WPGraphQL. Required for JWT-based auth flow (login mutation → authToken). Optional if using RAGBAZ Bridge built-in auth.',
+      ],
+      [
+        'name'    => 'WPGraphQL JWT Authentication',
+        'slug'    => 'wp-graphql-jwt-authentication/wp-graphql-jwt-authentication.php',
+        'url'     => 'https://github.com/wp-graphql/wp-graphql-jwt-authentication',
+        'purpose' => 'Alternative JWT auth for WPGraphQL. Use either this or WPGraphQL Headless Login — not both.',
+      ],
+    ],
+    'content' => [
+      [
+        'name'    => 'LearnPress',
+        'slug'    => 'learnpress/learnpress.php',
+        'url'     => 'https://wordpress.org/plugins/learnpress/',
+        'purpose' => 'LMS plugin. RAGBAZ Bridge exposes LpCourse types with price, duration, curriculum, instructor, and enrolment fields.',
+      ],
+      [
+        'name'    => 'Event Organiser',
+        'slug'    => 'event-organiser/event-organiser.php',
+        'url'     => 'https://wordpress.org/plugins/event-organiser/',
+        'purpose' => 'Events plugin. RAGBAZ Bridge normalises event date/time, venue, cost, and ticket URL fields.',
+      ],
+      [
+        'name'    => 'The Events Calendar',
+        'slug'    => 'the-events-calendar/the-events-calendar.php',
+        'url'     => 'https://wordpress.org/plugins/the-events-calendar/',
+        'purpose' => 'Alternative events plugin (tribe_events post type). RAGBAZ Bridge auto-detects and normalises.',
+      ],
+      [
+        'name'    => 'Events Manager',
+        'slug'    => 'events-manager/events-manager.php',
+        'url'     => 'https://wordpress.org/plugins/events-manager/',
+        'purpose' => 'Another events plugin. RAGBAZ Bridge normalises dates, venue, and cost.',
+      ],
+    ],
+    'ecommerce' => [
+      [
+        'name'    => 'WooCommerce',
+        'slug'    => 'woocommerce/woocommerce.php',
+        'url'     => 'https://wordpress.org/plugins/woocommerce/',
+        'purpose' => 'eCommerce platform. Combined with WPGraphQL for WooCommerce, exposes products, orders, and cart via GraphQL.',
+      ],
+      [
+        'name'    => 'WPGraphQL for WooCommerce',
+        'slug'    => 'wp-graphql-woocommerce/wp-graphql-woocommerce.php',
+        'url'     => 'https://wordpress.org/plugins/wp-graphql-woocommerce/',
+        'purpose' => 'GraphQL schema for WooCommerce. RAGBAZ Bridge adds price and stock normalisation fields.',
+      ],
+    ],
+    'performance' => [
+      [
+        'name'    => 'Redis Object Cache',
+        'slug'    => 'redis-cache/redis-cache.php',
+        'url'     => 'https://wordpress.org/plugins/redis-cache/',
+        'purpose' => 'Persistent object cache. Strongly recommended in production — reduces database queries on every GraphQL request.',
+      ],
+      [
+        'name'    => 'Query Monitor',
+        'slug'    => 'query-monitor/query-monitor.php',
+        'url'     => 'https://wordpress.org/plugins/query-monitor/',
+        'purpose' => 'Development-only debugging tool. Disable in production — adds overhead to every request.',
+      ],
+    ],
+  ];
+}
+
+// ── Auth status ─────────────────────────────────────────────────────────────
+
+function ragbaz_get_auth_status() {
+  $secret = ragbaz_get_site_secret();
+  $secret_source = '';
+  if ($secret) {
+    $faust = get_option('faustwp_settings', []);
+    $secret_source = !empty($faust['secret_key']) ? 'FaustWP settings' : 'ragbaz_site_secret option';
+  }
+  $headless_id = ragbaz_get_headless_user_id();
+  $headless_user = $headless_id ? get_user_by('id', $headless_id) : null;
+
+  return [
+    'secret_configured'   => !empty($secret),
+    'secret_source'       => $secret_source,
+    'secret_preview'      => $secret ? substr($secret, 0, 8) . '…' : '',
+    'headless_user_id'    => $headless_id,
+    'headless_user_login' => $headless_user ? $headless_user->user_login : '',
+    'headless_user_roles' => $headless_user ? implode(', ', $headless_user->roles) : '',
+    'faust_active'        => ragbaz_plugin_active('faustwp/faustwp.php'),
+    'headless_login_active' => ragbaz_plugin_active('wp-graphql-headless-login/wp-graphql-headless-login.php'),
+    'wpgraphql_active'    => function_exists('register_graphql_field'),
+    'content_restricted'  => (bool) apply_filters('graphql_require_authentication', false),
+  ];
+}
+
+// ── Debug payload for Connect panel ─────────────────────────────────────────
+
+function ragbaz_build_debug_payload() {
+  global $wp_version;
+  $auth = ragbaz_get_auth_status();
+  $runtime = ragbaz_get_wp_runtime_status();
+  $inventory = ragbaz_get_plugin_inventory();
+  $plugin_status = [];
+  foreach ($inventory as $group) {
+    foreach ($group as $p) {
+      $plugin_status[$p['slug']] = ragbaz_plugin_active($p['slug']);
+    }
+  }
+  return [
+    'ragbaz_bridge_version' => RAGBAZ_VERSION,
+    'wp_version'            => $wp_version,
+    'php_version'           => PHP_VERSION,
+    'site_url'              => get_site_url(),
+    'graphql_endpoint'      => get_site_url() . '/graphql',
+    'auth' => [
+      'secret_configured'   => $auth['secret_configured'],
+      'secret_source'       => $auth['secret_source'],
+      'headless_user_login' => $auth['headless_user_login'],
+      'headless_user_roles' => $auth['headless_user_roles'],
+      'faust_active'        => $auth['faust_active'],
+      'headless_login_active' => $auth['headless_login_active'],
+    ],
+    'plugins'   => $plugin_status,
+    'runtime'   => $runtime,
+    'generated' => gmdate('c'),
+  ];
+}
+
+// ── Main render ──────────────────────────────────────────────────────────────
+
 function ragbaz_render_info_page() {
   if (!current_user_can('manage_options')) {
     wp_die(esc_html__('Unauthorized', 'ragbaz'));
   }
-  $status = ragbaz_get_wp_runtime_status();
-  $checks = ragbaz_get_wp_runtime_checks();
+
+  $status   = ragbaz_get_wp_runtime_status();
+  $checks   = ragbaz_get_wp_runtime_checks();
+  $auth     = ragbaz_get_auth_status();
+  $inv      = ragbaz_get_plugin_inventory();
+  $debug    = ragbaz_build_debug_payload();
+  $tab      = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
+  $base_url = admin_url('tools.php?page=ragbaz-bridge');
+
+  $ok_html  = '<span style="color:#166534;font-weight:600">✓ OK</span>';
+  $bad_html = '<span style="color:#b91c1c;font-weight:600">✗</span>';
+  $warn_html= '<span style="color:#92400e;font-weight:600">⚠</span>';
   ?>
-  <div class="wrap">
-    <h1>RAGBAZ Articulate Info</h1>
-    <p>
-      Minimal production-readiness checks for WordPress runtime and GraphQL debug settings.
+  <div class="wrap" style="max-width:980px">
+    <div style="display:flex;align-items:center;gap:14px;margin:16px 0 4px">
+      <img src="data:image/png;base64,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"
+           alt="RAGBAZ" style="height:40px;width:auto;display:block">
+      <div>
+        <span style="font-size:20px;font-weight:700;color:#1e3a5f;letter-spacing:-.01em">Bridge</span>
+        <span style="margin-left:8px;color:#64748b;font-size:13px">v<?php echo esc_html(RAGBAZ_VERSION); ?></span>
+        <div style="font-size:12px;color:#94a3b8;margin-top:1px">GraphQL Events, Courses, WooCommerce &amp; Downloads StoreFront</div>
+      </div>
+    </div>
+
+    <nav class="nav-tab-wrapper" style="margin-bottom:20px">
+      <?php
+      $tabs = [
+        'overview'       => 'Overview',
+        'authentication' => 'Authentication',
+        'plugins'        => 'Plugins',
+        'performance'    => 'Performance',
+        'connect'        => 'Connect to RAGBAZ',
+      ];
+      foreach ($tabs as $slug => $label) {
+        $active = $tab === $slug ? ' nav-tab-active' : '';
+        printf(
+          '<a href="%s" class="nav-tab%s">%s</a>',
+          esc_url($base_url . '&tab=' . $slug),
+          $active,
+          esc_html($label)
+        );
+      }
+      ?>
+    </nav>
+
+    <?php if ($tab === 'overview') : ?>
+    <!-- ── Overview ─────────────────────────────────────────────────── -->
+    <h2>What RAGBAZ Bridge does</h2>
+    <p style="color:#475569;max-width:720px">
+      RAGBAZ Bridge is a single-file WordPress plugin that wires up WPGraphQL extensions
+      for headless storefronts. It exposes content types, adds normalised fields, modifies
+      WordPress query behaviour for GraphQL visibility, and provides built-in headless
+      authentication via a shared site secret.
     </p>
-    <table class="widefat striped" style="max-width: 980px;">
-      <thead>
+
+    <h3>GraphQL types registered</h3>
+    <table class="widefat striped">
+      <thead><tr><th>Type / Field</th><th>Source</th><th>Fields added</th></tr></thead>
+      <tbody>
+        <tr><td><code>LpCourse</code></td><td>LearnPress</td><td>price, priceFormatted, currency, duration, durationUnit, instructor, curriculum (sections → lessons), hasEnrolled, enrolStatus</td></tr>
+        <tr><td><code>Event.startDate / endDate</code></td><td>Any events plugin</td><td>startDate, endDate, allDay, timezone, venueName, venueAddress, ticketUrl, cost</td></tr>
+        <tr><td><code>MediaItem.ragbazAsset</code></td><td>Core</td><td>assetId, assetSlug, publicUrl, mimeType, fileSize, variants (array)</td></tr>
+        <tr><td><code>RootQuery.ragbazInfo</code></td><td>Core</td><td>version, hasLearnPress, hasEventsPlugin, eventsPlugin, wpRuntime</td></tr>
+        <tr><td><code>RootQuery.ragbazPluginVersion</code></td><td>Core</td><td>Version string</td></tr>
+        <tr><td><code>RootQuery.ragbazWpRuntime</code></td><td>Core</td><td>Full runtime status object</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:20px">WordPress behaviour changes</h3>
+    <table class="widefat striped">
+      <thead><tr><th>Hook / Filter</th><th>What it does</th></tr></thead>
+      <tbody>
         <tr>
-          <th>Setting</th>
-          <th>Current</th>
-          <th>Recommended</th>
-          <th>Status</th>
+          <td><code>register_post_type_args</code></td>
+          <td>Sets <code>show_in_graphql: true</code> on event post types (<code>tribe_events</code>, <code>event</code>, <code>event_listing</code>, <code>eo_event</code>) so they appear in the WPGraphQL schema even if the originating plugin didn't set that flag.</td>
         </tr>
+        <tr>
+          <td><code>register_taxonomy_args</code></td>
+          <td>Sets <code>show_in_graphql: true</code> on event-related taxonomies (<code>tribe_events_cat</code>, <code>event_tag</code>, <code>event_category</code>) for the same reason.</td>
+        </tr>
+        <tr>
+          <td><code>determine_current_user</code> (priority 20)</td>
+          <td>Authenticates headless API requests carrying the correct site-secret header as a WordPress administrator. Only fires for requests to the <code>/graphql</code> endpoint. No effect on WP admin, REST, or front-end requests.</td>
+        </tr>
+        <tr>
+          <td><code>rest_api_init</code></td>
+          <td>Registers a <code>ragbaz_asset</code> REST field on <code>attachment</code> posts, mirroring the GraphQL <code>ragbazAsset</code> data for REST consumers.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:20px">GraphQL query examples</h3>
+    <pre style="background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:4px;overflow:auto"><code>query BridgeProbe {
+  ragbazPluginVersion
+  ragbazInfo { version hasLearnPress hasEventsPlugin eventsPlugin }
+  ragbazWpRuntime { okForProduction opcacheEnabled objectCacheEnabled checkedAt }
+}</code></pre>
+
+    <?php elseif ($tab === 'authentication') : ?>
+    <!-- ── Authentication ────────────────────────────────────────────── -->
+    <h2>Built-in headless authentication</h2>
+
+    <?php
+    if ($auth['secret_configured']) {
+      echo '<div style="background:#f0fdf4;border:1px solid #86efac;padding:12px 16px;border-radius:6px;margin-bottom:16px">';
+      echo '<strong style="color:#166534">✓ Auth is configured.</strong> ';
+      printf(
+        'Secret source: <code>%s</code> &nbsp;|&nbsp; Secret preview: <code>%s</code> &nbsp;|&nbsp; Authenticates as: <code>%s</code> (%s)',
+        esc_html($auth['secret_source']),
+        esc_html($auth['secret_preview']),
+        esc_html($auth['headless_user_login']),
+        esc_html($auth['headless_user_roles'])
+      );
+      echo '</div>';
+    } else {
+      echo '<div style="background:#fef2f2;border:1px solid #fca5a5;padding:12px 16px;border-radius:6px;margin-bottom:16px">';
+      echo '<strong style="color:#b91c1c">✗ No site secret configured.</strong> Headless requests will be unauthenticated. See "How to fix" below.';
+      echo '</div>';
+    }
+    ?>
+
+    <h3>How it works</h3>
+    <p style="max-width:720px">
+      RAGBAZ Bridge hooks into WordPress's <code>determine_current_user</code> filter at priority&nbsp;20.
+      When an incoming request to <code>/graphql</code> carries a secret header that matches the configured
+      site secret, WordPress authenticates the request as the headless service-account user (the first
+      administrator by default). This happens before WPGraphQL evaluates any field-level access checks,
+      so all normally-restricted content becomes accessible to the headless storefront.
+    </p>
+    <p style="max-width:720px">
+      The secret is never exposed in GraphQL responses. Constant-time comparison (<code>hash_equals</code>)
+      prevents timing attacks.
+    </p>
+
+    <h3>Headers accepted</h3>
+    <table class="widefat striped" style="max-width:640px">
+      <thead><tr><th>Header</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><code>X-Headless-Secret: &lt;secret&gt;</code></td><td>FaustWP / standard headless</td></tr>
+        <tr><td><code>X-Faust-Secret: &lt;secret&gt;</code></td><td>Alternative name</td></tr>
+        <tr><td><code>X-FaustWP-Secret: &lt;secret&gt;</code></td><td>Alternative name</td></tr>
+        <tr><td><code>X-Ragbaz-Secret: &lt;secret&gt;</code></td><td>RAGBAZ-specific override</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:20px">How to fix authentication issues</h3>
+    <ol style="max-width:720px;line-height:1.9">
+      <li>
+        <strong>Install and activate FaustWP.</strong>
+        It stores the headless secret in <code>faustwp_settings['secret_key']</code>, which RAGBAZ Bridge reads automatically.
+        Go to <em>Settings → Faust</em> and note the secret key.
+      </li>
+      <li>
+        <strong>Copy the secret to your storefront environment.</strong>
+        Set <code>FAUST_SECRET_KEY=&lt;value&gt;</code> (and optionally push it as a Cloudflare Worker secret with <code>wrangler secret put FAUST_SECRET_KEY</code>).
+      </li>
+      <li>
+        <strong>Verify with curl:</strong><br>
+        <pre style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:4px;margin-top:6px"><code>curl -s -X POST <?php echo esc_url(get_site_url()); ?>/graphql \
+  -H "Content-Type: application/json" \
+  -H "X-Headless-Secret: YOUR_SECRET" \
+  -d '{"query":"{ viewer { name roles { nodes { name } } } }"}' | python3 -m json.tool</code></pre>
+        You should see your administrator name and role.
+      </li>
+      <li>
+        <strong>If WPGraphQL has "Restrict Content" enabled</strong> and you still get
+        <em>"cannot be accessed without authentication"</em>, confirm the secret matches exactly
+        (no trailing spaces). Check <em>GraphQL → Settings → Auth</em> for the restriction setting.
+      </li>
+      <li>
+        <strong>Service account user.</strong> By default RAGBAZ Bridge authenticates as the first
+        administrator (lowest ID). To use a dedicated service account user, set the WordPress option
+        <code>ragbaz_headless_user_id</code> to that user's ID, or use the
+        <code>ragbaz_headless_user_id</code> filter in a mu-plugin.
+      </li>
+    </ol>
+
+    <h3 style="margin-top:20px">wp-graphql-headless-login JWT flow (optional)</h3>
+    <p style="max-width:720px">
+      If you also have WPGraphQL Headless Login installed and configured, the storefront can exchange
+      the site secret for a short-lived JWT via the <code>login(input: { provider: SITETOKEN, … })</code>
+      mutation. The JWT is then used as a Bearer token for subsequent requests. RAGBAZ Bridge's
+      built-in auth is tried first; the JWT flow is a fallback.
+      <br><strong>Important:</strong> the <code>login</code> mutation must be publicly accessible
+      (WP Admin → GraphQL → Settings → Auth) or RAGBAZ Bridge's own auth must be active for
+      the mutation to succeed.
+    </p>
+
+    <?php elseif ($tab === 'plugins') : ?>
+    <!-- ── Plugins ──────────────────────────────────────────────────── -->
+    <h2>Plugin inventory</h2>
+    <?php
+    $groups = [
+      'required'       => ['label' => 'Required',               'color' => '#b91c1c'],
+      'authentication' => ['label' => 'Authentication',         'color' => '#1e40af'],
+      'content'        => ['label' => 'Content (optional)',      'color' => '#166534'],
+      'ecommerce'      => ['label' => 'eCommerce (optional)',    'color' => '#7c3aed'],
+      'performance'    => ['label' => 'Performance (optional)',  'color' => '#92400e'],
+    ];
+    foreach ($groups as $group_key => $group_meta) :
+      if (empty($inv[$group_key])) continue;
+      ?>
+      <h3 style="color:<?php echo esc_attr($group_meta['color']); ?>;margin-top:22px">
+        <?php echo esc_html($group_meta['label']); ?>
+      </h3>
+      <table class="widefat striped">
+        <thead><tr><th>Plugin</th><th style="width:70px">Status</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <?php foreach ($inv[$group_key] as $p) :
+            $active = ragbaz_plugin_active($p['slug']);
+          ?>
+          <tr>
+            <td>
+              <strong><?php echo esc_html($p['name']); ?></strong><br>
+              <a href="<?php echo esc_url($p['url']); ?>" target="_blank" rel="noopener noreferrer" style="font-size:12px"><?php echo esc_html($p['url']); ?></a>
+            </td>
+            <td>
+              <?php if ($active) : ?>
+                <span style="color:#166534;font-weight:600">Active</span>
+              <?php else : ?>
+                <span style="color:#94a3b8">Inactive</span>
+              <?php endif; ?>
+            </td>
+            <td style="color:#475569"><?php echo esc_html($p['purpose']); ?></td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endforeach; ?>
+
+    <?php elseif ($tab === 'performance') : ?>
+    <!-- ── Performance ──────────────────────────────────────────────── -->
+    <h2>WordPress runtime &amp; performance</h2>
+    <p style="color:#475569">
+      These checks identify common settings that hurt performance or expose debug information in production.
+    </p>
+    <table class="widefat striped" style="max-width:820px">
+      <thead>
+        <tr><th>Setting</th><th>Current</th><th>Recommended</th><th>Status</th></tr>
       </thead>
       <tbody>
-      <?php foreach ($checks as $check) : ?>
-        <?php
-        $ok = !empty($check['ok']);
+      <?php foreach ($checks as $check) :
+        $ok       = !empty($check['ok']);
         $required = !empty($check['required']);
-        $status_text = $ok ? 'OK' : ($required ? 'ACTION' : 'RECOMMENDED');
-        ?>
+        $status_text = $ok ? 'OK' : ($required ? 'ACTION NEEDED' : 'RECOMMENDED');
+        $status_color = $ok ? '#166534' : ($required ? '#b91c1c' : '#92400e');
+      ?>
         <tr>
           <td><code><?php echo esc_html($check['label']); ?></code></td>
           <td><strong><?php echo esc_html(ragbaz_bool_label(!empty($check['value']))); ?></strong></td>
           <td><?php echo esc_html(ragbaz_bool_label(!empty($check['recommended']))); ?></td>
-          <td style="font-weight: 600; color: <?php echo esc_attr($ok ? '#166534' : ($required ? '#b91c1c' : '#92400e')); ?>">
-            <?php echo esc_html($status_text); ?>
-          </td>
+          <td style="font-weight:600;color:<?php echo esc_attr($status_color); ?>"><?php echo esc_html($status_text); ?></td>
         </tr>
       <?php endforeach; ?>
       </tbody>
     </table>
 
-    <p style="margin-top: 14px;">
-      <strong>Production-ready summary:</strong>
-      <span style="color: <?php echo esc_attr($status['okForProduction'] ? '#166534' : '#b91c1c'); ?>; font-weight: 600;">
-        <?php echo esc_html($status['okForProduction'] ? 'OK' : 'Needs action'); ?>
+    <p style="margin-top:14px">
+      <strong>Production-ready:</strong>
+      <span style="color:<?php echo esc_attr($status['okForProduction'] ? '#166534' : '#b91c1c'); ?>;font-weight:600">
+        <?php echo esc_html($status['okForProduction'] ? 'Yes' : 'No — see actions above'); ?>
       </span>
-      <span style="margin-left: 12px; color: #475569;">Checked: <?php echo esc_html($status['checkedAt']); ?></span>
+      <span style="margin-left:14px;color:#475569;font-size:13px">Checked: <?php echo esc_html($status['checkedAt']); ?></span>
     </p>
 
-    <h2 style="margin-top: 24px;">GraphQL essentials</h2>
-    <p>Query only the terse essentials from WPGraphQL:</p>
-    <pre style="max-width: 980px; overflow: auto;"><code>query RagbazRuntime {
-  ragbazPluginVersion
-  ragbazWpRuntime {
-    pluginVersion
-    checkedAt
-    okForProduction
-    cacheReadinessOk
-    wpDebug
-    wpDebugLog
-    scriptDebug
-    saveQueries
-    graphqlDebug
-    queryMonitorActive
-    xdebugActive
-    objectCacheDropInPresent
-    redisPluginActive
-    memcachedPluginActive
-    objectCacheEnabled
-    opcacheEnabled
-  }
-}</code></pre>
+    <?php elseif ($tab === 'connect') : ?>
+    <!-- ── Connect ──────────────────────────────────────────────────── -->
+    <h2>Connect to RAGBAZ SaaS</h2>
+    <p style="color:#475569;max-width:640px">
+      Connect this WordPress site to the RAGBAZ platform to manage storefronts, monitor
+      GraphQL health, and configure content access rules from a central dashboard.
+    </p>
+
+    <div style="background:#f8fafc;border:2px dashed #cbd5e1;padding:24px;border-radius:8px;max-width:540px;margin-bottom:24px">
+      <p style="margin:0 0 16px;font-weight:600">RAGBAZ Platform</p>
+      <p style="margin:0 0 16px;color:#475569;font-size:14px">
+        Registration and API key setup is coming soon at <a href="https://ragbaz.xyz" target="_blank" rel="noopener noreferrer">ragbaz.xyz</a>.
+        The button below will send this site's debug payload to the platform once your API key is configured.
+      </p>
+      <button class="button button-primary" disabled style="opacity:0.6">
+        Connect to RAGBAZ (coming soon)
+      </button>
+    </div>
+
+    <h3>Site debug payload</h3>
+    <p style="color:#475569;font-size:13px;max-width:720px">
+      This is the data that will be sent to the RAGBAZ platform. Secrets are not included — only
+      whether a secret is configured and its source. Review before connecting.
+    </p>
+    <pre id="ragbaz-debug-payload" style="background:#0f172a;color:#e2e8f0;padding:20px;border-radius:6px;overflow:auto;font-size:12px;line-height:1.6;max-height:520px"><?php
+      echo esc_html(json_encode($debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    ?></pre>
+    <p style="margin-top:10px">
+      <button class="button" onclick="
+        navigator.clipboard.writeText(document.getElementById('ragbaz-debug-payload').textContent)
+          .then(function(){ this.textContent='Copied!'; }.bind(this))
+          .catch(function(){ this.textContent='Copy failed'; }.bind(this));
+      ">Copy to clipboard</button>
+    </p>
+
+    <?php endif; ?>
   </div>
   <?php
 }
+
+// ---------------------------------------------------------------------------
+// Headless authentication
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the site secret used to authenticate headless API requests.
+ *
+ * Checks, in order:
+ *   1. FaustWP settings option  (faustwp_settings['secret_key'])
+ *   2. Standalone option        (ragbaz_site_secret)
+ */
+function ragbaz_get_site_secret() {
+  $faust = get_option('faustwp_settings', []);
+  if (!empty($faust['secret_key'])) {
+    return trim($faust['secret_key']);
+  }
+  $direct = get_option('ragbaz_site_secret', '');
+  return $direct ? trim($direct) : '';
+}
+
+/**
+ * Extracts the secret sent by the headless client from the HTTP request.
+ * Accepts X-Headless-Secret, X-Faust-Secret, X-FaustWP-Secret, or
+ * X-Ragbaz-Secret (PHP normalises header names to HTTP_X_* in $_SERVER).
+ */
+function ragbaz_get_request_secret() {
+  $candidates = [
+    'HTTP_X_HEADLESS_SECRET',
+    'HTTP_X_FAUST_SECRET',
+    'HTTP_X_FAUSTWP_SECRET',
+    'HTTP_X_RAGBAZ_SECRET',
+  ];
+  foreach ($candidates as $key) {
+    if (!empty($_SERVER[$key])) {
+      return trim($_SERVER[$key]);
+    }
+  }
+  return '';
+}
+
+/**
+ * Returns the WordPress user ID that secret-authenticated requests run as.
+ *
+ * Prefers a dedicated service-account user configured via the
+ * `ragbaz_headless_user_id` option; falls back to the first administrator.
+ * Override the resolved user via the `ragbaz_headless_user_id` filter.
+ */
+function ragbaz_get_headless_user_id() {
+  $configured = intval(get_option('ragbaz_headless_user_id', 0));
+  if ($configured > 0) {
+    $user = get_user_by('id', $configured);
+    if ($user && !is_wp_error($user)) {
+      return apply_filters('ragbaz_headless_user_id', $configured);
+    }
+  }
+  $admins = get_users([
+    'role'   => 'administrator',
+    'number' => 1,
+    'fields' => 'ids',
+    'orderby' => 'ID',
+    'order'  => 'ASC',
+  ]);
+  $id = !empty($admins) ? (int) $admins[0] : 0;
+  return apply_filters('ragbaz_headless_user_id', $id);
+}
+
+/**
+ * Authenticate headless requests that carry the correct site secret header.
+ *
+ * The secret must match the value stored in FaustWP settings or the
+ * `ragbaz_site_secret` option. Requests are scoped to the /graphql endpoint
+ * so no other WordPress routes are affected.
+ *
+ * This makes the Faust/Ragbaz secret a first-class authentication method for
+ * WPGraphQL without depending on wp-graphql-headless-login's JWT flow.
+ */
+add_filter('determine_current_user', function ($user_id) {
+  // Already authenticated — nothing to do.
+  if ($user_id) return $user_id;
+
+  // Scope to GraphQL endpoint only.
+  $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+  if (strpos($uri, '/graphql') === false) return $user_id;
+
+  $secret = ragbaz_get_site_secret();
+  if (!$secret) return $user_id;
+
+  $request_secret = ragbaz_get_request_secret();
+  if (!$request_secret) return $user_id;
+
+  // Constant-time comparison to prevent timing attacks.
+  if (!hash_equals($secret, $request_secret)) return $user_id;
+
+  $headless_id = ragbaz_get_headless_user_id();
+  return $headless_id > 0 ? $headless_id : $user_id;
+}, 20);
 
 add_action('graphql_register_types', function () {
   if (!function_exists('register_graphql_field')) {
