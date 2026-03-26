@@ -10,7 +10,21 @@ const wpHostname = (() => {
   }
 })();
 
+const wpImageHosts = (() => {
+  const hosts = new Set(["localhost"]);
+  if (wpHostname) {
+    hosts.add(wpHostname);
+    if (wpHostname.startsWith("www.")) {
+      hosts.add(wpHostname.slice(4));
+    } else {
+      hosts.add(`www.${wpHostname}`);
+    }
+  }
+  return Array.from(hosts);
+})();
+
 const nextConfig = {
+  trailingSlash: true,
   reactStrictMode: true,
   productionBrowserSourceMaps:
     process.env.PRODUCTION_BROWSER_SOURCEMAPS === "1",
@@ -65,10 +79,10 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
-      { protocol: "http", hostname: "localhost" },
-      { protocol: "https", hostname: "localhost" },
-      { protocol: "http", hostname: wpHostname },
-      { protocol: "https", hostname: wpHostname },
+      ...wpImageHosts.flatMap((hostname) => [
+        { protocol: "http", hostname },
+        { protocol: "https", hostname },
+      ]),
       { protocol: "https", hostname: "usercontent.one" },
     ],
     ...(process.env.CLOUDFLARE_IMAGE_RESIZING === "1"
