@@ -2,6 +2,24 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — event visibility/date pass + storefront version bump to 0.1.1
+
+**Delivered:**
+- Removed `Event` schema-introspection gating on homepage events and `/events` page so event rendering no longer depends on WPGraphQL introspection being enabled.
+- Added robust event-date normalization/display across storefront event surfaces:
+  - new shared helper `src/lib/eventDates.js` reads multiple likely date fields (`startDate`, `date`, etc.),
+  - homepage calendar/list now uses normalized dates where available,
+  - `/events` cards now show readable event date labels,
+  - single event view meta now includes date label when present.
+- Bumped storefront package version:
+  - `package.json` `version: 0.1.1`
+  - `package-lock.json` root/package mirror updated.
+
+**Commits:**
+- `45f2204` — `Remove Event introspection gate for home and events pages`
+- `191bf8f` — `Show event dates across home calendar and event pages`
+- `698b425` — `Bump storefront version to 0.1.1`
+
 ### Codex — homepage event-calendar widget hardened (render only when events exist, links to real event URIs)
 
 **Delivered:**
