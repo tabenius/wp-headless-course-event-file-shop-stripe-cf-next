@@ -23,7 +23,10 @@
     "course": "Kurs",
     "event": "Evenemang",
     "product": "Produkt",
-    "noDetails": "Inga detaljer"
+    "noDetails": "Inga detaljer",
+    "homeUpcomingEvents": "Kommande evenemang",
+    "homeViewAll": "Visa alla",
+    "homeNoImage": "Ingen bild"
   },
   "auth": {
     "signInTitle": "Logga in",

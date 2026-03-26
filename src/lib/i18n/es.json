@@ -23,7 +23,10 @@
     "course": "Curso",
     "event": "Evento",
     "product": "Producto",
-    "noDetails": "Sin detalles"
+    "noDetails": "Sin detalles",
+    "homeUpcomingEvents": "Próximos eventos",
+    "homeViewAll": "Ver todo",
+    "homeNoImage": "Sin imagen"
   },
   "auth": {
     "signInTitle": "Iniciar sesión",

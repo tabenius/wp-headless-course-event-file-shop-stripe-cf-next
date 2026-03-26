@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { decodeEntities } from "@/lib/decodeEntities";
 import { formatEventDateRange, getEventEndIso, getEventStartIso } from "@/lib/eventDates";
+import { t } from "@/lib/i18n";
 
 function parseDate(value) {
   if (!value || typeof value !== "string") return null;
@@ -65,7 +66,7 @@ function EventRow({ event }) {
           />
         ) : (
           <div className="flex h-32 w-full items-center justify-center bg-gradient-to-br from-[#fff8fc] to-[#fff4fa] text-[10px] font-semibold uppercase tracking-wide text-purple-600 dark:from-neutral-800 dark:to-neutral-900 dark:text-white lg:h-24">
-            No image
+            {t("common.homeNoImage", "No image")}
           </div>
         )}
       </Link>
@@ -80,12 +81,14 @@ export default function EventCalendar({ events }) {
     <section className="border-b border-[#f0d7eb] bg-transparent dark:border-neutral-800">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Events</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {t("common.homeUpcomingEvents", "Upcoming Events")}
+          </h2>
           <Link
             href="/events"
             className="text-sm font-medium text-purple-700 hover:underline dark:text-white"
           >
-            View all →
+            {t("common.homeViewAll", "View all")} →
           </Link>
         </div>
 
