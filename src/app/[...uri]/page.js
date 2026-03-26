@@ -27,6 +27,7 @@ import { parsePriceCents } from "@/lib/parsePrice";
 import { t } from "@/lib/i18n";
 import { appendServerLog } from "@/lib/serverLog";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
+import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
 import { cache } from "react";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
@@ -131,6 +132,7 @@ function buildUriLookupAttempts(uri) {
  * depending on permalink and plugin behavior.
  */
 async function fetchContent(uri) {
+  await probeStorefrontRagbazGraphql(uri);
   const query = await getContentQuery();
   const attempts = buildUriLookupAttempts(uri);
   let lastData = null;

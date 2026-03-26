@@ -7,6 +7,7 @@ import RateLimitPage from "@/components/common/RateLimitPage";
 import WordPressSetupPage from "@/components/setup/WordPressSetupPage";
 import { notFound } from "next/navigation";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
+import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
 
 const GET_CONTENT_QUERY = `
 ${SinglePageFragment}
@@ -28,6 +29,7 @@ export default async function HomePage() {
 
   let data, events, hasDates;
   try {
+    await probeStorefrontRagbazGraphql("/");
     [data, { events, hasDates }] = await Promise.all([
       fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800),
       fetchHomeEvents(),
