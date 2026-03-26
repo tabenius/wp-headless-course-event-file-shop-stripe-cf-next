@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import { tenantConfig } from "@/lib/tenantConfig";
 
@@ -223,20 +223,20 @@ function ArchitectureSystemMapSlide() {
 
 function ArchitectureFlowSlide() {
   return (
-    <div className="h-full rounded-2xl border border-indigo-300 bg-gradient-to-br from-slate-100 via-white to-blue-50 p-5 shadow-xl">
-      <h3 className="text-lg font-semibold text-slate-900">
+    <div className="h-full rounded-2xl border border-indigo-400 bg-gradient-to-br from-slate-50 via-white to-blue-100 p-5 shadow-xl">
+      <h3 className="text-xl font-semibold text-slate-900">
         Information flow and control flow
       </h3>
-      <p className="mt-1 text-xs text-slate-700">
+      <p className="mt-1 text-sm text-slate-800">
         The same backbone powers content fetching, checkout, and post-payment
         access grants.
       </p>
-      <div className="mt-4 grid h-[255px] grid-cols-12 gap-3">
-        <div className="col-span-6 rounded-xl border border-indigo-300 bg-white p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-800">
+      <div className="mt-4 grid h-[280px] grid-cols-12 gap-3">
+        <div className="col-span-6 rounded-xl border border-indigo-400 bg-white p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900">
             Runtime sequence
           </p>
-          <ol className="mt-2 space-y-1.5 text-xs text-slate-800">
+          <ol className="mt-2.5 space-y-2 text-[13px] text-slate-900">
             <li>1. Client opens route and worker resolves content source.</li>
             <li>2. Worker loads WordPress content + user access state.</li>
             <li>3. If locked: worker creates Stripe checkout session.</li>
@@ -244,42 +244,42 @@ function ArchitectureFlowSlide() {
             <li>5. Worker writes access grant and stores receipt metadata.</li>
             <li>6. Admin dashboards read the same payment/access signals.</li>
           </ol>
-          <div className="mt-2 rounded-lg border border-indigo-200 bg-indigo-100 px-2 py-1.5 text-[11px] text-indigo-900">
+          <div className="mt-2.5 rounded-lg border border-indigo-300 bg-indigo-100 px-2.5 py-2 text-xs text-indigo-900">
             Shared state contracts: product id, category, VAT, access keys,
             receipt id.
           </div>
         </div>
-        <div className="col-span-6 rounded-xl border border-slate-300 bg-white p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-800">
+        <div className="col-span-6 rounded-xl border border-slate-400 bg-white p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-900">
             Flow diagram
           </p>
-          <svg viewBox="0 0 460 218" className="mt-2 h-[195px] w-full">
-            <rect x="12" y="16" width="120" height="38" rx="9" fill="#dbeafe" stroke="#60a5fa" />
-            <text x="24" y="39" fontSize="11" fill="#1e3a8a">Client</text>
+          <svg viewBox="0 0 460 218" className="mt-2.5 h-[205px] w-full">
+            <rect x="12" y="16" width="126" height="44" rx="10" fill="#bfdbfe" stroke="#2563eb" strokeWidth="1.5" />
+            <text x="24" y="42" fontSize="13" fontWeight="600" fill="#1e3a8a">Client</text>
 
-            <rect x="170" y="16" width="132" height="38" rx="9" fill="#f5d0fe" stroke="#d946ef" />
-            <text x="186" y="39" fontSize="11" fill="#701a75">Worker APIs</text>
+            <rect x="166" y="16" width="138" height="44" rx="10" fill="#f5d0fe" stroke="#c026d3" strokeWidth="1.5" />
+            <text x="182" y="42" fontSize="13" fontWeight="600" fill="#701a75">Worker APIs</text>
 
-            <rect x="326" y="16" width="118" height="38" rx="9" fill="#dcfce7" stroke="#34d399" />
-            <text x="344" y="39" fontSize="11" fill="#065f46">WordPress</text>
+            <rect x="326" y="16" width="124" height="44" rx="10" fill="#bbf7d0" stroke="#059669" strokeWidth="1.5" />
+            <text x="344" y="42" fontSize="13" fontWeight="600" fill="#065f46">WordPress</text>
 
-            <rect x="326" y="86" width="118" height="38" rx="9" fill="#ede9fe" stroke="#8b5cf6" />
-            <text x="356" y="109" fontSize="11" fill="#4c1d95">Stripe</text>
+            <rect x="326" y="86" width="124" height="44" rx="10" fill="#ddd6fe" stroke="#7c3aed" strokeWidth="1.5" />
+            <text x="356" y="112" fontSize="13" fontWeight="600" fill="#4c1d95">Stripe</text>
 
-            <rect x="326" y="156" width="118" height="38" rx="9" fill="#ffe4e6" stroke="#fb7185" />
-            <text x="356" y="179" fontSize="11" fill="#9f1239">KV / R2</text>
+            <rect x="326" y="156" width="124" height="44" rx="10" fill="#fecdd3" stroke="#e11d48" strokeWidth="1.5" />
+            <text x="354" y="182" fontSize="13" fontWeight="600" fill="#9f1239">KV / R2</text>
 
-            <line x1="132" y1="35" x2="170" y2="35" stroke="#475569" strokeWidth="2" />
-            <line x1="302" y1="35" x2="326" y2="35" stroke="#475569" strokeWidth="2" />
-            <line x1="302" y1="102" x2="326" y2="102" stroke="#475569" strokeWidth="2" />
-            <line x1="302" y1="172" x2="326" y2="172" stroke="#475569" strokeWidth="2" />
+            <line x1="138" y1="38" x2="166" y2="38" stroke="#334155" strokeWidth="2.5" />
+            <line x1="304" y1="38" x2="326" y2="38" stroke="#334155" strokeWidth="2.5" />
+            <line x1="304" y1="108" x2="326" y2="108" stroke="#334155" strokeWidth="2.5" />
+            <line x1="304" y1="178" x2="326" y2="178" stroke="#334155" strokeWidth="2.5" />
 
-            <line x1="326" y1="50" x2="302" y2="50" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="4 4" />
-            <line x1="326" y1="116" x2="302" y2="116" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="4 4" />
-            <line x1="326" y1="186" x2="302" y2="186" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="4 4" />
+            <line x1="326" y1="56" x2="304" y2="56" stroke="#64748b" strokeWidth="2" strokeDasharray="4 4" />
+            <line x1="326" y1="126" x2="304" y2="126" stroke="#64748b" strokeWidth="2" strokeDasharray="4 4" />
+            <line x1="326" y1="196" x2="304" y2="196" stroke="#64748b" strokeWidth="2" strokeDasharray="4 4" />
 
-            <line x1="170" y1="50" x2="132" y2="50" stroke="#475569" strokeWidth="2" />
-            <text x="48" y="76" fontSize="10" fill="#475569">Paywall + unlocked content</text>
+            <line x1="166" y1="56" x2="138" y2="56" stroke="#334155" strokeWidth="2.5" />
+            <text x="42" y="82" fontSize="11" fontWeight="600" fill="#334155">Paywall + unlocked content</text>
           </svg>
         </div>
       </div>
@@ -892,6 +892,36 @@ export default function AdminWelcomeTab({
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [slideLayout, setSlideLayout] = useState(computeSlideLayout);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const storyShellRef = useRef(null);
+
+  const enterFullscreen = useCallback(async () => {
+    if (typeof document === "undefined") return;
+    const node = storyShellRef.current;
+    if (!node || typeof node.requestFullscreen !== "function") return;
+    if (document.fullscreenElement) return;
+    try {
+      await node.requestFullscreen();
+    } catch {
+      // Browsers may block autoplay fullscreen without user gesture.
+    }
+  }, []);
+
+  const exitFullscreen = useCallback(async () => {
+    if (typeof document === "undefined") return;
+    if (!document.fullscreenElement) return;
+    try {
+      await document.exitFullscreen();
+    } catch {
+      // Best effort only.
+    }
+  }, []);
+
+  const hideStory = useCallback(() => {
+    if (onSeenRevision) onSeenRevision();
+    exitFullscreen();
+    if (onHideStory) onHideStory();
+  }, [exitFullscreen, onHideStory, onSeenRevision]);
 
   useEffect(() => {
     function onResize() {
@@ -1073,11 +1103,21 @@ export default function AdminWelcomeTab({
 
   useEffect(() => {
     if (typeof window === "undefined" || !showStory) return undefined;
+    setIsFullscreen(Boolean(document.fullscreenElement));
+    function onFullscreenChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    const autoFullscreenTimer = window.setTimeout(() => {
+      enterFullscreen();
+    }, 140);
     window.__RAGBAZ_IMPRESS_ACTIVE__ = true;
     return () => {
+      window.clearTimeout(autoFullscreenTimer);
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
       window.__RAGBAZ_IMPRESS_ACTIVE__ = false;
     };
-  }, [showStory]);
+  }, [enterFullscreen, showStory]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showStory) return undefined;
@@ -1095,12 +1135,11 @@ export default function AdminWelcomeTab({
     function onKeyDown(event) {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      if (onSeenRevision) onSeenRevision();
-      if (onHideStory) onHideStory();
+      hideStory();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onHideStory, onSeenRevision, showStory]);
+  }, [hideStory, showStory]);
 
   const goToStep = useCallback(
     (index) => {
@@ -1163,7 +1202,10 @@ export default function AdminWelcomeTab({
   }
 
   return (
-    <div className="welcome-story-shell space-y-1 bg-gradient-to-br from-[hsl(210_18%_36%)] via-[hsl(211_16%_29%)] to-[hsl(214_18%_20%)] p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]">
+    <div
+      ref={storyShellRef}
+      className="welcome-story-shell relative space-y-1 bg-gradient-to-br from-[hsl(210_18%_36%)] via-[hsl(211_16%_29%)] to-[hsl(214_18%_20%)] p-1.5 sm:p-2 text-white min-w-0 min-h-[calc(100vh-3rem)]"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p
@@ -1176,10 +1218,7 @@ export default function AdminWelcomeTab({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              if (onSeenRevision) onSeenRevision();
-              if (onHideStory) onHideStory();
-            }}
+            onClick={hideStory}
             className="welcome-story-force-white rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
             style={{ color: "#ffffff" }}
           >
@@ -1271,6 +1310,23 @@ export default function AdminWelcomeTab({
       >
         {t("admin.welcomeEscHint", "Press Esc to exit the story at any time")}
       </p>
+      <div className="fixed bottom-4 right-4 z-[90]">
+        <button
+          type="button"
+          onClick={() => {
+            if (isFullscreen) {
+              exitFullscreen();
+            } else {
+              enterFullscreen();
+            }
+          }}
+          className="rounded-lg border-2 border-white bg-black px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg hover:bg-white hover:text-black"
+        >
+          {isFullscreen
+            ? t("admin.welcomeExitFullscreen", "Not fullscreen")
+            : t("admin.welcomeEnterFullscreen", "Fullscreen")}
+        </button>
+      </div>
     </div>
   );
 }

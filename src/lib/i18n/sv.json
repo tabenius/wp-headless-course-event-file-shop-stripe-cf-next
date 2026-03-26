@@ -485,6 +485,8 @@
     "welcomeSkip": "Hoppa till dashboard",
     "welcomeSkipHint": "Tryck Escape för att hoppa när som helst",
     "welcomeEscHint": "Tryck Esc för att avsluta berättelsen när som helst",
+    "welcomeEnterFullscreen": "Helskärm",
+    "welcomeExitFullscreen": "Inte helskärm",
     "welcomeEscAction": "för att avsluta",
     "welcomePrev": "Föregående",
     "welcomeNext": "Nästa",

@@ -485,6 +485,8 @@
     "welcomeSkip": "Skip to dashboard",
     "welcomeSkipHint": "Press Escape to skip at any time",
     "welcomeEscHint": "Press Esc to exit the story at any time",
+    "welcomeEnterFullscreen": "Fullscreen",
+    "welcomeExitFullscreen": "Not fullscreen",
     "welcomeEscAction": "to exit",
     "welcomePrev": "Prev",
     "welcomeNext": "Next",

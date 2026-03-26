@@ -32,8 +32,8 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [ ] FEATURE: All environment variable in the admin ui under storage should be able to toggle visible and also fill in those that are not shown at all, put them under a new tab called secret and make the admin user to write in her password again as confirmation.
 [ ] FEATURE: review the knob and ui style of the font laboratory ../type-laboratory.html, of draft-font-editor* as inspiration and add variants as an advanced setting: vintage font style and synchronize the two font selectors range of possibilites.
 [ ] FEATURE: to the font choosers show css with google fonts url and typeface declarations and everything.
-[ ] FEATURE: welcome impress slides, go to fullscreen automatically and then allow a not fullscreen button to be present lower right corner (high contrast).
-[ ] FEATURE: welcome impress slide flow diagram: increase contrast and size of texts, boxes and flows, use more space.
+[x] FEATURE: welcome impress slides, go to fullscreen automatically and then allow a not fullscreen button to be present lower right corner (high contrast).
+[x] FEATURE: welcome impress slide flow diagram: increase contrast and size of texts, boxes and flows, use more space.
 [x] FEATURE: I want the ragbaz wp plugin be instructive in how to change her wordpress url in a shared hosting setting where subdirectories are becoming subdomains such that wp.xtas.nu could be created by either moving the current directory in to that subdirectory or create a symlink to the same.
 [ ] FEATURE: add a telegram bot that tells about actions such as login, payments, products bought, media library asset uploaded, logout, change of keys of any sort.
 [ ] FEATURE: Build a ChatWoot integration that send to this account id: 155812, webhook for us will be something like /api/chatwoot/event for read and send

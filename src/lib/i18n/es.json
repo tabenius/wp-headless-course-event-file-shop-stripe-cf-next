@@ -485,6 +485,8 @@
     "welcomeSkip": "Saltar al panel",
     "welcomeSkipHint": "Pulsa Escape para saltar en cualquier momento",
     "welcomeEscHint": "Pulsa Escape para salir de la historia en cualquier momento",
+    "welcomeEnterFullscreen": "Pantalla completa",
+    "welcomeExitFullscreen": "No pantalla completa",
     "welcomeEscAction": "para salir",
     "welcomePrev": "Anterior",
     "welcomeNext": "Siguiente",
