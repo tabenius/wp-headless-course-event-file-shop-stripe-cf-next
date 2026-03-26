@@ -84,6 +84,17 @@ function ragbaz_sanitize_asset_slug($value, $max = 120) {
   return substr($safe, 0, $max);
 }
 
+function ragbaz_sanitize_tenant_slug($value, $max = 64) {
+  $safe = strtolower(ragbaz_sanitize_text($value, $max));
+  if ($safe === '') return '';
+  $safe = preg_replace('/[^a-z0-9-]+/', '-', $safe);
+  $safe = preg_replace('/-+/', '-', $safe);
+  $safe = trim($safe, '-');
+  if ($safe === '') return '';
+  if (strlen($safe) < 2) return '';
+  return substr($safe, 0, $max);
+}
+
 function ragbaz_normalize_owner_uri($value, $max = 320) {
   $raw = trim((string) $value);
   if ($raw === '' || $raw === '/') return '/';
@@ -1184,6 +1195,7 @@ function ragbaz_get_home_credentials() {
     'account_id' => trim((string) get_option('ragbaz_home_account_id', '')),
     'passkey'    => trim((string) get_option('ragbaz_home_passkey', '')),
     'gift_key'   => trim((string) get_option('ragbaz_home_gift_key', '')),
+    'tenant_slug'=> ragbaz_sanitize_tenant_slug((string) get_option('ragbaz_home_tenant_slug', '')),
   ];
 }
 
@@ -1221,12 +1233,14 @@ function ragbaz_get_home_connection_graphql_payload() {
   $account_id = preg_replace('/[^a-z0-9]/', '', strtolower((string) $creds['account_id']));
   $passkey = preg_replace('/[^a-z0-9]/', '', strtolower((string) $creds['passkey']));
   $gift_key = preg_replace('/[^a-z0-9-]/', '', strtolower((string) $creds['gift_key']));
+  $tenant_slug = ragbaz_sanitize_tenant_slug((string) ($creds['tenant_slug'] ?? ''));
 
   return [
     'baseUrl' => $base_url,
     'accountId' => $account_id,
     'passkey' => $passkey,
     'giftKey' => $gift_key,
+    'tenantSlug' => $tenant_slug,
     'canPhoneHome' => ($account_id !== '' && $passkey !== ''),
     'graphqlRelay' => [
       'enabled' => (bool) $relay['enabled'],
@@ -1274,6 +1288,7 @@ function ragbaz_collect_installed_plugins() {
 
 function ragbaz_build_home_payload() {
   global $wp_version;
+  $creds = ragbaz_get_home_credentials();
   $runtime = ragbaz_get_wp_runtime_status();
   $relay = ragbaz_get_home_graphql_relay_settings(true);
   $site_url = get_site_url();
@@ -1305,6 +1320,9 @@ function ragbaz_build_home_payload() {
       'headerName' => (string) $relay['header_name'],
       'graphqlUrl' => (string) $relay['graphql_url'],
       'secret' => $relay['enabled'] ? (string) $relay['secret'] : '',
+    ],
+    'tenant' => [
+      'preferredSlug' => ragbaz_sanitize_tenant_slug((string) ($creds['tenant_slug'] ?? '')),
     ],
     'runtime' => [
       'wpDebug'                 => (bool) $runtime['wpDebug'],
@@ -1537,6 +1555,40 @@ function ragbaz_send_home_event($type, $message, $severity = 'good', $details = 
   ]);
 }
 
+function ragbaz_claim_home_tenant_slug($slug = '') {
+  $creds = ragbaz_get_home_credentials();
+  if ($creds['account_id'] === '' || $creds['passkey'] === '') {
+    return ['ok' => false, 'error' => 'missing_credentials'];
+  }
+
+  $slug_from_option = ragbaz_sanitize_tenant_slug((string) ($creds['tenant_slug'] ?? ''));
+  $slug_clean = ragbaz_sanitize_tenant_slug((string) $slug);
+  if ($slug_clean === '') $slug_clean = $slug_from_option;
+  if ($slug_clean === '') {
+    return ['ok' => false, 'error' => 'missing_tenant_slug'];
+  }
+
+  $site_url = get_site_url();
+  $site_host = '';
+  $parsed = wp_parse_url($site_url);
+  if (is_array($parsed) && !empty($parsed['host'])) {
+    $site_host = strtolower((string) $parsed['host']);
+  }
+
+  update_option('ragbaz_home_tenant_slug', $slug_clean, false);
+
+  return ragbaz_home_post_json('/api/v1/home/slug-claim', [
+    'accountId' => $creds['account_id'],
+    'passkey' => $creds['passkey'],
+    'giftKey' => $creds['gift_key'],
+    'slug' => $slug_clean,
+    'alias' => $slug_clean,
+    'siteDomain' => $site_host,
+    'siteHost' => $site_host,
+    'siteUrl' => $site_url,
+  ]);
+}
+
 function ragbaz_handle_connect_actions() {
   if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
   if (empty($_POST['ragbaz_connect_action'])) return;
@@ -1554,6 +1606,7 @@ function ragbaz_handle_connect_actions() {
     $account = strtolower(trim((string) wp_unslash($_POST['ragbaz_home_account_id'] ?? '')));
     $passkey = trim((string) wp_unslash($_POST['ragbaz_home_passkey'] ?? ''));
     $gift = strtolower(trim((string) wp_unslash($_POST['ragbaz_home_gift_key'] ?? '')));
+    $tenant_slug = ragbaz_sanitize_tenant_slug((string) wp_unslash($_POST['ragbaz_home_tenant_slug'] ?? ''));
     $relay_enabled = !empty($_POST['ragbaz_home_graphql_relay_enabled']) ? '1' : '0';
     $relay_secret_input = trim((string) wp_unslash($_POST['ragbaz_home_graphql_relay_secret'] ?? ''));
     $relay_secret_clean = preg_replace('/[^a-z0-9]/', '', strtolower($relay_secret_input));
@@ -1562,6 +1615,7 @@ function ragbaz_handle_connect_actions() {
     update_option('ragbaz_home_account_id', preg_replace('/[^a-z0-9]/', '', $account), false);
     update_option('ragbaz_home_passkey', preg_replace('/[^a-z0-9]/', '', strtolower($passkey)), false);
     update_option('ragbaz_home_gift_key', preg_replace('/[^a-z0-9-]/', '', $gift), false);
+    update_option('ragbaz_home_tenant_slug', $tenant_slug, false);
     update_option('ragbaz_home_graphql_relay_enabled', $relay_enabled, false);
     if ($relay_secret_clean !== '') {
       update_option('ragbaz_home_graphql_relay_secret', $relay_secret_clean, false);
@@ -1589,10 +1643,28 @@ function ragbaz_handle_connect_actions() {
     $result = ragbaz_auto_onboard_home();
     if (!empty($result['ok'])) {
       ragbaz_get_home_graphql_relay_settings(true);
+      $slug_claim_status = '';
+      $slug_claim_error = '';
+      $slug_claimed = '';
+      $saved_creds = ragbaz_get_home_credentials();
+      if (!empty($saved_creds['tenant_slug'])) {
+        $slug_claim = ragbaz_claim_home_tenant_slug((string) $saved_creds['tenant_slug']);
+        if (!empty($slug_claim['ok'])) {
+          $slug_claim_status = 'ok';
+          $slug_data = isset($slug_claim['data']) && is_array($slug_claim['data']) ? $slug_claim['data'] : [];
+          $slug_claimed = ragbaz_sanitize_tenant_slug((string) ($slug_data['slug'] ?? $saved_creds['tenant_slug']));
+        } else {
+          $slug_claim_status = 'failed';
+          $slug_claim_error = (string) ($slug_claim['error'] ?? 'unknown');
+        }
+      }
       ragbaz_set_home_last_result('ok', 'Auto onboarding completed and credentials were saved.', [
         'status' => $result['status'] ?? 200,
         'accountId' => $result['account']['id'] ?? '',
         'giftKey' => $result['account']['giftKey'] ?? '',
+        'slugClaimStatus' => $slug_claim_status,
+        'slugClaimed' => $slug_claimed,
+        'slugClaimError' => $slug_claim_error,
       ]);
       wp_redirect(add_query_arg(['ragbaz_connect_result' => 'auto_onboard_ok'], $redirect));
       exit;
@@ -1631,6 +1703,36 @@ function ragbaz_handle_connect_actions() {
     }
     ragbaz_set_home_last_result('error', 'Event send failed.', ['error' => $result['error'] ?? 'unknown']);
     wp_redirect(add_query_arg(['ragbaz_connect_result' => 'event_failed'], $redirect));
+    exit;
+  }
+
+  if ($action === 'claim_tenant_slug') {
+    $slug_input = ragbaz_sanitize_tenant_slug((string) wp_unslash($_POST['ragbaz_home_tenant_slug'] ?? ''));
+    if ($slug_input !== '') {
+      update_option('ragbaz_home_tenant_slug', $slug_input, false);
+    }
+    $result = ragbaz_claim_home_tenant_slug($slug_input);
+    if (!empty($result['ok'])) {
+      $data = isset($result['data']) && is_array($result['data']) ? $result['data'] : [];
+      $slug_claimed = ragbaz_sanitize_tenant_slug((string) ($data['slug'] ?? $slug_input));
+      if ($slug_claimed !== '') {
+        update_option('ragbaz_home_tenant_slug', $slug_claimed, false);
+      }
+      ragbaz_set_home_last_result('ok', 'Tenant slug claimed successfully.', [
+        'status' => $result['status'] ?? 200,
+        'slug' => $slug_claimed,
+      ]);
+      wp_redirect(add_query_arg(['ragbaz_connect_result' => 'slug_claim_ok'], $redirect));
+      exit;
+    }
+    $status = isset($result['status']) ? intval($result['status']) : 0;
+    $result_key = $status === 409 ? 'slug_claim_conflict' : 'slug_claim_failed';
+    ragbaz_set_home_last_result('error', 'Tenant slug claim failed.', [
+      'status' => $status,
+      'error' => $result['error'] ?? 'unknown',
+      'data' => isset($result['data']) && is_array($result['data']) ? $result['data'] : [],
+    ]);
+    wp_redirect(add_query_arg(['ragbaz_connect_result' => $result_key], $redirect));
     exit;
   }
 }
@@ -1913,6 +2015,7 @@ function ragbaz_render_info_page() {
     $home_base = ragbaz_get_home_base_url();
     $home_creds = ragbaz_get_home_credentials();
     $relay = ragbaz_get_home_graphql_relay_settings(true);
+    $tenant_slug = ragbaz_sanitize_tenant_slug((string) ($home_creds['tenant_slug'] ?? ''));
     $last_result = ragbaz_get_home_last_result();
     $site_url_raw = get_site_url();
     $site_host = '';
@@ -1921,8 +2024,10 @@ function ragbaz_render_info_page() {
       $site_host = strtolower((string) $parsed_site['host']);
     }
     $tenant_preview = $home_creds['gift_key'] !== '' ? 'https://' . $home_creds['gift_key'] . '.ragbaz.xyz/' : '';
+    $tenant_slug_preview = $tenant_slug !== '' ? 'https://' . $tenant_slug . '.ragbaz.xyz/' : '';
     $tenant_info = $site_host !== '' ? $home_base . '/tenant/' . rawurlencode($site_host) : '';
     $gift_info = $home_creds['gift_key'] !== '' ? $home_base . '/articulate/sites/' . rawurlencode($home_creds['gift_key']) : '';
+    $slug_info = $tenant_slug !== '' ? $home_base . '/articulate/sites/' . rawurlencode($tenant_slug) : '';
     ?>
     <?php
     $has_account = $home_creds['account_id'] !== '';
@@ -1936,10 +2041,13 @@ function ragbaz_render_info_page() {
       'auto_onboard_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Auto onboarding completed and credentials were saved.'],
       'heartbeat_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Phone-home heartbeat sent successfully.'],
       'event_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Call-home event sent successfully.'],
+      'slug_claim_ok' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'Tenant slug claimed and reserved successfully.'],
       'relay_secret_rotated' => ['tone' => '#14532d', 'bg' => '#ecfdf5', 'border' => '#86efac', 'message' => 'GraphQL relay secret rotated and relay kept enabled.'],
       'auto_onboard_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Auto onboarding failed. Check Home base URL and network connectivity.'],
       'heartbeat_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Heartbeat failed. Check credentials and endpoint URL.'],
       'event_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Event send failed. Check credentials and endpoint URL.'],
+      'slug_claim_conflict' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Tenant slug is already claimed by another site.'],
+      'slug_claim_failed' => ['tone' => '#991b1b', 'bg' => '#fef2f2', 'border' => '#fecaca', 'message' => 'Tenant slug claim failed. Check credentials, slug format, and endpoint URL.'],
     ];
     $notice = isset($connect_notice_map[$connect_result]) ? $connect_notice_map[$connect_result] : null;
     ?>
@@ -1951,6 +2059,7 @@ function ragbaz_render_info_page() {
       </p>
       <ol style="margin:0;padding-left:18px;color:#7a4b1b;font-size:13px;line-height:1.5">
         <li>Click <strong>Auto onboard</strong> to request and save account credentials from ragbaz.xyz.</li>
+        <li>Optionally set a <strong>tenant slug alias</strong> (letters, digits, hyphen; no dots) and claim it.</li>
         <li>Keep <strong>GraphQL relay for ragbaz.xyz</strong> enabled unless you explicitly want to disable it.</li>
         <li>Click <strong>Phone home now</strong> to send a heartbeat snapshot and update status pages.</li>
         <li>Use <strong>Advanced settings</strong> only if you need manual endpoint/credential overrides.</li>
@@ -2032,6 +2141,15 @@ function ragbaz_render_info_page() {
                 <td><input id="ragbaz_home_gift_key" name="ragbaz_home_gift_key" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['gift_key']); ?>" /></td>
               </tr>
               <tr>
+                <th scope="row"><label for="ragbaz_home_tenant_slug">Tenant slug alias</label></th>
+                <td>
+                  <input id="ragbaz_home_tenant_slug" name="ragbaz_home_tenant_slug" type="text" class="regular-text code" value="<?php echo esc_attr($tenant_slug); ?>" placeholder="xtas" />
+                  <p style="margin:6px 0 0;color:#64748b;font-size:12px">
+                    Use lowercase <code>a-z</code>, digits, and hyphen only (no dots). Example: <code>xtas</code>.
+                  </p>
+                </td>
+              </tr>
+              <tr>
                 <th scope="row"><label for="ragbaz_home_graphql_relay_secret">GraphQL relay secret</label></th>
                 <td>
                   <input id="ragbaz_home_graphql_relay_secret" name="ragbaz_home_graphql_relay_secret" type="text" class="regular-text code" placeholder="leave empty to keep current" />
@@ -2043,6 +2161,7 @@ function ragbaz_render_info_page() {
         </details>
         <p style="display:flex;flex-wrap:wrap;gap:8px;margin:0">
           <button class="button button-primary">Save settings</button>
+          <button class="button" name="ragbaz_connect_action" value="claim_tenant_slug" <?php disabled(!$can_phone_home); ?>>Claim / reserve slug</button>
           <button class="button" name="ragbaz_connect_action" value="rotate_graphql_relay_secret">Rotate relay secret</button>
         </p>
       </form>
@@ -2095,8 +2214,14 @@ function ragbaz_render_info_page() {
           <?php if ($tenant_preview) : ?>
             <li><a href="<?php echo esc_url($tenant_preview); ?>" target="_blank" rel="noopener noreferrer">Tenant preview</a>: <code><?php echo esc_html($tenant_preview); ?></code></li>
           <?php endif; ?>
+          <?php if ($tenant_slug_preview) : ?>
+            <li><a href="<?php echo esc_url($tenant_slug_preview); ?>" target="_blank" rel="noopener noreferrer">Tenant preview by slug</a>: <code><?php echo esc_html($tenant_slug_preview); ?></code></li>
+          <?php endif; ?>
           <?php if ($gift_info) : ?>
             <li><a href="<?php echo esc_url($gift_info); ?>" target="_blank" rel="noopener noreferrer">Gift-key site info screen</a>: <code><?php echo esc_html($gift_info); ?></code></li>
+          <?php endif; ?>
+          <?php if ($slug_info) : ?>
+            <li><a href="<?php echo esc_url($slug_info); ?>" target="_blank" rel="noopener noreferrer">Slug site info screen</a>: <code><?php echo esc_html($slug_info); ?></code></li>
           <?php endif; ?>
           <?php if ($tenant_info) : ?>
             <li><a href="<?php echo esc_url($tenant_info); ?>" target="_blank" rel="noopener noreferrer">Domain info screen</a>: <code><?php echo esc_html($tenant_info); ?></code></li>
@@ -2497,6 +2622,7 @@ add_action('graphql_register_types', function () {
       'accountId' => ['type' => 'String'],
       'passkey' => ['type' => 'String'],
       'giftKey' => ['type' => 'String'],
+      'tenantSlug' => ['type' => 'String'],
       'canPhoneHome' => ['type' => 'Boolean'],
       'graphqlRelay' => ['type' => 'RagbazGraphqlRelay'],
     ],
