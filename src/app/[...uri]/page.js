@@ -321,41 +321,69 @@ function makeExcerpt(content, maxLen = 160) {
   return text.slice(0, maxLen).replace(/\s\S*$/, "") + "…";
 }
 
+function safeAbsoluteUrl(value) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return "";
+  try {
+    return new URL(raw).toString();
+  } catch {
+    return "";
+  }
+}
+
+function safeCanonicalUrl(uri) {
+  const base = safeAbsoluteUrl(site.url);
+  if (!base) return "";
+  try {
+    return new URL(uri, base).toString();
+  } catch {
+    return "";
+  }
+}
+
 export async function generateMetadata({ params: paramsPromise }) {
-  const params = await paramsPromise;
-  const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
-  const uri =
-    uriSegments.length > 0 ? `/${uriSegments.filter(Boolean).join("/")}` : "/";
-  const node = await resolveNodeByUri(uri);
-  if (!node) return {};
+  try {
+    const params = await paramsPromise;
+    const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
+    const uri =
+      uriSegments.length > 0 ? `/${uriSegments.filter(Boolean).join("/")}` : "/";
+    const node = await resolveNodeByUri(uri);
+    if (!node) return {};
 
-  const title = node.title || undefined;
-  const description = node.excerpt
-    ? makeExcerpt(node.excerpt)
-    : node.content
-      ? makeExcerpt(node.content)
-      : undefined;
-  const image = node.featuredImage?.node?.sourceUrl;
+    const title = node.title || undefined;
+    const description = node.excerpt
+      ? makeExcerpt(node.excerpt)
+      : node.content
+        ? makeExcerpt(node.content)
+        : undefined;
+    const image = safeAbsoluteUrl(node.featuredImage?.node?.sourceUrl);
+    const canonical = safeCanonicalUrl(uri);
 
-  return {
-    title,
-    description,
-    openGraph: {
+    return {
       title,
       description,
-      url: `${site.url}${uri}`,
-      type: node.__typename === "Post" ? "article" : "website",
-      ...(image ? { images: [{ url: image }] } : {}),
-    },
-    twitter: {
-      card: image ? "summary_large_image" : "summary",
-      title,
-      description,
-    },
-    alternates: {
-      canonical: `${site.url}${uri}`,
-    },
-  };
+      openGraph: {
+        title,
+        description,
+        ...(canonical ? { url: canonical } : {}),
+        type: node.__typename === "Post" ? "article" : "website",
+        ...(image ? { images: [{ url: image }] } : {}),
+      },
+      twitter: {
+        card: image ? "summary_large_image" : "summary",
+        title,
+        description,
+      },
+      alternates: canonical
+        ? {
+            canonical,
+          }
+        : undefined,
+    };
+  } catch (err) {
+    console.error("[Metadata] Failed to build metadata:", err?.message || err);
+    return {};
+  }
 }
 
 function buildJsonLd(node, uri) {
