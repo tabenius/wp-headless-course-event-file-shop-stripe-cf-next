@@ -24,8 +24,8 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [ ] FEATURE: if we change the advanced setting for wordpress url we may query that wordpress instead but the default is still xtas.nu
 [ ] FEATURE: Add a yellow sepia / umbra colored theme and call it earth, therefore there are now three steps in the sun moon cycle and there will be a globe as an icon
 [ ] FEATURE: Add a pink ceris purple colored theme and call it lollipop, therefore there are now four steps in the sun moon earth cycle and there will be a star as an icon
-[ ] BUG: /, buttons for theme, sun and moon icons, are not visible in the purple button. Head icon for login is not visible either.
-[ ] BUG: /, dark theme have dark text initially, change to white text if there is a dark theme.
+[x] BUG: /, buttons for theme, sun and moon icons, are not visible in the purple button. Head icon for login is not visible either.
+[x] BUG: /, dark theme have dark text initially, change to white text if there is a dark theme.
 [ ] BUG: /admin/docs/readme-sv have no generated mermaid diagrams, they are all source code.
 [ ] BUG: /admin/docs/ have a lot of not generated mermaid diagrams, they are source code only.
 [ ] FEATURE: Split /shop into static catalog shell + user ownership enrichment API. Expected gain: major TTFB reduction for anonymous traffic. Tradeoff: additional client-side state path; ownership badges become async.

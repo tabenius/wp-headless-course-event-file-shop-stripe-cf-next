@@ -96,6 +96,12 @@ export default function RootLayout({ children }) {
             __html: JSON.stringify(organizationJsonLd),
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark-mode');}}catch(_){}})();",
+          }}
+        />
         <link rel="stylesheet" href="/api/site-fonts" />
       </head>
       <body
