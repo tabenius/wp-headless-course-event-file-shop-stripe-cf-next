@@ -26,7 +26,7 @@ function EventRow({ event }) {
   const badge = formatDateBadge(event);
 
   return (
-    <article className="flex flex-col gap-4 rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 lg:flex-row lg:items-center lg:gap-6">
+    <article className="flex flex-col gap-4 rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 dark:bg-neutral-900/95 dark:ring-purple-400/30 lg:flex-row lg:items-center lg:gap-6">
       <div className="shrink-0 lg:w-40">
         {badge ? (
           <div>
@@ -38,19 +38,21 @@ function EventRow({ event }) {
             </div>
           </div>
         ) : (
-          <div className="text-base font-bold text-purple-700">UPCOMING</div>
+          <div className="text-base font-bold text-purple-700 dark:text-purple-300">UPCOMING</div>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
         <Link
           href={event.uri}
-          className="block text-2xl font-semibold leading-tight text-gray-900 hover:text-purple-700"
+          className="block text-2xl font-semibold leading-tight text-gray-900 hover:text-purple-700 dark:text-white dark:hover:text-purple-300"
           title={title}
         >
           {title}
         </Link>
-        {dateLabel && <p className="mt-2 text-sm text-purple-800/90">{dateLabel}</p>}
+        {dateLabel && (
+          <p className="mt-2 text-sm text-purple-800/90 dark:text-purple-200">{dateLabel}</p>
+        )}
       </div>
 
       <Link
@@ -65,7 +67,7 @@ function EventRow({ event }) {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-purple-100 to-purple-50 text-xs font-semibold uppercase tracking-wide text-purple-600 lg:h-36">
+          <div className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-purple-100 to-purple-50 text-xs font-semibold uppercase tracking-wide text-purple-600 dark:from-neutral-800 dark:to-neutral-900 dark:text-purple-200 lg:h-36">
             No image
           </div>
         )}
@@ -78,11 +80,14 @@ export default function EventCalendar({ events }) {
   if (!events?.length) return null;
 
   return (
-    <section className="border-b border-gray-200 bg-gray-50">
+    <section className="border-b border-gray-200 bg-gray-50 dark:border-neutral-800 dark:bg-neutral-950">
       <div className="mx-auto max-w-5xl px-5 py-8">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Upcoming Events</h2>
-          <Link href="/events" className="text-sm font-medium text-purple-700 hover:underline">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Upcoming Events</h2>
+          <Link
+            href="/events"
+            className="text-sm font-medium text-purple-700 hover:underline dark:text-purple-300"
+          >
             View all →
           </Link>
         </div>
