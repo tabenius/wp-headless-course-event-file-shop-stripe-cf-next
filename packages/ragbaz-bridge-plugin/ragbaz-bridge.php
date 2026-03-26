@@ -5,7 +5,7 @@
  * Description: GraphQL bridge for headless storefronts — exposes LearnPress courses, events (Event Organiser, The Events Calendar, Events Manager), WooCommerce products, and digital downloads via WPGraphQL. Includes built-in headless authentication via site-secret headers.
  * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
- * Version: 1.2.0
+ * Version: 1.2.1
  * Requires at least: 6.3
  * Tested up to: 6.5
  * Requires PHP: 7.4
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 // Keep the legacy option name so existing rules remain intact.
 const RAGBAZ_COURSE_RULES_OPTION = 'Articulate_course_access_rules';
-const RAGBAZ_VERSION = '1.2.0';
+const RAGBAZ_VERSION = '1.2.1';
 const RAGBAZ_STOREFRONT_URL = 'https://github.com/ragbaz/ragbaz-bridge-storefront';
 
 function ragbaz_get_storefront_url() {
@@ -1771,11 +1771,11 @@ function ragbaz_render_info_page() {
     <nav class="nav-tab-wrapper" style="margin-bottom:20px">
       <?php
       $tabs = [
+        'connect'        => 'Connect to RAGBAZ',
         'overview'       => 'Overview',
         'authentication' => 'Authentication',
         'plugins'        => 'Plugins',
         'performance'    => 'Performance',
-        'connect'        => 'Connect to RAGBAZ',
       ];
       foreach ($tabs as $slug => $label) {
         $active = $tab === $slug ? ' nav-tab-active' : '';
@@ -2120,6 +2120,19 @@ function ragbaz_render_info_page() {
             This relay secret is separate from storefront auth keys and can be disabled any time.
           </p>
         </div>
+        <div style="background:#f8fafc;border:1px solid #dbeafe;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+          <h4 style="margin:0 0 8px;color:#1e3a8a;font-size:13px">Claim tenant slug alias (step 2)</h4>
+          <p style="margin:0 0 8px;color:#334155;font-size:12px">
+            Set a simple alias so this site can be reached as <code>https://&lt;slug&gt;.ragbaz.xyz/</code> and via tenant lookup pages.
+          </p>
+          <input id="ragbaz_home_tenant_slug" name="ragbaz_home_tenant_slug" type="text" class="regular-text code" value="<?php echo esc_attr($tenant_slug); ?>" placeholder="xtas" />
+          <p style="margin:6px 0 0;color:#64748b;font-size:12px">
+            Use lowercase <code>a-z</code>, digits, and hyphen only (no dots). Example: <code>xtas</code>.
+          </p>
+          <p style="margin:10px 0 0">
+            <button class="button" name="ragbaz_connect_action" value="claim_tenant_slug" <?php disabled(!$can_phone_home); ?>>Claim / reserve slug</button>
+          </p>
+        </div>
         <details style="margin:0 0 10px">
           <summary style="cursor:pointer;font-weight:600;color:#7a4b1b">Advanced settings (manual overrides)</summary>
           <table class="form-table" role="presentation" style="margin:8px 0 0">
@@ -2141,15 +2154,6 @@ function ragbaz_render_info_page() {
                 <td><input id="ragbaz_home_gift_key" name="ragbaz_home_gift_key" type="text" class="regular-text code" value="<?php echo esc_attr($home_creds['gift_key']); ?>" /></td>
               </tr>
               <tr>
-                <th scope="row"><label for="ragbaz_home_tenant_slug">Tenant slug alias</label></th>
-                <td>
-                  <input id="ragbaz_home_tenant_slug" name="ragbaz_home_tenant_slug" type="text" class="regular-text code" value="<?php echo esc_attr($tenant_slug); ?>" placeholder="xtas" />
-                  <p style="margin:6px 0 0;color:#64748b;font-size:12px">
-                    Use lowercase <code>a-z</code>, digits, and hyphen only (no dots). Example: <code>xtas</code>.
-                  </p>
-                </td>
-              </tr>
-              <tr>
                 <th scope="row"><label for="ragbaz_home_graphql_relay_secret">GraphQL relay secret</label></th>
                 <td>
                   <input id="ragbaz_home_graphql_relay_secret" name="ragbaz_home_graphql_relay_secret" type="text" class="regular-text code" placeholder="leave empty to keep current" />
@@ -2161,7 +2165,6 @@ function ragbaz_render_info_page() {
         </details>
         <p style="display:flex;flex-wrap:wrap;gap:8px;margin:0">
           <button class="button button-primary">Save settings</button>
-          <button class="button" name="ragbaz_connect_action" value="claim_tenant_slug" <?php disabled(!$can_phone_home); ?>>Claim / reserve slug</button>
           <button class="button" name="ragbaz_connect_action" value="rotate_graphql_relay_secret">Rotate relay secret</button>
         </p>
       </form>

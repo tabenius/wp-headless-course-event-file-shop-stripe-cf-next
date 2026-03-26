@@ -1,6 +1,6 @@
 {
   "name": "ragbaz-bridge-plugin",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "GraphQL bridge for headless storefronts — events, courses, WooCommerce, and digital downloads via WPGraphQL. Includes built-in headless authentication.",
   "license": "GPL-2.0-or-later",
