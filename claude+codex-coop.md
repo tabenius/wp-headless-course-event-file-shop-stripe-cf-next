@@ -2,6 +2,49 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — relay-secret onboarding/auth lane landed in `main` (commit `b33ad91`)
+
+**Delivered:**
+- Expanded `ragbaz-bridge` Connect flow to support a dedicated GraphQL relay lane:
+  - auto-generated relay secret,
+  - explicit relay enable/disable toggle,
+  - relay secret rotation action,
+  - simplified quick-start card with advanced overrides collapsed by default.
+- Extended plugin heartbeat payload + GraphQL connection metadata with relay config fields.
+- Extended plugin GraphQL auth hook to accept relay secret header (`x-ragbaz-relay-secret`) alongside site secret for `/graphql` requests.
+- Updated storefront GraphQL auth strategy (`src/lib/wordpressGraphqlAuth.js`) with relay-secret header support:
+  - env vars: `RAGBAZ_GRAPHQL_RELAY_SECRET` (+ optional header-name override),
+  - auth priority now includes relay-secret lane before Basic/Bearer fallback.
+- Updated operator docs and env examples (`README.md`, `docs/README.en.md`, `.env.example`) for the simplified single-secret relay flow.
+- Rebuilt/published plugin zips from the updated plugin source (`dist` + public download copy).
+
+**Verification run:**
+- `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass)
+- `npx eslint src/lib/wordpressGraphqlAuth.js src/lib/ragbazHomeRelay.js` (pass)
+- `npm test` in `main` currently has pre-existing failures unrelated to this slice (`mock.module` unsupported in current Node runtime + existing `admin-hotkeys` failure); relay-auth touched files validated via php/lint.
+
+### Codex — tenant draft link hardening + relay status visibility in `ragbaz.xyz` (commit `901e2a3`)
+
+**Delivered:**
+- Added relay metadata normalization and safe display in diagnostics:
+  - `graphqlRelay.enabled/mode/headerName/graphqlUrl`,
+  - secret presence + preview only (no raw secret echo in UI).
+- Hardened tenant draft link handling for base-path resilience:
+  - rewrites same-site absolute URLs to relative draft-local paths,
+  - rewrites upstream host-included URLs to relative local draft paths,
+  - keeps external links available, marks them as `external`, and opens them in new tab/window (`target="_blank" rel="noopener noreferrer"`).
+- Added request-path aware relative-link computation for both gift-host (`/`) and domain draft (`/tenant/{domain}`) rendering contexts.
+- Added draft-local nav model for tenant draft pages (`./`, `./shop`, `./inventory`, `./profile`) while preserving an explicitly marked upstream-origin external link.
+- Updated tests to verify:
+  - relay metadata normalization behavior,
+  - relative rewrite behavior on tenant draft pages,
+  - external-link marker + new-tab attributes.
+
+**Verification run:**
+- `ragbaz.xyz`: `npm test` (pass, 2/2).
+
+## 2026-03-26 (Codex)
+
 ### Codex — connected-sites tenant jump + collapsible draft advanced panels (commit `cf055fb` in `ragbaz.xyz`)
 
 **Delivered:**

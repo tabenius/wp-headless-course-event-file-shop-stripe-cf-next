@@ -89,6 +89,16 @@ The lock is created automatically by `scripts/build-with-lock.mjs` and removed o
 - Always render as `"750 SEK"` format (no decimals, currency after amount).
 - `normalizePrice()` in `src/lib/utils.js` handles WooCommerce raw strings like `"kr750.00"`.
 
+### WordPress GraphQL relay lane
+
+- Preferred low-friction auth lane is now relay-secret header auth from `ragbaz-bridge`.
+- Storefront env supports:
+  - `RAGBAZ_GRAPHQL_RELAY_SECRET` (or fallback `WORDPRESS_GRAPHQL_RELAY_SECRET`)
+  - optional header override `RAGBAZ_GRAPHQL_RELAY_HEADER_NAME` (default `x-ragbaz-relay-secret`)
+- Auth priority in `src/lib/wordpressGraphqlAuth.js`:
+  - SiteToken JWT (if configured) → Relay secret header → Basic app password → Bearer token.
+- Keep relay secret distinct from storefront app-password/JWT credentials; relay can be rotated/disabled from plugin Connect UI.
+
 ---
 
 ## File ownership guide
@@ -199,6 +209,8 @@ Full list in `.env.example`.
 
 ## Recent work log (summary — full detail in coop file)
 
+- **2026-03-26 (Codex)**: Landed relay-secret onboarding/auth lane (`main` commit `b33ad91`) across plugin + storefront auth/docs: plugin now generates/enables/rotates dedicated GraphQL relay secret and exposes relay metadata; storefront supports `RAGBAZ_GRAPHQL_RELAY_SECRET` header auth (`x-ragbaz-relay-secret`) with updated auth priority and env/doc guidance.
+- **2026-03-26 (Codex)**: Landed tenant draft link hardening + relay metadata visibility in `ragbaz.xyz` (`master` commit `901e2a3`): same-site/upstream-host absolute URLs are rewritten to request-path-relative draft links; external links are explicitly marked and open in new tab/window; relay lane status is shown safely (presence/preview only), with tests covering rewrite/external behavior.
 - **2026-03-26 (Codex)**: Implemented end-to-end call-home expansion and tenant mapping workflow: `ragbaz.xyz` now supports authenticated event ingestion (`/api/v1/home/events`), storefront subdomain claims (`/api/v1/home/tenant-claim`), connected-site screens (`/articulate/sites`, `/articulate/sites/{gift_or_alias}`, `/tenant/{domain}` incl. `xtas.nu -> xtas` alias), while the bridge plugin Connect tab now saves home credentials and can send manual heartbeat/event payloads directly.
 - **2026-03-26 (Codex)**: Completed plugin naming normalization to `ragbaz-bridge` across `main`, including package/workspace wiring (`ragbaz-bridge-plugin`), plugin file/zip names (`ragbaz-bridge.php`, `ragbaz-bridge.zip`), download path updates (`/downloads/ragbaz-bridge/ragbaz-bridge.zip`), and docs/tests references.
 - **2026-03-23 (Claude)**: AdminMediaLibraryTab refactor phase 1 — extracted `mediaLibraryHelpers.js` (30+ pure util functions), `R2ConnectionPanel` (S3/R2 connection checklist + GUI clients, 240 lines), `MediaViewerPanel` (asset data viewer, 195 lines). Main file: 3942 → 3205 lines. Commits `858403d`, `3e6722e`, `f1dc7ba`.
