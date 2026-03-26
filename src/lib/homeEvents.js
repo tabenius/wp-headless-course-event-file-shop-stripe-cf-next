@@ -2,13 +2,13 @@ import { fetchGraphQL } from "@/lib/client";
 import { getEventEndIso, getEventStartIso } from "@/lib/eventDates";
 
 /**
- * RAGBAZ Bridge registers startDate and endDate on the Event type via
- * register_graphql_field. When the plugin is active these fields are always
- * present, so we query them directly.
+ * Compatibility-first event loading:
+ * 1) Try enriched fields (start/end/date) for calendar/date rendering.
+ * 2) Fall back to minimal event fields when upstream schema is stricter.
  */
 const HOME_EVENTS_QUERY = `
   query HomeEvents {
-    events(first: 50, where: { orderby: { field: DATE, order: ASC } }) {
+    events(first: 50) {
       edges {
         node {
           id
@@ -31,7 +31,6 @@ const HOME_EVENTS_FALLBACK_QUERY = `
           id
           title
           uri
-          date
         }
       }
     }

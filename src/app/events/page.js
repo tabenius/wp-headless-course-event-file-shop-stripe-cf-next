@@ -51,7 +51,6 @@ const LIST_EVENTS_FALLBACK_QUERY = `
           uri
           title
           content
-          date
           featuredImage {
             node {
               sourceUrl

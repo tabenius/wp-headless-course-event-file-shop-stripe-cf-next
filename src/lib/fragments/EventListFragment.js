@@ -13,7 +13,6 @@ fragment EventListFragment on Event {
     title
     uri
     content
-    date
     eventVenues {
       edges {
         node {
