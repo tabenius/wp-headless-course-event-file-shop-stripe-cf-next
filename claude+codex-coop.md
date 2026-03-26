@@ -2,6 +2,25 @@
 
 ## 2026-03-26 (Codex)
 
+### Codex — home events calendar visibility fixed and re-deployed (version 0.1.1)
+
+**Delivered:**
+- Hardened home/events GraphQL compatibility so event rendering no longer depends on stricter schema support:
+  - `src/lib/homeEvents.js` now uses compatibility-first querying (`events(first: 50)`), with a minimal fallback query (`id/title/uri`) that still renders widget entries when enriched date fields are unavailable.
+  - `src/app/events/page.js` fallback query was reduced to minimal safe fields to avoid empty lists when optional date fields are rejected upstream.
+  - Removed fragile optional `date` selections from shared Event fragments to prevent schema-validation breakage on Event detail/list queries.
+- Deployed storefront worker after patch.
+
+**Commit:**
+- `main` `eba38fe` — `Harden home/events queries for broader WPGraphQL compatibility`
+
+**Deploy verification:**
+- `npm run cf:deploy` succeeded.
+- Current worker version: `7c8bdc83-8c84-41fc-b36e-2d60dffe44e0`.
+- Live HTML checks:
+  - `https://xtas.ragbaz.xyz/` includes top calendar section (`calendar_sections=1`) with event links.
+  - `https://xtas.ragbaz.xyz/events/` includes explicit date readouts (`aria-label="Event date"`), e.g. `9 mars 2026 11:03–11:03`.
+
 ### Codex — event visibility/date pass + storefront version bump to 0.1.1
 
 **Delivered:**
