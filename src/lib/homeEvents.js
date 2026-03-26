@@ -17,6 +17,12 @@ const HOME_EVENTS_QUERY = `
           startDate
           endDate
           date
+          featuredImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
         }
       }
     }
@@ -31,6 +37,12 @@ const HOME_EVENTS_FALLBACK_QUERY = `
           id
           title
           uri
+          featuredImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
         }
       }
     }
@@ -66,15 +78,29 @@ function toRenderableEvents(nodes) {
         uri,
         startDate: getEventStartIso(node) || null,
         endDate: getEventEndIso(node) || null,
+        imageUrl: node?.featuredImage?.node?.sourceUrl || "",
+        imageAlt: node?.featuredImage?.node?.altText || title,
       };
     })
     .filter(Boolean);
 }
 
+function parseDate(value) {
+  if (!value || typeof value !== "string") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function sortByStartDateAsc(events) {
   return [...events].sort((a, b) => {
-    const aTime = a.startDate ? Date.parse(a.startDate) : Number.POSITIVE_INFINITY;
-    const bTime = b.startDate ? Date.parse(b.startDate) : Number.POSITIVE_INFINITY;
+    const aTime =
+      parseDate(a.startDate)?.getTime() ??
+      parseDate(a.endDate)?.getTime() ??
+      Number.POSITIVE_INFINITY;
+    const bTime =
+      parseDate(b.startDate)?.getTime() ??
+      parseDate(b.endDate)?.getTime() ??
+      Number.POSITIVE_INFINITY;
     return aTime - bTime;
   });
 }
@@ -103,14 +129,16 @@ export async function fetchHomeEvents() {
     today.setHours(0, 0, 0, 0);
 
     const withDates = sortByStartDateAsc(raw);
-    const upcoming = withDates.filter((e) => {
-      if (!e.startDate) return true; // include if date field missing
-      return new Date(e.startDate) >= today;
+    const upcoming = withDates.filter((event) => {
+      const start = parseDate(event.startDate);
+      if (start) return start >= today;
+      const end = parseDate(event.endDate);
+      if (end) return end >= today;
+      return true; // keep undated events as best effort
     });
-    const display = upcoming.length > 0 ? upcoming : withDates;
 
-    const hasDates = display.some((e) => e.startDate);
-    return { events: display, hasDates };
+    const hasDates = upcoming.some((e) => e.startDate);
+    return { events: upcoming, hasDates };
   } catch {
     return { events: [], hasDates: false };
   }

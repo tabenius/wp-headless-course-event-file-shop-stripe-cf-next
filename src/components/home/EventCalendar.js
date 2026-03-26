@@ -1,221 +1,99 @@
 import Link from "next/link";
 import { decodeEntities } from "@/lib/decodeEntities";
-import { formatEventDateRange, getEventStartIso } from "@/lib/eventDates";
+import { formatEventDateRange, getEventEndIso, getEventStartIso } from "@/lib/eventDates";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getMonthGrid(year, month) {
-  // month is 0-based (Date convention)
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  // Week starts Monday (ISO)
-  const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon … 6=Sun
-  const totalDays = lastDay.getDate();
-  const cells = [];
-  for (let i = 0; i < startDow; i++) cells.push(null);
-  for (let d = 1; d <= totalDays; d++) cells.push(d);
-  // Pad to full weeks
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
+function parseDate(value) {
+  if (!value || typeof value !== "string") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function toDateKey(dateStr) {
-  // Normalise to YYYY-MM-DD regardless of ISO vs plain format
-  return dateStr?.slice(0, 10) ?? null;
+function formatDateBadge(event) {
+  const start = parseDate(getEventStartIso(event));
+  const end = parseDate(getEventEndIso(event));
+  const date = start || end;
+  if (!date) return null;
+
+  const day = new Intl.DateTimeFormat("sv-SE", { day: "2-digit" }).format(date);
+  const month = new Intl.DateTimeFormat("sv-SE", { month: "short" }).format(date);
+  const year = new Intl.DateTimeFormat("sv-SE", { year: "numeric" }).format(date);
+  return { day, month: month.toUpperCase(), year };
 }
 
-function buildEventMap(events) {
-  const map = new Map(); // "YYYY-MM-DD" → Event[]
-  for (const ev of events) {
-    const key = toDateKey(getEventStartIso(ev));
-    if (!key) continue;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(ev);
-  }
-  return map;
-}
-
-const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-// ── Month calendar ────────────────────────────────────────────────────────────
-
-function MonthGrid({ year, month, eventMap, todayKey }) {
-  const cells = getMonthGrid(year, month);
-  const monthLabel = `${MONTH_NAMES[month]} ${year}`;
+function EventRow({ event }) {
+  const title = decodeEntities(event.title || "Untitled event");
+  const dateLabel = formatEventDateRange(event, "sv-SE");
+  const badge = formatDateBadge(event);
 
   return (
-    <div className="flex-1 min-w-0">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">{monthLabel}</h3>
-      <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden text-xs">
-        {DOW_LABELS.map((d) => (
-          <div
-            key={d}
-            className="bg-gray-100 text-center text-gray-500 font-medium py-1"
-          >
-            {d}
-          </div>
-        ))}
-        {cells.map((day, i) => {
-          if (!day) {
-            return <div key={`empty-${i}`} className="bg-white py-1" />;
-          }
-          const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          const dayEvents = eventMap.get(dateKey) ?? [];
-          const isToday = dateKey === todayKey;
-
-          return (
-            <div
-              key={dateKey}
-              className={`bg-white p-1 min-h-[2.5rem] ${isToday ? "ring-2 ring-inset ring-purple-400" : ""}`}
-            >
-              <span
-                className={`block text-center text-[11px] font-medium leading-tight mb-0.5 ${isToday ? "text-purple-700" : "text-gray-600"}`}
-              >
-                {day}
-              </span>
-              {dayEvents.map((ev) => (
-                <Link
-                  key={ev.id}
-                  href={ev.uri}
-                  className="block truncate text-[10px] leading-tight px-0.5 py-px rounded bg-purple-100 text-purple-800 hover:bg-purple-200 mb-px"
-                  title={decodeEntities(ev.title)}
-                >
-                  {decodeEntities(ev.title)}
-                </Link>
-              ))}
+    <article className="flex flex-col gap-4 rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 lg:flex-row lg:items-center lg:gap-6">
+      <div className="shrink-0 lg:w-40">
+        {badge ? (
+          <div>
+            <div className="text-4xl font-black leading-none text-purple-700">
+              {badge.day}
             </div>
-          );
-        })}
+            <div className="mt-1 text-sm font-semibold tracking-[0.16em] text-purple-600">
+              {badge.month} {badge.year}
+            </div>
+          </div>
+        ) : (
+          <div className="text-base font-bold text-purple-700">UPCOMING</div>
+        )}
       </div>
-    </div>
+
+      <div className="min-w-0 flex-1">
+        <Link
+          href={event.uri}
+          className="block text-2xl font-semibold leading-tight text-gray-900 hover:text-purple-700"
+          title={title}
+        >
+          {title}
+        </Link>
+        {dateLabel && <p className="mt-2 text-sm text-purple-800/90">{dateLabel}</p>}
+      </div>
+
+      <Link
+        href={event.uri}
+        className="block overflow-hidden rounded-xl ring-1 ring-purple-200 lg:w-64 lg:flex-none"
+      >
+        {event.imageUrl ? (
+          <img
+            src={event.imageUrl}
+            alt={event.imageAlt || title}
+            className="h-44 w-full object-cover lg:h-36"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-purple-100 to-purple-50 text-xs font-semibold uppercase tracking-wide text-purple-600 lg:h-36">
+            No image
+          </div>
+        )}
+      </Link>
+    </article>
   );
 }
 
-// ── Simple list (no dates) ────────────────────────────────────────────────────
-
-function EventList({ events }) {
-  return (
-    <ul className="divide-y divide-gray-100">
-      {events.slice(0, 8).map((ev) => {
-        const dateLabel = formatEventDateRange(ev);
-        return (
-          <li key={ev.id} className="py-2">
-            <Link
-              href={ev.uri}
-              className="text-sm font-medium text-gray-800 hover:text-purple-700 hover:underline"
-            >
-              {decodeEntities(ev.title)}
-            </Link>
-            {dateLabel && <div className="text-xs text-gray-500 mt-0.5">{dateLabel}</div>}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-
-export default function EventCalendar({ events, hasDates }) {
+export default function EventCalendar({ events }) {
   if (!events?.length) return null;
 
-  const now = new Date();
-  const todayAtStart = new Date(now);
-  todayAtStart.setHours(0, 0, 0, 0);
-  const hasUpcoming = events.some((ev) => {
-    const startDate = getEventStartIso(ev);
-    if (!startDate) return true;
-    return new Date(startDate) >= todayAtStart;
-  });
-  const heading = hasUpcoming ? "Upcoming Events" : "Events";
-  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-
-  // Determine which months to show (current + next, or months containing events)
-  let months;
-  if (hasDates) {
-    const eventMap = buildEventMap(events);
-    // Collect distinct year-months from events, cap at 2
-    const seen = new Set();
-    for (const key of eventMap.keys()) {
-      const ym = key.slice(0, 7); // "YYYY-MM"
-      seen.add(ym);
-    }
-    // Always include current month
-    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    seen.add(currentYM);
-    months = [...seen]
-      .sort()
-      .filter((ym) => ym >= currentYM)
-      .slice(0, 2)
-      .map((ym) => {
-        const [y, m] = ym.split("-").map(Number);
-        return { year: y, month: m - 1 };
-      });
-    if (months.length === 0) {
-      months = [{ year: now.getFullYear(), month: now.getMonth() }];
-    }
-
-    return (
-      <section className="bg-gray-50 border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {heading}
-            </h2>
-            <Link
-              href="/events"
-              className="text-sm text-purple-700 hover:underline"
-            >
-              View all →
-            </Link>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-6">
-            {months.map(({ year, month }) => (
-              <MonthGrid
-                key={`${year}-${month}`}
-                year={year}
-                month={month}
-                eventMap={eventMap}
-                todayKey={todayKey}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Fallback: simple list without calendar grid
   return (
-    <section className="bg-gray-50 border-b border-gray-200">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {heading}
-          </h2>
-          <Link
-            href="/events"
-            className="text-sm text-purple-700 hover:underline"
-          >
+    <section className="border-b border-gray-200 bg-gray-50">
+      <div className="mx-auto max-w-5xl px-5 py-8">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">Upcoming Events</h2>
+          <Link href="/events" className="text-sm font-medium text-purple-700 hover:underline">
             View all →
           </Link>
         </div>
-        <EventList events={events} />
+
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-purple-400 to-transparent" />
+
+        <div className="mt-5 space-y-5">
+          {events.slice(0, 8).map((event) => (
+            <EventRow key={event.id} event={event} />
+          ))}
+        </div>
       </div>
     </section>
   );
