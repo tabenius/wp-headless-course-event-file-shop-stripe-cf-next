@@ -12,6 +12,7 @@ import ImageUploader from "./ImageUploader";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 import UserAccessPanel from "./UserAccessPanel";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
@@ -216,8 +217,11 @@ function PriceAccessForm({
     <div className="space-y-5">
       {/* Price row */}
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-gray-700">
-          {t("admin.courseFee")} <span className="text-red-500">*</span>
+        <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+          <span>
+            {t("admin.courseFee")} <span className="text-red-500">*</span>
+          </span>
+          <AdminFieldHelpLink slug="product-value" />
         </label>
         <label className="inline-flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -263,8 +267,9 @@ function PriceAccessForm({
 
       {/* VAT override */}
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-gray-700">
-          {t("admin.vatOverrideLabel")}
+        <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+          <span>{t("admin.vatOverrideLabel")}</span>
+          <AdminFieldHelpLink slug="technical-manual" />
         </label>
         <p className="text-xs text-gray-500">{t("admin.vatOverrideHint")}</p>
         <div className="flex items-center gap-2">
@@ -1605,8 +1610,9 @@ function SettingsTab({
   return (
     <div className="max-w-lg space-y-4">
       <div>
-        <p className="text-sm font-semibold text-gray-800">
-          {t("admin.shopVisibility")}
+        <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+          <span>{t("admin.shopVisibility")}</span>
+          <AdminFieldHelpLink slug="product-value" />
         </p>
         <p className="text-xs text-gray-500 mt-0.5">
           {t("admin.shopVisibilityDesc")}
@@ -1712,7 +1718,10 @@ export default function AdminProductsTab(props) {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-semibold">{t("admin.contentAccess")}</h2>
+          <h2 className="inline-flex items-center gap-2 text-2xl font-semibold">
+            <span>{t("admin.contentAccess")}</span>
+            <AdminFieldHelpLink slug="product-value" className="h-5 w-5 text-xs" />
+          </h2>
           <p className="text-sm text-gray-500 mt-1">
             {t("admin.contentAccessDesc")}
           </p>

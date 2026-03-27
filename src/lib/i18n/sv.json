@@ -337,6 +337,7 @@
     "docsContextPrefix": "Behover du hjalp?",
     "docsContextHint": "Kontextanpassade docs-lankar for denna sektion.",
     "docsOpenGuideTooltip": "Oppna guide pa ragbaz.xyz ({lang}).",
+    "docsOpenGuideAria": "Oppna relaterad guide",
     "docsGuideQuickStart": "Snabbstart",
     "docsGuideProductValue": "Funktioner och varde",
     "docsGuidePerformance": "Prestanda forklarat",

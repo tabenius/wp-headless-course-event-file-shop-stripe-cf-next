@@ -337,6 +337,7 @@
     "docsContextPrefix": "Necesitas ayuda?",
     "docsContextHint": "Enlaces de documentacion segun el contexto de esta seccion.",
     "docsOpenGuideTooltip": "Abrir guia en ragbaz.xyz ({lang}).",
+    "docsOpenGuideAria": "Abrir guia relacionada",
     "docsGuideQuickStart": "Inicio rapido",
     "docsGuideProductValue": "Funciones y valor",
     "docsGuidePerformance": "Rendimiento explicado",

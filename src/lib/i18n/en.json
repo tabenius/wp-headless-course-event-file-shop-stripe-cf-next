@@ -337,6 +337,7 @@
     "docsContextPrefix": "Need help?",
     "docsContextHint": "Context-aware docs links for this section.",
     "docsOpenGuideTooltip": "Open guide on ragbaz.xyz ({lang}).",
+    "docsOpenGuideAria": "Open related guide",
     "docsGuideQuickStart": "Quick start",
     "docsGuideProductValue": "Features and value",
     "docsGuidePerformance": "Performance explained",

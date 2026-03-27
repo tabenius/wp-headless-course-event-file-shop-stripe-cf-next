@@ -53,6 +53,7 @@ import R2ConnectionPanel from "@/components/admin/R2ConnectionPanel";
 import MediaViewerPanel from "@/components/admin/MediaViewerPanel";
 import R2ManualIngestPanel from "@/components/admin/R2ManualIngestPanel";
 import AdminDocsContextLinks from "@/components/admin/AdminDocsContextLinks";
+import AdminFieldHelpLink from "@/components/admin/AdminFieldHelpLink";
 
 export default function AdminMediaLibraryTab({
   uploadBackend = "wordpress",
@@ -2020,8 +2021,9 @@ export default function AdminMediaLibraryTab({
         <div className="rounded border border-indigo-200 bg-indigo-50 p-4 text-xs space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold text-indigo-800">
-                {t("admin.mediaDerivationsTitle", "Derivation templates")}
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-800">
+                <span>{t("admin.mediaDerivationsTitle", "Derivation templates")}</span>
+                <AdminFieldHelpLink slug="technical-manual" />
               </p>
               <p className="text-[11px] text-indigo-700">
                 {t(
@@ -2070,7 +2072,10 @@ export default function AdminMediaLibraryTab({
           <div className="space-y-3">
             <div className="grid gap-3 lg:grid-cols-3">
               <label className="space-y-1 text-[11px] text-gray-700">
-                <span>{t("admin.mediaDerivationId", "Derivation ID")}</span>
+                <span className="inline-flex items-center gap-1">
+                  <span>{t("admin.mediaDerivationId", "Derivation ID")}</span>
+                  <AdminFieldHelpLink slug="technical-manual" />
+                </span>
                 <input
                   type="text"
                   value={editorId}
@@ -2079,7 +2084,10 @@ export default function AdminMediaLibraryTab({
                 />
               </label>
               <label className="space-y-1 text-[11px] text-gray-700">
-                <span>{t("admin.mediaDerivationName", "Name")}</span>
+                <span className="inline-flex items-center gap-1">
+                  <span>{t("admin.mediaDerivationName", "Name")}</span>
+                  <AdminFieldHelpLink slug="technical-manual" />
+                </span>
                 <input
                   type="text"
                   value={editorName}
@@ -2088,7 +2096,10 @@ export default function AdminMediaLibraryTab({
                 />
               </label>
               <label className="space-y-1 text-[11px] text-gray-700 lg:col-span-3">
-                <span>{t("admin.mediaDerivationDescription", "Description")}</span>
+                <span className="inline-flex items-center gap-1">
+                  <span>{t("admin.mediaDerivationDescription", "Description")}</span>
+                  <AdminFieldHelpLink slug="technical-manual" />
+                </span>
                 <input
                   type="text"
                   value={editorDescription}
@@ -2098,7 +2109,10 @@ export default function AdminMediaLibraryTab({
               </label>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-700">
-              <span>{t("admin.mediaDerivationAssetTypes", "Applicable asset types")}</span>
+              <span className="inline-flex items-center gap-1">
+                <span>{t("admin.mediaDerivationAssetTypes", "Applicable asset types")}</span>
+                <AdminFieldHelpLink slug="technical-manual" />
+              </span>
               {[
                 { key: "image", label: t("admin.mediaTypeImage", "Images") },
                 { key: "data", label: t("admin.mediaTypeData", "Data files") },
@@ -2332,7 +2346,10 @@ export default function AdminMediaLibraryTab({
           })}
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 text-[11px] text-gray-700">
-              <span>{t("admin.mediaDerivationAddOperationLabel", "Add operation")}</span>
+              <span className="inline-flex items-center gap-1">
+                <span>{t("admin.mediaDerivationAddOperationLabel", "Add operation")}</span>
+                <AdminFieldHelpLink slug="technical-manual" />
+              </span>
               <select
                 className="border rounded px-2 py-1 text-xs bg-white"
                 value={newOperationType}
