@@ -97,7 +97,7 @@ export default function HeaderNavClient({ navigation = [] }) {
                 item={item}
                 className={menuItemClass}
                 activeClassName={activeMenuClass}
-                dropdownClassName="bg-[#fff1f1] border border-[#333333] rounded shadow-lg py-1 min-w-[180px]"
+                dropdownClassName="storefront-nav-dropdown bg-[#fff1f1] border border-[#333333] rounded shadow-lg py-1 min-w-[180px]"
               />
             ) : (
               <NavLink

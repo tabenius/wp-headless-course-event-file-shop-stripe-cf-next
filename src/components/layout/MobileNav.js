@@ -26,7 +26,7 @@ export default function MobileNav({ items, authLinks }) {
   }, [open]);
 
   const menuItemClass =
-    "block font-[family-name:var(--font-montserrat)] text-[13px] font-normal py-[6px] border-b border-[#f0d0d0] hover:text-[#6d003e] leading-tight";
+    "storefront-mobile-nav-link block font-[family-name:var(--font-montserrat)] text-[13px] font-normal py-[6px] border-b border-[#f0d0d0] hover:text-[#6d003e] leading-tight";
   const activeMobileClass = "text-[#6d003e] font-semibold";
 
   const overlay = (
@@ -41,7 +41,7 @@ export default function MobileNav({ items, authLinks }) {
 
       {/* Slide-out panel */}
       <nav
-        className={`fixed top-0 right-0 h-full w-[min(72vw,288px)] bg-[#fff1f1] z-[9999] transform transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${
+        className={`storefront-mobile-nav-panel fixed top-0 right-0 h-full w-[min(72vw,288px)] bg-[#fff1f1] z-[9999] transform transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -121,17 +121,17 @@ export default function MobileNav({ items, authLinks }) {
         aria-expanded={open}
       >
         <span
-          className={`block w-6 h-[2px] bg-[#1a1a1a] transition-transform duration-300 ${
+          className={`storefront-mobile-nav-burger-line block w-6 h-[2px] bg-[#1a1a1a] transition-transform duration-300 ${
             open ? "translate-y-[7px] rotate-45" : ""
           }`}
         />
         <span
-          className={`block w-6 h-[2px] bg-[#1a1a1a] transition-opacity duration-300 ${
+          className={`storefront-mobile-nav-burger-line block w-6 h-[2px] bg-[#1a1a1a] transition-opacity duration-300 ${
             open ? "opacity-0" : ""
           }`}
         />
         <span
-          className={`block w-6 h-[2px] bg-[#1a1a1a] transition-transform duration-300 ${
+          className={`storefront-mobile-nav-burger-line block w-6 h-[2px] bg-[#1a1a1a] transition-transform duration-300 ${
             open ? "-translate-y-[7px] -rotate-45" : ""
           }`}
         />

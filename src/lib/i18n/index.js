@@ -7,9 +7,12 @@ const LOCALE_STORAGE_KEY = "ragbaz-admin-locale";
 
 function getStoredLocale() {
   if (typeof window === "undefined") return null;
+  const pathname = String(window.location?.pathname || "");
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  if (!isAdminRoute) return null;
   const stored = window?.localStorage?.getItem?.(LOCALE_STORAGE_KEY);
   if (stored) return stored;
-  return window.__SITE_LOCALE__;
+  return window.__SITE_LOCALE__ || null;
 }
 
 /**

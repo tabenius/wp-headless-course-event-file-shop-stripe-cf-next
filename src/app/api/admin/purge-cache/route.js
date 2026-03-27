@@ -1,21 +1,34 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { requireAdmin } from "@/lib/adminRoute";
+import { resetGraphqlClientCaches } from "@/lib/client";
+import { resetMenuCaches } from "@/lib/menu";
+import { resetShopProductsCaches } from "@/lib/shopProducts";
+import { bumpStorefrontCacheEpoch } from "@/lib/storefrontCache";
 
-export async function POST() {
-  // Verify admin session
-  const cookieStore = await cookies();
-  const session = cookieStore.get("admin_session");
-  if (!session?.value) {
-    return NextResponse.json(
-      { ok: false, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+const REVALIDATE_PATHS = ["/", "/events", "/courses", "/shop", "/blog"];
+
+export async function POST(request) {
+  const auth = await requireAdmin(request);
+  if (auth.error) return auth.error;
 
   try {
+    resetGraphqlClientCaches();
+    resetMenuCaches();
+    resetShopProductsCaches();
+
+    for (const path of REVALIDATE_PATHS) {
+      revalidatePath(path);
+    }
     revalidatePath("/", "layout");
-    return NextResponse.json({ ok: true, message: "Cache purged" });
+    const epoch = await bumpStorefrontCacheEpoch();
+
+    return NextResponse.json({
+      ok: true,
+      message: "Cache purged",
+      cacheEpoch: epoch,
+      paths: REVALIDATE_PATHS,
+    });
   } catch (err) {
     console.error("Purge cache failed:", err);
     return NextResponse.json(

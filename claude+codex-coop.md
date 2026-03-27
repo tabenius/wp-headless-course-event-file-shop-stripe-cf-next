@@ -1,5 +1,26 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-27 (Codex)
+
+### Codex — storefront dark-mode submenu contrast + locale fix + stronger admin cache purge
+
+**Delivered:**
+- Fixed unreadable storefront submenus in dark mode by introducing explicit dark-surface classes and overrides for:
+  - desktop dropdown panels/links (`storefront-nav-dropdown*`),
+  - mobile menu panel/links/hamburger lines (`storefront-mobile-nav-*`).
+- Fixed homepage events heading locale drift on storefront routes:
+  - admin locale persistence (`ragbaz-admin-locale`) now applies only on `/admin*`,
+  - storefront pages now fall back to site/default locale instead of inheriting admin language preference.
+- Improved cache controls and purge effectiveness:
+  - removed global `force-dynamic` from layout and catch-all route, while forcing request-bound rendering for paid/session paths only (`noStore()` in `src/app/[...uri]/page.js`).
+  - added cache epoch invalidation (`src/lib/storefrontCache.js`) wired into GraphQL edge cache keying (`src/lib/client.js`).
+  - upgraded `/api/admin/purge-cache` to use `requireAdmin`, clear in-memory caches, bump cache epoch, and revalidate key storefront paths.
+  - exposed a prominent purge button in the Info section header for faster operator access.
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only)
+- `npm test` (pass, 25/25)
+
 ## 2026-03-26 (Codex)
 
 ### Codex — home events calendar visibility fixed and re-deployed (version 0.1.1)

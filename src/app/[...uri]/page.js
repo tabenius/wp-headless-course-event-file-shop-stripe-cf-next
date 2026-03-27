@@ -28,9 +28,7 @@ import { appendServerLog } from "@/lib/serverLog";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
 import { cache } from "react";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { unstable_noStore as noStore } from "next/cache";
 const DEBUG_WP_RESOLVE = process.env.STOREFRONT_RESOLVE_DEBUG === "1";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
@@ -644,6 +642,9 @@ export default async function ContentPage({
       </>
     );
   if (isPaidAccessType) {
+    // Paid access depends on session identity and checkout query params.
+    // Keep these responses request-bound to avoid leaking user-specific state.
+    noStore();
     const session = await auth().catch(() => null);
     const userEmail = session?.user?.email || "";
     let canAccess = false;

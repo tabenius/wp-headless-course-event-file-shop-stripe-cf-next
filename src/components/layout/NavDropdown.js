@@ -94,7 +94,7 @@ export default function NavDropdown({
             {parentHref && (
               <NavLink
                 href={parentHref}
-                className="block px-4 py-2 text-[13px] font-[family-name:var(--font-montserrat)] font-semibold hover:bg-[#f0d0d0] whitespace-nowrap border-b border-[#f0d0d0]"
+                className="storefront-nav-dropdown-link storefront-nav-dropdown-link-border block px-4 py-2 text-[13px] font-[family-name:var(--font-montserrat)] font-semibold hover:bg-[#f0d0d0] whitespace-nowrap border-b border-[#f0d0d0]"
                 activeClassName="text-[#6d003e]"
                 onClick={() => setOpen(false)}
               >
@@ -105,7 +105,7 @@ export default function NavDropdown({
               <NavLink
                 key={child.href}
                 href={child.href}
-                className="block px-4 py-2 text-[13px] font-[family-name:var(--font-montserrat)] hover:bg-[#f0d0d0] whitespace-nowrap"
+                className="storefront-nav-dropdown-link block px-4 py-2 text-[13px] font-[family-name:var(--font-montserrat)] hover:bg-[#f0d0d0] whitespace-nowrap"
                 activeClassName="text-[#6d003e] font-semibold"
                 onClick={() => setOpen(false)}
               >

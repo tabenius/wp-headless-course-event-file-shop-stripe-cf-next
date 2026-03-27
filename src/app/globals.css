@@ -809,6 +809,37 @@ body:has(.admin-layout)::before {
   color: #fff !important;
 }
 
+.dark-mode .storefront-nav-dropdown {
+  background: rgba(24, 24, 24, 0.98) !important;
+  border-color: rgba(255, 255, 255, 0.32) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+.dark-mode .storefront-nav-dropdown .storefront-nav-dropdown-link {
+  color: #fff !important;
+}
+.dark-mode .storefront-nav-dropdown .storefront-nav-dropdown-link:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
+.dark-mode .storefront-nav-dropdown .storefront-nav-dropdown-link-border {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark-mode .storefront-mobile-nav-panel {
+  background: rgba(24, 24, 24, 0.98) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.24);
+}
+.dark-mode .storefront-mobile-nav-link {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.dark-mode .storefront-mobile-nav-link:hover {
+  color: #ffd166 !important;
+}
+.dark-mode .storefront-mobile-nav-burger-line {
+  background: #fff !important;
+}
+
 .dark-mode article,
 .dark-mode .wp-content,
 .dark-mode main,

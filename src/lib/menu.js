@@ -61,6 +61,15 @@ let sitemapCache = {
   pending: null,
 };
 
+export function resetMenuCaches() {
+  menuUriExistenceCache.clear();
+  sitemapCache = {
+    expiresAt: 0,
+    paths: null,
+    pending: null,
+  };
+}
+
 const ALWAYS_ALLOW_PATHS = new Set(["/", "/#", "#"]);
 const ALWAYS_ALLOW_PREFIXES = [
   "/admin",

@@ -827,6 +827,8 @@ export default function AdminInfoHubTab({
   webhookUrl,
   ragbazDownloadUrl,
   runHealthCheck,
+  purging,
+  purgeCache,
   storage,
   uploadInfo,
   uploadBackend,
@@ -886,21 +888,34 @@ export default function AdminInfoHubTab({
 
   return (
     <div className="space-y-4">
-      <div className="border rounded bg-white p-2 flex flex-wrap gap-2">
-        {sections.map((entry) => (
+      <div className="border rounded bg-white p-2 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-2">
+          {sections.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => setSectionAndHash(entry.id)}
+              className={`px-3 py-1.5 rounded text-sm border transition-colors ${
+                section === entry.id
+                  ? "bg-purple-700 text-white border-purple-700"
+                  : "border-gray-200 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {entry.label}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
           <button
-            key={entry.id}
             type="button"
-            onClick={() => setSectionAndHash(entry.id)}
-            className={`px-3 py-1.5 rounded text-sm border transition-colors ${
-              section === entry.id
-                ? "bg-purple-700 text-white border-purple-700"
-                : "border-gray-200 text-gray-700 hover:bg-gray-50"
-            }`}
+            onClick={purgeCache}
+            disabled={purging}
+            className="px-3 py-1.5 rounded border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 disabled:opacity-50 text-sm"
+            title={t("admin.purgeCacheTooltip")}
           >
-            {entry.label}
+            {purging ? t("admin.purgingCache") : t("admin.purgeCache")}
           </button>
-        ))}
+        </div>
       </div>
 
       {section === "overview" && (
@@ -910,7 +925,11 @@ export default function AdminInfoHubTab({
             healthLoading={healthLoading}
             runHealthCheck={runHealthCheck}
           />
-          <AdminSandboxTab {...sandboxProps} />
+          <AdminSandboxTab
+            {...sandboxProps}
+            purging={purging}
+            purgeCache={purgeCache}
+          />
         </div>
       )}
 

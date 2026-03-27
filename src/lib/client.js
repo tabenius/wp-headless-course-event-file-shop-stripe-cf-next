@@ -5,6 +5,7 @@ import {
 import { appendServerLog } from "@/lib/serverLog";
 import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
+import { getStorefrontCacheEpoch } from "@/lib/storefrontCache";
 
 const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
@@ -46,6 +47,10 @@ function recordAttempt(endpoint, status, ok) {
 /** Returns a snapshot of the last GraphQL request attempts (newest first). */
 export function getRequestHistory() {
   return [..._requestHistory];
+}
+
+export function resetGraphqlClientCaches() {
+  _typeCache.clear();
 }
 
 // ── RateLimitError ────────────────────────────────────────────────────────────
@@ -140,11 +145,17 @@ async function digestSha256Hex(value) {
     .join("");
 }
 
-async function buildGraphqlEdgeCacheRequest(graphqlEndpoint, query, variables) {
+async function buildGraphqlEdgeCacheRequest(
+  graphqlEndpoint,
+  query,
+  variables,
+  cacheEpoch = 0,
+) {
   const keyPayload = JSON.stringify({
     endpoint: graphqlEndpoint,
     query,
     variables: variables ?? {},
+    cacheEpoch: Number.isFinite(cacheEpoch) ? cacheEpoch : 0,
   });
   const digest = await digestSha256Hex(keyPayload);
   const keyUrl = `https://ragbaz-edge-cache.local/graphql/${digest}`;
@@ -243,11 +254,14 @@ export async function fetchGraphQL(
     Number.parseInt(String(options?.edgeCacheStaleSeconds || ""), 10) ||
     GRAPHQL_EDGE_CACHE_STALE_SECONDS;
   let cacheRequest = null;
+  let cacheEpoch = 0;
   if (edgeCacheEnabled) {
+    cacheEpoch = await getStorefrontCacheEpoch().catch(() => 0);
     cacheRequest = await buildGraphqlEdgeCacheRequest(
       graphqlEndpoint,
       query,
       variables,
+      cacheEpoch,
     ).catch(() => null);
     if (cacheRequest) {
       const cached = await readGraphqlEdgeCache(cacheRequest);

@@ -25,6 +25,10 @@ import site from "@/lib/site";
 const defaultCurrency = site.defaultCurrency || "SEK";
 const graphqlFieldSupportCache = new Map();
 
+export function resetShopProductsCaches() {
+  graphqlFieldSupportCache.clear();
+}
+
 async function hasGraphQLField(typeName, fieldName) {
   const cacheKey = `${typeName}:${fieldName}`;
   if (graphqlFieldSupportCache.has(cacheKey)) {
