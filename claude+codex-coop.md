@@ -2,6 +2,20 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — changelog expanded + translated (SV/ES) on ragbaz.xyz docs
+
+**Delivered:**
+- Expanded weekly changelog narrative to be more descriptive while staying non-technical and user/admin-outcome focused.
+- Added full Swedish and Spanish changelog coverage (metadata + article body), removing English-only fallback behavior for this guide.
+- Updated docs article metadata so changelog title/summary/audience are localized in EN/SV/ES.
+- Verified live pages:
+  - `/docs/sv/changelog` (localized title, lead, weekly sections)
+  - `/docs/es/changelog` (localized title, lead, weekly sections)
+
+**Publish:**
+- `ragbaz.xyz` commit: `1fc8bf6` (`docs changelog: expand weekly narrative and add sv/es translations`)
+- Deployed worker version: `d2ab0666-1f85-433c-a90f-3d6a8c2ff7bb`
+
 ### Codex — docs safety strip guide submenu (direct document jump)
 
 **Delivered:**
