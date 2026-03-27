@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { requireAdmin } from "@/lib/adminRoute";
+import { getStripeSecretKey } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
+async function getStripe() {
+  const key = await getStripeSecretKey();
   if (!key) throw new Error("STRIPE_SECRET_KEY missing");
   return new Stripe(key, { apiVersion: "2024-12-18" });
 }
@@ -30,7 +31,7 @@ export async function POST(request) {
       );
     }
 
-    const stripe = getStripe();
+    const stripe = await getStripe();
     const params = paymentIntentId
       ? { payment_intent: paymentIntentId }
       : { charge: chargeId };

@@ -11,9 +11,11 @@ import GraphqlAvailabilityPanel from "./GraphqlAvailabilityPanel";
 import PagePerformancePanel from "./PagePerformancePanel";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
+import AdminSettingsPanel from "./AdminSettingsPanel";
 
 function normalizeSection(value) {
   const safe = String(value || "").trim().toLowerCase();
+  if (safe === "settings" || safe === "setting") return "settings";
   if (safe === "health") return "health";
   if (safe === "stats" || safe === "statistics") return "stats";
   if (safe === "links" || safe === "dead-links" || safe === "deadlinks") return "beta";
@@ -30,6 +32,7 @@ function sectionFromHash(hashValue) {
     .toLowerCase();
   const parts = normalized.split("/").filter(Boolean);
   if (parts[0] === "health") return "health";
+  if (parts[0] === "settings") return "settings";
   if (parts[0] === "stats") return "stats";
   if (parts[0] === "links" || parts[0] === "dead-links") return "beta";
   if (parts[0] === "storage") return "storage";
@@ -41,6 +44,7 @@ function sectionFromHash(hashValue) {
 }
 
 function hashForSection(section) {
+  if (section === "settings") return "#/info/settings";
   if (section === "health") return "#/info/health";
   if (section === "stats") return "#/info/stats";
   if (section === "storage") return "#/info/storage";
@@ -892,6 +896,7 @@ export default function AdminInfoHubTab({
 
   const sections = [
     { id: "overview", label: t("admin.infoOverview", "Overview") },
+    { id: "settings", label: t("admin.settings", "Settings") },
     { id: "stats", label: t("admin.navStats", "Stats") },
     { id: "health", label: t("admin.healthCheck", "Health check") },
     { id: "storage", label: t("admin.navStorage", "Storage") },
@@ -972,6 +977,8 @@ export default function AdminInfoHubTab({
           />
         </div>
       )}
+
+      {section === "settings" && <AdminSettingsPanel />}
 
       {section === "stats" && (
         <div className="border rounded p-5 bg-white">

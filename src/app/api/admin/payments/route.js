@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { compilePayments, fetchStripeCharge } from "@/lib/stripePayments";
 import { listAllShopItems } from "@/lib/shopProducts";
 import { getShopSettings } from "@/lib/shopSettings";
+import { getStripeSecretKey, isStripeEnabled } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -348,7 +349,7 @@ export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
-  const stripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+  const stripeConfigured = isStripeEnabled();
   if (!stripeConfigured) {
     return NextResponse.json({
       ok: true,
@@ -451,9 +452,16 @@ export async function POST(request) {
       );
     }
 
+    const stripeSecretKey = await getStripeSecretKey();
+    if (!stripeSecretKey) {
+      return NextResponse.json(
+        { ok: false, error: "Stripe is not configured" },
+        { status: 503 },
+      );
+    }
     const result = await fetchStripeReceiptPdf(
       receiptUrl,
-      process.env.STRIPE_SECRET_KEY,
+      stripeSecretKey,
       charge?.invoice,
     );
     if (!result.ok) {

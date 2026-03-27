@@ -1,12 +1,13 @@
-function stripeSecretKey() {
-  const key = process.env.STRIPE_SECRET_KEY;
+import { getStripeSecretKey } from "@/lib/stripe";
+
+async function stripeSecretKey() {
+  const key = await getStripeSecretKey();
   if (!key) throw new Error("STRIPE_SECRET_KEY missing");
   return key;
 }
 
 export function getStripe() {
   // Kept for compatibility with older imports/tests.
-  stripeSecretKey();
   return {
     configured: true,
     getApiField(field) {
@@ -25,7 +26,7 @@ function stripeError(type, message, status) {
 }
 
 async function stripeRequest(path, params = {}) {
-  const key = stripeSecretKey();
+  const key = await stripeSecretKey();
   const url = new URL(`https://api.stripe.com${path}`);
 
   Object.entries(params).forEach(([k, v]) => {

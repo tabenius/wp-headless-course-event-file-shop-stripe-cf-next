@@ -4,6 +4,7 @@ import { grantCourseAccess } from "@/lib/courseAccess";
 import { grantDigitalAccess } from "@/lib/digitalAccessStore";
 import { sendEmail } from "@/lib/email";
 import { tenantConfig } from "@/lib/tenantConfig";
+import { readWcProxySettings } from "@/lib/adminSettingsStore";
 
 function parseSignature(headerValue) {
   if (typeof headerValue !== "string") return {};
@@ -34,6 +35,32 @@ function verifyStripeSignature(rawBody, signatureHeader, secret) {
   return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
 }
 
+async function maybeForwardToWcProxy(rawBody, eventType) {
+  try {
+    const proxy = await readWcProxySettings();
+    if (!proxy?.enabled || !proxy?.url) return;
+    const response = await fetch(proxy.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-RAGBAZ-Relay": "stripe-webhook",
+        "X-RAGBAZ-Stripe-Event": String(eventType || ""),
+      },
+      body: rawBody,
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.warn(
+        "WC proxy forward failed:",
+        response.status,
+        text.slice(0, 240),
+      );
+    }
+  } catch (error) {
+    console.warn("WC proxy forwarding failed:", error);
+  }
+}
+
 export async function POST(request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = request.headers.get("stripe-signature") || "";
@@ -51,6 +78,7 @@ export async function POST(request) {
 
   try {
     const event = JSON.parse(rawBody);
+    await maybeForwardToWcProxy(rawBody, event?.type);
     if (event?.type === "checkout.session.completed") {
       const session = event?.data?.object || {};
       const paymentStatus = session?.payment_status;

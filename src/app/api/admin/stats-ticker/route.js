@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
+import { getStripeSecretKey } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -8,7 +9,7 @@ const CF_GRAPHQL = "https://api.cloudflare.com/client/v4/graphql";
 // ─── Stripe ──────────────────────────────────────────────────────────────────
 
 async function stripeRequest(path, params = {}) {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = await getStripeSecretKey();
   if (!key) throw new Error("STRIPE_SECRET_KEY missing");
 
   const url = new URL(`https://api.stripe.com${path}`);
@@ -138,9 +139,10 @@ export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth?.error) return auth.error;
 
+  const stripeSecretKey = await getStripeSecretKey();
   const results = await Promise.allSettled([
     // Stripe summary
-    process.env.STRIPE_SECRET_KEY
+    stripeSecretKey
       ? fetchStripeSummary()
       : Promise.reject(new Error("no stripe key")),
 

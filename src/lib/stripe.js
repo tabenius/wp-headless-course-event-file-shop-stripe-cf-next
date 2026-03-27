@@ -1,10 +1,66 @@
-function hasStripeConfig() {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+import { readStripeKeyOverrides } from "@/lib/adminSettingsStore";
+
+const STRIPE_OVERRIDE_CACHE_MS =
+  Number.parseInt(process.env.STRIPE_OVERRIDE_CACHE_MS || "20000", 10) || 20000;
+
+let stripeKeyCache = {
+  expiresAt: 0,
+  value: null,
+};
+
+function kvOverridesEnabled() {
+  const mode = String(process.env.STRIPE_KV_OVERRIDE_MODE || "enabled")
+    .trim()
+    .toLowerCase();
+  return mode !== "off" && mode !== "disabled" && mode !== "false";
 }
 
-function stripeHeaders() {
+function hasKvConfig() {
+  return Boolean(
+    process.env.CLOUDFLARE_ACCOUNT_ID &&
+      process.env.CF_API_TOKEN &&
+      process.env.CF_KV_NAMESPACE_ID,
+  );
+}
+
+function hasStripeConfig() {
+  if (process.env.STRIPE_SECRET_KEY) return true;
+  return kvOverridesEnabled() && hasKvConfig();
+}
+
+async function resolveStripeSecretKey() {
+  const envSecret = String(process.env.STRIPE_SECRET_KEY || "").trim();
+  if (!kvOverridesEnabled()) return envSecret;
+
+  const now = Date.now();
+  if (stripeKeyCache.expiresAt > now) {
+    return stripeKeyCache.value || envSecret;
+  }
+
+  let resolved = envSecret;
+  try {
+    const overrides = await readStripeKeyOverrides();
+    if (overrides?.enabled && overrides?.secretKey) {
+      resolved = String(overrides.secretKey).trim() || resolved;
+    }
+  } catch (error) {
+    console.error("Failed to load Stripe key overrides:", error);
+  }
+
+  stripeKeyCache = {
+    value: resolved || null,
+    expiresAt: now + STRIPE_OVERRIDE_CACHE_MS,
+  };
+  return resolved;
+}
+
+export async function getStripeSecretKey() {
+  return resolveStripeSecretKey();
+}
+
+function stripeHeaders(secretKey) {
   return {
-    Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+    Authorization: `Bearer ${secretKey}`,
     "Content-Type": "application/x-www-form-urlencoded",
   };
 }
@@ -32,6 +88,8 @@ export async function createStripePaymentSession({
   if (!hasStripeConfig()) {
     throw new Error("Stripe is not configured");
   }
+  const secretKey = await resolveStripeSecretKey();
+  if (!secretKey) throw new Error("Stripe is not configured");
 
   const payload = new URLSearchParams();
   payload.set("mode", "payment");
@@ -65,7 +123,7 @@ export async function createStripePaymentSession({
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
-    headers: stripeHeaders(),
+    headers: stripeHeaders(secretKey),
     body: payload,
   });
   const json = await response.json();
@@ -116,11 +174,13 @@ export async function fetchStripeCheckoutSession(sessionId) {
   if (!hasStripeConfig()) {
     throw new Error("Stripe is not configured");
   }
+  const secretKey = await resolveStripeSecretKey();
+  if (!secretKey) throw new Error("Stripe is not configured");
   const response = await fetch(
     `https://api.stripe.com/v1/checkout/sessions/${sessionId}`,
     {
       method: "GET",
-      headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      headers: { Authorization: `Bearer ${secretKey}` },
     },
   );
   const json = await response.json();

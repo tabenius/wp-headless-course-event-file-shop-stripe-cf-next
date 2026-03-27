@@ -10,19 +10,20 @@
  */
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
+import { getStripeSecretKey } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
 // ─── Stripe fetch helpers ─────────────────────────────────────────────────────
 
-function stripeKey() {
-  const key = process.env.STRIPE_SECRET_KEY;
+async function stripeKey() {
+  const key = await getStripeSecretKey();
   if (!key) throw new Error("STRIPE_SECRET_KEY is not configured.");
   return key;
 }
 
 async function stripeGet(path) {
-  const key = stripeKey();
+  const key = await stripeKey();
   const response = await fetch(`https://api.stripe.com${path}`, {
     headers: { Authorization: `Bearer ${key}` },
   });

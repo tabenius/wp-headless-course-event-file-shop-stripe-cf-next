@@ -6,7 +6,7 @@ import {
 import { appendServerLog } from "@/lib/serverLog";
 import { getEnabledProviders } from "@/lib/oauthProviders";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
-import { isStripeEnabled } from "@/lib/stripe";
+import { getStripeSecretKey, isStripeEnabled } from "@/lib/stripe";
 import {
   isCloudflareKvConfigured,
   readCloudflareKvJson,
@@ -300,8 +300,12 @@ async function checkStripe() {
   }
 
   try {
+    const secretKey = await getStripeSecretKey();
+    if (!secretKey) {
+      return { ok: false, message: t("health.stripeNotConfigured") };
+    }
     const response = await fetchWithTimeout("https://api.stripe.com/v1/account", {
-      headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      headers: { Authorization: `Bearer ${secretKey}` },
       cache: "no-store",
     });
     if (!response.ok) {
