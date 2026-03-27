@@ -2937,7 +2937,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - New export: `renderGiftDraftPage(...)`
   - Draft view includes:
     - Source WordPress URL known from onboarding/heartbeat payload
-    - Capability matrix (WPGraphQL, Ragbaz WP plugin bridge, Smart Cache, object cache)
+    - Capability matrix (WPGraphQL, RAGBAZ WP plugin bridge, Smart Cache, object cache)
     - Suggested page blueprint for an optimized frontend
     - Generated draft manifest JSON
     - Priority actions based on current runtime/performance recommendations
@@ -3104,7 +3104,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Landed in `main` (commit: `b1eee04`):
   - Renamed admin logo component filename to lowercase (`src/components/admin/ragbaz-logo.js`) and updated imports.
-  - Normalized user-facing brand copy from mixed-case `Ragbaz` / lowercase `ragbaz.xyz` labels to `RAGBAZ` / `RAGBAZ.xyz` across admin docs tooltips, info hub links, relay-status panel text, and plugin connect/auth copy.
+  - Normalized user-facing brand copy from mixed-case brand labels / lowercase `ragbaz.xyz` labels to `RAGBAZ` / `RAGBAZ.xyz` across admin docs tooltips, info hub links, relay-status panel text, and plugin connect/auth copy.
   - Updated i18n EN/SV/ES brand-facing strings (`docsExternal*`, docs tooltips, copyright-holder placeholder).
   - Aligned user-facing header examples to `X-RAGBAZ-Secret` wording in plugin docs/readme text.
   - Updated receipt proxy response header label to `X-RAGBAZ-Request-Id`.
