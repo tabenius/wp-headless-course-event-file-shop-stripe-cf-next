@@ -2,6 +2,22 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — ragbaz.xyz global font-theme system (Option C, phase 1)
+
+**Delivered:**
+- Implemented a site-wide font-theme system in `ragbaz.xyz/src/lib/pages.js` for both render paths (`shell(...)` and `renderHomePage(...)`) so typography is consistent across all pages.
+- Added five named font themes with heading/body pairs and CSS-variable wiring:
+  - `elegant`, `formal`, `casual`, `creative`, `contemporary`.
+- Added a global font selector (`Font`) in the top controls next to the elemental theme selector.
+- Added persisted font preference (`localStorage` key: `ragbaz_home_font_theme`) and keyboard rotation hotkey `Ctrl+Alt+F` (theme hotkey `Ctrl+Alt+T` retained).
+- Kept typography change purely presentation-level (no API/data path changes).
+
+**Validation:**
+- `node --check src/lib/pages.js` (pass)
+
+**Commit:**
+- `ragbaz.xyz` `82aefe5` — `Add global font themes with persisted selector and hotkeys`
+
 ### Codex — storefront dark-mode submenu contrast + locale fix + stronger admin cache purge
 
 **Delivered:**
