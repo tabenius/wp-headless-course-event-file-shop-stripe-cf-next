@@ -61,6 +61,27 @@
 **Commit:**
 - `main` `01f5297` — `Expand admin docs links across info, style, welcome, and chat`
 
+### Codex — admin field-level docs help links, phase 3
+
+**Delivered:**
+- Added reusable field-level `?` helper control for contextual docs:
+  - `src/components/admin/AdminFieldHelpLink.js`
+- Wired field-level localized help links into high-edit-density forms:
+  - `AdminProductsTab` (content/access title, course fee, VAT override, shop visibility)
+  - `AdminMediaLibraryTab` (derivation templates title, name/description, applicable types, add operation)
+- Added new localized accessibility label key in EN/SV/ES:
+  - `admin.docsOpenGuideAria`
+
+**Validation:**
+- `node --check` pass for:
+  - `src/components/admin/AdminFieldHelpLink.js`
+  - `src/components/admin/AdminProductsTab.js`
+  - `src/components/admin/AdminMediaLibraryTab.js`
+- i18n JSON parse checks pass for EN/SV/ES
+
+**Commit:**
+- `main` `55b75df` — `Add field-level docs help links in products and derivations`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
