@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  ensureShopMenuEntry,
+  ensureCoreMenuEntries,
+  ensureCoreMenuEntriesByExistence,
   filterNavigationByExistence,
 } from "../src/lib/menuFilter.js";
 
@@ -55,22 +56,42 @@ test("filterNavigationByExistence drops invalid object shapes", async () => {
   assert.deepEqual(result, [{ href: "/valid", label: "Valid" }]);
 });
 
-test("ensureShopMenuEntry appends Shop when /shop is missing", () => {
+test("ensureCoreMenuEntries appends core links when missing", () => {
   const input = [
     { href: "/blog", label: "Blog" },
-    { href: "/events", label: "Events" },
+    { href: "/custom", label: "Custom" },
   ];
-  const result = ensureShopMenuEntry(input);
-  assert.equal(result.at(-1)?.href, "/shop");
-  assert.equal(result.at(-1)?.label, "Shop");
+  const result = ensureCoreMenuEntries(input);
+  const hrefs = result.map((item) => item.href);
+  assert.ok(hrefs.includes("/blog"));
+  assert.ok(hrefs.includes("/events"));
+  assert.ok(hrefs.includes("/courses"));
+  assert.ok(hrefs.includes("/shop"));
 });
 
-test("ensureShopMenuEntry does not duplicate existing /shop", () => {
+test("ensureCoreMenuEntries does not duplicate existing core routes", () => {
   const input = [
+    { href: "/blog", label: "BLOG" },
+    { href: "/events", label: "EVENEMANG" },
+    { href: "/courses", label: "KURSER" },
     { href: "/shop", label: "BUTIK" },
     { href: "/blog", label: "Blog" },
   ];
-  const result = ensureShopMenuEntry(input);
+  const result = ensureCoreMenuEntries(input);
   assert.equal(result.filter((item) => item.href === "/shop").length, 1);
-  assert.equal(result[0].label, "BUTIK");
+  assert.equal(result.filter((item) => item.href === "/blog").length, 2);
+  assert.equal(result.filter((item) => item.href === "/events").length, 1);
+  assert.equal(result.filter((item) => item.href === "/courses").length, 1);
+});
+
+test("ensureCoreMenuEntriesByExistence only appends verified core routes", async () => {
+  const input = [{ href: "/custom", label: "Custom" }];
+  const result = await ensureCoreMenuEntriesByExistence(input, async (href) =>
+    ["/events", "/shop"].includes(href),
+  );
+  const hrefs = result.map((item) => item.href);
+  assert.ok(hrefs.includes("/events"));
+  assert.ok(hrefs.includes("/shop"));
+  assert.ok(!hrefs.includes("/blog"));
+  assert.ok(!hrefs.includes("/courses"));
 });

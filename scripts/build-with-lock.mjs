@@ -49,7 +49,7 @@ function cleanup() {
 }
 
 const [bin, ...args] = cmd;
-const child = spawn(bin, args, { stdio: "inherit", shell: true });
+const child = spawn(bin, args, { stdio: "inherit", shell: false });
 
 child.on("exit", (code) => {
   cleanup();

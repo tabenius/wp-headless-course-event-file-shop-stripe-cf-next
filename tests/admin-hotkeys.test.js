@@ -20,17 +20,15 @@ test("admin tab hotkeys stay unique and stable", () => {
   assert.deepEqual(
     ADMIN_TAB_HOTKEYS.map((item) => item.tab),
     [
-      "welcome",
       "sales",
-      "stats",
-      "storage",
-      "products",
-      "chat",
-      "health",
-      "style",
-      "info",
-      "support",
       "media",
+      "products",
+      "support",
+      "style",
+      "chat",
+      "info",
+      "welcome",
+      "health",
     ],
   );
 });
@@ -98,9 +96,9 @@ test("action hotkeys detect menu toggle, next/prev tab, and logout", () => {
 });
 
 test("tab labels returned by getAdminTabHotkeyLabel remain user-facing", () => {
-  assert.equal(getAdminTabHotkeyLabel("welcome"), "Ctrl+Alt+0");
-  assert.equal(getAdminTabHotkeyLabel("storage"), "Ctrl+Alt+3");
-  assert.equal(getAdminTabHotkeyLabel("support"), "Ctrl+Alt+9");
-  assert.equal(getAdminTabHotkeyLabel("media"), "Ctrl+Alt+A");
+  assert.equal(getAdminTabHotkeyLabel("welcome"), "Ctrl+Alt+8");
+  assert.equal(getAdminTabHotkeyLabel("products"), "Ctrl+Alt+3");
+  assert.equal(getAdminTabHotkeyLabel("support"), "Ctrl+Alt+4");
+  assert.equal(getAdminTabHotkeyLabel("media"), "Ctrl+Alt+2");
   assert.equal(ADMIN_ACTION_HOTKEYS.menuToggle.combo, "Ctrl+Alt+M");
 });
