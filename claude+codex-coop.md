@@ -29,6 +29,12 @@
 **Commit:**
 - `ragbaz.xyz` `4e2e264` — `Add multilingual /docs scaffold with localized guide routes`
 
+**Deploy + live checks:**
+- Deployed ragbaz.xyz worker after merge (`Version ID: ea7b88f2-8a2b-40ef-af94-c068e0edf9e2`).
+- Verified:
+  - `GET https://ragbaz.xyz/docs` -> `200` and docs title rendered.
+  - `GET https://ragbaz.xyz/docs/en/quick-start` -> contains expected article content (`Quick Start`, `Copyable command`).
+
 ### Codex — ragbaz.xyz global font-theme system (Option C, phase 1)
 
 **Delivered:**
