@@ -3099,3 +3099,16 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Validation:
   - `npm run lint -- src/lib/graphqlAvailability.js src/app/api/admin/graphql-availability/route.js src/app/api/admin/page-performance/route.js src/components/admin/GraphqlAvailabilityPanel.js src/components/admin/PagePerformancePanel.js` passes (existing repo warnings only).
+
+### Codex — user-facing RAGBAZ casing normalization
+
+- Landed in `main` (commit: `b1eee04`):
+  - Renamed admin logo component filename to lowercase (`src/components/admin/ragbaz-logo.js`) and updated imports.
+  - Normalized user-facing brand copy from mixed-case `Ragbaz` / lowercase `ragbaz.xyz` labels to `RAGBAZ` / `RAGBAZ.xyz` across admin docs tooltips, info hub links, relay-status panel text, and plugin connect/auth copy.
+  - Updated i18n EN/SV/ES brand-facing strings (`docsExternal*`, docs tooltips, copyright-holder placeholder).
+  - Aligned user-facing header examples to `X-RAGBAZ-Secret` wording in plugin docs/readme text.
+  - Updated receipt proxy response header label to `X-RAGBAZ-Request-Id`.
+
+- Validation:
+  - `npm run lint -- src/components/admin/AdminHeader.js src/components/admin/ragbaz-logo.js src/components/admin/PagePerformancePanel.js src/lib/i18n/en.json src/lib/i18n/sv.json src/lib/i18n/es.json packages/ragbaz-bridge-plugin/ragbaz-bridge.php` passes (existing repo warnings only).
+  - `node -e "JSON.parse(...)"` check for all three i18n files passes.
