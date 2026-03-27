@@ -754,6 +754,7 @@
     "dateFilter": "Datumfilter",
     "paymentsReload": "Ladda om",
     "noPayments": "Inga betalningar hittades.",
+    "statsSubtitle": "Signaler om trafik, efterfrågan och svarstider från storefront och infrastruktur.",
     "deadLinksTitle": "Brutna-länkar-sökare",
     "deadLinksHint": "Skannar ankarlänkar i innehåll och klassar interna, pseudo-externa (tenant root domain) och externa länkar.",
     "deadLinksScan": "Skanna nu",

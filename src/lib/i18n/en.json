@@ -754,6 +754,7 @@
     "dateFilter": "Date filter",
     "paymentsReload": "Reload",
     "noPayments": "No payments found.",
+    "statsSubtitle": "Traffic, demand, and response signals from storefront and infrastructure.",
     "deadLinksTitle": "Dead-link finder",
     "deadLinksHint": "Scans content anchor tags and classifies internal, pseudo-external (tenant root domain) and external links.",
     "deadLinksScan": "Scan now",

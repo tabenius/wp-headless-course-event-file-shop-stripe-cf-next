@@ -10,6 +10,7 @@ import AdminStatsTab from "./AdminStatsTab";
 import GraphqlAvailabilityPanel from "./GraphqlAvailabilityPanel";
 import PagePerformancePanel from "./PagePerformancePanel";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 function normalizeSection(value) {
   const safe = String(value || "").trim().toLowerCase();
@@ -180,9 +181,12 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
   return (
     <div className="border rounded p-5 bg-white space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold">
-          {t("admin.infoWpRuntimeTitle", "WordPress runtime posture")}
-        </h2>
+        <div className="inline-flex items-center gap-1">
+          <h2 className="text-xl font-semibold">
+            {t("admin.infoWpRuntimeTitle", "WordPress runtime posture")}
+          </h2>
+          <AdminFieldHelpLink slug="performance-explained" />
+        </div>
         <button
           type="button"
           onClick={runHealthCheck}
@@ -385,9 +389,12 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
     <div className="space-y-6">
       {/* ── Session storage backend ── */}
       <div className="border rounded p-5 bg-white space-y-3">
-        <h3 className="text-base font-semibold text-gray-900">
-          {t("admin.storageBackend")}
-        </h3>
+        <div className="inline-flex items-center gap-1">
+          <h3 className="text-base font-semibold text-gray-900">
+            {t("admin.storageBackend")}
+          </h3>
+          <AdminFieldHelpLink slug="technical-manual" />
+        </div>
         <p className="text-sm text-gray-500">
           {t("admin.storageBackendHelp")}{" "}
           <code className="bg-gray-100 px-1 rounded">COURSE_ACCESS_BACKEND</code>.
@@ -417,9 +424,12 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
 
       {/* ── Upload destination ── */}
       <div className="border rounded p-5 bg-white space-y-3">
-        <h3 className="text-base font-semibold text-gray-900">
-          {t("admin.uploadDestinationTitle")}
-        </h3>
+        <div className="inline-flex items-center gap-1">
+          <h3 className="text-base font-semibold text-gray-900">
+            {t("admin.uploadDestinationTitle")}
+          </h3>
+          <AdminFieldHelpLink slug="quick-start" />
+        </div>
         <p className="text-xs text-gray-500">{t("admin.uploadDestinationHint")}</p>
         <div className="flex flex-wrap gap-2">
           {uploadTargets.map((opt) => (
@@ -445,9 +455,12 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
 
       {/* ── Environment variables ── */}
       <div className="border rounded p-5 bg-white space-y-3">
-        <h3 className="text-base font-semibold text-gray-900">
-          {t("admin.envVarsTitle", "Environment variables")}
-        </h3>
+        <div className="inline-flex items-center gap-1">
+          <h3 className="text-base font-semibold text-gray-900">
+            {t("admin.envVarsTitle", "Environment variables")}
+          </h3>
+          <AdminFieldHelpLink slug="technical-manual" />
+        </div>
         <p className="text-xs text-gray-500">
           {t("admin.envVarsHint", "All env vars the app reads, grouped by service. Secret values are masked.")}
         </p>
@@ -593,9 +606,12 @@ function DeadLinksPanel() {
     <div className="border rounded p-4 space-y-3 bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">
-            {t("admin.deadLinksTitle", "Dead-link finder")}
-          </h3>
+          <div className="inline-flex items-center gap-1">
+            <h3 className="text-lg font-semibold text-gray-800">
+              {t("admin.deadLinksTitle", "Dead-link finder")}
+            </h3>
+            <AdminFieldHelpLink slug="technical-manual" />
+          </div>
           <p className="text-xs text-gray-500">
             {t(
               "admin.deadLinksHint",

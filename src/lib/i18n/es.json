@@ -754,6 +754,7 @@
     "dateFilter": "Filtro de fecha",
     "paymentsReload": "Recargar",
     "noPayments": "No se encontraron pagos",
+    "statsSubtitle": "Señales de tráfico, demanda y respuesta desde storefront e infraestructura.",
     "deadLinksTitle": "Buscador de enlaces rotos",
     "deadLinksHint": "Escanea enlaces `<a href>` del contenido y los clasifica como internos, pseudo-externos (dominio raíz del tenant) o externos.",
     "deadLinksScan": "Escanear ahora",

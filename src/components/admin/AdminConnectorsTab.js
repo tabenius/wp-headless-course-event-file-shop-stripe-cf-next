@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { t } from "@/lib/i18n";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 export default function AdminConnectorsTab({
   healthChecks,
@@ -28,15 +30,18 @@ export default function AdminConnectorsTab({
     <div className="border rounded p-4 space-y-3 min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-semibold">{t("admin.healthCheck")}</h2>
-        <button
-          type="button"
-          onClick={runHealthCheck}
-          className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50"
-          disabled={healthLoading}
-          title={t("admin.healthCheckDesc")}
-        >
-          {healthLoading ? t("admin.running") : t("admin.runCheck")}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <AdminDocsContextLinks tab="info" compact />
+          <button
+            type="button"
+            onClick={runHealthCheck}
+            className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50"
+            disabled={healthLoading}
+            title={t("admin.healthCheckDesc")}
+          >
+            {healthLoading ? t("admin.running") : t("admin.runCheck")}
+          </button>
+        </div>
       </div>
       {healthChecks ? (
         <ul className="space-y-2 text-sm">
@@ -60,7 +65,10 @@ export default function AdminConnectorsTab({
 
       {webhookUrl && (
         <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
-          <h3 className="font-semibold">{t("admin.stripeWebhook")}</h3>
+          <div className="inline-flex items-center gap-1">
+            <h3 className="font-semibold">{t("admin.stripeWebhook")}</h3>
+            <AdminFieldHelpLink slug="technical-manual" />
+          </div>
           <p className="text-gray-600">
             {t("admin.stripeWebhookConfigureIn")}{" "}
             <a
@@ -101,7 +109,10 @@ export default function AdminConnectorsTab({
 
       {ragbazDownloadUrl && (
         <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
-          <h3 className="font-semibold">{t("admin.ragbazPlugin")}</h3>
+          <div className="inline-flex items-center gap-1">
+            <h3 className="font-semibold">{t("admin.ragbazPlugin")}</h3>
+            <AdminFieldHelpLink slug="quick-start" />
+          </div>
           <p className="text-gray-600">{t("admin.ragbazPluginDesc")}</p>
           <div className="flex items-center gap-2">
             <a

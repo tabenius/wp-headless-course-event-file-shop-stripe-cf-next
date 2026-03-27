@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { TYPOGRAPHY_THEMES } from "@/lib/typographyThemes";
 import AdminFontBrowserModal from "./AdminFontBrowserModal";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 // ── CTA button style constants (mirrored from AdminDashboard.js) ──────────────
 
@@ -179,9 +180,12 @@ export default function AdminStyleTab({
         <div className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {t("admin.styleSiteTitle")}
-              </h2>
+              <div className="inline-flex items-center gap-1">
+                <h2 className="text-2xl font-semibold text-gray-900">
+                  {t("admin.styleSiteTitle")}
+                </h2>
+                <AdminFieldHelpLink slug="product-value" />
+              </div>
               <p className="text-sm text-gray-500 mt-1">
                 {t("admin.styleSiteSummary")}
               </p>
@@ -225,11 +229,17 @@ export default function AdminStyleTab({
           </div>
           {/* ── Typography ───────────────────────────────────────────── */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Typography</h3>
+            <div className="inline-flex items-center gap-1">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Typography</h3>
+              <AdminFieldHelpLink slug="technical-manual" />
+            </div>
 
             {/* Built-in themes strip */}
             <div>
-              <div className="text-xs text-gray-500 mb-2">Themes</div>
+              <div className="inline-flex items-center gap-1 text-xs text-gray-500 mb-2">
+                <span>Themes</span>
+                <AdminFieldHelpLink slug="product-value" />
+              </div>
               <div className="flex flex-wrap gap-2">
                 {TYPOGRAPHY_THEMES.map((theme) => (
                   <button
@@ -563,9 +573,12 @@ export default function AdminStyleTab({
           </div>
           <div className="rounded border bg-gray-50 p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-gray-800">
-                {t("admin.styleRevisionHistory", "Style revision history")}
-              </h3>
+              <div className="inline-flex items-center gap-1">
+                <h3 className="text-sm font-semibold text-gray-800">
+                  {t("admin.styleRevisionHistory", "Style revision history")}
+                </h3>
+                <AdminFieldHelpLink slug="technical-manual" />
+              </div>
               <span className="text-xs text-gray-500">
                 {t("admin.styleRevisionCount", "{count} saved revisions", {
                   count: siteStyleHistory.length,
@@ -643,7 +656,10 @@ export default function AdminStyleTab({
 
         {/* ── Button Style ─────────────────────────────────────────────── */}
         <div className="space-y-4">
-          <div className="text-sm font-semibold text-gray-800">Button Style</div>
+          <div className="inline-flex items-center gap-1">
+            <div className="text-sm font-semibold text-gray-800">Button Style</div>
+            <AdminFieldHelpLink slug="technical-manual" />
+          </div>
 
           {/* Preset strip */}
           <div className="flex flex-wrap gap-2 items-center">

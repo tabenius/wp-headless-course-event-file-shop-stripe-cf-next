@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { t } from "@/lib/i18n";
 import StatsChart from "./StatsChart";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 export default function AdminStatsTab({
   wcProducts,
@@ -21,6 +23,21 @@ export default function AdminStatsTab({
 
   return (
     <div className="space-y-6 min-w-0">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {t("admin.navStats", "Stats")}
+          </h2>
+          <p className="text-sm text-gray-500">
+            {t(
+              "admin.statsSubtitle",
+              "Traffic, demand, and response signals from storefront and infrastructure.",
+            )}
+          </p>
+        </div>
+        <AdminDocsContextLinks tab="info" compact />
+      </div>
+
       {/* Quick stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="border rounded p-4 text-center">
@@ -56,7 +73,10 @@ export default function AdminStatsTab({
       {analytics ? (
         <div className="border rounded p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Traffic (last 24h)</h2>
+            <div className="inline-flex items-center gap-1">
+              <h2 className="text-lg font-semibold">Traffic (last 24h)</h2>
+              <AdminFieldHelpLink slug="performance-explained" />
+            </div>
             <span
               className={`text-xs px-2 py-0.5 rounded ${
                 analyticsMode === "zone"
