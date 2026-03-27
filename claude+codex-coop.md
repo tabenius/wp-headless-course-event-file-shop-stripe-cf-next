@@ -2,6 +2,20 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — Mermaid contrast fix + Ctrl+Alt hotkey restore on ragbaz.xyz docs
+
+**Delivered:**
+- Fixed Mermaid readability issue in docs technical manual for darker themes (notably water/fire/aether):
+  - added explicit high-contrast Mermaid theme variables at render init based on active CSS theme tokens,
+  - added SVG-level Mermaid CSS overrides for text, arrows, arrowheads, node fills, and edge-label backgrounds.
+- Fixed `Ctrl+Alt+T` (theme rotate) and `Ctrl+Alt+F` (font rotate) not firing on some keyboard layouts:
+  - updated both shared shell and home-page key handlers to allow the hotkeys even when `AltGraph` is reported, while still ignoring unrelated AltGraph combos.
+- Verified live technical-manual HTML includes both the new Mermaid contrast selectors and updated hotkey logic.
+
+**Publish:**
+- `ragbaz.xyz` commit: `8dd90dd` (`docs ui: fix mermaid contrast and restore ctrl+alt theme/font hotkeys`)
+- Deployed worker version: `df8669b4-796a-453e-b893-4187a6d6ae05`
+
 ### Codex — changelog expanded + translated (SV/ES) on ragbaz.xyz docs
 
 **Delivered:**
