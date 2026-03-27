@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "@/lib/adminFetch";
 
 const API = "/api/admin/page-performance";
+const GRAPHQL_AVAILABILITY_API = "/api/admin/graphql-availability";
 
 function getVals(log, key) {
   return log.map((d) => d[key]).filter((v) => v != null && !isNaN(v));
@@ -65,10 +66,65 @@ function formatMetricValue(value, metric) {
   return metric.unit ? `${rounded} ${metric.unit}` : String(rounded);
 }
 
+function formatRelayReason(reason, status) {
+  const safe = String(reason || "").trim().toLowerCase();
+  if (safe === "home_connection_missing") {
+    return "Relay skipped: ragbaz home connection missing (account/passkey not available).";
+  }
+  if (safe === "home_events_failed") {
+    if (Number(status) === 401) {
+      return "Relay rejected by ragbaz.xyz: unauthorized (invalid or outdated passkey).";
+    }
+    return "Relay failed while sending event to ragbaz.xyz.";
+  }
+  if (safe === "relay_exception") {
+    return "Relay exception while posting vitals to ragbaz.xyz.";
+  }
+  if (safe) return `Relay status: ${safe}`;
+  return "Relay status unavailable.";
+}
+
+function collectCurrentNavigationVitals() {
+  const nav =
+    typeof performance !== "undefined"
+      ? performance.getEntriesByType("navigation")[0]
+      : null;
+  const pathname =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search || ""}`
+      : "/admin";
+  const lcpEntries =
+    typeof performance !== "undefined"
+      ? performance.getEntriesByType("largest-contentful-paint")
+      : [];
+  const fcpEntries =
+    typeof performance !== "undefined" ? performance.getEntriesByType("paint") : [];
+  const latestLcp = Array.isArray(lcpEntries) && lcpEntries.length
+    ? Number(lcpEntries[lcpEntries.length - 1]?.startTime)
+    : undefined;
+  const firstFcp =
+    Array.isArray(fcpEntries) && fcpEntries.length
+      ? fcpEntries.find((entry) => entry?.name === "first-contentful-paint")
+      : null;
+  return {
+    url: pathname || "/admin",
+    ttfb: nav ? Math.max(0, Number(nav.responseStart || 0) - Number(nav.requestStart || 0)) : 0,
+    domComplete: nav ? Number(nav.domComplete || 0) : 0,
+    navigationType: nav?.type || "navigate",
+    ...(Number.isFinite(latestLcp) ? { lcp: latestLcp } : {}),
+    ...(firstFcp && Number.isFinite(Number(firstFcp.startTime))
+      ? { fcp: Number(firstFcp.startTime) }
+      : {}),
+  };
+}
+
 export default function PagePerformancePanel() {
   const [loading, setLoading] = useState(true);
   const [kvConfigured, setKvConfigured] = useState(false);
   const [log, setLog] = useState([]);
+  const [relayStatus, setRelayStatus] = useState(null);
+  const [recordingNow, setRecordingNow] = useState(false);
+  const [recordNowMessage, setRecordNowMessage] = useState("");
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
 
@@ -80,6 +136,7 @@ export default function PagePerformancePanel() {
       const data = await res.json();
       setKvConfigured(data.kvConfigured ?? false);
       setLog(Array.isArray(data.log) ? data.log : []);
+      setRelayStatus(data.relayStatus && typeof data.relayStatus === "object" ? data.relayStatus : null);
     } catch (e) {
       setError(`Failed to load: ${e.message}`);
     } finally {
@@ -102,6 +159,34 @@ export default function PagePerformancePanel() {
       setError(`Failed to clear: ${e.message}`);
     } finally {
       setClearing(false);
+    }
+  }
+
+  async function handleRecordNow() {
+    setRecordingNow(true);
+    setError("");
+    setRecordNowMessage("");
+    try {
+      await adminFetch(GRAPHQL_AVAILABILITY_API, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enableForSeconds: 3600 }),
+      });
+      const payload = collectCurrentNavigationVitals();
+      await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      });
+      setRecordNowMessage(
+        "Vitals sample queued. Logging stays enabled for 1 hour, then expires automatically.",
+      );
+      await load();
+    } catch (e) {
+      setError(`Failed to record now: ${e.message}`);
+    } finally {
+      setRecordingNow(false);
     }
   }
 
@@ -142,6 +227,15 @@ export default function PagePerformancePanel() {
           >
             Refresh
           </button>
+          <button
+            type="button"
+            onClick={handleRecordNow}
+            disabled={recordingNow || !kvConfigured}
+            className="px-3 py-1.5 text-sm border border-amber-200 text-amber-700 rounded hover:bg-amber-50 transition-colors disabled:opacity-40"
+            title="Enable logging for 1 hour and submit one vitals sample immediately"
+          >
+            {recordingNow ? "Recording…" : "Record vitals now (1h)"}
+          </button>
           {log.length > 0 && (
             <button
               type="button"
@@ -160,6 +254,40 @@ export default function PagePerformancePanel() {
           {error}
         </p>
       )}
+
+      {recordNowMessage && (
+        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+          {recordNowMessage}
+        </p>
+      )}
+
+      <div
+        className={`rounded border px-3 py-2 text-sm ${
+          relayStatus?.ok
+            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+            : relayStatus
+              ? "border-amber-200 bg-amber-50 text-amber-800"
+              : "border-gray-200 bg-gray-50 text-gray-500"
+        }`}
+      >
+        <div className="font-semibold">Ragbaz relay status</div>
+        {!relayStatus && <div>No relay attempts recorded yet.</div>}
+        {relayStatus && (
+          <div className="space-y-0.5">
+            <div>
+              {relayStatus.ok
+                ? "Last relay to ragbaz.xyz succeeded."
+                : formatRelayReason(relayStatus.reason, relayStatus.status)}
+            </div>
+            <div className="text-xs">
+              {relayStatus.ts
+                ? `Last attempt: ${new Date(relayStatus.ts).toLocaleString()}`
+                : "Last attempt time unavailable."}
+              {relayStatus.status ? ` · HTTP ${relayStatus.status}` : ""}
+            </div>
+          </div>
+        )}
+      </div>
 
       {log.length === 0 && !error && (
         <p className="text-sm text-gray-400">

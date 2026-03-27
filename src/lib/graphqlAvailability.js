@@ -13,13 +13,18 @@ import {
   isCloudflareKvConfigured,
   readCloudflareKvJson,
   writeCloudflareKvJson,
+  deleteCloudflareKv,
 } from "./cloudflareKv.js";
 
 const SETTINGS_KEY = "graphql-availability-settings";
 const LOG_KEY = "graphql-availability-log";
+const TEMP_ENABLE_KEY = "graphql-availability-temp-enable";
+const RELAY_STATUS_KEY = "ragbaz-home-relay-status";
 const MAX_DATAPOINTS = 500;
 const LOG_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 const SETTINGS_CACHE_TTL = 60_000; // re-check every 60 s
+const TEMP_CACHE_TTL = 15_000; // re-check every 15 s
+const MAX_TEMP_ENABLE_SECONDS = 24 * 60 * 60; // 24 h safety cap
 const MAX_QUERY_CHARS = 2400;
 const MAX_VARIABLES_CHARS = 1600;
 const MAX_RESPONSE_CHARS = 1600;
@@ -28,6 +33,33 @@ const MAX_ERRORS = 8;
 /** @type {{ enabled: boolean } | null} */
 let _settingsCache = null;
 let _settingsCacheTs = 0;
+/** @type {{ enabledUntil: number } | null} */
+let _tempCache = null;
+let _tempCacheTs = 0;
+
+function normalizeEnabledUntil(raw) {
+  const value =
+    raw && typeof raw === "object" ? Number(raw.enabledUntil) : Number.NaN;
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+}
+
+async function getTemporaryEnabledUntilMs() {
+  if (!isCloudflareKvConfigured()) return null;
+  const now = Date.now();
+  if (_tempCacheTs > 0 && now - _tempCacheTs < TEMP_CACHE_TTL) {
+    const until = normalizeEnabledUntil(_tempCache);
+    return until && until > now ? until : null;
+  }
+  try {
+    _tempCache = await readCloudflareKvJson(TEMP_ENABLE_KEY);
+    _tempCacheTs = now;
+    const until = normalizeEnabledUntil(_tempCache);
+    if (!until || until <= now) return null;
+    return until;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Returns true when KV is configured AND the admin has opted in.
@@ -37,13 +69,15 @@ export async function isAvailabilityLoggingEnabled() {
   if (!isCloudflareKvConfigured()) return false;
   const now = Date.now();
   if (_settingsCache !== null && now - _settingsCacheTs < SETTINGS_CACHE_TTL) {
-    return _settingsCache.enabled === true;
+    if (_settingsCache.enabled === true) return true;
+    return (await getTemporaryEnabledUntilMs()) !== null;
   }
   try {
     const settings = await readCloudflareKvJson(SETTINGS_KEY);
     _settingsCache = settings ?? { enabled: false };
     _settingsCacheTs = now;
-    return _settingsCache.enabled === true;
+    if (_settingsCache.enabled === true) return true;
+    return (await getTemporaryEnabledUntilMs()) !== null;
   } catch {
     return false;
   }
@@ -63,6 +97,38 @@ export async function getAvailabilitySettings() {
     return (await readCloudflareKvJson(SETTINGS_KEY)) ?? { enabled: false };
   } catch {
     return { enabled: false };
+  }
+}
+
+export async function getAvailabilityTemporaryEnabledUntil() {
+  const untilMs = await getTemporaryEnabledUntilMs();
+  return untilMs ? new Date(untilMs).toISOString() : null;
+}
+
+export async function enableAvailabilityLoggingTemporarily(seconds = 3600) {
+  if (!isCloudflareKvConfigured()) return null;
+  const safeSeconds = Math.max(
+    60,
+    Math.min(MAX_TEMP_ENABLE_SECONDS, Math.round(Number(seconds) || 3600)),
+  );
+  const enabledUntil = Date.now() + safeSeconds * 1000;
+  const payload = { enabledUntil };
+  _tempCache = payload;
+  _tempCacheTs = Date.now();
+  await writeCloudflareKvJson(TEMP_ENABLE_KEY, payload, {
+    expirationTtl: safeSeconds + 300,
+  });
+  return new Date(enabledUntil).toISOString();
+}
+
+export async function clearAvailabilityTemporaryWindow() {
+  _tempCache = null;
+  _tempCacheTs = 0;
+  if (!isCloudflareKvConfigured()) return;
+  try {
+    await deleteCloudflareKv(TEMP_ENABLE_KEY);
+  } catch {
+    // best effort cleanup
   }
 }
 
@@ -165,6 +231,42 @@ export async function clearAvailabilityLog() {
     });
   } catch (e) {
     console.error("[graphqlAvailability] Failed to clear log:", e.message);
+  }
+}
+
+export async function setRagbazRelayStatus(status) {
+  if (!isCloudflareKvConfigured()) return;
+  const safe = status && typeof status === "object" ? status : {};
+  const payload = {
+    ts: Date.now(),
+    ok: Boolean(safe.ok),
+    skipped: Boolean(safe.skipped),
+    reason:
+      typeof safe.reason === "string" ? safe.reason.slice(0, 120) : "",
+    status:
+      safe.status != null ? Number.parseInt(String(safe.status), 10) || 0 : 0,
+    endpoint:
+      typeof safe.endpoint === "string" ? safe.endpoint.slice(0, 600) : "",
+    message:
+      typeof safe.message === "string" ? safe.message.slice(0, 600) : "",
+    giftKey:
+      typeof safe.giftKey === "string" ? safe.giftKey.slice(0, 120) : "",
+  };
+  try {
+    await writeCloudflareKvJson(RELAY_STATUS_KEY, payload, {
+      expirationTtl: LOG_TTL_SECONDS,
+    });
+  } catch (e) {
+    console.error("[graphqlAvailability] Failed to write relay status:", e.message);
+  }
+}
+
+export async function getRagbazRelayStatus() {
+  if (!isCloudflareKvConfigured()) return null;
+  try {
+    return (await readCloudflareKvJson(RELAY_STATUS_KEY)) ?? null;
+  } catch {
+    return null;
   }
 }
 

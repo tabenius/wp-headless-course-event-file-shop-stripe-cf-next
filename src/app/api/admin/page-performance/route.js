@@ -3,6 +3,8 @@ import {
   recordPagePerformance,
   getPagePerformanceLog,
   clearPagePerformanceLog,
+  setRagbazRelayStatus,
+  getRagbazRelayStatus,
 } from "@/lib/graphqlAvailability";
 import { isCloudflareKvConfigured } from "@/lib/cloudflareKv";
 import { relayStorefrontVitalsToRagbazHome } from "@/lib/ragbazHomeRelay";
@@ -37,7 +39,16 @@ export async function POST(request) {
       typeof body.navigationType === "string" ? body.navigationType.slice(0, 32) : undefined,
   }).catch(() => {});
 
-  relayStorefrontVitalsToRagbazHome(body, request).catch(() => {});
+  relayStorefrontVitalsToRagbazHome(body, request)
+    .then((relayStatus) => setRagbazRelayStatus(relayStatus))
+    .catch((error) =>
+      setRagbazRelayStatus({
+        ok: false,
+        skipped: false,
+        reason: "relay_exception",
+        message: error instanceof Error ? error.message : String(error || "unknown"),
+      }),
+    );
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 202,
@@ -55,9 +66,12 @@ export async function GET(request) {
     });
   }
 
-  const log = await getPagePerformanceLog();
+  const [log, relayStatus] = await Promise.all([
+    getPagePerformanceLog(),
+    getRagbazRelayStatus(),
+  ]);
   return new Response(
-    JSON.stringify({ kvConfigured: isCloudflareKvConfigured(), log }),
+    JSON.stringify({ kvConfigured: isCloudflareKvConfigured(), log, relayStatus }),
     {
       status: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },

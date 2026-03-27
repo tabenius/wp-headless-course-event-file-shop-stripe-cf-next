@@ -2,6 +2,9 @@ import { auth } from "@/auth";
 import {
   getAvailabilitySettings,
   setAvailabilityLoggingEnabled,
+  getAvailabilityTemporaryEnabledUntil,
+  enableAvailabilityLoggingTemporarily,
+  clearAvailabilityTemporaryWindow,
   getAvailabilityLog,
   clearAvailabilityLog,
 } from "@/lib/graphqlAvailability";
@@ -23,8 +26,9 @@ export async function GET(request) {
   const deny = await requireAdmin(request);
   if (deny) return deny;
 
-  const [settings, log] = await Promise.all([
+  const [settings, temporaryEnabledUntil, log] = await Promise.all([
     getAvailabilitySettings(),
+    getAvailabilityTemporaryEnabledUntil(),
     getAvailabilityLog(),
   ]);
 
@@ -32,6 +36,8 @@ export async function GET(request) {
     JSON.stringify({
       kvConfigured: isCloudflareKvConfigured(),
       settings,
+      temporaryEnabledUntil,
+      effectiveEnabled: Boolean(settings?.enabled || temporaryEnabledUntil),
       log,
     }),
     {
@@ -58,10 +64,40 @@ export async function POST(request) {
   }
 
   await setAvailabilityLoggingEnabled(body.enabled);
+  if (body.enabled === false) {
+    await clearAvailabilityTemporaryWindow();
+  }
   return new Response(JSON.stringify({ ok: true, enabled: body.enabled }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/** PATCH /api/admin/graphql-availability — enable temporary logging window */
+export async function PATCH(request) {
+  const deny = await requireAdmin(request);
+  if (deny) return deny;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const seconds = Number.parseInt(String(body?.enableForSeconds ?? 3600), 10);
+  const until = await enableAvailabilityLoggingTemporarily(seconds);
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      temporaryEnabledUntil: until,
+      effectiveEnabled: true,
+    }),
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 }
 
 /** DELETE /api/admin/graphql-availability — clear log */

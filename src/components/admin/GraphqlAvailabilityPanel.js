@@ -245,6 +245,8 @@ export default function GraphqlAvailabilityPanel() {
   const [loading, setLoading] = useState(true);
   const [kvConfigured, setKvConfigured] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const [temporaryEnabledUntil, setTemporaryEnabledUntil] = useState(null);
+  const [effectiveEnabled, setEffectiveEnabled] = useState(false);
   const [log, setLog] = useState([]);
   const [toggling, setToggling] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -259,6 +261,13 @@ export default function GraphqlAvailabilityPanel() {
       const data = await res.json();
       setKvConfigured(data.kvConfigured ?? false);
       setEnabled(data.settings?.enabled ?? false);
+      setTemporaryEnabledUntil(
+        typeof data.temporaryEnabledUntil === "string" &&
+          data.temporaryEnabledUntil.trim() !== ""
+          ? data.temporaryEnabledUntil
+          : null,
+      );
+      setEffectiveEnabled(Boolean(data.effectiveEnabled));
       setLog(Array.isArray(data.log) ? data.log : []);
     } catch (e) {
       setError(`Failed to load: ${e.message}`);
@@ -281,6 +290,10 @@ export default function GraphqlAvailabilityPanel() {
         body: JSON.stringify({ enabled: !enabled }),
       });
       setEnabled((v) => !v);
+      if (enabled) {
+        setTemporaryEnabledUntil(null);
+      }
+      setEffectiveEnabled(() => (enabled ? false : true));
     } catch (e) {
       setError(`Failed to update setting: ${e.message}`);
     } finally {
@@ -332,7 +345,7 @@ export default function GraphqlAvailabilityPanel() {
 
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <span className="text-sm text-gray-600">
-            {enabled ? "Enabled" : "Disabled"}
+            {effectiveEnabled ? "Enabled" : "Disabled"}
           </span>
           <button
             type="button"
@@ -352,6 +365,13 @@ export default function GraphqlAvailabilityPanel() {
           </button>
         </label>
       </div>
+
+      {temporaryEnabledUntil && (
+        <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Temporary logging window active until{" "}
+          <strong>{new Date(temporaryEnabledUntil).toLocaleString()}</strong>.
+        </p>
+      )}
 
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
