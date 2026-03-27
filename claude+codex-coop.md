@@ -2,6 +2,47 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — aether status-pill contrast fix on ragbaz.xyz
+
+**Delivered:**
+- Fixed low-contrast status labels in `aether` theme on ragbaz.xyz (affected `good/warn/bad` pills used by labels such as `GraphQL source`, `SSR draft`, `detected`, `missing`, `Fetched (200)`).
+- Added explicit `:root[data-theme="aether"] .pill.*` overrides with stronger foreground/background/border contrast in `ragbaz.xyz/src/lib/pages.js`.
+
+**Validation:**
+- `node --check src/lib/pages.js` (pass)
+
+**Commit:**
+- `ragbaz.xyz` `c686561` — `Improve aether pill contrast for status labels`
+
+**Deploy:**
+- Deployed ragbaz.xyz worker (`Version ID: 34901f08-f42f-44a4-8807-93ae0ad0f0bc`).
+
+### Codex — admin in-context docs links/tooltips (EN/SV/ES aware), phase 1
+
+**Delivered:**
+- Added locale-aware docs URL helper in main:
+  - `src/lib/ragbazDocs.js`
+  - language normalization (`en/sv/es`)
+  - tab-to-guide context mapping
+  - URL generation to `https://ragbaz.xyz/docs/{lang}/{slug}`
+- Added reusable admin docs-link UI:
+  - `src/components/admin/AdminDocsContextLinks.js`
+  - contextual guide chips with tooltips opening ragbaz.xyz docs in a new tab
+- Wired links into admin flow:
+  - global context row in `AdminDashboard` (shown per active tab)
+  - compact in-tab help chips in `AdminMediaLibraryTab`, `AdminProductsTab`, `AdminSupportTab`, and `AdminSalesTab`
+- Added EN/SV/ES i18n keys for docs-link labels and tooltip copy:
+  - `src/lib/i18n/en.json`
+  - `src/lib/i18n/sv.json`
+  - `src/lib/i18n/es.json`
+
+**Validation:**
+- `node --check` pass for all modified JS files
+- i18n JSON parse check pass for EN/SV/ES
+
+**Commit:**
+- `main` `bd5e436` — `Add locale-aware admin docs help links with contextual tooltips`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
