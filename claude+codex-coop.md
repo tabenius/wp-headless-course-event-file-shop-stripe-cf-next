@@ -43,6 +43,24 @@
 **Commit:**
 - `main` `bd5e436` — `Add locale-aware admin docs help links with contextual tooltips`
 
+### Codex — admin in-context docs links/tooltips, phase 2 (broader surface + no legacy docs focus)
+
+**Delivered:**
+- Extended docs-link integration to additional high-traffic admin surfaces:
+  - `AdminStyleTab`
+  - `AdminWelcomeTab` (dashboard mode)
+  - `ChatPanel`
+  - `AdminInfoHubTab`
+- Updated Info Hub docs panel to prioritize direct ragbaz.xyz docs cards (localized), removing emphasis on old `/admin/docs` cards per latest direction (no backward-compatibility requirement).
+- Added missing localized i18n labels for external docs cards in EN/SV/ES.
+
+**Validation:**
+- `node --check` pass for all modified JS files
+- i18n JSON parse check pass for EN/SV/ES
+
+**Commit:**
+- `main` `01f5297` — `Expand admin docs links across info, style, welcome, and chat`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
