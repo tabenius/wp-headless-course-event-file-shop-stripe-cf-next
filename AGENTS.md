@@ -127,24 +127,24 @@ But here are natural areas of focus:
 4. Before touching a file the other agent recently committed, pull first.
 5. If you discover a bug or leave something half-done, note it at the top of the coop file with `TODO:` so the other agent doesn't step on it.
 
-### Shared-doc lock protocol (AGENTS.md and claude+codex-coop.md)
+### Shared-doc lock protocol (AGENTS.md, claude+codex-coop.md, docs/CHANGELOG.md)
 
-Both agents edit the same two files. To prevent merge conflicts, use `docs.lock.pid` as an advisory lock before editing either file.
+Both agents edit these shared docs. To prevent merge conflicts, use `docs.lock.pid` as an advisory lock before editing any of them.
 
-**Before editing `AGENTS.md` or `claude+codex-coop.md`:**
+**Before editing `AGENTS.md`, `claude+codex-coop.md`, or `docs/CHANGELOG.md`:**
 
 ```bash
 # 1. Check — is the lock free?
 node scripts/docs-lock.mjs check
 
 # 2. Acquire it
-node scripts/docs-lock.mjs acquire codex "AGENTS.md, claude+codex-coop.md"
+node scripts/docs-lock.mjs acquire codex "AGENTS.md, claude+codex-coop.md, docs/CHANGELOG.md"
 
 # 3. Pull to get the latest version
 git pull
 
 # 4. Make your edits, then commit and push immediately
-git add AGENTS.md claude+codex-coop.md
+git add AGENTS.md claude+codex-coop.md docs/CHANGELOG.md
 git commit -m "...
 git push
 
@@ -181,9 +181,10 @@ Rules:
 
 1. Update `docs/CHANGELOG.md` every week when major user/admin-facing features or UX changes land.
 2. Keep changelog entries high-level and experience-focused (avoid code-level implementation detail).
-3. Whenever `docs/CHANGELOG.md` is updated in `main`, publish the update on `ragbaz.xyz` docs in the same delivery slice.
-4. Treat publish as mandatory completion criteria for changelog updates: update content, commit/push, deploy `ragbaz.xyz`, and verify live docs.
-5. Log each changelog update and publish action in `claude+codex-coop.md`.
+3. Use the shared-doc lock + checkout helper flow for changelog updates (acquire lock, `git pull`, edit, commit/push, release).
+4. Whenever `docs/CHANGELOG.md` is updated in `main`, publish the update on `ragbaz.xyz` docs in the same delivery slice.
+5. Treat publish as mandatory completion criteria for changelog updates: update content, commit/push, deploy `ragbaz.xyz`, and verify live docs.
+6. Log each changelog update and publish action in `claude+codex-coop.md`.
 
 ---
 

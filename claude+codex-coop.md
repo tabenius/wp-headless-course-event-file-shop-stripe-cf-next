@@ -2,6 +2,13 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — protocol update: changelog uses shared docs lock + helper flow
+
+**Delivered:**
+- Updated `AGENTS.md` shared-doc protocol scope to include `docs/CHANGELOG.md`.
+- Updated lock example commands to include changelog in acquire/add steps.
+- Updated changelog protocol rules to explicitly require the same lock + pull + commit/push + release helper flow for changelog edits.
+
 ### Codex — AGENTS protocol update for weekly changelog + ragbaz.xyz publish
 
 **Delivered:**
