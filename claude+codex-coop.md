@@ -2,6 +2,33 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
+
+**Delivered:**
+- Added multilingual documentation routes on ragbaz.xyz:
+  - `/docs` (default EN index)
+  - `/docs/{lang}` where `lang in {en, sv, es}`
+  - `/docs/{lang}/{slug}`
+  - short EN fallback: `/docs/{slug}`
+- Implemented localized docs index + article rendering in `ragbaz.xyz/src/lib/pages.js`.
+- Added initial article set required by Option C docs restructure:
+  - `quick-start`
+  - `product-value` (non-technical features/use-cases/value)
+  - `performance-explained` (non-technical speed/usability impact and actions)
+  - `technical-manual` (developer + AI-agent extension guidance)
+- Added cross-links and discoverability:
+  - Default top nav now includes `Docs`.
+  - Home page top nav and head-menu include docs entry points.
+  - Articulate page CTA now links to `/docs`.
+- Added language switchers and mermaid code-block sections in docs pages for flow/hierarchy communication.
+
+**Validation:**
+- `node --check src/lib/pages.js` (pass)
+- `node --check src/index.js` (pass)
+
+**Commit:**
+- `ragbaz.xyz` `4e2e264` — `Add multilingual /docs scaffold with localized guide routes`
+
 ### Codex — ragbaz.xyz global font-theme system (Option C, phase 1)
 
 **Delivered:**
