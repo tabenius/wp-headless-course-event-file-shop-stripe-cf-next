@@ -2782,3 +2782,25 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - `npm run lint` passes (warnings only).
   - `npm test` passes (`25/25`).
   - Next build startup warnings fixed earlier remain resolved (middleware->proxy, invalid `next.config.mjs` keys).
+
+### Codex — storefront/admin performance iteration (requested 2/3/4/5)
+
+- Landed in `main`:
+  - Implemented edge cache support for public GraphQL reads in `fetchGraphQL` (`src/lib/client.js`), with TTL/stale knobs.
+  - Switched key storefront queries to use edge caching (`/`, `/events`, `/courses`, menu/home-events/shop listing queries, and URI resolver lookups).
+  - Refactored `src/app/[...uri]/page.js` to a two-step fetch path:
+    1) resolve node type via lightweight `nodeByUri` query
+    2) fetch type-specific details (Page/Post/Event/LpCourse/product)
+  - Kept REST/course fallbacks and hardened URI-match checks for fallback correctness.
+  - Reduced admin entry JS pressure by lazy-loading `ChatPanel` and wrapping chat tab content in `Suspense`.
+  - Replaced homepage events `<img>` with `next/image` (`src/components/home/EventCalendar.js`) for better storefront image delivery defaults.
+  - Updated docs/env for new performance knobs (`GRAPHQL_EDGE_CACHE_TTL_SECONDS`, `GRAPHQL_EDGE_CACHE_STALE_SECONDS`).
+
+- Validation:
+  - `npm test` passes (`25/25`).
+  - `npm run lint` passes (warnings only).
+  - `npm run build` completes successfully (observed compile + static generation finish in the latest local run).
+
+- Commits:
+  - `c274d15` Optimize storefront fetch path with edge cache and typed node resolution
+  - `df1eedf` Document edge GraphQL cache tuning knobs
