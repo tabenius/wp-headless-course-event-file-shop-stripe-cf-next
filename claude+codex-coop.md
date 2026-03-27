@@ -119,6 +119,28 @@
 **Commit:**
 - `main` `dab5e74` — `Remove legacy admin docs route and link manuals to ragbaz docs`
 
+### Codex — field-level docs helpers expanded across info/health/stats/style
+
+**Delivered:**
+- Added additional field-level `?` docs helpers in System/Info surfaces:
+  - `AdminInfoHubTab`: runtime posture, storage backend, upload destination, environment variables, dead-link finder
+  - `AdminConnectorsTab`: health-check header + Stripe webhook + plugin install blocks
+  - `AdminStatsTab`: top-level stats section + traffic panel
+  - `AdminStyleTab`: site-style heading, typography/themes controls, revision history, button-style controls
+- Added localized stats helper subtitle key in EN/SV/ES:
+  - `admin.statsSubtitle`
+
+**Validation:**
+- `node --check` pass:
+  - `src/components/admin/AdminInfoHubTab.js`
+  - `src/components/admin/AdminConnectorsTab.js`
+  - `src/components/admin/AdminStatsTab.js`
+  - `src/components/admin/AdminStyleTab.js`
+- i18n JSON parse checks pass for EN/SV/ES
+
+**Commit:**
+- `main` `c58459f` — `Expand field-level docs helpers across info, health, stats, and style`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
