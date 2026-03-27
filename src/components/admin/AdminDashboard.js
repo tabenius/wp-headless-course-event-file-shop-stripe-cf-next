@@ -14,6 +14,7 @@ import { parsePriceCents } from "@/lib/parsePrice";
 import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import AdminUiFeedbackBar from "./AdminUiFeedbackBar";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import { adminFetch } from "@/lib/adminFetch";
 import {
   isAdminActionHotkey,
@@ -2327,6 +2328,9 @@ export default function AdminDashboard() {
           readOnly={uiFeedbackReadOnly}
           onSet={saveUiFeedback}
         />
+      )}
+      {!(activeTab === "welcome" && welcomeStoryVisible) && (
+        <AdminDocsContextLinks tab={activeTab} className="mb-3" />
       )}
       {activeTab === "welcome" && (
         <Suspense

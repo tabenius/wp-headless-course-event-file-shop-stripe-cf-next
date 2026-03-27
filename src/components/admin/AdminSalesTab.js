@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { t } from "@/lib/i18n";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
@@ -187,26 +188,29 @@ export default function AdminSalesTab({
             {t("admin.salesSubtitle", "Stripe charges, revenue and receipts")}
           </p>
         </div>
-        <a
-          href="https://dashboard.stripe.com/payments"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-        >
-          {t("admin.stripePayments", "View in Stripe")}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 16 16"
-            fill="currentColor"
-            className="w-3.5 h-3.5"
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <AdminDocsContextLinks tab="sales" compact />
+          <a
+            href="https://dashboard.stripe.com/payments"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
           >
-            <path
-              fillRule="evenodd"
-              d="M4.5 2a.5.5 0 000 1H11V8.5a.5.5 0 001 0v-7a.5.5 0 00-.5-.5h-7zM3 12.5a.5.5 0 01.5-.5H10V5.5a.5.5 0 011 0v7a.5.5 0 01-.5.5H3.5a.5.5 0 01-.5-.5z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </a>
+            {t("admin.stripePayments", "View in Stripe")}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              className="w-3.5 h-3.5"
+            >
+              <path
+                fillRule="evenodd"
+                d="M4.5 2a.5.5 0 000 1H11V8.5a.5.5 0 001 0v-7a.5.5 0 00-.5-.5h-7zM3 12.5a.5.5 0 01.5-.5H10V5.5a.5.5 0 011 0v7a.5.5 0 01-.5.5H3.5a.5.5 0 01-.5-.5z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </a>
+        </div>
       </div>
 
       {/* ── Toolbar ── */}

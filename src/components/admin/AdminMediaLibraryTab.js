@@ -52,6 +52,7 @@ import {
 import R2ConnectionPanel from "@/components/admin/R2ConnectionPanel";
 import MediaViewerPanel from "@/components/admin/MediaViewerPanel";
 import R2ManualIngestPanel from "@/components/admin/R2ManualIngestPanel";
+import AdminDocsContextLinks from "@/components/admin/AdminDocsContextLinks";
 
 export default function AdminMediaLibraryTab({
   uploadBackend = "wordpress",
@@ -1310,14 +1311,17 @@ export default function AdminMediaLibraryTab({
             )}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setRefreshToken((value) => value + 1)}
-          disabled={loading}
-          className="px-3 py-2 rounded border hover:bg-gray-50 text-sm disabled:opacity-50"
-        >
-          {t("admin.mediaRefresh", "Refresh")}
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <AdminDocsContextLinks tab="media" compact />
+          <button
+            type="button"
+            onClick={() => setRefreshToken((value) => value + 1)}
+            disabled={loading}
+            className="px-3 py-2 rounded border hover:bg-gray-50 text-sm disabled:opacity-50"
+          >
+            {t("admin.mediaRefresh", "Refresh")}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">

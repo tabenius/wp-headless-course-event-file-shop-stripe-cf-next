@@ -11,6 +11,7 @@ import {
 import ImageUploader from "./ImageUploader";
 import ImageGenerationPanel from "./ImageGenerationPanel";
 import UserAccessPanel from "./UserAccessPanel";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
@@ -1716,6 +1717,7 @@ export default function AdminProductsTab(props) {
             {t("admin.contentAccessDesc")}
           </p>
         </div>
+        <AdminDocsContextLinks tab="products" compact />
       </div>
 
       <InnerTabs active={innerTab} onChange={setInnerTab} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { t } from "@/lib/i18n";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 
 export default function AdminSupportTab({
   tickets,
@@ -27,25 +28,28 @@ export default function AdminSupportTab({
             {t("admin.supportIntro")}
           </p>
         </div>
-        <div className="text-xs text-gray-500 bg-gray-50 border rounded px-3 py-2">
-          <div className="font-semibold text-gray-700 mb-1">
-            {t("admin.storageBackend")}
+        <div className="flex flex-wrap items-start justify-end gap-2">
+          <AdminDocsContextLinks tab="support" compact />
+          <div className="text-xs text-gray-500 bg-gray-50 border rounded px-3 py-2">
+            <div className="font-semibold text-gray-700 mb-1">
+              {t("admin.storageBackend")}
+            </div>
+            {process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME ? (
+              <div>
+                R2 bucket (
+                {(
+                  process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME
+                ).slice(0, 24)}
+                …)
+              </div>
+            ) : process.env.CF_KV_NAMESPACE_ID ? (
+              <div>
+                Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)
+              </div>
+            ) : (
+              <div className="text-red-700">No R2/KV configured</div>
+            )}
           </div>
-          {process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME ? (
-            <div>
-              R2 bucket (
-              {(
-                process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME
-              ).slice(0, 24)}
-              …)
-            </div>
-          ) : process.env.CF_KV_NAMESPACE_ID ? (
-            <div>
-              Cloudflare KV ({process.env.CF_KV_NAMESPACE_ID.slice(0, 8)}…)
-            </div>
-          ) : (
-            <div className="text-red-700">No R2/KV configured</div>
-          )}
         </div>
       </div>
 
