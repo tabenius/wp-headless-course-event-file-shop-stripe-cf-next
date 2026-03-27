@@ -1407,10 +1407,19 @@ export default function AdminMediaLibraryTab({
     textOverlay: t("admin.mediaDerivationOpTextOverlay",  "Adding text overlay…"),
   };
 
-  async function applySelectedDerivation() {
+  function canApplyDerivationNow() {
+    return Boolean(
+      selectedDerivation &&
+        focusedItem &&
+        derivationUnboundParameters.length === 0 &&
+        derivationInvalidParameters.length === 0,
+    );
+  }
+
+  async function runDerivationApply({ quality = previewQuality } = {}) {
     if (!selectedDerivation || !focusedItem) {
       setDerivationError(t("admin.mediaDerivationRequiresSelection", "Select a derivation and an asset first."));
-      return;
+      return null;
     }
     if (derivationInvalidParameters.length > 0) {
       setDerivationError(
@@ -1419,7 +1428,7 @@ export default function AdminMediaLibraryTab({
           "Fix invalid numeric parameters before applying the derivation.",
         ),
       );
-      return;
+      return null;
     }
     if (derivationUnboundParameters.length > 0) {
       setDerivationError(
@@ -1428,7 +1437,7 @@ export default function AdminMediaLibraryTab({
           "Fill all operation parameters before applying the derivation.",
         ),
       );
-      return;
+      return null;
     }
     const operationsToApply = bindOperationsToAsset(customOperations, focusedItem?.id);
     setApplyingDerivation(true);
@@ -1446,7 +1455,7 @@ export default function AdminMediaLibraryTab({
           derivationId: selectedDerivation.id,
           asset: focusedItem,
           operations: operationsToApply,
-          previewQuality,
+          previewQuality: quality,
         }),
       });
 
@@ -1482,8 +1491,9 @@ export default function AdminMediaLibraryTab({
             const blob = new Blob([bytes], { type: evt.contentType });
             setPreviewBlob(blob);
             setPreviewBlobUrl(URL.createObjectURL(blob));
-            setLastPreviewQuality(evt.previewQuality || previewQuality);
+            setLastPreviewQuality(evt.previewQuality || quality);
             setApplyProgress(100);
+            return { blob, contentType: evt.contentType, previewQuality: evt.previewQuality || quality };
           } else if (evt.type === "error") {
             throw new Error(evt.message || t("admin.mediaDerivationFailed", "Could not apply derivation."));
           }
@@ -1495,20 +1505,35 @@ export default function AdminMediaLibraryTab({
           ? applyError.message
           : t("admin.mediaDerivationFailed", "Could not apply derivation."),
       );
+      return null;
     } finally {
       setApplyingDerivation(false);
     }
+    return null;
   }
 
-  async function savePreviewToLibrary() {
-    if (!previewBlob || savingPreview) return;
+  async function applySelectedDerivation() {
+    await runDerivationApply({ quality: previewQuality });
+  }
+
+  async function uploadDerivedBlobToLibrary(blob, { qualityHint = lastPreviewQuality } = {}) {
+    if (!blob || savingPreview) return false;
+    if (qualityHint === "fast") {
+      setSavePreviewError(
+        t(
+          "admin.mediaDerivationSaveRequiresFullQuality",
+          "Fast preview cannot be saved. Re-run with Full quality or use Apply full-quality and save.",
+        ),
+      );
+      return false;
+    }
     setSavingPreview(true);
     setSavePreviewError("");
     try {
-      const ext = previewBlob.type === "image/png" ? "png" : previewBlob.type === "image/webp" ? "webp" : previewBlob.type === "image/avif" ? "avif" : "jpg";
+      const ext = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : blob.type === "image/avif" ? "avif" : "jpg";
       const filename = `${selectedDerivation?.id || "derived"}-${Date.now()}.${ext}`;
       const formData = new FormData();
-      formData.append("file", previewBlob, filename);
+      formData.append("file", blob, filename);
       const query = new URLSearchParams({ backend: selectedUploadBackend });
       const response = await fetch(`/api/admin/upload?${query.toString()}`, {
         method: "POST",
@@ -1528,15 +1553,27 @@ export default function AdminMediaLibraryTab({
       setUploadHistory((prev) => [entry, ...prev].slice(0, HISTORY_MAX_ENTRIES));
       setPreviewBlobUrl(null);
       setPreviewBlob(null);
+      return true;
     } catch (saveErr) {
       setSavePreviewError(
         saveErr instanceof Error
           ? saveErr.message
           : t("admin.mediaSaveDerivedAssetFailed", "Could not save to library."),
       );
+      return false;
     } finally {
       setSavingPreview(false);
     }
+  }
+
+  async function applyFullQualityAndSave() {
+    const result = await runDerivationApply({ quality: "full" });
+    if (!result?.blob) return;
+    await uploadDerivedBlobToLibrary(result.blob, { qualityHint: "full" });
+  }
+
+  async function savePreviewToLibrary() {
+    await uploadDerivedBlobToLibrary(previewBlob, { qualityHint: lastPreviewQuality });
   }
 
   async function openViewer(item) {
@@ -2708,10 +2745,7 @@ export default function AdminMediaLibraryTab({
               type="button"
               onClick={applySelectedDerivation}
               disabled={
-                applyingDerivation ||
-                !focusedItem ||
-                derivationUnboundParameters.length > 0 ||
-                derivationInvalidParameters.length > 0
+                applyingDerivation || savingPreview || !canApplyDerivationNow()
               }
               className="px-3 py-1.5 rounded bg-indigo-700 text-white text-xs hover:bg-indigo-600 disabled:opacity-50"
             >
@@ -2722,8 +2756,20 @@ export default function AdminMediaLibraryTab({
             </button>
             <button
               type="button"
+              onClick={applyFullQualityAndSave}
+              disabled={
+                applyingDerivation || savingPreview || !canApplyDerivationNow()
+              }
+              className="px-3 py-1.5 rounded bg-emerald-700 text-white text-xs hover:bg-emerald-600 disabled:opacity-50"
+            >
+              {applyingDerivation || savingPreview
+                ? t("admin.mediaSavingDerivedAsset", "Saving…")
+                : t("admin.mediaApplyDerivationAndSave", "Apply full-quality and save")}
+            </button>
+            <button
+              type="button"
               onClick={savePreviewToLibrary}
-              disabled={!previewBlob || savingPreview}
+              disabled={!previewBlob || savingPreview || lastPreviewQuality === "fast"}
               className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
             >
               {savingPreview
@@ -2748,6 +2794,14 @@ export default function AdminMediaLibraryTab({
                 {t(
                   "admin.mediaDerivationFixInvalidNumeric",
                   "Fix invalid numeric parameters before applying the derivation.",
+                )}
+              </span>
+            )}
+            {previewBlob && lastPreviewQuality === "fast" && (
+              <span className="text-[11px] text-amber-700">
+                {t(
+                  "admin.mediaDerivationFastPreviewSaveBlocked",
+                  "Save is blocked for Fast preview. Use Apply full-quality and save.",
                 )}
               </span>
             )}

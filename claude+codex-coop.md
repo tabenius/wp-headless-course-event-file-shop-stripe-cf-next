@@ -44,6 +44,23 @@
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js src/app/api/admin/derivations/apply/route.js src/lib/photonPipeline.js src/components/admin/DerivationEditor/operationRegistry.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
+### Codex — one-click full-quality save flow for derivations
+
+**Delivered:**
+- Added one-click action in Media → Derivations:
+  - `Apply full-quality and save`
+- Refactored apply/save flow in `AdminMediaLibraryTab`:
+  - centralized apply runner `runDerivationApply({quality})`
+  - shared uploader `uploadDerivedBlobToLibrary(blob, {qualityHint})`
+- Added explicit guardrail so `Fast` previews cannot be saved by mistake:
+  - regular `Save to library` is disabled when current preview quality is `fast`
+  - inline warning explains to use full-quality save path
+  - backend upload helper also rejects fast-quality save attempts defensively
+
+**Validation:**
+- `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
+- `node --test tests/photon-pipeline.test.js` (pass)
+
 ### Codex — aether status-pill contrast fix on ragbaz.xyz
 
 **Delivered:**
