@@ -36,7 +36,10 @@ export default function AdminSandboxTab({
             <h2 className="text-xl font-semibold">
               {t("admin.sandboxSettings")}
             </h2>
-            <AdminFieldHelpLink slug="technical-manual" />
+            <AdminFieldHelpLink
+              slug="technical-manual"
+              topic={t("admin.sandboxSettings")}
+            />
           </div>
           <div className="flex gap-2">
             <AdminDocsContextLinks tab="info" compact />
@@ -85,7 +88,10 @@ export default function AdminSandboxTab({
             <h3 className="text-sm font-semibold text-gray-700">
               {t("admin.environment")}
             </h3>
-            <AdminFieldHelpLink slug="quick-start" />
+            <AdminFieldHelpLink
+              slug="quick-start"
+              topic={t("admin.environment")}
+            />
           </div>
           <div className="grid md:grid-cols-2 gap-3 text-xs">
             <div className="bg-gray-50 rounded p-3 space-y-1">
@@ -161,7 +167,10 @@ export default function AdminSandboxTab({
               <h3 className="text-sm font-semibold text-gray-700">
                 {t("admin.recentCommits")}
               </h3>
-              <AdminFieldHelpLink slug="technical-manual" />
+              <AdminFieldHelpLink
+                slug="technical-manual"
+                topic={t("admin.recentCommits")}
+              />
             </div>
             {commits && (
               <button
@@ -222,9 +231,12 @@ export default function AdminSandboxTab({
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1">
               <h3 className="text-sm font-semibold text-gray-700">
-                Recent requests
+                {t("admin.recentRequests", "Recent requests")}
               </h3>
-              <AdminFieldHelpLink slug="performance-explained" />
+              <AdminFieldHelpLink
+                slug="performance-explained"
+                topic={t("admin.recentRequests", "Recent requests")}
+              />
             </div>
             <div className="bg-gray-900 text-gray-100 rounded p-3 font-mono text-xs space-y-1 max-h-48 overflow-auto">
               {debugLogs.map((logItem) => (

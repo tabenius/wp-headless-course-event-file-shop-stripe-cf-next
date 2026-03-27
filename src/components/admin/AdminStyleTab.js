@@ -184,7 +184,10 @@ export default function AdminStyleTab({
                 <h2 className="text-2xl font-semibold text-gray-900">
                   {t("admin.styleSiteTitle")}
                 </h2>
-                <AdminFieldHelpLink slug="product-value" />
+                <AdminFieldHelpLink
+                  slug="product-value"
+                  topic={t("admin.styleSiteTitle")}
+                />
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 {t("admin.styleSiteSummary")}
@@ -230,15 +233,23 @@ export default function AdminStyleTab({
           {/* ── Typography ───────────────────────────────────────────── */}
           <div className="space-y-4">
             <div className="inline-flex items-center gap-1">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Typography</h3>
-              <AdminFieldHelpLink slug="technical-manual" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                {t("admin.styleTypographyTitle", "Typography")}
+              </h3>
+              <AdminFieldHelpLink
+                slug="technical-manual"
+                topic={t("admin.styleTypographyTitle", "Typography")}
+              />
             </div>
 
             {/* Built-in themes strip */}
             <div>
               <div className="inline-flex items-center gap-1 text-xs text-gray-500 mb-2">
-                <span>Themes</span>
-                <AdminFieldHelpLink slug="product-value" />
+                <span>{t("admin.styleThemesLabel", "Themes")}</span>
+                <AdminFieldHelpLink
+                  slug="product-value"
+                  topic={t("admin.styleThemesLabel", "Themes")}
+                />
               </div>
               <div className="flex flex-wrap gap-2">
                 {TYPOGRAPHY_THEMES.map((theme) => (
@@ -577,7 +588,10 @@ export default function AdminStyleTab({
                 <h3 className="text-sm font-semibold text-gray-800">
                   {t("admin.styleRevisionHistory", "Style revision history")}
                 </h3>
-                <AdminFieldHelpLink slug="technical-manual" />
+                <AdminFieldHelpLink
+                  slug="technical-manual"
+                  topic={t("admin.styleRevisionHistory", "Style revision history")}
+                />
               </div>
               <span className="text-xs text-gray-500">
                 {t("admin.styleRevisionCount", "{count} saved revisions", {
@@ -657,8 +671,13 @@ export default function AdminStyleTab({
         {/* ── Button Style ─────────────────────────────────────────────── */}
         <div className="space-y-4">
           <div className="inline-flex items-center gap-1">
-            <div className="text-sm font-semibold text-gray-800">Button Style</div>
-            <AdminFieldHelpLink slug="technical-manual" />
+            <div className="text-sm font-semibold text-gray-800">
+              {t("admin.styleButtonStyle", "Button style")}
+            </div>
+            <AdminFieldHelpLink
+              slug="technical-manual"
+              topic={t("admin.styleButtonStyle", "Button style")}
+            />
           </div>
 
           {/* Preset strip */}
