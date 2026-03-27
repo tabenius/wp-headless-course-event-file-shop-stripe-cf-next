@@ -14,9 +14,26 @@ import {
 import { t } from "@/lib/i18n";
 import { buildRagbazDownloadUrl } from "./helpers";
 
+const HEALTH_FETCH_TIMEOUT_MS =
+  Number.parseInt(process.env.HEALTH_FETCH_TIMEOUT_MS || "8000", 10) || 8000;
+
+async function fetchWithTimeout(
+  url,
+  options = {},
+  timeoutMs = HEALTH_FETCH_TIMEOUT_MS,
+) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function checkWordPressGraphQL() {
   const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   if (!url) {
     return { ok: false, message: t("health.wpNotConfigured") };
   }
@@ -28,7 +45,7 @@ async function checkWordPressGraphQL() {
   }
 
   try {
-    const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
+    const response = await fetchWithTimeout(`${url.replace(/\/$/, "")}/graphql`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -57,11 +74,11 @@ async function checkWordPressGraphQL() {
 
 async function checkWpSchema() {
   const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   if (!url || !auth.authorization)
     return { ok: false, message: t("health.wpSchemaUnknown") };
   try {
-    const response = await fetch(`${url.replace(/\/$/, "")}/graphql`, {
+    const response = await fetchWithTimeout(`${url.replace(/\/$/, "")}/graphql`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -105,7 +122,7 @@ async function checkWpSchema() {
 
 async function checkRagbazPlugin() {
   const url = process.env.NEXT_PUBLIC_WORDPRESS_URL;
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   if (!url || !auth.authorization)
     return { ok: false, message: t("health.ragbazUnknown") };
   const endpoint = `${url.replace(/\/$/, "")}/graphql`;
@@ -115,7 +132,7 @@ async function checkRagbazPlugin() {
     Authorization: auth.authorization,
   };
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetchWithTimeout(endpoint, {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -152,7 +169,7 @@ async function checkRagbazPlugin() {
     };
 
     try {
-      const runtimeResponse = await fetch(endpoint, {
+      const runtimeResponse = await fetchWithTimeout(endpoint, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -283,7 +300,7 @@ async function checkStripe() {
   }
 
   try {
-    const response = await fetch("https://api.stripe.com/v1/account", {
+    const response = await fetchWithTimeout("https://api.stripe.com/v1/account", {
       headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
       cache: "no-store",
     });
@@ -315,18 +332,25 @@ export async function GET(request) {
   const authSecretConfigured = Boolean(process.env.AUTH_SECRET);
   const stripeWebhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET);
 
-  const wordpressCheck =
+  const [
+    wordpressCheck,
+    wpSchemaCheck,
+    ragbazCheck,
+    stripeCheck,
+    kvCheck,
+  ] = await Promise.all([
     backend === "wordpress"
-      ? await checkWordPressGraphQL()
-      : { ok: true, message: t("health.wpModeNotEnabled") };
-  const wpSchemaCheck =
+      ? checkWordPressGraphQL()
+      : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
     backend === "wordpress"
-      ? await checkWpSchema()
-      : { ok: true, message: t("health.wpModeNotEnabled") };
-  const ragbazCheck =
+      ? checkWpSchema()
+      : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
     backend === "wordpress"
-      ? await checkRagbazPlugin()
-      : { ok: true, message: t("health.wpModeNotEnabled") };
+      ? checkRagbazPlugin()
+      : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
+    checkStripe(),
+    checkKvStorage(),
+  ]);
   const ragbazRuntimeCheck =
     backend === "wordpress"
       ? {
@@ -346,9 +370,6 @@ export async function GET(request) {
           },
         }
       : { ok: true, message: t("health.wpModeNotEnabled") };
-  const stripeCheck = await checkStripe();
-  const kvCheck = await checkKvStorage();
-
   // Build the webhook URL from the request
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;

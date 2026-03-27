@@ -821,6 +821,10 @@ export default function AdminDashboard() {
     (errorState.tab === null ||
       errorState.tab === "global" ||
       errorState.tab === activeTab);
+  const [uiFeedbackFields, setUiFeedbackFields] = useState({});
+  const [uiFeedbackReadOnly, setUiFeedbackReadOnly] = useState(true);
+  const [uiFeedbackLoading, setUiFeedbackLoading] = useState(true);
+  const [uiFeedbackSavingField, setUiFeedbackSavingField] = useState("");
   const setError = useCallback(
     (nextMessage, tabOverride) => {
       const message = String(nextMessage || "");
@@ -979,10 +983,6 @@ export default function AdminDashboard() {
   const [paymentsStripeConfigured, setPaymentsStripeConfigured] = useState(true);
   const [paymentsEmptyReason, setPaymentsEmptyReason] = useState(null);
   const [downloading, setDownloading] = useState(null);
-  const [uiFeedbackFields, setUiFeedbackFields] = useState({});
-  const [uiFeedbackReadOnly, setUiFeedbackReadOnly] = useState(true);
-  const [uiFeedbackLoading, setUiFeedbackLoading] = useState(true);
-  const [uiFeedbackSavingField, setUiFeedbackSavingField] = useState("");
 
   useEffect(() => {
     log("mounted");

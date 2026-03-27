@@ -6,6 +6,7 @@ import { registerUploadedAsset } from "@/lib/avatarFeedStore";
 import { t } from "@/lib/i18n";
 
 const DEFAULT_MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
+const DEFAULT_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 const EDGE_R2_MAX_BYTES = 100 * 1024 * 1024;
 const S3_ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const ALLOWED_ASSET_FORMATS = new Set(["raw", "webp", "avif"]);
@@ -40,6 +41,11 @@ function maxImageUploadBytes() {
   return Number.isFinite(raw) && raw > 0
     ? raw
     : DEFAULT_MAX_IMAGE_UPLOAD_BYTES;
+}
+
+function maxUploadBytes() {
+  const raw = Number.parseInt(process.env.MAX_UPLOAD_BYTES || "", 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MAX_UPLOAD_BYTES;
 }
 
 function sanitizeFileName(name) {
@@ -320,7 +326,7 @@ async function uploadToWordPress(arrayBuffer, file, assetContext) {
   );
   if (!wpUrl) throw new Error(t("apiErrors.wpUrlMissing"));
 
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   if (!auth.authorization) throw new Error(t("apiErrors.wpAuthMissing"));
 
   const response = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
@@ -509,7 +515,28 @@ export async function POST(request) {
       );
     }
 
+    const maxBytes = maxUploadBytes();
+    const fileSize = Number(file.size);
+    if (Number.isFinite(fileSize) && fileSize > maxBytes) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `File too large (max ${Math.floor(maxBytes / (1024 * 1024))} MB).`,
+        },
+        { status: 413 },
+      );
+    }
+
     const arrayBuffer = await file.arrayBuffer();
+    if (arrayBuffer.byteLength > maxBytes) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `File too large (max ${Math.floor(maxBytes / (1024 * 1024))} MB).`,
+        },
+        { status: 413 },
+      );
+    }
     if (imageOnly) {
       const isImageMime =
         typeof file.type === "string" && file.type.startsWith("image/");
@@ -519,13 +546,13 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-      const maxBytes = maxImageUploadBytes();
-      if (arrayBuffer.byteLength > maxBytes) {
+      const maxImageBytes = maxImageUploadBytes();
+      if (arrayBuffer.byteLength > maxImageBytes) {
         return NextResponse.json(
           {
             ok: false,
             error: t("admin.uploadImageTooLarge", {
-              mb: Math.floor(maxBytes / (1024 * 1024)),
+              mb: Math.floor(maxImageBytes / (1024 * 1024)),
             }),
           },
           { status: 413 },

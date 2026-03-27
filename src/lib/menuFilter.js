@@ -52,14 +52,49 @@ function normalizePath(value) {
   return collapsed.replace(/\/+$/, "");
 }
 
-export function ensureShopMenuEntry(items) {
+const CORE_MENU_FALLBACKS = [
+  { href: "/blog", label: "BLOG" },
+  { href: "/events", label: "EVENTS" },
+  { href: "/courses", label: "COURSES" },
+  { href: "/shop", label: "SHOP" },
+];
+
+export function ensureCoreMenuEntries(items) {
   const list = Array.isArray(items) ? items.filter(Boolean) : [];
-  const hasShop = list.some(
-    (item) =>
-      item &&
-      typeof item === "object" &&
-      normalizePath(item.href) === "/shop",
+  const seen = new Set(
+    list
+      .filter((item) => item && typeof item === "object")
+      .map((item) => normalizePath(item.href)),
   );
-  if (hasShop) return list;
-  return [...list, { href: "/shop", label: "Shop" }];
+  const appended = CORE_MENU_FALLBACKS.filter(
+    (entry) => !seen.has(normalizePath(entry.href)),
+  );
+  return [...list, ...appended];
+}
+
+export async function ensureCoreMenuEntriesByExistence(items, resolver) {
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  const canResolve = typeof resolver === "function" ? resolver : async () => true;
+  const seen = new Set(
+    list
+      .filter((item) => item && typeof item === "object")
+      .map((item) => normalizePath(item.href)),
+  );
+  const missingCore = CORE_MENU_FALLBACKS.filter(
+    (entry) => !seen.has(normalizePath(entry.href)),
+  );
+  if (missingCore.length === 0) return list;
+
+  const checks = await Promise.all(
+    missingCore.map(async (entry) => {
+      try {
+        const keep = await canResolve(entry.href);
+        return keep ? entry : null;
+      } catch {
+        // Fail-open to avoid unexpectedly stripping core storefront routes.
+        return entry;
+      }
+    }),
+  );
+  return [...list, ...checks.filter(Boolean)];
 }

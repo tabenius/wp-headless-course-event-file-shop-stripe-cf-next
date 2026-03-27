@@ -16,6 +16,13 @@ query StorefrontRagbazProbe {
 }
 `;
 
+const STOREFRONT_GRAPHQL_PROBE_TTL_MS =
+  Number.parseInt(process.env.STOREFRONT_GRAPHQL_PROBE_TTL_MS || "900000", 10) ||
+  900000;
+
+let lastProbeAt = 0;
+let pendingProbe = null;
+
 function normalizeIntendedUri(uri) {
   const raw = typeof uri === "string" ? uri.trim() : "";
   if (!raw) return "/";
@@ -29,39 +36,52 @@ function normalizeIntendedUri(uri) {
 }
 
 export async function probeStorefrontRagbazGraphql(intendedUri) {
-  const uri = normalizeIntendedUri(intendedUri);
-  try {
-    const data = await fetchGraphQL(STOREFRONT_RAGBAZ_PROBE_QUERY, {}, 0);
-    const rootFields = Array.isArray(data?.rootQuery?.fields)
-      ? data.rootQuery.fields
-      : [];
-    const ragbazRootFields = rootFields
-      .map((field) => String(field?.name || ""))
-      .filter((name) => /^ragbaz/i.test(name));
-    const ragbazInfoFields = Array.isArray(data?.ragbazInfoType?.fields)
-      ? data.ragbazInfoType.fields
-          .map((field) => String(field?.name || ""))
-          .filter(Boolean)
-      : [];
-
-    console.log(
-      "[StorefrontGraphQLProbe]",
-      JSON.stringify({
-        intendedUri: uri,
-        hasRagbazRootFields: ragbazRootFields.length > 0,
-        ragbazRootFields,
-        hasRagbazInfoType: Boolean(data?.ragbazInfoType?.name),
-        ragbazInfoFields,
-      }),
-    );
-  } catch (error) {
-    console.warn(
-      "[StorefrontGraphQLProbe]",
-      JSON.stringify({
-        intendedUri: uri,
-        error: error?.message || String(error),
-      }),
-    );
+  const now = Date.now();
+  if (lastProbeAt > 0 && now - lastProbeAt < STOREFRONT_GRAPHQL_PROBE_TTL_MS) {
+    return;
   }
-}
+  if (pendingProbe) {
+    return pendingProbe;
+  }
+  const uri = normalizeIntendedUri(intendedUri);
+  pendingProbe = (async () => {
+    try {
+      const data = await fetchGraphQL(STOREFRONT_RAGBAZ_PROBE_QUERY, {}, 0);
+      const rootFields = Array.isArray(data?.rootQuery?.fields)
+        ? data.rootQuery.fields
+        : [];
+      const ragbazRootFields = rootFields
+        .map((field) => String(field?.name || ""))
+        .filter((name) => /^ragbaz/i.test(name));
+      const ragbazInfoFields = Array.isArray(data?.ragbazInfoType?.fields)
+        ? data.ragbazInfoType.fields
+            .map((field) => String(field?.name || ""))
+            .filter(Boolean)
+        : [];
 
+      console.log(
+        "[StorefrontGraphQLProbe]",
+        JSON.stringify({
+          intendedUri: uri,
+          hasRagbazRootFields: ragbazRootFields.length > 0,
+          ragbazRootFields,
+          hasRagbazInfoType: Boolean(data?.ragbazInfoType?.name),
+          ragbazInfoFields,
+        }),
+      );
+    } catch (error) {
+      console.warn(
+        "[StorefrontGraphQLProbe]",
+        JSON.stringify({
+          intendedUri: uri,
+          error: error?.message || String(error),
+        }),
+      );
+    } finally {
+      lastProbeAt = Date.now();
+    }
+  })().finally(() => {
+    pendingProbe = null;
+  });
+  return pendingProbe;
+}

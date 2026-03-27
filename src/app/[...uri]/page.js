@@ -31,6 +31,7 @@ import { cache } from "react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const DEBUG_WP_RESOLVE = process.env.STOREFRONT_RESOLVE_DEBUG === "1";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 
@@ -128,6 +129,22 @@ function buildUriLookupAttempts(uri) {
   return [normalized, `${normalized}/`];
 }
 
+function safePathnameFromUrl(value) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return "";
+  try {
+    return new URL(raw).pathname || "";
+  } catch {
+    return raw;
+  }
+}
+
+function isMatchingRequestedUri(requestedUri, candidateUri) {
+  const requested = normalizeUriForLookup(requestedUri);
+  const candidate = normalizeUriForLookup(candidateUri);
+  return requested === candidate;
+}
+
 /**
  * Fail-safe fetcher for WPGraphQL nodes.
  * Retries with both trailing-slash variants because nodeByUri can be strict
@@ -175,40 +192,59 @@ async function fetchContent(uri) {
  */
 const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
   const normalizedUri = normalizeUriForLookup(uri);
-  console.log(`[WP-Resolve] Attempting to resolve: ${normalizedUri}`);
+  if (DEBUG_WP_RESOLVE) {
+    console.log(`[WP-Resolve] Attempting to resolve: ${normalizedUri}`);
+  }
   
   try {
     const data = await fetchContent(normalizedUri);
     if (data?.nodeByUri) {
-      console.log(`[WP-Resolve] Success: Found ${data.nodeByUri.__typename} for ${normalizedUri}`);
+      if (DEBUG_WP_RESOLVE) {
+        console.log(
+          `[WP-Resolve] Success: Found ${data.nodeByUri.__typename} for ${normalizedUri}`,
+        );
+      }
       return data.nodeByUri;
     }
   } catch (err) {
     if (err instanceof RateLimitError) {
       throw err;
     }
-    console.error(`[WP-Resolve] GraphQL Error for ${normalizedUri}:`, err?.message || err);
+    if (DEBUG_WP_RESOLVE) {
+      console.error(
+        `[WP-Resolve] GraphQL Error for ${normalizedUri}:`,
+        err?.message || err,
+      );
+    }
   }
 
   // If GraphQL fails, try REST and Course fallbacks
-  console.log(`[WP-Resolve] GraphQL failed for ${normalizedUri}. Entering Fallback mode...`);
+  if (DEBUG_WP_RESOLVE) {
+    console.log(
+      `[WP-Resolve] GraphQL failed for ${normalizedUri}. Entering Fallback mode...`,
+    );
+  }
   const wordpressUrl = await resolveWordPressUrl();
   
   const [restNode, courseNode] = await Promise.all([
     fetchRestFallback(normalizedUri, wordpressUrl).catch(e => {
       if (e instanceof RateLimitError) throw e;
-      console.error("[WP-Resolve] REST Fallback error:", e?.message || e);
+      if (DEBUG_WP_RESOLVE) {
+        console.error("[WP-Resolve] REST Fallback error:", e?.message || e);
+      }
       return null;
     }),
     fetchCourseFallback(normalizedUri, wordpressUrl).catch(e => {
       if (e instanceof RateLimitError) throw e;
-      console.error("[WP-Resolve] Course Fallback error:", e?.message || e);
+      if (DEBUG_WP_RESOLVE) {
+        console.error("[WP-Resolve] Course Fallback error:", e?.message || e);
+      }
       return null;
     }),
   ]);
 
   const finalResult = restNode || courseNode;
-  if (!finalResult) {
+  if (!finalResult && DEBUG_WP_RESOLVE) {
     console.warn(`[WP-Resolve] 404: No data found for ${normalizedUri} in GraphQL or REST.`);
   }
 
@@ -252,7 +288,12 @@ async function fetchRestFallback(uri, wordpressUrl = null) {
     if (!res.ok) continue;
     const json = await res.json().catch(() => null);
     if (!Array.isArray(json) || json.length === 0) continue;
-    const page = json[0];
+    const page = json.find((entry) => {
+      const candidateUri = entry?.uri || safePathnameFromUrl(entry?.link || "");
+      if (!candidateUri) return false;
+      return isMatchingRequestedUri(uri, candidateUri);
+    });
+    if (!page) continue;
     return {
       __typename: "Page",
       title: decodeEntities(page?.title?.rendered || ""),
@@ -312,12 +353,17 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
   if (!res.ok) return null;
   const json = await res.json().catch(() => null);
   if (!Array.isArray(json) || json.length === 0) return null;
-  const course = json[0];
+  const course = json.find((entry) => {
+    const candidateUri = entry?.uri || safePathnameFromUrl(entry?.link || "");
+    if (!candidateUri) return false;
+    return isMatchingRequestedUri(uri, candidateUri);
+  });
+  if (!course) return null;
   return {
     __typename: "LpCourse",
     title: decodeEntities(course?.title?.rendered || ""),
     content: decodeEntities(course?.content?.rendered || ""),
-    uri: course?.link ? new URL(course.link).pathname : uri,
+    uri: safePathnameFromUrl(course?.link) || uri,
     featuredImage: null,
     priceRendered: "",
   };

@@ -601,6 +601,20 @@ export default function AdminMediaLibraryTab({
     setEditor((current) => current || toEditorState(selectedItem));
   }, [selectedItem]);
 
+  const closeEditor = useCallback(() => {
+    setSelectedId("");
+    setEditor(null);
+    setSaveError("");
+    setSaveSuccess("");
+  }, []);
+
+  const closeViewer = useCallback(() => {
+    setViewerItem(null);
+    setViewerData(null);
+    setViewerError("");
+    setViewerLoading(false);
+  }, []);
+
   useEffect(() => {
     if (!selectedItem && !viewerItem) return undefined;
     function handleEscape(event) {
@@ -635,20 +649,6 @@ export default function AdminMediaLibraryTab({
     setSaveError("");
     setSaveSuccess("");
   }
-
-  const closeEditor = useCallback(() => {
-    setSelectedId("");
-    setEditor(null);
-    setSaveError("");
-    setSaveSuccess("");
-  }, []);
-
-  const closeViewer = useCallback(() => {
-    setViewerItem(null);
-    setViewerData(null);
-    setViewerError("");
-    setViewerLoading(false);
-  }, []);
 
   function suggestAnnotations() {
     setEditor((current) => {

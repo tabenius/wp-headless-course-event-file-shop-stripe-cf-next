@@ -92,6 +92,7 @@ const FontRow = memo(({
     </div>
   );
 });
+FontRow.displayName = "FontRow";
 
 export default function AdminFontBrowserModal({ role, currentFamily, downloadedFamilies, onSelect, onClose, onDownloadStart, onDownloadEnd }) {
   const [catalog, setCatalog] = useState([]);

@@ -1,7 +1,10 @@
 import { fetchGraphQL } from "@/lib/client";
 import site from "@/lib/site";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
-import { ensureShopMenuEntry, filterNavigationByExistence } from "@/lib/menuFilter";
+import {
+  ensureCoreMenuEntriesByExistence,
+  filterNavigationByExistence,
+} from "@/lib/menuFilter";
 import { cache } from "react";
 
 const MENU_QUERY = `
@@ -309,7 +312,7 @@ export const getNavigation = cache(async function getNavigation() {
         site.navigation,
         canRenderMenuHref,
       );
-      return ensureShopMenuEntry(filtered);
+      return ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
     }
 
     const mapped = menuItems.map((item) => {
@@ -321,12 +324,12 @@ export const getNavigation = cache(async function getNavigation() {
       };
     });
     const filtered = await filterNavigationByExistence(mapped, canRenderMenuHref);
-    return ensureShopMenuEntry(filtered);
+    return ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
   } catch {
     const filtered = await filterNavigationByExistence(
       site.navigation,
       canRenderMenuHref,
     );
-    return ensureShopMenuEntry(filtered);
+    return ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
   }
 });
