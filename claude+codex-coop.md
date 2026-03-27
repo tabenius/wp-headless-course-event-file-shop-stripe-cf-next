@@ -3112,3 +3112,17 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npm run lint -- src/components/admin/AdminHeader.js src/components/admin/ragbaz-logo.js src/components/admin/PagePerformancePanel.js src/lib/i18n/en.json src/lib/i18n/sv.json src/lib/i18n/es.json packages/ragbaz-bridge-plugin/ragbaz-bridge.php` passes (existing repo warnings only).
   - `node -e "JSON.parse(...)"` check for all three i18n files passes.
+
+### Codex — continued RAGBAZ casing rollout across sibling repos
+
+- Landed in `wp-cf-front-oss` (commit: `84a88f3`):
+  - Normalized user-facing i18n placeholders to `RAGBAZ AB` (EN/SV/ES).
+  - Normalized receipt response header label to `X-RAGBAZ-Request-Id`.
+
+- Landed in `ragbaz.xyz` (commit: `b7af99a`):
+  - Normalized site-facing brand copy to `RAGBAZ` / `RAGBAZ.xyz` in docs/frontpage/diagnostic text surfaces (`src/lib/pages.js`, `src/lib/payload.js`, `src/index.js`, `README.md`, `package.json`).
+  - Kept filesystem/path references lowercase where they represent actual directory names (e.g. `cd ragbaz.xyz`).
+
+- Validation:
+  - `wp-cf-front-oss`: i18n JSON parse check passes.
+  - `ragbaz.xyz`: `npm test` run observed one existing failure in `tests/home-api.test.js` (`302 !== 200` on hardcoded xtas alias route expectation), unrelated to casing text edits.
