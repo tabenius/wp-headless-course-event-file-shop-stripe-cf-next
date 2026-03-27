@@ -1,3 +1,9 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const wpHostname = (() => {
   try {
@@ -28,7 +34,7 @@ const nextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps:
     process.env.PRODUCTION_BROWSER_SOURCEMAPS === "1",
-  outputFileTracingRoot: ".",
+  outputFileTracingRoot: __dirname,
   env: {
     NEXT_PUBLIC_BUILD_TIME:
       process.env.NEXT_PUBLIC_BUILD_TIME ||
@@ -56,11 +62,6 @@ const nextConfig = {
       type: "asset/source",
     });
     return config;
-  },
-  terserOptions: {
-    compress: {
-      drop_console: false,
-    },
   },
   async rewrites() {
     const wpBase = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(
