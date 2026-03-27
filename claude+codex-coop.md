@@ -2,6 +2,18 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — expanded PRO storefront admin UI feature documentation
+
+**Delivered:**
+- Extended `/articulate` with a more detailed PRO storefront admin UI section:
+  - added explicit `PRO Storefront Admin UI (Detailed)` block,
+  - documented control-room navigation scope, diagnostics/remediation flow, media/derivation operations, access/commerce controls, storage governance, keyboard ergonomics, role-aware docs/help, and readability/theme controls.
+- Kept this tied to the storefront matrix model so updates remain centralized and maintainable.
+
+**Publish:**
+- `ragbaz.xyz` commit: `42a90ae` (`articulate: expand pro storefront admin ui feature detail`)
+- Deployed worker version: `90e2642b-fc3b-4093-a6ea-0eda4110ee43`
+
 ### Codex — Articulate storefront matrix (OSS vs PRO/FULL) + diacritics fix
 
 **Delivered:**
