@@ -25,6 +25,25 @@
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js src/lib/photonPipeline.js src/components/admin/DerivationEditor/operationRegistry.js src/lib/mediaLibraryHelpers.js tests/photon-pipeline.test.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
+### Codex — tilt shift linear mode + fast/full preview quality toggle
+
+**Delivered:**
+- Extended `tiltShift` operator with mode selector:
+  - `mode: radial | linear` (default radial)
+  - linear mode preserves a horizontal in-focus band and blurs top/bottom
+- Added preview-quality control in derivation apply UI:
+  - `Full` (default) and `Fast`
+  - request payload now includes `previewQuality`
+- Added fast preview optimization in derivation apply route:
+  - when `previewQuality=fast`, source image is downscaled to max dimension `1600` before pipeline
+  - NDJSON progress now emits `preview_downscale`
+  - done event returns `previewQuality` for UI messaging
+- Added UI hint when preview was generated in fast mode, warning that output may be downscaled.
+
+**Validation:**
+- `npx eslint src/components/admin/AdminMediaLibraryTab.js src/app/api/admin/derivations/apply/route.js src/lib/photonPipeline.js src/components/admin/DerivationEditor/operationRegistry.js` (pass, existing `no-img-element` warning only)
+- `node --test tests/photon-pipeline.test.js` (pass)
+
 ### Codex — aether status-pill contrast fix on ragbaz.xyz
 
 **Delivered:**

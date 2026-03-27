@@ -205,6 +205,15 @@ export const OPERATION_REGISTRY = {
     tip: "Keep the center sharp while blurring the edges for Instagram-style focus",
     techTip: "Radial focus mask blending between original and gaussian blur",
     parameters: [
+      {
+        key: "mode",
+        label: "Mode",
+        type: "select",
+        options: [
+          { value: "radial", label: "Radial (Instagram)" },
+          { value: "linear", label: "Linear band" },
+        ],
+      },
       { key: "centerX", label: "Center X (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
       { key: "centerY", label: "Center Y (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
       { key: "focusRadius", label: "Focus radius", type: "number", min: 0, max: 1, step: 0.01 },

@@ -348,6 +348,7 @@ export function executeOperations(photon, img, operations, onProgress) {
         const srcW = current.get_width();
         const srcH = current.get_height();
         const halfMin = Math.max(1, Math.min(srcW, srcH) / 2);
+        const mode = String(p.mode || "radial").toLowerCase();
         const centerX = Math.min(1, Math.max(0, Number(p.centerX) || 0.5));
         const centerY = Math.min(1, Math.max(0, Number(p.centerY) || 0.5));
         const cx = centerX * (srcW - 1);
@@ -368,7 +369,7 @@ export function executeOperations(photon, img, operations, onProgress) {
             const dy = (y - cy) / halfMin;
             for (let x = 0; x < srcW; x++) {
               const dx = (x - cx) / halfMin;
-              const distance = Math.hypot(dx, dy);
+              const distance = mode === "linear" ? Math.abs(dy) : Math.hypot(dx, dy);
               const blend = computeTiltShiftBlendFactor(
                 distance,
                 focusRadius,

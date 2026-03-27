@@ -138,6 +138,8 @@ export default function AdminMediaLibraryTab({
   const [applyingDerivation, setApplyingDerivation] = useState(false);
   const [applyProgress, setApplyProgress] = useState(0);
   const [applyProgressLabel, setApplyProgressLabel] = useState("");
+  const [previewQuality, setPreviewQuality] = useState("full");
+  const [lastPreviewQuality, setLastPreviewQuality] = useState("full");
   const [showAllDerivations, setShowAllDerivations] = useState(false);
   const [editorId, setEditorId] = useState("");
   const [editorName, setEditorName] = useState("");
@@ -1374,6 +1376,7 @@ export default function AdminMediaLibraryTab({
   const APPLY_LABELS = {
     fetch:       t("admin.mediaDerivationStepFetch",      "Fetching image…"),
     load:        t("admin.mediaDerivationStepLoad",       "Loading image…"),
+    preview_downscale: t("admin.mediaDerivationStepPreviewDownscale", "Building faster preview…"),
     decode_avif: t("admin.mediaDerivationStepDecodeAvif", "Decoding AVIF source…"),
     encode_avif: t("admin.mediaDerivationStepEncodeAvif", "Encoding AVIF output…"),
     encode:      t("admin.mediaDerivationStepEncode",     "Encoding output…"),
@@ -1443,6 +1446,7 @@ export default function AdminMediaLibraryTab({
           derivationId: selectedDerivation.id,
           asset: focusedItem,
           operations: operationsToApply,
+          previewQuality,
         }),
       });
 
@@ -1478,6 +1482,7 @@ export default function AdminMediaLibraryTab({
             const blob = new Blob([bytes], { type: evt.contentType });
             setPreviewBlob(blob);
             setPreviewBlobUrl(URL.createObjectURL(blob));
+            setLastPreviewQuality(evt.previewQuality || previewQuality);
             setApplyProgress(100);
           } else if (evt.type === "error") {
             throw new Error(evt.message || t("admin.mediaDerivationFailed", "Could not apply derivation."));
@@ -2675,6 +2680,22 @@ export default function AdminMediaLibraryTab({
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex items-center gap-2 text-[11px] text-indigo-700">
+              <span>{t("admin.mediaDerivationPreviewQuality", "Preview quality")}</span>
+              <select
+                className="border rounded px-2 py-1 text-xs bg-white"
+                value={previewQuality}
+                onChange={(event) => setPreviewQuality(event.target.value)}
+                disabled={applyingDerivation}
+              >
+                <option value="full">
+                  {t("admin.mediaDerivationPreviewQualityFull", "Full")}
+                </option>
+                <option value="fast">
+                  {t("admin.mediaDerivationPreviewQualityFast", "Fast")}
+                </option>
+              </select>
+            </label>
             <button
               type="button"
               onClick={saveDerivationTemplate}
@@ -2759,6 +2780,14 @@ export default function AdminMediaLibraryTab({
               <p className="text-[11px] font-semibold text-indigo-800">
                 {t("admin.mediaDerivationPreview", "Derivation preview")}
               </p>
+              {lastPreviewQuality === "fast" && (
+                <p className="text-[11px] text-amber-700">
+                  {t(
+                    "admin.mediaDerivationPreviewQualityFastHint",
+                    "Fast preview may be downscaled for speed. Re-run with Full before saving final output.",
+                  )}
+                </p>
+              )}
               <img
                 src={previewBlobUrl}
                 alt={t("admin.mediaDerivationPreviewAlt", "Derived image preview")}

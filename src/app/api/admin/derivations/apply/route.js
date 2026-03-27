@@ -11,6 +11,8 @@ import {
 import { encodeAvif, decodeAvif } from "@/lib/avifEncode";
 import { getPhoton } from "@/lib/photonLoader";
 
+const FAST_PREVIEW_MAX_DIM = 1600;
+
 function buildAllowedHosts(request) {
   const hosts = new Set();
   const toHost = (value) => {
@@ -68,7 +70,7 @@ export async function POST(request) {
     return jsonError("Invalid JSON body.");
   }
 
-  const { derivationId, asset, operations, format: requestedFormat } = payload || {};
+  const { derivationId, asset, operations, format: requestedFormat, previewQuality } = payload || {};
   if (!derivationId || !asset?.url) {
     return jsonError("derivationId and asset (with url) are required.");
   }
@@ -87,6 +89,7 @@ export async function POST(request) {
   const finalOperations = bindOperationsToAsset(baseOperations, asset.id);
 
   const format = resolveOutputFormat(finalOperations, requestedFormat);
+  const qualityMode = String(previewQuality || "full").toLowerCase() === "fast" ? "fast" : "full";
   const contentType =
     format === "avif"
       ? "image/avif"
@@ -137,6 +140,23 @@ export async function POST(request) {
           img = photon.PhotonImage.new_from_byteslice(sourceBytes);
         }
 
+        if (qualityMode === "fast") {
+          const srcW = img.get_width();
+          const srcH = img.get_height();
+          const maxDim = Math.max(srcW, srcH);
+          if (maxDim > FAST_PREVIEW_MAX_DIM) {
+            send({ type: "progress", pct: 16, label: "preview_downscale" });
+            const scale = FAST_PREVIEW_MAX_DIM / maxDim;
+            const targetW = Math.max(1, Math.round(srcW * scale));
+            const targetH = Math.max(1, Math.round(srcH * scale));
+            const resized = photon.resize(img, targetW, targetH, 5);
+            if (resized !== img) {
+              img.free();
+              img = resized;
+            }
+          }
+        }
+
         // ── Pipeline ────────────────────────────────────────────────────────
         // WASM ops are synchronous — per-op events arrive in a burst after
         // all ops complete, but still animate smoothly via CSS transitions.
@@ -176,6 +196,7 @@ export async function POST(request) {
             contentType,
             derivationId: String(derivationId),
             derivationFormat: format,
+            previewQuality: qualityMode,
             data: toBase64(outputBytes),
           });
         } finally {
