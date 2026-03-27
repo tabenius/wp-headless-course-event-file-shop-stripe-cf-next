@@ -181,6 +181,20 @@
 **Commit:**
 - `main` `3284274` — `Localize style/sandbox helper labels and add docs-link hotkeys`
 
+### Codex — ragbaz.xyz tenant draft canonicalization + Mermaid rendering fix
+
+**Delivered (nested repo `ragbaz.xyz`):**
+- Canonicalized tenant draft URLs so `/tenant/{domain}/...` now redirects to `/tenant/{domain}` (admin routes remain handled by existing `/tenant/{domain}/admin...` proxy branch).
+- Fixed docs diagram rendering by replacing raw Mermaid code blocks with `.mermaid` containers and enabling client-side Mermaid rendering on docs pages.
+- Enabled Mermaid only for docs routes via `shell(..., { enableMermaid: true })`.
+
+**Validation:**
+- `node --check src/index.js` (pass)
+- `node --check src/lib/pages.js` (pass)
+
+**Commit:**
+- `ragbaz.xyz` `d990944` — `Canonicalize tenant draft URLs and render docs Mermaid diagrams`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
