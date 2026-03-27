@@ -2757,3 +2757,28 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Landed in `wp-cf-front-oss`:
   - Updated plugin zip copy script to publish to shared workspace `../ragbaz.xyz/release` (with local fallback).
   - Commit pushed on `main`: `358df6c`.
+
+---
+
+## 2026-03-27
+
+### Codex — runtime/performance hardening + test/build stability
+
+- Landed runtime hardening in `main` (commit: `4e54a89`):
+  - Added storefront GraphQL probe throttling (`src/lib/storefrontGraphqlProbe.js`) so probe runs once per process per TTL instead of every request.
+  - Added universal configurable upload cap (`MAX_UPLOAD_BYTES`) with pre/post buffer enforcement in `src/app/api/admin/upload/route.js`.
+  - Parallelized health checks and added timeout-bounded fetches in `src/app/api/admin/health/route.js` (`HEALTH_FETCH_TIMEOUT_MS`).
+  - Fixed URI collision risk in REST fallbacks by requiring URI/path match before accepting fallback nodes (`src/app/[...uri]/page.js`).
+  - Switched core-menu fallback appending to existence-aware mode (`ensureCoreMenuEntriesByExistence`) in `src/lib/menuFilter.js` + `src/lib/menu.js`.
+  - Fixed admin TDZ/use-before-init risks in `AdminDashboard` and `AdminMediaLibraryTab`.
+  - Added missing React display name for memoized font-row component.
+  - Documented new perf/hardening knobs in `docs/performance-hardening.md`, `.env.example`, and `README.md`.
+
+- Landed build/test stability updates (commit: `f8c94bb`):
+  - Updated `npm test` to include `--experimental-test-module-mocks`, restoring passing font-related tests under current Node.
+  - Removed `shell: true` from `scripts/build-with-lock.mjs` spawn call (removes DEP0190 warning and tightens command execution behavior).
+
+- Verified after changes:
+  - `npm run lint` passes (warnings only).
+  - `npm test` passes (`25/25`).
+  - Next build startup warnings fixed earlier remain resolved (middleware->proxy, invalid `next.config.mjs` keys).
