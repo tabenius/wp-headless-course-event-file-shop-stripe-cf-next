@@ -154,6 +154,33 @@
 **Commit:**
 - `main` `f21de42` — `Add docs helpers in sandbox system panel`
 
+### Codex — localized helper labels + keyboard docs shortcuts
+
+**Delivered:**
+- Localized remaining helper labels in Style/Sandbox surfaces that pair with docs `?` links:
+  - `AdminStyleTab`: typography/themes/button-style labels now use i18n keys
+  - `AdminSandboxTab`: recent-requests label now uses i18n key
+- Added keyboard affordances directly on field-level docs links in `AdminFieldHelpLink`:
+  - `F1` and `?` open the linked guide when the `?` control is focused
+  - added `aria-keyshortcuts="Shift+Slash F1"`
+  - localized tooltip now includes hotkey guidance
+- Added EN/SV/ES i18n keys:
+  - `admin.docsOpenGuideTooltipFor`
+  - `admin.docsOpenGuideHotkeyHint`
+  - `admin.styleThemesLabel`
+  - `admin.styleButtonStyle`
+  - `admin.recentRequests`
+
+**Validation:**
+- `node --check` pass:
+  - `src/components/admin/AdminFieldHelpLink.js`
+  - `src/components/admin/AdminStyleTab.js`
+  - `src/components/admin/AdminSandboxTab.js`
+- i18n JSON parse checks pass for EN/SV/ES
+
+**Commit:**
+- `main` `3284274` — `Localize style/sandbox helper labels and add docs-link hotkeys`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
