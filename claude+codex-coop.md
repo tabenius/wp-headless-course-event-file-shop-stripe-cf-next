@@ -3126,3 +3126,12 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `wp-cf-front-oss`: i18n JSON parse check passes.
   - `ragbaz.xyz`: `npm test` run observed one existing failure in `tests/home-api.test.js` (`302 !== 200` on hardcoded xtas alias route expectation), unrelated to casing text edits.
+
+### Codex — final strict casing sweep (no mixed-case `Ragbaz` tokens left)
+
+- Landed in `main` (commit: `c45c898`):
+  - Normalized remaining mixed-case brand token in `.env.example`.
+  - Normalized residual mixed-case mentions in coop history text.
+
+- Landed in `ragbaz.xyz` (commit: `1e827af`):
+  - Normalized migration banner comment casing (`RAGBAZ control plane`).
