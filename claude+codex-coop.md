@@ -2,6 +2,18 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — continued PRO admin elaboration (boundary + adoption guidance)
+
+**Delivered:**
+- Continued the `/articulate` PRO admin documentation with:
+  - `OSS vs PRO Admin Boundary (At a Glance)` table (area-by-area OSS scope vs PRO scope),
+  - `When Teams Usually Adopt PRO Admin UI` section (practical adoption signals for operators).
+- This keeps the edition split explicit at decision-time, not just as a static feature list.
+
+**Publish:**
+- `ragbaz.xyz` commit: `183f1bb` (`articulate: add oss/pro admin boundary and pro adoption signals`)
+- Deployed worker version: `76facda6-50a8-43be-95f6-6392608bd882`
+
 ### Codex — further expansion of PRO storefront admin UI feature detail
 
 **Delivered:**
