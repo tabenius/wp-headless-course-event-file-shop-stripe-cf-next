@@ -2,6 +2,19 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — enforced product-name capitalization standard (homepage + docs copy)
+
+**Delivered:**
+- Applied user-facing naming standard across rendered copy:
+  - `RAGBAZ-Bridge`
+  - `RAGBAZ-StoreFront`
+- Updated homepage, Articulate overview text, and docs guide copy/diagram labels where these product names are shown to users.
+- Kept technical paths/slugs/download URLs unchanged (`/downloads/ragbaz-bridge/ragbaz-bridge.zip`) to avoid breakage.
+
+**Publish:**
+- `ragbaz.xyz` commit: `18b714d` (`ui copy: enforce RAGBAZ-Bridge and RAGBAZ-StoreFront capitalization`)
+- Deployed worker version: `47fb357a-7074-4f36-a538-0dc2ee162445`
+
 ### Codex — continued PRO admin elaboration (boundary + adoption guidance)
 
 **Delivered:**
