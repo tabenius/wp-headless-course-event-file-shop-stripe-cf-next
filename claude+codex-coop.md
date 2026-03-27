@@ -141,6 +141,19 @@
 **Commit:**
 - `main` `c58459f` — `Expand field-level docs helpers across info, health, stats, and style`
 
+### Codex — sandbox/system panel docs helper pass
+
+**Delivered:**
+- Added contextual docs guidance to `AdminSandboxTab` so advanced operators have in-place help while handling cache/deploy and diagnostics:
+  - Added section-level docs chips in the sandbox header
+  - Added field-level `?` helpers for sandbox settings, environment block, recent commits, and recent requests
+
+**Validation:**
+- `node --check src/components/admin/AdminSandboxTab.js` (pass)
+
+**Commit:**
+- `main` `f21de42` — `Add docs helpers in sandbox system panel`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
