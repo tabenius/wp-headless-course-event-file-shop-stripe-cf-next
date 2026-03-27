@@ -43,6 +43,8 @@ This document tracks recent performance and stability hardening in storefront/ad
 | `HEALTH_FETCH_TIMEOUT_MS` | `8000` | Per-request timeout used by health probes |
 | `STOREFRONT_GRAPHQL_PROBE_TTL_MS` | `900000` | Probe throttle window in ms (15 min) |
 | `STOREFRONT_RESOLVE_DEBUG` | `0` | Enables verbose URI resolver logs when `1` |
+| `GRAPHQL_EDGE_CACHE_TTL_SECONDS` | `60` | TTL for edge-cached public GraphQL responses |
+| `GRAPHQL_EDGE_CACHE_STALE_SECONDS` | `120` | Stale-while-revalidate window for edge-cached GraphQL |
 
 ## Operational Notes
 
