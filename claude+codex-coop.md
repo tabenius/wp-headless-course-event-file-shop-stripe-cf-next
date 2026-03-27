@@ -2,6 +2,27 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — Articulate storefront matrix (OSS vs PRO/FULL) + diacritics fix
+
+**Delivered:**
+- Expanded `/articulate` with a dedicated storefront feature matrix:
+  - clear split between `OSS storefront` and `PRO/FULL storefront`,
+  - shared baseline capabilities section,
+  - explicit `Feature matrix updated` date stamp for maintenance cadence.
+- Added implementation pattern that is easy to keep current:
+  - centralized feature lists (`baseline`, `oss`, `pro`) in renderer data structure,
+  - single update point for feature-tier changes.
+- Fixed SV/ES diacritics across docs content and labels so characters render correctly:
+  - Swedish: `åäöÅÄÖ` now appears correctly in docs strings.
+  - Spanish accents/ñ restored (e.g. `Español`, `Documentación`, `técnico`, `diagnóstico`, `más`, `qué`).
+- Verified live:
+  - `/articulate` shows `Storefront Features (OSS vs PRO/FULL)` with both editions.
+  - `/docs/sv/changelog` and `/docs/es/changelog` show proper accented characters.
+
+**Publish:**
+- `ragbaz.xyz` commit: `e183fa5` (`articulate: add oss vs pro storefront matrix; fix sv/es diacritics`)
+- Deployed worker version: `009cef6c-0187-41ab-b987-b4348eced883`
+
 ### Codex — Mermaid contrast fix + Ctrl+Alt hotkey restore on ragbaz.xyz docs
 
 **Delivered:**
