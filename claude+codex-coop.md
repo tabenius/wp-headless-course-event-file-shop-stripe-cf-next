@@ -2,6 +2,22 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — docs safety strip language submenu (subtle hover)
+
+**Delivered:**
+- Updated `ragbaz.xyz/src/lib/pages.js` safety-strip renderer to support optional submenu items per safety cell.
+- Wired docs language safety item to show `en/sv/es` as a subtle hover/focus submenu from the `Language en` value.
+- Kept `/docs` as a separate direct safety-strip link (`Base /docs`) exactly as before.
+- Added matching submenu styles in both page shell style blocks for consistent rendering.
+- Verified generated docs HTML includes:
+  - `.safety-menu-trigger` with current lang value
+  - `.safety-menu-panel` with `en/sv/es` options
+  - unchanged `/docs` safety link
+
+**Publish:**
+- `ragbaz.xyz` commit: `439ee75` (`docs safety strip: add subtle language hover submenu`)
+- Deployed worker version: `bdd73b49-d7d8-49f1-853d-fcc337e91e2f`
+
 ### Codex — published weekly changelog on ragbaz.xyz docs
 
 **Delivered:**
