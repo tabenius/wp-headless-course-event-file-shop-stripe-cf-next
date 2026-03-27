@@ -13,11 +13,6 @@ import { t } from "@/lib/i18n";
 import { parsePriceCents } from "@/lib/parsePrice";
 import { slugify } from "@/lib/slugify";
 import { multipartUpload } from "@/lib/multipartUploadClient";
-import ImageUploader from "./ImageUploader";
-import ProductRow from "./ProductRow";
-import ProductSection from "./ProductSection";
-import ImageGenerationPanel from "./ImageGenerationPanel";
-import ChatPanel from "./ChatPanel";
 import AdminUiFeedbackBar from "./AdminUiFeedbackBar";
 import { adminFetch } from "@/lib/adminFetch";
 import {
@@ -43,6 +38,7 @@ const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
 const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
 const AdminInfoHubTab = lazy(() => import("./AdminInfoHubTab"));
 const AdminStyleTab = lazy(() => import("./AdminStyleTab"));
+const ChatPanel = lazy(() => import("./ChatPanel"));
 
 const ADMIN_TABS_BASE = [
   "sales",
@@ -2556,16 +2552,18 @@ export default function AdminDashboard() {
       {/* ── Chat tab ── */}
       {activeTab === "chat" && (
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
-          <ChatPanel
-            chatMessages={chatMessages}
-            chatInput={chatInput}
-            setChatInput={setChatInput}
-            sendChat={sendChat}
-            rebuildIndex={rebuildIndex}
-            clearChat={clearChat}
-            chatLoading={chatLoading}
-            uploadBackend={uploadBackend}
-          />
+          <Suspense fallback={<div className="rounded border p-4 text-sm text-gray-500">Loading chat…</div>}>
+            <ChatPanel
+              chatMessages={chatMessages}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              sendChat={sendChat}
+              rebuildIndex={rebuildIndex}
+              clearChat={clearChat}
+              chatLoading={chatLoading}
+              uploadBackend={uploadBackend}
+            />
+          </Suspense>
           <div className="min-w-0 border rounded p-4 space-y-4 text-sm text-gray-300 bg-[#0e0018]">
             <h3 className="font-semibold text-white">Example commands</h3>
             {[

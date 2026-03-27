@@ -26,6 +26,11 @@ const EFFECTIVE_DELAY_MS = IS_BUILD_PHASE
 const EFFECTIVE_TIMEOUT_MS = IS_BUILD_PHASE
   ? Math.max(GRAPHQL_TIMEOUT_MS, GRAPHQL_BUILD_TIMEOUT_MS)
   : GRAPHQL_TIMEOUT_MS;
+const GRAPHQL_EDGE_CACHE_TTL_SECONDS =
+  Number.parseInt(process.env.GRAPHQL_EDGE_CACHE_TTL_SECONDS || "60", 10) || 60;
+const GRAPHQL_EDGE_CACHE_STALE_SECONDS =
+  Number.parseInt(process.env.GRAPHQL_EDGE_CACHE_STALE_SECONDS || "120", 10) ||
+  120;
 let lastCallTs = 0;
 
 // ── Request history ───────────────────────────────────────────────────────────
@@ -118,6 +123,66 @@ function detectGraphqlFailureKind(errors) {
   return "graphql-error";
 }
 
+function getEdgeCache() {
+  try {
+    if (typeof caches === "undefined" || !caches) return null;
+    return caches.default || null;
+  } catch {
+    return null;
+  }
+}
+
+async function digestSha256Hex(value) {
+  const input = new TextEncoder().encode(String(value || ""));
+  const hash = await crypto.subtle.digest("SHA-256", input);
+  return Array.from(new Uint8Array(hash))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function buildGraphqlEdgeCacheRequest(graphqlEndpoint, query, variables) {
+  const keyPayload = JSON.stringify({
+    endpoint: graphqlEndpoint,
+    query,
+    variables: variables ?? {},
+  });
+  const digest = await digestSha256Hex(keyPayload);
+  const keyUrl = `https://ragbaz-edge-cache.local/graphql/${digest}`;
+  return new Request(keyUrl, { method: "GET" });
+}
+
+async function readGraphqlEdgeCache(cacheRequest) {
+  const edgeCache = getEdgeCache();
+  if (!edgeCache || !cacheRequest) return null;
+  try {
+    const cached = await edgeCache.match(cacheRequest);
+    if (!cached) return null;
+    const payload = await cached.json().catch(() => null);
+    return payload && typeof payload === "object" ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeGraphqlEdgeCache(cacheRequest, data, ttlSeconds, staleSeconds) {
+  const edgeCache = getEdgeCache();
+  if (!edgeCache || !cacheRequest) return;
+  try {
+    const response = new Response(JSON.stringify(data ?? {}), {
+      headers: {
+        "content-type": "application/json",
+        "cache-control": `public, max-age=${Math.max(
+          1,
+          ttlSeconds,
+        )}, stale-while-revalidate=${Math.max(0, staleSeconds)}`,
+      },
+    });
+    await edgeCache.put(cacheRequest, response);
+  } catch {
+    // Cache writes are best-effort only.
+  }
+}
+
 /**
  * Cache of GraphQL type existence checks.
  * Populated lazily on first call to hasGraphQLType().
@@ -146,7 +211,12 @@ export async function hasGraphQLType(typeName) {
   }
 }
 
-export async function fetchGraphQL(query, variables = {}, revalidate = null) {
+export async function fetchGraphQL(
+  query,
+  variables = {},
+  revalidate = null,
+  options = {},
+) {
   if (typeof query !== "string" || query.trim().length === 0) {
     console.error("fetchGraphQL called with an invalid query");
     return {};
@@ -162,6 +232,30 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
   const debugGraphQL =
     process.env.WORDPRESS_GRAPHQL_DEBUG === "1" ||
     process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
+  const edgeCacheEnabled =
+    !IS_BUILD_PHASE &&
+    options?.edgeCache === true &&
+    getEdgeCache() !== null;
+  const edgeCacheTtlSeconds =
+    Number.parseInt(String(options?.edgeCacheTtlSeconds || ""), 10) ||
+    GRAPHQL_EDGE_CACHE_TTL_SECONDS;
+  const edgeCacheStaleSeconds =
+    Number.parseInt(String(options?.edgeCacheStaleSeconds || ""), 10) ||
+    GRAPHQL_EDGE_CACHE_STALE_SECONDS;
+  let cacheRequest = null;
+  if (edgeCacheEnabled) {
+    cacheRequest = await buildGraphqlEdgeCacheRequest(
+      graphqlEndpoint,
+      query,
+      variables,
+    ).catch(() => null);
+    if (cacheRequest) {
+      const cached = await readGraphqlEdgeCache(cacheRequest);
+      if (cached) {
+        return cached;
+      }
+    }
+  }
   const operationName = extractOperationName(query);
   const queryPreview = trimText(query, 2400);
   const variablesPreview = stringifyVariablesPreview(variables, 1600);
@@ -337,7 +431,16 @@ export async function fetchGraphQL(query, variables = {}, revalidate = null) {
         latencyMs,
         operationName,
       }).catch(() => {});
-      return result?.data || {};
+      const successData = result?.data || {};
+      if (edgeCacheEnabled && cacheRequest) {
+        await writeGraphqlEdgeCache(
+          cacheRequest,
+          successData,
+          edgeCacheTtlSeconds,
+          edgeCacheStaleSeconds,
+        );
+      }
+      return successData;
     }
 
     if (lastError) {

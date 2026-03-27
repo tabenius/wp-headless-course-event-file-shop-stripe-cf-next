@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { decodeEntities } from "@/lib/decodeEntities";
 import { formatEventDateRange, getEventEndIso, getEventStartIso } from "@/lib/eventDates";
 import { t } from "@/lib/i18n";
@@ -58,9 +59,12 @@ function EventRow({ event }) {
 
       <Link href={event.uri} className="block overflow-hidden rounded-lg ring-1 ring-[#edd5e8] lg:w-48 lg:flex-none">
         {event.imageUrl ? (
-          <img
+          <Image
             src={event.imageUrl}
             alt={event.imageAlt || title}
+            width={384}
+            height={192}
+            sizes="(min-width: 1024px) 12rem, 100vw"
             className="h-32 w-full object-cover lg:h-24"
             loading="lazy"
           />

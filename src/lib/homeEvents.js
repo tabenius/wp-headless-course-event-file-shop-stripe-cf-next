@@ -115,12 +115,19 @@ function sortByStartDateAsc(events) {
  */
 export async function fetchHomeEvents() {
   try {
-    const data = await fetchGraphQL(HOME_EVENTS_QUERY, {}, 1800);
+    const data = await fetchGraphQL(HOME_EVENTS_QUERY, {}, 1800, {
+      edgeCache: true,
+    });
     const raw = toRenderableEvents(extractEventNodes(data));
 
     // Fallback when custom date fields are unavailable or blocked by upstream GraphQL policy.
     if (raw.length === 0) {
-      const fallbackData = await fetchGraphQL(HOME_EVENTS_FALLBACK_QUERY, {}, 1800);
+      const fallbackData = await fetchGraphQL(
+        HOME_EVENTS_FALLBACK_QUERY,
+        {},
+        1800,
+        { edgeCache: true },
+      );
       const fallbackRaw = toRenderableEvents(extractEventNodes(fallbackData));
       return { events: fallbackRaw, hasDates: false };
     }

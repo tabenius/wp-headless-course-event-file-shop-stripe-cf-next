@@ -31,7 +31,7 @@ export default async function HomePage() {
   try {
     await probeStorefrontRagbazGraphql("/");
     [data, { events, hasDates }] = await Promise.all([
-      fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800),
+      fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800, { edgeCache: true }),
       fetchHomeEvents(),
     ]);
   } catch (err) {

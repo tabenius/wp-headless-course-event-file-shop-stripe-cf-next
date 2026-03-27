@@ -79,10 +79,14 @@ function extractEvents(data) {
 }
 
 export default async function EventsPage() {
-  const data = await fetchGraphQL(LIST_EVENTS_QUERY, {}, 1800);
+  const data = await fetchGraphQL(LIST_EVENTS_QUERY, {}, 1800, {
+    edgeCache: true,
+  });
   let events = extractEvents(data);
   if (events.length === 0) {
-    const fallback = await fetchGraphQL(LIST_EVENTS_FALLBACK_QUERY, {}, 1800);
+    const fallback = await fetchGraphQL(LIST_EVENTS_FALLBACK_QUERY, {}, 1800, {
+      edgeCache: true,
+    });
     events = extractEvents(fallback);
   }
 

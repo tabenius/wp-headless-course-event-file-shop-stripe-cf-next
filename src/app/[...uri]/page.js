@@ -35,80 +35,104 @@ const DEBUG_WP_RESOLVE = process.env.STOREFRONT_RESOLVE_DEBUG === "1";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 
-/** Build the content query dynamically based on which CPTs exist in the schema. */
-async function buildContentQuery() {
-  const [eventFragment, courseFragment] = await Promise.all([
-    getSingleEventFragment(),
-    getLpCourseFragment(),
-  ]);
-  const eventSpread = eventFragment ? "...SingleEventFragment" : "";
-  const courseSpread = courseFragment ? "...LpCourseFragment" : "";
-
-  return `
-  ${eventFragment}
-  ${courseFragment}
-  ${SinglePageFragment}
-  ${SinglePostFragment}
-  query GetNodeByUri($uri: String!) {
+const RESOLVE_NODE_TYPE_QUERY = `
+  query ResolveNodeByUriType($uri: String!) {
     nodeByUri(uri: $uri) {
       __typename
-      ... on NodeWithTitle {
-        title
-      }
-      ... on NodeWithContentEditor {
-        content
-      }
       ... on ContentNode {
         id
         uri
       }
-      ... on NodeWithFeaturedImage {
-        featuredImage {
-          node {
-            sourceUrl
-            altText
-            mediaDetails {
-              width
-              height
-            }
-          }
-        }
-      }
-      ... on SimpleProduct {
-        name
-        priceText: price
-        shortDescription
-      }
-      ... on VariableProduct {
-        name
-        priceText: price
-        shortDescription
-      }
-      ... on ExternalProduct {
-        name
-        priceText: price
-        shortDescription
-      }
-      ...SinglePageFragment
-      ...SinglePostFragment
-      ${eventSpread}
-      ${courseSpread}
     }
   }
 `;
+
+const COMMON_NODE_FIELDS = `
+  __typename
+  ... on NodeWithTitle {
+    title
+  }
+  ... on NodeWithContentEditor {
+    content
+  }
+  ... on ContentNode {
+    id
+    uri
+  }
+  ... on NodeWithFeaturedImage {
+    featuredImage {
+      node {
+        sourceUrl
+        altText
+        mediaDetails {
+          width
+          height
+        }
+      }
+    }
+  }
+  ... on SimpleProduct {
+    name
+    priceText: price
+    shortDescription
+  }
+  ... on VariableProduct {
+    name
+    priceText: price
+    shortDescription
+  }
+  ... on ExternalProduct {
+    name
+    priceText: price
+    shortDescription
+  }
+`;
+
+const typedQueryPromiseByType = new Map();
+
+async function buildTypedContentQuery(typeName) {
+  const safeType = String(typeName || "").trim();
+  let fragments = "";
+  let spread = "";
+
+  if (safeType === "Page") {
+    fragments = SinglePageFragment;
+    spread = "...SinglePageFragment";
+  } else if (safeType === "Post") {
+    fragments = SinglePostFragment;
+    spread = "...SinglePostFragment";
+  } else if (safeType === "Event") {
+    const eventFragment = await getSingleEventFragment();
+    fragments = eventFragment || "";
+    spread = eventFragment ? "...SingleEventFragment" : "";
+  } else if (safeType === "LpCourse") {
+    const courseFragment = await getLpCourseFragment();
+    fragments = courseFragment || "";
+    spread = courseFragment ? "...LpCourseFragment" : "";
+  }
+
+  const queryNameSuffix = safeType.replace(/[^A-Za-z0-9_]/g, "_") || "Node";
+  return `
+    ${fragments}
+    query GetNodeByUri_${queryNameSuffix}($uri: String!) {
+      nodeByUri(uri: $uri) {
+        ${COMMON_NODE_FIELDS}
+        ${spread}
+      }
+    }
+  `;
 }
 
-// Cache the built query so introspection only runs once per process.
-// If the promise rejects, clear it so the next request retries.
-let _queryPromise = null;
-function getContentQuery() {
-  if (!_queryPromise) {
-    _queryPromise = buildContentQuery().catch((err) => {
-      _queryPromise = null;
-      throw err;
+function getTypedContentQuery(typeName) {
+  const key = String(typeName || "").trim() || "Node";
+  if (!typedQueryPromiseByType.has(key)) {
+    const promise = buildTypedContentQuery(key).catch((error) => {
+      typedQueryPromiseByType.delete(key);
+      throw error;
     });
+    typedQueryPromiseByType.set(key, promise);
   }
-  return _queryPromise;
+  return typedQueryPromiseByType.get(key);
 }
 
 function normalizeUriForLookup(uri) {
@@ -145,23 +169,26 @@ function isMatchingRequestedUri(requestedUri, candidateUri) {
   return requested === candidate;
 }
 
-/**
- * Fail-safe fetcher for WPGraphQL nodes.
- * Retries with both trailing-slash variants because nodeByUri can be strict
- * depending on permalink and plugin behavior.
- */
-async function fetchContent(uri) {
-  await probeStorefrontRagbazGraphql(uri);
-  const query = await getContentQuery();
+async function fetchNodeType(uri) {
   const attempts = buildUriLookupAttempts(uri);
   let lastData = null;
   let lastError = null;
 
   for (const candidateUri of attempts) {
     try {
-      const data = await fetchGraphQL(query, { uri: candidateUri }, 1800);
+      const data = await fetchGraphQL(
+        RESOLVE_NODE_TYPE_QUERY,
+        { uri: candidateUri },
+        1800,
+        { edgeCache: true },
+      );
       lastData = data;
-      if (data?.nodeByUri) return data;
+      if (data?.nodeByUri?.__typename) {
+        return {
+          nodeByUri: data.nodeByUri,
+          resolvedUri: candidateUri,
+        };
+      }
     } catch (err) {
       if (err instanceof RateLimitError) {
         throw err;
@@ -169,22 +196,44 @@ async function fetchContent(uri) {
       lastError = err;
       appendServerLog({
         level: "warn",
-        msg: `WPGraphQL lookup failed for ${candidateUri}: ${err?.message || err}`,
+        msg: `WPGraphQL type lookup failed for ${candidateUri}: ${err?.message || err}`,
         persist: false,
       }).catch(() => {});
     }
   }
 
-  if (!lastData?.nodeByUri) {
+  if (!lastData?.nodeByUri?.__typename) {
     const detail = lastError ? ` (last error: ${lastError.message || lastError})` : "";
     appendServerLog({
       level: "info",
-      msg: `WPGraphQL nodeByUri returned null for all variants of: ${normalizeUriForLookup(uri)}${detail}`,
+      msg: `WPGraphQL nodeByUri type resolution returned null for: ${normalizeUriForLookup(uri)}${detail}`,
       persist: false,
     }).catch(() => {});
   }
 
   return lastData || {};
+}
+
+async function fetchTypedContent(uri, nodeType) {
+  const query = await getTypedContentQuery(nodeType);
+  const attempts = buildUriLookupAttempts(uri);
+
+  for (const candidateUri of attempts) {
+    try {
+      const data = await fetchGraphQL(query, { uri: candidateUri }, 1800, {
+        edgeCache: true,
+      });
+      if (data?.nodeByUri) return data;
+    } catch (err) {
+      if (err instanceof RateLimitError) throw err;
+      appendServerLog({
+        level: "warn",
+        msg: `WPGraphQL typed lookup failed for ${candidateUri} (${nodeType}): ${err?.message || err}`,
+        persist: false,
+      }).catch(() => {});
+    }
+  }
+  return {};
 }
 
 /**
@@ -197,14 +246,27 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
   }
   
   try {
-    const data = await fetchContent(normalizedUri);
-    if (data?.nodeByUri) {
+    await probeStorefrontRagbazGraphql(normalizedUri);
+    const typeData = await fetchNodeType(normalizedUri);
+    const resolvedType = typeData?.nodeByUri?.__typename || "";
+    if (resolvedType) {
+      const resolvedUri = typeData?.resolvedUri || normalizedUri;
+      const data = await fetchTypedContent(resolvedUri, resolvedType);
+      if (data?.nodeByUri) {
+        if (DEBUG_WP_RESOLVE) {
+          console.log(
+            `[WP-Resolve] Success: Found ${data.nodeByUri.__typename} for ${normalizedUri}`,
+          );
+        }
+        return data.nodeByUri;
+      }
+    }
+    if (typeData?.nodeByUri) {
       if (DEBUG_WP_RESOLVE) {
         console.log(
-          `[WP-Resolve] Success: Found ${data.nodeByUri.__typename} for ${normalizedUri}`,
+          `[WP-Resolve] Type resolved but typed fetch empty for ${normalizedUri}: ${resolvedType}`,
         );
       }
-      return data.nodeByUri;
     }
   } catch (err) {
     if (err instanceof RateLimitError) {
@@ -322,9 +384,11 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
       }
     }
   `;
-  const data = await fetchGraphQL(query, { uri }, 1800);
+  const data = await fetchGraphQL(query, { uri }, 1800, { edgeCache: true });
   if (data?.lpCourse) return data.lpCourse;
-  const dataBySlug = await fetchGraphQL(query, { uri: slug }, 1800);
+  const dataBySlug = await fetchGraphQL(query, { uri: slug }, 1800, {
+    edgeCache: true,
+  });
   if (dataBySlug?.lpCourse) return dataBySlug.lpCourse;
 
   // REST fallback for LearnPress course

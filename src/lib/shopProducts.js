@@ -38,6 +38,7 @@ async function hasGraphQLField(typeName, fieldName) {
     }`,
     { name: typeName },
     1800,
+    { edgeCache: true },
   );
   const exists = (data?.__type?.fields || []).some(
     (field) => field?.name === fieldName,
@@ -78,6 +79,7 @@ async function fetchWooCommerceProducts() {
       }`,
       {},
       300,
+      { edgeCache: true },
     );
     return (data?.products?.edges || [])
       .map((e) => e.node)
@@ -108,6 +110,7 @@ async function fetchLearnPressCourses() {
       } } } }`,
       {},
       300,
+      { edgeCache: true },
     );
     return (data?.lpCourses?.edges || []).map((e) => e.node);
   } catch (err) {
@@ -133,6 +136,7 @@ async function fetchEvents() {
       } } } }`,
       {},
       300,
+      { edgeCache: true },
     );
     return (data?.events?.edges || []).map((e) => e.node);
   } catch (err) {
