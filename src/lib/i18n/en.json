@@ -751,6 +751,7 @@
     "noComments": "No comments yet.",
     "payments": "Payments",
     "paymentsFilter": "Filter by email (optional)",
+    "dateFilter": "Date filter",
     "paymentsReload": "Reload",
     "noPayments": "No payments found.",
     "deadLinksTitle": "Dead-link finder",

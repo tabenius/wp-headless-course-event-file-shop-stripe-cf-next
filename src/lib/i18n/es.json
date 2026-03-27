@@ -751,6 +751,7 @@
     "noComments": "Sin comentarios.",
     "payments": "Pagos",
     "paymentsFilter": "Filtrar por correo (opcional)",
+    "dateFilter": "Filtro de fecha",
     "paymentsReload": "Recargar",
     "noPayments": "No se encontraron pagos",
     "deadLinksTitle": "Buscador de enlaces rotos",

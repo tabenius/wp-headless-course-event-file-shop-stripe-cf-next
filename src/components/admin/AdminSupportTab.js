@@ -2,6 +2,7 @@
 
 import { t } from "@/lib/i18n";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 export default function AdminSupportTab({
   tickets,
@@ -135,9 +136,12 @@ export default function AdminSupportTab({
           </div>
 
           <div className="border rounded p-3 space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">
-              {t("admin.newTicket")}
-            </h3>
+            <div className="flex items-center gap-1">
+              <h3 className="text-sm font-semibold text-gray-700">
+                {t("admin.newTicket")}
+              </h3>
+              <AdminFieldHelpLink slug="quick-start" />
+            </div>
             <input
               type="text"
               className="w-full border rounded px-3 py-2 text-sm"
@@ -159,7 +163,10 @@ export default function AdminSupportTab({
               }
             />
             <div className="flex items-center gap-2 text-sm">
-              <label className="text-gray-600">{t("admin.priority")}:</label>
+              <label className="inline-flex items-center gap-1 text-gray-600">
+                <span>{t("admin.priority")}:</span>
+                <AdminFieldHelpLink slug="technical-manual" />
+              </label>
               <select
                 value={newTicket.priority}
                 onChange={(e) =>
@@ -213,17 +220,20 @@ export default function AdminSupportTab({
                     {new Date(selectedTicket.createdAt).toLocaleString("sv-SE")}
                   </p>
                 </div>
-                <select
-                  className="border rounded px-2 py-1 text-sm"
-                  value={selectedTicket.status}
-                  onChange={(e) =>
-                    updateSupportTicket({ status: e.target.value })
-                  }
-                >
-                  <option value="open">{t("admin.statusOpen")}</option>
-                  <option value="will-fix">{t("admin.statusWillFix")}</option>
-                  <option value="resolved">{t("admin.statusResolved")}</option>
-                </select>
+                <div className="inline-flex items-center gap-1">
+                  <select
+                    className="border rounded px-2 py-1 text-sm"
+                    value={selectedTicket.status}
+                    onChange={(e) =>
+                      updateSupportTicket({ status: e.target.value })
+                    }
+                  >
+                    <option value="open">{t("admin.statusOpen")}</option>
+                    <option value="will-fix">{t("admin.statusWillFix")}</option>
+                    <option value="resolved">{t("admin.statusResolved")}</option>
+                  </select>
+                  <AdminFieldHelpLink slug="technical-manual" />
+                </div>
               </div>
               {selectedTicket.description && (
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -245,9 +255,12 @@ export default function AdminSupportTab({
               )}
 
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-gray-700">
-                  {t("admin.comments")}
-                </h4>
+                <div className="flex items-center gap-1">
+                  <h4 className="text-sm font-semibold text-gray-700">
+                    {t("admin.comments")}
+                  </h4>
+                  <AdminFieldHelpLink slug="technical-manual" />
+                </div>
                 <div className="space-y-2 max-h-48 overflow-auto pr-1">
                   {(selectedTicket.comments || []).length === 0 ? (
                     <p className="text-xs text-gray-500">

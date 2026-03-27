@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
@@ -216,24 +217,30 @@ export default function AdminSalesTab({
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center gap-3 min-w-0">
         {/* Email search */}
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-4 h-4 text-gray-400 shrink-0"
-          >
-            <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-            <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-          </svg>
-          <input
-            type="email"
-            value={paymentsEmail}
-            onChange={(e) => setPaymentsEmail(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && loadPayments(paymentsEmail)}
-            placeholder={t("admin.paymentsFilter", "Filter by email")}
-            className="text-sm outline-none bg-transparent w-48 max-w-[70vw] placeholder-gray-400"
-          />
+        <div className="space-y-1">
+          <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            <span>{t("admin.paymentsFilter", "Filter by email")}</span>
+            <AdminFieldHelpLink slug="technical-manual" />
+          </div>
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4 text-gray-400 shrink-0"
+            >
+              <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
+              <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
+            </svg>
+            <input
+              type="email"
+              value={paymentsEmail}
+              onChange={(e) => setPaymentsEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && loadPayments(paymentsEmail)}
+              placeholder={t("admin.paymentsFilter", "Filter by email")}
+              className="text-sm outline-none bg-transparent w-48 max-w-[70vw] placeholder-gray-400"
+            />
+          </div>
         </div>
 
         <button
@@ -248,21 +255,27 @@ export default function AdminSalesTab({
         </button>
 
         {/* Date pills */}
-        <div className="ml-auto flex flex-wrap gap-1">
-          {DATE_FILTERS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setDateFilter(key)}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                dateFilter === key
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="ml-auto space-y-1">
+          <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            <span>{t("admin.dateFilter", "Date filter")}</span>
+            <AdminFieldHelpLink slug="performance-explained" />
+          </div>
+          <div className="flex flex-wrap justify-end gap-1">
+            {DATE_FILTERS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setDateFilter(key)}
+                className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+                  dateFilter === key
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

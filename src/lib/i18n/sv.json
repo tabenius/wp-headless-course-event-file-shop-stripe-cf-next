@@ -751,6 +751,7 @@
     "noComments": "Inga kommentarer än.",
     "payments": "Betalningar",
     "paymentsFilter": "Filtrera på e-post (valfritt)",
+    "dateFilter": "Datumfilter",
     "paymentsReload": "Ladda om",
     "noPayments": "Inga betalningar hittades.",
     "deadLinksTitle": "Brutna-länkar-sökare",
