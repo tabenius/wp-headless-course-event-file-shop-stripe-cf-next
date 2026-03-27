@@ -59,6 +59,14 @@ import AdminDocsContextLinks from "@/components/admin/AdminDocsContextLinks";
 import AdminFieldHelpLink from "@/components/admin/AdminFieldHelpLink";
 
 const RGB_CHANNELS = ["r", "g", "b"];
+const QUICK_OPERATION_TYPES = [
+  "presetCrop",
+  "tiltShift",
+  "textOverlay",
+  "saturation",
+  "sepia",
+  "cropCircle",
+];
 
 function clampRgbChannel(value, fallback = 0) {
   const parsed = Number(value);
@@ -162,6 +170,8 @@ export default function AdminMediaLibraryTab({
   const uploadInputRef = useRef(null);
   const dragDepthRef = useRef(0);
   const mediaRowsRef = useRef(new Map());
+  const derivationPanelRef = useRef(null);
+  const operationSearchInputRef = useRef(null);
 
   const imageUploadOptions = useMemo(
     () => [
@@ -241,6 +251,14 @@ export default function AdminMediaLibraryTab({
         ? newOperationType
         : "",
     [newOperationType, visibleAddableOperationTypes],
+  );
+  const quickOperationButtons = useMemo(
+    () =>
+      QUICK_OPERATION_TYPES.map((type) => ({
+        type,
+        schema: OPERATION_REGISTRY[type],
+      })).filter((entry) => entry.schema),
+    [],
   );
 
   useEffect(() => {
@@ -1232,11 +1250,22 @@ export default function AdminMediaLibraryTab({
     }
   }
 
+  function addOperationByType(typeToAdd) {
+    if (!typeToAdd) return;
+    const defaultParams = buildDefaultParams(typeToAdd);
+    setNewOperationType(typeToAdd);
+    let nextIndex = -1;
+    setCustomOperations((current) => {
+      nextIndex = current.length;
+      return [...current, { type: typeToAdd, params: defaultParams }];
+    });
+    if (nextIndex >= 0) setFocusedOperationIndex(nextIndex);
+  }
+
   function handleAddOperation() {
     const typeToAdd = selectedVisibleOperationType || newOperationType;
     if (!typeToAdd) return;
-    const defaultParams = buildDefaultParams(typeToAdd);
-    setCustomOperations((current) => [...current, { type: typeToAdd, params: defaultParams }]);
+    addOperationByType(typeToAdd);
   }
 
   function handleRemoveOperation(operationIndex) {
@@ -1313,6 +1342,34 @@ export default function AdminMediaLibraryTab({
       return `${param.key}=${formatParameterValue(value)}`;
     });
     return entries.filter(Boolean);
+  }
+
+  function handleDerivationPanelKeyDown(event) {
+    if (!event.altKey) return;
+    const key = String(event.key || "").toLowerCase();
+    const targetTag = String(event.target?.tagName || "").toUpperCase();
+    const isTextControl = ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag);
+    if (key === "/") {
+      event.preventDefault();
+      operationSearchInputRef.current?.focus();
+      operationSearchInputRef.current?.select();
+      return;
+    }
+    if (isTextControl) return;
+    if (key === "n") {
+      event.preventDefault();
+      handleAddOperation();
+      return;
+    }
+    if (key === "e" && event.shiftKey) {
+      event.preventDefault();
+      expandAllOperations();
+      return;
+    }
+    if (key === "e") {
+      event.preventDefault();
+      collapseAllOperations();
+    }
   }
 
   function renderOperationParamField(operation, operationIndex, param) {
@@ -2490,7 +2547,11 @@ export default function AdminMediaLibraryTab({
       )}
 
       {derivations.length > 0 && (
-        <div className="rounded border border-indigo-200 bg-indigo-50 p-4 text-xs space-y-3">
+        <div
+          ref={derivationPanelRef}
+          onKeyDown={handleDerivationPanelKeyDown}
+          className="rounded border border-indigo-200 bg-indigo-50 p-4 text-xs space-y-3"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-800">
@@ -2918,9 +2979,26 @@ export default function AdminMediaLibraryTab({
             );
           })}
           <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1 rounded border border-indigo-200 bg-white px-2 py-1">
+              <span className="text-[11px] font-semibold text-indigo-700">
+                {t("admin.mediaDerivationQuickAdd", "Quick add")}
+              </span>
+              {quickOperationButtons.map((entry) => (
+                <button
+                  key={`quick-add-${entry.type}`}
+                  type="button"
+                  onClick={() => addOperationByType(entry.type)}
+                  className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-100"
+                >
+                  {entry.schema?.icon ? `${entry.schema.icon} ` : ""}
+                  {entry.schema?.label || entry.type}
+                </button>
+              ))}
+            </div>
             <label className="flex items-center gap-2 text-[11px] text-gray-700">
               <span>{t("admin.mediaDerivationFindOperation", "Find operation")}</span>
               <input
+                ref={operationSearchInputRef}
                 type="search"
                 value={operationSearchTerm}
                 onChange={(event) => setOperationSearchTerm(event.target.value)}
@@ -2963,6 +3041,12 @@ export default function AdminMediaLibraryTab({
             >
               {t("admin.mediaDerivationAddOperation", "Add operation")}
             </button>
+            <span className="text-[10px] text-indigo-600">
+              {t(
+                "admin.mediaDerivationPanelHotkeys",
+                "Panel hotkeys: Alt+/ search, Alt+N add, Alt+E collapse all, Alt+Shift+E expand all.",
+              )}
+            </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="inline-flex items-center gap-2 text-[11px] text-indigo-700">

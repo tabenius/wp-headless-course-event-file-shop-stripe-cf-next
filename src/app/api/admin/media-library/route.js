@@ -565,7 +565,7 @@ async function fetchWordPressMedia({ limit, search }) {
   if (!baseUrl) {
     throw new Error("WordPress URL is not configured.");
   }
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   const params = new URLSearchParams({
     per_page: String(limit),
     page: "1",
@@ -836,7 +836,7 @@ function toPatchPayload(body) {
 async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights, asset }) {
   const baseUrl = normalizeWordPressUrl();
   if (!baseUrl) throw new Error("WordPress URL is not configured.");
-  const auth = getWordPressGraphqlAuth();
+  const auth = await getWordPressGraphqlAuth();
   const payloadWithMeta = {
     title: metadata.title,
     caption: metadata.caption,
