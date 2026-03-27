@@ -7,7 +7,7 @@ Both agents MUST read this at session start and update it whenever priorities sh
 
 ## Agent status
 
-- **Claude** is active (2026-03-25). Working on: (1) CF Workers bundle size reduction (R2 bindings, i18n dedup, AWS SDK externalization — landed), (2) Derivation editor redesign — visual grid picker with 22 operations, sliders, drag-and-drop pipeline (spec done, writing implementation plan).
+- **Claude** handed the active storefront/admin backlog to **Codex**. Codex currently owns the implementation loop and should keep logging every landed feature in `claude+codex-coop.md`.
 
 ## Project overview
 
@@ -210,9 +210,14 @@ Full list in `.env.example`.
 
 ### Ranked backlog (see coop file for full detail)
 
-**Admin UI refactor + bug fixes (2026-03-22, Claude).** `AdminDashboard.js` reduced from 3316 → 2593 lines. Style tab extracted into `AdminStyleTab.js` (955 lines). 8 concrete bugs fixed across 5 files. `AdminMediaLibraryTab.js` refactor deferred to a separate plan.
+DONE (2026-03-27, Codex): prioritized implementation batch landed in order:
+1. R2 binding + CF bundle-size migration
+2. Media/derivation UX hardening (quick-add + panel hotkeys + async WP auth callsites)
+3. Image pipeline defaults (WebP-first + responsive variant uploads + stricter variant-kind defaults)
+4. `/shop` static shell + async ownership enrichment API split
+5. Tiered settings panel with WC proxy + Stripe key override settings (KV-backed) and runtime wiring
 
-**Follow-up / Monitoring** — Watch recent changes (Photon pipeline + WASM derivation blob flow, admin header stats ticker, security audit fixes, WP plugin asset metadata + health integration, font browser / typography system, AdminStyleTab extraction) for regressions.
+**Follow-up / Monitoring** — Validate new settings/Stripe override paths and shop enrichment flow in staging/production, then continue planned `AdminMediaLibraryTab` extraction.
 
 ### Working rules for this backlog
 

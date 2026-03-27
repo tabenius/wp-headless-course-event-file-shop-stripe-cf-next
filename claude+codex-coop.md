@@ -1,5 +1,79 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-27 (Codex) — prioritized 1→5 implementation batch
+
+### Codex — R2 bindings + CF bundle-size migration (commit `1258caa`)
+
+**Delivered:**
+- Added Worker-native R2 binding accessor (`src/lib/r2Bindings.js`) and switched storage operations to prefer `R2_BUCKET` binding first, then edge-signed R2 requests, then AWS SDK fallback.
+- Updated OpenNext/CF patch scripts:
+  - externalized AWS SDK packages from Worker bundle path,
+  - deduplicated inlined i18n blobs in generated handler.
+- Added R2 bucket binding in `wrangler.jsonc`.
+
+**Validation:**
+- `npx eslint src/lib/s3upload.js src/lib/r2Bindings.js scripts/patch-opennext.mjs scripts/patch-cf-worker.mjs`
+- `node --check src/lib/s3upload.js src/lib/r2Bindings.js scripts/patch-opennext.mjs scripts/patch-cf-worker.mjs`
+
+### Codex — media/derivation UX hardening (commit `148ccba`)
+
+**Delivered:**
+- Fixed async auth callsites in admin media API to await WordPress GraphQL auth correctly.
+- Added derivation quick-add operator buttons for common operations.
+- Added derivation panel keyboard shortcuts (`Alt+/`, `Alt+N`, `Alt+E`, `Alt+Shift+E`).
+- Added i18n keys for new derivation panel controls in EN/SV/ES.
+
+**Validation:**
+- `npx eslint src/components/admin/AdminMediaLibraryTab.js src/app/api/admin/media-library/route.js`
+- i18n JSON validation for EN/SV/ES.
+
+### Codex — image pipeline defaults + responsive variants (commit `b482c8f`)
+
+**Delivered:**
+- Changed derivation default output fallback from JPEG to WebP (`resolveOutputFormat`).
+- Enforced non-original upload variant default to `compressed` (instead of `original`) and expanded accepted responsive variant kinds.
+- Upgraded `ImageUploader` to save responsive variants (`sm`, `md`, `lg`) from one crop flow while keeping original upload lineage.
+- Added UI hint about automatic responsive variants and aligned variant-type messaging.
+
+**Validation:**
+- `npx eslint src/components/admin/ImageUploader.js src/lib/photonPipeline.js src/app/api/admin/upload/route.js tests/photon-pipeline.test.js`
+- `node --test tests/photon-pipeline.test.js`
+
+### Codex — static `/shop` shell + async ownership enrichment API (commit `ae2bf50`)
+
+**Delivered:**
+- Converted `/shop` page to a static catalog shell (`revalidate = 300`) without per-request auth/access gating.
+- Added `/api/shop/ownership` POST endpoint that handles:
+  - session-aware ownership enrichment,
+  - checkout success confirmation/grants,
+  - batched WP URI access checks.
+- Updated `ShopIndex` to load ownership/checkout state asynchronously on client while keeping purchase flow behavior.
+
+**Validation:**
+- `npx eslint src/app/shop/page.js src/components/shop/ShopIndex.js src/app/api/shop/ownership/route.js`
+
+### Codex — tiered settings + WC proxy + Stripe key overrides (commit `80a651d`)
+
+**Delivered:**
+- Added KV-backed settings store helper (`src/lib/adminSettingsStore.js`) for:
+  - `settings:wc_proxy`
+  - `settings:stripe_key_overrides`
+- Added admin settings APIs:
+  - `GET/POST /api/admin/settings/wc-proxy`
+  - `GET/POST/DELETE /api/admin/settings/stripe-keys`
+- Added new Info tab section and UI panel (`AdminSettingsPanel`) with progressive tiers:
+  - Basic
+  - Advanced (WC proxy relay)
+  - Developer (Stripe key overrides)
+- Wired runtime usage:
+  - Stripe key resolution now supports KV overrides with cache,
+  - Stripe-dependent admin/receipt/refund/stats/health paths consume the resolved key,
+  - Stripe webhook can forward payloads to WC proxy endpoint when enabled.
+
+**Validation:**
+- `npx eslint` over all touched settings/stripe/admin route files
+- `node --check` on new settings component/store/routes
+
 ## 2026-03-27 (Codex)
 
 ### Codex — enforced product-name capitalization standard (homepage + docs copy)
