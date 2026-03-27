@@ -9,13 +9,13 @@ export default function AdminFieldHelpLink({ slug, topic = "", className = "" })
   const tooltipBase = topic
     ? t(
         "admin.docsOpenGuideTooltipFor",
-        "Open guide for {topic} on ragbaz.xyz ({lang}).",
+        "Open guide for {topic} on RAGBAZ.xyz ({lang}).",
         {
           topic,
           lang: docsLang.toUpperCase(),
         },
       )
-    : t("admin.docsOpenGuideTooltip", "Open guide on ragbaz.xyz ({lang}).", {
+    : t("admin.docsOpenGuideTooltip", "Open guide on RAGBAZ.xyz ({lang}).", {
         lang: docsLang.toUpperCase(),
       });
   const hotkeyHint = t(

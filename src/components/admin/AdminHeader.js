@@ -10,7 +10,7 @@ import {
   isAdminActionHotkey,
   shouldIgnoreAdminHotkeys,
 } from "@/lib/adminHotkeys";
-import RagbazLogo from "./RagbazLogo";
+import RagbazLogo from "./ragbaz-logo";
 
 const CHAT_BETA_STORAGE_KEY = "ragbaz_chat_beta_enabled";
 

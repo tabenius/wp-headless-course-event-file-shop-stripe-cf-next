@@ -60,7 +60,7 @@ Email ragbaz@proton.me or visit https://ragbaz.xyz/products.
 * Renamed plugin to RAGBAZ Bridge. Replaced info page with a tabbed settings panel covering overview, authentication guide, plugin inventory, performance checks, and a Connect to RAGBAZ SaaS section with live debug payload.
 
 = 1.1.0 =
-* Added built-in headless authentication via site-secret headers. Requests to /graphql carrying a matching `X-Headless-Secret`, `X-Faust-Secret`, `X-FaustWP-Secret`, or `X-Ragbaz-Secret` header are transparently authenticated as a service-account administrator. The secret is read from FaustWP settings (`faustwp_settings['secret_key']`) or the `ragbaz_site_secret` option. The authenticated user ID can be overridden via the `ragbaz_headless_user_id` filter.
+* Added built-in headless authentication via site-secret headers. Requests to /graphql carrying a matching `X-Headless-Secret`, `X-Faust-Secret`, `X-FaustWP-Secret`, or `X-RAGBAZ-Secret` header are transparently authenticated as a service-account administrator. The secret is read from FaustWP settings (`faustwp_settings['secret_key']`) or the `ragbaz_site_secret` option. The authenticated user ID can be overridden via the `ragbaz_headless_user_id` filter.
 
 = 1.0.3 =
 * Added a minimal wp-admin information screen (**Tools → RAGBAZ Bridge**) with production runtime checks.

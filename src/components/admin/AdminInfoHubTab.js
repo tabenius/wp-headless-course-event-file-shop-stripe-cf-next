@@ -822,12 +822,12 @@ function DocsPanel() {
           target="_blank"
           rel="noopener noreferrer"
           className="rounded border bg-sky-50 px-4 py-3 hover:bg-sky-100 transition-colors"
-          title={t("admin.docsOpenGuideTooltip", "Open guide on ragbaz.xyz ({lang}).", {
+          title={t("admin.docsOpenGuideTooltip", "Open guide on RAGBAZ.xyz ({lang}).", {
             lang: docsLang.toUpperCase(),
           })}
         >
           <p className="font-semibold text-sky-900">
-            {t("admin.docsExternalHub", "ragbaz.xyz docs")}
+            {t("admin.docsExternalHub", "RAGBAZ.xyz docs")}
           </p>
           <p className="text-xs text-sky-700 mt-1">
             {t(
@@ -841,12 +841,12 @@ function DocsPanel() {
           target="_blank"
           rel="noopener noreferrer"
           className="rounded border bg-sky-50 px-4 py-3 hover:bg-sky-100 transition-colors"
-          title={t("admin.docsOpenGuideTooltip", "Open guide on ragbaz.xyz ({lang}).", {
+          title={t("admin.docsOpenGuideTooltip", "Open guide on RAGBAZ.xyz ({lang}).", {
             lang: docsLang.toUpperCase(),
           })}
         >
           <p className="font-semibold text-sky-900">
-            {t("admin.docsExternalTechnical", "ragbaz.xyz technical manual")}
+            {t("admin.docsExternalTechnical", "RAGBAZ.xyz technical manual")}
           </p>
           <p className="text-xs text-sky-700 mt-1">
             {t(

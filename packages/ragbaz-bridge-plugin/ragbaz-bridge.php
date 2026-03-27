@@ -854,14 +854,14 @@ function ragbaz_plugin_row_links($links) {
   $links[] = sprintf(
     '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
     'https://ragbaz.xyz',
-    'ragbaz.xyz'
+    'RAGBAZ.xyz'
   );
   return $links;
 }
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'ragbaz_plugin_row_links');
 add_filter('plugin_row_meta', function ($links, $file) {
   if ($file === plugin_basename(__FILE__)) {
-    $links[] = '<a href="https://ragbaz.xyz/products" target="_blank" rel="noopener noreferrer">ragbaz.xyz/products</a>';
+    $links[] = '<a href="https://ragbaz.xyz/products" target="_blank" rel="noopener noreferrer">RAGBAZ.xyz/products</a>';
   }
   return $links;
 }, 10, 2);
@@ -1883,7 +1883,7 @@ function ragbaz_render_info_page() {
         <tr><td><code>X-Headless-Secret: &lt;secret&gt;</code></td><td>FaustWP / standard headless</td></tr>
         <tr><td><code>X-Faust-Secret: &lt;secret&gt;</code></td><td>Alternative name</td></tr>
         <tr><td><code>X-FaustWP-Secret: &lt;secret&gt;</code></td><td>Alternative name</td></tr>
-        <tr><td><code>X-Ragbaz-Secret: &lt;secret&gt;</code></td><td>RAGBAZ-specific override</td></tr>
+        <tr><td><code>X-RAGBAZ-Secret: &lt;secret&gt;</code></td><td>RAGBAZ-specific override</td></tr>
       </tbody>
     </table>
 
@@ -2053,12 +2053,12 @@ function ragbaz_render_info_page() {
     <h2>Connect &amp; Phone Home</h2>
     <div style="max-width:820px;background:#fff7ed;border:1px solid #e2c9a7;padding:14px 16px;border-radius:10px;margin-bottom:14px">
       <p style="margin:0 0 8px;color:#5b3a1f;font-size:13px">
-        Connect this WordPress site to <strong>ragbaz.xyz</strong> and push diagnostics snapshots.
+        Connect this WordPress site to <strong>RAGBAZ.xyz</strong> and push diagnostics snapshots.
       </p>
       <ol style="margin:0;padding-left:18px;color:#7a4b1b;font-size:13px;line-height:1.5">
-        <li>Click <strong>Auto onboard</strong> to request and save account credentials from ragbaz.xyz.</li>
+        <li>Click <strong>Auto onboard</strong> to request and save account credentials from RAGBAZ.xyz.</li>
         <li>Optionally set a <strong>tenant slug alias</strong> (letters, digits, hyphen; no dots) and claim it.</li>
-        <li>Keep <strong>GraphQL relay for ragbaz.xyz</strong> enabled unless you explicitly want to disable it.</li>
+        <li>Keep <strong>GraphQL relay for RAGBAZ.xyz</strong> enabled unless you explicitly want to disable it.</li>
         <li>Click <strong>Phone home now</strong> to send a heartbeat snapshot and update status pages.</li>
         <li>Use <strong>Advanced settings</strong> only if you need manual endpoint/credential overrides.</li>
       </ol>
@@ -2079,12 +2079,12 @@ function ragbaz_render_info_page() {
           Auto onboarding is the default path. It saves keys, keeps relay auth separate from storefront auth, and requires minimal manual input.
         </p>
         <p style="margin:0 0 12px">
-          <button class="button button-secondary" name="ragbaz_connect_action" value="auto_onboard">Auto onboard (request keys from ragbaz.xyz)</button>
+          <button class="button button-secondary" name="ragbaz_connect_action" value="auto_onboard">Auto onboard (request keys from RAGBAZ.xyz)</button>
         </p>
         <div style="background:#f8fafc;border:1px solid #dbeafe;border-radius:8px;padding:10px 12px;margin-bottom:12px">
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#1e3a8a">
             <input type="checkbox" name="ragbaz_home_graphql_relay_enabled" value="1" <?php checked($relay_enabled); ?> />
-            Allow ragbaz.xyz GraphQL relay (recommended)
+            Allow RAGBAZ.xyz GraphQL relay (recommended)
           </label>
           <p style="margin:8px 0 0;color:#334155;font-size:12px">
             Mode: <code><?php echo esc_html($relay['mode']); ?></code> · Header: <code><?php echo esc_html($relay['header_name']); ?></code> ·
@@ -2282,7 +2282,7 @@ function ragbaz_get_site_secret() {
 /**
  * Extracts the secret sent by the headless client from the HTTP request.
  * Accepts X-Headless-Secret, X-Faust-Secret, X-FaustWP-Secret, or
- * X-Ragbaz-Secret / X-Ragbaz-Relay-Secret
+ * X-RAGBAZ-Secret / X-RAGBAZ-Relay-Secret
  * (PHP normalises header names to HTTP_X_* in $_SERVER).
  */
 function ragbaz_get_request_secret() {
@@ -2342,7 +2342,7 @@ function ragbaz_get_headless_user_id() {
  *
  * Requests are scoped to the /graphql endpoint so no other WordPress routes are affected.
  *
- * This makes the Faust/Ragbaz secret a first-class authentication method for
+ * This makes the Faust/RAGBAZ secret a first-class authentication method for
  * WPGraphQL without depending on wp-graphql-headless-login's JWT flow.
  */
 add_filter('determine_current_user', function ($user_id) {

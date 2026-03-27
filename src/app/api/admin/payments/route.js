@@ -484,7 +484,7 @@ export async function POST(request) {
         "Content-Type": result.contentType || "application/pdf",
         "Content-Disposition": `attachment; filename="receipt-${chargeId}.pdf"`,
         "Cache-Control": "no-store",
-        "X-Ragbaz-Request-Id": requestId,
+        "X-RAGBAZ-Request-Id": requestId,
       },
     });
   } catch (error) {

@@ -69,16 +69,16 @@ function formatMetricValue(value, metric) {
 function formatRelayReason(reason, status) {
   const safe = String(reason || "").trim().toLowerCase();
   if (safe === "home_connection_missing") {
-    return "Relay skipped: ragbaz home connection missing (account/passkey not available).";
+    return "Relay skipped: RAGBAZ home connection missing (account/passkey not available).";
   }
   if (safe === "home_events_failed") {
     if (Number(status) === 401) {
-      return "Relay rejected by ragbaz.xyz: unauthorized (invalid or outdated passkey).";
+      return "Relay rejected by RAGBAZ.xyz: unauthorized (invalid or outdated passkey).";
     }
-    return "Relay failed while sending event to ragbaz.xyz.";
+    return "Relay failed while sending event to RAGBAZ.xyz.";
   }
   if (safe === "relay_exception") {
-    return "Relay exception while posting vitals to ragbaz.xyz.";
+    return "Relay exception while posting vitals to RAGBAZ.xyz.";
   }
   if (safe) return `Relay status: ${safe}`;
   return "Relay status unavailable.";
@@ -270,13 +270,13 @@ export default function PagePerformancePanel() {
               : "border-gray-200 bg-gray-50 text-gray-500"
         }`}
       >
-        <div className="font-semibold">Ragbaz relay status</div>
+        <div className="font-semibold">RAGBAZ relay status</div>
         {!relayStatus && <div>No relay attempts recorded yet.</div>}
         {relayStatus && (
           <div className="space-y-0.5">
             <div>
               {relayStatus.ok
-                ? "Last relay to ragbaz.xyz succeeded."
+                ? "Last relay to RAGBAZ.xyz succeeded."
                 : formatRelayReason(relayStatus.reason, relayStatus.status)}
             </div>
             <div className="text-xs">
