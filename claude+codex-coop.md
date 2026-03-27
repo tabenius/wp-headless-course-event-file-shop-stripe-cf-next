@@ -2,6 +2,16 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — published weekly changelog on ragbaz.xyz docs
+
+**Delivered:**
+- Added docs article `changelog` to `ragbaz.xyz` docs content (`src/lib/pages.js`) and deployed worker.
+- Verified live pages:
+  - `/docs/en/changelog` shows Weekly Changelog timeline content
+  - `/docs` index now links to the changelog article
+- Deployment version:
+  - `ragbaz-xyz` worker `df2848e8-2701-42f6-8ea1-669348ae74fa`
+
 ### Codex — protocol update: changelog uses shared docs lock + helper flow
 
 **Delivered:**
