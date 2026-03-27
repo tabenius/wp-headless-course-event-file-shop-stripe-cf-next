@@ -99,6 +99,34 @@ export function isAvifSource(contentType) {
   return String(contentType || "").toLowerCase().includes("avif");
 }
 
+/**
+ * Computes radial tilt-shift blend factor for a single pixel distance.
+ * Returns 0 in the focus region and approaches `intensity` outside the falloff band.
+ *
+ * @param {number} normalizedDistance distance from center normalized by half min dimension
+ * @param {number} focusRadius         0..1 sharp center radius
+ * @param {number} variance            0.01..1 transition width
+ * @param {number} intensity           0..1 max blur blend
+ * @returns {number}
+ */
+export function computeTiltShiftBlendFactor(
+  normalizedDistance,
+  focusRadius,
+  variance,
+  intensity,
+) {
+  const d = Math.max(0, Number(normalizedDistance) || 0);
+  const focus = Math.min(1, Math.max(0, Number(focusRadius) || 0));
+  const spread = Math.min(1, Math.max(0.01, Number(variance) || 0.25));
+  const maxBlur = Math.min(1, Math.max(0, Number(intensity) || 0));
+  if (maxBlur <= 0) return 0;
+  if (d <= focus) return 0;
+  const t = Math.min(1, Math.max(0, (d - focus) / spread));
+  // smoothstep easing for softer transition edges
+  const smooth = t * t * (3 - 2 * t);
+  return smooth * maxBlur;
+}
+
 // ─── Pixel helpers ────────────────────────────────────────────────────────────
 
 /**
@@ -126,6 +154,26 @@ function applyCircleMask(rawPixels, width, height, centerX, centerY, radius) {
     }
   }
   return data;
+}
+
+// ─── Blend helper ─────────────────────────────────────────────────────────────
+
+function blendWithOriginal(current, effectFn, amount, photon) {
+  if (amount >= 1) { effectFn(current); return; }
+  if (amount <= 0) return;
+  const origPixels = new Uint8Array(current.get_raw_pixels());
+  effectFn(current);
+  const effPixels = current.get_raw_pixels();
+  const w = current.get_width();
+  const h = current.get_height();
+  const blended = new Uint8Array(origPixels.length);
+  const inv = 1 - amount;
+  for (let i = 0; i < origPixels.length; i++) {
+    blended[i] = Math.round(origPixels[i] * inv + effPixels[i] * amount);
+  }
+  const next = new photon.PhotonImage(blended, w, h);
+  current.free();
+  return next;
 }
 
 // ─── Operator executor ────────────────────────────────────────────────────────
@@ -195,9 +243,14 @@ export function executeOperations(photon, img, operations, onProgress) {
         break;
       }
 
-      case "sepia":
-        photon.sepia(current);
+      case "sepia": {
+        const amount = Number(p.amount ?? 1);
+        const result = blendWithOriginal(
+          current, (img) => photon.sepia(img), amount, photon
+        );
+        if (result) current = result;
         break;
+      }
 
       case "colorBoost": {
         const contrast = Math.min(100, Math.max(-100, Number(p.contrast || 0) * 100));
@@ -252,13 +305,19 @@ export function executeOperations(photon, img, operations, onProgress) {
       }
 
       case "brightness": {
-        const amount = Math.round(Math.min(255, Math.max(-255, Number(p.amount) || 0)));
+        let raw = Number(p.amount) || 0;
+        if (Math.abs(raw) <= 1) raw = raw * 255;
+        const amount = Math.round(Math.min(255, Math.max(-255, raw)));
         photon.adjust_brightness(current, amount);
         break;
       }
 
       case "grayscale": {
-        photon.grayscale_human_corrected(current);
+        const amount = Number(p.amount ?? 1);
+        const result = blendWithOriginal(
+          current, (img) => photon.grayscale_human_corrected(img), amount, photon
+        );
+        if (result) current = result;
         break;
       }
 
@@ -282,6 +341,54 @@ export function executeOperations(photon, img, operations, onProgress) {
       case "blur": {
         const radius = Math.max(1, Math.round(Number(p.radius) || 1));
         photon.gaussian_blur(current, radius);
+        break;
+      }
+
+      case "tiltShift": {
+        const srcW = current.get_width();
+        const srcH = current.get_height();
+        const halfMin = Math.max(1, Math.min(srcW, srcH) / 2);
+        const centerX = Math.min(1, Math.max(0, Number(p.centerX) || 0.5));
+        const centerY = Math.min(1, Math.max(0, Number(p.centerY) || 0.5));
+        const cx = centerX * (srcW - 1);
+        const cy = centerY * (srcH - 1);
+        const focusRadius = Math.min(1, Math.max(0, Number(p.focusRadius) || 0.35));
+        const variance = Math.min(1, Math.max(0.01, Number(p.variance) || 0.25));
+        const intensity = Math.min(1, Math.max(0, Number(p.intensity) || 0.85));
+        const blurRadius = Math.max(1, Math.min(32, Math.round(Number(p.blurRadius) || 10)));
+        if (intensity <= 0) break;
+
+        const original = new Uint8Array(current.get_raw_pixels());
+        const blurImage = new photon.PhotonImage(new Uint8Array(original), srcW, srcH);
+        try {
+          photon.gaussian_blur(blurImage, blurRadius);
+          const blurred = blurImage.get_raw_pixels();
+          const result = new Uint8Array(original.length);
+          for (let y = 0; y < srcH; y++) {
+            const dy = (y - cy) / halfMin;
+            for (let x = 0; x < srcW; x++) {
+              const dx = (x - cx) / halfMin;
+              const distance = Math.hypot(dx, dy);
+              const blend = computeTiltShiftBlendFactor(
+                distance,
+                focusRadius,
+                variance,
+                intensity,
+              );
+              const keep = 1 - blend;
+              const offset = (y * srcW + x) * 4;
+              result[offset] = Math.round(original[offset] * keep + blurred[offset] * blend);
+              result[offset + 1] = Math.round(original[offset + 1] * keep + blurred[offset + 1] * blend);
+              result[offset + 2] = Math.round(original[offset + 2] * keep + blurred[offset + 2] * blend);
+              result[offset + 3] = Math.round(original[offset + 3] * keep + blurred[offset + 3] * blend);
+            }
+          }
+          const next = new photon.PhotonImage(result, srcW, srcH);
+          current.free();
+          current = next;
+        } finally {
+          blurImage.free();
+        }
         break;
       }
 
@@ -313,7 +420,11 @@ export function executeOperations(photon, img, operations, onProgress) {
       }
 
       case "invert": {
-        photon.invert(current);
+        const amount = Number(p.amount ?? 1);
+        const result = blendWithOriginal(
+          current, (img) => photon.invert(img), amount, photon
+        );
+        if (result) current = result;
         break;
       }
 

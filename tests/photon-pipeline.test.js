@@ -6,6 +6,7 @@ import {
   guardSourceSize,
   clampSaturation,
   isAvifSource,
+  computeTiltShiftBlendFactor,
 } from "../src/lib/photonPipeline.js";
 
 describe("resolveOutputFormat", () => {
@@ -31,8 +32,12 @@ describe("resolveOutputFormat", () => {
     assert.equal(resolveOutputFormat([{ type: "cropCircle" }], "webp"), "png");
   });
 
+  it("returns avif when caller requests it explicitly", () => {
+    assert.equal(resolveOutputFormat([], "avif"), "avif");
+  });
+
   it("falls back to jpeg when override is unknown", () => {
-    assert.equal(resolveOutputFormat([], "avif"), "jpeg");
+    assert.equal(resolveOutputFormat([], "heif"), "jpeg");
   });
 });
 
@@ -130,5 +135,27 @@ describe("isAvifSource", () => {
   it("returns false for null/undefined", () => {
     assert.equal(isAvifSource(null), false);
     assert.equal(isAvifSource(undefined), false);
+  });
+});
+
+describe("computeTiltShiftBlendFactor", () => {
+  it("returns zero inside the focus radius", () => {
+    assert.equal(computeTiltShiftBlendFactor(0.2, 0.3, 0.25, 0.8), 0);
+  });
+
+  it("returns full intensity beyond focus+variance", () => {
+    assert.equal(computeTiltShiftBlendFactor(1.0, 0.2, 0.3, 0.75), 0.75);
+  });
+
+  it("returns a smooth intermediate blend in the transition band", () => {
+    const blend = computeTiltShiftBlendFactor(0.35, 0.2, 0.3, 1.0);
+    assert.ok(blend > 0);
+    assert.ok(blend < 1);
+  });
+
+  it("clamps invalid inputs safely", () => {
+    assert.equal(computeTiltShiftBlendFactor(-10, -1, 0, -1), 0);
+    const blend = computeTiltShiftBlendFactor(10, 0.2, 0.001, 2);
+    assert.equal(blend, 1);
   });
 });

@@ -9,13 +9,17 @@ import {
   bindOperationsToAsset,
 } from "@/lib/derivationEngine";
 import {
+  OPERATION_REGISTRY,
+  buildDefaultParams,
+  getOperationsByCategory,
+} from "@/components/admin/DerivationEditor/operationRegistry";
+import {
   MAX_IMAGE_BYTES,
   MAX_DATA_ASSET_BYTES,
   MAX_IMAGE_MB,
   MAX_DATA_MB,
   HISTORY_MAX_ENTRIES,
   DATA_ASSET_EXTENSIONS,
-  PRESET_CROP_OPTIONS,
   LS_LAST_OPENED_KEY,
   extFromFileName,
   formatBytes,
@@ -25,7 +29,6 @@ import {
   sourceBadgeClass,
   buildPseudoDerivationName,
   getUnboundParameters,
-  describeOperationParameters,
   formatParameterValue,
   isInvalidNumericParam,
   getInvalidOperationParameters,
@@ -54,6 +57,45 @@ import MediaViewerPanel from "@/components/admin/MediaViewerPanel";
 import R2ManualIngestPanel from "@/components/admin/R2ManualIngestPanel";
 import AdminDocsContextLinks from "@/components/admin/AdminDocsContextLinks";
 import AdminFieldHelpLink from "@/components/admin/AdminFieldHelpLink";
+
+const RGB_CHANNELS = ["r", "g", "b"];
+
+function clampRgbChannel(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(0, Math.min(255, Math.round(parsed)));
+}
+
+function normalizeRgbObject(value, fallback = { r: 0, g: 0, b: 0 }) {
+  const fallbackColor = {
+    r: clampRgbChannel(fallback?.r, 0),
+    g: clampRgbChannel(fallback?.g, 0),
+    b: clampRgbChannel(fallback?.b, 0),
+  };
+  if (!value || typeof value !== "object") return fallbackColor;
+  return {
+    r: clampRgbChannel(value.r, fallbackColor.r),
+    g: clampRgbChannel(value.g, fallbackColor.g),
+    b: clampRgbChannel(value.b, fallbackColor.b),
+  };
+}
+
+function rgbToHex(value) {
+  const color = normalizeRgbObject(value);
+  const toHex = (channel) => channel.toString(16).padStart(2, "0");
+  return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
+}
+
+function hexToRgb(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  const match = normalized.match(/^#?([0-9a-f]{6})$/i);
+  if (!match) return null;
+  return {
+    r: Number.parseInt(match[1].slice(0, 2), 16),
+    g: Number.parseInt(match[1].slice(2, 4), 16),
+    b: Number.parseInt(match[1].slice(4, 6), 16),
+  };
+}
 
 export default function AdminMediaLibraryTab({
   uploadBackend = "wordpress",
@@ -101,7 +143,7 @@ export default function AdminMediaLibraryTab({
   const [editorName, setEditorName] = useState("");
   const [editorDescription, setEditorDescription] = useState("");
   const [editorAssetTypes, setEditorAssetTypes] = useState([]);
-  const [newOperationType, setNewOperationType] = useState(Object.keys(OPERATION_SCHEMAS)[0] || "");
+  const [newOperationType, setNewOperationType] = useState(Object.keys(OPERATION_REGISTRY)[0] || "");
   const [derivationSaveStatus, setDerivationSaveStatus] = useState("");
   const [derivationSaveError, setDerivationSaveError] = useState("");
   const [lastDerivedAsset, setLastDerivedAsset] = useState(null);
@@ -155,6 +197,12 @@ export default function AdminMediaLibraryTab({
     [enabledUploadOptions, uploadBackend],
   );
 
+  const operationPickerGroups = useMemo(() => getOperationsByCategory(), []);
+  const addableOperationTypes = useMemo(
+    () => operationPickerGroups.flatMap((group) => group.operations.map((entry) => entry.type)),
+    [operationPickerGroups],
+  );
+
   useEffect(() => {
     const backendExists = enabledUploadOptions.some(
       (option) => option.id === selectedUploadBackend,
@@ -163,6 +211,16 @@ export default function AdminMediaLibraryTab({
       setSelectedUploadBackend(preferredUploadBackend);
     }
   }, [enabledUploadOptions, preferredUploadBackend, selectedUploadBackend]);
+
+  useEffect(() => {
+    if (addableOperationTypes.length === 0) {
+      setNewOperationType("");
+      return;
+    }
+    if (!newOperationType || !addableOperationTypes.includes(newOperationType)) {
+      setNewOperationType(addableOperationTypes[0]);
+    }
+  }, [addableOperationTypes, newOperationType]);
 
   const loadLibrary = useCallback(async () => {
     setLoading(true);
@@ -983,11 +1041,27 @@ export default function AdminMediaLibraryTab({
           (param) => param.key === key,
         );
         let value = rawValue;
-        if (typeof rawValue === "string" && rawValue.trim() === "") {
+        if (schemaParam?.type === "number") {
+          if (typeof rawValue === "string" && rawValue.trim() === "") {
+            value = undefined;
+          } else {
+            const parsed = Number(rawValue);
+            value = Number.isFinite(parsed) ? parsed : rawValue;
+          }
+        } else if (schemaParam?.type === "color") {
+          if (rawValue == null || rawValue === "") {
+            value = undefined;
+          } else if (typeof rawValue === "string") {
+            value = hexToRgb(rawValue) || undefined;
+          } else if (typeof rawValue === "object") {
+            value = normalizeRgbObject(rawValue, schemaParam.defaultValue);
+          } else {
+            value = undefined;
+          }
+        } else if (typeof rawValue === "string" && rawValue.trim() === "") {
           value = undefined;
-        } else if (schemaParam?.type === "number") {
-          const parsed = Number(rawValue);
-          value = Number.isFinite(parsed) ? parsed : rawValue;
+        } else if (schemaParam?.type === "select" && rawValue === "") {
+          value = undefined;
         }
         const nextParams = { ...operation.params };
         if (value === undefined) {
@@ -1003,34 +1077,234 @@ export default function AdminMediaLibraryTab({
     );
   }
 
+  function handleColorChannelChange(operationIndex, key, channel, rawValue) {
+    setCustomOperations((current) =>
+      current.map((operation, index) => {
+        if (index !== operationIndex) return operation;
+        const schemaParam = OPERATION_SCHEMAS[operation.type]?.parameters?.find(
+          (param) => param.key === key,
+        );
+        if (!schemaParam || schemaParam.type !== "color") return operation;
+        const currentColor = normalizeRgbObject(
+          operation.params?.[key],
+          schemaParam.defaultValue,
+        );
+        const parsed = Number(rawValue);
+        if (!Number.isFinite(parsed)) return operation;
+        const nextColor = {
+          ...currentColor,
+          [channel]: clampRgbChannel(parsed, currentColor[channel]),
+        };
+        return {
+          ...operation,
+          params: {
+            ...operation.params,
+            [key]: nextColor,
+          },
+        };
+      }),
+    );
+  }
+
+  function handleMoveOperation(operationIndex, direction) {
+    setCustomOperations((current) => {
+      const targetIndex = operationIndex + direction;
+      if (
+        operationIndex < 0 ||
+        targetIndex < 0 ||
+        operationIndex >= current.length ||
+        targetIndex >= current.length
+      ) {
+        return current;
+      }
+      const next = [...current];
+      const [moved] = next.splice(operationIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+  }
+
+  function handleDuplicateOperation(operationIndex) {
+    setCustomOperations((current) => {
+      if (operationIndex < 0 || operationIndex >= current.length) return current;
+      const duplicate = cloneOperations([current[operationIndex]])[0];
+      if (!duplicate) return current;
+      const next = [...current];
+      next.splice(operationIndex + 1, 0, duplicate);
+      return next;
+    });
+  }
+
+  function handleOperationEditorKeyDown(event, operationIndex) {
+    if (!event.altKey) return;
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      handleMoveOperation(operationIndex, -1);
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      handleMoveOperation(operationIndex, 1);
+    }
+  }
+
   function handleAddOperation() {
     if (!newOperationType) return;
-    const schema = OPERATION_SCHEMAS[newOperationType];
-    const defaultParams = {};
-    schema?.parameters?.forEach((param) => {
-      if (param.type === "number") {
-        if (param.key === "x" || param.key === "y") {
-          defaultParams[param.key] = 0.5;
-        } else if (param.key === "size") {
-          defaultParams[param.key] = 24;
-        } else {
-          defaultParams[param.key] = typeof param.min === "number" ? param.min : 0;
-        }
-      } else if (param.key === "preset") {
-        defaultParams[param.key] = PRESET_CROP_OPTIONS[0]?.value || "";
-      } else if (param.key === "typeface") {
-        defaultParams[param.key] = "Inter";
-      } else if (param.key === "text") {
-        defaultParams[param.key] = "Caption";
-      } else {
-        defaultParams[param.key] = "";
-      }
-    });
+    const defaultParams = buildDefaultParams(newOperationType);
     setCustomOperations((current) => [...current, { type: newOperationType, params: defaultParams }]);
   }
 
   function handleRemoveOperation(operationIndex) {
     setCustomOperations((current) => current.filter((_, index) => index !== operationIndex));
+  }
+
+  function renderOperationParamField(operation, operationIndex, param) {
+    const currentValue = operation.params?.[param.key];
+    const isInvalid = isInvalidNumericParam(param, currentValue);
+    const isUnbound = currentValue == null || currentValue === "";
+    const numericRange = [
+      typeof param.min === "number" ? param.min : null,
+      typeof param.max === "number" ? param.max : null,
+    ];
+    const rangeHint =
+      numericRange[0] != null || numericRange[1] != null
+        ? `${numericRange[0] ?? "−∞"}..${numericRange[1] ?? "∞"}`
+        : null;
+
+    if (param.type === "select") {
+      return (
+        <div key={`${operationIndex}-${param.key}`} className="space-y-1">
+          <label className="flex flex-col text-[11px] text-gray-700">
+            <span>{param.label}</span>
+            <select
+              value={currentValue ?? ""}
+              onChange={(event) =>
+                handleOperationParamChange(operationIndex, param.key, event.target.value)
+              }
+              className="border rounded px-2 py-1 text-xs bg-white"
+            >
+              <option value="">
+                {t("admin.mediaDerivationParamUnboundOption", "Unbound")}
+              </option>
+              {(param.options || []).map((option) => (
+                <option key={String(option.value)} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      );
+    }
+
+    if (param.type === "color") {
+      const colorValue = normalizeRgbObject(currentValue, param.defaultValue);
+      const colorHex = rgbToHex(colorValue);
+      return (
+        <div key={`${operationIndex}-${param.key}`} className="space-y-1">
+          <label className="flex items-center justify-between text-[11px] text-gray-700">
+            <span>{param.label}</span>
+            <button
+              type="button"
+              onClick={() =>
+                handleOperationParamChange(
+                  operationIndex,
+                  param.key,
+                  isUnbound ? colorValue : "",
+                )
+              }
+              className="text-[10px] text-indigo-700 hover:underline"
+            >
+              {isUnbound
+                ? t("admin.mediaDerivationBindParam", "Bind")
+                : t("admin.mediaDerivationUnbindParam", "Unbind")}
+            </button>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={colorHex}
+              onChange={(event) =>
+                handleOperationParamChange(operationIndex, param.key, event.target.value)
+              }
+              className="h-8 w-10 rounded border"
+            />
+            <code className="rounded bg-gray-100 px-2 py-1 text-[10px] text-gray-700">
+              {colorHex}
+            </code>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {RGB_CHANNELS.map((channel) => (
+              <label key={channel} className="text-[10px] text-gray-600">
+                <span className="uppercase">{channel}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={255}
+                  step={1}
+                  value={colorValue[channel]}
+                  onChange={(event) =>
+                    handleColorChannelChange(
+                      operationIndex,
+                      param.key,
+                      channel,
+                      event.target.value,
+                    )
+                  }
+                  className="mt-1 w-full border rounded px-2 py-1 text-xs"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={`${operationIndex}-${param.key}`} className="space-y-1">
+        <label className="flex items-center justify-between text-[11px] text-gray-700">
+          <span>{param.label}</span>
+          <button
+            type="button"
+            onClick={() => handleOperationParamChange(operationIndex, param.key, "")}
+            className="text-[10px] text-indigo-700 hover:underline"
+          >
+            {t("admin.mediaDerivationUnbindParam", "Unbind")}
+          </button>
+        </label>
+        <input
+          type={param.type === "number" ? "number" : "text"}
+          min={param.min}
+          max={param.max}
+          step={param.step}
+          value={currentValue ?? ""}
+          onChange={(event) =>
+            handleOperationParamChange(operationIndex, param.key, event.target.value)
+          }
+          placeholder={rangeHint ? `${param.label} (${rangeHint})` : ""}
+          aria-invalid={isInvalid || undefined}
+          className={`w-full border rounded px-2 py-1 text-xs ${
+            isInvalid
+              ? "border-red-400 bg-red-50 text-red-900"
+              : ""
+          }`}
+        />
+        {param.type === "number" && Array.isArray(param.shortcuts) && param.shortcuts.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {param.shortcuts.map((shortcut) => (
+              <button
+                key={`${operationIndex}-${param.key}-${shortcut}`}
+                type="button"
+                onClick={() => handleOperationParamChange(operationIndex, param.key, shortcut)}
+                className="rounded border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-100"
+              >
+                {shortcut}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   function handleToggleAssetType(type) {
@@ -1108,6 +1382,7 @@ export default function AdminMediaLibraryTab({
     resize:      t("admin.mediaDerivationOpResize",       "Resizing…"),
     crop:        t("admin.mediaDerivationOpCrop",         "Cropping…"),
     blur:        t("admin.mediaDerivationOpBlur",         "Blurring…"),
+    tiltShift:   t("admin.mediaDerivationOpTiltShift",    "Applying tilt shift…"),
     sharpen:     t("admin.mediaDerivationOpSharpen",      "Sharpening…"),
     brightness:  t("admin.mediaDerivationOpBrightness",   "Adjusting brightness…"),
     grayscale:   t("admin.mediaDerivationOpGrayscale",    "Converting to grayscale…"),
@@ -2284,19 +2559,70 @@ export default function AdminMediaLibraryTab({
           )}
           {customOperations.map((operation, index) => {
             const schema = OPERATION_SCHEMAS[operation.type];
+            const registrySchema = OPERATION_REGISTRY[operation.type];
+            const isFirst = index === 0;
+            const isLast = index === customOperations.length - 1;
             return (
               <div
                 key={`${operation.type}-${index}`}
                 className="rounded border border-indigo-100 bg-white p-3 space-y-2"
+                onKeyDown={(event) => handleOperationEditorKeyDown(event, index)}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-[13px] font-semibold text-indigo-800">
-                    {schema?.label || operation.type}
-                  </p>
-                  <span className="text-[11px] text-indigo-600">
-                    {t("admin.mediaDerivationStep", "Step {n}", { n: index + 1 })}
-                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-indigo-800">
+                      {schema?.label || operation.type}
+                    </p>
+                    {registrySchema?.tip && (
+                      <p className="text-[10px] text-indigo-700 truncate">
+                        {registrySchema.tip}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] text-indigo-600">
+                      {t("admin.mediaDerivationStep", "Step {n}", { n: index + 1 })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveOperation(index, -1)}
+                      disabled={isFirst}
+                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"
+                      title={t("admin.mediaDerivationMoveStepUp", "Move step up")}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveOperation(index, 1)}
+                      disabled={isLast}
+                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"
+                      title={t("admin.mediaDerivationMoveStepDown", "Move step down")}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDuplicateOperation(index)}
+                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      title={t("admin.mediaDerivationDuplicateStep", "Duplicate step")}
+                    >
+                      {t("admin.mediaDerivationDuplicateStepShort", "Dup")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveOperation(index)}
+                      className="rounded border border-red-200 px-1 py-0.5 text-[10px] text-red-600 hover:bg-red-50"
+                    >
+                      {t("admin.mediaDerivationRemoveStep", "Remove step")}
+                    </button>
+                  </div>
                 </div>
+                {registrySchema?.techTip && (
+                  <p className="text-[10px] text-indigo-500">
+                    {registrySchema.techTip}
+                  </p>
+                )}
                 {operation.type === "source" && (
                   <p className="text-[11px] text-indigo-600">
                     {t(
@@ -2305,42 +2631,15 @@ export default function AdminMediaLibraryTab({
                     )}
                   </p>
                 )}
-                {schema?.parameters?.map((param) => (
-                  <label key={param.key} className="flex flex-col text-[11px] text-gray-700">
-                    <span>{param.label}</span>
-                    {(() => {
-                      const currentValue = operation.params?.[param.key];
-                      const isInvalid = isInvalidNumericParam(param, currentValue);
-                      return (
-                        <input
-                          type={param.type}
-                          min={param.min}
-                          max={param.max}
-                          step={param.step}
-                          value={currentValue ?? ""}
-                          onChange={(event) =>
-                            handleOperationParamChange(index, param.key, event.target.value)
-                          }
-                          aria-invalid={isInvalid || undefined}
-                          className={`border rounded px-2 py-1 text-xs ${
-                            isInvalid
-                              ? "border-red-400 bg-red-50 text-red-900"
-                              : ""
-                          }`}
-                        />
-                      );
-                    })()}
-                  </label>
-                ))}
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveOperation(index)}
-                    className="text-[11px] text-red-600 hover:underline"
-                  >
-                    {t("admin.mediaDerivationRemoveStep", "Remove step")}
-                  </button>
-                </div>
+                {schema?.parameters?.map((param) =>
+                  renderOperationParamField(operation, index, param),
+                )}
+                <p className="text-[10px] text-indigo-500">
+                  {t(
+                    "admin.mediaDerivationStepHotkeys",
+                    "Tip: Alt+ArrowUp or Alt+ArrowDown moves this step.",
+                  )}
+                </p>
               </div>
             );
           })}
@@ -2355,10 +2654,15 @@ export default function AdminMediaLibraryTab({
                 value={newOperationType}
                 onChange={(event) => setNewOperationType(event.target.value)}
               >
-                {Object.entries(OPERATION_SCHEMAS).map(([type, schema]) => (
-                  <option key={type} value={type}>
-                    {schema?.label || type}
-                  </option>
+                {operationPickerGroups.map((group) => (
+                  <optgroup key={group.key} label={group.label}>
+                    {group.operations.map((operation) => (
+                      <option key={operation.type} value={operation.type}>
+                        {operation.icon ? `${operation.icon} ` : ""}
+                        {operation.label || operation.type}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>

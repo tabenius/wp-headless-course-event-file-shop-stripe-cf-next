@@ -198,6 +198,21 @@ export const OPERATION_REGISTRY = {
       { key: "radius", label: "Radius", type: "number", min: 1, max: 20, step: 1 },
     ],
   },
+  tiltShift: {
+    label: "Tilt shift",
+    category: "effects",
+    icon: "\uD83D\uDCF7",
+    tip: "Keep the center sharp while blurring the edges for Instagram-style focus",
+    techTip: "Radial focus mask blending between original and gaussian blur",
+    parameters: [
+      { key: "centerX", label: "Center X (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
+      { key: "centerY", label: "Center Y (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
+      { key: "focusRadius", label: "Focus radius", type: "number", min: 0, max: 1, step: 0.01 },
+      { key: "variance", label: "Variance/falloff", type: "number", min: 0.01, max: 1, step: 0.01 },
+      { key: "intensity", label: "Intensity", type: "number", min: 0, max: 1, step: 0.05 },
+      { key: "blurRadius", label: "Blur radius", type: "number", min: 1, max: 32, step: 1 },
+    ],
+  },
   sepia: {
     label: "Sepia",
     category: "effects",
@@ -303,6 +318,11 @@ export function buildDefaultParams(type) {
     if (p.type === "number") {
       // Sensible defaults: midpoint for sliders, or specific overrides
       if (p.key === "x" || p.key === "y") params[p.key] = 0.5;
+      else if (p.key === "centerX" || p.key === "centerY") params[p.key] = 0.5;
+      else if (p.key === "focusRadius") params[p.key] = 0.35;
+      else if (p.key === "variance") params[p.key] = 0.25;
+      else if (p.key === "intensity") params[p.key] = 0.85;
+      else if (p.key === "blurRadius") params[p.key] = 10;
       else if (p.key === "size" && p.min === 6) params[p.key] = 24; // text size
       else if (p.key === "amount" && p.min === 0) params[p.key] = 1; // intensity defaults to full
       else if (p.key === "amount" && p.min < 0) params[p.key] = 0; // brightness default neutral

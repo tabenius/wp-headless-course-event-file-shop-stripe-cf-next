@@ -2,6 +2,29 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — image operator usability pass + new Instagram-style tilt shift
+
+**Delivered:**
+- Added new image operator `tiltShift` (Instagram-style radial focus blur) in derivation registry:
+  - `centerX`, `centerY`, `focusRadius`, `variance`, `intensity`, `blurRadius`
+  - sensible defaults via `buildDefaultParams`
+- Implemented `tiltShift` in the photon pipeline using a performant single-blur + radial blend approach:
+  - new exported helper `computeTiltShiftBlendFactor(...)`
+  - blended original/blurred pixels with smoothstep falloff to keep center sharp and edges blurred
+- Expanded derivation editor usability in `AdminMediaLibraryTab`:
+  - typed parameter controls for `select` and `color` params
+  - color picker + RGB channel editing for object color params
+  - explicit bind/unbind actions for operation params
+  - operation actions: move up/down, duplicate, remove
+  - keyboard step reordering hotkey: `Alt+ArrowUp/Alt+ArrowDown`
+  - grouped “Add operation” picker by category with operator icons
+- Improved matrix readability for object params (e.g. duotone colors now render as hex values instead of `[object Object]`).
+- Added/updated photon pipeline tests for tilt-shift blend math in `tests/photon-pipeline.test.js`.
+
+**Validation:**
+- `npx eslint src/components/admin/AdminMediaLibraryTab.js src/lib/photonPipeline.js src/components/admin/DerivationEditor/operationRegistry.js src/lib/mediaLibraryHelpers.js tests/photon-pipeline.test.js` (pass, existing `no-img-element` warning only)
+- `node --test tests/photon-pipeline.test.js` (pass)
+
 ### Codex — aether status-pill contrast fix on ragbaz.xyz
 
 **Delivered:**

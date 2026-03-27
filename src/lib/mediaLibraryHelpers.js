@@ -111,6 +111,23 @@ export function formatParameterValue(value) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value.toString() : String(value);
   }
+  if (typeof value === "object") {
+    const hasRgb = ["r", "g", "b"].every((key) => Number.isFinite(Number(value?.[key])));
+    if (hasRgb) {
+      const r = Math.max(0, Math.min(255, Math.round(Number(value.r))));
+      const g = Math.max(0, Math.min(255, Math.round(Number(value.g))));
+      const b = Math.max(0, Math.min(255, Math.round(Number(value.b))));
+      const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b
+        .toString(16)
+        .padStart(2, "0")}`;
+      return hex;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
   return String(value);
 }
 
