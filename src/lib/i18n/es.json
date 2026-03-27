@@ -309,6 +309,7 @@
     "imageResetCrop": "Reiniciar",
     "imageOutputFormatLabel": "Formato de salida",
     "imageOutputFormatHint": "Primero se sube el archivo original y se marca como original; la variante procesada mantiene un enlace al original.",
+    "imageResponsiveVariantsHint": "Las variantes responsivas se guardan automáticamente (sm, md, lg) con el recorte seleccionado.",
     "imageOutputFormatWebp": "WebP (compresión por defecto)",
     "imageOutputFormatAvif": "AVIF (archivos más pequeños cuando está disponible)",
     "imageOutputFormatRaw": "Fuente original (sin compresión)",

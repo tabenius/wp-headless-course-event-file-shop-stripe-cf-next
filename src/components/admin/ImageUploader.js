@@ -28,7 +28,8 @@ const MAX_SCALE = 3;
 const SCALE_STEP = 0.05;
 const KEYBOARD_PAN_STEP = 14;
 const DEFAULT_OUTPUT_FORMAT = "webp";
-const OUTPUT_FORMATS = ["webp", "avif", "raw"];
+const OUTPUT_FORMATS = ["webp", "avif"];
+const INTERNAL_FALLBACK_OUTPUT_FORMAT = "raw";
 const OUTPUT_EXTENSIONS = {
   webp: "webp",
   avif: "avif",
@@ -44,6 +45,13 @@ const OUTPUT_QUALITY = {
   avif: 0.82,
   raw: 1,
 };
+const RESPONSIVE_VARIANT_KEYS = [
+  { key: "sm", scale: 0.5, variantKind: "responsive-sm" },
+  { key: "md", scale: 1, variantKind: "responsive-md" },
+  { key: "lg", scale: 1.5, variantKind: "responsive-lg" },
+];
+const MIN_VARIANT_DIMENSION = 320;
+const MAX_VARIANT_DIMENSION = 2000;
 
 function resolveAspectSize(key) {
   return SIZE_PRESETS[key] || SIZE_PRESETS[DEFAULT_ASPECT_KEY] || SIZE_PRESETS.square;
@@ -90,6 +98,75 @@ function clampScale(value) {
   if (value < MIN_SCALE) return MIN_SCALE;
   if (value > MAX_SCALE) return MAX_SCALE;
   return value;
+}
+
+function clampVariantDimensions(width, height, sourceWidth, sourceHeight) {
+  let nextWidth = Math.max(1, Math.round(Number(width) || 1));
+  let nextHeight = Math.max(1, Math.round(Number(height) || 1));
+  if (sourceWidth > 0 && sourceHeight > 0) {
+    const sourceScale = Math.min(1, sourceWidth / nextWidth, sourceHeight / nextHeight);
+    nextWidth = Math.max(1, Math.round(nextWidth * sourceScale));
+    nextHeight = Math.max(1, Math.round(nextHeight * sourceScale));
+  }
+  const maxDim = Math.max(nextWidth, nextHeight);
+  if (maxDim > MAX_VARIANT_DIMENSION) {
+    const downScale = MAX_VARIANT_DIMENSION / maxDim;
+    nextWidth = Math.max(1, Math.round(nextWidth * downScale));
+    nextHeight = Math.max(1, Math.round(nextHeight * downScale));
+  }
+  return { width: nextWidth, height: nextHeight };
+}
+
+function buildResponsiveVariantPlan({
+  baseWidth,
+  baseHeight,
+  sourceWidth,
+  sourceHeight,
+}) {
+  const normalizedBase = clampVariantDimensions(
+    baseWidth,
+    baseHeight,
+    sourceWidth,
+    sourceHeight,
+  );
+  const entries = [];
+  const dedupe = new Set();
+  for (const preset of RESPONSIVE_VARIANT_KEYS) {
+    const scaled = clampVariantDimensions(
+      normalizedBase.width * preset.scale,
+      normalizedBase.height * preset.scale,
+      sourceWidth,
+      sourceHeight,
+    );
+    if (!scaled.width || !scaled.height) continue;
+    if (
+      preset.key !== "md" &&
+      Math.max(scaled.width, scaled.height) < MIN_VARIANT_DIMENSION
+    ) {
+      continue;
+    }
+    const signature = `${scaled.width}x${scaled.height}`;
+    if (dedupe.has(signature)) continue;
+    dedupe.add(signature);
+    entries.push({
+      key: preset.key,
+      width: scaled.width,
+      height: scaled.height,
+      variantKind: preset.variantKind,
+    });
+  }
+  if (!entries.some((entry) => entry.key === "md")) {
+    entries.unshift({
+      key: "md",
+      width: normalizedBase.width,
+      height: normalizedBase.height,
+      variantKind: "responsive-md",
+    });
+  }
+  return entries.sort((left, right) => {
+    const rank = { md: 0, sm: 1, lg: 2 };
+    return (rank[left.key] ?? 10) - (rank[right.key] ?? 10);
+  });
 }
 
 function isTypingTarget(target) {
@@ -651,69 +728,116 @@ export default function ImageUploader({
         height: img.naturalHeight,
       });
 
-      // Step 2: upload processed output linked to the original.
-      const exportCanvas = document.createElement("canvas");
-      const exportWidth = selectedSize.width;
-      const exportHeight = selectedSize.height;
-      const scaleX = exportWidth / previewFrame.width;
-      const scaleY = exportHeight / previewFrame.height;
-      drawCroppedImage({
-        canvas: exportCanvas,
-        image: img,
-        frameWidth: exportWidth,
-        frameHeight: exportHeight,
-        scale,
-        offsetX: offsetX * scaleX,
-        offsetY: offsetY * scaleY,
+      // Step 2: upload processed output(s) linked to the original.
+      const variants = buildResponsiveVariantPlan({
+        baseWidth: selectedSize.width,
+        baseHeight: selectedSize.height,
+        sourceWidth: img.naturalWidth,
+        sourceHeight: img.naturalHeight,
       });
+      const primaryVariant =
+        variants.find((entry) => entry.key === "md") || variants[0];
+      if (!primaryVariant) throw new Error("No valid variant size available");
 
-      let requestedFormat = outputFormat;
-      let exportMime = OUTPUT_MIME_TYPES[requestedFormat] || "image/webp";
-      let exportBlob = await canvasToBlob(
-        exportCanvas,
-        exportMime,
-        OUTPUT_QUALITY[requestedFormat] ?? 0.86,
-      );
+      async function renderVariantBlob(frameWidth, frameHeight, preferredFormat) {
+        const exportCanvas = document.createElement("canvas");
+        const scaleX = frameWidth / previewFrame.width;
+        const scaleY = frameHeight / previewFrame.height;
+        drawCroppedImage({
+          canvas: exportCanvas,
+          image: img,
+          frameWidth,
+          frameHeight,
+          scale,
+          offsetX: offsetX * scaleX,
+          offsetY: offsetY * scaleY,
+        });
 
-      if (!exportBlob && requestedFormat === "avif") {
-        requestedFormat = "webp";
-        exportMime = OUTPUT_MIME_TYPES.webp;
-        exportBlob = await canvasToBlob(
+        let format = preferredFormat;
+        let mimeType = OUTPUT_MIME_TYPES[format] || OUTPUT_MIME_TYPES.webp;
+        let blob = await canvasToBlob(
           exportCanvas,
-          exportMime,
-          OUTPUT_QUALITY.webp,
+          mimeType,
+          OUTPUT_QUALITY[format] ?? OUTPUT_QUALITY.webp,
         );
-      }
-      if (!exportBlob) {
-        requestedFormat = "raw";
-        exportMime = OUTPUT_MIME_TYPES.raw;
-        exportBlob = await canvasToBlob(exportCanvas, exportMime, 1);
-      }
-      if (!exportBlob) {
-        throw new Error("Canvas export failed");
+        if (!blob && format === "avif") {
+          format = "webp";
+          mimeType = OUTPUT_MIME_TYPES.webp;
+          blob = await canvasToBlob(
+            exportCanvas,
+            mimeType,
+            OUTPUT_QUALITY.webp,
+          );
+        }
+        if (!blob) {
+          format = INTERNAL_FALLBACK_OUTPUT_FORMAT;
+          mimeType = OUTPUT_MIME_TYPES[format];
+          blob = await canvasToBlob(exportCanvas, mimeType, OUTPUT_QUALITY[format]);
+        }
+        if (!blob) throw new Error("Canvas export failed");
+        return { blob, format };
       }
 
-      const variantKind = isDerivedWork ? "derived-work" : "original";
-      const variantFileName = `${fileBaseName}-${requestedFormat}.${OUTPUT_EXTENSIONS[requestedFormat] || "bin"}`;
-      const variantUpload = await uploadAssetStep({
-        fileBlob: exportBlob,
-        fileName: variantFileName,
+      const primaryRendered = await renderVariantBlob(
+        primaryVariant.width,
+        primaryVariant.height,
+        outputFormat,
+      );
+      const primaryVariantKind = isDerivedWork ? "derived-work" : "compressed";
+      const primaryFileName = `${fileBaseName}-${primaryVariant.key}-${primaryRendered.format}.${OUTPUT_EXTENSIONS[primaryRendered.format] || "bin"}`;
+      const primaryUpload = await uploadAssetStep({
+        fileBlob: primaryRendered.blob,
+        fileName: primaryFileName,
         assetId,
         assetRole: "variant",
-        assetFormat: requestedFormat,
-        variantKind,
+        assetFormat: primaryRendered.format,
+        variantKind: primaryVariantKind,
         originalUrl: originalUpload?.url || "",
         originalId: originalUpload?.id || "",
         sourceHash,
         copyrightHolder,
         license,
-        width: exportWidth,
-        height: exportHeight,
+        width: primaryVariant.width,
+        height: primaryVariant.height,
       });
+
+      const optionalVariants = variants.filter(
+        (entry) => entry.key !== primaryVariant.key,
+      );
+      for (const variant of optionalVariants) {
+        try {
+          const rendered = await renderVariantBlob(
+            variant.width,
+            variant.height,
+            primaryRendered.format,
+          );
+          const variantFileName = `${fileBaseName}-${variant.key}-${rendered.format}.${OUTPUT_EXTENSIONS[rendered.format] || "bin"}`;
+          await uploadAssetStep({
+            fileBlob: rendered.blob,
+            fileName: variantFileName,
+            assetId,
+            assetRole: "variant",
+            assetFormat: rendered.format,
+            variantKind: variant.variantKind || "compressed",
+            originalUrl: originalUpload?.url || "",
+            originalId: originalUpload?.id || "",
+            sourceHash,
+            copyrightHolder,
+            license,
+            width: variant.width,
+            height: variant.height,
+          });
+        } catch (variantError) {
+          console.warn("Optional image variant upload skipped", {
+            key: variant.key,
+            error: variantError,
+          });
+        }
+      }
 
       resetEditorState();
       try {
-        onUploaded?.(variantUpload.url, variantUpload.asset);
+        onUploaded?.(primaryUpload.url, primaryUpload.asset);
       } catch (error) {
         console.error("ImageUploader onUploaded callback failed:", error);
       }
@@ -1074,6 +1198,12 @@ export default function ImageUploader({
                   <p className="text-[11px] text-gray-500">
                     {t("admin.imageOutputFormatHint")}
                   </p>
+                  <p className="text-[11px] text-gray-500">
+                    {t(
+                      "admin.imageResponsiveVariantsHint",
+                      "Responsive variants are saved automatically (sm, md, lg) using the selected crop.",
+                    )}
+                  </p>
                 </div>
 
                 <details className="rounded border bg-gray-50 px-3 py-2">
@@ -1097,7 +1227,7 @@ export default function ImageUploader({
                         {
                           kind: isDerivedWork
                             ? t("admin.imageVariantKindDerivedWork")
-                            : t("admin.imageVariantKindOriginal"),
+                            : t("admin.imageVariantKindCompressed"),
                         },
                       )}
                     </p>

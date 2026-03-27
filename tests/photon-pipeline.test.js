@@ -10,9 +10,9 @@ import {
 } from "../src/lib/photonPipeline.js";
 
 describe("resolveOutputFormat", () => {
-  it("returns jpeg when no cropCircle operation", () => {
+  it("returns webp when no cropCircle operation", () => {
     const ops = [{ type: "source" }, { type: "resize", params: { width: 800, height: 600 } }];
-    assert.equal(resolveOutputFormat(ops), "jpeg");
+    assert.equal(resolveOutputFormat(ops), "webp");
   });
 
   it("returns png when cropCircle is present", () => {
@@ -20,8 +20,8 @@ describe("resolveOutputFormat", () => {
     assert.equal(resolveOutputFormat(ops), "png");
   });
 
-  it("returns jpeg for empty operations", () => {
-    assert.equal(resolveOutputFormat([]), "jpeg");
+  it("returns webp for empty operations", () => {
+    assert.equal(resolveOutputFormat([]), "webp");
   });
 
   it("returns webp when caller requests it explicitly", () => {
@@ -36,8 +36,12 @@ describe("resolveOutputFormat", () => {
     assert.equal(resolveOutputFormat([], "avif"), "avif");
   });
 
-  it("falls back to jpeg when override is unknown", () => {
-    assert.equal(resolveOutputFormat([], "heif"), "jpeg");
+  it("falls back to webp when override is unknown", () => {
+    assert.equal(resolveOutputFormat([], "heif"), "webp");
+  });
+
+  it("accepts explicit jpeg override", () => {
+    assert.equal(resolveOutputFormat([], "jpeg"), "jpeg");
   });
 });
 

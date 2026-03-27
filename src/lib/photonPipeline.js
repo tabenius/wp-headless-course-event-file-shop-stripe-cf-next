@@ -12,7 +12,8 @@ const JPEG_QUALITY = 85;
  * Resolves the output image format.
  * - cropCircle requires transparency → always PNG regardless of requestedFormat
  * - "avif", "webp", and "png" are accepted as requestedFormat overrides
- * - anything else falls back to "jpeg"
+ * - "jpeg" is accepted as an explicit override
+ * - anything else falls back to "webp"
  *
  * @param {Array}  operations
  * @param {string} [requestedFormat]  optional caller override: "avif"|"webp"|"png"|"jpeg"
@@ -25,7 +26,8 @@ export function resolveOutputFormat(operations, requestedFormat) {
   if (requestedFormat === "avif") return "avif";
   if (requestedFormat === "webp") return "webp";
   if (requestedFormat === "png") return "png";
-  return "jpeg";
+  if (requestedFormat === "jpeg") return "jpeg";
+  return "webp";
 }
 
 /**

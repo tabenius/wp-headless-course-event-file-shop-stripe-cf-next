@@ -309,6 +309,7 @@
     "imageResetCrop": "Reset",
     "imageOutputFormatLabel": "Output format",
     "imageOutputFormatHint": "Original source is uploaded first and tagged as original; the processed variant links back to it.",
+    "imageResponsiveVariantsHint": "Responsive variants are saved automatically (sm, md, lg) using the selected crop.",
     "imageOutputFormatWebp": "WebP (default compression)",
     "imageOutputFormatAvif": "AVIF (smaller files when supported)",
     "imageOutputFormatRaw": "Raw source (no compression)",

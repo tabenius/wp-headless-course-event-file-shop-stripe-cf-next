@@ -309,6 +309,7 @@
     "imageResetCrop": "Återställ",
     "imageOutputFormatLabel": "Utdataformat",
     "imageOutputFormatHint": "Originalfilen laddas alltid upp först och märks som original; den bearbetade varianten länkar tillbaka till originalet.",
+    "imageResponsiveVariantsHint": "Responsiva varianter sparas automatiskt (sm, md, lg) med vald beskärning.",
     "imageOutputFormatWebp": "WebP (standardkomprimering)",
     "imageOutputFormatAvif": "AVIF (mindre filer när det stöds)",
     "imageOutputFormatRaw": "Rå källa (ingen komprimering)",
