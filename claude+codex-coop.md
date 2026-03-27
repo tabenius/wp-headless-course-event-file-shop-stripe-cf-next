@@ -82,6 +82,23 @@
 **Commit:**
 - `main` `55b75df` — `Add field-level docs help links in products and derivations`
 
+### Codex — admin field-level docs help links, phase 4 (sales + support)
+
+**Delivered:**
+- Extended inline field-level docs `?` helpers into additional operator-heavy admin tabs:
+  - `AdminSalesTab`: email filter control and date-filter controls
+  - `AdminSupportTab`: new-ticket section, priority selector, status selector, comments section
+- Added missing localized label key used by Sales filter metadata:
+  - `admin.dateFilter` in EN/SV/ES
+
+**Validation:**
+- `node --check src/components/admin/AdminSalesTab.js` (pass)
+- `node --check src/components/admin/AdminSupportTab.js` (pass)
+- i18n JSON parse checks pass for EN/SV/ES
+
+**Commit:**
+- `main` `a833eca` — `Add field-level docs helpers in sales and support`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
