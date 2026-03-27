@@ -1,7 +1,68 @@
-import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
+import { fetchGraphQL } from "@/lib/client";
 import site from "@/lib/site";
 
 const siteUrl = site.url;
+const SITEMAP_COMBINED_QUERY = `
+  query SitemapCombined {
+    pages(first: 100) {
+      edges {
+        node {
+          uri
+          modified
+        }
+      }
+    }
+    posts(first: 100) {
+      edges {
+        node {
+          uri
+          modified
+        }
+      }
+    }
+    lpCourses(first: 100) {
+      edges {
+        node {
+          uri
+          modified
+        }
+      }
+    }
+  }
+`;
+
+const SITEMAP_CORE_QUERY = `
+  query SitemapCore {
+    pages(first: 100) {
+      edges {
+        node {
+          uri
+          modified
+        }
+      }
+    }
+    posts(first: 100) {
+      edges {
+        node {
+          uri
+          modified
+        }
+      }
+    }
+  }
+`;
+
+function pushNodes(entries, nodes, { priority, changeFrequency }) {
+  for (const { node } of nodes || []) {
+    if (!node?.uri || node.uri === "/") continue;
+    entries.push({
+      url: `${siteUrl}${node.uri.replace(/\/$/, "")}`,
+      lastModified: node.modified ? new Date(node.modified) : undefined,
+      changeFrequency,
+      priority,
+    });
+  }
+}
 
 export default async function sitemap() {
   const entries = [
@@ -16,63 +77,41 @@ export default async function sitemap() {
     { url: `${siteUrl}/shop`, changeFrequency: "weekly", priority: 0.7 },
   ];
 
-  // Fetch all pages
   try {
-    const pageData = await fetchGraphQL(
-      `{ pages(first: 100) { edges { node { uri modified } } } }`,
-      {},
-      3600,
-    );
-    for (const { node } of pageData?.pages?.edges || []) {
-      if (node.uri && node.uri !== "/") {
-        entries.push({
-          url: `${siteUrl}${node.uri.replace(/\/$/, "")}`,
-          lastModified: node.modified ? new Date(node.modified) : undefined,
-          changeFrequency: "monthly",
-          priority: 0.7,
-        });
-      }
-    }
-  } catch {}
+    const data = await fetchGraphQL(SITEMAP_COMBINED_QUERY, {}, 3600, {
+      edgeCache: true,
+    });
+    pushNodes(entries, data?.pages?.edges, {
+      priority: 0.7,
+      changeFrequency: "monthly",
+    });
+    pushNodes(entries, data?.posts?.edges, {
+      priority: 0.6,
+      changeFrequency: "monthly",
+    });
+    pushNodes(entries, data?.lpCourses?.edges, {
+      priority: 0.8,
+      changeFrequency: "monthly",
+    });
+    return entries;
+  } catch {
+    // Fallback for installs where LearnPress types are not present.
+  }
 
-  // Fetch all posts
   try {
-    const postData = await fetchGraphQL(
-      `{ posts(first: 100) { edges { node { uri modified } } } }`,
-      {},
-      3600,
-    );
-    for (const { node } of postData?.posts?.edges || []) {
-      if (node.uri) {
-        entries.push({
-          url: `${siteUrl}${node.uri.replace(/\/$/, "")}`,
-          lastModified: node.modified ? new Date(node.modified) : undefined,
-          changeFrequency: "monthly",
-          priority: 0.6,
-        });
-      }
-    }
-  } catch {}
-
-  // Fetch LearnPress courses (auto-detected via schema introspection)
-  if (await hasGraphQLType("LpCourse")) {
-    try {
-      const courseData = await fetchGraphQL(
-        `{ lpCourses(first: 100) { edges { node { uri modified } } } }`,
-        {},
-        3600,
-      );
-      for (const { node } of courseData?.lpCourses?.edges || []) {
-        if (node.uri) {
-          entries.push({
-            url: `${siteUrl}${node.uri.replace(/\/$/, "")}`,
-            lastModified: node.modified ? new Date(node.modified) : undefined,
-            changeFrequency: "monthly",
-            priority: 0.8,
-          });
-        }
-      }
-    } catch {}
+    const data = await fetchGraphQL(SITEMAP_CORE_QUERY, {}, 3600, {
+      edgeCache: true,
+    });
+    pushNodes(entries, data?.pages?.edges, {
+      priority: 0.7,
+      changeFrequency: "monthly",
+    });
+    pushNodes(entries, data?.posts?.edges, {
+      priority: 0.6,
+      changeFrequency: "monthly",
+    });
+  } catch {
+    // Keep static defaults only when upstream content fetch fails.
   }
 
   return entries;

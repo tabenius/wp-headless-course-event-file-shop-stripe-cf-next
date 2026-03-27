@@ -6,6 +6,7 @@ import {
   filterNavigationByExistence,
 } from "@/lib/menuFilter";
 import { cache } from "react";
+import { readCloudflareKvJson, writeCloudflareKvJson } from "@/lib/cloudflareKv";
 
 const MENU_QUERY = `
   query GetPrimaryMenu {
@@ -55,9 +56,17 @@ const MENU_SITEMAP_MAX_FILES =
   Number.parseInt(process.env.MENU_SITEMAP_MAX_FILES || "24", 10) || 24;
 const MENU_SITEMAP_TIMEOUT_MS =
   Number.parseInt(process.env.MENU_SITEMAP_TIMEOUT_MS || "8000", 10) || 8000;
+const MENU_SNAPSHOT_KV_KEY = process.env.MENU_SNAPSHOT_KV_KEY || "menu:primary:v1";
+const MENU_SNAPSHOT_TTL_MS =
+  Number.parseInt(process.env.MENU_SNAPSHOT_TTL_MS || "300000", 10) || 300000;
 let sitemapCache = {
   expiresAt: 0,
   paths: null,
+  pending: null,
+};
+let menuSnapshotCache = {
+  expiresAt: 0,
+  items: null,
   pending: null,
 };
 
@@ -68,6 +77,27 @@ export function resetMenuCaches() {
     paths: null,
     pending: null,
   };
+  menuSnapshotCache = {
+    expiresAt: 0,
+    items: null,
+    pending: null,
+  };
+}
+
+export async function purgeMenuSnapshot() {
+  menuSnapshotCache = {
+    expiresAt: 0,
+    items: null,
+    pending: null,
+  };
+  try {
+    await writeCloudflareKvJson(MENU_SNAPSHOT_KV_KEY, {
+      items: [],
+      purgedAt: new Date().toISOString(),
+    });
+  } catch {
+    // Ignore KV errors — local reset is already applied.
+  }
 }
 
 const ALWAYS_ALLOW_PATHS = new Set(["/", "/#", "#"]);
@@ -124,6 +154,75 @@ function mapItem(node, { uppercase = false } = {}) {
     href: toRelativePath(rewritten),
     label: uppercase ? label.toUpperCase() : label,
   };
+}
+
+function normalizeSnapshotItems(items) {
+  if (!Array.isArray(items)) return null;
+  return items
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const href = typeof item.href === "string" ? item.href : "";
+      const label = typeof item.label === "string" ? item.label : "";
+      if (!href || !label) return null;
+      const children = Array.isArray(item.children)
+        ? item.children
+            .map((child) => {
+              if (!child || typeof child !== "object") return null;
+              const childHref =
+                typeof child.href === "string" ? child.href : "";
+              const childLabel =
+                typeof child.label === "string" ? child.label : "";
+              if (!childHref || !childLabel) return null;
+              return { href: childHref, label: childLabel };
+            })
+            .filter(Boolean)
+        : [];
+      return children.length > 0 ? { href, label, children } : { href, label };
+    })
+    .filter(Boolean);
+}
+
+async function getMenuSnapshot() {
+  const now = Date.now();
+  if (menuSnapshotCache.items && menuSnapshotCache.expiresAt > now) {
+    return menuSnapshotCache.items;
+  }
+  if (menuSnapshotCache.pending) {
+    return menuSnapshotCache.pending;
+  }
+
+  menuSnapshotCache.pending = (async () => {
+    try {
+      const payload = await readCloudflareKvJson(MENU_SNAPSHOT_KV_KEY);
+      const items = normalizeSnapshotItems(payload?.items);
+      if (items && items.length > 0) {
+        menuSnapshotCache.items = items;
+        menuSnapshotCache.expiresAt = Date.now() + MENU_SNAPSHOT_TTL_MS;
+        return items;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      menuSnapshotCache.pending = null;
+    }
+  })();
+  return menuSnapshotCache.pending;
+}
+
+async function writeMenuSnapshot(items) {
+  const normalized = normalizeSnapshotItems(items);
+  if (!normalized || normalized.length === 0) return;
+  menuSnapshotCache.items = normalized;
+  menuSnapshotCache.expiresAt = Date.now() + MENU_SNAPSHOT_TTL_MS;
+  try {
+    await writeCloudflareKvJson(MENU_SNAPSHOT_KV_KEY, {
+      items: normalized,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch {
+    // KV persistence is best effort; in-memory snapshot still helps this isolate.
+  }
 }
 
 function normalizeUriForLookup(uri) {
@@ -311,6 +410,11 @@ async function canRenderMenuHref(href) {
  * Returns items with optional `children` arrays.
  */
 export const getNavigation = cache(async function getNavigation() {
+  const snapshot = await getMenuSnapshot();
+  if (snapshot && snapshot.length > 0) {
+    return ensureCoreMenuEntriesByExistence(snapshot, canRenderMenuHref);
+  }
+
   try {
     const data = await fetchGraphQL(MENU_QUERY, {}, 1800, { edgeCache: true });
     const menuItems =
@@ -321,7 +425,12 @@ export const getNavigation = cache(async function getNavigation() {
         site.navigation,
         canRenderMenuHref,
       );
-      return ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
+      const ensured = await ensureCoreMenuEntriesByExistence(
+        filtered,
+        canRenderMenuHref,
+      );
+      writeMenuSnapshot(ensured).catch(() => {});
+      return ensured;
     }
 
     const mapped = menuItems.map((item) => {
@@ -333,12 +442,22 @@ export const getNavigation = cache(async function getNavigation() {
       };
     });
     const filtered = await filterNavigationByExistence(mapped, canRenderMenuHref);
-    return ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
+    const ensured = await ensureCoreMenuEntriesByExistence(
+      filtered,
+      canRenderMenuHref,
+    );
+    writeMenuSnapshot(ensured).catch(() => {});
+    return ensured;
   } catch {
     const filtered = await filterNavigationByExistence(
       site.navigation,
       canRenderMenuHref,
     );
-    return ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
+    const ensured = await ensureCoreMenuEntriesByExistence(
+      filtered,
+      canRenderMenuHref,
+    );
+    writeMenuSnapshot(ensured).catch(() => {});
+    return ensured;
   }
 });

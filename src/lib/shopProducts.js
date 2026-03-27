@@ -23,133 +23,241 @@ import site from "@/lib/site";
  */
 
 const defaultCurrency = site.defaultCurrency || "SEK";
-const graphqlFieldSupportCache = new Map();
+const SHOP_CORE_MODE_TTL_MS =
+  Number.parseInt(process.env.SHOP_CORE_MODE_TTL_MS || "900000", 10) || 900000;
+let shopCoreMode = {
+  mode: "unknown",
+  expiresAt: 0,
+};
 
 export function resetShopProductsCaches() {
-  graphqlFieldSupportCache.clear();
+  shopCoreMode = {
+    mode: "unknown",
+    expiresAt: 0,
+  };
 }
 
-async function hasGraphQLField(typeName, fieldName) {
-  const cacheKey = `${typeName}:${fieldName}`;
-  if (graphqlFieldSupportCache.has(cacheKey)) {
-    return graphqlFieldSupportCache.get(cacheKey);
-  }
-  const data = await fetchGraphQL(
-    `query IntrospectField($name: String!) {
-      __type(name: $name) {
-        fields { name }
-      }
-    }`,
-    { name: typeName },
-    1800,
-    { edgeCache: true },
-  );
-  const exists = (data?.__type?.fields || []).some(
-    (field) => field?.name === fieldName,
-  );
-  graphqlFieldSupportCache.set(cacheKey, exists);
-  return exists;
+function extractNodes(data, rootField) {
+  return data?.[rootField]?.edges?.map((edge) => edge?.node).filter(Boolean) || [];
 }
 
-async function fetchWooCommerceProducts() {
-  try {
-    const data = await fetchGraphQL(
-      `{
-        products(first: 100, where: { status: "publish" }) {
-          edges {
-            node {
-              __typename
-              ... on SimpleProduct {
-                databaseId name slug uri price regularPrice
-                shortDescription
-                featuredImage { node { sourceUrl } }
-                productCategories { edges { node { name slug } } }
-              }
-              ... on VariableProduct {
-                databaseId name slug uri price regularPrice
-                shortDescription
-                featuredImage { node { sourceUrl } }
-                productCategories { edges { node { name slug } } }
-              }
-              ... on ExternalProduct {
-                databaseId name slug uri price regularPrice
-                shortDescription
-                featuredImage { node { sourceUrl } }
-                productCategories { edges { node { name slug } } }
-              }
-            }
+const SHOP_CORE_COMBINED_QUERY = `
+  query ShopCoreDataCombined {
+    products(first: 100, where: { status: "publish" }) {
+      edges {
+        node {
+          __typename
+          ... on SimpleProduct {
+            databaseId
+            name
+            slug
+            uri
+            price
+            regularPrice
+            shortDescription
+            featuredImage { node { sourceUrl } }
+            productCategories { edges { node { name slug } } }
+          }
+          ... on VariableProduct {
+            databaseId
+            name
+            slug
+            uri
+            price
+            regularPrice
+            shortDescription
+            featuredImage { node { sourceUrl } }
+            productCategories { edges { node { name slug } } }
+          }
+          ... on ExternalProduct {
+            databaseId
+            name
+            slug
+            uri
+            price
+            regularPrice
+            shortDescription
+            featuredImage { node { sourceUrl } }
+            productCategories { edges { node { name slug } } }
           }
         }
-      }`,
-      {},
-      300,
-      { edgeCache: true },
-    );
-    return (data?.products?.edges || [])
-      .map((e) => e.node)
-      .filter((n) => n?.name);
-  } catch (err) {
-    appendServerLog({
-      level: "error",
-      msg: `fetchWooCommerceProducts failed: ${err?.message || err}`,
-    }).catch(() => {});
-    return [];
+      }
+    }
+    lpCourses(first: 100) {
+      edges {
+        node {
+          databaseId
+          uri
+          title
+          price
+          priceRendered
+          duration
+          featuredImage { node { sourceUrl } }
+          lpCourseCategory { nodes { name slug } }
+        }
+      }
+    }
+    events(first: 100) {
+      edges {
+        node {
+          databaseId
+          uri
+          title
+          slug
+          featuredImage { node { sourceUrl } }
+          eventCategories { nodes { name slug } }
+        }
+      }
+    }
   }
+`;
+
+const SHOP_PRODUCTS_ONLY_QUERY = `
+  query ShopProductsOnly {
+    products(first: 100, where: { status: "publish" }) {
+      edges {
+        node {
+          __typename
+          ... on SimpleProduct {
+            databaseId
+            name
+            slug
+            uri
+            price
+            regularPrice
+            shortDescription
+            featuredImage { node { sourceUrl } }
+            productCategories { edges { node { name slug } } }
+          }
+          ... on VariableProduct {
+            databaseId
+            name
+            slug
+            uri
+            price
+            regularPrice
+            shortDescription
+            featuredImage { node { sourceUrl } }
+            productCategories { edges { node { name slug } } }
+          }
+          ... on ExternalProduct {
+            databaseId
+            name
+            slug
+            uri
+            price
+            regularPrice
+            shortDescription
+            featuredImage { node { sourceUrl } }
+            productCategories { edges { node { name slug } } }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const SHOP_COURSES_ONLY_QUERY = `
+  query ShopCoursesOnly {
+    lpCourses(first: 100) {
+      edges {
+        node {
+          databaseId
+          uri
+          title
+          price
+          priceRendered
+          duration
+          featuredImage { node { sourceUrl } }
+        }
+      }
+    }
+  }
+`;
+
+const SHOP_EVENTS_ONLY_QUERY = `
+  query ShopEventsOnly {
+    events(first: 100) {
+      edges {
+        node {
+          databaseId
+          uri
+          title
+          slug
+          featuredImage { node { sourceUrl } }
+        }
+      }
+    }
+  }
+`;
+
+async function fetchShopCoreGraphDataCombined() {
+  const data = await fetchGraphQL(SHOP_CORE_COMBINED_QUERY, {}, 300, {
+    edgeCache: true,
+  });
+  return {
+    wcProducts: extractNodes(data, "products").filter((node) => node?.name),
+    lpCourses: extractNodes(data, "lpCourses"),
+    events: extractNodes(data, "events"),
+  };
 }
 
-async function fetchLearnPressCourses() {
-  try {
-    const hasCourseCategories = await hasGraphQLField(
-      "LpCourse",
-      "lpCourseCategory",
-    );
-    const categoryFragment = hasCourseCategories
-      ? "lpCourseCategory { nodes { name slug } }"
-      : "";
-    const data = await fetchGraphQL(
-      `{ lpCourses(first: 100) { edges { node {
-        databaseId uri title price priceRendered duration
-        featuredImage { node { sourceUrl } }
-        ${categoryFragment}
-      } } } }`,
-      {},
-      300,
-      { edgeCache: true },
-    );
-    return (data?.lpCourses?.edges || []).map((e) => e.node);
-  } catch (err) {
-    appendServerLog({
-      level: "error",
-      msg: `fetchLearnPressCourses failed: ${err?.message || err}`,
-    }).catch(() => {});
-    return [];
-  }
+async function fetchShopCoreGraphDataLegacy() {
+  const [productsData, coursesData, eventsData] = await Promise.all([
+    fetchGraphQL(SHOP_PRODUCTS_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
+      () => ({}),
+    ),
+    fetchGraphQL(SHOP_COURSES_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
+      () => ({}),
+    ),
+    fetchGraphQL(SHOP_EVENTS_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
+      () => ({}),
+    ),
+  ]);
+  return {
+    wcProducts: extractNodes(productsData, "products").filter((node) => node?.name),
+    lpCourses: extractNodes(coursesData, "lpCourses"),
+    events: extractNodes(eventsData, "events"),
+  };
 }
 
-async function fetchEvents() {
-  try {
-    const hasEventCategories = await hasGraphQLField("Event", "eventCategories");
-    const categoryFragment = hasEventCategories
-      ? "eventCategories { nodes { name slug } }"
-      : "";
-    const data = await fetchGraphQL(
-      `{ events(first: 100) { edges { node {
-        databaseId uri title slug
-        featuredImage { node { sourceUrl } }
-        ${categoryFragment}
-      } } } }`,
-      {},
-      300,
-      { edgeCache: true },
-    );
-    return (data?.events?.edges || []).map((e) => e.node);
-  } catch (err) {
+async function fetchShopCoreGraphData() {
+  const now = Date.now();
+  const mode = shopCoreMode.expiresAt > now ? shopCoreMode.mode : "unknown";
+
+  if (mode !== "legacy") {
+    try {
+      const combined = await fetchShopCoreGraphDataCombined();
+      shopCoreMode = {
+        mode: "combined",
+        expiresAt: Date.now() + SHOP_CORE_MODE_TTL_MS,
+      };
+      return combined;
+    } catch (err) {
+      appendServerLog({
+        level: "warn",
+        msg: `Shop combined query failed, falling back to legacy split queries: ${err?.message || err}`,
+        persist: false,
+      }).catch(() => {});
+      shopCoreMode = {
+        mode: "legacy",
+        expiresAt: Date.now() + SHOP_CORE_MODE_TTL_MS,
+      };
+    }
+  }
+
+  return fetchShopCoreGraphDataLegacy().catch((err) => {
     appendServerLog({
       level: "error",
-      msg: `fetchEvents failed: ${err?.message || err}`,
+      msg: `Shop legacy queries failed: ${err?.message || err}`,
+      persist: false,
     }).catch(() => {});
-    return [];
-  }
+    return {
+      wcProducts: [],
+      lpCourses: [],
+      events: [],
+    };
+  });
 }
 
 /**
@@ -157,17 +265,12 @@ async function fetchEvents() {
  * Only items with a price > 0 are included (free items are skipped).
  */
 export async function listAllShopItems() {
+  const { wcProducts, lpCourses, events } = await fetchShopCoreGraphData();
   const [
-    wcProducts,
-    lpCourses,
-    events,
     digitalProducts,
     accessState,
     shopSettings,
   ] = await Promise.all([
-    fetchWooCommerceProducts(),
-    fetchLearnPressCourses(),
-    fetchEvents(),
     listDigitalProducts(),
     getCourseAccessState(),
     getShopSettings(),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchGraphQL, hasGraphQLType } from "@/lib/client";
+import { fetchGraphQL } from "@/lib/client";
 import { FeaturedImage } from "@/components/image/FeaturedImage";
 import { t } from "@/lib/i18n";
 import site from "@/lib/site";
@@ -40,8 +40,12 @@ const LIST_COURSES_QUERY = `
 `;
 
 export default async function CoursesPage() {
-  const hasLpCourse = await hasGraphQLType("LpCourse");
-  if (!hasLpCourse) {
+  let data;
+  try {
+    data = await fetchGraphQL(LIST_COURSES_QUERY, {}, 1800, {
+      edgeCache: true,
+    });
+  } catch {
     return (
       <main className="max-w-4xl mx-auto px-6 py-24">
         <h1 className="text-4xl font-bold mb-6">{t("courses.title")}</h1>
@@ -50,9 +54,6 @@ export default async function CoursesPage() {
     );
   }
 
-  const data = await fetchGraphQL(LIST_COURSES_QUERY, {}, 1800, {
-    edgeCache: true,
-  });
   const courses = data?.lpCourses?.edges?.map((e) => e.node) || [];
 
   return (

@@ -21,6 +21,26 @@
 - `npm run lint` (pass; existing warnings only)
 - `npm test` (pass, 25/25)
 
+### Codex — implemented GraphQL roundtrip reduction items (4,3,1,5)
+
+**Delivered:**
+- **(4) Sitemap consolidation:** merged sitemap WP content fetches into one primary GraphQL query (`pages + posts + lpCourses`) with a core fallback query (`pages + posts`) when LearnPress types are missing.
+  - File: `src/app/sitemap.js`
+- **(3) Removed preflight introspection on `/courses`:** dropped `hasGraphQLType("LpCourse")` precheck and switched to optimistic course fetch with graceful fallback UI on query failure.
+  - File: `src/app/courses/page.js`
+- **(1) Shop core aggregation:** replaced split WooCommerce/LearnPress/Event query path + schema-field introspection with:
+  - one combined shop core query in the common case,
+  - mode-cached fallback to split legacy queries only when combined shape fails.
+  - File: `src/lib/shopProducts.js`
+- **(5) Menu source decoupling:** added menu snapshot layer (in-memory + KV-backed best-effort persistence) so public nav can be served from snapshot before hitting WP GraphQL.
+  - File: `src/lib/menu.js`
+- Updated admin cache purge to clear/purge menu snapshot state as part of cache clear flow.
+  - File: `src/app/api/admin/purge-cache/route.js`
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only)
+- `npm test` (pass, 25/25)
+
 ## 2026-03-26 (Codex)
 
 ### Codex — home events calendar visibility fixed and re-deployed (version 0.1.1)
