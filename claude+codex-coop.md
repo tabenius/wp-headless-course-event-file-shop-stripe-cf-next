@@ -2,6 +2,17 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — docs safety strip guide submenu (direct document jump)
+
+**Delivered:**
+- Extended docs article safety strip so `Guide` (active doc slug, e.g. `changelog`) now has a subtle hover/focus submenu.
+- Submenu lists all docs articles and links directly to each guide in the current language.
+- Active guide is highlighted (`aria-current="true"`), matching the language submenu behavior.
+
+**Publish:**
+- `ragbaz.xyz` commit: `33deddd` (`docs safety strip: add guide submenu for direct doc navigation`)
+- Deployed worker version: `93def01e-5617-4c44-b825-47ca7d455987`
+
 ### Codex — docs safety strip language submenu (subtle hover)
 
 **Delivered:**
