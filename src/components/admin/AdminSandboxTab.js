@@ -4,6 +4,8 @@ import { t } from "@/lib/i18n";
 import { tenantConfig } from "@/lib/tenantConfig";
 import DebugLogPanel from "./DebugLogPanel";
 import TorusBanner from "./TorusBanner";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
+import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 export default function AdminSandboxTab({
   buildTimestamp,
@@ -30,10 +32,14 @@ export default function AdminSandboxTab({
       <TorusBanner />
       <div className="border rounded p-5 space-y-6 bg-white">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">
-            {t("admin.sandboxSettings")}
-          </h2>
+          <div className="inline-flex items-center gap-1">
+            <h2 className="text-xl font-semibold">
+              {t("admin.sandboxSettings")}
+            </h2>
+            <AdminFieldHelpLink slug="technical-manual" />
+          </div>
           <div className="flex gap-2">
+            <AdminDocsContextLinks tab="info" compact />
             <button
               type="button"
               onClick={purgeCache}
@@ -75,9 +81,12 @@ export default function AdminSandboxTab({
 
         {/* Environment info */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">
-            {t("admin.environment")}
-          </h3>
+          <div className="inline-flex items-center gap-1">
+            <h3 className="text-sm font-semibold text-gray-700">
+              {t("admin.environment")}
+            </h3>
+            <AdminFieldHelpLink slug="quick-start" />
+          </div>
           <div className="grid md:grid-cols-2 gap-3 text-xs">
             <div className="bg-gray-50 rounded p-3 space-y-1">
               <div className="font-medium text-gray-700">WordPress</div>
@@ -148,9 +157,12 @@ export default function AdminSandboxTab({
         {/* Recent commits */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700">
-              {t("admin.recentCommits")}
-            </h3>
+            <div className="inline-flex items-center gap-1">
+              <h3 className="text-sm font-semibold text-gray-700">
+                {t("admin.recentCommits")}
+              </h3>
+              <AdminFieldHelpLink slug="technical-manual" />
+            </div>
             {commits && (
               <button
                 type="button"
@@ -208,9 +220,12 @@ export default function AdminSandboxTab({
         {/* ── Server request log ── */}
         {debugLogs?.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Recent requests
-            </h3>
+            <div className="inline-flex items-center gap-1">
+              <h3 className="text-sm font-semibold text-gray-700">
+                Recent requests
+              </h3>
+              <AdminFieldHelpLink slug="performance-explained" />
+            </div>
             <div className="bg-gray-900 text-gray-100 rounded p-3 font-mono text-xs space-y-1 max-h-48 overflow-auto">
               {debugLogs.map((logItem) => (
                 <div
