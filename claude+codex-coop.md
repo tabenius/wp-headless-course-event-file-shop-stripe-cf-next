@@ -96,6 +96,14 @@
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
+### Codex — user/admin experience changelog document (weekly timeline)
+
+**Delivered:**
+- Added a new high-level weekly changelog document:
+  - `docs/CHANGELOG.md`
+- Content focus is product/admin experience and major feature outcomes (not code details), using a week-by-week timeline.
+- Scope currently summarizes major progress from week of 2026-03-02 through week of 2026-03-23.
+
 ### Codex — aether status-pill contrast fix on ragbaz.xyz
 
 **Delivered:**
