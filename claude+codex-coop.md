@@ -2,6 +2,19 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — further expansion of PRO storefront admin UI feature detail
+
+**Delivered:**
+- Continued elaboration of `/articulate` PRO admin documentation with three additional structured sections:
+  - `PRO Admin UI Modules` (module/capabilities/operator-outcome table),
+  - `PRO Operator Workflows` (daily ops, campaign/content, incident loops),
+  - `Feature Matrix Maintenance` (explicit update discipline to keep OSS/PRO split current).
+- Kept this data-driven in `renderArticulatePage` so future feature updates remain centralized and fast to maintain.
+
+**Publish:**
+- `ragbaz.xyz` commit: `48c68e8` (`articulate: add pro admin modules, workflows, and update discipline`)
+- Deployed worker version: `b1870f0c-6b72-4419-90d9-d0a6ef2a6a8e`
+
 ### Codex — expanded PRO storefront admin UI feature documentation
 
 **Delivered:**
