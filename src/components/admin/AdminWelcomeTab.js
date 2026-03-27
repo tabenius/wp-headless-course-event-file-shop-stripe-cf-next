@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import { tenantConfig } from "@/lib/tenantConfig";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 
 const IMPRESS_SCRIPT_ID = "impress-js-1.1.0";
 const BASE_SLIDE_WIDTH = 940;
@@ -1185,6 +1186,9 @@ export default function AdminWelcomeTab({
             <h2 className="text-2xl font-semibold text-slate-900">
               {t("admin.welcomeHeadline", "Welcome to your new control room")}
             </h2>
+            <div className="mt-2">
+              <AdminDocsContextLinks tab="welcome" compact />
+            </div>
           </div>
           <button
             type="button"

@@ -3,6 +3,7 @@
 import { t } from "@/lib/i18n";
 import { TYPOGRAPHY_THEMES } from "@/lib/typographyThemes";
 import AdminFontBrowserModal from "./AdminFontBrowserModal";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 
 // ── CTA button style constants (mirrored from AdminDashboard.js) ──────────────
 
@@ -176,13 +177,16 @@ export default function AdminStyleTab({
       <div className="border rounded p-5 space-y-8">
         {/* ── Main site style ── */}
         <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              {t("admin.styleSiteTitle")}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {t("admin.styleSiteSummary")}
-            </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">
+                {t("admin.styleSiteTitle")}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {t("admin.styleSiteSummary")}
+              </p>
+            </div>
+            <AdminDocsContextLinks tab="style" compact />
           </div>
           <p className="text-xs text-gray-500">
             {t(

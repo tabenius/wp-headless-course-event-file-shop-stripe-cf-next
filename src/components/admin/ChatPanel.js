@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { t } from "@/lib/i18n";
 import ChatMessage from "./ChatMessage";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 
 export default function ChatPanel({
   chatMessages,
@@ -26,6 +27,9 @@ export default function ChatPanel({
         <div>
           <h2 className="text-xl font-semibold">{t("chat.title")}</h2>
           <p className="text-sm text-gray-500">{t("chat.subtitle")}</p>
+          <div className="mt-2">
+            <AdminDocsContextLinks tab="chat" compact />
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button

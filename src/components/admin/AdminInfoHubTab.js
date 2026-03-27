@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { t } from "@/lib/i18n";
+import { getLocale, t } from "@/lib/i18n";
+import { buildRagbazDocsUrl, normalizeDocsLanguage } from "@/lib/ragbazDocs";
 import { tenantConfig } from "@/lib/tenantConfig";
 import AdminConnectorsTab from "./AdminConnectorsTab";
 import AdminSandboxTab from "./AdminSandboxTab";
 import AdminStatsTab from "./AdminStatsTab";
 import GraphqlAvailabilityPanel from "./GraphqlAvailabilityPanel";
 import PagePerformancePanel from "./PagePerformancePanel";
+import AdminDocsContextLinks from "./AdminDocsContextLinks";
 
 function normalizeSection(value) {
   const safe = String(value || "").trim().toLowerCase();
@@ -778,11 +779,21 @@ function DeadLinksPanel() {
 }
 
 function DocsPanel() {
+  const docsLang = normalizeDocsLanguage(getLocale());
+  const docsIndexUrl = buildRagbazDocsUrl({ lang: docsLang });
+  const docsTechnicalUrl = buildRagbazDocsUrl({
+    lang: docsLang,
+    slug: "technical-manual",
+  });
+
   return (
     <div className="border rounded p-5 bg-white space-y-4">
-      <h2 className="text-xl font-semibold">
-        {t("admin.documentation", "Documentation")}
-      </h2>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h2 className="text-xl font-semibold">
+          {t("admin.documentation", "Documentation")}
+        </h2>
+        <AdminDocsContextLinks tab="info" compact />
+      </div>
       <p className="text-sm text-gray-600">
         {t(
           "admin.docsInfoSummary",
@@ -790,32 +801,44 @@ function DocsPanel() {
         )}
       </p>
       <div className="grid gap-3 md:grid-cols-2">
-        <Link
-          href="/admin/docs"
-          className="rounded border bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-colors"
+        <a
+          href={docsIndexUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded border bg-sky-50 px-4 py-3 hover:bg-sky-100 transition-colors"
+          title={t("admin.docsOpenGuideTooltip", "Open guide on ragbaz.xyz ({lang}).", {
+            lang: docsLang.toUpperCase(),
+          })}
         >
-          <p className="font-semibold text-gray-900">
-            {t("admin.documentation", "Documentation")}
+          <p className="font-semibold text-sky-900">
+            {t("admin.docsExternalHub", "ragbaz.xyz docs")}
           </p>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="text-xs text-sky-700 mt-1">
             {t(
-              "admin.docsHubHint",
-              "Open the admin docs index and choose a guide.",
+              "admin.docsExternalHubHint",
+              "Open the multilingual public docs hub for operators and non-technical readers.",
             )}
           </p>
-        </Link>
-        <Link
-          href="/admin/docs/architecture"
-          className="rounded border bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-colors"
+        </a>
+        <a
+          href={docsTechnicalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded border bg-sky-50 px-4 py-3 hover:bg-sky-100 transition-colors"
+          title={t("admin.docsOpenGuideTooltip", "Open guide on ragbaz.xyz ({lang}).", {
+            lang: docsLang.toUpperCase(),
+          })}
         >
-          <p className="font-semibold text-gray-900">Architecture</p>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="font-semibold text-sky-900">
+            {t("admin.docsExternalTechnical", "ragbaz.xyz technical manual")}
+          </p>
+          <p className="text-xs text-sky-700 mt-1">
             {t(
-              "admin.docsArchitectureHint",
-              "Review system design, data flow, and deployment notes.",
+              "admin.docsExternalTechnicalHint",
+              "Open implementation-level guidance aligned with AI-agent collaboration workflows.",
             )}
           </p>
-        </Link>
+        </a>
       </div>
     </div>
   );
@@ -906,6 +929,7 @@ export default function AdminInfoHubTab({
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <AdminDocsContextLinks tab="info" compact />
           <button
             type="button"
             onClick={purgeCache}
