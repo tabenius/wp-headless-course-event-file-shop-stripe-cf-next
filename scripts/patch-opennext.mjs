@@ -40,19 +40,54 @@ try {
 }
 
 if (src.includes(PATCH) && !src.includes(NEEDLE)) {
-  console.log("patch-opennext: already patched, skipping.");
-  process.exit(0);
-}
-
-if (!src.includes(NEEDLE)) {
+  console.log("patch-opennext: loadManifest already patched, skipping.");
+} else if (!src.includes(NEEDLE)) {
   console.error(
     "patch-opennext: needle not found — OpenNext version may have changed. Skipping.",
   );
+} else {
+  const patched = src.replace(NEEDLE, PATCH);
+  writeFileSync(TARGET, patched, "utf8");
+  console.log(
+    "patch-opennext: loadManifest now returns {} for unrecognised manifests (Next.js 16 compat)",
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Patch 2: Externalize AWS SDK from the CF Workers esbuild bundle.
+//
+// With R2 bindings, the Worker no longer needs the AWS SDK at runtime.
+// The SDK is still installed for local dev (next dev) where it's loaded via
+// dynamic import().  Adding the packages to esbuild's `external` array
+// prevents them from being bundled into handler.mjs (~980 KB / ~250 KB gz).
+// ---------------------------------------------------------------------------
+const BUNDLE_SERVER = resolve(
+  "node_modules/@opennextjs/cloudflare/dist/cli/build/bundle-server.js",
+);
+
+let bundleSrc;
+try {
+  bundleSrc = readFileSync(BUNDLE_SERVER, "utf8");
+} catch {
   process.exit(0);
 }
 
-const patched = src.replace(NEEDLE, PATCH);
-writeFileSync(TARGET, patched, "utf8");
-console.log(
-  "patch-opennext: loadManifest now returns {} for unrecognised manifests (Next.js 16 compat)",
-);
+const EXTERNAL_NEEDLE = `"./middleware/handler.mjs",`;
+const EXTERNAL_PATCH = `"./middleware/handler.mjs",
+            // Externalize AWS SDK — R2 bindings replace it at runtime (patch-opennext)
+            "@aws-sdk/client-s3",
+            "@aws-sdk/s3-request-presigner",`;
+
+if (bundleSrc.includes("@aws-sdk/client-s3")) {
+  console.log("patch-opennext: AWS SDK already externalized, skipping.");
+} else if (!bundleSrc.includes(EXTERNAL_NEEDLE)) {
+  console.error(
+    "patch-opennext: external needle not found in bundle-server.js — OpenNext version may have changed. Skipping.",
+  );
+} else {
+  const patchedBundle = bundleSrc.replace(EXTERNAL_NEEDLE, EXTERNAL_PATCH);
+  writeFileSync(BUNDLE_SERVER, patchedBundle, "utf8");
+  console.log(
+    "patch-opennext: externalized @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner from CF Workers bundle",
+  );
+}

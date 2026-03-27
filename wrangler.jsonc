@@ -31,6 +31,12 @@
   "ai": {
     "binding": "AI",
   },
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      "bucket_name": "sofiacerne",
+    },
+  ],
   "kv_namespaces": [
     {
       "binding": "COURSE_ACCESS",

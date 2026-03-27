@@ -6,6 +6,7 @@ import {
   buildR2Url,
   toHex,
 } from "@/lib/r2Edge";
+import { getR2Bucket } from "@/lib/r2Bindings";
 
 const _clients = new Map();
 let _awsSdkPromise = null;
@@ -194,6 +195,50 @@ function encodeS3CopySource(bucket, key) {
   return `${safeBucket}/${encodedKey}`;
 }
 
+// ---------------------------------------------------------------------------
+// R2 Binding helpers — used when running on CF Workers
+// ---------------------------------------------------------------------------
+
+function r2HttpMetadata(contentType) {
+  const meta = {};
+  if (contentType) meta.contentType = contentType;
+  return meta;
+}
+
+function r2ObjectToHead(obj) {
+  return {
+    metadata: normalizeStorageMetadata(obj.customMetadata || {}),
+    contentType: obj.httpMetadata?.contentType || "",
+    cacheControl: obj.httpMetadata?.cacheControl || "",
+    contentDisposition: obj.httpMetadata?.contentDisposition || "",
+    contentEncoding: obj.httpMetadata?.contentEncoding || "",
+    contentLanguage: obj.httpMetadata?.contentLanguage || "",
+    expires: obj.httpMetadata?.expiration
+      ? new Date(obj.httpMetadata.expiration).toISOString()
+      : "",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Edge R2 helpers (signed fetch — no SDK)
+// ---------------------------------------------------------------------------
+
+function getEdgeR2Creds() {
+  return {
+    accessKeyId:
+      process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID,
+    secretAccessKey:
+      process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY,
+    accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
+    bucket: process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME,
+    publicBaseUrl: (
+      process.env.S3_PUBLIC_URL ||
+      process.env.CF_R2_PUBLIC_URL ||
+      ""
+    ).replace(/\/+$/, ""),
+  };
+}
+
 async function uploadToR2Edge(buffer, fileName, contentType, metadata = {}) {
   assertEdgeR2Support();
   if (buffer.byteLength > EDGE_R2_MAX_BYTES) {
@@ -201,17 +246,8 @@ async function uploadToR2Edge(buffer, fileName, contentType, metadata = {}) {
       `File too large for edge R2 upload (max ${EDGE_R2_MAX_BYTES / (1024 * 1024)} MB).`,
     );
   }
-  const accessKeyId =
-    process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
-  const secretAccessKey =
-    process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
-  const publicUrl = (
-    process.env.S3_PUBLIC_URL ||
-    process.env.CF_R2_PUBLIC_URL ||
-    ""
-  ).replace(/\/+$/, "");
+  const { accessKeyId, secretAccessKey, accountId, bucket, publicBaseUrl } =
+    getEdgeR2Creds();
   const key = `uploads/${Date.now()}-${fileName}`;
   const url = buildR2Url({ accountId, bucket, key });
   const metadataHeaders = toR2MetadataHeaders(metadata);
@@ -238,8 +274,12 @@ async function uploadToR2Edge(buffer, fileName, contentType, metadata = {}) {
     const text = await res.text().catch(() => "");
     throw new Error(`R2 upload failed (${res.status}): ${text.slice(0, 200)}`);
   }
-  return `${publicUrl}/${key}`;
+  return `${publicBaseUrl}/${key}`;
 }
+
+// ---------------------------------------------------------------------------
+// Public API — each function tries R2 binding → edge R2 → SDK fallback
+// ---------------------------------------------------------------------------
 
 /**
  * Upload a file to S3-compatible storage.
@@ -253,27 +293,37 @@ export async function uploadToS3(
   options = {},
 ) {
   const metadata = normalizeStorageMetadata(options?.metadata);
-  if (backend === "r2" && isEdgeRuntime) {
-    return uploadToR2Edge(buffer, fileName, contentType, metadata);
+
+  // R2 binding path (CF Workers — no SDK needed)
+  if (backend === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const publicBaseUrl = getPublicUrl();
+      const key = `uploads/${Date.now()}-${fileName}`;
+      await bucket.put(key, buffer, {
+        httpMetadata: r2HttpMetadata(contentType),
+        customMetadata: metadata,
+      });
+      return `${publicBaseUrl}/${key}`;
+    }
+    if (isEdgeRuntime) return uploadToR2Edge(buffer, fileName, contentType, metadata);
   }
+
   assertNodeS3Support(backend);
   const { PutObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backend);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const publicUrl = getPublicUrl();
-
   const key = `uploads/${Date.now()}-${fileName}`;
-
   await client.send(
     new PutObjectCommand({
-      Bucket: bucket,
+      Bucket: bucketName,
       Key: key,
       Body: buffer,
       ContentType: contentType || "application/octet-stream",
       ...(Object.keys(metadata).length > 0 ? { Metadata: metadata } : {}),
     }),
   );
-
   return `${publicUrl}/${key}`;
 }
 
@@ -288,101 +338,106 @@ export async function createPresignedUpload(
   expiresIn = 3600,
   backend = resolveBackend(),
 ) {
-  if (backend === "r2" && isEdgeRuntime) {
-    throw new Error(
-      "Presigned browser uploads to R2 are not supported on edge runtime. Use direct upload path.",
-    );
+  // R2 bindings can't generate presigned URLs — use r2Edge signing instead.
+  if (backend === "r2") {
+    const { accessKeyId, secretAccessKey, accountId, bucket, publicBaseUrl } =
+      getEdgeR2Creds();
+    if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+      throw new Error("R2 credentials missing for presigned URL generation.");
+    }
+    const key = `uploads/${Date.now()}-${fileName}`;
+    const url = buildR2Url({ accountId, bucket, key });
+    const uploadUrl = await presignR2Url({
+      method: "PUT",
+      url,
+      expiresIn,
+      accessKeyId,
+      secretAccessKey,
+      region: "auto",
+    });
+    return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key, expiresIn };
   }
+
   const { PutObjectCommand, getSignedUrl } = await loadAwsSdk();
   const client = await getS3Client(backend);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const publicBaseUrl = getPublicUrl();
-
   const key = `uploads/${Date.now()}-${fileName}`;
-
   const command = new PutObjectCommand({
-    Bucket: bucket,
+    Bucket: bucketName,
     Key: key,
     ContentType: contentType || "application/octet-stream",
   });
-
   const uploadUrl = await getSignedUrl(client, command, { expiresIn });
-
-  return {
-    uploadUrl,
-    publicUrl: `${publicBaseUrl}/${key}`,
-    key,
-    expiresIn,
-  };
+  return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key, expiresIn };
 }
 
 /**
  * Initiate a multipart upload. Returns { uploadId, key, publicUrl }.
- * The client then requests presigned URLs for each part.
  */
 export async function createMultipartUpload(
   fileName,
   contentType,
   backend = resolveBackend(),
 ) {
-  if (backend === "r2" && isEdgeRuntime) {
-    assertEdgeR2Support();
-    const accessKeyId =
-      process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
-    const secretAccessKey =
-      process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
-    const publicBaseUrl = (
-      process.env.S3_PUBLIC_URL ||
-      process.env.CF_R2_PUBLIC_URL ||
-      ""
-    ).replace(/\/+$/, "");
-    const key = `uploads/${Date.now()}-${fileName}`;
-    const url = buildR2Url({ accountId, bucket, key }) + "?uploads";
-    const signedHeaders = await signR2Request({
-      method: "POST",
-      url,
-      headers: {},
-      payloadHash: "UNSIGNED-PAYLOAD",
-      accessKeyId,
-      secretAccessKey,
-      region: "auto",
-    });
-    const res = await fetch(url, { method: "POST", headers: signedHeaders });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(
-        `R2 multipart create failed (${res.status}): ${text.slice(0, 200)}`,
-      );
+  if (backend === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const publicBaseUrl = getPublicUrl();
+      const key = `uploads/${Date.now()}-${fileName}`;
+      const mpu = await bucket.createMultipartUpload(key, {
+        httpMetadata: r2HttpMetadata(contentType),
+      });
+      return { uploadId: mpu.uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
     }
-    const xml = await res.text();
-    const uploadIdMatch = xml.match(/<UploadId>([^<]+)<\/UploadId>/i);
-    const uploadId = uploadIdMatch ? uploadIdMatch[1] : null;
-    if (!uploadId) throw new Error("R2 multipart create failed (no uploadId)");
-    return { uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
+    if (isEdgeRuntime) {
+      assertEdgeR2Support();
+      const { accessKeyId, secretAccessKey, accountId, bucket: bucketName, publicBaseUrl } =
+        getEdgeR2Creds();
+      const key = `uploads/${Date.now()}-${fileName}`;
+      const url = buildR2Url({ accountId, bucket: bucketName, key }) + "?uploads";
+      const signedHeaders = await signR2Request({
+        method: "POST",
+        url,
+        headers: {},
+        payloadHash: "UNSIGNED-PAYLOAD",
+        accessKeyId,
+        secretAccessKey,
+        region: "auto",
+      });
+      const res = await fetch(url, { method: "POST", headers: signedHeaders });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(
+          `R2 multipart create failed (${res.status}): ${text.slice(0, 200)}`,
+        );
+      }
+      const xml = await res.text();
+      const uploadIdMatch = xml.match(/<UploadId>([^<]+)<\/UploadId>/i);
+      const uploadId = uploadIdMatch ? uploadIdMatch[1] : null;
+      if (!uploadId) throw new Error("R2 multipart create failed (no uploadId)");
+      return { uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
+    }
   }
+
   const { CreateMultipartUploadCommand } = await loadAwsSdk();
   const client = await getS3Client(backend);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const publicBaseUrl = getPublicUrl();
   const key = `uploads/${Date.now()}-${fileName}`;
-
   const { UploadId } = await client.send(
     new CreateMultipartUploadCommand({
-      Bucket: bucket,
+      Bucket: bucketName,
       Key: key,
       ContentType: contentType || "application/octet-stream",
     }),
   );
-
   return { uploadId: UploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
 }
 
 /**
  * Generate presigned URLs for one or more parts of a multipart upload.
- * partNumbers is an array of 1-based part numbers.
- * Returns an array of { partNumber, uploadUrl }.
+ * Always uses r2Edge signing for R2 (no SDK needed).
  */
 export async function signMultipartParts(
   key,
@@ -391,15 +446,12 @@ export async function signMultipartParts(
   expiresIn = 3600,
   backend = resolveBackend(),
 ) {
-  if (backend === "r2" && isEdgeRuntime) {
-    assertEdgeR2Support();
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
-    const accessKeyId =
-      process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
-    const secretAccessKey =
-      process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
-
+  if (backend === "r2") {
+    const { accessKeyId, secretAccessKey, accountId, bucket } =
+      getEdgeR2Creds();
+    if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+      throw new Error("R2 credentials missing for multipart signing.");
+    }
     const signed = [];
     for (const partNumber of partNumbers) {
       const url =
@@ -417,14 +469,14 @@ export async function signMultipartParts(
     }
     return signed;
   }
+
   const { UploadPartCommand, getSignedUrl } = await loadAwsSdk();
   const client = await getS3Client(backend);
-  const bucket = getBucket();
-
+  const bucketName = getBucket();
   const signed = await Promise.all(
     partNumbers.map(async (partNumber) => {
       const command = new UploadPartCommand({
-        Bucket: bucket,
+        Bucket: bucketName,
         Key: key,
         UploadId: uploadId,
         PartNumber: partNumber,
@@ -433,13 +485,11 @@ export async function signMultipartParts(
       return { partNumber, uploadUrl };
     }),
   );
-
   return signed;
 }
 
 /**
  * Complete a multipart upload.
- * parts is an array of { partNumber, etag } (etag from each PUT response).
  */
 export async function completeMultipartUpload(
   key,
@@ -447,67 +497,71 @@ export async function completeMultipartUpload(
   parts,
   backend = resolveBackend(),
 ) {
-  if (backend === "r2" && isEdgeRuntime) {
-    assertEdgeR2Support();
-    const accessKeyId =
-      process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
-    const secretAccessKey =
-      process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
-    const publicBaseUrl = (
-      process.env.S3_PUBLIC_URL ||
-      process.env.CF_R2_PUBLIC_URL ||
-      ""
-    ).replace(/\/+$/, "");
-
-    const sortedParts = parts
-      .slice()
-      .sort((a, b) => a.partNumber - b.partNumber);
-    const body = `<CompleteMultipartUpload>${sortedParts
-      .map(
-        (p) =>
-          `<Part><PartNumber>${p.partNumber}</PartNumber><ETag>${p.etag}</ETag></Part>`,
-      )
-      .join("")}</CompleteMultipartUpload>`;
-
-    const url =
-      buildR2Url({ accountId, bucket, key }) +
-      `?uploadId=${encodeURIComponent(uploadId)}`;
-    const payloadHash = toHex(
-      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body)),
-    );
-    const signedHeaders = await signR2Request({
-      method: "POST",
-      url,
-      headers: { "content-type": "application/xml" },
-      payloadHash,
-      accessKeyId,
-      secretAccessKey,
-      region: "auto",
-    });
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: signedHeaders,
-      body,
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(
-        `R2 multipart complete failed (${res.status}): ${text.slice(0, 200)}`,
-      );
+  if (backend === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const publicBaseUrl = getPublicUrl();
+      const mpu = bucket.resumeMultipartUpload(key, uploadId);
+      const sortedParts = parts
+        .slice()
+        .sort((a, b) => a.partNumber - b.partNumber)
+        .map((p) => ({
+          partNumber: p.partNumber,
+          etag: p.etag,
+        }));
+      await mpu.complete(sortedParts);
+      return `${publicBaseUrl}/${key}`;
     }
-    return `${publicBaseUrl}/${key}`;
+    if (isEdgeRuntime) {
+      assertEdgeR2Support();
+      const { accessKeyId, secretAccessKey, accountId, bucket: bucketName, publicBaseUrl } =
+        getEdgeR2Creds();
+      const sortedParts = parts
+        .slice()
+        .sort((a, b) => a.partNumber - b.partNumber);
+      const body = `<CompleteMultipartUpload>${sortedParts
+        .map(
+          (p) =>
+            `<Part><PartNumber>${p.partNumber}</PartNumber><ETag>${p.etag}</ETag></Part>`,
+        )
+        .join("")}</CompleteMultipartUpload>`;
+      const url =
+        buildR2Url({ accountId, bucket: bucketName, key }) +
+        `?uploadId=${encodeURIComponent(uploadId)}`;
+      const payloadHash = toHex(
+        await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body)),
+      );
+      const signedHeaders = await signR2Request({
+        method: "POST",
+        url,
+        headers: { "content-type": "application/xml" },
+        payloadHash,
+        accessKeyId,
+        secretAccessKey,
+        region: "auto",
+      });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: signedHeaders,
+        body,
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(
+          `R2 multipart complete failed (${res.status}): ${text.slice(0, 200)}`,
+        );
+      }
+      return `${publicBaseUrl}/${key}`;
+    }
   }
+
   const { CompleteMultipartUploadCommand } = await loadAwsSdk();
   const client = await getS3Client(backend);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const publicBaseUrl = getPublicUrl();
-
   await client.send(
     new CompleteMultipartUploadCommand({
-      Bucket: bucket,
+      Bucket: bucketName,
       Key: key,
       UploadId: uploadId,
       MultipartUpload: {
@@ -520,7 +574,6 @@ export async function completeMultipartUpload(
       },
     }),
   );
-
   return `${publicBaseUrl}/${key}`;
 }
 
@@ -532,36 +585,40 @@ export async function abortMultipartUpload(
   uploadId,
   backend = resolveBackend(),
 ) {
-  if (backend === "r2" && isEdgeRuntime) {
-    assertEdgeR2Support();
-    const accessKeyId =
-      process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID;
-    const secretAccessKey =
-      process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY;
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const bucket = process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME;
-    const url =
-      buildR2Url({ accountId, bucket, key }) +
-      `?uploadId=${encodeURIComponent(uploadId)}`;
-    const signedHeaders = await signR2Request({
-      method: "DELETE",
-      url,
-      headers: {},
-      payloadHash: "UNSIGNED-PAYLOAD",
-      accessKeyId,
-      secretAccessKey,
-      region: "auto",
-    });
-    await fetch(url, { method: "DELETE", headers: signedHeaders });
-    return;
+  if (backend === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const mpu = bucket.resumeMultipartUpload(key, uploadId);
+      await mpu.abort();
+      return;
+    }
+    if (isEdgeRuntime) {
+      assertEdgeR2Support();
+      const { accessKeyId, secretAccessKey, accountId, bucket: bucketName } =
+        getEdgeR2Creds();
+      const url =
+        buildR2Url({ accountId, bucket: bucketName, key }) +
+        `?uploadId=${encodeURIComponent(uploadId)}`;
+      const signedHeaders = await signR2Request({
+        method: "DELETE",
+        url,
+        headers: {},
+        payloadHash: "UNSIGNED-PAYLOAD",
+        accessKeyId,
+        secretAccessKey,
+        region: "auto",
+      });
+      await fetch(url, { method: "DELETE", headers: signedHeaders });
+      return;
+    }
   }
+
   const { AbortMultipartUploadCommand } = await loadAwsSdk();
   const client = await getS3Client(backend);
-  const bucket = getBucket();
-
+  const bucketName = getBucket();
   await client.send(
     new AbortMultipartUploadCommand({
-      Bucket: bucket,
+      Bucket: bucketName,
       Key: key,
       UploadId: uploadId,
     }),
@@ -618,14 +675,42 @@ export async function listBucketObjects({
   if (backendToUse === "wordpress") {
     throw new Error("Bucket listing is not available for the WordPress backend.");
   }
+
+  // R2 binding path
+  if (backendToUse === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const publicBaseUrl = getPublicUrl();
+      const clampedLimit = Math.min(Math.max(Number(limit) || 0, 1), 100);
+      const result = await bucket.list({
+        prefix,
+        limit: clampedLimit,
+      });
+      return (result.objects ?? [])
+        .map((item) => ({
+          key: item.key,
+          url: item.key ? `${publicBaseUrl}/${item.key}` : null,
+          size: item.size ?? 0,
+          lastModified: item.uploaded
+            ? item.uploaded.toISOString()
+            : null,
+        }))
+        .sort((a, b) => {
+          if (!a.lastModified) return 1;
+          if (!b.lastModified) return -1;
+          return b.lastModified.localeCompare(a.lastModified);
+        });
+    }
+  }
+
   assertNodeS3Support(backendToUse);
   const { ListObjectsV2Command } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const publicBaseUrl = getPublicUrl();
   const clampedLimit = Math.min(Math.max(Number(limit) || 0, 1), 100);
   const command = new ListObjectsV2Command({
-    Bucket: bucket,
+    Bucket: bucketName,
     Prefix: prefix,
     MaxKeys: clampedLimit,
   });
@@ -654,13 +739,24 @@ export async function headBucketObject({ key, backend } = {}) {
   if (backendToUse === "wordpress") {
     throw new Error("Object metadata is not available for the WordPress backend.");
   }
+
+  // R2 binding path
+  if (backendToUse === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const obj = await bucket.head(safeKey);
+      if (!obj) throw new Error(`Object not found: ${safeKey}`);
+      return r2ObjectToHead(obj);
+    }
+  }
+
   assertNodeS3Support(backendToUse);
   const { HeadObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const result = await client.send(
     new HeadObjectCommand({
-      Bucket: bucket,
+      Bucket: bucketName,
       Key: safeKey,
     }),
   );
@@ -689,8 +785,48 @@ export async function replaceBucketObjectMetadata({
   if (backendToUse === "wordpress") {
     throw new Error("Object metadata replacement is not available for WordPress.");
   }
+
+  // R2 binding path — get object and re-put with updated metadata.
+  // R2 bindings don't have CopyObject, but for small metadata objects the
+  // get+put round-trip is fast over the internal CF backbone.
+  if (backendToUse === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const current = await bucket.head(safeKey);
+      if (!current) throw new Error(`Object not found: ${safeKey}`);
+
+      const incoming = normalizeStorageMetadata(metadata);
+      const replaced = { ...(current.customMetadata || {}) };
+      for (const rawKey of Array.isArray(replaceKeys) ? replaceKeys : []) {
+        const safeMetaKey = String(rawKey || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, "")
+          .slice(0, 64);
+        if (safeMetaKey) delete replaced[safeMetaKey];
+      }
+      for (const [metaKey, metaValue] of Object.entries(incoming)) {
+        replaced[metaKey] = metaValue;
+      }
+
+      // Get the full object body so we can re-put with updated metadata.
+      const obj = await bucket.get(safeKey);
+      if (!obj) throw new Error(`Object not found: ${safeKey}`);
+      await bucket.put(safeKey, obj.body, {
+        httpMetadata: current.httpMetadata || {},
+        customMetadata: replaced,
+      });
+
+      return {
+        key: safeKey,
+        metadata: replaced,
+        contentType: current.httpMetadata?.contentType || "",
+      };
+    }
+  }
+
   assertNodeS3Support(backendToUse);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const client = await getS3Client(backendToUse);
   const current = await headBucketObject({ key: safeKey, backend: backendToUse });
   const incoming = normalizeStorageMetadata(metadata);
@@ -711,9 +847,9 @@ export async function replaceBucketObjectMetadata({
   const { CopyObjectCommand } = await loadAwsSdk();
   await client.send(
     new CopyObjectCommand({
-      Bucket: bucket,
+      Bucket: bucketName,
       Key: safeKey,
-      CopySource: encodeS3CopySource(bucket, safeKey),
+      CopySource: encodeS3CopySource(bucketName, safeKey),
       MetadataDirective: "REPLACE",
       Metadata: replaced,
       ...(current.contentType ? { ContentType: current.contentType } : {}),
@@ -736,22 +872,52 @@ export async function replaceBucketObjectMetadata({
 /**
  * List objects in a "directory" using a `/` delimiter.
  * Returns { dirs: [{key, isDirectory}], files: [{key, url, size, lastModified}] }
- * so callers can distinguish virtual subdirectories from actual objects.
  */
 export async function listBucketDirectory({ prefix = "", backend } = {}) {
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
     throw new Error("Directory listing is not available for the WordPress backend.");
   }
+
+  // R2 binding path
+  if (backendToUse === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const publicBaseUrl = getPublicUrl();
+      const safePrefix = String(prefix || "");
+      const result = await bucket.list({
+        prefix: safePrefix,
+        delimiter: "/",
+        limit: 1000,
+      });
+      const dirs = (result.delimitedPrefixes ?? []).map((dp) => ({
+        key: dp,
+        isDirectory: true,
+        size: 0,
+        lastModified: null,
+      }));
+      const files = (result.objects ?? [])
+        .filter((item) => item.key !== safePrefix)
+        .map((item) => ({
+          key: item.key,
+          url: item.key ? `${publicBaseUrl}/${item.key}` : null,
+          size: item.size ?? 0,
+          lastModified: item.uploaded ? item.uploaded.toISOString() : null,
+          isDirectory: false,
+        }));
+      return { dirs, files };
+    }
+  }
+
   assertNodeS3Support(backendToUse);
   const { ListObjectsV2Command } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const publicBaseUrl = getPublicUrl();
   const safePrefix = String(prefix || "");
   const result = await client.send(
     new ListObjectsV2Command({
-      Bucket: bucket,
+      Bucket: bucketName,
       Prefix: safePrefix,
       Delimiter: "/",
       MaxKeys: 1000,
@@ -764,7 +930,7 @@ export async function listBucketDirectory({ prefix = "", backend } = {}) {
     lastModified: null,
   }));
   const files = (result.Contents ?? [])
-    .filter((item) => item.Key !== safePrefix) // skip the dir placeholder itself
+    .filter((item) => item.Key !== safePrefix)
     .map((item) => ({
       key: item.Key,
       url: item.Key ? `${publicBaseUrl}/${item.Key}` : null,
@@ -792,15 +958,30 @@ export async function putBucketObject({
   if (backendToUse === "wordpress") {
     throw new Error("Direct object put is not available for the WordPress backend.");
   }
+
+  // R2 binding path
+  if (backendToUse === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const publicBaseUrl = getPublicUrl();
+      const safeMetadata = normalizeStorageMetadata(metadata);
+      await bucket.put(safeKey, body, {
+        httpMetadata: r2HttpMetadata(contentType),
+        customMetadata: safeMetadata,
+      });
+      return `${publicBaseUrl}/${safeKey}`;
+    }
+  }
+
   assertNodeS3Support(backendToUse);
   const { PutObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
-  const bucket = getBucket();
+  const bucketName = getBucket();
   const publicBaseUrl = getPublicUrl();
   const safeMetadata = normalizeStorageMetadata(metadata);
   await client.send(
     new PutObjectCommand({
-      Bucket: bucket,
+      Bucket: bucketName,
       Key: safeKey,
       Body: body,
       ContentType: contentType || "application/octet-stream",
@@ -818,11 +999,21 @@ export async function deleteBucketObject({ key, backend } = {}) {
   if (backendToUse === "wordpress") {
     throw new Error("Object deletion is not available for the WordPress backend.");
   }
+
+  // R2 binding path
+  if (backendToUse === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      await bucket.delete(safeKey);
+      return;
+    }
+  }
+
   assertNodeS3Support(backendToUse);
   const { DeleteObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
-  const bucket = getBucket();
-  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: safeKey }));
+  const bucketName = getBucket();
+  await client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: safeKey }));
 }
 
 /**
@@ -836,11 +1027,27 @@ export async function getBucketObjectStream({ key, backend } = {}) {
   if (backendToUse === "wordpress") {
     throw new Error("Object streaming is not available for the WordPress backend.");
   }
+
+  // R2 binding path
+  if (backendToUse === "r2") {
+    const bucket = await getR2Bucket();
+    if (bucket) {
+      const obj = await bucket.get(safeKey);
+      if (!obj) throw new Error(`Object not found: ${safeKey}`);
+      return {
+        body: obj.body,
+        contentType: obj.httpMetadata?.contentType || "application/octet-stream",
+        contentLength: obj.size ?? null,
+        lastModified: obj.uploaded ? obj.uploaded.toISOString() : null,
+      };
+    }
+  }
+
   assertNodeS3Support(backendToUse);
   const { GetObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
-  const bucket = getBucket();
-  const result = await client.send(new GetObjectCommand({ Bucket: bucket, Key: safeKey }));
+  const bucketName = getBucket();
+  const result = await client.send(new GetObjectCommand({ Bucket: bucketName, Key: safeKey }));
   return {
     body: result.Body.transformToWebStream(),
     contentType: result.ContentType || "application/octet-stream",

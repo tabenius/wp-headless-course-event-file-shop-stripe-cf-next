@@ -93,3 +93,66 @@ stubWasm(
   "node_modules/next/dist/compiled/@vercel/og/yoga.wasm",
   "yoga WASM (@vercel/og — not used by this app)",
 );
+
+// ---------------------------------------------------------------------------
+// 4. Deduplicate i18n JSON blobs in handler.mjs
+//
+//    Turbopack creates separate chunks for SSR / RSC / API route contexts,
+//    each containing the same locale JSON data.  After esbuild inlines them
+//    all, we end up with 3 copies × 3 locales = 9 `JSON.parse(...)` blobs
+//    (~488 KB).  This pass hoists one copy per locale into a shared variable
+//    at the top of the file and replaces the remaining duplicates.
+// ---------------------------------------------------------------------------
+{
+  let handler = readFileSync(HANDLER, "utf8");
+  const localeFingerprints = [
+    { id: "__i18n_sv", prefix: `JSON.parse('{"common":{"admin":"Admin","inventory":"Inventarie"`, delim: "'" },
+    { id: "__i18n_en", prefix: 'JSON.parse(`{"common":{"admin":"Admin","inventory":"Inventory"', delim: "`" },
+    { id: "__i18n_es", prefix: `JSON.parse('{"common":{"admin":"Administraci`, delim: "'" },
+  ];
+  const hoisted = [];
+  let totalSaved = 0;
+
+  for (const { id, prefix, delim } of localeFingerprints) {
+    const closer = delim + ")";
+    // Find all occurrences by scanning with indexOf.
+    const positions = [];
+    let searchFrom = 0;
+    while (true) {
+      const start = handler.indexOf(prefix, searchFrom);
+      if (start === -1) break;
+      const afterOpen = start + "JSON.parse(".length + 1; // past opening quote
+      const endIdx = handler.indexOf(closer, afterOpen);
+      if (endIdx === -1) break;
+      const end = endIdx + closer.length;
+      positions.push({ start, end });
+      searchFrom = end;
+    }
+    if (positions.length <= 1) continue;
+
+    // Extract the canonical (first) expression.
+    const canonical = handler.slice(positions[0].start, positions[0].end);
+    hoisted.push(`var ${id}=${canonical};`);
+
+    // Replace all occurrences back-to-front so offsets stay valid.
+    let count = 0;
+    for (let i = positions.length - 1; i >= 0; i--) {
+      const { start, end } = positions[i];
+      handler = handler.slice(0, start) + id + handler.slice(end);
+      count++;
+    }
+    const saved = canonical.length * (count - 1);
+    totalSaved += saved;
+    console.log(
+      `patch-cf-worker: deduped ${id} — ${count} copies → 1 (saved ~${(saved / 1024).toFixed(0)} KB)`,
+    );
+  }
+
+  if (hoisted.length > 0) {
+    // Inject hoisted variables after the banner import line.
+    const bannerEnd = handler.indexOf("\n") + 1;
+    handler = handler.slice(0, bannerEnd) + hoisted.join("") + "\n" + handler.slice(bannerEnd);
+    writeFileSync(HANDLER, handler, "utf8");
+    console.log(`patch-cf-worker: i18n dedup total saved ~${(totalSaved / 1024).toFixed(0)} KB raw`);
+  }
+}
