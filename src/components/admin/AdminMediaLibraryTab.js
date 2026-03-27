@@ -148,6 +148,7 @@ export default function AdminMediaLibraryTab({
   const [operationSearchTerm, setOperationSearchTerm] = useState("");
   const [newOperationType, setNewOperationType] = useState(Object.keys(OPERATION_REGISTRY)[0] || "");
   const [collapsedOperationIndexes, setCollapsedOperationIndexes] = useState([]);
+  const [focusedOperationIndex, setFocusedOperationIndex] = useState(-1);
   const [derivationSaveStatus, setDerivationSaveStatus] = useState("");
   const [derivationSaveError, setDerivationSaveError] = useState("");
   const [lastDerivedAsset, setLastDerivedAsset] = useState(null);
@@ -274,6 +275,16 @@ export default function AdminMediaLibraryTab({
       current.filter((index) => Number.isInteger(index) && index >= 0 && index < customOperations.length),
     );
   }, [customOperations.length]);
+
+  useEffect(() => {
+    if (customOperations.length === 0) {
+      setFocusedOperationIndex(-1);
+      return;
+    }
+    if (focusedOperationIndex >= customOperations.length) {
+      setFocusedOperationIndex(customOperations.length - 1);
+    }
+  }, [customOperations.length, focusedOperationIndex]);
 
   const loadLibrary = useCallback(async () => {
     setLoading(true);
@@ -1160,8 +1171,8 @@ export default function AdminMediaLibraryTab({
   }
 
   function handleMoveOperation(operationIndex, direction) {
+    const targetIndex = operationIndex + direction;
     setCustomOperations((current) => {
-      const targetIndex = operationIndex + direction;
       if (
         operationIndex < 0 ||
         targetIndex < 0 ||
@@ -1175,6 +1186,9 @@ export default function AdminMediaLibraryTab({
       next.splice(targetIndex, 0, moved);
       return next;
     });
+    setFocusedOperationIndex((currentFocused) =>
+      currentFocused === operationIndex ? targetIndex : currentFocused,
+    );
   }
 
   function handleDuplicateOperation(operationIndex) {
@@ -1186,18 +1200,35 @@ export default function AdminMediaLibraryTab({
       next.splice(operationIndex + 1, 0, duplicate);
       return next;
     });
+    setFocusedOperationIndex(operationIndex + 1);
   }
 
   function handleOperationEditorKeyDown(event, operationIndex) {
     if (!event.altKey) return;
-    if (event.key === "ArrowUp") {
+    const key = event.key.toLowerCase();
+    if (key === "arrowup") {
       event.preventDefault();
       handleMoveOperation(operationIndex, -1);
       return;
     }
-    if (event.key === "ArrowDown") {
+    if (key === "arrowdown") {
       event.preventDefault();
       handleMoveOperation(operationIndex, 1);
+      return;
+    }
+    if (key === "f") {
+      event.preventDefault();
+      toggleOperationCollapsed(operationIndex);
+      return;
+    }
+    if (key === "b") {
+      event.preventDefault();
+      handleBindMissingOperationParams(operationIndex);
+      return;
+    }
+    if (key === "r") {
+      event.preventDefault();
+      handleResetOperationDefaults(operationIndex);
     }
   }
 
@@ -1215,6 +1246,11 @@ export default function AdminMediaLibraryTab({
         .filter((index) => index !== operationIndex)
         .map((index) => (index > operationIndex ? index - 1 : index)),
     );
+    setFocusedOperationIndex((currentFocused) => {
+      if (currentFocused === operationIndex) return Math.max(0, operationIndex - 1);
+      if (currentFocused > operationIndex) return currentFocused - 1;
+      return currentFocused;
+    });
   }
 
   function handleResetOperationDefaults(operationIndex) {
@@ -2743,11 +2779,18 @@ export default function AdminMediaLibraryTab({
             const isLast = index === customOperations.length - 1;
             const isCollapsed = isOperationCollapsed(index);
             const summaryParts = getOperationSummary(operation);
+            const isFocused = focusedOperationIndex === index;
             return (
               <div
                 key={`${operation.type}-${index}`}
-                className="rounded border border-indigo-100 bg-white p-3 space-y-2"
+                className={`rounded border bg-white p-3 space-y-2 outline-none ${
+                  isFocused
+                    ? "border-indigo-400 ring-2 ring-indigo-200"
+                    : "border-indigo-100"
+                }`}
+                tabIndex={0}
                 onKeyDown={(event) => handleOperationEditorKeyDown(event, index)}
+                onFocusCapture={() => setFocusedOperationIndex(index)}
               >
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
@@ -2866,7 +2909,7 @@ export default function AdminMediaLibraryTab({
                 <p className="text-[10px] text-indigo-500">
                   {t(
                     "admin.mediaDerivationStepHotkeys",
-                    "Tip: Alt+ArrowUp or Alt+ArrowDown moves this step.",
+                    "Tip: Alt+F fold, Alt+B bind, Alt+R reset, Alt+ArrowUp/Down move.",
                   )}
                 </p>
                   </>

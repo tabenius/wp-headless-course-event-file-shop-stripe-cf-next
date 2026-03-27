@@ -80,6 +80,22 @@
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
+### Codex — keyboard shortcuts for focused derivation step actions
+
+**Delivered:**
+- Added focused-step keyboard controls in Media derivation editor:
+  - `Alt+F` fold/unfold current step
+  - `Alt+B` bind missing params from defaults
+  - `Alt+R` reset current step to defaults
+  - existing `Alt+ArrowUp/Down` step move retained
+- Added visible focus ring/highlight on the active operation card.
+- Made operation cards focusable (`tabIndex=0`) and track focused index via `onFocusCapture`.
+- Updated per-step shortcut hint text to include all supported key combos.
+
+**Validation:**
+- `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
+- `node --test tests/photon-pipeline.test.js` (pass)
+
 ### Codex — aether status-pill contrast fix on ragbaz.xyz
 
 **Delivered:**
