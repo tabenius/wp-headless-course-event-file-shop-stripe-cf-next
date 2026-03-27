@@ -1,6 +1,16 @@
 import enRaw from "@/../docs/README.en.md?raw";
 import svRaw from "@/../docs/README.sv.md?raw";
 
+const DOCS_BASE = String(process.env.NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL || "https://ragbaz.xyz/docs").replace(
+  /\/+$/,
+  "",
+);
+const DOCS_URLS = {
+  en: `${DOCS_BASE}/en/technical-manual`,
+  sv: `${DOCS_BASE}/sv/technical-manual`,
+  es: `${DOCS_BASE}/es/technical-manual`,
+};
+
 const STYLE_GUIDE = `
 # Site Style Guide
 
@@ -53,7 +63,11 @@ const STYLE_GUIDE = `
 `;
 
 export const manuals = [
-  { title: "Docs (EN)", text: enRaw },
-  { title: "Docs (SV)", text: svRaw },
-  { title: "Style Guide", text: STYLE_GUIDE },
+  { title: "Docs (EN)", uri: DOCS_URLS.en, text: enRaw },
+  { title: "Docs (SV)", uri: DOCS_URLS.sv, text: svRaw },
+  {
+    title: "Style Guide",
+    uri: DOCS_URLS.en,
+    text: STYLE_GUIDE,
+  },
 ];
