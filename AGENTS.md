@@ -173,6 +173,20 @@ node scripts/docs-lock.mjs release
 
 ---
 
+## Changelog protocol (required)
+
+Maintain a user-facing weekly changelog in `docs/CHANGELOG.md`.
+
+Rules:
+
+1. Update `docs/CHANGELOG.md` every week when major user/admin-facing features or UX changes land.
+2. Keep changelog entries high-level and experience-focused (avoid code-level implementation detail).
+3. Whenever `docs/CHANGELOG.md` is updated in `main`, publish the update on `ragbaz.xyz` docs in the same delivery slice.
+4. Treat publish as mandatory completion criteria for changelog updates: update content, commit/push, deploy `ragbaz.xyz`, and verify live docs.
+5. Log each changelog update and publish action in `claude+codex-coop.md`.
+
+---
+
 ## Environment variables (key ones)
 
 | Var                                       | Purpose                                                         |

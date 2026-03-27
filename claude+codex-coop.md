@@ -2,6 +2,16 @@
 
 ## 2026-03-27 (Codex)
 
+### Codex — AGENTS protocol update for weekly changelog + ragbaz.xyz publish
+
+**Delivered:**
+- Updated `AGENTS.md` protocol with a required changelog workflow:
+  - keep `docs/CHANGELOG.md` updated week by week,
+  - keep content user/admin-experience focused,
+  - publish changelog updates to `ragbaz.xyz` docs whenever changed,
+  - treat deploy + live verification as part of changelog completion,
+  - log changelog update/publish actions in coop notes.
+
 ### Codex — image operator usability pass + new Instagram-style tilt shift
 
 **Delivered:**
