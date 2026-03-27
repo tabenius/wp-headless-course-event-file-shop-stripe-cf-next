@@ -145,7 +145,9 @@ export default function AdminMediaLibraryTab({
   const [editorName, setEditorName] = useState("");
   const [editorDescription, setEditorDescription] = useState("");
   const [editorAssetTypes, setEditorAssetTypes] = useState([]);
+  const [operationSearchTerm, setOperationSearchTerm] = useState("");
   const [newOperationType, setNewOperationType] = useState(Object.keys(OPERATION_REGISTRY)[0] || "");
+  const [collapsedOperationIndexes, setCollapsedOperationIndexes] = useState([]);
   const [derivationSaveStatus, setDerivationSaveStatus] = useState("");
   const [derivationSaveError, setDerivationSaveError] = useState("");
   const [lastDerivedAsset, setLastDerivedAsset] = useState(null);
@@ -204,6 +206,41 @@ export default function AdminMediaLibraryTab({
     () => operationPickerGroups.flatMap((group) => group.operations.map((entry) => entry.type)),
     [operationPickerGroups],
   );
+  const filteredOperationPickerGroups = useMemo(() => {
+    const q = operationSearchTerm.trim().toLowerCase();
+    if (!q) return operationPickerGroups;
+    return operationPickerGroups
+      .map((group) => ({
+        ...group,
+        operations: group.operations.filter((operation) => {
+          const haystack = [
+            operation.type,
+            operation.label,
+            operation.tip,
+            operation.techTip,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(q);
+        }),
+      }))
+      .filter((group) => group.operations.length > 0);
+  }, [operationPickerGroups, operationSearchTerm]);
+  const visibleAddableOperationTypes = useMemo(
+    () =>
+      filteredOperationPickerGroups.flatMap((group) =>
+        group.operations.map((entry) => entry.type),
+      ),
+    [filteredOperationPickerGroups],
+  );
+  const selectedVisibleOperationType = useMemo(
+    () =>
+      visibleAddableOperationTypes.includes(newOperationType)
+        ? newOperationType
+        : "",
+    [newOperationType, visibleAddableOperationTypes],
+  );
 
   useEffect(() => {
     const backendExists = enabledUploadOptions.some(
@@ -223,6 +260,20 @@ export default function AdminMediaLibraryTab({
       setNewOperationType(addableOperationTypes[0]);
     }
   }, [addableOperationTypes, newOperationType]);
+
+  useEffect(() => {
+    if (!operationSearchTerm.trim()) return;
+    if (visibleAddableOperationTypes.length === 0) return;
+    if (!visibleAddableOperationTypes.includes(newOperationType)) {
+      setNewOperationType(visibleAddableOperationTypes[0]);
+    }
+  }, [visibleAddableOperationTypes, newOperationType, operationSearchTerm]);
+
+  useEffect(() => {
+    setCollapsedOperationIndexes((current) =>
+      current.filter((index) => Number.isInteger(index) && index >= 0 && index < customOperations.length),
+    );
+  }, [customOperations.length]);
 
   const loadLibrary = useCallback(async () => {
     setLoading(true);
@@ -1151,13 +1202,81 @@ export default function AdminMediaLibraryTab({
   }
 
   function handleAddOperation() {
-    if (!newOperationType) return;
-    const defaultParams = buildDefaultParams(newOperationType);
-    setCustomOperations((current) => [...current, { type: newOperationType, params: defaultParams }]);
+    const typeToAdd = selectedVisibleOperationType || newOperationType;
+    if (!typeToAdd) return;
+    const defaultParams = buildDefaultParams(typeToAdd);
+    setCustomOperations((current) => [...current, { type: typeToAdd, params: defaultParams }]);
   }
 
   function handleRemoveOperation(operationIndex) {
     setCustomOperations((current) => current.filter((_, index) => index !== operationIndex));
+    setCollapsedOperationIndexes((current) =>
+      current
+        .filter((index) => index !== operationIndex)
+        .map((index) => (index > operationIndex ? index - 1 : index)),
+    );
+  }
+
+  function handleResetOperationDefaults(operationIndex) {
+    setCustomOperations((current) =>
+      current.map((operation, index) => {
+        if (index !== operationIndex) return operation;
+        return {
+          ...operation,
+          params: buildDefaultParams(operation.type),
+        };
+      }),
+    );
+  }
+
+  function handleBindMissingOperationParams(operationIndex) {
+    setCustomOperations((current) =>
+      current.map((operation, index) => {
+        if (index !== operationIndex) return operation;
+        const defaults = buildDefaultParams(operation.type);
+        const nextParams = { ...(operation.params || {}) };
+        Object.entries(defaults).forEach(([key, value]) => {
+          if (nextParams[key] == null || nextParams[key] === "") {
+            nextParams[key] = value;
+          }
+        });
+        return {
+          ...operation,
+          params: nextParams,
+        };
+      }),
+    );
+  }
+
+  function toggleOperationCollapsed(operationIndex) {
+    setCollapsedOperationIndexes((current) => {
+      if (current.includes(operationIndex)) {
+        return current.filter((index) => index !== operationIndex);
+      }
+      return [...current, operationIndex];
+    });
+  }
+
+  function collapseAllOperations() {
+    setCollapsedOperationIndexes(customOperations.map((_, index) => index));
+  }
+
+  function expandAllOperations() {
+    setCollapsedOperationIndexes([]);
+  }
+
+  function isOperationCollapsed(operationIndex) {
+    return collapsedOperationIndexes.includes(operationIndex);
+  }
+
+  function getOperationSummary(operation) {
+    const schema = OPERATION_SCHEMAS[operation.type];
+    const entries = (schema?.parameters || []).map((param) => {
+      const value = operation.params?.[param.key];
+      if (value == null || value === "") return param.key;
+      return `${param.key}=${formatParameterValue(value)}`;
+    });
+    return entries.filter(Boolean);
   }
 
   function renderOperationParamField(operation, operationIndex, param) {
@@ -2599,11 +2718,31 @@ export default function AdminMediaLibraryTab({
               {t("admin.mediaDerivationNoOperations", "Select a derivation to edit its operations.")}
             </p>
           )}
+          {customOperations.length > 0 && (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={collapseAllOperations}
+                className="rounded border border-indigo-200 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50"
+              >
+                {t("admin.mediaDerivationCollapseAll", "Collapse all")}
+              </button>
+              <button
+                type="button"
+                onClick={expandAllOperations}
+                className="rounded border border-indigo-200 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50"
+              >
+                {t("admin.mediaDerivationExpandAll", "Expand all")}
+              </button>
+            </div>
+          )}
           {customOperations.map((operation, index) => {
             const schema = OPERATION_SCHEMAS[operation.type];
             const registrySchema = OPERATION_REGISTRY[operation.type];
             const isFirst = index === 0;
             const isLast = index === customOperations.length - 1;
+            const isCollapsed = isOperationCollapsed(index);
+            const summaryParts = getOperationSummary(operation);
             return (
               <div
                 key={`${operation.type}-${index}`}
@@ -2625,6 +2764,18 @@ export default function AdminMediaLibraryTab({
                     <span className="text-[11px] text-indigo-600">
                       {t("admin.mediaDerivationStep", "Step {n}", { n: index + 1 })}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleOperationCollapsed(index)}
+                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      title={isCollapsed
+                        ? t("admin.mediaDerivationExpandStep", "Expand step")
+                        : t("admin.mediaDerivationCollapseStep", "Collapse step")}
+                    >
+                      {isCollapsed
+                        ? t("admin.mediaDerivationExpandStepShort", "Open")
+                        : t("admin.mediaDerivationCollapseStepShort", "Fold")}
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleMoveOperation(index, -1)}
@@ -2653,6 +2804,22 @@ export default function AdminMediaLibraryTab({
                     </button>
                     <button
                       type="button"
+                      onClick={() => handleBindMissingOperationParams(index)}
+                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      title={t("admin.mediaDerivationBindMissingParams", "Bind missing params")}
+                    >
+                      {t("admin.mediaDerivationBindMissingShort", "Bind")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleResetOperationDefaults(index)}
+                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      title={t("admin.mediaDerivationResetStepDefaults", "Reset to defaults")}
+                    >
+                      {t("admin.mediaDerivationResetStepDefaultsShort", "Reset")}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleRemoveOperation(index)}
                       className="rounded border border-red-200 px-1 py-0.5 text-[10px] text-red-600 hover:bg-red-50"
                     >
@@ -2665,6 +2832,26 @@ export default function AdminMediaLibraryTab({
                     {registrySchema.techTip}
                   </p>
                 )}
+                {isCollapsed && (
+                  <div className="flex flex-wrap gap-1">
+                    {summaryParts.length === 0 ? (
+                      <span className="text-[10px] text-indigo-500">
+                        {t("admin.mediaDerivationNoParams", "No parameters")}
+                      </span>
+                    ) : (
+                      summaryParts.map((part, partIndex) => (
+                        <span
+                          key={`${operation.type}-${index}-summary-${partIndex}`}
+                          className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-800"
+                        >
+                          {part}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                )}
+                {!isCollapsed && (
+                  <>
                 {operation.type === "source" && (
                   <p className="text-[11px] text-indigo-600">
                     {t(
@@ -2682,10 +2869,22 @@ export default function AdminMediaLibraryTab({
                     "Tip: Alt+ArrowUp or Alt+ArrowDown moves this step.",
                   )}
                 </p>
+                  </>
+                )}
               </div>
             );
           })}
           <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-[11px] text-gray-700">
+              <span>{t("admin.mediaDerivationFindOperation", "Find operation")}</span>
+              <input
+                type="search"
+                value={operationSearchTerm}
+                onChange={(event) => setOperationSearchTerm(event.target.value)}
+                placeholder={t("admin.mediaDerivationFindOperationPlaceholder", "Search by name or effect")}
+                className="w-56 border rounded px-2 py-1 text-xs"
+              />
+            </label>
             <label className="flex items-center gap-2 text-[11px] text-gray-700">
               <span className="inline-flex items-center gap-1">
                 <span>{t("admin.mediaDerivationAddOperationLabel", "Add operation")}</span>
@@ -2693,10 +2892,15 @@ export default function AdminMediaLibraryTab({
               </span>
               <select
                 className="border rounded px-2 py-1 text-xs bg-white"
-                value={newOperationType}
+                value={selectedVisibleOperationType}
                 onChange={(event) => setNewOperationType(event.target.value)}
               >
-                {operationPickerGroups.map((group) => (
+                {filteredOperationPickerGroups.length === 0 && (
+                  <option value="" disabled>
+                    {t("admin.mediaDerivationNoMatchingOperations", "No matching operations")}
+                  </option>
+                )}
+                {filteredOperationPickerGroups.map((group) => (
                   <optgroup key={group.key} label={group.label}>
                     {group.operations.map((operation) => (
                       <option key={operation.type} value={operation.type}>
@@ -2711,6 +2915,7 @@ export default function AdminMediaLibraryTab({
             <button
               type="button"
               onClick={handleAddOperation}
+              disabled={!selectedVisibleOperationType || filteredOperationPickerGroups.length === 0}
               className="px-3 py-1 rounded border text-[11px] bg-white"
             >
               {t("admin.mediaDerivationAddOperation", "Add operation")}

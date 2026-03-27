@@ -61,6 +61,25 @@
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
+### Codex — derivation operator UI ergonomics pass (collapse/search/reset)
+
+**Delivered:**
+- Added operation-card ergonomics for long derivations:
+  - per-step `Fold/Open` toggle
+  - global `Collapse all` / `Expand all`
+  - compact folded summaries that show bound/unbound parameter values
+- Added quick per-step editing actions:
+  - `Bind` (fill missing params from operator defaults)
+  - `Reset` (replace all params with defaults)
+- Added add-operation search/filter:
+  - search input filters operators by type/label/tip/techTip
+  - grouped results remain category-based
+  - add button disables when no matching operator is selectable
+
+**Validation:**
+- `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
+- `node --test tests/photon-pipeline.test.js` (pass)
+
 ### Codex — aether status-pill contrast fix on ragbaz.xyz
 
 **Delivered:**
