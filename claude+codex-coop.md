@@ -99,6 +99,26 @@
 **Commit:**
 - `main` `a833eca` — `Add field-level docs helpers in sales and support`
 
+### Codex — removed legacy `/admin/docs` routes and re-linked manual sources
+
+**Delivered:**
+- Deleted obsolete in-admin documentation routes and renderer components:
+  - `src/app/admin/docs/page.js`
+  - `src/app/admin/docs/[slug]/page.js`
+  - `src/app/admin/docs/[slug]/ArchitectureDiagram.js`
+- Updated RAG manual metadata to use direct `ragbaz.xyz/docs/{lang}` targets instead of legacy `/admin/docs` source links:
+  - `src/lib/manuals.js`
+  - `src/lib/chat/rag.js`
+- Added configurable docs base handling in manuals via `NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL` fallback to `https://ragbaz.xyz/docs`.
+
+**Validation:**
+- `node --check src/lib/manuals.js` (pass)
+- `node --check src/lib/chat/rag.js` (pass)
+- `rg -n "/admin/docs" src` now returns no runtime references.
+
+**Commit:**
+- `main` `dab5e74` — `Remove legacy admin docs route and link manuals to ragbaz docs`
+
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
