@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { t } from "@/lib/i18n";
 
 function formatPrice(priceCents, currency) {
@@ -60,18 +61,83 @@ function deriveBoughtUri(item) {
 }
 
 export default function ShopIndex({
-  user,
   items,
-  ownedProductIds,
-  ownedUris,
-  accessBatchFailed,
   stripeEnabled,
-  checkoutStatus,
-  checkoutError,
 }) {
+  const searchParams = useSearchParams();
+  const checkoutStatus =
+    typeof searchParams?.get("checkout") === "string"
+      ? searchParams.get("checkout")
+      : "";
+  const checkoutSessionId =
+    typeof searchParams?.get("session_id") === "string"
+      ? searchParams.get("session_id")
+      : "";
+  const checkoutProductId =
+    typeof searchParams?.get("product_id") === "string"
+      ? searchParams.get("product_id")
+      : "";
   const [loadingId, setLoadingId] = useState("");
   const [error, setError] = useState("");
   const [brokenImages, setBrokenImages] = useState({});
+  const [ownershipReady, setOwnershipReady] = useState(false);
+  const [user, setUser] = useState(null);
+  const [ownedProductIds, setOwnedProductIds] = useState([]);
+  const [ownedUris, setOwnedUris] = useState([]);
+  const [accessBatchFailed, setAccessBatchFailed] = useState(false);
+  const [checkoutError, setCheckoutError] = useState(false);
+  const wpUris = useMemo(
+    () =>
+      items
+        .filter((item) => item.source !== "digital" && typeof item.uri === "string")
+        .map((item) => item.uri),
+    [items],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadOwnership() {
+      setOwnershipReady(false);
+      try {
+        const response = await fetch("/api/shop/ownership", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uris: wpUris,
+            checkoutStatus,
+            checkoutSessionId,
+            checkoutProductId,
+          }),
+        });
+        const json = await response.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!response.ok || !json?.ok) {
+          throw new Error(json?.error || "Ownership lookup failed");
+        }
+        setUser(json.user || null);
+        setOwnedProductIds(
+          Array.isArray(json.ownedProductIds) ? json.ownedProductIds : [],
+        );
+        setOwnedUris(Array.isArray(json.ownedUris) ? json.ownedUris : []);
+        setAccessBatchFailed(Boolean(json.accessBatchFailed));
+        setCheckoutError(Boolean(json.checkoutError));
+      } catch (err) {
+        console.error("Shop ownership enrichment failed:", err);
+        if (cancelled) return;
+        setUser(null);
+        setOwnedProductIds([]);
+        setOwnedUris([]);
+        setAccessBatchFailed(false);
+        setCheckoutError(checkoutStatus === "success");
+      } finally {
+        if (!cancelled) setOwnershipReady(true);
+      }
+    }
+    loadOwnership();
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutProductId, checkoutSessionId, checkoutStatus, wpUris]);
 
   // Digital product checkout via /api/digital/checkout
   async function startDigitalCheckout(productSlug) {
@@ -139,7 +205,7 @@ export default function ShopIndex({
           </p>
         </div>
       )}
-      {checkoutStatus === "success" && !checkoutError && (
+      {checkoutStatus === "success" && !checkoutError && ownershipReady && (
         <p className="text-green-700">{t("shop.paymentSuccess")}</p>
       )}
       {checkoutStatus === "cancel" && (
@@ -264,5 +330,5 @@ export default function ShopIndex({
         })}
       </div>
     </section>
-  );
-}
+    );
+  }
