@@ -3087,3 +3087,15 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Commits:
   - `c274d15` Optimize storefront fetch path with edge cache and typed node resolution
   - `df1eedf` Document edge GraphQL cache tuning knobs
+
+### Codex — vitals relay observability + temporary logging window
+
+- Landed in `main` (commit: `44e49eb`):
+  - Added a temporary GraphQL-availability logging window in KV (TTL-backed) so logging can be enabled for a fixed duration and auto-expire.
+  - Extended `/api/admin/graphql-availability` with `PATCH` (`enableForSeconds`) and GET metadata (`temporaryEnabledUntil`, `effectiveEnabled`).
+  - Added admin action in Page Performance: `Record vitals now (1h)`; this enables temporary logging for one hour and submits an immediate vitals sample.
+  - Added relay-status persistence for ragbaz.xyz vitals forwarding and surfaced it in admin (`last attempt`, `reason`, `HTTP status`), including missing connection and unauthorized relay failures.
+  - Continued keeping permanent logging toggle semantics intact; disabling the permanent toggle now also clears any active temporary window.
+
+- Validation:
+  - `npm run lint -- src/lib/graphqlAvailability.js src/app/api/admin/graphql-availability/route.js src/app/api/admin/page-performance/route.js src/components/admin/GraphqlAvailabilityPanel.js src/components/admin/PagePerformancePanel.js` passes (existing repo warnings only).
