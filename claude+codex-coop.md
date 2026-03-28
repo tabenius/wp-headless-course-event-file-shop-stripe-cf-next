@@ -31,6 +31,35 @@
 - `npx eslint src/components/admin/ImageGenerationPanel.js src/components/admin/AdminProductsTab.js --rule "react-hooks/exhaustive-deps: 1" --rule "no-use-before-define: [2, {\"functions\": false, \"classes\": true, \"variables\": true}]"`
 - `node --check src/components/admin/ImageGenerationPanel.js src/components/admin/AdminProductsTab.js`
 
+## 2026-03-28 (Claude) — shop catalog split + image pipeline defaults
+
+### Claude — shop catalog split (commits `bf6b170`..`c712a86`)
+
+**Delivered:**
+- Aligned `SHOP_CATALOG_CACHE_TTL_MS` default from 120s to 300s to match ISR revalidation, eliminating unnecessary GraphQL refetches within an ISR cycle.
+- Replaced disabled "Checking…" button with pulsing skeleton pill (`animate-pulse`) in `ShopIndex.js` for lighter ownership loading state.
+- Added `GET /api/admin/cache-info` endpoint returning ISR, catalog, GraphQL edge, and SWR cache TTL values.
+- Added Cache Configuration section to admin Info tab (`AdminInfoHubTab.js`) displaying cache TTLs in a read-only table.
+
+### Claude — image pipeline defaults (commits `b0b8c2f`..`a57a1fc`)
+
+**Delivered:**
+- Created `src/lib/uploadPipeline.js` with pure helpers (`shouldSkipPipeline`, `buildVariantDefs`, `buildVariantFilename`) and `runUploadPipeline` orchestration function.
+- Auto-generates WebP compressed + responsive variants (sm 50%, md 100%, lg 150%) on admin image upload.
+- Skip conditions: non-image MIME, GIF, <320px either dimension. Already WebP/AVIF sources skip format conversion but still get responsive sizes.
+- Wired pipeline into all three upload backends (R2, S3, WordPress) in `route.js`. Best-effort: variant failures don't block the original upload response.
+- Variants registered via existing `registerUploadedAsset` and returned in `variants` array in upload response.
+
+**Validation:**
+- `node --test tests/shop-catalog-split.test.js tests/upload-pipeline.test.js` — 19 tests, all pass
+- Branch: `feat/shop-catalog-image-pipeline` (9 commits, ready for merge)
+
+**Specs and plans:**
+- `docs/superpowers/specs/2026-03-28-shop-catalog-split-design.md`
+- `docs/superpowers/specs/2026-03-28-image-pipeline-defaults-design.md`
+- `docs/superpowers/plans/2026-03-28-shop-catalog-split.md`
+- `docs/superpowers/plans/2026-03-28-image-pipeline-defaults.md`
+
 ## 2026-03-28 (Codex) — follow-up 3→6 batch after settings + ownership hardening
 
 ### Codex — shop catalog cache + asset-variant storefront rendering (commits `d82f886`, `518ea57`)

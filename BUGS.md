@@ -28,7 +28,7 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG: /, dark theme have dark text initially, change to white text if there is a dark theme.
 [x] BUG: /admin/docs/readme-sv have no generated mermaid diagrams, they are all source code.
 [x] BUG: /admin/docs/ have a lot of not generated mermaid diagrams, they are source code only.
-[ ] FEATURE: Split /shop into static catalog shell + user ownership enrichment API. Expected gain: major TTFB reduction for anonymous traffic. Tradeoff: additional client-side state path; ownership badges become async.
+[x] FEATURE: Split /shop into static catalog shell + user ownership enrichment API. Expected gain: major TTFB reduction for anonymous traffic. Tradeoff: additional client-side state path; ownership badges become async.
 [ ] FEATURE: All environment variable in the admin ui under storage should be able to toggle visible and also fill in those that are not shown at all, put them under a new tab called secret and make the admin user to write in her password again as confirmation.
 [ ] FEATURE: review the knob and ui style of the font laboratory ../type-laboratory.html, of draft-font-editor* as inspiration and add variants as an advanced setting: vintage font style and synchronize the two font selectors range of possibilites.
 [ ] FEATURE: to the font choosers show css with google fonts url and typeface declarations and everything.
@@ -38,4 +38,4 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] FEATURE: add a telegram bot that tells about actions such as login, payments, products bought, media library asset uploaded, logout, change of keys of any sort.
 [ ] FEATURE: Build a ChatWoot integration that send to this account id: 155812, webhook for us will be something like /api/chatwoot/event for read and send
 [ ] FEATURE: sales trends, a diagram, small, in the payments section over the last year, marked Q1, Q2 ... a smooth line diagram with MA20 and MA200 and a minimal awesome oscillator below based on rsi 75, 25% or standard values.
-[ ] FEATURE: Enforce image pipeline defaults (WebP by default, AVIF where practical, size variants). Expected gain: better LCP and lower transfer. Tradeoff: extra storage + processing + variant bookkeeping.
+[x] FEATURE: Enforce image pipeline defaults (WebP by default, AVIF where practical, size variants). Expected gain: better LCP and lower transfer. Tradeoff: extra storage + processing + variant bookkeeping.
