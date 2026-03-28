@@ -3539,3 +3539,15 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npx eslint src/proxy.js`
   - `node --check src/proxy.js`
+
+### Codex — resolved Next16/OpenNext proxy conflict by reverting to middleware (commit: `1161f8d`)
+
+- Replaced `src/proxy.js` with `src/middleware.js` (same logic, edge middleware convention).
+- Reason: Next 16 `proxy` is Node-only and forbids route-segment runtime config, while current OpenNext CF build rejects Node middleware/proxy runtime.
+- Preserved behavior:
+  - admin/map request-id tagging (`x-request-id`, `reqid` cookie)
+  - WebDAV `PROPFIND`/`MKCOL` forwarding to POST with `x-dav-method`.
+
+- Validation:
+  - `npx eslint src/middleware.js`
+  - `node --check src/middleware.js`
