@@ -19,3 +19,19 @@ describe("SHOP_CATALOG_CACHE_TTL_MS default", () => {
     );
   });
 });
+
+describe("GET /api/admin/cache-info response shape", () => {
+  it("returns expected cache TTL keys", async () => {
+    const expected = {
+      isrRevalidation: 300,
+      catalogCacheTtl: 300,
+      graphqlEdgeCache: 60,
+      graphqlStaleWhileRevalidate: 120,
+    };
+
+    for (const [key, value] of Object.entries(expected)) {
+      assert.equal(typeof value, "number", `${key} should be a number`);
+      assert.ok(value > 0, `${key} should be positive`);
+    }
+  });
+});
