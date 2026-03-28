@@ -19,6 +19,7 @@ function normalizeUriList(value) {
 }
 
 export async function POST(request) {
+  const startedAt = Date.now();
   const session = await auth();
   const userEmail = String(session?.user?.email || "").trim().toLowerCase();
 
@@ -77,6 +78,10 @@ export async function POST(request) {
     } catch (error) {
       checkoutError = true;
       console.error("Failed to confirm shop purchase:", error);
+      appendServerLog({
+        level: "warn",
+        msg: `shop ownership checkout confirm failed for ${userEmail || "anonymous"}: ${error?.message || error}`,
+      }).catch(() => {});
     }
   }
 
@@ -121,5 +126,6 @@ export async function POST(request) {
     ownedUris,
     accessBatchFailed,
     checkoutError,
+    durationMs: Math.max(0, Date.now() - startedAt),
   });
 }

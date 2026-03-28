@@ -6,9 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { t } from "@/lib/i18n";
 
+const OWNERSHIP_MAX_ATTEMPTS = 3;
+const OWNERSHIP_TIMEOUT_MS = 8000;
+const OWNERSHIP_RETRY_BASE_MS = 350;
+
 function formatPrice(priceCents, currency) {
   if (!priceCents || priceCents <= 0) return null;
   return `${(priceCents / 100).toFixed(0)} ${String(currency || "SEK").toUpperCase()}`;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** Parse a WordPress-rendered price like "kr750.00" or "750,00&nbsp;kr" into cents */
@@ -86,6 +94,8 @@ export default function ShopIndex({
   const [ownedUris, setOwnedUris] = useState([]);
   const [accessBatchFailed, setAccessBatchFailed] = useState(false);
   const [checkoutError, setCheckoutError] = useState(false);
+  const [ownershipError, setOwnershipError] = useState("");
+  const [ownershipRetryTick, setOwnershipRetryTick] = useState(0);
   const wpUris = useMemo(
     () =>
       items
@@ -98,29 +108,51 @@ export default function ShopIndex({
     let cancelled = false;
     async function loadOwnership() {
       setOwnershipReady(false);
+      setOwnershipError("");
       try {
-        const response = await fetch("/api/shop/ownership", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            uris: wpUris,
-            checkoutStatus,
-            checkoutSessionId,
-            checkoutProductId,
-          }),
-        });
-        const json = await response.json().catch(() => ({}));
-        if (cancelled) return;
-        if (!response.ok || !json?.ok) {
-          throw new Error(json?.error || "Ownership lookup failed");
+        let lastError = null;
+        for (let attempt = 1; attempt <= OWNERSHIP_MAX_ATTEMPTS; attempt += 1) {
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(
+              () => controller.abort(),
+              OWNERSHIP_TIMEOUT_MS,
+            );
+            const response = await fetch("/api/shop/ownership", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                uris: wpUris,
+                checkoutStatus,
+                checkoutSessionId,
+                checkoutProductId,
+              }),
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            const json = await response.json().catch(() => ({}));
+            if (!response.ok || !json?.ok) {
+              throw new Error(json?.error || "Ownership lookup failed");
+            }
+            if (cancelled) return;
+            setUser(json.user || null);
+            setOwnedProductIds(
+              Array.isArray(json.ownedProductIds) ? json.ownedProductIds : [],
+            );
+            setOwnedUris(Array.isArray(json.ownedUris) ? json.ownedUris : []);
+            setAccessBatchFailed(Boolean(json.accessBatchFailed));
+            setCheckoutError(Boolean(json.checkoutError));
+            setOwnershipError("");
+            return;
+          } catch (err) {
+            lastError = err;
+            if (attempt < OWNERSHIP_MAX_ATTEMPTS) {
+              await sleep(OWNERSHIP_RETRY_BASE_MS * 2 ** (attempt - 1));
+              continue;
+            }
+            throw lastError;
+          }
         }
-        setUser(json.user || null);
-        setOwnedProductIds(
-          Array.isArray(json.ownedProductIds) ? json.ownedProductIds : [],
-        );
-        setOwnedUris(Array.isArray(json.ownedUris) ? json.ownedUris : []);
-        setAccessBatchFailed(Boolean(json.accessBatchFailed));
-        setCheckoutError(Boolean(json.checkoutError));
       } catch (err) {
         console.error("Shop ownership enrichment failed:", err);
         if (cancelled) return;
@@ -129,6 +161,12 @@ export default function ShopIndex({
         setOwnedUris([]);
         setAccessBatchFailed(false);
         setCheckoutError(checkoutStatus === "success");
+        setOwnershipError(
+          t(
+            "shop.ownershipLookupFailed",
+            "Could not verify ownership right now. You can retry in a moment.",
+          ),
+        );
       } finally {
         if (!cancelled) setOwnershipReady(true);
       }
@@ -137,7 +175,19 @@ export default function ShopIndex({
     return () => {
       cancelled = true;
     };
-  }, [checkoutProductId, checkoutSessionId, checkoutStatus, wpUris]);
+  }, [
+    checkoutProductId,
+    checkoutSessionId,
+    checkoutStatus,
+    wpUris,
+    ownershipRetryTick,
+  ]);
+
+  const ownershipPending = !ownershipReady;
+
+  function retryOwnershipLookup() {
+    setOwnershipRetryTick((current) => current + 1);
+  }
 
   // Digital product checkout via /api/digital/checkout
   async function startDigitalCheckout(productSlug) {
@@ -222,6 +272,27 @@ export default function ShopIndex({
           <p className="text-red-600 text-sm mt-1">
             {t("shop.checkoutRetryHint")}
           </p>
+        </div>
+      )}
+
+      {ownershipPending && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          {t(
+            "shop.ownershipLookupLoading",
+            "Checking your ownership and access state…",
+          )}
+        </div>
+      )}
+      {ownershipError && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <p>{ownershipError}</p>
+          <button
+            type="button"
+            onClick={retryOwnershipLookup}
+            className="mt-2 rounded border border-amber-500 px-3 py-1.5 text-xs hover:bg-amber-100"
+          >
+            {t("shop.retryOwnershipLookup", "Retry ownership check")}
+          </button>
         </div>
       )}
 
@@ -315,12 +386,22 @@ export default function ShopIndex({
                         </span>
                       )
                     ) : (
-                      <Link
-                        href={item.uri}
-                        className="px-4 py-2 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 text-sm"
-                      >
-                        {t("shop.viewAndBuy")}
-                      </Link>
+                      ownershipPending ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="px-4 py-2 rounded bg-gray-400 text-white text-sm cursor-not-allowed"
+                        >
+                          {t("shop.ownershipLookupLoadingShort", "Checking…")}
+                        </button>
+                      ) : (
+                        <Link
+                          href={item.uri}
+                          className="px-4 py-2 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 text-sm"
+                        >
+                          {t("shop.viewAndBuy")}
+                        </Link>
+                      )
                     )}
                   </div>
                 </div>
