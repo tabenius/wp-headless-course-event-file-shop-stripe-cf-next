@@ -1,5 +1,22 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-28 (Codex) — build mode upstream bypass for rate-limited WordPress/Varnish
+
+### Codex — default build-time upstream skip (`SKIP_UPSTREAM_DURING_BUILD=1`) (commit `4aec6dc`)
+
+**Delivered:**
+- Added `src/lib/buildUpstreamGuard.js` with:
+  - `isBuildPhase()`
+  - `shouldSkipUpstreamDuringBuild()` (default enabled in build phase unless explicitly set to `0`/`false`)
+- Updated `src/lib/client.js` so `fetchGraphQL()` returns early during build when skip mode is active, preventing all build-time GraphQL upstream calls.
+- Updated `src/lib/menu.js` to bypass WordPress sitemap/URI existence probing and GraphQL menu fetch during build-skip mode; falls back to local `site.navigation` + ensured core links.
+- Updated `src/app/page.js` to render setup fallback during build-skip mode instead of attempting upstream-backed homepage resolution.
+- Documented new flag in `.env.example` (`SKIP_UPSTREAM_DURING_BUILD=1`) and README configuration table.
+
+**Validation:**
+- `npx eslint src/lib/buildUpstreamGuard.js src/lib/client.js src/lib/menu.js src/app/page.js`
+- `node --check` on the same files
+
 ## 2026-03-28 (Codex) — admin runtime hook-safety pass (TDZ-adjacent risk sweep)
 
 ### Codex — removed stale-callback/exhaustive-deps suppressions in admin UI (commit `71a8f1d`)
