@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "edge";
-
 function shouldTag(request) {
   const { pathname } = request.nextUrl;
   return (
@@ -32,7 +30,7 @@ async function forwardDavMethod(request) {
   });
 }
 
-export async function proxy(request) {
+export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const method = request.method.toUpperCase();
 
@@ -68,5 +66,10 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/__maps/:path*", "/webdav/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/__maps/:path*",
+    "/webdav/:path*",
+  ],
 };
