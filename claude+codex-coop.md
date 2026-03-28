@@ -1,5 +1,39 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-28 (Codex) — follow-up 3→6 batch after settings + ownership hardening
+
+### Codex — shop catalog cache + asset-variant storefront rendering (commits `d82f886`, `518ea57`)
+
+**Delivered:**
+- Added short-lived aggregated shop cache (`SHOP_CATALOG_CACHE_TTL_MS`) in `src/lib/shopProducts.js` so repeated catalog assembly (WP + KV + settings) reuses server-side results between refresh windows.
+- Extended asset persistence in `src/lib/avatarFeedStore.js` to keep variant history (`variants`) instead of only the last uploaded source, while still exposing a single preferred `source`.
+- Wired asset-mode digital products to resolve stored asset variants and expose `imageSources` to storefront rendering.
+- Updated `src/components/shop/ShopIndex.js` image rendering to use a width-aware loader over responsive variants (`sm/md/lg`) when available, with safe fallback to single-source image URLs.
+
+**Validation:**
+- `npx eslint src/lib/avatarFeedStore.js src/lib/shopProducts.js src/components/shop/ShopIndex.js`
+- `node --check` on the same files
+
+### Codex — font payload trimming + performance budget gate scaffold (commits `518ea57`, `e63a825`)
+
+**Delivered:**
+- Added core-weight font CSS mode in `src/app/api/site-fonts/route.js` backed by new helpers in `src/lib/downloadedFonts.js`:
+  - `parseFontWeightList`
+  - `getAllFontFaceCss(..., { trimToWeights })`
+- Added tests for font-weight parsing/trimming in `tests/downloadedFonts.test.js`.
+- Added bundle budget script `scripts/check-performance-budgets.mjs` and npm script `npm run perf:budget`.
+- Documented new knobs and status updates in `.env.example`, `README.md`, and `docs/performance-and-seo.md`.
+
+**Important push note:**
+- Directly committing workflow-file updates is blocked by current PAT scope (`workflow` permission missing).
+- Budget script and docs are pushed; workflow hook change was intentionally reverted in follow-up commit `e63a825` so branch push could proceed.
+
+**Validation:**
+- `npx eslint src/lib/downloadedFonts.js src/app/api/site-fonts/route.js scripts/check-performance-budgets.mjs`
+- `node --experimental-test-module-mocks --test tests/downloadedFonts.test.js`
+- `npm run perf:budget`
+- Full suite run observed one existing unrelated failure in `tests/stripe-payments.test.js` (`ERR_MODULE_NOT_FOUND` alias import path issue in that test path); not introduced by this batch.
+
 ## 2026-03-27 (Codex) — prioritized 1→5 implementation batch
 
 ### Codex — R2 bindings + CF bundle-size migration (commit `1258caa`)
