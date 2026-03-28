@@ -1028,6 +1028,9 @@ export default function AdminStyleTab({
           role={fontBrowserRole}
           currentFamily={fontRoles[fontBrowserRole]?.family}
           downloadedFamilies={downloadedFamilies}
+          usedFonts={Object.entries(fontRoles)
+            .filter(([k, r]) => k !== fontBrowserRole && r?.type === "google" && r?.family)
+            .map(([k, r]) => ({ family: r.family, role: k.replace("font", "") }))}
           onSelect={(roleObj) => {
             const updated = { ...fontRoles, [fontBrowserRole]: roleObj };
             setFontRoles(updated);
