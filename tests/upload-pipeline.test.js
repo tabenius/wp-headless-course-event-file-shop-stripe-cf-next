@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   shouldSkipPipeline,
   buildVariantDefs,
+  buildVariantFilename,
 } from "../src/lib/uploadPipeline.js";
 
 describe("shouldSkipPipeline", () => {
@@ -77,5 +78,42 @@ describe("buildVariantDefs", () => {
     assert.equal(md.height, 800);
     assert.equal(lg.width, 1500);
     assert.equal(lg.height, 1200);
+  });
+});
+
+describe("buildVariantFilename", () => {
+  it("compressed variant replaces extension with .webp", () => {
+    assert.equal(
+      buildVariantFilename("uploads/1711612800000-photo.jpg", "compressed"),
+      "uploads/1711612800000-photo.webp",
+    );
+  });
+
+  it("responsive-sm adds -sm suffix", () => {
+    assert.equal(
+      buildVariantFilename("uploads/1711612800000-photo.jpg", "responsive-sm"),
+      "uploads/1711612800000-photo-sm.webp",
+    );
+  });
+
+  it("responsive-md adds -md suffix", () => {
+    assert.equal(
+      buildVariantFilename("uploads/1711612800000-photo.jpg", "responsive-md"),
+      "uploads/1711612800000-photo-md.webp",
+    );
+  });
+
+  it("responsive-lg adds -lg suffix", () => {
+    assert.equal(
+      buildVariantFilename("uploads/1711612800000-photo.jpg", "responsive-lg"),
+      "uploads/1711612800000-photo-lg.webp",
+    );
+  });
+
+  it("handles URLs with paths", () => {
+    assert.equal(
+      buildVariantFilename("https://cdn.example.com/uploads/photo.png", "responsive-sm"),
+      "https://cdn.example.com/uploads/photo-sm.webp",
+    );
   });
 });
