@@ -3590,3 +3590,9 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - JSON parse checks for `src/lib/i18n/sv.json` and `src/lib/i18n/es.json`
   - `npx eslint src/components/admin/AdminDocsContextLinks.js`
+
+### Codex — docs-context pill contrast hardening (commit: `4a8729a`)
+
+- Replaced docs-context color utilities with dedicated classes (`admin-docs-context-pill`, `admin-docs-context-link`).
+- Added explicit high-contrast colors with `!important` in `globals.css` to prevent theme overrides from producing low-contrast text.
+- Result: the docs help pill/link labels remain legible across all admin themes.
