@@ -288,6 +288,24 @@ body:has(.admin-layout)::before {
   display: none;
 }
 
+.admin-docs-context-pill {
+  border-color: #a16207 !important;
+  background-color: #facc15 !important;
+  color: #111827 !important;
+}
+
+.admin-docs-context-link {
+  border-color: #111827 !important;
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+}
+
+.admin-docs-context-link:hover,
+.admin-docs-context-link:focus-visible {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+}
+
 .welcome-story-force-white {
   color: #fff !important;
 }
