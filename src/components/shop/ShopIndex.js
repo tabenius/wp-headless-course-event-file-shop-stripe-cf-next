@@ -27,6 +27,37 @@ function parseWpPrice(priceStr) {
   return Number.isFinite(num) ? Math.round(num * 100) : 0;
 }
 
+function pickVariantUrlByWidth(variants, width, fallbackUrl) {
+  const safeVariants = (Array.isArray(variants) ? variants : [])
+    .filter(
+      (variant) =>
+        variant &&
+        typeof variant.url === "string" &&
+        variant.url &&
+        Number.isFinite(Number(variant.width)),
+    )
+    .map((variant) => ({
+      ...variant,
+      width: Number(variant.width),
+    }))
+    .sort((left, right) => left.width - right.width);
+  if (safeVariants.length === 0) return fallbackUrl;
+  const target = Number.isFinite(width) && width > 0 ? width : 1200;
+  for (const variant of safeVariants) {
+    if (variant.width >= target) return variant.url;
+  }
+  return safeVariants[safeVariants.length - 1].url;
+}
+
+function buildImageLoader(imageSources, fallbackUrl) {
+  const variants = Array.isArray(imageSources?.variants)
+    ? imageSources.variants
+    : [];
+  if (variants.length === 0) return undefined;
+  return ({ src, width }) =>
+    pickVariantUrlByWidth(variants, width, fallbackUrl || src || "");
+}
+
 function typeLabel(item) {
   switch (item.type) {
     case "product":
@@ -302,7 +333,23 @@ export default function ShopIndex({
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {items.map((item) => {
-          const showImage = item.imageUrl && !brokenImages[item.id];
+          const imageSources =
+            item.imageSources && typeof item.imageSources === "object"
+              ? item.imageSources
+              : null;
+          const imageUrl = imageSources?.src || item.imageUrl || "";
+          const imageWidth =
+            Number.isFinite(Number(imageSources?.width)) &&
+            Number(imageSources?.width) > 0
+              ? Number(imageSources.width)
+              : 1200;
+          const imageHeight =
+            Number.isFinite(Number(imageSources?.height)) &&
+            Number(imageSources?.height) > 0
+              ? Number(imageSources.height)
+              : 600;
+          const imageLoader = buildImageLoader(imageSources, imageUrl);
+          const showImage = imageUrl && !brokenImages[item.id];
           const owned = isOwned(item);
           const loading = loadingId === item.slug;
           const isDigital = item.source === "digital";
@@ -318,11 +365,16 @@ export default function ShopIndex({
             >
               {showImage ? (
                 <Image
-                  src={item.imageUrl}
+                  src={imageUrl}
                   alt={item.name}
-                  width={1200}
-                  height={600}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  width={imageWidth}
+                  height={imageHeight}
+                  loader={imageLoader}
+                  unoptimized={Boolean(imageLoader)}
+                  sizes={
+                    imageSources?.sizes ||
+                    "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  }
                   className="w-full h-44 object-cover"
                   onError={() =>
                     setBrokenImages((prev) => ({ ...prev, [item.id]: true }))

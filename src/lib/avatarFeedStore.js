@@ -161,6 +161,58 @@ function normalizeSource(raw) {
   };
 }
 
+function sourceIdentity(source) {
+  const safe = normalizeSource(source);
+  const kind =
+    safe.variantKind || safe.role || safe.format || safe.sourceId || safe.url;
+  return sanitizeText(kind, 180).toLowerCase();
+}
+
+function mergeVariantSources(existingVariants = [], incomingSource = null) {
+  const merged = [];
+  const seen = new Set();
+  const push = (entry) => {
+    const safe = normalizeSource(entry);
+    if (!safe.url && !safe.sourceId && !safe.variantKind) return;
+    const key = sourceIdentity(safe);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    merged.push(safe);
+  };
+
+  for (const variant of Array.isArray(existingVariants) ? existingVariants : []) {
+    push(variant);
+  }
+  if (incomingSource) push(incomingSource);
+  return merged;
+}
+
+function pickPrimarySource(variants = [], fallbackSource = null) {
+  const list = Array.isArray(variants) ? variants : [];
+  const rank = {
+    "responsive-md": 0,
+    compressed: 1,
+    "derived-work": 2,
+    "responsive-lg": 3,
+    "responsive-sm": 4,
+    original: 5,
+  };
+  const scored = list
+    .map((entry) => {
+      const safe = normalizeSource(entry);
+      const key = sanitizeText(safe.variantKind, 80).toLowerCase();
+      const base = Number.isFinite(rank[key]) ? rank[key] : 20;
+      const sizeBias =
+        Number.isFinite(safe.width) && safe.width > 0
+          ? Math.abs(safe.width - 1280) / 10000
+          : 5;
+      return { safe, score: base + sizeBias };
+    })
+    .sort((left, right) => left.score - right.score);
+  if (scored.length > 0) return scored[0].safe;
+  return normalizeSource(fallbackSource);
+}
+
 function normalizeAssetRecord(raw) {
   const assetId = normalizeAssetId(raw?.assetId);
   if (!assetId) return null;
@@ -176,6 +228,8 @@ function normalizeAssetRecord(raw) {
   const updatedAt = normalizeIsoDate(raw?.updatedAt, createdAt);
   const uri =
     sanitizeText(raw?.uri, 400) || `/assets/${encodeURIComponent(assetId)}`;
+  const normalizedSource = normalizeSource(raw?.source);
+  const normalizedVariants = mergeVariantSources(raw?.variants, normalizedSource);
   return {
     assetId,
     ownerUri: normalizeOwnerUri(raw?.ownerUri || "/"),
@@ -185,7 +239,8 @@ function normalizeAssetRecord(raw) {
     creatorType: safeCreatorType,
     creatorId,
     rights: normalizeRights(raw?.rights),
-    source: normalizeSource(raw?.source),
+    source: pickPrimarySource(normalizedVariants, normalizedSource),
+    variants: normalizedVariants,
     createdAt,
     updatedAt,
   };
@@ -486,6 +541,7 @@ function serializeAsset(row) {
     },
     rights: asset.rights,
     source: asset.source,
+    variants: Array.isArray(asset.variants) ? asset.variants : [asset.source],
     createdAt: asset.createdAt,
     updatedAt: asset.updatedAt,
   };
@@ -711,10 +767,20 @@ export async function upsertAssetRecord(input = {}) {
   const state = await getState();
   const index = state.assets.findIndex((row) => row.assetId === assetId);
   const existing = index >= 0 ? state.assets[index] : null;
+  const incomingSource = normalizeSource(input?.source);
+  const existingVariants = Array.isArray(existing?.variants)
+    ? existing.variants
+    : existing?.source
+      ? [existing.source]
+      : [];
+  const mergedVariants = mergeVariantSources(existingVariants, incomingSource);
+  const primarySource = pickPrimarySource(mergedVariants, incomingSource);
   const next = normalizeAssetRecord({
     ...(existing || {}),
     ...input,
     assetId,
+    source: primarySource,
+    variants: mergedVariants,
     createdAt: existing?.createdAt || nowIso(),
     updatedAt: nowIso(),
   });
