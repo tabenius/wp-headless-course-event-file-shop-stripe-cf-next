@@ -3612,3 +3612,14 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - JSON parse checks for `src/lib/i18n/en.json`, `sv.json`, `es.json`
   - `node --check` for updated JS files
   - `node --test tests/i18n-admin-parity.test.js`
+
+### Codex — removed admin theme switching, locked to Water palette (commit: `0f9dab0`)
+
+- Removed all admin theme cycling/state/hotkey behavior (no localStorage theme switching, no Ctrl+Alt+T action, no sun/moon toggle button).
+- Admin now always renders with `admin-theme-water` via `AdminThemeWrapper`.
+- Reworked admin palette tokens to a single Water theme aligned with `ragbaz.xyz` Water direction (`#002b36/#073642` surfaces, blue+teal accents, high-contrast text).
+- Simplified header/drawer styling to rely on one token set instead of multi-theme branches.
+
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminThemeWrapper.js src/lib/adminHotkeys.js src/app/admin/layout.js`
+  - `node --check` for updated JS files
