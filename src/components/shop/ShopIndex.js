@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { t } from "@/lib/i18n";
 
@@ -99,7 +99,7 @@ function deriveBoughtUri(item) {
   return "";
 }
 
-export default function ShopIndex({
+function ShopIndexContent({
   items,
   stripeEnabled,
 }) {
@@ -465,3 +465,28 @@ export default function ShopIndex({
     </section>
     );
   }
+
+function ShopIndexFallback() {
+  return (
+    <section className="max-w-6xl mx-auto px-6 py-16 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">{t("shop.title")}</h1>
+        <p className="text-gray-600 mt-2">{t("shop.subtitle")}</p>
+      </div>
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+        {t(
+          "shop.ownershipLookupLoading",
+          "Checking your ownership and access state…",
+        )}
+      </div>
+    </section>
+  );
+}
+
+export default function ShopIndex(props) {
+  return (
+    <Suspense fallback={<ShopIndexFallback />}>
+      <ShopIndexContent {...props} />
+    </Suspense>
+  );
+}
