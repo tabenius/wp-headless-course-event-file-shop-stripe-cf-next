@@ -1104,7 +1104,7 @@ export default function ImageUploader({
                           }}
                           className={`rounded border px-2 py-1.5 text-left transition-colors ${
                             active
-                              ? "border-purple-500 bg-purple-50 text-purple-800"
+                              ? "border-slate-500 bg-slate-50 text-slate-800"
                               : "border-gray-300 hover:bg-gray-50"
                           }`}
                         >

@@ -472,7 +472,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
         {envError && (
           <div className="flex items-center gap-2">
             <p className="text-xs text-red-600">{envError}</p>
-            <button type="button" onClick={loadEnvStatus} className="text-xs text-indigo-600 hover:underline">
+            <button type="button" onClick={loadEnvStatus} className="text-xs text-slate-600 hover:underline">
               {t("common.retry", "Retry")}
             </button>
           </div>
@@ -480,7 +480,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
         {envGroups && envGroups.map((group) => (
           <details
             key={group.id}
-            className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-purple-300 open:bg-purple-50/20"
+            className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-slate-300 open:bg-slate-50/20"
           >
             <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
               <span className="font-medium text-sm text-gray-800">{group.label}</span>
@@ -532,7 +532,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
                               return next;
                             })
                           }
-                          className="text-[10px] text-purple-700 hover:underline"
+                          className="text-[10px] text-slate-700 hover:underline"
                         >
                           {isRevealed ? t("admin.hideSecret", "Hide") : t("admin.showSecret", "Show")}
                         </button>
@@ -541,7 +541,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
                         <button
                           type="button"
                           onClick={() => copyEnvValue(key, v.value)}
-                          className="text-[10px] px-1.5 py-0.5 rounded border border-purple-200 text-purple-700 hover:bg-purple-50"
+                          className="text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50"
                         >
                           {copiedEnv === key ? t("admin.clientCopied", "Copied") : t("common.copy", "Copy")}
                         </button>
@@ -658,7 +658,7 @@ function DeadLinksPanel() {
             {t("admin.deadLinksTotal", "Total")}:{" "}
             <span className="font-semibold">{deadLinksTotals.total ?? 0}</span>
           </div>
-          <div className="rounded border border-indigo-200 bg-indigo-50 px-2 py-1.5">
+          <div className="rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
             {t("admin.deadLinksKindInternal", "Internal")}:{" "}
             <span className="font-semibold">{deadLinksTotals.internal ?? 0}</span>
           </div>
@@ -666,7 +666,7 @@ function DeadLinksPanel() {
             {t("admin.deadLinksKindPseudo", "Pseudo external")}:{" "}
             <span className="font-semibold">{deadLinksTotals.pseudoExternal ?? 0}</span>
           </div>
-          <div className="rounded border border-violet-200 bg-violet-50 px-2 py-1.5">
+          <div className="rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
             {t("admin.deadLinksKindExternal", "External")}:{" "}
             <span className="font-semibold">{deadLinksTotals.external ?? 0}</span>
           </div>
@@ -733,7 +733,7 @@ function DeadLinksPanel() {
                       href={link.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="break-all text-purple-700 underline"
+                      className="break-all text-slate-700 underline"
                     >
                       {link.href}
                     </a>
@@ -954,7 +954,7 @@ export default function AdminInfoHubTab({
               onClick={() => setSectionAndHash(entry.id)}
               className={`px-3 py-1.5 rounded text-sm border transition-colors ${
                 section === entry.id
-                  ? "bg-purple-700 text-white border-purple-700"
+                  ? "bg-slate-700 text-white border-slate-700"
                   : "border-gray-200 text-gray-700 hover:bg-gray-50"
               }`}
             >
@@ -1095,8 +1095,8 @@ export default function AdminInfoHubTab({
                   role="switch"
                   aria-checked={Boolean(chatBetaEnabled)}
                   onClick={() => setChatBetaEnabled?.(!chatBetaEnabled)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                    chatBetaEnabled ? "bg-purple-600" : "bg-gray-300"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 ${
+                    chatBetaEnabled ? "bg-slate-600" : "bg-gray-300"
                   }`}
                 >
                   <span

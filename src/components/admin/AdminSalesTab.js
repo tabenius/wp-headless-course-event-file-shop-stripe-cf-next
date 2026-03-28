@@ -76,13 +76,13 @@ function MetricCard({ label, value, sub, accent = false }) {
     <div
       className={`rounded-xl p-5 flex flex-col gap-1 border ${
         accent
-          ? "bg-indigo-950 border-indigo-800 text-white"
+          ? "bg-slate-950 border-slate-800 text-white"
           : "bg-white border-gray-200 text-gray-900"
       }`}
     >
       <span
         className={`text-[10px] font-bold tracking-widest uppercase ${
-          accent ? "text-indigo-300" : "text-gray-400"
+          accent ? "text-slate-300" : "text-gray-400"
         }`}
       >
         {label}
@@ -94,7 +94,7 @@ function MetricCard({ label, value, sub, accent = false }) {
       </span>
       {sub && (
         <span
-          className={`text-xs mt-0.5 ${accent ? "text-indigo-300" : "text-gray-400"}`}
+          className={`text-xs mt-0.5 ${accent ? "text-slate-300" : "text-gray-400"}`}
         >
           {sub}
         </span>
@@ -195,7 +195,7 @@ export default function AdminSalesTab({
             href="https://dashboard.stripe.com/payments"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 transition-colors"
           >
             {t("admin.stripePayments", "View in Stripe")}
             <svg
@@ -222,7 +222,7 @@ export default function AdminSalesTab({
             <span>{t("admin.paymentsFilter", "Filter by email")}</span>
             <AdminFieldHelpLink slug="technical-manual" />
           </div>
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-slate-500 focus-within:border-slate-500">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
@@ -247,7 +247,7 @@ export default function AdminSalesTab({
           type="button"
           onClick={() => loadPayments(paymentsEmail)}
           disabled={isLoading}
-          className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
+          className="px-4 py-2 rounded-lg bg-slate-600 text-white text-sm font-medium hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm"
         >
           {isLoading
             ? t("admin.running", "Loading…")
@@ -268,7 +268,7 @@ export default function AdminSalesTab({
                 onClick={() => setDateFilter(key)}
                 className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
                   dateFilter === key
-                    ? "bg-indigo-600 text-white shadow-sm"
+                    ? "bg-slate-600 text-white shadow-sm"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                 }`}
               >
@@ -333,7 +333,7 @@ export default function AdminSalesTab({
       {isLoading ? (
         <div className="flex items-center justify-center py-24 text-sm text-gray-400">
           <svg
-            className="animate-spin w-5 h-5 mr-2 text-indigo-400"
+            className="animate-spin w-5 h-5 mr-2 text-slate-400"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -462,7 +462,7 @@ export default function AdminSalesTab({
                 {filtered.map((p, i) => (
                   <tr
                     key={p.id}
-                    className={`transition-colors hover:bg-indigo-50/40 ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}
+                    className={`transition-colors hover:bg-slate-50/40 ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 font-mono">
                       {formatDate(p.created)}
@@ -505,7 +505,7 @@ export default function AdminSalesTab({
                           type="button"
                           onClick={() => downloadReceipt(p.receiptId)}
                           disabled={downloading === p.receiptId}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-50 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-800 disabled:opacity-50 transition-colors"
                         >
                           {downloading === p.receiptId ? (
                             <>

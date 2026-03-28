@@ -388,7 +388,7 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
           type="button"
           onClick={() => runR2ManualAction({ persist: true })}
           disabled={!r2ManualKey.trim() || r2ManualPending}
-          className="px-3 py-1 rounded border text-xs bg-purple-600 text-white border-purple-700 hover:bg-purple-700 disabled:opacity-50"
+          className="px-3 py-1 rounded border text-xs bg-slate-600 text-white border-slate-700 hover:bg-slate-700 disabled:opacity-50"
         >
           {r2ManualPending
             ? t("common.loading", "Loading…")
@@ -411,21 +411,21 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
         </p>
       )}
       {r2ManualPreview && (
-        <div className="rounded border border-purple-200 bg-purple-50 p-2 text-xs space-y-2">
-          <p className="font-semibold text-purple-800">
+        <div className="rounded border border-slate-200 bg-slate-50 p-2 text-xs space-y-2">
+          <p className="font-semibold text-slate-800">
             {t("admin.mediaR2ManualPreviewTitle", "Preview")}
           </p>
           <div className="grid gap-1 sm:grid-cols-2">
-            <p className="text-purple-900 break-all">
+            <p className="text-slate-900 break-all">
               {t("admin.mediaR2ManualObject", "Object")}: {r2ManualPreview.key}
             </p>
-            <p className="text-purple-900">
+            <p className="text-slate-900">
               {t("admin.mediaTypeLabel", "Type")}: {r2ManualPreview.mimeType || "—"}
             </p>
-            <p className="text-purple-900">
+            <p className="text-slate-900">
               {t("admin.bucketSize", "Size")}: {formatBytes(r2ManualPreview.sizeBytes)}
             </p>
-            <p className="text-purple-900">
+            <p className="text-slate-900">
               {t("admin.resolution", "Resolution")}:{" "}
               {formatResolution(r2ManualPreview.width, r2ManualPreview.height)}
             </p>
@@ -435,7 +435,7 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
               href={r2ManualPreview.url}
               target="_blank"
               rel="noreferrer"
-              className="text-[11px] text-purple-700 hover:underline break-all"
+              className="text-[11px] text-slate-700 hover:underline break-all"
             >
               {r2ManualPreview.url}
             </a>
@@ -443,13 +443,13 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
               type="button"
               onClick={() => onCopyUrl?.(r2ManualPreview.url)}
               disabled={!r2ManualPreview.url}
-              className="px-2 py-0.5 rounded border text-[11px] text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+              className="px-2 py-0.5 rounded border text-[11px] text-slate-700 hover:bg-slate-100 disabled:opacity-50"
             >
               {t("admin.bucketCopyUrl", "Copy URL")}
             </button>
           </div>
           {r2ManualPreview.isImage && r2ManualPreview.url && (
-            <div className="rounded border border-purple-200 bg-white p-2 inline-block max-w-full">
+            <div className="rounded border border-slate-200 bg-white p-2 inline-block max-w-full">
               <Image
                 src={r2ManualPreview.url}
                 alt={r2ManualPreview.title || r2ManualPreview.key || "R2 preview"}

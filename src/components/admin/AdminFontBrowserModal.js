@@ -51,15 +51,15 @@ const FontRow = memo(({
     <div
       ref={rowRef}
       className={`flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors ${
-        isCurrent ? "ring-2 ring-inset ring-indigo-500 bg-indigo-50/30" : ""
+        isCurrent ? "ring-2 ring-inset ring-slate-500 bg-slate-50/30" : ""
       }`}
     >
       <div className="flex-1 min-w-0">
         <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 flex items-center gap-2 flex-wrap">
           {font.family}
-          {isVar && <span className="bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded text-[10px]">Variable</span>}
+          {isVar && <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px]">Variable</span>}
           {usedByRoles && usedByRoles.map((r) => (
-            <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">{r}</span>
+            <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">{r}</span>
           ))}
         </div>
         <div
@@ -86,7 +86,7 @@ const FontRow = memo(({
           )}
           <button
             onClick={() => onSelect(font)}
-            className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm active:scale-95 transition-all"
+            className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm active:scale-95 transition-all"
           >
             Select
           </button>
@@ -212,7 +212,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
             placeholder="Search fonts..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-            className="px-3 py-2 border rounded-xl text-sm focus:ring-2 ring-indigo-500 outline-none"
+            className="px-3 py-2 border rounded-xl text-sm focus:ring-2 ring-slate-500 outline-none"
           />
           <select
             value={category}
@@ -227,7 +227,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                 type="checkbox"
                 checked={variableOnly}
                 onChange={(e) => { setVariableOnly(e.target.checked); setVisibleCount(PAGE_SIZE); }}
-                className="w-4 h-4 text-indigo-600 rounded"
+                className="w-4 h-4 text-slate-600 rounded"
               />
               Variable Fonts
             </label>
@@ -241,7 +241,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
             type="text"
             value={previewText}
             onChange={(e) => setPreviewText(e.target.value)}
-            className="w-full text-sm text-gray-600 focus:text-indigo-600 outline-none"
+            className="w-full text-sm text-gray-600 focus:text-slate-600 outline-none"
           />
         </div>
 
@@ -285,7 +285,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                   key={w}
                   onClick={() => setSelectedWeights(prev => prev.includes(w) ? prev.filter(x => x !== w) : [...prev, w])}
                   className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
-                    selectedWeights.includes(w) ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-gray-200 text-gray-600"
+                    selectedWeights.includes(w) ? "bg-slate-600 border-slate-600 text-white" : "bg-white border-gray-200 text-gray-600"
                   }`}
                 >
                   {w}
@@ -294,7 +294,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
             </div>
             <button
               onClick={() => downloadFont(weightPickerFamily, selectedWeights)}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold"
+              className="w-full py-3 bg-slate-600 text-white rounded-xl font-bold"
             >
               Download Selected Weights
             </button>

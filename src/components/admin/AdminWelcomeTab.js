@@ -121,7 +121,7 @@ function ArchitectureSystemMapSlide() {
             around it.
           </p>
         </div>
-        <div className="rounded-full border border-indigo-400 bg-indigo-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-900">
+        <div className="rounded-full border border-slate-400 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-900">
           docs/architecture
         </div>
       </div>
@@ -131,9 +131,9 @@ function ArchitectureSystemMapSlide() {
           <p className="font-semibold text-blue-900">Browser / Admin UI</p>
           <p className="mt-1 text-blue-800">React + App Router pages</p>
         </div>
-        <div className="col-span-6 rounded-xl border-2 border-fuchsia-400 bg-fuchsia-100 p-2.5 text-xs shadow-sm">
-          <p className="font-semibold text-fuchsia-900">Cloudflare Worker</p>
-          <p className="mt-1 text-fuchsia-900">
+        <div className="col-span-6 rounded-xl border-2 border-slate-400 bg-slate-100 p-2.5 text-xs shadow-sm">
+          <p className="font-semibold text-slate-900">Cloudflare Worker</p>
+          <p className="mt-1 text-slate-900">
             Next.js edge runtime, API routes, auth, routing
           </p>
         </div>
@@ -148,9 +148,9 @@ function ArchitectureSystemMapSlide() {
           <p className="font-semibold text-emerald-900">WordPress + WPGraphQL</p>
           <p className="mt-1 text-emerald-800">Pages, products, courses, events</p>
         </div>
-        <div className="rounded-xl border border-violet-300 bg-violet-100 p-2.5 text-xs">
-          <p className="font-semibold text-violet-900">Stripe</p>
-          <p className="mt-1 text-violet-800">Checkout, receipts, webhooks</p>
+        <div className="rounded-xl border border-slate-300 bg-slate-100 p-2.5 text-xs">
+          <p className="font-semibold text-slate-900">Stripe</p>
+          <p className="mt-1 text-slate-800">Checkout, receipts, webhooks</p>
         </div>
         <div className="rounded-xl border border-rose-300 bg-rose-100 p-2.5 text-xs">
           <p className="font-semibold text-rose-900">KV + R2</p>
@@ -224,7 +224,7 @@ function ArchitectureSystemMapSlide() {
 
 function ArchitectureFlowSlide() {
   return (
-    <div className="h-full rounded-2xl border border-indigo-400 bg-gradient-to-br from-slate-50 via-white to-blue-100 p-5 shadow-xl">
+    <div className="h-full rounded-2xl border border-slate-400 bg-gradient-to-br from-slate-50 via-white to-blue-100 p-5 shadow-xl">
       <h3 className="text-xl font-semibold text-slate-900">
         Information flow and control flow
       </h3>
@@ -233,8 +233,8 @@ function ArchitectureFlowSlide() {
         access grants.
       </p>
       <div className="mt-4 grid h-[280px] grid-cols-12 gap-3">
-        <div className="col-span-6 rounded-xl border border-indigo-400 bg-white p-3.5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900">
+        <div className="col-span-6 rounded-xl border border-slate-400 bg-white p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-900">
             Runtime sequence
           </p>
           <ol className="mt-2.5 space-y-2 text-[13px] text-slate-900">
@@ -245,7 +245,7 @@ function ArchitectureFlowSlide() {
             <li>5. Worker writes access grant and stores receipt metadata.</li>
             <li>6. Admin dashboards read the same payment/access signals.</li>
           </ol>
-          <div className="mt-2.5 rounded-lg border border-indigo-300 bg-indigo-100 px-2.5 py-2 text-xs text-indigo-900">
+          <div className="mt-2.5 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-2 text-xs text-slate-900">
             Shared state contracts: product id, category, VAT, access keys,
             receipt id.
           </div>
@@ -535,7 +535,7 @@ function ProductsMockScreen() {
     { name: "WPGraphQL Event Template", type: "Product", price: "790 SEK", stock: "Active" },
   ];
   return (
-    <div className="h-full rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-100 p-5 shadow-xl">
+    <div className="h-full rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-5 shadow-xl">
       <h3 className="text-lg font-semibold text-gray-900">Product studio</h3>
       <p className="text-xs text-gray-700">
         Mock catalog data with mixed product types and publish state.
@@ -546,8 +546,8 @@ function ProductsMockScreen() {
             key={product.name}
             className={`rounded-xl border p-3 ${
               index % 2 === 0
-                ? "bg-violet-100/60 border-violet-200"
-                : "bg-indigo-100/70 border-indigo-200"
+                ? "bg-slate-100/60 border-slate-200"
+                : "bg-slate-100/70 border-slate-200"
             }`}
           >
             <div className="text-[10px] uppercase tracking-wider text-gray-700">
@@ -571,7 +571,7 @@ function ProductsMockScreen() {
           </div>
         ))}
       </div>
-      <div className="mt-4 rounded-xl border border-violet-200 bg-white p-3 text-xs text-gray-700">
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 text-xs text-gray-700">
         Bulk actions, upload storage links, and pricing metadata are managed in
         one panel in the real admin tab.
       </div>
@@ -589,7 +589,7 @@ function ImagePromptMockScreen() {
   );
 
   return (
-    <div className="h-full rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-pink-100 p-5 shadow-xl">
+    <div className="h-full rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-pink-100 p-5 shadow-xl">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">
@@ -602,13 +602,13 @@ function ImagePromptMockScreen() {
             )}
           </p>
         </div>
-        <span className="rounded-full border border-fuchsia-300 bg-fuchsia-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-900">
+        <span className="rounded-full border border-slate-300 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-900">
           {t("admin.welcomeImageMockBadge", "mock")}
         </span>
       </div>
       <div className="mt-4 grid h-[255px] grid-cols-12 gap-3">
-        <div className="col-span-7 rounded-xl border border-fuchsia-200 bg-white p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-fuchsia-800">
+        <div className="col-span-7 rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-800">
             {t("admin.welcomeImageQuotaTitle", "Quota")}
           </p>
           <div className="mt-2 space-y-2 text-xs text-gray-700">
@@ -618,9 +618,9 @@ function ImagePromptMockScreen() {
                 {mockQuota.used} / {mockQuota.limit}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-fuchsia-100">
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full bg-fuchsia-500"
+                className="h-full bg-slate-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -628,7 +628,7 @@ function ImagePromptMockScreen() {
               <span>{t("admin.welcomeImageQuotaRemaining", "Remaining")}</span>
               <span className="font-semibold">{mockQuota.remaining}</span>
             </div>
-            <div className="rounded border border-fuchsia-100 bg-fuchsia-50 px-2 py-1">
+            <div className="rounded border border-slate-100 bg-slate-50 px-2 py-1">
               {t("admin.welcomeImageQuotaReset", "Resets")}: 00:00
             </div>
           </div>
@@ -647,11 +647,11 @@ function ImagePromptMockScreen() {
             {t("admin.welcomeImageLastRun", "Last run")}: 2026-03-19 18:45
           </div>
         </div>
-        <div className="col-span-5 rounded-xl border border-fuchsia-200 bg-white p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-fuchsia-800">
+        <div className="col-span-5 rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-800">
             {t("admin.welcomeImagePreviewTitle", "Mock image result")}
           </p>
-          <div className="mt-2 h-[130px] overflow-hidden rounded-lg border border-fuchsia-200 bg-gradient-to-br from-fuchsia-100 via-rose-100 to-amber-100 p-2">
+          <div className="mt-2 h-[130px] overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-100 via-rose-100 to-amber-100 p-2">
             <svg viewBox="0 0 320 180" className="h-full w-full rounded-md border border-white/60 bg-white/60">
               <defs>
                 <linearGradient id="mock-image-gradient" x1="0" x2="1" y1="0" y2="1">
@@ -667,7 +667,7 @@ function ImagePromptMockScreen() {
               <text x="24" y="127" fontSize="11" fill="#1f2937">4:5 portrait • editorial lighting</text>
             </svg>
           </div>
-          <div className="mt-2 max-h-[56px] overflow-hidden rounded-lg border border-dashed border-fuchsia-300 bg-gradient-to-br from-fuchsia-100 to-rose-100 p-2 text-[11px] leading-relaxed text-fuchsia-950">
+          <div className="mt-2 max-h-[56px] overflow-hidden rounded-lg border border-dashed border-slate-300 bg-gradient-to-br from-slate-100 to-rose-100 p-2 text-[11px] leading-relaxed text-slate-950">
             {mockPrompt}
           </div>
           <div className="mt-2 text-[11px] text-gray-500">
@@ -782,7 +782,7 @@ function WelcomeCards({ showRevisionBadge }) {
         "admin.cardShopBody",
         "Curate WooCommerce/LearnPress products, metadata, and prices.",
       ),
-      tone: "from-violet-500/20 via-violet-200/10 to-indigo-200/10",
+      tone: "from-slate-500/20 via-slate-200/10 to-slate-200/10",
     },
     {
       tab: "chat",
@@ -809,7 +809,7 @@ function WelcomeCards({ showRevisionBadge }) {
         "admin.cardStyleBody",
         "Review active type, color, and button system tokens.",
       ),
-      tone: "from-fuchsia-500/20 via-fuchsia-200/10 to-violet-200/10",
+      tone: "from-slate-500/20 via-slate-200/10 to-slate-200/10",
     },
     {
       tab: "info",
@@ -827,7 +827,7 @@ function WelcomeCards({ showRevisionBadge }) {
         "admin.cardSupportBody",
         "Track issues, tickets, and updates in one place.",
       ),
-      tone: "from-rose-500/20 via-pink-200/10 to-fuchsia-200/10",
+      tone: "from-rose-500/20 via-pink-200/10 to-slate-200/10",
     },
     {
       tab: "info/docs",
@@ -1029,7 +1029,7 @@ export default function AdminWelcomeTab({
         scale: scaledStep(1.02),
         rotate: 0,
         content: (
-          <div className="h-full rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-6 shadow-xl">
+          <div className="h-full rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50 p-6 shadow-xl">
             <h3 className="text-xl font-semibold text-slate-900">
               {t("admin.welcomeLandingHeadline", "Control room unlocked")}
             </h3>
@@ -1046,7 +1046,7 @@ export default function AdminWelcomeTab({
                   if (onSeenRevision) onSeenRevision();
                   if (onHideStory) onHideStory();
                 }}
-                className="rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600"
+                className="rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-600"
               >
                 {t("admin.welcomeEnterDashboard", "Enter the dashboard")}
               </button>
@@ -1058,7 +1058,7 @@ export default function AdminWelcomeTab({
                     new CustomEvent("admin:switchTab", { detail: "stats" }),
                   );
                 }}
-                className="rounded-xl border border-indigo-300 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 {t("admin.welcomeFinish", "Go to Stats →")}
               </button>

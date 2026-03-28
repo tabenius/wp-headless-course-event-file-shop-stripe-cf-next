@@ -79,7 +79,7 @@ export default function AdminSupportTab({
                     onClick={() => setSelectedTicketId(ticket.id)}
                     className={`w-full text-left border rounded px-3 py-2 text-sm transition-colors ${
                       selectedTicket?.id === ticket.id
-                        ? "border-purple-400 bg-purple-50"
+                        ? "border-slate-400 bg-slate-50"
                         : "border-gray-200 hover:border-gray-300 bg-white"
                     }`}
                   >
@@ -298,7 +298,7 @@ export default function AdminSupportTab({
                       onClick={() =>
                         updateSupportTicket({ comment: commentText })
                       }
-                      className="px-4 py-2 rounded bg-purple-700 text-white hover:bg-purple-800 text-sm disabled:opacity-50"
+                      className="px-4 py-2 rounded bg-slate-700 text-white hover:bg-slate-800 text-sm disabled:opacity-50"
                       disabled={!commentText.trim() || ticketSaving}
                     >
                       {ticketSaving ? "…" : t("admin.addComment")}

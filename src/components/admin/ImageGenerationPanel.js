@@ -251,9 +251,9 @@ export default function ImageGenerationPanel({
 
   return (
     <div
-      className={`border rounded p-4 space-y-3 bg-purple-50 ${context === "chat" ? "text-sm" : ""}`}
+      className={`border rounded p-4 space-y-3 bg-slate-50 ${context === "chat" ? "text-sm" : ""}`}
     >
-      <div className="text-sm font-semibold text-purple-800">
+      <div className="text-sm font-semibold text-slate-800">
         {t("admin.aiImagesTitle")}
       </div>
 
@@ -264,7 +264,7 @@ export default function ImageGenerationPanel({
               {Array.from({ length: quota.limit }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-3 h-3 rounded-sm ${i < quota.used ? "bg-purple-500" : "bg-gray-200"}`}
+                  className={`w-3 h-3 rounded-sm ${i < quota.used ? "bg-slate-500" : "bg-gray-200"}`}
                 />
               ))}
             </div>
@@ -342,7 +342,7 @@ export default function ImageGenerationPanel({
                 onClick={() => setCount(n)}
                 className={`px-3 py-1 rounded border text-sm ${
                   count === n
-                    ? "bg-purple-600 text-white border-purple-600"
+                    ? "bg-slate-600 text-white border-slate-600"
                     : "hover:bg-gray-50"
                 }`}
               >
@@ -376,7 +376,7 @@ export default function ImageGenerationPanel({
           type="button"
           onClick={handleGenerate}
           disabled={generating || quotaExhausted || !prompt.trim()}
-          className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 text-sm ml-auto"
+          className="px-4 py-2 rounded bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50 text-sm ml-auto"
         >
           {generating ? `${elapsed}s…` : t("admin.generateButton")}
         </button>

@@ -358,7 +358,7 @@ export default function AdminStyleTab({
                           setTypographySaveExpanded(false);
                         }
                       }}
-                      className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                      className="text-xs px-2 py-1 rounded bg-slate-600 text-white hover:bg-slate-700"
                     >
                       Save
                     </button>
@@ -573,7 +573,7 @@ export default function AdminStyleTab({
                       setLinkStyle(next);
                       applyFontRolesToDom(fontRoles, typographyPalette, next);
                     }}
-                    className={`px-3 py-1.5 text-xs border rounded-full ${linkStyle.hoverVariant === variant ? "bg-indigo-100 border-indigo-400 text-indigo-700" : "hover:bg-gray-100"}`}
+                    className={`px-3 py-1.5 text-xs border rounded-full ${linkStyle.hoverVariant === variant ? "bg-slate-100 border-slate-400 text-slate-700" : "hover:bg-gray-100"}`}
                   >
                     {variant}
                   </button>
@@ -744,7 +744,7 @@ export default function AdminStyleTab({
                     setSiteStyleTokens(next);
                     applySiteStyleTokensToDom(next);
                   }}
-                  className={`px-3 py-1 text-xs rounded border ${isActive ? "bg-purple-100 border-purple-400 text-purple-700 font-semibold" : "border-gray-300 text-gray-600 hover:border-gray-400"}`}
+                  className={`px-3 py-1 text-xs rounded border ${isActive ? "bg-slate-100 border-slate-400 text-slate-700 font-semibold" : "border-gray-300 text-gray-600 hover:border-gray-400"}`}
                 >
                   {preset.name}{preset.id === "upstream" && isActive ? " ●" : ""}
                 </button>
@@ -816,7 +816,7 @@ export default function AdminStyleTab({
                       setCtaSaveExpanded(false);
                     }
                   }}
-                  className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                  className="text-xs px-2 py-1 rounded bg-slate-600 text-white hover:bg-slate-700"
                 >
                   Save
                 </button>
@@ -994,7 +994,7 @@ export default function AdminStyleTab({
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+              <div className="text-xs uppercase tracking-wide text-slate-600 font-semibold">
                 {t("admin.styleTypography")}
               </div>
               <p className="text-sm text-gray-600">
@@ -1002,7 +1002,7 @@ export default function AdminStyleTab({
               </p>
             </div>
             <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+              <div className="text-xs uppercase tracking-wide text-slate-600 font-semibold">
                 {t("admin.styleColors")}
               </div>
               <p className="text-sm text-gray-600">
@@ -1010,7 +1010,7 @@ export default function AdminStyleTab({
               </p>
             </div>
             <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">
+              <div className="text-xs uppercase tracking-wide text-slate-600 font-semibold">
                 {t("admin.styleButtons")}
               </div>
               <p className="text-sm text-gray-600">

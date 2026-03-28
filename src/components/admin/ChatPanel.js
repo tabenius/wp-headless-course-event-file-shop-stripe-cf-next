@@ -36,7 +36,7 @@ export default function ChatPanel({
             type="button"
             onClick={rebuildIndex}
             disabled={chatLoading}
-            className="shrink-0 text-xs text-purple-400 hover:text-purple-200 disabled:opacity-50 mt-1"
+            className="shrink-0 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50 mt-1"
             title="Force-rebuild the RAG search index from site content"
           >
             Rebuild index
@@ -85,7 +85,7 @@ export default function ChatPanel({
           type="button"
           onClick={sendChat}
           disabled={chatLoading}
-          className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+          className="px-4 py-2 rounded bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50"
         >
           {chatLoading ? t("admin.running") : t("chat.send")}
         </button>

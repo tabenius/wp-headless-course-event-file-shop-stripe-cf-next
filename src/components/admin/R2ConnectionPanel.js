@@ -60,9 +60,9 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             {t("admin.clientChecklistTitle")}
           </h3>
           <p className="text-[11px] text-gray-500">{t("admin.clientChecklistHint")}</p>
-          <div className="border rounded-xl p-3 bg-indigo-50/70 border-indigo-200 space-y-2">
+          <div className="border rounded-xl p-3 bg-slate-50/70 border-slate-200 space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-800">
                 {backendMode === "r2" ? t("admin.uploadClientModeR2") : t("admin.uploadClientModeS3")}
               </span>
             </div>
@@ -92,7 +92,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
                         <button
                           type="button"
                           onClick={() => setShowSecret((prev) => !prev)}
-                          className="text-[10px] text-purple-700 hover:underline"
+                          className="text-[10px] text-slate-700 hover:underline"
                         >
                           {showSecret ? t("admin.hideSecret") : t("admin.showSecret")}
                         </button>
@@ -101,7 +101,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
                         type="button"
                         onClick={() => copyValue(row.id, rawValue)}
                         disabled={isNoDetails}
-                        className="text-[10px] px-1.5 py-0.5 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {copiedField === row.id ? t("admin.clientCopied") : t("common.copy")}
                       </button>
@@ -151,7 +151,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           )}
         </div>
 
-        <details className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-indigo-300 open:bg-indigo-50/30">
+        <details className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-slate-300 open:bg-slate-50/30">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
             <span className="flex items-center gap-3">
               <span className="h-7 w-7 flex-shrink-0">
@@ -171,7 +171,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
               href="https://winscp.net/eng/docs/start"
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-indigo-700 hover:underline"
+              className="text-xs text-slate-700 hover:underline"
               onClick={(event) => event.stopPropagation()}
             >
               {t("admin.clientDocs")}
@@ -203,7 +203,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
               href="https://cyberduck.io"
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-indigo-700 hover:underline"
+              className="text-xs text-slate-700 hover:underline"
               onClick={(event) => event.stopPropagation()}
             >
               {t("admin.clientWebsite")}

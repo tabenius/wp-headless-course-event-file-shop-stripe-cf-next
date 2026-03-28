@@ -62,7 +62,7 @@ export default function AdminStatsTab({
           <div className="text-xs text-gray-500 mt-1">Courses &amp; Events</div>
         </div>
         <div className="border rounded p-4 text-center">
-          <div className="text-2xl font-bold text-purple-700">
+          <div className="text-2xl font-bold text-slate-700">
             {users.length}
           </div>
           <div className="text-xs text-gray-500 mt-1">Registered users</div>

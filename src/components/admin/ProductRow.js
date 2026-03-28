@@ -3,7 +3,7 @@
 import BuyableIcon from "./BuyableIcon";
 
 function rowBackground(index) {
-  return index % 2 === 0 ? "bg-purple-50" : "bg-purple-100";
+  return index % 2 === 0 ? "bg-gray-50" : "bg-gray-100";
 }
 
 export default function ProductRow({
@@ -21,8 +21,8 @@ export default function ProductRow({
     ? meta.filter(Boolean).join(" · ")
     : meta || "";
   const buttonClasses = active
-    ? "bg-purple-100 border border-purple-500"
-    : `border border-gray-900 hover:bg-purple-50 ${rowBackground(rowIndex)}`;
+    ? "bg-gray-100 border border-gray-400"
+    : `border border-gray-700 hover:bg-gray-100 ${rowBackground(rowIndex)}`;
 
   return (
     <button

@@ -417,7 +417,7 @@ function applyFontRolesToDom(roles, palette, ls) {
   }
 }
 
-/** Alternating row background for product lists (purple hues). */
+/** Alternating row background for product lists (neutral hues). */
 function emptyProduct() {
   return {
     name: "",
@@ -739,7 +739,7 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
                   [{entry.level}]
                 </span>
                 {entry.reqId && (
-                  <span className="text-purple-400 shrink-0">
+                  <span className="text-slate-400 shrink-0">
                     {entry.reqId.slice(0, 8)}
                   </span>
                 )}
@@ -2636,7 +2636,7 @@ export default function AdminDashboard() {
               },
             ].map(({ group, examples }) => (
               <div key={group}>
-                <p className="text-purple-300 font-medium mb-1">{group}</p>
+                <p className="text-slate-300 font-medium mb-1">{group}</p>
                 <ul className="space-y-1">
                   {examples.map((ex) => (
                     <li key={ex}>
@@ -2669,7 +2669,7 @@ export default function AdminDashboard() {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-purple-600 h-2 rounded-full transition-all"
+              className="bg-slate-600 h-2 rounded-full transition-all"
               style={{ width: `${uploadProgress.percent}%` }}
             />
           </div>

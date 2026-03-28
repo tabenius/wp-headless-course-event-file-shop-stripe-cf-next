@@ -265,17 +265,17 @@ body:has(.admin-layout):not(.impress-enabled) {
   --admin-bg: #002b36;
   --admin-surface: #073642;
   --admin-surface-alt: #002b36;
-  --admin-border: #268bd2;
+  --admin-border: #5f747d;
   --admin-text: #eee8d5;
   --admin-muted: #93a1a1;
-  --admin-accent: #2aa198;
-  --admin-accent-strong: #268bd2;
-  --admin-success: #2aa198;
+  --admin-accent: #94a3b8;
+  --admin-accent-strong: #cbd5e1;
+  --admin-success: #84cc16;
   --admin-warning: #b58900;
   --admin-danger: #dc322f;
 
   --admin-header-bg: #073642;
-  --admin-header-border: #268bd2;
+  --admin-header-border: #5f747d;
   --admin-header-text: #fdf6e3;
   --admin-header-control-bg: rgba(0, 43, 54, 0.86);
   --admin-header-control-hover: rgba(7, 54, 66, 0.96);
@@ -287,12 +287,12 @@ body:has(.admin-layout):not(.impress-enabled) {
   --admin-kbd-border: rgba(255, 255, 255, 0.3);
   --admin-kbd-text: #fdf6e3;
 
-  --admin-docs-pill-bg: #2aa198;
-  --admin-docs-pill-text: #fdf6e3;
-  --admin-docs-pill-border: #268bd2;
+  --admin-docs-pill-bg: #d1d5db;
+  --admin-docs-pill-text: #0f172a;
+  --admin-docs-pill-border: #9ca3af;
   --admin-docs-link-bg: #003847;
   --admin-docs-link-text: #fdf6e3;
-  --admin-docs-link-border: #268bd2;
+  --admin-docs-link-border: #5f747d;
   --admin-docs-link-hover: #005066;
 
   --admin-torus-bg: #073642;
@@ -433,23 +433,6 @@ body:has(.admin-layout)::before {
   color: var(--admin-text) !important;
 }
 
-.admin-layout .text-indigo-600,
-.admin-layout .text-purple-600,
-.admin-layout .text-blue-700,
-.admin-layout .text-blue-900 {
-  color: var(--admin-accent) !important;
-}
-.admin-layout .hover\:text-indigo-800:hover,
-.admin-layout .hover\:text-purple-800:hover {
-  color: var(--admin-accent-strong) !important;
-}
-.admin-layout .bg-indigo-600 {
-  background-color: var(--admin-accent) !important;
-}
-.admin-layout .hover\:bg-indigo-700:hover {
-  background-color: var(--admin-accent-strong) !important;
-}
-
 .admin-layout .text-amber-900,
 .admin-layout .text-amber-800 {
   color: var(--admin-warning) !important;
@@ -547,160 +530,174 @@ body:has(.admin-layout)::before {
 }
 
 /* Storefront utility icon buttons (theme toggle + user menu) must never use CTA button colors */
-.storefront-icon-button {
+body:not(:has(.admin-layout)) .storefront-icon-button {
   background: rgba(255, 241, 241, 0.92) !important;
   color: #1a1a1a !important;
   border: 1px solid rgba(109, 0, 62, 0.35) !important;
   padding: 0 !important;
   box-shadow: none !important;
 }
-.storefront-icon-button:hover {
+body:not(:has(.admin-layout)) .storefront-icon-button:hover {
   background: #f0d0d0 !important;
   color: #1a1a1a !important;
 }
-.storefront-icon-button:focus-visible {
+body:not(:has(.admin-layout)) .storefront-icon-button:focus-visible {
   outline: 2px solid #6d003e;
   outline-offset: 2px;
 }
-.dark-mode header button.storefront-icon-button {
+.dark-mode body:not(:has(.admin-layout)) header button.storefront-icon-button {
   background: rgba(24, 24, 24, 0.88) !important;
   color: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.45) !important;
 }
-.dark-mode header button.storefront-icon-button:hover {
+.dark-mode body:not(:has(.admin-layout)) header button.storefront-icon-button:hover {
   background: rgba(40, 40, 40, 0.94) !important;
   color: #ffffff !important;
 }
 
 /* Darken the background image */
-.dark-mode body::before {
+.dark-mode body:not(:has(.admin-layout))::before {
   filter: brightness(0.25);
 }
 
 /* Dark mode text policy: headlines + normal text are white everywhere */
-.dark-mode header,
-.dark-mode footer {
+.dark-mode body:not(:has(.admin-layout)) header,
+.dark-mode body:not(:has(.admin-layout)) footer {
   background-color: rgba(22, 22, 22, 0.92);
   color: #fff;
 }
-.dark-mode header svg,
-.dark-mode header button,
-.dark-mode header a,
-.dark-mode footer a {
+.dark-mode body:not(:has(.admin-layout)) header svg,
+.dark-mode body:not(:has(.admin-layout)) header button,
+.dark-mode body:not(:has(.admin-layout)) header a,
+.dark-mode body:not(:has(.admin-layout)) footer a {
   color: #fff !important;
 }
 
-.dark-mode .storefront-nav-dropdown {
+.dark-mode body:not(:has(.admin-layout)) .storefront-nav-dropdown {
   background: rgba(24, 24, 24, 0.98) !important;
   border-color: rgba(255, 255, 255, 0.32) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
-.dark-mode .storefront-nav-dropdown .storefront-nav-dropdown-link {
+.dark-mode body:not(:has(.admin-layout))
+  .storefront-nav-dropdown
+  .storefront-nav-dropdown-link {
   color: #fff !important;
 }
-.dark-mode .storefront-nav-dropdown .storefront-nav-dropdown-link:hover {
+.dark-mode body:not(:has(.admin-layout))
+  .storefront-nav-dropdown
+  .storefront-nav-dropdown-link:hover {
   background: rgba(255, 255, 255, 0.12) !important;
   color: #fff !important;
 }
-.dark-mode .storefront-nav-dropdown .storefront-nav-dropdown-link-border {
+.dark-mode body:not(:has(.admin-layout))
+  .storefront-nav-dropdown
+  .storefront-nav-dropdown-link-border {
   border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-.dark-mode .storefront-mobile-nav-panel {
+.dark-mode body:not(:has(.admin-layout)) .storefront-mobile-nav-panel {
   background: rgba(24, 24, 24, 0.98) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.24);
 }
-.dark-mode .storefront-mobile-nav-link {
+.dark-mode body:not(:has(.admin-layout)) .storefront-mobile-nav-link {
   color: #fff !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
 }
-.dark-mode .storefront-mobile-nav-link:hover {
+.dark-mode body:not(:has(.admin-layout)) .storefront-mobile-nav-link:hover {
   color: #ffd166 !important;
 }
-.dark-mode .storefront-mobile-nav-burger-line {
+.dark-mode body:not(:has(.admin-layout)) .storefront-mobile-nav-burger-line {
   background: #fff !important;
 }
 
-.dark-mode article,
-.dark-mode .wp-content,
-.dark-mode main,
-.dark-mode section,
-.dark-mode a,
-.dark-mode p,
-.dark-mode li,
-.dark-mode span,
-.dark-mode label,
-.dark-mode h1,
-.dark-mode h2,
-.dark-mode h3,
-.dark-mode h4,
-.dark-mode h5,
-.dark-mode h6,
-.dark-mode .text-gray-900,
-.dark-mode .text-gray-800,
-.dark-mode .text-gray-700,
-.dark-mode .text-gray-600,
-.dark-mode .text-gray-500,
-.dark-mode .text-slate-900,
-.dark-mode .text-slate-800,
-.dark-mode .text-slate-700,
-.dark-mode .text-slate-600 {
+.dark-mode body:not(:has(.admin-layout)) article,
+.dark-mode body:not(:has(.admin-layout)) .wp-content,
+.dark-mode body:not(:has(.admin-layout)) main,
+.dark-mode body:not(:has(.admin-layout)) section,
+.dark-mode body:not(:has(.admin-layout)) a,
+.dark-mode body:not(:has(.admin-layout)) p,
+.dark-mode body:not(:has(.admin-layout)) li,
+.dark-mode body:not(:has(.admin-layout)) span,
+.dark-mode body:not(:has(.admin-layout)) label,
+.dark-mode body:not(:has(.admin-layout)) h1,
+.dark-mode body:not(:has(.admin-layout)) h2,
+.dark-mode body:not(:has(.admin-layout)) h3,
+.dark-mode body:not(:has(.admin-layout)) h4,
+.dark-mode body:not(:has(.admin-layout)) h5,
+.dark-mode body:not(:has(.admin-layout)) h6,
+.dark-mode body:not(:has(.admin-layout)) .text-gray-900,
+.dark-mode body:not(:has(.admin-layout)) .text-gray-800,
+.dark-mode body:not(:has(.admin-layout)) .text-gray-700,
+.dark-mode body:not(:has(.admin-layout)) .text-gray-600,
+.dark-mode body:not(:has(.admin-layout)) .text-gray-500,
+.dark-mode body:not(:has(.admin-layout)) .text-slate-900,
+.dark-mode body:not(:has(.admin-layout)) .text-slate-800,
+.dark-mode body:not(:has(.admin-layout)) .text-slate-700,
+.dark-mode body:not(:has(.admin-layout)) .text-slate-600 {
   color: #fff !important;
 }
 
 /* Gray/dark buttons — improve contrast in both modes */
-.wp-block-button__link.has-dark-gray-color,
-.wp-block-button__link.has-light-gray-background-color {
+body:not(:has(.admin-layout)) .wp-block-button__link.has-dark-gray-color,
+body:not(:has(.admin-layout)) .wp-block-button__link.has-light-gray-background-color {
   background-color: #444;
   color: #fff;
   border-color: #444;
 }
-.wp-block-button.is-style-outline .wp-block-button__link.has-dark-gray-color {
+body:not(:has(.admin-layout))
+  .wp-block-button.is-style-outline
+  .wp-block-button__link.has-dark-gray-color {
   background-color: transparent;
   color: #444;
   border-color: #444;
 }
-.wp-block-button.is-style-outline
+body:not(:has(.admin-layout))
+  .wp-block-button.is-style-outline
   .wp-block-button__link.has-dark-gray-color:hover {
   background-color: #444;
   color: #fff;
 }
 
 /* Buttons in dark mode */
-.dark-mode .wp-block-button__link,
-.dark-mode .wp-element-button {
+.dark-mode body:not(:has(.admin-layout)) .wp-block-button__link,
+.dark-mode body:not(:has(.admin-layout)) .wp-element-button {
   background-color: var(--color-primary);
   color: #fff;
 }
-.dark-mode .wp-block-button__link.has-dark-gray-color,
-.dark-mode .wp-block-button__link.has-light-gray-background-color {
+.dark-mode body:not(:has(.admin-layout)) .wp-block-button__link.has-dark-gray-color,
+.dark-mode body:not(:has(.admin-layout))
+  .wp-block-button__link.has-light-gray-background-color {
   background-color: #ccc;
   color: #1a1a1a;
   border-color: #ccc;
 }
-.dark-mode .wp-block-button.is-style-outline .wp-block-button__link {
+.dark-mode body:not(:has(.admin-layout))
+  .wp-block-button.is-style-outline
+  .wp-block-button__link {
   color: #e8e0e0;
   border-color: #e8e0e0;
 }
-.dark-mode .wp-block-button.is-style-outline .wp-block-button__link:hover {
+.dark-mode body:not(:has(.admin-layout))
+  .wp-block-button.is-style-outline
+  .wp-block-button__link:hover {
   background-color: #e8e0e0;
   color: #1a1a1a;
 }
 
 /* Shop call-to-action buttons: force white text on dark backgrounds */
-.shop-cta {
+body:not(:has(.admin-layout)) .shop-cta {
   color: #fff !important;
 }
-.shop-cta:hover,
-.shop-cta:focus {
+body:not(:has(.admin-layout)) .shop-cta:hover,
+body:not(:has(.admin-layout)) .shop-cta:focus {
   color: #fff !important;
 }
 
 /* Paywall and card backgrounds */
-.dark-mode .bg-white {
+.dark-mode body:not(:has(.admin-layout)) .bg-white {
   background-color: #2a2a2a !important;
 }
-.dark-mode .bg-gray-50 {
+.dark-mode body:not(:has(.admin-layout)) .bg-gray-50 {
   background-color: #222 !important;
 }
 
@@ -708,7 +705,7 @@ body:has(.admin-layout)::before {
 .home-events-date {
   color: #9a6a00 !important;
 }
-.dark-mode .home-events-date {
+.dark-mode body:not(:has(.admin-layout)) .home-events-date {
   color: #ffe08a !important;
 }
 
@@ -719,7 +716,7 @@ body:has(.admin-layout)::before {
 }
 
 /* CTA button style — zero specificity so WP theme rules always win */
-:where(button, .btn, [role="button"], input[type="submit"]) {
+body:not(:has(.admin-layout)) :where(button, .btn, [role="button"], input[type="submit"]) {
   background-color: var(--btn-bg, var(--color-primary));
   color:            var(--btn-color, var(--color-background));
   border-radius:    var(--btn-radius, 8px);

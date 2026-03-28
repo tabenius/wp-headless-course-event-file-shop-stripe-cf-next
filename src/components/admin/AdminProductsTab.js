@@ -93,7 +93,7 @@ function InnerTabs({ active, onChange }) {
           onClick={() => onChange(key)}
           className={`min-w-[8.5rem] flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
             active === key
-              ? "bg-white text-purple-800 shadow-sm"
+              ? "bg-white text-slate-800 shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
@@ -124,7 +124,7 @@ function ImagePickerButton({
         <button
           type="button"
           onClick={openPicker}
-          className="group relative z-10 pointer-events-auto flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 shadow-[inset_0_0_0_2px_rgba(17,24,39,0.35),0_1px_2px_rgba(0,0,0,0.18)] transition-colors hover:border-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+          className="group relative z-10 pointer-events-auto flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 shadow-[inset_0_0_0_2px_rgba(17,24,39,0.35),0_1px_2px_rgba(0,0,0,0.18)] transition-colors hover:border-gray-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-1"
           title={t("admin.uploadImage")}
           aria-label={t("admin.uploadImage")}
         >
@@ -239,7 +239,7 @@ function PriceAccessForm({
               }
               setPrice("");
             }}
-            className="accent-purple-600"
+            className="accent-slate-600"
           />
           <span>{t("admin.freeAccess")}</span>
         </label>
@@ -326,7 +326,7 @@ function PriceAccessForm({
                     type="checkbox"
                     checked={allowedUsers.includes(user.email)}
                     onChange={() => toggleUser(user.email)}
-                    className="accent-purple-600"
+                    className="accent-slate-600"
                   />
                   <span>
                     {user.name}{" "}
@@ -345,7 +345,7 @@ function PriceAccessForm({
                       type="checkbox"
                       checked
                       onChange={() => toggleUser(email)}
-                      className="accent-purple-600"
+                      className="accent-slate-600"
                     />
                     <span>{email}</span>
                   </label>
@@ -378,7 +378,7 @@ function PriceAccessForm({
         type="button"
         onClick={saveUnified}
         disabled={loading}
-        className="w-full py-2 rounded bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 disabled:opacity-50 transition-colors"
+        className="w-full py-2 rounded bg-slate-700 text-white text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
       >
         {loading ? t("admin.saving") : t("common.save", "Save")}
       </button>
@@ -528,7 +528,7 @@ function AccessTab({
   const TYPE_LABEL = { wc: "WC", lp: "LP", ev: "EV", shop: "DL", other: "URI" };
   const TYPE_COLOR = {
     wc: "bg-blue-100 text-blue-800",
-    lp: "bg-indigo-100 text-indigo-800",
+    lp: "bg-slate-100 text-slate-800",
     ev: "bg-amber-100 text-amber-800",
     shop: "bg-green-100 text-green-800",
     other: "bg-gray-100 text-gray-600",
@@ -791,10 +791,10 @@ function AccessTab({
                     typeFilter === key
                       ? urgent
                         ? "bg-amber-500 text-white border-amber-500"
-                        : "bg-purple-600 text-white border-purple-600"
+                        : "bg-slate-600 text-white border-slate-600"
                       : urgent
                         ? "text-amber-600 border-amber-300 hover:border-amber-500"
-                        : "text-gray-500 border-gray-300 hover:border-purple-400"
+                        : "text-gray-500 border-gray-300 hover:border-slate-400"
                   }`}
                 >
                   {label}
@@ -828,8 +828,8 @@ function AccessTab({
                   onClick={() => setTypeFilter(key)}
                   className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                     typeFilter === key
-                      ? "bg-purple-600 text-white border-purple-600"
-                      : "text-gray-500 border-gray-300 hover:border-purple-400"
+                      ? "bg-slate-600 text-white border-slate-600"
+                      : "text-gray-500 border-gray-300 hover:border-slate-400"
                   }`}
                 >
                   {label}
@@ -1008,7 +1008,7 @@ function AccessTab({
                       configured
                         ? isActive
                           ? "bg-white"
-                          : "bg-purple-500"
+                          : "bg-slate-500"
                         : isActive
                           ? "bg-amber-200"
                           : "bg-amber-300"
@@ -1055,7 +1055,7 @@ function AccessTab({
               <button
                 type="button"
                 onClick={applyManualUri}
-                className="px-2 py-1.5 text-[11px] rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+                className="px-2 py-1.5 text-[11px] rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
               >
                 {t("common.use", "Use")}
               </button>
@@ -1095,7 +1095,7 @@ function AccessTab({
                   wpItem?._source === "woocommerce"
                     ? "bg-blue-100 text-blue-800"
                     : wpItem?._source === "learnpress"
-                      ? "bg-indigo-100 text-indigo-800"
+                      ? "bg-slate-100 text-slate-800"
                       : "bg-amber-100 text-amber-800";
 
                 return (
@@ -1142,7 +1142,7 @@ function AccessTab({
                             </span>
                           )}
                           {(courses[selectedCourse] || wpParsedCents > 0) && (
-                            <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                            <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
                               {t("admin.configuredBadge")}
                             </span>
                           )}
@@ -1305,7 +1305,7 @@ function AccessTab({
                         onChange={(e) =>
                           updateProduct(shopIndex, "active", e.target.checked)
                         }
-                        className="accent-purple-600"
+                        className="accent-slate-600"
                       />
                       <span className="text-gray-700">
                         {t("admin.activeProduct")}
@@ -1329,7 +1329,7 @@ function AccessTab({
                   <button
                     type="button"
                     onClick={() => setShowImageGen((v) => !v)}
-                    className="mt-1 text-xs px-2.5 py-1 rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+                    className="mt-1 text-xs px-2.5 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
                   >
                     {t("admin.generateImages")}
                   </button>
@@ -1418,7 +1418,7 @@ function AccessTab({
                   type="checkbox"
                   checked={selectedCourseActive !== false}
                   onChange={(e) => setSelectedCourseActive(e.target.checked)}
-                  className="accent-purple-600"
+                  className="accent-slate-600"
                 />
                 <span>{t("admin.activeProduct", "Active product")}</span>
               </label>
@@ -1445,13 +1445,13 @@ function AccessTab({
               autoSaveTrigger={autoSaveTrigger}
             />
 
-            <div className="admin-vat-panel rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-indigo-50 p-4 space-y-3">
+            <div className="admin-vat-panel rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50 p-4 space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <p className="admin-product-title text-sm font-semibold text-purple-900">
+                  <p className="admin-product-title text-sm font-semibold text-slate-900">
                     {t("admin.vatMapTitle")}
                   </p>
-                  <p className="admin-soft-yellow text-xs text-purple-700/90 mt-1">
+                  <p className="admin-soft-yellow text-xs text-slate-700/90 mt-1">
                     {t("admin.vatMapHint")}
                   </p>
                 </div>
@@ -1459,7 +1459,7 @@ function AccessTab({
                   type="button"
                   onClick={() => updateShopVatByCategory(vatDraft)}
                   disabled={shopSettingsSaving}
-                  className="px-3 py-1.5 rounded-md bg-purple-700 text-white text-xs font-medium hover:bg-purple-800 disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-md bg-slate-700 text-white text-xs font-medium hover:bg-slate-800 disabled:opacity-50"
                 >
                   {shopSettingsSaving
                     ? t("common.saving", "Saving…")
@@ -1474,11 +1474,11 @@ function AccessTab({
                     return (
                       <span
                         key={`${category}-${slug}`}
-                        className="admin-vat-surface inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-2.5 py-1 text-[11px] text-purple-800"
+                        className="admin-vat-surface inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-800"
                         title={slug ? `${category} (${slug})` : category}
                       >
                         <span className="font-medium">{category}</span>
-                        <span className="text-purple-500">
+                        <span className="text-slate-500">
                           {Number.isFinite(mappedVat)
                             ? `${mappedVat}%`
                             : t("admin.vatNotSet")}
@@ -1504,7 +1504,7 @@ function AccessTab({
                     vatRows.map((row) => (
                       <div
                         key={row.slug}
-                        className="admin-vat-surface grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 items-center rounded-lg border border-purple-100 bg-white px-2 py-1.5"
+                        className="admin-vat-surface grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 items-center rounded-lg border border-slate-100 bg-white px-2 py-1.5"
                       >
                         <span className="text-sm text-gray-700 truncate" title={row.slug}>
                           {row.name}
@@ -1555,7 +1555,7 @@ function AccessTab({
                 <button
                   type="button"
                   onClick={addVatCategoryRow}
-                  className="px-3 py-2 rounded border border-purple-300 text-purple-700 text-sm hover:bg-purple-50"
+                  className="px-3 py-2 rounded border border-slate-300 text-slate-700 text-sm hover:bg-slate-50"
                 >
                   {t("common.add")}
                 </button>
@@ -1629,7 +1629,7 @@ function SettingsTab({
             key={key}
             className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
               shopVisibleTypes.includes(key)
-                ? "bg-purple-50"
+                ? "bg-slate-50"
                 : "bg-white hover:bg-gray-50"
             }`}
           >
@@ -1638,7 +1638,7 @@ function SettingsTab({
               checked={shopVisibleTypes.includes(key)}
               onChange={() => toggleShopType(key)}
               disabled={shopSettingsSaving}
-              className="mt-0.5 accent-purple-600"
+              className="mt-0.5 accent-slate-600"
             />
             <div>
               <p className="text-sm font-medium text-gray-800">{label}</p>
@@ -1648,7 +1648,7 @@ function SettingsTab({
         ))}
       </div>
       {shopSettingsSaving && (
-        <p className="text-xs text-purple-600">
+        <p className="text-xs text-slate-600">
           {t("common.saving", "Sparar…")}
         </p>
       )}

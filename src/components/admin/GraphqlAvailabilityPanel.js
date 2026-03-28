@@ -353,8 +353,8 @@ export default function GraphqlAvailabilityPanel() {
             aria-checked={enabled}
             onClick={handleToggle}
             disabled={toggling || !kvConfigured}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-40 ${
-              enabled ? "bg-purple-600" : "bg-gray-300"
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-40 ${
+              enabled ? "bg-slate-600" : "bg-gray-300"
             }`}
           >
             <span

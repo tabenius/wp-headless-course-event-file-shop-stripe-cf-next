@@ -112,7 +112,7 @@ export default function DebugLogPanel({ clientLogs, setClientLogs }) {
                   [{entry.level}]
                 </span>
                 {entry.reqId && (
-                  <span className="text-purple-400 shrink-0">
+                  <span className="text-slate-400 shrink-0">
                     {entry.reqId.slice(0, 8)}
                   </span>
                 )}

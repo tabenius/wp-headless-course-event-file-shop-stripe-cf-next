@@ -1427,7 +1427,7 @@ export default function AdminMediaLibraryTab({
                   isUnbound ? colorValue : "",
                 )
               }
-              className="text-[10px] text-indigo-700 hover:underline"
+              className="text-[10px] text-slate-700 hover:underline"
             >
               {isUnbound
                 ? t("admin.mediaDerivationBindParam", "Bind")
@@ -1481,7 +1481,7 @@ export default function AdminMediaLibraryTab({
           <button
             type="button"
             onClick={() => handleOperationParamChange(operationIndex, param.key, "")}
-            className="text-[10px] text-indigo-700 hover:underline"
+            className="text-[10px] text-slate-700 hover:underline"
           >
             {t("admin.mediaDerivationUnbindParam", "Unbind")}
           </button>
@@ -1510,7 +1510,7 @@ export default function AdminMediaLibraryTab({
                 key={`${operationIndex}-${param.key}-${shortcut}`}
                 type="button"
                 onClick={() => handleOperationParamChange(operationIndex, param.key, shortcut)}
-                className="rounded border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-100"
+                className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
               >
                 {shortcut}
               </button>
@@ -1866,7 +1866,7 @@ export default function AdminMediaLibraryTab({
             onClick={() => setSourceFilter(option.id)}
             className={`px-3 py-1.5 rounded border text-sm ${
               sourceFilter === option.id
-                ? "border-purple-500 bg-purple-50 text-purple-800"
+                ? "border-slate-500 bg-slate-50 text-slate-800"
                 : "border-gray-200 text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -2007,9 +2007,9 @@ export default function AdminMediaLibraryTab({
           onDragLeave={handleDropZoneDragLeave}
           onDragOver={handleDropZoneDragOver}
           onDrop={handleDropZoneDrop}
-          className={`rounded border-2 border-dashed p-4 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+          className={`rounded border-2 border-dashed p-4 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-500 ${
             isDragActive
-              ? "border-purple-500 bg-purple-50"
+              ? "border-slate-500 bg-slate-50"
               : "border-gray-300 bg-gray-50 hover:bg-gray-100"
           }`}
         >
@@ -2207,7 +2207,7 @@ export default function AdminMediaLibraryTab({
 
       {rows.length > 0 && (
         <div
-          className="overflow-auto border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="overflow-auto border rounded focus:outline-none focus:ring-2 focus:ring-slate-500"
           tabIndex={0}
           onFocus={() => {
             if (!focusedItemId && rows.length > 0) {
@@ -2243,7 +2243,7 @@ export default function AdminMediaLibraryTab({
                 ref={(node) => registerMediaRowRef(item.id, node)}
                 onClick={() => setFocusedItemId(item.id)}
                 className={`border-t align-top ${
-                  focusedItemId === item.id ? "bg-purple-50" : ""
+                  focusedItemId === item.id ? "bg-slate-50" : ""
                 }`}
               >
                   <td className="px-3 py-2">
@@ -2339,7 +2339,7 @@ export default function AdminMediaLibraryTab({
                         href={item.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-purple-700 hover:underline break-all"
+                        className="text-xs text-slate-700 hover:underline break-all"
                       >
                         {item.url}
                       </a>
@@ -2362,54 +2362,54 @@ export default function AdminMediaLibraryTab({
       )}
 
       {focusedItem && (
-        <div className="rounded border border-purple-200 bg-purple-50 p-4 text-xs space-y-3">
+        <div className="rounded border border-slate-200 bg-slate-50 p-4 text-xs space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-xs font-semibold text-purple-800">
+              <p className="text-xs font-semibold text-slate-800">
                 {t("admin.mediaSelectedAsset", "Selected asset")}
               </p>
-              <p className="text-[11px] text-purple-700 break-all">
+              <p className="text-[11px] text-slate-700 break-all">
                 {focusedItem.title || focusedItem.key || focusedItem.url}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setFocusedItemId("")}
-              className="px-3 py-1 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+              className="px-3 py-1 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
             >
               {t("common.clear", "Clear")}
             </button>
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
-            <p className="text-purple-700">
+            <p className="text-slate-700">
               {t("admin.mediaTypeLabel", "Type")}: {resolveAssetType(focusedItem)}
             </p>
-            <p className="text-purple-700">
+            <p className="text-slate-700">
               {t("admin.source", "Source")}: {sourceLabel(focusedItem.source)}
             </p>
-            <p className="text-purple-700">
+            <p className="text-slate-700">
               {t("admin.bucketSize", "Size")}: {formatBytes(focusedItem.sizeBytes)}
             </p>
-            <p className="text-purple-700">
+            <p className="text-slate-700">
               {t("admin.resolution", "Resolution")}:{" "}
               {formatResolution(focusedItem.width, focusedItem.height)}
             </p>
-            <p className="text-purple-700">
+            <p className="text-slate-700">
               {t("admin.bucketLastModified", "Updated")}: {formatUpdatedAt(focusedItem.updatedAt)}
             </p>
             {focusedItem.source === "wordpress" && focusedItem.sourceId && (
-              <p className="text-purple-700">
+              <p className="text-slate-700">
                 {t("admin.mediaWordPressId", "WordPress ID")}: {focusedItem.sourceId}
               </p>
             )}
           </div>
           {focusedAssetLineage.hasLineage && (
-            <div className="rounded border border-purple-200 bg-white/70 p-2 space-y-2">
+            <div className="rounded border border-slate-200 bg-white/70 p-2 space-y-2">
               <div>
-                <p className="text-[11px] font-semibold text-purple-800">
+                <p className="text-[11px] font-semibold text-slate-800">
                   {t("admin.mediaAssetLineageTitle", "Asset lineage")}
                 </p>
-                <p className="text-[11px] text-purple-700">
+                <p className="text-[11px] text-slate-700">
                   {t(
                     "admin.mediaAssetLineageHint",
                     "Jump between original and variant attachments that share the same asset ID.",
@@ -2419,7 +2419,7 @@ export default function AdminMediaLibraryTab({
               {(focusedAssetLineage.original?.item ||
                 focusedAssetLineage.original?.url) && (
                 <div className="space-y-1">
-                  <p className="text-[11px] font-semibold text-purple-800">
+                  <p className="text-[11px] font-semibold text-slate-800">
                     {t("admin.mediaAssetOriginal", "Original")}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
@@ -2429,7 +2429,7 @@ export default function AdminMediaLibraryTab({
                         onClick={() =>
                           focusItemById(focusedAssetLineage.original.item.id)
                         }
-                        className="px-2 py-1 rounded border text-[11px] bg-white text-purple-700 hover:bg-purple-100"
+                        className="px-2 py-1 rounded border text-[11px] bg-white text-slate-700 hover:bg-slate-100"
                       >
                         {focusedAssetLineage.original.item.title ||
                           `${t("admin.mediaWordPressId", "WordPress ID")} #${focusedAssetLineage.original.item.sourceId}`}
@@ -2439,7 +2439,7 @@ export default function AdminMediaLibraryTab({
                         href={focusedAssetLineage.original.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] text-purple-700 hover:underline break-all"
+                        className="text-[11px] text-slate-700 hover:underline break-all"
                       >
                         {focusedAssetLineage.original.url}
                       </a>
@@ -2449,7 +2449,7 @@ export default function AdminMediaLibraryTab({
               )}
               {focusedAssetLineage.variants.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[11px] font-semibold text-purple-800">
+                  <p className="text-[11px] font-semibold text-slate-800">
                     {t("admin.mediaAssetVariants", "Variants")} (
                     {focusedAssetLineage.variants.length})
                   </p>
@@ -2475,8 +2475,8 @@ export default function AdminMediaLibraryTab({
                             onClick={() => focusItemById(variant.linkedItem.id)}
                             className={`px-2 py-1 rounded border text-[11px] ${
                               isCurrent
-                                ? "bg-purple-200 text-purple-900 border-purple-400"
-                                : "bg-white text-purple-700 hover:bg-purple-100"
+                                ? "bg-slate-200 text-slate-900 border-slate-400"
+                                : "bg-white text-slate-700 hover:bg-slate-100"
                             }`}
                           >
                             {label}
@@ -2492,8 +2492,8 @@ export default function AdminMediaLibraryTab({
                             rel="noreferrer"
                             className={`px-2 py-1 rounded border text-[11px] ${
                               isCurrent
-                                ? "bg-purple-200 text-purple-900 border-purple-400"
-                                : "bg-white text-purple-700 hover:bg-purple-100"
+                                ? "bg-slate-200 text-slate-900 border-slate-400"
+                                : "bg-white text-slate-700 hover:bg-slate-100"
                             }`}
                           >
                             {label}
@@ -2505,8 +2505,8 @@ export default function AdminMediaLibraryTab({
                           key={variant.key}
                           className={`px-2 py-1 rounded border text-[11px] ${
                             isCurrent
-                              ? "bg-purple-200 text-purple-900 border-purple-400"
-                              : "bg-white text-purple-700"
+                              ? "bg-slate-200 text-slate-900 border-slate-400"
+                              : "bg-white text-slate-700"
                           }`}
                         >
                           {label}
@@ -2522,7 +2522,7 @@ export default function AdminMediaLibraryTab({
             <button
               type="button"
               onClick={() => copyUrl(focusedItem.url)}
-              className="px-3 py-1.5 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+              className="px-3 py-1.5 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
             >
               {t("admin.bucketCopyUrl", "Copy URL")}
             </button>
@@ -2530,7 +2530,7 @@ export default function AdminMediaLibraryTab({
               <button
                 type="button"
                 onClick={() => openViewer(focusedItem)}
-                className="px-3 py-1.5 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+                className="px-3 py-1.5 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
               >
                 {t("admin.mediaViewFile", "View")}
               </button>
@@ -2538,7 +2538,7 @@ export default function AdminMediaLibraryTab({
             <button
               type="button"
               onClick={() => openEditor(focusedItem)}
-              className="px-3 py-1.5 rounded border text-[11px] hover:bg-purple-100 text-purple-700"
+              className="px-3 py-1.5 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
             >
               {t("admin.mediaAnnotate", "Annotate")}
             </button>
@@ -2550,15 +2550,15 @@ export default function AdminMediaLibraryTab({
         <div
           ref={derivationPanelRef}
           onKeyDown={handleDerivationPanelKeyDown}
-          className="rounded border border-indigo-200 bg-indigo-50 p-4 text-xs space-y-3"
+          className="rounded border border-slate-200 bg-slate-50 p-4 text-xs space-y-3"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-800">
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800">
                 <span>{t("admin.mediaDerivationsTitle", "Derivation templates")}</span>
                 <AdminFieldHelpLink slug="technical-manual" />
               </p>
-              <p className="text-[11px] text-indigo-700">
+              <p className="text-[11px] text-slate-700">
                 {t(
                   "admin.mediaDerivationsHint",
                   "Choose an operation chain and tweak parameters before applying the derivation to the selected asset.",
@@ -2588,7 +2588,7 @@ export default function AdminMediaLibraryTab({
               </select>
             </div>
           </div>
-          <p className="text-[11px] text-indigo-700">
+          <p className="text-[11px] text-slate-700">
             {showAllDerivations
               ? t("admin.mediaDerivationShowAllHint", "Showing all derivations.")
               : focusedAssetType
@@ -2664,16 +2664,16 @@ export default function AdminMediaLibraryTab({
             </div>
           </div>
           {customOperations.length > 0 && (
-            <div className="space-y-3 rounded border border-indigo-100 bg-indigo-50 p-3 text-[11px] text-indigo-700">
+            <div className="space-y-3 rounded border border-slate-100 bg-slate-50 p-3 text-[11px] text-slate-700">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
-                  <p className="text-[11px] font-semibold text-indigo-800">
+                  <p className="text-[11px] font-semibold text-slate-800">
                     {t("admin.mediaDerivationSummaryTitle", "Derivation preview")}
                   </p>
-                  <p className="text-sm font-semibold text-indigo-900 truncate">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
                     {editorName?.trim() || derivationPseudoName}
                   </p>
-                  <p className="text-[11px] text-indigo-600">
+                  <p className="text-[11px] text-slate-600">
                     {t(
                       "admin.mediaDerivationPseudoName",
                       "Pseudo name: {name}",
@@ -2694,11 +2694,11 @@ export default function AdminMediaLibraryTab({
                 </span>
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-indigo-800">
+                <p className="text-[11px] font-semibold text-slate-800">
                   {t("admin.mediaDerivationUnboundLabel", "Unbound parameters")}
                 </p>
                 {derivationUnboundParameters.length === 0 ? (
-                  <p className="text-[11px] text-indigo-600">
+                  <p className="text-[11px] text-slate-600">
                     {t("admin.mediaDerivationAllBound", "All operation parameters are bound.")}
                   </p>
                 ) : (
@@ -2706,7 +2706,7 @@ export default function AdminMediaLibraryTab({
                     {derivationUnboundParameters.map((entry, entryIndex) => (
                       <span
                         key={`${entry.operator}-${entry.param}-${entryIndex}`}
-                        className="rounded border border-indigo-200 bg-white px-2 py-0.5 text-[11px] text-indigo-700"
+                        className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700"
                       >
                         {entry.operator}: {entry.param}
                       </span>
@@ -2715,14 +2715,14 @@ export default function AdminMediaLibraryTab({
                 )}
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-indigo-800">
+                <p className="text-[11px] font-semibold text-slate-800">
                   {t(
                     "admin.mediaDerivationInvalidNumericLabel",
                     "Invalid numeric parameters",
                   )}
                 </p>
                 {derivationInvalidParameters.length === 0 ? (
-                  <p className="text-[11px] text-indigo-600">
+                  <p className="text-[11px] text-slate-600">
                     {t(
                       "admin.mediaDerivationAllNumericValid",
                       "All numeric parameters are valid.",
@@ -2741,9 +2741,9 @@ export default function AdminMediaLibraryTab({
                   </div>
                 )}
               </div>
-              <div className="rounded border border-indigo-100 bg-white p-3">
+              <div className="rounded border border-slate-100 bg-white p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-indigo-700">
+                  <p className="text-[11px] font-semibold text-slate-700">
                     {t("admin.mediaDerivationMatrixTitle", "Operation matrix")}
                   </p>
                 </div>
@@ -2765,11 +2765,11 @@ export default function AdminMediaLibraryTab({
                     <tbody>
                       {derivationMatrixRows.map((row) => (
                         <tr key={`${row.operation.type}-${row.index}`}>
-                          <td className="px-2 py-1 text-[11px] font-semibold text-indigo-800">
+                          <td className="px-2 py-1 text-[11px] font-semibold text-slate-800">
                             {row.index + 1}
                           </td>
                           <td className="px-2 py-1">
-                            <p className="font-semibold text-indigo-800">
+                            <p className="font-semibold text-slate-800">
                               {row.schema?.label || row.operation.type}
                             </p>
                             {row.operation.type === "source" && (
@@ -2790,7 +2790,7 @@ export default function AdminMediaLibraryTab({
                                     key={`${row.index}-${param.key}`}
                                     className={`rounded-full px-2 py-0.5 border text-[10px] ${
                                       param.bound
-                                        ? "border-indigo-200 bg-indigo-50 text-indigo-800"
+                                        ? "border-slate-200 bg-slate-50 text-slate-800"
                                         : "border-amber-200 bg-amber-50 text-amber-800"
                                     }`}
                                   >
@@ -2811,7 +2811,7 @@ export default function AdminMediaLibraryTab({
             </div>
           )}
           {customOperations.length === 0 && (
-            <p className="text-[11px] text-indigo-700">
+            <p className="text-[11px] text-slate-700">
               {t("admin.mediaDerivationNoOperations", "Select a derivation to edit its operations.")}
             </p>
           )}
@@ -2820,14 +2820,14 @@ export default function AdminMediaLibraryTab({
               <button
                 type="button"
                 onClick={collapseAllOperations}
-                className="rounded border border-indigo-200 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50"
+                className="rounded border border-slate-200 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
               >
                 {t("admin.mediaDerivationCollapseAll", "Collapse all")}
               </button>
               <button
                 type="button"
                 onClick={expandAllOperations}
-                className="rounded border border-indigo-200 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50"
+                className="rounded border border-slate-200 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
               >
                 {t("admin.mediaDerivationExpandAll", "Expand all")}
               </button>
@@ -2846,8 +2846,8 @@ export default function AdminMediaLibraryTab({
                 key={`${operation.type}-${index}`}
                 className={`rounded border bg-white p-3 space-y-2 outline-none ${
                   isFocused
-                    ? "border-indigo-400 ring-2 ring-indigo-200"
-                    : "border-indigo-100"
+                    ? "border-slate-400 ring-2 ring-slate-200"
+                    : "border-slate-100"
                 }`}
                 tabIndex={0}
                 onKeyDown={(event) => handleOperationEditorKeyDown(event, index)}
@@ -2855,23 +2855,23 @@ export default function AdminMediaLibraryTab({
               >
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-indigo-800">
+                    <p className="text-[13px] font-semibold text-slate-800">
                       {schema?.label || operation.type}
                     </p>
                     {registrySchema?.tip && (
-                      <p className="text-[10px] text-indigo-700 truncate">
+                      <p className="text-[10px] text-slate-700 truncate">
                         {registrySchema.tip}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-[11px] text-indigo-600">
+                    <span className="text-[11px] text-slate-600">
                       {t("admin.mediaDerivationStep", "Step {n}", { n: index + 1 })}
                     </span>
                     <button
                       type="button"
                       onClick={() => toggleOperationCollapsed(index)}
-                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
                       title={isCollapsed
                         ? t("admin.mediaDerivationExpandStep", "Expand step")
                         : t("admin.mediaDerivationCollapseStep", "Collapse step")}
@@ -2884,7 +2884,7 @@ export default function AdminMediaLibraryTab({
                       type="button"
                       onClick={() => handleMoveOperation(index, -1)}
                       disabled={isFirst}
-                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"
+                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                       title={t("admin.mediaDerivationMoveStepUp", "Move step up")}
                     >
                       ↑
@@ -2893,7 +2893,7 @@ export default function AdminMediaLibraryTab({
                       type="button"
                       onClick={() => handleMoveOperation(index, 1)}
                       disabled={isLast}
-                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-40"
+                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                       title={t("admin.mediaDerivationMoveStepDown", "Move step down")}
                     >
                       ↓
@@ -2901,7 +2901,7 @@ export default function AdminMediaLibraryTab({
                     <button
                       type="button"
                       onClick={() => handleDuplicateOperation(index)}
-                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
                       title={t("admin.mediaDerivationDuplicateStep", "Duplicate step")}
                     >
                       {t("admin.mediaDerivationDuplicateStepShort", "Dup")}
@@ -2909,7 +2909,7 @@ export default function AdminMediaLibraryTab({
                     <button
                       type="button"
                       onClick={() => handleBindMissingOperationParams(index)}
-                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
                       title={t("admin.mediaDerivationBindMissingParams", "Bind missing params")}
                     >
                       {t("admin.mediaDerivationBindMissingShort", "Bind")}
@@ -2917,7 +2917,7 @@ export default function AdminMediaLibraryTab({
                     <button
                       type="button"
                       onClick={() => handleResetOperationDefaults(index)}
-                      className="rounded border border-indigo-200 px-1 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
                       title={t("admin.mediaDerivationResetStepDefaults", "Reset to defaults")}
                     >
                       {t("admin.mediaDerivationResetStepDefaultsShort", "Reset")}
@@ -2932,21 +2932,21 @@ export default function AdminMediaLibraryTab({
                   </div>
                 </div>
                 {registrySchema?.techTip && (
-                  <p className="text-[10px] text-indigo-500">
+                  <p className="text-[10px] text-slate-500">
                     {registrySchema.techTip}
                   </p>
                 )}
                 {isCollapsed && (
                   <div className="flex flex-wrap gap-1">
                     {summaryParts.length === 0 ? (
-                      <span className="text-[10px] text-indigo-500">
+                      <span className="text-[10px] text-slate-500">
                         {t("admin.mediaDerivationNoParams", "No parameters")}
                       </span>
                     ) : (
                       summaryParts.map((part, partIndex) => (
                         <span
                           key={`${operation.type}-${index}-summary-${partIndex}`}
-                          className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-800"
+                          className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-800"
                         >
                           {part}
                         </span>
@@ -2957,7 +2957,7 @@ export default function AdminMediaLibraryTab({
                 {!isCollapsed && (
                   <>
                 {operation.type === "source" && (
-                  <p className="text-[11px] text-indigo-600">
+                  <p className="text-[11px] text-slate-600">
                     {t(
                       "admin.mediaDerivationSourceHint",
                       "The source step tracks the asset you select in the table above.",
@@ -2967,7 +2967,7 @@ export default function AdminMediaLibraryTab({
                 {schema?.parameters?.map((param) =>
                   renderOperationParamField(operation, index, param),
                 )}
-                <p className="text-[10px] text-indigo-500">
+                <p className="text-[10px] text-slate-500">
                   {t(
                     "admin.mediaDerivationStepHotkeys",
                     "Tip: Alt+F fold, Alt+B bind, Alt+R reset, Alt+ArrowUp/Down move.",
@@ -2979,8 +2979,8 @@ export default function AdminMediaLibraryTab({
             );
           })}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-1 rounded border border-indigo-200 bg-white px-2 py-1">
-              <span className="text-[11px] font-semibold text-indigo-700">
+            <div className="flex flex-wrap items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">
+              <span className="text-[11px] font-semibold text-slate-700">
                 {t("admin.mediaDerivationQuickAdd", "Quick add")}
               </span>
               {quickOperationButtons.map((entry) => (
@@ -2988,7 +2988,7 @@ export default function AdminMediaLibraryTab({
                   key={`quick-add-${entry.type}`}
                   type="button"
                   onClick={() => addOperationByType(entry.type)}
-                  className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-100"
+                  className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
                 >
                   {entry.schema?.icon ? `${entry.schema.icon} ` : ""}
                   {entry.schema?.label || entry.type}
@@ -3041,7 +3041,7 @@ export default function AdminMediaLibraryTab({
             >
               {t("admin.mediaDerivationAddOperation", "Add operation")}
             </button>
-            <span className="text-[10px] text-indigo-600">
+            <span className="text-[10px] text-slate-600">
               {t(
                 "admin.mediaDerivationPanelHotkeys",
                 "Panel hotkeys: Alt+/ search, Alt+N add, Alt+E collapse all, Alt+Shift+E expand all.",
@@ -3049,7 +3049,7 @@ export default function AdminMediaLibraryTab({
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex items-center gap-2 text-[11px] text-indigo-700">
+            <label className="inline-flex items-center gap-2 text-[11px] text-slate-700">
               <span>{t("admin.mediaDerivationPreviewQuality", "Preview quality")}</span>
               <select
                 className="border rounded px-2 py-1 text-xs bg-white"
@@ -3069,7 +3069,7 @@ export default function AdminMediaLibraryTab({
               type="button"
               onClick={saveDerivationTemplate}
               disabled={derivationSaveStatus === "saving"}
-              className="px-3 py-1.5 rounded bg-indigo-700 text-white text-xs hover:bg-indigo-600 disabled:opacity-50"
+              className="px-3 py-1.5 rounded bg-slate-700 text-white text-xs hover:bg-slate-600 disabled:opacity-50"
             >
               {t("admin.mediaDerivationSave", "Save derivation")}
             </button>
@@ -3079,7 +3079,7 @@ export default function AdminMediaLibraryTab({
               disabled={
                 applyingDerivation || savingPreview || !canApplyDerivationNow()
               }
-              className="px-3 py-1.5 rounded bg-indigo-700 text-white text-xs hover:bg-indigo-600 disabled:opacity-50"
+              className="px-3 py-1.5 rounded bg-slate-700 text-white text-xs hover:bg-slate-600 disabled:opacity-50"
             >
               {applyingDerivation
                 ? t("admin.mediaDerivationApplying", "Applying…")
@@ -3109,7 +3109,7 @@ export default function AdminMediaLibraryTab({
                 : t("admin.mediaSaveDerivedAsset", "Save to library")}
             </button>
             {!focusedItem && (
-              <span className="text-[11px] text-indigo-600">
+              <span className="text-[11px] text-slate-600">
                 {t("admin.mediaDerivationRequiresAsset", "Select an asset first.")}
               </span>
             )}
@@ -3140,14 +3140,14 @@ export default function AdminMediaLibraryTab({
           </div>
           {applyingDerivation && (
             <div className="space-y-1 py-1">
-              <div className="h-1.5 w-full rounded-full bg-indigo-100 overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-indigo-500 transition-all duration-500 ease-out"
+                  className="h-full rounded-full bg-slate-500 transition-all duration-500 ease-out"
                   style={{ width: `${applyProgress}%` }}
                 />
               </div>
               {applyProgressLabel && (
-                <p className="text-[10px] text-indigo-400">{applyProgressLabel}</p>
+                <p className="text-[10px] text-slate-400">{applyProgressLabel}</p>
               )}
             </div>
           )}
@@ -3162,8 +3162,8 @@ export default function AdminMediaLibraryTab({
             </p>
           )}
           {previewBlobUrl && (
-            <div className="rounded border border-indigo-100 bg-white p-3 space-y-2">
-              <p className="text-[11px] font-semibold text-indigo-800">
+            <div className="rounded border border-slate-100 bg-white p-3 space-y-2">
+              <p className="text-[11px] font-semibold text-slate-800">
                 {t("admin.mediaDerivationPreview", "Derivation preview")}
               </p>
               {lastPreviewQuality === "fast" && (

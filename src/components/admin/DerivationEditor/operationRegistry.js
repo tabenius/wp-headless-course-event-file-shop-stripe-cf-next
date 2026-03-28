@@ -16,7 +16,7 @@
 export const CATEGORIES = {
   transform: { label: "Transform", color: "blue" },
   colorTone: { label: "Color & Tone", color: "amber" },
-  effects: { label: "Effects", color: "purple" },
+  effects: { label: "Effects", color: "slate" },
   artistic: { label: "Artistic", color: "rose" },
 };
 

@@ -326,7 +326,7 @@ export default function AdminSettingsPanel() {
             onClick={() => setTier(option.id)}
             className={`rounded border px-3 py-1.5 text-sm ${
               tier === option.id
-                ? "border-purple-700 bg-purple-700 text-white"
+                ? "border-slate-700 bg-slate-700 text-white"
                 : "border-gray-200 text-gray-700 hover:bg-gray-50"
             }`}
           >
