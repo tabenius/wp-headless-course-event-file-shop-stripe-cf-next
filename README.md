@@ -349,6 +349,7 @@ When deployed to Cloudflare, all app data (user accounts, purchases, access rule
 | `MAX_UPLOAD_BYTES`     | bytes (e.g. `104857600`)   | Global hard cap for all uploads      |
 | `MAX_IMAGE_UPLOAD_BYTES` | bytes (e.g. `20971520`)  | Image-only upload cap                |
 | `GRAPHQL_EDGE_CACHE_TTL_SECONDS` | seconds (e.g. `60`) | Edge cache TTL for public GraphQL reads |
+| `SKIP_UPSTREAM_DURING_BUILD` | `1` (default) or `0` | Skip WordPress upstream calls during build (GraphQL + menu URI probes) |
 
 ### Secrets vs. public settings
 

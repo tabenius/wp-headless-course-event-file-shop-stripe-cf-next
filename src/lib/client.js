@@ -6,6 +6,7 @@ import { appendServerLog } from "@/lib/serverLog";
 import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { getStorefrontCacheEpoch } from "@/lib/storefrontCache";
+import { isBuildPhase, shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
 
 const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
@@ -15,12 +16,7 @@ const GRAPHQL_BUILD_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_BUILD_DELAY_MS || "180", 10) || 180;
 const GRAPHQL_BUILD_TIMEOUT_MS =
   Number.parseInt(process.env.GRAPHQL_BUILD_TIMEOUT_MS || "15000", 10) || 15000;
-const IS_BUILD_PHASE =
-  process.env.NEXT_PHASE === "phase-production-build" ||
-  process.env.npm_lifecycle_event === "build" ||
-  process.env.npm_lifecycle_event === "cf:build" ||
-  process.env.npm_lifecycle_event === "cf:deploy" ||
-  process.env.__NEXT_PRIVATE_BUILD_WORKER === "1";
+const IS_BUILD_PHASE = isBuildPhase();
 const EFFECTIVE_DELAY_MS = IS_BUILD_PHASE
   ? Math.max(DEFAULT_DELAY_MS, GRAPHQL_BUILD_DELAY_MS)
   : DEFAULT_DELAY_MS;
@@ -230,6 +226,10 @@ export async function fetchGraphQL(
 ) {
   if (typeof query !== "string" || query.trim().length === 0) {
     console.error("fetchGraphQL called with an invalid query");
+    return {};
+  }
+
+  if (shouldSkipUpstreamDuringBuild()) {
     return {};
   }
 

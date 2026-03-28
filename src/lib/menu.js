@@ -1,6 +1,7 @@
 import { fetchGraphQL } from "@/lib/client";
 import site from "@/lib/site";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
+import { shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
 import {
   ensureCoreMenuEntriesByExistence,
   filterNavigationByExistence,
@@ -371,6 +372,7 @@ async function getSitemapPathSet() {
 }
 
 async function doesWordPressUriExist(path) {
+  if (shouldSkipUpstreamDuringBuild()) return true;
   const normalized = normalizeUriForLookup(path);
   if (normalized === "/") return true;
 
@@ -410,6 +412,11 @@ async function canRenderMenuHref(href) {
  * Returns items with optional `children` arrays.
  */
 export const getNavigation = cache(async function getNavigation() {
+  if (shouldSkipUpstreamDuringBuild()) {
+    const alwaysRenderHref = async () => true;
+    return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
+  }
+
   const snapshot = await getMenuSnapshot();
   if (snapshot && snapshot.length > 0) {
     return ensureCoreMenuEntriesByExistence(snapshot, canRenderMenuHref);

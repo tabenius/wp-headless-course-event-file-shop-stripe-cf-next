@@ -8,6 +8,7 @@ import WordPressSetupPage from "@/components/setup/WordPressSetupPage";
 import { notFound } from "next/navigation";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
+import { shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
 
 const GET_CONTENT_QUERY = `
 ${SinglePageFragment}
@@ -20,6 +21,10 @@ query GetNodeByUri($uri: String!) {
 `;
 
 export default async function HomePage() {
+  if (shouldSkipUpstreamDuringBuild()) {
+    return <WordPressSetupPage />;
+  }
+
   // If no WordPress host is configured (env var or cookie), show the setup page.
   // This also makes the build succeed without a live WordPress instance.
   const wpUrl = await resolveWordPressUrl();
