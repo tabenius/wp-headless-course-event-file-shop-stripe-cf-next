@@ -40,7 +40,7 @@ export default function AdminDocsContextLinks({
   return (
     <div className={`${rootClass} ${className}`.trim()}>
       <span
-        className="inline-flex items-center rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 font-semibold text-sky-700"
+        className="inline-flex items-center rounded-full border border-amber-500 bg-amber-200 px-2 py-0.5 font-semibold text-amber-950"
         title={t("admin.docsContextHint", "Context-aware docs links for this section.")}
       >
         {t("admin.docsContextPrefix", "Need help?")}
@@ -51,7 +51,7 @@ export default function AdminDocsContextLinks({
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center rounded-full border border-slate-300 bg-white px-2.5 py-1 font-medium text-slate-700 hover:bg-slate-100"
+          className="inline-flex items-center rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 font-medium text-white hover:bg-slate-800"
           title={t("admin.docsOpenGuideTooltip", "Open guide on RAGBAZ.xyz ({lang}).", {
             lang: docsLang.toUpperCase(),
           })}
