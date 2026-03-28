@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 function shouldTag(request) {
   const { pathname } = request.nextUrl;
   return (
