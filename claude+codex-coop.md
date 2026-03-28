@@ -3596,3 +3596,19 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Replaced docs-context color utilities with dedicated classes (`admin-docs-context-pill`, `admin-docs-context-link`).
 - Added explicit high-contrast colors with `!important` in `globals.css` to prevent theme overrides from producing low-contrast text.
 - Result: the docs help pill/link labels remain legible across all admin themes.
+
+### Codex — admin theme reset to Sun/Moon + source-map debug uplift (commit: `a304dd3`)
+
+- Reduced admin theme model to two themes only:
+  - `sun` (solarized light)
+  - `moon` (solarized-gruvbox dark)
+- Added migration mapping for legacy stored theme values (`light/gruvbox/earth/lollipop`) so existing sessions map to `sun/moon` without breaking.
+- Replaced multi-theme hardcoded color branches with tokenized admin palette variables in `globals.css`, including shared header/drawer/control/ticker/docs-chip styling.
+- Updated theme toggle semantics/icons in admin header to `☀ / 🌙` and localized labels to Sun/Moon in EN/SV/ES.
+- Enabled production browser source maps by default (opt-out via `PRODUCTION_BROWSER_SOURCEMAPS=0`) and exposed stack details in admin error UI for faster diagnosis of minified runtime errors.
+
+- Validation:
+  - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminThemeWrapper.js src/components/admin/AdminDocsContextLinks.js next.config.mjs src/app/admin/error.js`
+  - JSON parse checks for `src/lib/i18n/en.json`, `sv.json`, `es.json`
+  - `node --check` for updated JS files
+  - `node --test tests/i18n-admin-parity.test.js`
