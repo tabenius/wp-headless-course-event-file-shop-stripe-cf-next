@@ -3580,3 +3580,13 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npx eslint src/middleware.js`
   - `node --check src/middleware.js`
+
+### Codex — docs-context diacritics + contrast fix (commit: `c817d21`)
+
+- Fixed missing diacritics in admin docs context copy:
+  - SV: `Behöver du hjälp?`
+  - ES: `¿Necesitas ayuda?`
+- Improved docs context chip/link contrast in `AdminDocsContextLinks` so labels remain legible across themes.
+- Validation:
+  - JSON parse checks for `src/lib/i18n/sv.json` and `src/lib/i18n/es.json`
+  - `npx eslint src/components/admin/AdminDocsContextLinks.js`
