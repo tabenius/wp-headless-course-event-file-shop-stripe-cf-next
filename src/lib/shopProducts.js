@@ -27,7 +27,7 @@ const defaultCurrency = site.defaultCurrency || "SEK";
 const SHOP_CORE_MODE_TTL_MS =
   Number.parseInt(process.env.SHOP_CORE_MODE_TTL_MS || "900000", 10) || 900000;
 const SHOP_CATALOG_CACHE_TTL_MS =
-  Number.parseInt(process.env.SHOP_CATALOG_CACHE_TTL_MS || "120000", 10) || 120000;
+  Number.parseInt(process.env.SHOP_CATALOG_CACHE_TTL_MS || "300000", 10) || 300000;
 let shopCoreMode = {
   mode: "unknown",
   expiresAt: 0,
