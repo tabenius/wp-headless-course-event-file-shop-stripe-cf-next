@@ -4,7 +4,11 @@ import { grantCourseAccess } from "@/lib/courseAccess";
 import { grantDigitalAccess } from "@/lib/digitalAccessStore";
 import { sendEmail } from "@/lib/email";
 import { tenantConfig } from "@/lib/tenantConfig";
-import { readWcProxySettings } from "@/lib/adminSettingsStore";
+import {
+  readWcProxySettings,
+  readWcRestApiSettings,
+} from "@/lib/adminSettingsStore";
+import { createWcOrder } from "@/lib/wooCommerceApi";
 
 function parseSignature(headerValue) {
   if (typeof headerValue !== "string") return {};
@@ -61,6 +65,38 @@ async function maybeForwardToWcProxy(rawBody, eventType) {
   }
 }
 
+async function maybeSyncWcOrder(session, email) {
+  try {
+    const config = await readWcRestApiSettings();
+    if (
+      !config?.sendOrders ||
+      !config?.wcUrl ||
+      !config?.consumerKey ||
+      !config?.consumerSecret
+    ) {
+      return;
+    }
+    const productName =
+      session?.metadata?.product_name ||
+      session?.metadata?.course_title ||
+      session?.metadata?.course_uri ||
+      "RAGBAZ purchase";
+    await createWcOrder(
+      {
+        email,
+        productName,
+        amountTotal: session?.amount_total,
+        currency: session?.currency,
+        sessionId: session?.id,
+        metadata: session?.metadata || {},
+      },
+      config,
+    );
+  } catch (error) {
+    console.error("WC order sync failed:", error);
+  }
+}
+
 export async function POST(request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = request.headers.get("stripe-signature") || "";
@@ -93,6 +129,7 @@ export async function POST(request) {
       ).toLowerCase();
 
       if (paymentStatus === "paid" && email) {
+        await maybeSyncWcOrder(session, email);
         if (
           (purchaseKind === "digital_file" ||
             purchaseKind === "course_product" ||

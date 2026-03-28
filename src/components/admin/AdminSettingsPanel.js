@@ -34,6 +34,8 @@ export default function AdminSettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [savingWcProxy, setSavingWcProxy] = useState(false);
+  const [savingWcRest, setSavingWcRest] = useState(false);
+  const [testingWcRest, setTestingWcRest] = useState(false);
   const [savingStripe, setSavingStripe] = useState(false);
   const [wcProxy, setWcProxy] = useState({
     enabled: false,
@@ -47,6 +49,17 @@ export default function AdminSettingsPanel() {
     publishableKey: "",
     updatedAt: null,
   });
+  const [wcRestApi, setWcRestApi] = useState({
+    wcUrl: "",
+    consumerKey: "",
+    hasConsumerSecret: false,
+    consumerSecret: "",
+    sendOrders: false,
+    readTax: false,
+    updatedAt: null,
+  });
+  const [wcRestTestMessage, setWcRestTestMessage] = useState("");
+  const [wcRestTestError, setWcRestTestError] = useState("");
   const [stripeSecretInput, setStripeSecretInput] = useState("");
   const [stripePublishableInput, setStripePublishableInput] = useState("");
 
@@ -67,16 +80,21 @@ export default function AdminSettingsPanel() {
     setLoading(true);
     setError("");
     try {
-      const [wcRes, stripeRes] = await Promise.all([
+      const [wcRes, wcRestRes, stripeRes] = await Promise.all([
         fetch("/api/admin/settings/wc-proxy", { cache: "no-store" }),
+        fetch("/api/admin/settings/wc-rest-api", { cache: "no-store" }),
         fetch("/api/admin/settings/stripe-keys", { cache: "no-store" }),
       ]);
-      const [wcJson, stripeJson] = await Promise.all([
+      const [wcJson, wcRestJson, stripeJson] = await Promise.all([
         wcRes.json().catch(() => ({})),
+        wcRestRes.json().catch(() => ({})),
         stripeRes.json().catch(() => ({})),
       ]);
       if (!wcRes.ok || !wcJson?.ok) {
         throw new Error(wcJson?.error || "Could not load WC proxy settings.");
+      }
+      if (!wcRestRes.ok || !wcRestJson?.ok) {
+        throw new Error(wcRestJson?.error || "Could not load WC REST API settings.");
       }
       if (!stripeRes.ok || !stripeJson?.ok) {
         throw new Error(
@@ -95,6 +113,17 @@ export default function AdminSettingsPanel() {
         publishableKey: stripeJson.settings?.publishableKey || "",
         updatedAt: stripeJson.settings?.updatedAt || null,
       });
+      setWcRestApi({
+        wcUrl: wcRestJson.settings?.wcUrl || "",
+        consumerKey: wcRestJson.settings?.consumerKey || "",
+        hasConsumerSecret: Boolean(wcRestJson.settings?.hasConsumerSecret),
+        consumerSecret: "",
+        sendOrders: Boolean(wcRestJson.settings?.sendOrders),
+        readTax: Boolean(wcRestJson.settings?.readTax),
+        updatedAt: wcRestJson.settings?.updatedAt || null,
+      });
+      setWcRestTestMessage("");
+      setWcRestTestError("");
       setStripePublishableInput(stripeJson.settings?.publishableKey || "");
       setStripeSecretInput("");
     } catch (loadError) {
@@ -168,6 +197,77 @@ export default function AdminSettingsPanel() {
       setError(saveError?.message || "Could not save Stripe overrides.");
     } finally {
       setSavingStripe(false);
+    }
+  }
+
+  async function saveWcRestApi() {
+    setSavingWcRest(true);
+    setError("");
+    setWcRestTestMessage("");
+    setWcRestTestError("");
+    try {
+      const response = await fetch("/api/admin/settings/wc-rest-api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wcUrl: wcRestApi.wcUrl.trim(),
+          consumerKey: wcRestApi.consumerKey.trim(),
+          consumerSecret: wcRestApi.consumerSecret.trim(),
+          sendOrders: wcRestApi.sendOrders,
+          readTax: wcRestApi.readTax,
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || "Could not save WooCommerce REST API settings.");
+      }
+      setWcRestApi((current) => ({
+        ...current,
+        wcUrl: json.settings?.wcUrl || "",
+        consumerKey: json.settings?.consumerKey || "",
+        hasConsumerSecret: Boolean(json.settings?.hasConsumerSecret),
+        consumerSecret: "",
+        sendOrders: Boolean(json.settings?.sendOrders),
+        readTax: Boolean(json.settings?.readTax),
+        updatedAt: json.settings?.updatedAt || null,
+      }));
+    } catch (saveError) {
+      setError(saveError?.message || "Could not save WooCommerce REST API settings.");
+    } finally {
+      setSavingWcRest(false);
+    }
+  }
+
+  async function testWcRestApi() {
+    setTestingWcRest(true);
+    setError("");
+    setWcRestTestMessage("");
+    setWcRestTestError("");
+    try {
+      const response = await fetch("/api/admin/settings/wc-rest-api/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wcUrl: wcRestApi.wcUrl.trim(),
+          consumerKey: wcRestApi.consumerKey.trim(),
+          consumerSecret: wcRestApi.consumerSecret.trim(),
+          sendOrders: wcRestApi.sendOrders,
+          readTax: wcRestApi.readTax,
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || "WooCommerce REST API test failed.");
+      }
+      setWcRestTestMessage(
+        json?.message || "WooCommerce REST API connection succeeded.",
+      );
+    } catch (testError) {
+      setWcRestTestError(
+        testError?.message || "WooCommerce REST API test failed.",
+      );
+    } finally {
+      setTestingWcRest(false);
     }
   }
 
@@ -312,6 +412,147 @@ export default function AdminSettingsPanel() {
         <div className="rounded border p-4 space-y-3">
           <div className="inline-flex items-center gap-1">
             <h3 className="text-lg font-semibold text-gray-900">
+              {t(
+                "admin.settingsWcRestApiTitle",
+                "Developer: WooCommerce REST API",
+              )}
+            </h3>
+            <AdminFieldHelpLink slug="technical-manual" />
+          </div>
+          <p className="text-sm text-gray-600">
+            {t(
+              "admin.settingsWcRestApiHint",
+              "Connect WooCommerce REST API for optional order relay and tax reads.",
+            )}
+          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-sm text-gray-700">
+              <span className="mb-1 block text-xs text-gray-500">
+                WooCommerce URL
+              </span>
+              <input
+                type="url"
+                value={wcRestApi.wcUrl}
+                onChange={(event) =>
+                  setWcRestApi((current) => ({
+                    ...current,
+                    wcUrl: event.target.value,
+                  }))
+                }
+                className="w-full rounded border px-3 py-2 text-sm"
+                placeholder="https://example.com"
+              />
+            </label>
+            <label className="text-sm text-gray-700">
+              <span className="mb-1 block text-xs text-gray-500">
+                Consumer key
+              </span>
+              <input
+                type="text"
+                value={wcRestApi.consumerKey}
+                onChange={(event) =>
+                  setWcRestApi((current) => ({
+                    ...current,
+                    consumerKey: event.target.value,
+                  }))
+                }
+                className="w-full rounded border px-3 py-2 text-sm"
+                placeholder="ck_..."
+              />
+            </label>
+            <label className="text-sm text-gray-700 md:col-span-2">
+              <span className="mb-1 block text-xs text-gray-500">
+                Consumer secret
+              </span>
+              <input
+                type="password"
+                value={wcRestApi.consumerSecret}
+                onChange={(event) =>
+                  setWcRestApi((current) => ({
+                    ...current,
+                    consumerSecret: event.target.value,
+                  }))
+                }
+                className="w-full rounded border px-3 py-2 text-sm"
+                placeholder={
+                  wcRestApi.hasConsumerSecret
+                    ? "Leave blank to keep current secret"
+                    : "cs_..."
+                }
+              />
+            </label>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={wcRestApi.sendOrders}
+                onChange={(event) =>
+                  setWcRestApi((current) => ({
+                    ...current,
+                    sendOrders: event.target.checked,
+                  }))
+                }
+              />
+              <span>Send orders to WooCommerce</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={wcRestApi.readTax}
+                onChange={(event) =>
+                  setWcRestApi((current) => ({
+                    ...current,
+                    readTax: event.target.checked,
+                  }))
+                }
+              />
+              <span>Read tax rates from WooCommerce</span>
+            </label>
+          </div>
+          {wcRestTestMessage && (
+            <p className="rounded border border-emerald-300 bg-emerald-50 p-2 text-xs text-emerald-800">
+              {wcRestTestMessage}
+            </p>
+          )}
+          {wcRestTestError && (
+            <p className="rounded border border-red-300 bg-red-50 p-2 text-xs text-red-800">
+              {wcRestTestError}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-gray-500">
+              {t("admin.settingsLastUpdated", "Last updated")}:{" "}
+              {formatTimestamp(wcRestApi.updatedAt)}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={testWcRestApi}
+                disabled={testingWcRest}
+                className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+              >
+                {testingWcRest ? "Testing…" : "Test connection"}
+              </button>
+              <button
+                type="button"
+                onClick={saveWcRestApi}
+                disabled={savingWcRest}
+                className="rounded bg-gray-800 px-3 py-1.5 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+              >
+                {savingWcRest
+                  ? t("admin.saving", "Saving…")
+                  : t("common.save", "Save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {canSeeDeveloper && (
+        <div className="rounded border p-4 space-y-3">
+          <div className="inline-flex items-center gap-1">
+            <h3 className="text-lg font-semibold text-gray-900">
               {t("admin.settingsStripeOverrideTitle", "Developer: Stripe key overrides")}
             </h3>
             <AdminFieldHelpLink slug="technical-manual" />
@@ -399,4 +640,3 @@ export default function AdminSettingsPanel() {
     </div>
   );
 }
-
