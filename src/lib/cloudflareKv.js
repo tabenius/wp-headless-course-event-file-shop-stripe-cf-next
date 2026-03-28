@@ -1,3 +1,5 @@
+import { shouldSkipUpstreamDuringBuild } from "./buildUpstreamGuard.js";
+
 function hasCloudflareConfig() {
   return Boolean(
     process.env.CLOUDFLARE_ACCOUNT_ID &&
@@ -6,15 +8,20 @@ function hasCloudflareConfig() {
   );
 }
 
+function shouldBypassCloudflareKv() {
+  return shouldSkipUpstreamDuringBuild();
+}
+
 function getKvUrl(key) {
   return `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CF_KV_NAMESPACE_ID}/values/${key}`;
 }
 
 export function isCloudflareKvConfigured() {
-  return hasCloudflareConfig();
+  return hasCloudflareConfig() && !shouldBypassCloudflareKv();
 }
 
 export async function readCloudflareKvJson(key) {
+  if (shouldBypassCloudflareKv()) return null;
   if (!hasCloudflareConfig()) return null;
   const response = await fetch(getKvUrl(key), {
     headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
@@ -39,6 +46,7 @@ export async function writeCloudflareKvJson(
   value,
   { expirationTtl } = {},
 ) {
+  if (shouldBypassCloudflareKv()) return false;
   if (!hasCloudflareConfig()) return false;
   let url = getKvUrl(key);
   if (expirationTtl) url += `?expiration_ttl=${expirationTtl}`;
@@ -54,6 +62,7 @@ export async function writeCloudflareKvJson(
 }
 
 export async function deleteCloudflareKv(key) {
+  if (shouldBypassCloudflareKv()) return false;
   if (!hasCloudflareConfig()) return false;
   const response = await fetch(getKvUrl(key), {
     method: "DELETE",

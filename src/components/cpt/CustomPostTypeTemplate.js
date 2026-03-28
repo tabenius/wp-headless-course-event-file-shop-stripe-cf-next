@@ -1,4 +1,5 @@
 import { getPosts, getPostsPerPage } from "@/lib/utils";
+import { shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
 import { notFound } from "next/navigation";
 import CustomPostTypeList from "./CustomPostTypeList";
 
@@ -17,6 +18,19 @@ export async function CustomPostTypeTemplate(query, customPostType, title) {
     !Array.isArray(data?.[customPostType]?.edges) ||
     data[customPostType].edges.length === 0
   ) {
+    if (shouldSkipUpstreamDuringBuild()) {
+      return (
+        <div className="container mx-auto px-4 py-12" data-cpt={customPostType}>
+          <h1 className="text-4xl font-bold mb-8 container max-w-4xl px-10 py-6 mx-auto">
+            {title}
+          </h1>
+          <p className="container max-w-4xl px-10 text-sm opacity-80">
+            Upstream content fetch is skipped during build. Content appears
+            after first runtime revalidation.
+          </p>
+        </div>
+      );
+    }
     console.warn(`No posts found for the custom post type ${customPostType}`);
     notFound();
   }

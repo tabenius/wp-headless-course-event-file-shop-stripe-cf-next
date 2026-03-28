@@ -1,4 +1,5 @@
 import BlogList from "@/components/blog/BlogList";
+import { shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
 import { capitalizeWords } from "@/lib/utils";
 import { getPosts, getPostsPerPage } from "@/lib/utils";
 import { notFound } from "next/navigation";
@@ -22,6 +23,20 @@ export async function BlogListingTemplate(query, params, titlePrefix) {
 
   // Check if posts exists then throw a 404
   if (!Array.isArray(data?.posts?.edges) || data.posts.edges.length === 0) {
+    if (shouldSkipUpstreamDuringBuild()) {
+      const capitalizeSlug = capitalizeWords(slug);
+      return (
+        <div className="container mx-auto px-4 py-12" data-slug={slug}>
+          <h1 className="text-4xl font-bold mb-8 container max-w-4xl px-10 py-6 mx-auto">
+            {capitalizeSlug ? `${titlePrefix}: ${capitalizeSlug}` : titlePrefix}
+          </h1>
+          <p className="container max-w-4xl px-10 text-sm opacity-80">
+            Upstream content fetch is skipped during build. Content appears
+            after first runtime revalidation.
+          </p>
+        </div>
+      );
+    }
     console.warn(`No posts found for ${titlePrefix.toLowerCase()}: ${slug}`);
     notFound();
   }
