@@ -151,25 +151,29 @@ function buildIconOutline(color, radius) {
 
 const THEME_ICON_OUTLINE_NORMAL = buildIconOutline("#2f2f2f", 1);
 const THEME_ICON_OUTLINE_HOVER = buildIconOutline("#000000", 2);
-const ADMIN_THEME_SEQUENCE = ["light", "gruvbox", "earth", "lollipop"];
+const ADMIN_THEME_SEQUENCE = ["sun", "moon"];
 const ADMIN_THEME_ICONS = Object.freeze({
-  light: "☀",
-  gruvbox: "🌙",
-  earth: "🌍",
-  lollipop: "⭐",
+  sun: "☀",
+  moon: "🌙",
 });
 const ADMIN_THEME_ICON_COLORS = Object.freeze({
-  light: "#ffff00",
-  gruvbox: "#ffff00",
-  earth: "#d4a15d",
-  lollipop: "#ff78d8",
+  sun: "#facc15",
+  moon: "#facc15",
+});
+
+const LEGACY_THEME_MAP = Object.freeze({
+  light: "sun",
+  gruvbox: "moon",
+  earth: "sun",
+  lollipop: "moon",
 });
 
 function normalizeAdminTheme(value) {
   const normalized = String(value || "")
     .trim()
     .toLowerCase();
-  return ADMIN_THEME_SEQUENCE.includes(normalized) ? normalized : "light";
+  const migrated = LEGACY_THEME_MAP[normalized] || normalized;
+  return ADMIN_THEME_SEQUENCE.includes(migrated) ? migrated : "sun";
 }
 
 function getNextAdminTheme(currentTheme) {
@@ -207,7 +211,7 @@ export default function AdminHeader({ logoUrl }) {
     return parseTabHash(window.location.hash) || "welcome";
   });
   const [localeState, setLocaleState] = useState(getLocale);
-  const [adminTheme, setAdminTheme] = useState("light");
+  const [adminTheme, setAdminTheme] = useState("sun");
   const [menuOpen, setMenuOpen] = useState(false);
   const [healthState, setHealthState] = useState("amber");
   const [showHealthTooltip, setShowHealthTooltip] = useState(false);
@@ -475,15 +479,13 @@ export default function AdminHeader({ logoUrl }) {
   const currentTheme = normalizeAdminTheme(adminTheme);
   const nextTheme = getNextAdminTheme(currentTheme);
   const themeName = {
-    light: t("admin.themeNameLight", "Light"),
-    gruvbox: t("admin.themeNameGruvbox", "Gruvbox"),
-    earth: t("admin.themeNameEarth", "Earth"),
-    lollipop: t("admin.themeNameLollipop", "Lollipop"),
+    sun: t("admin.themeNameLight", "Sun"),
+    moon: t("admin.themeNameGruvbox", "Moon"),
   };
   const themeIconColor = ADMIN_THEME_ICON_COLORS[currentTheme] || "#ffff00";
 
   return (
-    <header className="admin-header-concrete admin-header-shell relative overflow-visible w-full sticky top-0 z-40 bg-[hsl(22_62%_42%)] border-b border-[hsl(22_56%_31%)]">
+    <header className="admin-header-concrete admin-header-shell relative overflow-visible w-full sticky top-0 z-40 border-b">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -492,7 +494,7 @@ export default function AdminHeader({ logoUrl }) {
                 ref={menuToggleButtonRef}
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="admin-header-control p-2 rounded-lg bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
+                className="admin-header-control p-2 rounded-lg border focus:outline-none focus:ring-2"
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
@@ -501,13 +503,13 @@ export default function AdminHeader({ logoUrl }) {
                   <span className="block h-0.5 w-4 bg-white" />
                 </span>
               </button>
-              <span className="mt-1 text-[9px] font-medium tracking-wide text-black">
+              <span className="admin-header-hint mt-1 text-[9px] font-medium tracking-wide">
                 Ctrl+Alt+M
               </span>
             </div>
             <Link
               href="/admin#/welcome"
-              className="flex flex-col items-start justify-center gap-0.5 text-white/95 hover:text-white transition-colors"
+              className="admin-header-brand-link flex flex-col items-start justify-center gap-0.5 transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
               <span ref={ragbazWordmarkRef} className="ml-6 inline-flex">
@@ -526,7 +528,7 @@ export default function AdminHeader({ logoUrl }) {
                 style={{
                   marginLeft: "1.5rem",
                   marginTop: "2px",
-                  color: "#3e2611",
+                  color: "var(--admin-brand-subtitle)",
                   fontSize: "9.5px",
                   transform: `scaleX(${subtitleScaleX})`,
                   transformOrigin: "left center",
@@ -543,7 +545,7 @@ export default function AdminHeader({ logoUrl }) {
               onClick={toggleTheme}
               onMouseEnter={() => setThemeToggleHovered(true)}
               onMouseLeave={() => setThemeToggleHovered(false)}
-              className="appearance-none bg-transparent hover:bg-transparent active:bg-transparent border-0 shadow-none rounded-none px-1 text-[1.35rem] leading-none text-[#ffff00] transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
+              className="admin-theme-toggle appearance-none border-0 shadow-none rounded-none px-1 text-[1.35rem] leading-none transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
               aria-label={`${t("admin.themeCycleTo", "Switch theme to")} ${themeName[nextTheme]}`}
             >
               <span
@@ -565,7 +567,7 @@ export default function AdminHeader({ logoUrl }) {
               onMouseLeave={() => setShowHealthTooltip(false)}
               onFocus={() => setShowHealthTooltip(true)}
               onBlur={() => setShowHealthTooltip(false)}
-              className="admin-header-control flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(22_54%_30%/0.9)] border border-white/30 text-xs text-white hover:bg-[hsl(22_62%_36%)] focus:outline-none focus:ring-2 focus:ring-white"
+              className="admin-header-control flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs focus:outline-none focus:ring-2"
               aria-label={t("admin.healthCheck", "Control check")}
               title={healthLabelMap[healthState]}
             >
@@ -576,11 +578,11 @@ export default function AdminHeader({ logoUrl }) {
               />
             </button>
             {showHealthTooltip && (
-              <div className="admin-header-popover absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border border-white/20 bg-[hsl(22_52%_20%/0.95)] p-3 text-xs text-[hsl(39_62%_93%)] shadow-xl">
-                <p className="font-semibold text-white">
+              <div className="admin-header-popover absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border p-3 text-xs shadow-xl">
+                <p className="font-semibold">
                   {healthLabelMap[healthState]}
                 </p>
-                <p className="mt-1 text-[hsl(39_62%_93%)]">
+                <p className="mt-1">
                   {t(
                     "admin.healthTooltipHint",
                     "System checks summarize connector status and environment readiness.",
@@ -589,7 +591,7 @@ export default function AdminHeader({ logoUrl }) {
                 <button
                   type="button"
                   onClick={() => switchTab("info/health")}
-                  className="mt-2 inline-flex items-center rounded border border-white/30 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/10"
+                  className="admin-header-control mt-2 inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
                 >
                   {t("admin.healthCheck", "Control check")}
                 </button>
@@ -608,7 +610,7 @@ export default function AdminHeader({ logoUrl }) {
               <aside
                 ref={menuDrawerRef}
                 tabIndex={-1}
-                className="admin-header-drawer fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r border-white/20 bg-[hsl(22_52%_20%/0.98)] p-4 shadow-2xl"
+                className="admin-header-drawer fixed top-14 left-0 z-50 h-[calc(100dvh-3.5rem)] w-full max-w-sm overflow-y-auto border-r p-4 shadow-2xl"
               >
                 <div className="space-y-2">
                   {tabItems.map((item) => {
@@ -620,16 +622,16 @@ export default function AdminHeader({ logoUrl }) {
                         key={item.tab}
                         type="button"
                         onClick={() => switchTab(item.tab)}
-                        className={`w-full rounded-2xl px-3 py-2.5 text-sm font-medium text-white border border-white/10 transition-colors ${
+                        className={`admin-header-drawer-item w-full rounded-2xl px-3 py-2.5 text-sm font-medium border transition-colors ${
                           pathname === "/admin" && activeTab === item.tab
-                            ? "bg-white/20"
-                            : "hover:bg-white/10"
+                            ? "is-active"
+                            : ""
                         }`}
                       >
                         <span className="flex items-center justify-between gap-2">
                           <span>{item.label}</span>
                           {keyLabel && (
-                            <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold tracking-wide text-[hsl(39_62%_93%)]">
+                            <kbd className="admin-header-kbd rounded border px-2 py-0.5 text-xs font-semibold tracking-wide">
                               {keyLabel}
                             </kbd>
                           )}
@@ -638,7 +640,7 @@ export default function AdminHeader({ logoUrl }) {
                     );
                   })}
                 </div>
-                <div className="mt-4 space-y-2 text-xs text-[hsl(39_62%_93%)]">
+                <div className="admin-header-drawer-meta mt-4 space-y-2 text-xs">
                   <div className="flex items-center gap-2">
                     <label className="font-semibold">{t("admin.languageLabel")}</label>
                     <select
@@ -650,7 +652,7 @@ export default function AdminHeader({ logoUrl }) {
                         router.refresh();
                         setMenuOpen(false);
                       }}
-                      className="admin-header-select rounded border border-white/20 bg-[hsl(22_66%_36%)] px-2 py-1 text-xs text-white"
+                      className="admin-header-select rounded border px-2 py-1 text-xs"
                     >
                       <option value="sv">Svenska</option>
                       <option value="en">English</option>
@@ -660,20 +662,20 @@ export default function AdminHeader({ logoUrl }) {
                   <button
                     type="button"
                     onClick={() => switchTab("info/health")}
-                    className="flex items-center justify-between w-full text-white"
+                    className="flex items-center justify-between w-full"
                   >
                     <span>{t("admin.healthCheck")}</span>
-                    <kbd className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[hsl(39_62%_93%)]">
+                    <kbd className="admin-header-kbd rounded border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
                       {healthHotkey}
                     </kbd>
                   </button>
                   <button
                     type="button"
                     onClick={logoutAdmin}
-                    className="flex items-center justify-between w-full text-rose-200"
+                    className="admin-header-danger flex items-center justify-between w-full"
                   >
                     <span>{t("admin.logout", "Logout")}</span>
-                    <kbd className="rounded border border-rose-200/40 bg-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-rose-100">
+                    <kbd className="admin-header-kbd rounded border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
                       {logoutHotkey}
                     </kbd>
                   </button>
@@ -685,12 +687,12 @@ export default function AdminHeader({ logoUrl }) {
       </div>
       {/* Stats ticker — thin scrolling bar below the main nav row */}
       <div
-        className="admin-header-ticker w-full overflow-hidden border-t border-[hsl(22_56%_31%)] bg-[hsl(22_56%_35%)]"
+        className="admin-header-ticker w-full overflow-hidden border-t"
         style={{ height: "1.4rem" }}
         aria-label={t("admin.statsTicker", "Stats")}
       >
         <div
-          className="admin-header-ticker-text flex whitespace-nowrap text-[10px] font-medium text-[hsl(39_62%_93%)] select-none"
+          className="admin-header-ticker-text flex whitespace-nowrap text-[10px] font-medium select-none"
           style={{
             animation: "admin-ticker-scroll 60s linear infinite",
             willChange: "transform",

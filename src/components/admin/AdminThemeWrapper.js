@@ -3,11 +3,19 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "ragbaz-admin-theme";
-const THEME_SEQUENCE = ["light", "gruvbox", "earth", "lollipop"];
+const THEME_SEQUENCE = ["sun", "moon"];
+
+const LEGACY_THEME_MAP = Object.freeze({
+  light: "sun",
+  gruvbox: "moon",
+  earth: "sun",
+  lollipop: "moon",
+});
 
 function normalizeTheme(value) {
   const normalized = String(value || "").trim().toLowerCase();
-  return THEME_SEQUENCE.includes(normalized) ? normalized : "light";
+  const migrated = LEGACY_THEME_MAP[normalized] || normalized;
+  return THEME_SEQUENCE.includes(migrated) ? migrated : "sun";
 }
 
 function nextTheme(current) {
@@ -17,7 +25,7 @@ function nextTheme(current) {
 }
 
 export default function AdminThemeWrapper({ children, fontVariable }) {
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState("sun");
 
   // Read from localStorage on mount (client only)
   useEffect(() => {
@@ -39,9 +47,7 @@ export default function AdminThemeWrapper({ children, fontVariable }) {
   const classes = [
     "admin-layout",
     fontVariable,
-    theme === "gruvbox" ? "admin-gruvbox" : "",
-    theme === "earth" ? "admin-earth" : "",
-    theme === "lollipop" ? "admin-lollipop" : "",
+    theme === "moon" ? "admin-theme-moon" : "admin-theme-sun",
   ]
     .filter(Boolean)
     .join(" ");

@@ -44,6 +44,14 @@ export default function AdminError({ error, reset }) {
         {error?.digest && (
           <p className="text-xs text-gray-400">Digest: {error.digest}</p>
         )}
+        {error?.stack && (
+          <details className="text-left rounded border border-gray-300 bg-gray-50 p-3 text-xs text-gray-700">
+            <summary className="cursor-pointer font-semibold">
+              Debug stack (use with source maps)
+            </summary>
+            <pre className="mt-2 whitespace-pre-wrap break-all">{error.stack}</pre>
+          </details>
+        )}
         <div className="flex gap-3 justify-center">
           <button
             type="button"

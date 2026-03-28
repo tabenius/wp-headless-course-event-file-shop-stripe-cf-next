@@ -4,6 +4,14 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function envFlagEnabled(rawValue, defaultEnabled = false) {
+  if (rawValue === undefined || rawValue === null || rawValue === "") {
+    return defaultEnabled;
+  }
+  const value = String(rawValue).trim().toLowerCase();
+  return !["0", "false", "no", "off"].includes(value);
+}
+
 /** @type {import('next').NextConfig} */
 const wpHostname = (() => {
   try {
@@ -32,8 +40,12 @@ const wpImageHosts = (() => {
 const nextConfig = {
   trailingSlash: true,
   reactStrictMode: true,
-  productionBrowserSourceMaps:
-    process.env.PRODUCTION_BROWSER_SOURCEMAPS === "1",
+  // Keep source maps on by default so production errors can be resolved via
+  // protected /__maps access. Set PRODUCTION_BROWSER_SOURCEMAPS=0 to opt out.
+  productionBrowserSourceMaps: envFlagEnabled(
+    process.env.PRODUCTION_BROWSER_SOURCEMAPS,
+    true,
+  ),
   outputFileTracingRoot: __dirname,
   env: {
     NEXT_PUBLIC_BUILD_TIME:
