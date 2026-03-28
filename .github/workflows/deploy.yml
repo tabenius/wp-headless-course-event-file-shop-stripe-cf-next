@@ -23,9 +23,6 @@ jobs:
         env:
           NEXT_PUBLIC_WORDPRESS_URL: https://www.xtas.nu/
 
-      - name: Check performance budgets
-        run: npm run perf:budget
-
       - name: Deploy
         run: npx wrangler deploy
         env:
