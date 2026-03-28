@@ -3529,3 +3529,13 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Landed in `ragbaz.xyz` (commit: `1e827af`):
   - Normalized migration banner comment casing (`RAGBAZ control plane`).
+
+### Codex — OpenNext `cf:build` fix for proxy runtime (commit: `1f34556`)
+
+- Root cause: OpenNext rejected Node.js middleware/proxy runtime during `npm run cf:build` (`Node.js middleware is not currently supported`).
+- Fix: set explicit edge runtime in [`src/proxy.js`](src/proxy.js) via `export const runtime = "edge";`.
+- Result: proxy remains active for admin/map/WebDAV matching, but now compiles for Cloudflare Worker target.
+
+- Validation:
+  - `npx eslint src/proxy.js`
+  - `node --check src/proxy.js`
