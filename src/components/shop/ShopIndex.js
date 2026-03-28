@@ -439,13 +439,7 @@ export default function ShopIndex({
                       )
                     ) : (
                       ownershipPending ? (
-                        <button
-                          type="button"
-                          disabled
-                          className="px-4 py-2 rounded bg-gray-400 text-white text-sm cursor-not-allowed"
-                        >
-                          {t("shop.ownershipLookupLoadingShort", "Checking…")}
-                        </button>
+                        <span className="inline-block w-24 h-8 rounded bg-gray-200 animate-pulse" />
                       ) : (
                         <Link
                           href={item.uri}
