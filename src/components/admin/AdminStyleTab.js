@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { t } from "@/lib/i18n";
 import { TYPOGRAPHY_THEMES } from "@/lib/typographyThemes";
 import AdminFontBrowserModal from "./AdminFontBrowserModal";
@@ -173,6 +174,8 @@ export default function AdminStyleTab({
   applyFontRolesToDom,
   applySiteStyleTokensToDom,
 }) {
+  const [cssExpandedRole, setCssExpandedRole] = useState(null);
+
   return (
     <>
       <div className="border rounded p-5 space-y-8">
@@ -435,59 +438,106 @@ export default function AdminStyleTab({
                 role?.weights ? role.weights.join(", ") : "";
               const slot = role?.colorSlot;
 
+              const cssOpen = cssExpandedRole === key;
+              const downloadedEntry = role?.type === "google"
+                ? downloadedFamilies?.find(f => f.family === role.family)
+                : null;
+              const googleCdnUrl = downloadedEntry
+                ? downloadedEntry.isVariable
+                  ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(downloadedEntry.family).replace(/%20/g, "+")}:wght@${downloadedEntry.weightRange?.[0] ?? 100}..${downloadedEntry.weightRange?.[1] ?? 900}&display=swap`
+                  : `https://fonts.googleapis.com/css2?family=${encodeURIComponent(downloadedEntry.family).replace(/%20/g, "+")}:wght@${(downloadedEntry.weights ?? [400, 700]).join(";")}&display=swap`
+                : null;
+
               return (
-                <div key={key} className="border rounded-lg p-3 flex items-center gap-3">
-                  {hasColor && typographyPalette.length > 0 ? (
-                    <button
-                      onClick={() => {
-                        if (typographyPalette.length < 2) return;
-                        const nextSlot = slot === 2 ? 1 : 2;
-                        const updated = { ...fontRoles, [key]: { ...role, colorSlot: nextSlot } };
-                        setFontRoles(updated);
-                        applyFontRolesToDom(updated, typographyPalette, linkStyle);
-                      }}
-                      className="w-5 h-5 rounded-full border-2 border-white ring-1 ring-gray-300 shrink-0 cursor-pointer"
-                      style={{ backgroundColor: typographyPalette[(slot || 1) - 1] || "#111" }}
-                      title={typographyPalette.length < 2 ? "Add second color to enable slot switching" : `Color slot ${slot || 1}`}
-                    />
-                  ) : (
-                    <div className="w-5 h-5 shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-800">{label}</div>
-                    <div className="text-xs text-gray-500">{elements}</div>
-                    <div className="text-xs text-gray-700 mt-0.5">
-                      {fontLabel}
-                      {weightLabel && <span className="ml-2 text-gray-400">{weightLabel}</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {role?.type !== "preset" && role?.type !== "inherit" && (
+                <div key={key}>
+                  <div className="border rounded-lg p-3 flex items-center gap-3">
+                    {hasColor && typographyPalette.length > 0 ? (
                       <button
                         onClick={() => {
-                          const defaults = {
-                            fontDisplay: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
-                            fontHeading: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
-                            fontSubheading: { type: "inherit" },
-                            fontBody: { type: "preset", stack: "Georgia, serif" },
-                            fontButton: { type: "preset", stack: "system-ui, sans-serif" },
-                          };
-                          const updated = { ...fontRoles, [key]: defaults[key] };
+                          if (typographyPalette.length < 2) return;
+                          const nextSlot = slot === 2 ? 1 : 2;
+                          const updated = { ...fontRoles, [key]: { ...role, colorSlot: nextSlot } };
                           setFontRoles(updated);
                           applyFontRolesToDom(updated, typographyPalette, linkStyle);
                         }}
-                        className="text-gray-400 hover:text-gray-700 text-lg leading-none"
-                        title="Reset to preset"
-                      >×</button>
+                        className="w-5 h-5 rounded-full border-2 border-white ring-1 ring-gray-300 shrink-0 cursor-pointer"
+                        style={{ backgroundColor: typographyPalette[(slot || 1) - 1] || "#111" }}
+                        title={typographyPalette.length < 2 ? "Add second color to enable slot switching" : `Color slot ${slot || 1}`}
+                      />
+                    ) : (
+                      <div className="w-5 h-5 shrink-0" />
                     )}
-                    <button
-                      onClick={() => setFontBrowserRole(key)}
-                      disabled={downloadingRole === key}
-                      className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait"
-                    >
-                      {downloadingRole === key ? "Downloading…" : "Browse"}
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-800">{label}</div>
+                      <div className="text-xs text-gray-500">{elements}</div>
+                      <div className="text-xs text-gray-700 mt-0.5">
+                        {fontLabel}
+                        {weightLabel && <span className="ml-2 text-gray-400">{weightLabel}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {role?.type !== "preset" && role?.type !== "inherit" && (
+                        <button
+                          onClick={() => {
+                            const defaults = {
+                              fontDisplay: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+                              fontHeading: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+                              fontSubheading: { type: "inherit" },
+                              fontBody: { type: "preset", stack: "Georgia, serif" },
+                              fontButton: { type: "preset", stack: "system-ui, sans-serif" },
+                            };
+                            const updated = { ...fontRoles, [key]: defaults[key] };
+                            setFontRoles(updated);
+                            applyFontRolesToDom(updated, typographyPalette, linkStyle);
+                          }}
+                          className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                          title="Reset to preset"
+                        >×</button>
+                      )}
+                      {role?.type === "google" && downloadedEntry && (
+                        <button
+                          onClick={() => setCssExpandedRole(cssOpen ? null : key)}
+                          className={`px-2 py-1.5 text-xs border rounded-lg hover:bg-gray-100 ${cssOpen ? "bg-gray-100 border-gray-400" : ""}`}
+                          title="Show CSS"
+                        >CSS</button>
+                      )}
+                      <button
+                        onClick={() => setFontBrowserRole(key)}
+                        disabled={downloadingRole === key}
+                        className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait"
+                      >
+                        {downloadingRole === key ? "Downloading…" : "Browse"}
+                      </button>
+                    </div>
                   </div>
+                  {cssOpen && downloadedEntry && (
+                    <div className="mt-1 border rounded-lg p-3 bg-gray-50 space-y-3">
+                      {downloadedEntry.fontFaceCss && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-gray-500 font-medium">@font-face CSS</span>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(downloadedEntry.fontFaceCss)}
+                              className="px-2 py-0.5 text-xs border rounded hover:bg-gray-200"
+                            >Copy</button>
+                          </div>
+                          <pre className="text-xs font-mono whitespace-pre-wrap break-all bg-white border rounded p-2 text-gray-700">{downloadedEntry.fontFaceCss}</pre>
+                        </div>
+                      )}
+                      {googleCdnUrl && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-gray-500 font-medium">Google Fonts CDN URL</span>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(googleCdnUrl)}
+                              className="px-2 py-0.5 text-xs border rounded hover:bg-gray-200"
+                            >Copy</button>
+                          </div>
+                          <pre className="text-xs font-mono whitespace-pre-wrap break-all bg-white border rounded p-2 text-gray-700">{googleCdnUrl}</pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -978,6 +1028,9 @@ export default function AdminStyleTab({
           role={fontBrowserRole}
           currentFamily={fontRoles[fontBrowserRole]?.family}
           downloadedFamilies={downloadedFamilies}
+          usedFonts={Object.entries(fontRoles)
+            .filter(([k, r]) => k !== fontBrowserRole && r?.type === "google" && r?.family)
+            .map(([k, r]) => ({ family: r.family, role: k.replace("font", "") }))}
           onSelect={(roleObj) => {
             const updated = { ...fontRoles, [fontBrowserRole]: roleObj };
             setFontRoles(updated);

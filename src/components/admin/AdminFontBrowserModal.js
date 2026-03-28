@@ -28,9 +28,9 @@ function useGoogleFontsPreview() {
 }
 
 /** Memoized Individual Row to prevent massive re-renders */
-const FontRow = memo(({ 
-  font, previewText, isCurrent, isDl, isDling, dlError, 
-  onSelect, onDownload, onOpenWeightPicker, previewFont 
+const FontRow = memo(({
+  font, previewText, isCurrent, isDl, isDling, dlError, usedByRoles,
+  onSelect, onDownload, onOpenWeightPicker, previewFont
 }) => {
   const rowRef = useRef(null);
   const isVar = font.axes?.some((a) => a.tag === "wght");
@@ -55,9 +55,12 @@ const FontRow = memo(({
       }`}
     >
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 flex items-center gap-2">
+        <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 flex items-center gap-2 flex-wrap">
           {font.family}
           {isVar && <span className="bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded text-[10px]">Variable</span>}
+          {usedByRoles && usedByRoles.map((r) => (
+            <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">{r}</span>
+          ))}
         </div>
         <div
           className="text-lg text-gray-800 truncate"
@@ -94,7 +97,7 @@ const FontRow = memo(({
 });
 FontRow.displayName = "FontRow";
 
-export default function AdminFontBrowserModal({ role, currentFamily, downloadedFamilies, onSelect, onClose, onDownloadStart, onDownloadEnd }) {
+export default function AdminFontBrowserModal({ role, currentFamily, downloadedFamilies, usedFonts = [], onSelect, onClose, onDownloadStart, onDownloadEnd }) {
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -249,7 +252,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
           ) : (
             <>
               {visible.map((font) => (
-                <FontRow 
+                <FontRow
                   key={font.family}
                   font={font}
                   previewText={previewText}
@@ -257,6 +260,7 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                   isDl={downloaded.has(font.family)}
                   isDling={downloading.has(font.family)}
                   dlError={downloadErrors[font.family]}
+                  usedByRoles={usedFonts.filter(u => u.family === font.family).map(u => u.role)}
                   onSelect={handleSelect}
                   onDownload={downloadFont}
                   onOpenWeightPicker={setWeightPickerFamily}

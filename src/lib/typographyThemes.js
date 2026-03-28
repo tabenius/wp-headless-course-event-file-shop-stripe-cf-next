@@ -200,4 +200,43 @@ export const TYPOGRAPHY_THEMES = [
       weightRange: [100, 900],
     },
   },
+  {
+    id: "vintage",
+    name: "Vintage",
+    description: "Old-style serifs with warm character. Evokes print tradition.",
+    typographyPalette: ["#2c1810", "#5c3a2e"],
+    fontDisplay: {
+      type: "google",
+      family: "Playfair Display",
+      isVariable: true,
+      weightRange: [400, 900],
+      colorSlot: 1,
+    },
+    fontHeading: {
+      type: "google",
+      family: "Cormorant Garamond",
+      isVariable: true,
+      weightRange: [300, 700],
+      colorSlot: 2,
+    },
+    fontSubheading: {
+      type: "google",
+      family: "Cormorant Garamond",
+      isVariable: true,
+      weightRange: [300, 700],
+      colorSlot: 2,
+    },
+    fontBody: {
+      type: "google",
+      family: "Lora",
+      isVariable: true,
+      weightRange: [400, 700],
+    },
+    fontButton: {
+      type: "google",
+      family: "Playfair Display",
+      isVariable: true,
+      weightRange: [600, 900],
+    },
+  },
 ];
