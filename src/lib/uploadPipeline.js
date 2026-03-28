@@ -76,3 +76,98 @@ export function buildVariantFilename(originalUrl, variantKind) {
   const suffix = suffixMap[variantKind] ?? `-${variantKind}`;
   return `${base}${suffix}.webp`;
 }
+
+export async function runUploadPipeline({
+  arrayBuffer,
+  mimeType,
+  originalUrl,
+  assetId,
+  ownerUri = "/",
+  uploadVariant,
+}) {
+  // Dynamic imports — keeps pure helpers testable without WASM/Next.js resolver
+  const { getPhoton } = await import("@/lib/photonLoader");
+  const { executeOperations, serializeImage } = await import("@/lib/photonPipeline");
+  const { registerUploadedAsset } = await import("@/lib/avatarFeedStore");
+
+  const photon = await getPhoton();
+  const sourceBytes = new Uint8Array(arrayBuffer);
+  const sourceImage = photon.PhotonImage.new_from_byteslice(sourceBytes);
+
+  const sourceWidth = sourceImage.get_width();
+  const sourceHeight = sourceImage.get_height();
+
+  if (shouldSkipPipeline(mimeType, sourceWidth, sourceHeight)) {
+    sourceImage.free();
+    return [];
+  }
+
+  const variantDefs = buildVariantDefs(mimeType, sourceWidth, sourceHeight);
+  const variants = [];
+
+  // Process variants sequentially to avoid memory pressure
+  for (const def of variantDefs) {
+    try {
+      // Clone source for each variant (resize mutates)
+      const cloned = photon.PhotonImage.new_from_byteslice(sourceBytes);
+      let processed = cloned;
+
+      // Resize if dimensions differ from source
+      if (def.width !== sourceWidth || def.height !== sourceHeight) {
+        processed = executeOperations(photon, cloned, [
+          { type: "resize", params: { width: def.width, height: def.height } },
+        ]);
+      }
+
+      // Serialize to WebP
+      const webpBytes = serializeImage(processed, "webp");
+      processed.free();
+
+      // Upload the variant
+      const variantFilename = buildVariantFilename(originalUrl, def.variantKind);
+      const uploadResult = await uploadVariant(
+        webpBytes,
+        variantFilename,
+        "image/webp",
+      );
+
+      // Register the variant in the asset registry
+      await registerUploadedAsset({
+        asset: {
+          assetId,
+          ownerUri,
+          assetRole: "variant",
+          assetFormat: "webp",
+          variantKind: def.variantKind,
+          mimeType: "image/webp",
+          sizeBytes: webpBytes.byteLength,
+          width: def.width,
+          height: def.height,
+          originalUrl,
+          uri: `/asset/${encodeURIComponent(assetId)}`,
+        },
+        uploadResult: {
+          url: uploadResult.url,
+          id: uploadResult.id || null,
+        },
+      });
+
+      variants.push({
+        url: uploadResult.url,
+        width: def.width,
+        height: def.height,
+        format: "webp",
+        variantKind: def.variantKind,
+      });
+    } catch (err) {
+      // Variant generation is best-effort — log and continue
+      console.error(
+        `[upload-pipeline] Failed to generate ${def.variantKind} variant:`,
+        err,
+      );
+    }
+  }
+
+  sourceImage.free();
+  return variants;
+}
