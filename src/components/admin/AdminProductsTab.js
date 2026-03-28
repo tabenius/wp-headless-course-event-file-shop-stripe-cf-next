@@ -207,10 +207,15 @@ function PriceAccessForm({
 }) {
   const parsedPrice = Number.parseFloat(String(price || "").replace(",", "."));
   const freeAccessEnabled = Number.isFinite(parsedPrice) && parsedPrice === 0;
+  const latestSaveUnifiedRef = useRef(saveUnified);
 
   useEffect(() => {
-    if (autoSaveTrigger) saveUnified();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    latestSaveUnifiedRef.current = saveUnified;
+  }, [saveUnified]);
+
+  useEffect(() => {
+    if (!autoSaveTrigger) return;
+    latestSaveUnifiedRef.current?.();
   }, [autoSaveTrigger]);
 
   return (
