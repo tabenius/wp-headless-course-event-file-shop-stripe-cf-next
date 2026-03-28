@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { t, getLocale, setLocale } from "@/lib/i18n";
@@ -138,50 +138,6 @@ const healthDotColor = {
   red: "#b91c1c",
 };
 
-function buildIconOutline(color, radius) {
-  const shadows = [];
-  for (let x = -radius; x <= radius; x += 1) {
-    for (let y = -radius; y <= radius; y += 1) {
-      if (x === 0 && y === 0) continue;
-      shadows.push(`${x}px ${y}px 0 ${color}`);
-    }
-  }
-  return shadows.join(", ");
-}
-
-const THEME_ICON_OUTLINE_NORMAL = buildIconOutline("#2f2f2f", 1);
-const THEME_ICON_OUTLINE_HOVER = buildIconOutline("#000000", 2);
-const ADMIN_THEME_SEQUENCE = ["sun", "moon"];
-const ADMIN_THEME_ICONS = Object.freeze({
-  sun: "☀",
-  moon: "🌙",
-});
-const ADMIN_THEME_ICON_COLORS = Object.freeze({
-  sun: "#facc15",
-  moon: "#facc15",
-});
-
-const LEGACY_THEME_MAP = Object.freeze({
-  light: "sun",
-  gruvbox: "moon",
-  earth: "sun",
-  lollipop: "moon",
-});
-
-function normalizeAdminTheme(value) {
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase();
-  const migrated = LEGACY_THEME_MAP[normalized] || normalized;
-  return ADMIN_THEME_SEQUENCE.includes(migrated) ? migrated : "sun";
-}
-
-function getNextAdminTheme(currentTheme) {
-  const index = ADMIN_THEME_SEQUENCE.indexOf(normalizeAdminTheme(currentTheme));
-  if (index === -1) return ADMIN_THEME_SEQUENCE[0];
-  return ADMIN_THEME_SEQUENCE[(index + 1) % ADMIN_THEME_SEQUENCE.length];
-}
-
 function getFocusableElements(container) {
   if (!container || typeof container.querySelectorAll !== "function") return [];
   return Array.from(
@@ -211,11 +167,9 @@ export default function AdminHeader({ logoUrl }) {
     return parseTabHash(window.location.hash) || "welcome";
   });
   const [localeState, setLocaleState] = useState(getLocale);
-  const [adminTheme, setAdminTheme] = useState("sun");
   const [menuOpen, setMenuOpen] = useState(false);
   const [healthState, setHealthState] = useState("amber");
   const [showHealthTooltip, setShowHealthTooltip] = useState(false);
-  const [themeToggleHovered, setThemeToggleHovered] = useState(false);
   const ragbazWordmarkRef = useRef(null);
   const subtitleRef = useRef(null);
   const menuDrawerRef = useRef(null);
@@ -228,21 +182,11 @@ export default function AdminHeader({ logoUrl }) {
     return localStorage.getItem(CHAT_BETA_STORAGE_KEY) === "true";
   });
   const log = (...args) => console.info("[AdminHeader]", ...args);
-  const toggleTheme = useCallback(() => {
-    const next = getNextAdminTheme(adminTheme);
-    setAdminTheme(next);
-    window.dispatchEvent(new CustomEvent("admin:setTheme", { detail: next }));
-  }, [adminTheme]);
   const healthLabelMap = {
     green: t("admin.healthStatusGreen", "All systems operational"),
     amber: t("admin.healthStatusAmber", "Partial connectivity"),
     red: t("admin.healthStatusRed", "Critical issues"),
   };
-
-  useEffect(() => {
-    const saved = localStorage.getItem("ragbaz-admin-theme");
-    if (saved) setAdminTheme(normalizeAdminTheme(saved));
-  }, []);
 
   useEffect(() => {
     function onTabSwitch(e) {
@@ -292,8 +236,8 @@ export default function AdminHeader({ logoUrl }) {
   }, [menuOpen]);
 
   useEffect(() => {
-    log("theme", adminTheme, "health", healthState);
-  }, [adminTheme, healthState]);
+    log("health", healthState);
+  }, [healthState]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -351,16 +295,11 @@ export default function AdminHeader({ logoUrl }) {
       if (isAdminActionHotkey(event, "menuToggle")) {
         event.preventDefault();
         setMenuOpen((prev) => !prev);
-        return;
-      }
-      if (isAdminActionHotkey(event, "themeToggle")) {
-        event.preventDefault();
-        toggleTheme();
       }
     }
     window.addEventListener("keydown", onGlobalHotkey);
     return () => window.removeEventListener("keydown", onGlobalHotkey);
-  }, [toggleTheme]);
+  }, []);
 
   useEffect(() => {
     function alignSubtitleWidth() {
@@ -476,13 +415,6 @@ export default function AdminHeader({ logoUrl }) {
     .split("+")
     .pop()
     .toUpperCase();
-  const currentTheme = normalizeAdminTheme(adminTheme);
-  const nextTheme = getNextAdminTheme(currentTheme);
-  const themeName = {
-    sun: t("admin.themeNameLight", "Sun"),
-    moon: t("admin.themeNameGruvbox", "Moon"),
-  };
-  const themeIconColor = ADMIN_THEME_ICON_COLORS[currentTheme] || "#ffff00";
 
   return (
     <header className="admin-header-concrete admin-header-shell relative overflow-visible w-full sticky top-0 z-40 border-b">
@@ -540,26 +472,6 @@ export default function AdminHeader({ logoUrl }) {
           </div>
 
           <div className="relative flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              onMouseEnter={() => setThemeToggleHovered(true)}
-              onMouseLeave={() => setThemeToggleHovered(false)}
-              className="admin-theme-toggle appearance-none border-0 shadow-none rounded-none px-1 text-[1.35rem] leading-none transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
-              aria-label={`${t("admin.themeCycleTo", "Switch theme to")} ${themeName[nextTheme]}`}
-            >
-              <span
-                style={{
-                  color: themeIconColor,
-                  textShadow: themeToggleHovered
-                    ? THEME_ICON_OUTLINE_HOVER
-                    : THEME_ICON_OUTLINE_NORMAL,
-                }}
-              >
-                {ADMIN_THEME_ICONS[currentTheme]}
-              </span>
-            </button>
-
             <button
               type="button"
               onClick={() => switchTab("info/health")}
