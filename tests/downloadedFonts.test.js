@@ -15,8 +15,12 @@ mock.module("../src/lib/cloudflareKv.js", {
   },
 });
 
-const { getDownloadedFonts, upsertDownloadedFont, getAllFontFaceCss } =
-  await import("../src/lib/downloadedFonts.js");
+const {
+  getDownloadedFonts,
+  upsertDownloadedFont,
+  getAllFontFaceCss,
+  parseFontWeightList,
+} = await import("../src/lib/downloadedFonts.js");
 
 describe("getDownloadedFonts", () => {
   beforeEach(() => {
@@ -104,5 +108,29 @@ describe("getAllFontFaceCss", () => {
 
   it("returns empty string for empty array", () => {
     assert.equal(getAllFontFaceCss([]), "");
+  });
+
+  it("trims @font-face blocks to selected weights", () => {
+    const fonts = [
+      {
+        fontFaceCss: [
+          "@font-face{font-family:'Inter';font-weight:400;src:url(/inter-400.woff2)}",
+          "@font-face{font-family:'Inter';font-weight:900;src:url(/inter-900.woff2)}",
+        ].join("\n"),
+      },
+    ];
+    const result = getAllFontFaceCss(fonts, { trimToWeights: [400, 700] });
+    assert.ok(result.includes("inter-400.woff2"));
+    assert.ok(!result.includes("inter-900.woff2"));
+  });
+});
+
+describe("parseFontWeightList", () => {
+  it("parses comma separated strings and dedupes", () => {
+    assert.deepEqual(parseFontWeightList("300, 400, 400, 700"), [300, 400, 700]);
+  });
+
+  it("parses arrays and ignores invalid values", () => {
+    assert.deepEqual(parseFontWeightList(["300", 0, "abc", "900"]), [300, 900]);
   });
 });

@@ -22,6 +22,7 @@
     "cf:build": "node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs",
     "cf:preview": "node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs && wrangler dev",
     "cf:deploy": "node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs && wrangler deploy",
+    "perf:budget": "node scripts/check-performance-budgets.mjs",
     "wasm:upload": "bash scripts/upload-wasm-to-r2.sh",
     "lint": "eslint .",
     "prettier": "prettier --write .",

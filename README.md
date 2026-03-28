@@ -545,6 +545,7 @@ wrangler.jsonc              # Cloudflare Workers configuration
 | `npm run build`      | Build for production (webpack)                           |
 | `npm run start`      | Run the production build locally                         |
 | `npm run lint`       | Check code for errors and style issues                   |
+| `npm run perf:budget`| Verify bundle/perf budgets used by CI deploy gate        |
 | `npm run config`     | Interactive configuration wizard                         |
 | `npm run cf:build`   | Build for Cloudflare Workers                             |
 | `npm run cf:preview` | Build and preview locally with Wrangler                  |

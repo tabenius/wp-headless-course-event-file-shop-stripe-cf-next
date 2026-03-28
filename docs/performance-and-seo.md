@@ -104,16 +104,25 @@ Path: `src/app/[...uri]/page.js`
 4. GraphQL artificial delay default set to `0`; debug flags default-off in docs/config.
 Path: `src/lib/client.js`, `src/lib/courseAccess.js`, `.env.example`
 
-5. Shop course access changed from per-item fanout to batched list query.
-Path: `src/lib/courseAccess.js`, `src/app/shop/page.js`
+5. Shop page uses a static catalog shell with async ownership enrichment (`/api/shop/ownership`) including retry/backoff, so anonymous traffic avoids user-bound access checks in the initial HTML path.
+Path: `src/app/shop/page.js`, `src/components/shop/ShopIndex.js`, `src/app/api/shop/ownership/route.js`
 
-6. Storefront product images use optimized `next/image` with `sizes`.
-Path: `src/components/shop/ShopIndex.js`, `src/components/shop/ShopProductDetail.js`
+6. Shop catalog aggregation now uses a short-lived server cache to reduce repeated WordPress/KV recomputation.
+Path: `src/lib/shopProducts.js`
 
-7. Style bootstrap fetch switched to cache-friendly behavior.
+7. Asset-based digital products now consume stored responsive variants (`sm/md/lg`) through a width-aware image loader fallback strategy.
+Path: `src/lib/avatarFeedStore.js`, `src/lib/shopProducts.js`, `src/components/shop/ShopIndex.js`
+
+8. Style bootstrap fetch switched to cache-friendly behavior.
 Path: `src/app/layout.js`, `src/app/api/site-style/route.js`
 
-8. Production browser source maps made opt-in.
+9. Downloaded font CSS is served in a core-weight mode by default to reduce first-render font payload.
+Path: `src/app/api/site-fonts/route.js`, `src/lib/downloadedFonts.js`
+
+10. Performance budgets are now enforced in CI before deployment.
+Path: `scripts/check-performance-budgets.mjs`, `.github/workflows/deploy.yml`
+
+11. Production browser source maps made opt-in.
 Path: `next.config.mjs`
 
 ## Quantifying impact by asset category
@@ -204,7 +213,7 @@ If the next optimization wave is implemented, a realistic outcome is:
 
 ## Suggested roadmap with tradeoffs
 
-1. Split `/shop` into static catalog shell + user ownership enrichment API.
+1. Split `/shop` into static catalog shell + user ownership enrichment API. (Implemented)
 Expected gain: major TTFB reduction for anonymous traffic.
 Tradeoff: additional client-side state path; ownership badges become async.
 
@@ -216,7 +225,7 @@ Tradeoff: extra API/schema maintenance.
 Expected gain: fewer upstream WordPress calls.
 Tradeoff: cache invalidation complexity after content updates.
 
-4. Enforce image pipeline defaults (WebP by default, AVIF where practical, size variants).
+4. Enforce image pipeline defaults (WebP by default, AVIF where practical, size variants). (Implemented, continue tuning)
 Expected gain: better LCP and lower transfer.
 Tradeoff: extra storage + processing + variant bookkeeping.
 
@@ -224,7 +233,7 @@ Tradeoff: extra storage + processing + variant bookkeeping.
 Expected gain: faster first render and reduced layout shifts.
 Tradeoff: reduced typography flexibility.
 
-6. Add RUM Web Vitals collection and make performance budgets part of CI.
+6. Add RUM Web Vitals collection and make performance budgets part of CI. (Implemented)
 Expected gain: detect real regressions early.
 Tradeoff: instrumentation/storage overhead and alert tuning effort.
 
