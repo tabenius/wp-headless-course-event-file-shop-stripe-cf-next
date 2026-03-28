@@ -930,6 +930,19 @@ export default function AdminInfoHubTab({
     runHealthCheck?.();
   }, [section, healthChecks, runHealthCheck]);
 
+  const [cacheInfo, setCacheInfo] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/cache-info")
+      .then((r) => r.json())
+      .then((json) => {
+        if (!cancelled && json?.ok) setCacheInfo(json);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="border rounded bg-white p-2 flex flex-wrap items-center gap-2">
@@ -975,6 +988,33 @@ export default function AdminInfoHubTab({
             purging={purging}
             purgeCache={purgeCache}
           />
+          {cacheInfo && (
+            <div className="rounded-lg border p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700">
+                {t("admin.cacheConfiguration", "Cache Configuration")}
+              </h3>
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr className="border-b">
+                    <td className="py-1.5 text-gray-600">ISR Revalidation</td>
+                    <td className="py-1.5 font-mono text-right">{cacheInfo.isrRevalidation}s</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-1.5 text-gray-600">Catalog Cache TTL</td>
+                    <td className="py-1.5 font-mono text-right">{cacheInfo.catalogCacheTtl}s</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-1.5 text-gray-600">GraphQL Edge Cache</td>
+                    <td className="py-1.5 font-mono text-right">{cacheInfo.graphqlEdgeCache}s</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 text-gray-600">GraphQL Stale-While-Revalidate</td>
+                    <td className="py-1.5 font-mono text-right">{cacheInfo.graphqlStaleWhileRevalidate}s</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
