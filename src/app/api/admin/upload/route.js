@@ -4,6 +4,7 @@ import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { buildR2Url, signR2Put } from "@/lib/r2Edge";
 import { registerUploadedAsset } from "@/lib/avatarFeedStore";
 import { t } from "@/lib/i18n";
+import { runUploadPipeline } from "@/lib/uploadPipeline";
 
 const DEFAULT_MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
 const DEFAULT_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
@@ -502,6 +503,34 @@ function uploadDisabled() {
   );
 }
 
+function createVariantUploader(backend, storageMetadata) {
+  return async (bytes, filename, contentType) => {
+    if (backend === "r2") {
+      const result = await uploadToR2(
+        bytes.buffer,
+        { name: filename, type: contentType },
+        storageMetadata,
+      );
+      return result;
+    }
+    if (backend === "s3") {
+      const { uploadToS3, isS3Configured } = await import("@/lib/s3upload");
+      if (!isS3Configured("s3")) throw new Error("S3 not configured");
+      const url = await uploadToS3(bytes, filename, contentType, "s3", {
+        metadata: storageMetadata,
+      });
+      return { url, title: filename };
+    }
+    // WordPress
+    const result = await uploadToWordPress(
+      bytes.buffer,
+      { name: filename, type: contentType },
+      null,
+    );
+    return result;
+  };
+}
+
 export async function POST(request) {
   if (process.env.UPLOAD_ENABLED !== "1") return uploadDisabled();
   const auth = await requireAdmin(request);
@@ -574,6 +603,26 @@ export async function POST(request) {
       const result = await uploadToR2(arrayBuffer, file, storageMetadata);
       const asset = buildAssetResponse(assetContext, result, backend);
       await persistAssetRecord(asset, result);
+      // Auto-generate image variants (best-effort)
+      let variants = [];
+      if (
+        typeof file.type === "string" &&
+        file.type.startsWith("image/") &&
+        file.type !== "image/gif"
+      ) {
+        try {
+          variants = await runUploadPipeline({
+            arrayBuffer,
+            mimeType: file.type,
+            originalUrl: result.url,
+            assetId: assetContext.assetId,
+            ownerUri: assetContext.ownerUri,
+            uploadVariant: createVariantUploader(backend, storageMetadata),
+          });
+        } catch (err) {
+          console.error("[upload-pipeline] Auto-pipeline failed:", err);
+        }
+      }
       return NextResponse.json({
         ok: true,
         ...result,
@@ -581,6 +630,7 @@ export async function POST(request) {
         mimeType: file.type || "application/octet-stream",
         asset,
         originalUrl: asset?.original?.url || null,
+        variants,
       });
     }
 
@@ -608,6 +658,26 @@ export async function POST(request) {
       const result = { url, title: file.name };
       const asset = buildAssetResponse(assetContext, result, backend);
       await persistAssetRecord(asset, result);
+      // Auto-generate image variants (best-effort)
+      let variants = [];
+      if (
+        typeof file.type === "string" &&
+        file.type.startsWith("image/") &&
+        file.type !== "image/gif"
+      ) {
+        try {
+          variants = await runUploadPipeline({
+            arrayBuffer,
+            mimeType: file.type,
+            originalUrl: result.url,
+            assetId: assetContext.assetId,
+            ownerUri: assetContext.ownerUri,
+            uploadVariant: createVariantUploader(backend, storageMetadata),
+          });
+        } catch (err) {
+          console.error("[upload-pipeline] Auto-pipeline failed:", err);
+        }
+      }
       return NextResponse.json({
         ok: true,
         ...result,
@@ -615,12 +685,33 @@ export async function POST(request) {
         mimeType: file.type || "application/octet-stream",
         asset,
         originalUrl: asset?.original?.url || null,
+        variants,
       });
     }
 
     const result = await uploadToWordPress(arrayBuffer, file, assetContext);
     const asset = buildAssetResponse(assetContext, result, "wordpress");
     await persistAssetRecord(asset, result);
+    // Auto-generate image variants (best-effort)
+    let variants = [];
+    if (
+      typeof file.type === "string" &&
+      file.type.startsWith("image/") &&
+      file.type !== "image/gif"
+    ) {
+      try {
+        variants = await runUploadPipeline({
+          arrayBuffer,
+          mimeType: file.type,
+          originalUrl: result.url,
+          assetId: assetContext.assetId,
+          ownerUri: assetContext.ownerUri,
+          uploadVariant: createVariantUploader("wordpress", storageMetadata),
+        });
+      } catch (err) {
+        console.error("[upload-pipeline] Auto-pipeline failed:", err);
+      }
+    }
     return NextResponse.json({
       ok: true,
       ...result,
@@ -628,6 +719,7 @@ export async function POST(request) {
       mimeType: file.type || "application/octet-stream",
       asset,
       originalUrl: asset?.original?.url || null,
+      variants,
     });
   } catch (error) {
     console.error("Upload error:", error);
