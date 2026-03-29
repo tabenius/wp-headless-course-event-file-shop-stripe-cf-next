@@ -6,6 +6,9 @@ import Footer from "@/components/layout/Footer";
 import PagePerformanceLogger from "@/components/common/PagePerformanceLogger";
 import site from "@/lib/site";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Variable fonts: one file per family covers all weights (vs 5 separate files)
 const montserrat = Montserrat({
   variable: "--font-montserrat",
