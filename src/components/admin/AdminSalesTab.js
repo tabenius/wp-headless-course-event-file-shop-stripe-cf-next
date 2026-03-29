@@ -468,7 +468,7 @@ export default function AdminSalesTab({
                 {filtered.map((p, i) => (
                   <tr
                     key={p.id}
-                    className={`transition-colors hover:bg-slate-50/40 ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}
+                    className={`transition-colors hover:bg-slate-50/40 ${i % 2 === 1 ? "bg-gray-50/15" : ""}`}
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 font-mono">
                       {formatDate(p.created)}
