@@ -114,10 +114,12 @@ body:has(.admin-layout)::before {
   background-color: var(--admin-surface) !important;
   color: var(--admin-text) !important;
 }
-.admin-layout .bg-gray-50 {
+.admin-layout .bg-gray-50,
+.admin-layout .hover\:bg-gray-50:hover {
   background-color: var(--admin-bg) !important;
 }
-.admin-layout .bg-gray-100 {
+.admin-layout .bg-gray-100,
+.admin-layout .hover\:bg-gray-100:hover {
   background-color: var(--admin-surface-alt) !important;
 }
 .admin-layout .border,
