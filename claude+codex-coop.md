@@ -1,5 +1,34 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-29 (Codex) — admin responsiveness + docs-help cleanup stabilization
+
+### Codex — immediate admin loading feedback, hotkey/help cleanup, and compatibility fixes (commit `ecbf5ad`)
+
+**Delivered:**
+- Added route-level admin loading shell for immediate visual feedback while admin page/data hydrate:
+  - new `src/components/admin/AdminLoadingShell.js`
+  - new `src/app/admin/loading.js`
+  - `src/app/admin/page.js` now dynamically imports `AdminDashboard` with loading fallback.
+- Removed duplicated context-help rendering in admin:
+  - removed global `<AdminDocsContextLinks />` banner injection from `AdminDashboard` (each tab keeps its own context links).
+  - removed extra field-level `?` helper in Sales filter row to avoid duplicate “Need help?” surfaces.
+- Simplified `AdminFieldHelpLink` behavior:
+  - removed non-working `F1`/`?` key hint and related key handlers, keeping clear click/open behavior only.
+- Landed short-term stability fixes tied to current failing checks:
+  - restored `themeToggle` in `src/lib/adminHotkeys.js` so hotkey test contract passes.
+  - fixed ESM test import compatibility by replacing path-alias imports in Stripe settings/payment helpers with local relative imports (`stripePayments.js`, `stripe.js`, `adminSettingsStore.js`).
+  - expanded ESLint ignore set to skip hidden tool directories (`.*/**`) and avoid OOM scan regressions.
+- Kept `src/middleware.js` (edge middleware) as compatibility path for OpenNext Cloudflare builds; documented why in-session.
+- Marked the three newly reported BUGS entries as completed in `BUGS.md`:
+  - in-context helper hotkey mismatch,
+  - overly generic helper behavior,
+  - duplicated Sales “Need help?” block.
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only).
+- `node --experimental-test-module-mocks --test tests/admin-hotkeys.test.js tests/stripe-payments.test.js` (pass).
+- `npm run cf:build` (pass; OpenNext + worker patch complete).
+
 ## 2026-03-29 (Codex) — admin/storefront CSS separation
 
 ### Codex — moved admin styling to route-scoped stylesheet (commit `c05ae2d`)
