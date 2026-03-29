@@ -430,9 +430,9 @@ export default function AdminHeader({ logoUrl }) {
                 aria-label={t("admin.menuToggle", "Toggle main menu")}
               >
                 <span className="flex flex-col gap-1">
-                  <span className="block h-0.5 w-5 bg-white" />
-                  <span className="block h-0.5 w-6 bg-white" />
-                  <span className="block h-0.5 w-4 bg-white" />
+                  <span className="block h-0.5 w-5 bg-current" />
+                  <span className="block h-0.5 w-6 bg-current" />
+                  <span className="block h-0.5 w-4 bg-current" />
                 </span>
               </button>
               <span className="admin-header-hint mt-1 text-[9px] font-medium tracking-wide">
