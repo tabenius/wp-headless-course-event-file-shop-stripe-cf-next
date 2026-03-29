@@ -1,5 +1,21 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-29 (Codex) — admin/storefront CSS separation
+
+### Codex — moved admin styling to route-scoped stylesheet (commit `c05ae2d`)
+
+**Delivered:**
+- Created `src/app/admin/admin.css` and moved all admin-only selectors there:
+  - admin layout shell/reset (`.admin-layout`, `main:has(.admin-layout)`),
+  - admin token and surface mappings,
+  - admin header chrome and ticker animation.
+- Removed those admin blocks from `src/app/globals.css` so global stylesheet is now storefront/base-focused.
+- Updated `src/app/admin/layout.js` to import `./admin.css` so admin styles are loaded only on admin routes.
+- Removed unused admin font import wiring in `admin/layout.js` while keeping `AdminThemeWrapper` behavior intact.
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only).
+
 ## 2026-03-29 (Codex) — admin UI standardization follow-up
 
 ### Codex — simplify header chrome + fix form-state styling leaks (commit `dd9e2e1`)
