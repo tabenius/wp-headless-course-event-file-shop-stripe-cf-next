@@ -4,7 +4,7 @@ import {
   isAdminCredentialsConfigured,
 } from "@/auth";
 import { appendServerLog } from "@/lib/serverLog";
-import { getEnabledProviders } from "@/lib/oauthProviders";
+import { getEnabledProviders, getProviderConfig } from "@/lib/oauthProviders";
 import { getWordPressGraphqlAuth } from "@/lib/wordpressGraphqlAuth";
 import { getStripeSecretKey, isStripeEnabled } from "@/lib/stripe";
 import {
@@ -318,6 +318,54 @@ async function checkStripe() {
   }
 }
 
+async function checkOAuthProviders(providers) {
+  if (providers.length === 0) {
+    return { ok: true, message: t("health.oauthNone") };
+  }
+
+  const results = await Promise.all(
+    providers.map(async (id) => {
+      const config = getProviderConfig(id);
+      if (!config?.authorizationUrl) return { id, reachable: false };
+      try {
+        const res = await fetchWithTimeout(config.authorizationUrl, {
+          method: "HEAD",
+          redirect: "manual",
+        }, 5000);
+        // 2xx, 3xx, or 400 (expected without params) all mean the endpoint exists
+        return { id, reachable: res.status < 500 };
+      } catch {
+        return { id, reachable: false };
+      }
+    }),
+  );
+
+  const reachable = results.filter((r) => r.reachable).map((r) => r.id);
+  const unreachable = results.filter((r) => !r.reachable).map((r) => r.id);
+
+  if (unreachable.length === 0) {
+    return {
+      ok: true,
+      message: t("health.oauthActive", { providers: providers.join(", ") }),
+    };
+  }
+  if (reachable.length === 0) {
+    return {
+      ok: false,
+      message: t("health.oauthUnreachable", {
+        providers: unreachable.join(", "),
+      }),
+    };
+  }
+  return {
+    ok: false,
+    message: t("health.oauthPartial", {
+      active: reachable.join(", "),
+      unreachable: unreachable.join(", "),
+    }),
+  };
+}
+
 export async function GET(request) {
   const adminSession = getAdminSessionFromCookieHeader(
     request.headers.get("cookie") || "",
@@ -428,13 +476,7 @@ export async function GET(request) {
           ? t("health.webhookConfigured")
           : t("health.webhookMissing"),
       },
-      oauthProviders: {
-        ok: providers.length > 0,
-        message:
-          providers.length > 0
-            ? t("health.oauthActive", { providers: providers.join(", ") })
-            : t("health.oauthNone"),
-      },
+      oauthProviders: await checkOAuthProviders(providers),
       kvStorage: kvCheck,
     },
   });

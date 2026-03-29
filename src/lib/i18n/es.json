@@ -950,6 +950,8 @@
     "webhookConfigured": "Webhook de Stripe configurado.",
     "webhookMissing": "Webhook de Stripe ausente.",
     "oauthActive": "Proveedores activos: {providers}",
+    "oauthUnreachable": "Proveedores configurados pero inaccesibles: {providers}",
+    "oauthPartial": "Activos: {active}. Inaccesibles: {unreachable}",
     "oauthNone": "No hay proveedores externos.",
     "backendLabel": "Backend: {backend}",
     "wpModeNotEnabled": "Modo WordPress no activado.",

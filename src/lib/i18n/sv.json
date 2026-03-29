@@ -950,6 +950,8 @@
     "webhookConfigured": "Stripe-webhook är konfigurerad.",
     "webhookMissing": "Stripe-webhook saknas.",
     "oauthActive": "Aktiva inloggningstjänster: {providers}",
+    "oauthUnreachable": "Inloggningstjänster konfigurerade men onåbara: {providers}",
+    "oauthPartial": "Aktiva: {active}. Onåbara: {unreachable}",
     "oauthNone": "Inga externa inloggningstjänster är konfigurerade.",
     "backendLabel": "Backend: {backend}",
     "wpModeNotEnabled": "WordPress-läge är inte aktiverat.",

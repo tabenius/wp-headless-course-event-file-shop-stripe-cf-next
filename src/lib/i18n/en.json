@@ -950,6 +950,8 @@
     "webhookConfigured": "Stripe webhook is configured.",
     "webhookMissing": "Stripe webhook is missing.",
     "oauthActive": "Active sign-in providers: {providers}",
+    "oauthUnreachable": "Sign-in providers configured but unreachable: {providers}",
+    "oauthPartial": "Active: {active}. Unreachable: {unreachable}",
     "oauthNone": "No external sign-in providers are configured.",
     "backendLabel": "Backend: {backend}",
     "wpModeNotEnabled": "WordPress mode is not enabled.",

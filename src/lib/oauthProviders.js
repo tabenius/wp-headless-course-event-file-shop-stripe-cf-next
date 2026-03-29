@@ -34,10 +34,25 @@ const PROVIDERS = {
   },
 };
 
+const PLACEHOLDER_PATTERNS = [
+  /^fake[_-]/i,
+  /^your[_-]/i,
+  /^xxx/i,
+  /^placeholder/i,
+  /^test[_-]?key/i,
+  /^change[_-]?me/i,
+  /^TODO/i,
+  /^REPLACE/i,
+];
+
+function looksLikePlaceholder(value) {
+  return PLACEHOLDER_PATTERNS.some((p) => p.test(value));
+}
+
 function hasEnvVars(keys) {
   return keys.every((key) => {
     const value = process.env[key];
-    return typeof value === "string" && value.trim() !== "";
+    return typeof value === "string" && value.trim() !== "" && !looksLikePlaceholder(value.trim());
   });
 }
 
