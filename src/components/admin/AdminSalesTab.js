@@ -4,6 +4,7 @@ import { useState } from "react";
 import { t } from "@/lib/i18n";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
+import SalesTrendChart from "./SalesTrendChart";
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
@@ -327,6 +328,11 @@ export default function AdminSalesTab({
             />
           )}
         </div>
+      )}
+
+      {/* ── Trend chart ── */}
+      {!isLoading && !paymentsError && payments.length > 0 && (
+        <SalesTrendChart payments={payments} />
       )}
 
       {/* ── Loading / empty / table ── */}
