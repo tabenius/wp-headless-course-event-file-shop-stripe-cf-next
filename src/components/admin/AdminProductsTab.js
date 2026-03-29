@@ -1629,8 +1629,8 @@ function SettingsTab({
             key={key}
             className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
               shopVisibleTypes.includes(key)
-                ? "bg-slate-50"
-                : "bg-white hover:bg-gray-50"
+                ? "bg-slate-100 border-l-4 border-l-slate-500"
+                : "bg-white border-l-4 border-l-transparent hover:bg-gray-50"
             }`}
           >
             <input

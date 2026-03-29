@@ -301,15 +301,14 @@ body:has(.admin-layout):not(.impress-enabled) {
   background: var(--admin-bg);
   color: var(--admin-text);
   min-height: 100vh;
-  /* JetBrains Mono as the admin-exclusive type system */
+  /* Standard admin typography for readability */
   font-family:
-    var(--font-admin), "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   letter-spacing: -0.01em;
-  font-feature-settings:
-    "calt" 1,
-    "liga" 1; /* ligatures */
+  font-feature-settings: normal;
 }
 .admin-layout h1,
 .admin-layout h2,
@@ -317,7 +316,9 @@ body:has(.admin-layout):not(.impress-enabled) {
 .admin-layout h4,
 .admin-layout h5,
 .admin-layout h6 {
-  font-family: var(--font-admin), "JetBrains Mono", monospace;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -349,41 +350,6 @@ body:has(.admin-layout)::before {
 
 .welcome-story-force-white {
   color: #fff !important;
-}
-
-.admin-header-concrete {
-  isolation: isolate;
-}
-
-.admin-header-concrete::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.56;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='224' height='224' viewBox='0 0 224 224'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='5' seed='17' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.96'/%3E%3C/svg%3E");
-  background-size: 128px 128px;
-  filter: contrast(235%) brightness(88%);
-}
-
-.admin-header-concrete::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.48;
-  mix-blend-mode: soft-light;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='176' height='176' viewBox='0 0 176 176'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.35' numOctaves='4' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.92'/%3E%3C/svg%3E");
-  background-size: 56px 56px;
-  filter: contrast(260%) brightness(90%);
-}
-
-.admin-header-concrete > * {
-  position: relative;
-  z-index: 2;
 }
 
 /* Admin theme surfaces and utility mappings */
@@ -425,7 +391,7 @@ body:has(.admin-layout)::before {
   color: var(--admin-muted) !important;
 }
 
-.admin-layout input,
+.admin-layout input:not([type="checkbox"]):not([type="radio"]),
 .admin-layout select,
 .admin-layout textarea {
   background-color: var(--admin-surface-alt) !important;

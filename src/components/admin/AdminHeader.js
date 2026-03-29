@@ -417,7 +417,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
 
   return (
-    <header className="admin-header-concrete admin-header-shell relative overflow-visible w-full sticky top-0 z-40 border-b">
+    <header className="admin-header-shell relative overflow-visible w-full sticky top-0 z-40 border-b">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex w-full h-14 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
