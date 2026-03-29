@@ -844,12 +844,12 @@ export default function AdminDashboard() {
   const loadUiFeedback = useCallback(async () => {
     setUiFeedbackLoading(true);
     try {
-      const [sessionRes, feedbackRes] = await Promise.all([
+      const [sessionResult, feedbackResult] = await Promise.all([
         adminFetch("/api/admin/session"),
         adminFetch("/api/admin/ui-feedback"),
       ]);
-      const sessionJson = await sessionRes.json().catch(() => ({}));
-      const feedbackJson = await feedbackRes.json().catch(() => ({}));
+      const sessionJson = sessionResult.json || {};
+      const feedbackJson = feedbackResult.json || {};
 
       const email = String(sessionJson?.session?.email || "")
         .trim()
@@ -857,7 +857,7 @@ export default function AdminDashboard() {
       const editable = email.startsWith("sofia");
       setUiFeedbackReadOnly(!editable);
 
-      if (feedbackRes.ok && feedbackJson?.ok) {
+      if (feedbackResult.res.ok && feedbackJson?.ok) {
         setUiFeedbackFields(feedbackJson.fields || {});
       } else {
         throw new Error(feedbackJson?.error || "Failed to load UI feedback.");
@@ -875,12 +875,11 @@ export default function AdminDashboard() {
       if (!fieldId || uiFeedbackReadOnly) return;
       setUiFeedbackSavingField(fieldId);
       try {
-        const res = await adminFetch("/api/admin/ui-feedback", {
+        const { res, json } = await adminFetch("/api/admin/ui-feedback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fieldId, value }),
         });
-        const json = await res.json().catch(() => ({}));
         if (!res.ok || !json?.ok) {
           throw new Error(json?.error || "Failed to save UI feedback.");
         }
