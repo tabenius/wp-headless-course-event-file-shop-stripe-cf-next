@@ -1,5 +1,23 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-28 (Codex) — admin UI stabilization (remove purple + stop storefront CSS bleed)
+
+### Codex — neutral admin palette + CSS scope hardening (commit `93f0a39`)
+
+**Delivered:**
+- Scoped storefront-only styling away from admin in `src/app/globals.css`:
+  - dark-mode storefront rules now gated behind `body:not(:has(.admin-layout))`,
+  - global CTA button rule now excluded from admin (`body:not(:has(.admin-layout)) :where(button, ...)`),
+  - storefront icon/button rules are no longer applied when admin layout is present.
+- Simplified admin theme override layer by removing the broad purple/violet/fuchsia remap block and reducing hidden class-level style coercion.
+- Shifted admin token accents/docs pills to neutral slate/gray for clearer standard UI behavior and improved readability.
+- Replaced hardcoded admin `purple/violet/fuchsia/indigo` utility classes with neutral `slate` variants across key admin surfaces:
+  - Products, Media Library, Sales, Style, Info, Welcome, GraphQL panel, image generation/upload, R2 panels, and related helpers.
+- Removed remaining purple category metadata in derivation operation registry (`effects` now uses `slate`).
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only: manual stylesheet include in layout + expected `<img>` warnings in admin image-heavy surfaces).
+
 ## 2026-03-28 (Codex) — build mode upstream bypass for rate-limited WordPress/Varnish
 
 ### Codex — default build-time upstream skip (`SKIP_UPSTREAM_DURING_BUILD=1`) (commit `4aec6dc`)
