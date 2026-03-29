@@ -30,12 +30,11 @@ export default function AdminUiFeedbackBar({
   const updatedAt = formatWhen(entry?.updatedAt);
 
   return (
-    <aside className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+    <aside className="rounded-lg border border-gray-200 bg-gray-50/30 px-3 py-1.5 text-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium">
-          {t("admin.uiFeedbackTitle", "UI feedback")} ·{" "}
-          <span className="font-semibold">{contextLabel}</span>
-        </p>
+        <span className="text-gray-500">
+          {t("admin.uiFeedbackTitle", "UI feedback")} · {contextLabel}
+        </span>
         <div className="flex items-center gap-1">
           {FEEDBACK_OPTIONS.map((option) => {
             const isActive = selected === option.value;
@@ -43,16 +42,16 @@ export default function AdminUiFeedbackBar({
               <button
                 key={option.value}
                 type="button"
-                className={`rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                className={`rounded border px-1.5 py-0.5 text-xs transition-colors ${
                   isActive
-                    ? "border-amber-900 bg-amber-200 text-amber-950"
-                    : "border-amber-400 bg-white text-amber-900 hover:bg-amber-100"
-                } ${readOnly || loading || saving ? "opacity-70 cursor-not-allowed" : ""}`}
+                    ? "border-gray-500 bg-gray-200 text-gray-900"
+                    : "border-gray-300 text-gray-500 hover:bg-gray-100"
+                } ${readOnly || loading || saving ? "opacity-50 cursor-not-allowed" : ""}`}
                 disabled={readOnly || loading || saving}
                 onClick={() => onSet?.(fieldId, option.value)}
                 title={t(`admin.${option.labelKey}`, option.fallback)}
               >
-                <span className="mr-1" aria-hidden="true">
+                <span className="mr-0.5" aria-hidden="true">
                   {option.icon}
                 </span>
                 {t(`admin.${option.labelKey}`, option.fallback)}
@@ -61,20 +60,13 @@ export default function AdminUiFeedbackBar({
           })}
         </div>
       </div>
-      <p className="mt-1 text-xs text-amber-800">
-        {readOnly
-          ? t(
-              "admin.uiFeedbackReadOnly",
-              "Read-only for this admin user. Sofia can set feedback.",
-            )
-          : t(
-              "admin.uiFeedbackEditable",
-              "Your feedback is saved to Cloudflare KV and shared across admin sessions.",
-            )}
-        {by || updatedAt ? " " : ""}
-        {by ? `${t("admin.uiFeedbackBy", "By")}: ${by}. ` : ""}
-        {updatedAt ? `${t("admin.uiFeedbackUpdated", "Updated")}: ${updatedAt}.` : ""}
-      </p>
+      {(by || updatedAt) && (
+        <p className="mt-0.5 text-[10px] text-gray-400">
+          {by ? `${t("admin.uiFeedbackBy", "By")}: ${by}` : ""}
+          {by && updatedAt ? " · " : ""}
+          {updatedAt ? `${t("admin.uiFeedbackUpdated", "Updated")}: ${updatedAt}` : ""}
+        </p>
+      )}
     </aside>
   );
 }
