@@ -160,6 +160,12 @@ function getFocusableElements(container) {
   });
 }
 
+function formatAdminIdentity(email) {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized) return "";
+  return normalized;
+}
+
 export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -178,6 +184,8 @@ export default function AdminHeader({ logoUrl }) {
   const lastFocusedBeforeMenuRef = useRef(null);
   const [subtitleScaleX, setSubtitleScaleX] = useState(1);
   const [tickerStats, setTickerStats] = useState(null);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminSessionLoaded, setAdminSessionLoaded] = useState(false);
   const [chatBetaEnabled, setChatBetaEnabled] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(CHAT_BETA_STORAGE_KEY) === "true";
@@ -226,6 +234,28 @@ export default function AdminHeader({ logoUrl }) {
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAdminSession() {
+      try {
+        const response = await fetch("/api/admin/session", { cache: "no-store" });
+        const json = await response.json().catch(() => null);
+        if (cancelled) return;
+        const nextEmail = formatAdminIdentity(json?.session?.email);
+        setAdminEmail(nextEmail);
+      } catch {
+        if (cancelled) return;
+        setAdminEmail("");
+      } finally {
+        if (!cancelled) setAdminSessionLoaded(true);
+      }
+    }
+    loadAdminSession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -421,12 +451,15 @@ export default function AdminHeader({ logoUrl }) {
     .split("+")
     .pop()
     .toUpperCase();
+  const tickerText = buildTickerText(tickerStats);
+  const adminIdentityLabel =
+    adminEmail || t("admin.accountUnknown", "Admin");
 
   return (
     <header className="admin-header-shell relative overflow-visible w-full sticky top-0 z-40 border-b">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex w-full h-14 items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex w-full h-14 items-center gap-3">
+          <div className="flex items-center gap-4 shrink-0">
             <div className="flex flex-col items-center leading-none">
               <button
                 ref={menuToggleButtonRef}
@@ -477,11 +510,51 @@ export default function AdminHeader({ logoUrl }) {
             </Link>
           </div>
 
+          <div className="hidden md:flex min-w-0 flex-1 items-center justify-center">
+            <div
+              className="admin-header-ticker-inline w-full max-w-4xl overflow-hidden rounded-md border"
+              style={{ height: "1.4rem" }}
+              aria-label={t("admin.statsTicker", "Stats")}
+            >
+              <div
+                className="admin-header-ticker-text flex whitespace-nowrap text-[10px] font-medium select-none"
+                style={{
+                  animation: "admin-ticker-scroll 60s linear infinite",
+                  willChange: "transform",
+                  paddingTop: "2px",
+                }}
+              >
+                <span className="px-8">{tickerText}</span>
+                <span className="px-8" aria-hidden="true">{tickerText}</span>
+                <span className="px-8" aria-hidden="true">{tickerText}</span>
+              </div>
+            </div>
+          </div>
+
           <div
-            className="relative flex items-center gap-3"
+            className="relative flex shrink-0 items-center gap-3"
             onMouseEnter={() => setShowHealthTooltip(true)}
             onMouseLeave={() => setShowHealthTooltip(false)}
           >
+            <button
+              type="button"
+              onClick={logoutAdmin}
+              className="admin-header-account-pill flex max-w-[14rem] items-center gap-1 rounded-full border px-2.5 py-1 text-xs focus:outline-none focus:ring-2"
+              aria-label={t("admin.accountLogoutAria", "Sign out from admin")}
+              title={
+                adminSessionLoaded
+                  ? `${t("admin.loggedInAsLabel", "Signed in as")}: ${adminIdentityLabel}`
+                  : t("common.loading", "Loading…")
+              }
+            >
+              <span className="truncate">
+                {adminIdentityLabel}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span className="font-semibold">
+                {t("admin.logout", "Logout")}
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => setShowHealthTooltip((prev) => !prev)}
@@ -617,26 +690,6 @@ export default function AdminHeader({ logoUrl }) {
               </aside>
             </>
           )}
-        </div>
-      </div>
-      {/* Stats ticker — thin scrolling bar below the main nav row */}
-      <div
-        className="admin-header-ticker w-full overflow-hidden border-t"
-        style={{ height: "1.4rem" }}
-        aria-label={t("admin.statsTicker", "Stats")}
-      >
-        <div
-          className="admin-header-ticker-text flex whitespace-nowrap text-[10px] font-medium select-none"
-          style={{
-            animation: "admin-ticker-scroll 60s linear infinite",
-            willChange: "transform",
-            paddingTop: "2px",
-          }}
-        >
-          {/* Duplicate text for seamless loop */}
-          <span className="px-8">{buildTickerText(tickerStats)}</span>
-          <span className="px-8" aria-hidden="true">{buildTickerText(tickerStats)}</span>
-          <span className="px-8" aria-hidden="true">{buildTickerText(tickerStats)}</span>
         </div>
       </div>
     </header>

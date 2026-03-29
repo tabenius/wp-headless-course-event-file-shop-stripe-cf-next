@@ -239,12 +239,33 @@ body:has(.admin-layout)::before {
   color: #fecaca !important;
 }
 
+.admin-header-account-pill {
+  background: var(--admin-header-control-bg) !important;
+  border-color: rgba(255, 255, 255, 0.26) !important;
+  color: var(--admin-header-text) !important;
+}
+.admin-header-account-pill:hover {
+  background: var(--admin-header-control-hover) !important;
+}
+.admin-header-account-pill:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
+.admin-header-ticker-inline {
+  background: var(--admin-header-ticker-bg) !important;
+  border-color: var(--admin-header-border) !important;
+}
 .admin-header-ticker {
   background: var(--admin-header-ticker-bg) !important;
   border-top-color: var(--admin-header-border) !important;
 }
 .admin-header-ticker-text {
   color: var(--admin-header-ticker-text) !important;
+}
+.admin-feedback-strip {
+  background: var(--admin-header-bg) !important;
+  border-bottom-color: var(--admin-header-border) !important;
 }
 
 /* Admin header stats ticker scroll animation */

@@ -1,5 +1,23 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-29 (Codex) — header ticker + account pill + feedback strip compaction
+
+### Codex — moved stats ticker into main header row and made account/logout always visible (commit pending)
+
+**Delivered:**
+- Moved the admin stats ticker from a dedicated second header row into the center of the main header bar (`AdminHeader`), preserving the existing rolling ticker feed and cadence.
+- Added a visible actionable account pill in the main header that:
+  - fetches current admin session identity from `GET /api/admin/session`,
+  - shows the logged-in admin email (with truncation),
+  - exposes one-click logout directly in the pill.
+- Kept the previous logout paths intact (drawer entry + `Ctrl+Alt+L`) while adding localized account/logout labels for EN/SV/ES.
+- Relocated UI feedback controls out of the main content stack into a compact strip directly below the header (the previous ticker area), and tightened spacing/padding for denser flow.
+- Added header/feedback strip CSS tokens and classes (`admin-header-ticker-inline`, `admin-header-account-pill`, `admin-feedback-strip`) to keep styling consistent with the current admin theme.
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only)
+- `npm run cf:build` (pass)
+
 ## 2026-03-29 (Codex) — admin header status control clarification fix
 
 ### Codex — switched pre-check header state to unknown + actionable translated tooltip (commit `d8e9b7d`)

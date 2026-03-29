@@ -2306,7 +2306,7 @@ export default function AdminDashboard() {
   const dashboardSectionClass =
     activeTab === "welcome" && welcomeStoryVisible
       ? "w-full min-w-0 px-0 py-0"
-      : "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-6 sm:px-4 sm:py-8 lg:px-6 lg:py-10 space-y-6 sm:space-y-8";
+      : "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 space-y-6 sm:space-y-8";
   const uiFeedbackFieldId = `tab:${activeTab}`;
   const uiFeedbackContextLabelMap = {
     welcome: t("admin.navWelcome", "Welcome"),
@@ -2323,18 +2323,23 @@ export default function AdminDashboard() {
   const showUiFeedbackBar = !(activeTab === "welcome" && welcomeStoryVisible);
 
   return (
-    <section className={dashboardSectionClass}>
+    <>
       {showUiFeedbackBar && (
-        <AdminUiFeedbackBar
-          contextLabel={uiFeedbackContextLabel}
-          fieldId={uiFeedbackFieldId}
-          entry={uiFeedbackFields[uiFeedbackFieldId]}
-          loading={uiFeedbackLoading}
-          saving={uiFeedbackSavingField === uiFeedbackFieldId}
-          readOnly={uiFeedbackReadOnly}
-          onSet={saveUiFeedback}
-        />
+        <div className="admin-feedback-strip w-full border-b">
+          <div className="mx-auto w-full max-w-screen-2xl px-3 py-1 sm:px-4 lg:px-6">
+            <AdminUiFeedbackBar
+              contextLabel={uiFeedbackContextLabel}
+              fieldId={uiFeedbackFieldId}
+              entry={uiFeedbackFields[uiFeedbackFieldId]}
+              loading={uiFeedbackLoading}
+              saving={uiFeedbackSavingField === uiFeedbackFieldId}
+              readOnly={uiFeedbackReadOnly}
+              onSet={saveUiFeedback}
+            />
+          </div>
+        </div>
       )}
+      <section className={dashboardSectionClass}>
       {activeTab === "welcome" && (
         <Suspense
           fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
@@ -2678,6 +2683,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-    </section>
+      </section>
+    </>
   );
 }

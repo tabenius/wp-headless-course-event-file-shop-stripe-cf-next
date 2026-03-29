@@ -30,11 +30,22 @@ export default function AdminUiFeedbackBar({
   const updatedAt = formatWhen(entry?.updatedAt);
 
   return (
-    <aside className="rounded-lg border border-gray-200 bg-gray-50/30 px-3 py-1.5 text-xs">
+    <aside className="admin-ui-feedback-bar rounded-md border border-gray-200/80 bg-gray-50/20 px-2 py-1 text-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-gray-500">
-          {t("admin.uiFeedbackTitle", "UI feedback")} · {contextLabel}
-        </span>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-gray-500">
+            {t("admin.uiFeedbackTitle", "UI feedback")} · {contextLabel}
+          </span>
+          {(by || updatedAt) && (
+            <span className="text-[10px] text-gray-400">
+              {by ? `${t("admin.uiFeedbackBy", "By")}: ${by}` : ""}
+              {by && updatedAt ? " · " : ""}
+              {updatedAt
+                ? `${t("admin.uiFeedbackUpdated", "Updated")}: ${updatedAt}`
+                : ""}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           {FEEDBACK_OPTIONS.map((option) => {
             const isActive = selected === option.value;
@@ -60,14 +71,6 @@ export default function AdminUiFeedbackBar({
           })}
         </div>
       </div>
-      {(by || updatedAt) && (
-        <p className="mt-0.5 text-[10px] text-gray-400">
-          {by ? `${t("admin.uiFeedbackBy", "By")}: ${by}` : ""}
-          {by && updatedAt ? " · " : ""}
-          {updatedAt ? `${t("admin.uiFeedbackUpdated", "Updated")}: ${updatedAt}` : ""}
-        </p>
-      )}
     </aside>
   );
 }
-
