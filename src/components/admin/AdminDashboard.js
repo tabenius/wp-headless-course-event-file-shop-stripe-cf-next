@@ -436,9 +436,9 @@ function emptyProduct() {
 }
 
 function deriveHealthStatus(checks) {
-  if (!checks) return "red";
+  if (!checks) return "unknown";
   const entries = Object.values(checks).filter(Boolean);
-  if (entries.length === 0) return "red";
+  if (entries.length === 0) return "unknown";
   const failing = entries.filter((check) => check.ok === false).length;
   if (failing === 0) return "green";
   if (failing <= 2) return "amber";
@@ -1426,6 +1426,15 @@ export default function AdminDashboard() {
   useEffect(() => {
     emitHealthStatus(deriveHealthStatus(healthChecks));
   }, [healthChecks]);
+
+  useEffect(() => {
+    function onHeaderRunHealthCheck() {
+      runHealthCheck();
+    }
+    window.addEventListener("admin:runHealthCheck", onHeaderRunHealthCheck);
+    return () =>
+      window.removeEventListener("admin:runHealthCheck", onHeaderRunHealthCheck);
+  }, [runHealthCheck]);
 
   useEffect(() => {
     loadCourseAccess();

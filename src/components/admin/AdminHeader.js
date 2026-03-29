@@ -133,6 +133,7 @@ function getNavItems(chatBetaEnabled) {
 }
 
 const healthDotColor = {
+  unknown: "#6b7280",
   green: "#059669",
   amber: "#d97706",
   red: "#b91c1c",
@@ -168,7 +169,7 @@ export default function AdminHeader({ logoUrl }) {
   });
   const [localeState, setLocaleState] = useState(getLocale);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [healthState, setHealthState] = useState("amber");
+  const [healthState, setHealthState] = useState("unknown");
   const [showHealthTooltip, setShowHealthTooltip] = useState(false);
   const ragbazWordmarkRef = useRef(null);
   const subtitleRef = useRef(null);
@@ -183,6 +184,7 @@ export default function AdminHeader({ logoUrl }) {
   });
   const log = (...args) => console.info("[AdminHeader]", ...args);
   const healthLabelMap = {
+    unknown: t("admin.healthStatusUnknown", "Status unknown"),
     green: t("admin.healthStatusGreen", "All systems operational"),
     amber: t("admin.healthStatusAmber", "Partial connectivity"),
     red: t("admin.healthStatusRed", "Critical issues"),
@@ -210,7 +212,7 @@ export default function AdminHeader({ logoUrl }) {
 
   useEffect(() => {
     function onHealthStatus(e) {
-      setHealthState(e.detail?.status || "amber");
+      setHealthState(e.detail?.status || "unknown");
     }
     window.addEventListener("admin:healthStatus", onHealthStatus);
     return () => window.removeEventListener("admin:healthStatus", onHealthStatus);
@@ -405,6 +407,10 @@ export default function AdminHeader({ logoUrl }) {
     setMenuOpen(false);
   }
 
+  function runHealthCheckNow() {
+    window.dispatchEvent(new CustomEvent("admin:runHealthCheck"));
+  }
+
   const navItems = getNavItems(chatBetaEnabled);
   const tabItems = navItems.filter((item) => item.tab);
   const healthHotkey = getAdminTabHotkeyLabel("health")
@@ -471,12 +477,14 @@ export default function AdminHeader({ logoUrl }) {
             </Link>
           </div>
 
-          <div className="relative flex items-center gap-3">
+          <div
+            className="relative flex items-center gap-3"
+            onMouseEnter={() => setShowHealthTooltip(true)}
+            onMouseLeave={() => setShowHealthTooltip(false)}
+          >
             <button
               type="button"
-              onClick={() => switchTab("info/health")}
-              onMouseEnter={() => setShowHealthTooltip(true)}
-              onMouseLeave={() => setShowHealthTooltip(false)}
+              onClick={() => setShowHealthTooltip((prev) => !prev)}
               onFocus={() => setShowHealthTooltip(true)}
               onBlur={() => setShowHealthTooltip(false)}
               className="admin-header-control flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs focus:outline-none focus:ring-2"
@@ -495,18 +503,32 @@ export default function AdminHeader({ logoUrl }) {
                   {healthLabelMap[healthState]}
                 </p>
                 <p className="mt-1">
-                  {t(
-                    "admin.healthTooltipHint",
-                    "System checks summarize connector status and environment readiness.",
-                  )}
+                  {healthState === "unknown"
+                    ? t(
+                        "admin.healthTooltipHintUnknown",
+                        "No health check has run yet in this session.",
+                      )
+                    : t(
+                        "admin.healthTooltipHint",
+                        "System checks summarize connector status and environment readiness.",
+                      )}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => switchTab("info/health")}
-                  className="admin-header-control mt-2 inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
-                >
-                  {t("admin.healthCheck", "Control check")}
-                </button>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={runHealthCheckNow}
+                    className="admin-header-control inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
+                  >
+                    {t("admin.healthRunNow", "Run now")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchTab("info/health")}
+                    className="admin-header-control inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
+                  >
+                    {t("admin.healthOpenChecks", "Open checks")}
+                  </button>
+                </div>
               </div>
             )}
           </div>
