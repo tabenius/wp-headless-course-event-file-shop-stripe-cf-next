@@ -343,7 +343,7 @@ export default function AdminStyleTab({
                           typographyPalette,
                           linkStyle,
                         };
-                        const res = await adminFetch("/api/admin/style-presets", {
+                        const { json: data } = await adminFetch("/api/admin/style-presets", {
                           method: "POST",
                           body: JSON.stringify({
                             type: "typography",
@@ -351,7 +351,6 @@ export default function AdminStyleTab({
                             style,
                           }),
                         });
-                        const data = await res.json();
                         if (data?.ok && data.preset) {
                           setUserTypographyPresets((prev) => [data.preset, ...prev]);
                           setTypographySaveName("");
@@ -801,7 +800,7 @@ export default function AdminStyleTab({
                   onClick={async () => {
                     if (!ctaSaveName.trim()) return;
                     if (siteStyleTokens.ctaStyle?.type === "upstream") return; // can't save upstream as preset
-                    const res = await adminFetch("/api/admin/style-presets", {
+                    const { json: data } = await adminFetch("/api/admin/style-presets", {
                       method: "POST",
                       body: JSON.stringify({
                         type: "cta",
@@ -809,7 +808,6 @@ export default function AdminStyleTab({
                         style: siteStyleTokens.ctaStyle,
                       }),
                     });
-                    const data = await res.json();
                     if (data?.ok && data.preset) {
                       setUserCtaPresets((prev) => [data.preset, ...prev]);
                       setCtaSaveName("");

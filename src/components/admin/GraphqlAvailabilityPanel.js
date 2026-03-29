@@ -257,8 +257,7 @@ export default function GraphqlAvailabilityPanel() {
     setLoading(true);
     setError("");
     try {
-      const res = await adminFetch(API);
-      const data = await res.json();
+      const { json: data } = await adminFetch(API);
       setKvConfigured(data.kvConfigured ?? false);
       setEnabled(data.settings?.enabled ?? false);
       setTemporaryEnabledUntil(

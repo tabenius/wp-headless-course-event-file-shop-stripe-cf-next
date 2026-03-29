@@ -1290,11 +1290,10 @@ export default function AdminDashboard() {
       setLoaded((s) => ({ ...s, shopSettings: true }));
       // Load style presets
       adminFetch("/api/admin/style-presets")
-        .then((res) => res.ok ? res.json() : null)
-        .then((data) => {
-          if (data?.ok) {
-            if (Array.isArray(data.cta)) setUserCtaPresets(data.cta);
-            if (Array.isArray(data.typography)) setUserTypographyPresets(data.typography);
+        .then(({ res, json }) => {
+          if (res.ok && json?.ok) {
+            if (Array.isArray(json.cta)) setUserCtaPresets(json.cta);
+            if (Array.isArray(json.typography)) setUserTypographyPresets(json.typography);
           }
         })
         .catch(() => {});

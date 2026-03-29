@@ -132,8 +132,7 @@ export default function PagePerformancePanel() {
     setLoading(true);
     setError("");
     try {
-      const res = await adminFetch(API);
-      const data = await res.json();
+      const { json: data } = await adminFetch(API);
       setKvConfigured(data.kvConfigured ?? false);
       setLog(Array.isArray(data.log) ? data.log : []);
       setRelayStatus(data.relayStatus && typeof data.relayStatus === "object" ? data.relayStatus : null);
