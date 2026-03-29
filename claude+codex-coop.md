@@ -1,5 +1,33 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-29 (Codex) — admin header status control clarification fix
+
+### Codex — switched pre-check header state to unknown + actionable translated tooltip (commit `d8e9b7d`)
+
+**Delivered:**
+- Changed admin header status semantics so it no longer shows red before any health check has run:
+  - `deriveHealthStatus(null|empty) -> "unknown"` in `AdminDashboard`
+  - header default state now `unknown` with gray dot.
+- Added a header-triggered health-check action path:
+  - header emits `admin:runHealthCheck`
+  - dashboard listens and runs `runHealthCheck()` without requiring a manual tab visit first.
+- Fixed status tooltip interaction so it is actually actionable:
+  - moved hover visibility ownership to the wrapper (button + popover) so the popover no longer disappears when moving cursor from button to tooltip.
+- Updated tooltip UX copy and actions:
+  - unknown-state explanatory hint,
+  - translated buttons: `Run now` and `Open checks`.
+- Added/updated i18n keys in EN/SV/ES for:
+  - `healthStatusUnknown`
+  - `healthTooltipHint`
+  - `healthTooltipHintUnknown`
+  - `healthRunNow`
+  - `healthOpenChecks`
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only)
+- `node --experimental-test-module-mocks --test tests/i18n-admin-parity.test.js` (pass)
+- `npm run cf:build` (pass)
+
 ## 2026-03-29 (Codex) — secret/env tab continuation after sales-trend verification
 
 ### Codex — verified sales trend is live and completed secret/env tab (commit `2ddf156`)
