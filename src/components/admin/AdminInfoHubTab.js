@@ -12,6 +12,7 @@ import PagePerformancePanel from "./PagePerformancePanel";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
 import AdminSettingsPanel from "./AdminSettingsPanel";
+import AdminSecretsPanel from "./AdminSecretsPanel";
 
 function normalizeSection(value) {
   const safe = String(value || "").trim().toLowerCase();
@@ -20,6 +21,7 @@ function normalizeSection(value) {
   if (safe === "stats" || safe === "statistics") return "stats";
   if (safe === "links" || safe === "dead-links" || safe === "deadlinks") return "beta";
   if (safe === "storage" || safe === "infrastructure") return "storage";
+  if (safe === "secret" || safe === "secrets") return "secret";
   if (safe === "docs" || safe === "documentation") return "docs";
   if (safe === "beta" || safe === "beta-features" || safe === "monitoring") return "beta";
   return "overview";
@@ -36,6 +38,7 @@ function sectionFromHash(hashValue) {
   if (parts[0] === "stats") return "stats";
   if (parts[0] === "links" || parts[0] === "dead-links") return "beta";
   if (parts[0] === "storage") return "storage";
+  if (parts[0] === "secret" || parts[0] === "secrets") return "secret";
   if (parts[0] === "docs" || parts[0] === "documentation") return "docs";
   if (parts[0] === "beta") return "beta";
   if (parts[0] !== "info") return "overview";
@@ -48,6 +51,7 @@ function hashForSection(section) {
   if (section === "health") return "#/info/health";
   if (section === "stats") return "#/info/stats";
   if (section === "storage") return "#/info/storage";
+  if (section === "secret") return "#/info/secret";
   if (section === "docs") return "#/info/docs";
   if (section === "beta") return "#/info/beta";
   return "#/info";
@@ -331,7 +335,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
   const [envGroups, setEnvGroups] = useState(null);
   const [envLoading, setEnvLoading] = useState(false);
   const [envError, setEnvError] = useState("");
-  const [revealedSecrets, setRevealedSecrets] = useState(new Set());
+  const [revealedValues, setRevealedValues] = useState(new Set());
   const [copiedEnv, setCopiedEnv] = useState("");
 
   const loadEnvStatus = useCallback(() => {
@@ -491,10 +495,13 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
             <div className="mt-3 space-y-1">
               {group.vars.map((v) => {
                 const key = `${group.id}:${v.names[0]}`;
-                const isRevealed = revealedSecrets.has(key);
-                const displayValue = v.secret
-                  ? isRevealed ? "(secret — not available client-side)" : "••••••••"
-                  : (v.value || "");
+                const isRevealed = revealedValues.has(key);
+                const hasValue = Boolean(v.set);
+                const displayValue = !hasValue
+                  ? t("admin.envVarNotSet", "not set")
+                  : isRevealed
+                    ? (v.secret ? "(secret)" : (v.value || ""))
+                    : "••••••••";
                 return (
                   <div
                     key={key}
@@ -514,18 +521,18 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
                     <span
                       className={`font-mono break-all ${
                         !v.set ? "text-red-400 italic"
-                        : v.secret && !isRevealed ? "text-gray-300 tracking-widest"
+                        : !isRevealed ? "text-gray-300 tracking-widest"
                         : "text-gray-700"
                       }`}
                     >
-                      {!v.set ? t("admin.envVarNotSet", "not set") : displayValue}
+                      {displayValue}
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
-                      {v.set && v.secret && (
+                      {hasValue && (
                         <button
                           type="button"
                           onClick={() =>
-                            setRevealedSecrets((prev) => {
+                            setRevealedValues((prev) => {
                               const next = new Set(prev);
                               if (next.has(key)) next.delete(key);
                               else next.add(key);
@@ -537,7 +544,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
                           {isRevealed ? t("admin.hideSecret", "Hide") : t("admin.showSecret", "Show")}
                         </button>
                       )}
-                      {v.set && !v.secret && v.value && (
+                      {hasValue && !v.secret && v.value && isRevealed && (
                         <button
                           type="button"
                           onClick={() => copyEnvValue(key, v.value)}
@@ -900,6 +907,7 @@ export default function AdminInfoHubTab({
     { id: "stats", label: t("admin.navStats", "Stats") },
     { id: "health", label: t("admin.healthCheck", "Health check") },
     { id: "storage", label: t("admin.navStorage", "Storage") },
+    { id: "secret", label: t("admin.navSecret", "Secret") },
     { id: "docs", label: t("admin.documentation", "Documentation") },
     { id: "beta", label: t("admin.betaFeatures", "Beta & monitoring") },
   ];
@@ -1056,6 +1064,8 @@ export default function AdminInfoHubTab({
           uploadInfoDetails={uploadInfoDetails}
         />
       )}
+
+      {section === "secret" && <AdminSecretsPanel />}
 
       {section === "docs" && <DocsPanel />}
 

@@ -8,12 +8,16 @@ import {
 const WC_PROXY_KEY = "settings:wc_proxy";
 const WC_REST_API_KEY = "settings:wc_rest_api";
 const STRIPE_KEYS_KEY = "settings:stripe_key_overrides";
+const ENV_OVERRIDES_KEY = "settings:env_overrides";
 
 const inMemory = {
   wcProxy: null,
   wcRestApi: null,
   stripeKeys: null,
+  envOverrides: null,
 };
+
+const ENV_NAME_RE = /^[A-Z][A-Z0-9_]{0,95}$/;
 
 function normalizeUrl(value, max = 500) {
   const raw = String(value || "").trim().slice(0, max);
@@ -73,6 +77,38 @@ function normalizeWcRestApi(input) {
     consumerSecret,
     sendOrders: Boolean(input?.sendOrders),
     readTax: Boolean(input?.readTax),
+    updatedAt:
+      typeof input?.updatedAt === "string" && input.updatedAt
+        ? input.updatedAt
+        : null,
+  };
+}
+
+function normalizeEnvName(name) {
+  const safe = String(name || "")
+    .trim()
+    .toUpperCase();
+  if (!ENV_NAME_RE.test(safe)) return "";
+  return safe;
+}
+
+function normalizeEnvOverrides(input) {
+  const valuesInput =
+    input && typeof input === "object" && input.values && typeof input.values === "object"
+      ? input.values
+      : input && typeof input === "object"
+        ? input
+        : {};
+  const values = {};
+  for (const [rawName, rawValue] of Object.entries(valuesInput || {})) {
+    const name = normalizeEnvName(rawName);
+    if (!name) continue;
+    const value = String(rawValue ?? "").trim().slice(0, 8000);
+    if (!value) continue;
+    values[name] = value;
+  }
+  return {
+    values,
     updatedAt:
       typeof input?.updatedAt === "string" && input.updatedAt
         ? input.updatedAt
@@ -146,4 +182,29 @@ export async function clearStripeKeyOverrides() {
     }
   }
   inMemory.stripeKeys = null;
+}
+
+export async function readEnvOverrides() {
+  const raw = await readJsonWithFallback(ENV_OVERRIDES_KEY, "envOverrides");
+  return normalizeEnvOverrides(raw || {});
+}
+
+export async function saveEnvOverride(name, value) {
+  const envName = normalizeEnvName(name);
+  if (!envName) {
+    throw new Error("Invalid environment variable name.");
+  }
+  const nextValue = String(value || "").trim().slice(0, 8000);
+  const current = await readEnvOverrides();
+  const values = { ...(current.values || {}) };
+  if (!nextValue) {
+    delete values[envName];
+  } else {
+    values[envName] = nextValue;
+  }
+  const next = {
+    values,
+    updatedAt: new Date().toISOString(),
+  };
+  return writeJsonWithFallback(ENV_OVERRIDES_KEY, "envOverrides", next);
 }
