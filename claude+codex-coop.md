@@ -78,6 +78,32 @@
 - `docs/superpowers/plans/2026-03-28-shop-catalog-split.md`
 - `docs/superpowers/plans/2026-03-28-image-pipeline-defaults.md`
 
+## 2026-03-28 (Claude) — font laboratory review + sales trend chart
+
+### Claude — font laboratory review (commit on main)
+
+**Delivered:**
+- Added "Vintage" typography theme preset to `typographyThemes.js` (Playfair Display, Cormorant Garamond, Lora — all variable, warm old-style serifs).
+- Added collapsible CSS panel per font role card in `AdminStyleTab.js` showing `@font-face` declaration and Google Fonts CDN URL with copy buttons.
+- Added cross-role font awareness to `AdminFontBrowserModal.js`: accepts `usedFonts` prop, shows role badges (e.g., "Display", "Heading") next to fonts already used by other roles.
+
+### Claude — sales trend chart (commit `5d81dc3`)
+
+**Delivered:**
+- Created `salesTrendHelpers.js` with pure data processing helpers: `dominantCurrency`, `aggregateDailyRevenue`, `computeSMA`, `computeRSI`.
+- Created `SalesTrendChart.js` — compact SVG chart rendering daily revenue over last 365 days with MA20 (indigo) and MA200 (gray dashed) moving average overlays, quarter markers (Q1–Q4), and RSI-14 oscillator with 75/25 reference lines.
+- Integrated chart into `AdminSalesTab.js` between metric cards and payment table.
+- No external charting libraries — pure SVG matching existing `StatsChart.js` pattern.
+
+**Validation:**
+- `node --test tests/sales-trend-chart.test.js` — 14 tests, all pass
+- `npx next build` — clean build
+
+**Specs and plans:**
+- `docs/superpowers/specs/2026-03-28-font-laboratory-review-design.md`
+- `docs/superpowers/specs/2026-03-28-sales-trend-chart-design.md`
+- `docs/superpowers/plans/2026-03-28-sales-trend-chart.md`
+
 ## 2026-03-28 (Codex) — follow-up 3→6 batch after settings + ownership hardening
 
 ### Codex — shop catalog cache + asset-variant storefront rendering (commits `d82f886`, `518ea57`)
