@@ -331,6 +331,8 @@ export async function GET(request) {
   }
 
   const backend = process.env.COURSE_ACCESS_BACKEND || "local";
+  const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL;
+  const wpConfigured = Boolean(wpUrl);
   const providers = getEnabledProviders();
   const adminConfigured = isAdminCredentialsConfigured();
   const authSecretConfigured = Boolean(process.env.AUTH_SECRET);
@@ -343,20 +345,20 @@ export async function GET(request) {
     stripeCheck,
     kvCheck,
   ] = await Promise.all([
-    backend === "wordpress"
+    wpConfigured
       ? checkWordPressGraphQL()
       : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
-    backend === "wordpress"
+    wpConfigured
       ? checkWpSchema()
       : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
-    backend === "wordpress"
+    wpConfigured
       ? checkRagbazPlugin()
       : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
     checkStripe(),
     checkKvStorage(),
   ]);
   const ragbazRuntimeCheck =
-    backend === "wordpress"
+    wpConfigured
       ? {
           ok: Boolean(ragbazCheck?.ok),
           message: ragbazCheck?.ok
