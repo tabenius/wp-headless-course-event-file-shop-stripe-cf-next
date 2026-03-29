@@ -1,5 +1,45 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-29 (Codex) — secret/env tab continuation after sales-trend verification
+
+### Codex — verified sales trend is live and completed secret/env tab (commit `2ddf156`)
+
+**Verification first (requested):**
+- Confirmed sales trend diagram is already implemented and wired:
+  - component: `src/components/admin/SalesTrendChart.js`
+  - helpers: `src/components/admin/salesTrendHelpers.js`
+  - integration: `src/components/admin/AdminSalesTab.js`
+  - tests: `tests/sales-trend-chart.test.js`
+- Marked BUGS entry as done for the sales trend feature.
+
+**Delivered (Secret/Env continuation):**
+- Added shared admin env catalog with expanded coverage (including previously missing vars like `CF_KV_NAMESPACE_ID`) in:
+  - `src/lib/adminEnvCatalog.js`
+- Extended env-status endpoint to:
+  - source values from real env first, then KV overrides,
+  - return source/override metadata per variable,
+  - use unified catalog groups.
+  - file: `src/app/api/admin/env-status/route.js`
+- Added KV-backed secret/env override API with admin password confirmation:
+  - `GET/POST /api/admin/settings/secrets`
+  - file: `src/app/api/admin/settings/secrets/route.js`
+- Extended settings store for generic env overrides:
+  - `readEnvOverrides`, `saveEnvOverride`
+  - file: `src/lib/adminSettingsStore.js`
+- Added a new **Secret** section in Info hub navigation and full panel UI:
+  - file: `src/components/admin/AdminSecretsPanel.js`
+  - wired in `src/components/admin/AdminInfoHubTab.js`
+  - supports known variables + custom env names, per-row save/clear, password-confirmed writes, and show/hide controls.
+- Updated Storage → Environment table visibility behavior:
+  - all set variables now support show/hide toggling in the table.
+- Added i18n keys for EN/SV/ES for the new Secret UI copy.
+- Marked BUGS entry as done for the “new secret tab + password confirmation + fill missing env vars” feature.
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only)
+- `node --experimental-test-module-mocks --test tests/i18n-admin-parity.test.js tests/sales-trend-chart.test.js` (pass)
+- `npm run cf:build` (pass)
+
 ## 2026-03-29 (Codex) — admin responsiveness + docs-help cleanup stabilization
 
 ### Codex — immediate admin loading feedback, hotkey/help cleanup, and compatibility fixes (commit `ecbf5ad`)
