@@ -1,5 +1,18 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-29 (Codex) — admin UI standardization follow-up
+
+### Codex — simplify header chrome + fix form-state styling leaks (commit `dd9e2e1`)
+
+**Delivered:**
+- Removed textured/ornamental admin header surface treatment to keep the top bar visually standard and calmer.
+- Switched admin typography from monospaced display to standard sans-serif defaults for better readability/scannability.
+- Fixed admin form-control selector so only text-like inputs are force-styled; checkboxes/radios now keep proper native semantics and checked-state clarity.
+- Strengthened Products visibility list state differentiation by adding explicit left-border state markers on selected rows.
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only).
+
 ## 2026-03-28 (Codex) — admin UI stabilization (remove purple + stop storefront CSS bleed)
 
 ### Codex — neutral admin palette + CSS scope hardening (commit `93f0a39`)
