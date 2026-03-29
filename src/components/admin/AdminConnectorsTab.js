@@ -84,7 +84,7 @@ export default function AdminConnectorsTab({
             <label className="text-gray-500 shrink-0">
               {t("admin.endpointUrl")}:
             </label>
-            <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
+            <code className="bg-gray-100 border rounded px-2 py-1 text-xs break-all flex-1 select-all">
               {webhookUrl}
             </code>
             <button
@@ -100,7 +100,7 @@ export default function AdminConnectorsTab({
           </div>
           <p className="text-gray-500">
             {t("admin.eventsToListen")}:{" "}
-            <code className="bg-white border rounded px-1 text-xs">
+            <code className="bg-gray-100 border rounded px-1 text-xs">
               checkout.session.completed
             </code>
           </p>
@@ -116,7 +116,7 @@ export default function AdminConnectorsTab({
           <p className="text-gray-600">{t("admin.ragbazPluginDesc")}</p>
           <div className="flex items-center gap-2">
             <a
-              className="px-3 py-2 rounded border bg-white hover:bg-gray-100 text-sm"
+              className="px-3 py-2 rounded border bg-gray-100 hover:bg-gray-50 text-sm"
               href={ragbazDownloadUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -134,7 +134,7 @@ export default function AdminConnectorsTab({
           </div>
           <div className="flex items-center gap-2">
             <label className="text-gray-500 shrink-0">WP-CLI:</label>
-            <code className="bg-white border rounded px-2 py-1 text-xs break-all flex-1 select-all">
+            <code className="bg-gray-100 border rounded px-2 py-1 text-xs break-all flex-1 select-all">
               {`wp plugin install ${ragbazDownloadUrl} --activate`}
             </code>
             <button
