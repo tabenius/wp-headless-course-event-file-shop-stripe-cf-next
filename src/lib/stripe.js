@@ -1,4 +1,4 @@
-import { readStripeKeyOverrides } from "@/lib/adminSettingsStore";
+import { readStripeKeyOverrides } from "./adminSettingsStore.js";
 
 const STRIPE_OVERRIDE_CACHE_MS =
   Number.parseInt(process.env.STRIPE_OVERRIDE_CACHE_MS || "20000", 10) || 20000;

@@ -39,3 +39,6 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [ ] FEATURE: Build a ChatWoot integration that send to this account id: 155812, webhook for us will be something like /api/chatwoot/event for read and send
 [ ] FEATURE: sales trends, a diagram, small, in the payments section over the last year, marked Q1, Q2 ... a smooth line diagram with MA20 and MA200 and a minimal awesome oscillator below based on rsi 75, 25% or standard values.
 [x] FEATURE: Enforce image pipeline defaults (WebP by default, AVIF where practical, size variants). Expected gain: better LCP and lower transfer. Tradeoff: extra storage + processing + variant bookkeeping.
+[x] BUG: the ? in-context helpers use as hot-keys F1 or ? and F1 is usually linked to the browsers help and '?' does not work either.
+[x] BUG: the ? in-context helpers link to general help that is not related to the context. Put something helpful for the user there or remove that ?-circle.
+[x] BUG: /sales: "Behöver du hjälp?" help is linked both above the header and just below the header "Betalningar" + description, it is pure unneccesary duplication

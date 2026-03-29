@@ -3,7 +3,7 @@ import {
   readCloudflareKvJson,
   writeCloudflareKvJson,
   deleteCloudflareKv,
-} from "@/lib/cloudflareKv";
+} from "./cloudflareKv.js";
 
 const WC_PROXY_KEY = "settings:wc_proxy";
 const WC_REST_API_KEY = "settings:wc_rest_api";

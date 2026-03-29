@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
+import nextDynamic from "next/dynamic";
 import { adminAuth } from "@/auth";
-import AdminDashboard from "@/components/admin/AdminDashboard";
+import AdminLoadingShell from "@/components/admin/AdminLoadingShell";
 import { t } from "@/lib/i18n";
+
+const AdminDashboard = nextDynamic(() => import("@/components/admin/AdminDashboard"), {
+  loading: () => <AdminLoadingShell />,
+});
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

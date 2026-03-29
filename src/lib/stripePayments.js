@@ -1,4 +1,4 @@
-import { getStripeSecretKey } from "@/lib/stripe";
+import { getStripeSecretKey } from "./stripe.js";
 
 async function stripeSecretKey() {
   const key = await getStripeSecretKey();
@@ -7,7 +7,9 @@ async function stripeSecretKey() {
 }
 
 export function getStripe() {
-  // Kept for compatibility with older imports/tests.
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY missing");
+  // Compatibility shim for tests/legacy call sites; compilePayments uses REST.
   return {
     configured: true,
     getApiField(field) {

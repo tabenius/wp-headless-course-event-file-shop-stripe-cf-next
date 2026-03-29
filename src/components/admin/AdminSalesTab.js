@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
-import AdminFieldHelpLink from "./AdminFieldHelpLink";
 import SalesTrendChart from "./SalesTrendChart";
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
@@ -110,13 +109,18 @@ function StatusBadge({ status }) {
     pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
     failed: "bg-red-50 text-red-700 ring-1 ring-red-200",
   };
+  const labels = {
+    succeeded: t("admin.paymentStatusSucceeded", "Succeeded"),
+    failed: t("admin.paymentStatusFailed", "Failed"),
+    pending: t("admin.paymentStatusPending", "Pending"),
+  };
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${
         styles[status] || "bg-gray-100 text-gray-600 ring-1 ring-gray-200"
       }`}
     >
-      {status}
+      {labels[status] || status}
     </span>
   );
 }
@@ -221,7 +225,6 @@ export default function AdminSalesTab({
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
             <span>{t("admin.paymentsFilter", "Filter by email")}</span>
-            <AdminFieldHelpLink slug="technical-manual" />
           </div>
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-slate-500 focus-within:border-slate-500">
             <svg
@@ -248,18 +251,18 @@ export default function AdminSalesTab({
           type="button"
           onClick={() => loadPayments(paymentsEmail)}
           disabled={isLoading}
-          className="px-4 py-2 rounded-lg bg-slate-600 text-white text-sm font-medium hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm"
+          className="self-end p-2 rounded-lg bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm"
+          title={isLoading ? t("admin.running", "Loading…") : t("admin.paymentsReload", "Reload")}
         >
-          {isLoading
-            ? t("admin.running", "Loading…")
-            : t("admin.paymentsReload", "Reload")}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4${isLoading ? " animate-spin" : ""}`}>
+            <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.378 2.495l-1.06 1.06a7 7 0 0012.21-3.555H15.31zm-1.06-4.848A5.5 5.5 0 004.688 8.576H6.69a7 7 0 0112.21 3.555l1.06-1.06a7 7 0 00-5.698-4.499z" clipRule="evenodd" />
+          </svg>
         </button>
 
         {/* Date pills */}
         <div className="ml-auto space-y-1">
           <div className="flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
             <span>{t("admin.dateFilter", "Date filter")}</span>
-            <AdminFieldHelpLink slug="performance-explained" />
           </div>
           <div className="flex flex-wrap justify-end gap-1">
             {DATE_FILTERS.map(({ key, label }) => (

@@ -12,9 +12,9 @@ function shouldTag(request) {
 
 /**
  * WebDAV clients use non-standard HTTP methods (PROPFIND, MKCOL) that Next.js
- * App Router does not natively route.  Intercept them here and forward as POST
+ * App Router does not natively route. Intercept them here and forward as POST
  * to the same URL with an `x-dav-method` header so the route handler can pick
- * up the real intent.  A `x-dav-forwarded` guard prevents re-entry loops.
+ * up the real intent. A `x-dav-forwarded` guard prevents re-entry loops.
  */
 async function forwardDavMethod(request) {
   const headers = new Headers(request.headers);
