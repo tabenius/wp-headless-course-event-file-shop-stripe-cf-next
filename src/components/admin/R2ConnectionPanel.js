@@ -151,7 +151,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           )}
         </div>
 
-        <details className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-slate-300 open:bg-slate-50/30">
+        <details className="rounded-xl border border-gray-200 bg-white p-3 open:border-slate-300 open:bg-gray-50">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
             <span className="flex items-center gap-3">
               <span className="h-7 w-7 flex-shrink-0">
@@ -185,7 +185,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           </div>
         </details>
 
-        <details className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-amber-300 open:bg-amber-50/30">
+        <details className="rounded-xl border border-gray-200 bg-white p-3 open:border-amber-300 open:bg-gray-50">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
             <span className="flex items-center gap-3">
               <span className="h-7 w-7 flex-shrink-0">

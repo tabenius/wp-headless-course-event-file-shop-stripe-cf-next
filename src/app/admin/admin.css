@@ -143,6 +143,7 @@ body:has(.admin-layout)::before {
 .admin-layout .text-gray-600,
 .admin-layout .text-gray-500,
 .admin-layout .text-gray-400,
+.admin-layout .text-gray-300,
 .admin-layout .text-slate-700,
 .admin-layout .text-slate-600 {
   color: var(--admin-muted) !important;

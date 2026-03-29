@@ -480,7 +480,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
         {envGroups && envGroups.map((group) => (
           <details
             key={group.id}
-            className="rounded-xl border border-gray-200 bg-white/90 p-3 open:border-slate-300 open:bg-slate-50/20"
+            className="rounded-xl border border-gray-200 bg-white p-3 open:border-slate-300 open:bg-gray-50"
           >
             <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
               <span className="font-medium text-sm text-gray-800">{group.label}</span>
