@@ -1,5 +1,20 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — media library UX pass: remove selected panel, inline lineage controls, and upload-order fix
+
+- Removed the separate `SelectedAssetPanel` and deleted `src/components/admin/media-library/SelectedAssetPanel.js` to keep asset work in one list-first flow.
+- Added list-level asset-role filtering in Media (`All assets`, `Original`, `Derived`) and inline lineage controls:
+  - focused-row lineage jump buttons (`Original` / variant buttons),
+  - `Show lineage only` toggle + reset back to all assets.
+- Added a direct per-row `Apply derivation` action (image assets with compatible derivations).
+- Reordered upload UI as requested:
+  - upload destination selector first,
+  - `Upload using external software` section second,
+  - upload dropzone after those choices,
+  - recent uploads shown after the upload controls block.
+- Added EN/SV/ES i18n keys for lineage filter/toggle copy.
+- Validation: `npx eslint src/components/admin/AdminMediaLibraryTab.js` and locale JSON parse checks (pass).
+
 ## 2026-03-30 (Codex) — BUGS last-item fix: bucket/path duplicate in upload guides
 
 - Landed `35a4050`.

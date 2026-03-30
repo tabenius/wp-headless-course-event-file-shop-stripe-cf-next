@@ -55,7 +55,6 @@ import AdminDocsContextLinks from "@/components/admin/AdminDocsContextLinks";
 import DerivationWorkspacePanel from "@/components/admin/media-library/DerivationWorkspacePanel";
 import FilePreviewTile from "@/components/admin/media-library/FilePreviewTile";
 import MediaAnnotationEditorPanel from "@/components/admin/media-library/MediaAnnotationEditorPanel";
-import SelectedAssetPanel from "@/components/admin/media-library/SelectedAssetPanel";
 
 const RGB_CHANNELS = ["r", "g", "b"];
 const QUICK_OPERATION_TYPES = [
@@ -104,6 +103,23 @@ function hexToRgb(value) {
   };
 }
 
+function resolveAssetLineageRole(item) {
+  const asset = item?.asset;
+  if (!asset || typeof asset !== "object") return "untracked";
+  const variantKind = normalizeEditorValue(
+    String(asset.variantKind || asset.role || ""),
+    80,
+  ).toLowerCase();
+  const hasOriginalPointer = Boolean(
+    normalizeEditorValue(asset.originalId || "", 96) ||
+      normalizeEditorValue(asset.originalUrl || "", 1024),
+  );
+  if ((variantKind && variantKind !== "original") || hasOriginalPointer) {
+    return "derived";
+  }
+  return "original";
+}
+
 export default function AdminMediaLibraryTab({
   uploadBackend = "wordpress",
   uploadInfo = null,
@@ -116,6 +132,7 @@ export default function AdminMediaLibraryTab({
   const [error, setError] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [lineageFilter, setLineageFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("updated-desc");
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -135,6 +152,7 @@ export default function AdminMediaLibraryTab({
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedUploadBackend, setSelectedUploadBackend] = useState("wordpress");
   const [focusedItemId, setFocusedItemId] = useState("");
+  const [showFocusedLineageOnly, setShowFocusedLineageOnly] = useState(false);
   const [pendingFocusItemId, setPendingFocusItemId] = useState("");
   const [flashFocusedItemId, setFlashFocusedItemId] = useState("");
   const [viewerItem, setViewerItem] = useState(null);
@@ -407,6 +425,45 @@ export default function AdminMediaLibraryTab({
     };
   }, [previewBlobUrl]);
 
+  const focusedItemFromItems = useMemo(
+    () => items.find((item) => item.id === focusedItemId) || null,
+    [items, focusedItemId],
+  );
+
+  const wordpressRowsBySourceId = useMemo(() => {
+    const mapping = new Map();
+    items.forEach((item) => {
+      if (item?.source !== "wordpress") return;
+      const sourceId = Number.parseInt(String(item?.sourceId ?? ""), 10);
+      if (!Number.isFinite(sourceId)) return;
+      mapping.set(String(sourceId), item);
+    });
+    return mapping;
+  }, [items]);
+
+  const focusedLineageItemIds = useMemo(() => {
+    const ids = new Set();
+    if (!focusedItemFromItems?.id) return ids;
+    ids.add(focusedItemFromItems.id);
+    const asset = focusedItemFromItems?.asset;
+    if (!asset || typeof asset !== "object") return ids;
+
+    const originalId = Number.parseInt(String(asset.originalId ?? ""), 10);
+    if (Number.isFinite(originalId)) {
+      const originalItem = wordpressRowsBySourceId.get(String(originalId));
+      if (originalItem?.id) ids.add(originalItem.id);
+    }
+
+    const variants = Array.isArray(asset.variants) ? asset.variants : [];
+    for (const variant of variants) {
+      const variantId = Number.parseInt(String(variant?.sourceId ?? ""), 10);
+      if (!Number.isFinite(variantId)) continue;
+      const linkedVariant = wordpressRowsBySourceId.get(String(variantId));
+      if (linkedVariant?.id) ids.add(linkedVariant.id);
+    }
+    return ids;
+  }, [focusedItemFromItems, wordpressRowsBySourceId]);
+
   const rows = useMemo(() => {
     let nextRows = Array.isArray(items) ? [...items] : [];
     if (typeFilter === "image") {
@@ -415,6 +472,20 @@ export default function AdminMediaLibraryTab({
       nextRows = nextRows.filter((item) => resolveAssetType(item) === "data");
     } else if (typeFilter === "other") {
       nextRows = nextRows.filter((item) => resolveAssetType(item) === "other");
+    }
+
+    if (lineageFilter === "original") {
+      nextRows = nextRows.filter((item) => resolveAssetLineageRole(item) === "original");
+    } else if (lineageFilter === "derived") {
+      nextRows = nextRows.filter((item) => resolveAssetLineageRole(item) === "derived");
+    }
+
+    if (showFocusedLineageOnly) {
+      if (focusedLineageItemIds.size === 0) {
+        nextRows = [];
+      } else {
+        nextRows = nextRows.filter((item) => focusedLineageItemIds.has(item.id));
+      }
     }
 
     nextRows.sort((left, right) => {
@@ -437,7 +508,14 @@ export default function AdminMediaLibraryTab({
     });
 
     return nextRows;
-  }, [items, sortOrder, typeFilter]);
+  }, [
+    focusedLineageItemIds,
+    items,
+    lineageFilter,
+    showFocusedLineageOnly,
+    sortOrder,
+    typeFilter,
+  ]);
 
   const focusedItem = useMemo(
     () => rows.find((item) => item.id === focusedItemId) || null,
@@ -454,16 +532,12 @@ export default function AdminMediaLibraryTab({
     [focusedItemId, rows],
   );
 
-  const wordpressRowsBySourceId = useMemo(() => {
-    const mapping = new Map();
-    rows.forEach((item) => {
-      if (item?.source !== "wordpress") return;
-      const sourceId = Number.parseInt(String(item?.sourceId ?? ""), 10);
-      if (!Number.isFinite(sourceId)) return;
-      mapping.set(String(sourceId), item);
-    });
-    return mapping;
-  }, [rows]);
+  useEffect(() => {
+    if (!showFocusedLineageOnly) return;
+    if (focusedLineageItemIds.size === 0) {
+      setShowFocusedLineageOnly(false);
+    }
+  }, [focusedLineageItemIds, showFocusedLineageOnly]);
 
   const registerMediaRowRef = useCallback((id, node) => {
     if (!id) return;
@@ -592,6 +666,17 @@ export default function AdminMediaLibraryTab({
       return assetTypes.length === 0 || assetTypes.includes(focusedAssetType);
     });
   }, [derivations, focusedAssetSupportsDerivations, focusedAssetType]);
+
+  const hasDerivationsForItem = useCallback(
+    (item) => {
+      if (!item || resolveAssetType(item) !== "image") return false;
+      return derivations.some((entry) => {
+        const assetTypes = Array.isArray(entry.assetTypes) ? entry.assetTypes : [];
+        return assetTypes.length === 0 || assetTypes.includes("image");
+      });
+    },
+    [derivations],
+  );
 
   useEffect(() => {
     if (availableDerivations.length === 0) {
@@ -1656,10 +1741,13 @@ export default function AdminMediaLibraryTab({
     return `${base}-${Date.now().toString(36)}`;
   }
 
-  function openDerivationFlow() {
-    if (!focusedAssetSupportsDerivations || availableDerivations.length === 0) {
-      return;
+  function openDerivationFlow(targetItem = null) {
+    const candidate = targetItem || focusedItem || null;
+    if (candidate && candidate.id && candidate.id !== focusedItemId) {
+      setFocusedItemId(candidate.id);
     }
+    if (candidate && !hasDerivationsForItem(candidate)) return;
+    if (!candidate && !derivations.length) return;
     setActiveAssetFlow("derivation");
     requestAnimationFrame(() => {
       derivationPanelRef.current?.scrollIntoView?.({
@@ -2052,6 +2140,49 @@ export default function AdminMediaLibraryTab({
       />
 
       <div className="space-y-2 font-sans">
+        <div className="flex flex-wrap items-center gap-2">
+          {enabledUploadOptions.length > 1 && (
+            <label className="flex items-center gap-2 text-xs text-gray-600">
+              <span>{t("admin.uploadDestinationTitle", "Upload destination")}</span>
+              <select
+                value={selectedUploadBackend}
+                onChange={(event) => setSelectedUploadBackend(event.target.value)}
+                className="border rounded px-2 py-1 text-xs bg-white"
+              >
+                {enabledUploadOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {uploading && (
+            <span className="text-xs text-gray-600">
+              {t("admin.mediaUploadUploading", { n: uploadCount || 1 })}
+            </span>
+          )}
+          {uploadStatus && !uploading && (
+            <span className="text-xs text-emerald-700">{uploadStatus}</span>
+          )}
+        </div>
+
+        <details className="rounded border border-slate-200 bg-slate-50">
+          <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-slate-800">
+            {t(
+              "admin.mediaExternalUploadToggle",
+              "Upload using external software",
+            )}
+          </summary>
+          <div className="border-t border-slate-200 px-3 py-3">
+            <R2ConnectionPanel
+              uploadBackend={uploadBackend}
+              uploadInfo={uploadInfo}
+              uploadInfoDetails={uploadInfoDetails}
+            />
+          </div>
+        </details>
+
         <div
           role="button"
           tabIndex={0}
@@ -2112,32 +2243,13 @@ export default function AdminMediaLibraryTab({
             </button>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {enabledUploadOptions.length > 1 && (
-            <label className="flex items-center gap-2 text-xs text-gray-600">
-              <span>{t("admin.uploadDestinationTitle", "Upload destination")}</span>
-              <select
-                value={selectedUploadBackend}
-                onChange={(event) => setSelectedUploadBackend(event.target.value)}
-                className="border rounded px-2 py-1 text-xs bg-white"
-              >
-                {enabledUploadOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {uploading && (
-            <span className="text-xs text-gray-600">
-              {t("admin.mediaUploadUploading", { n: uploadCount || 1 })}
-            </span>
-          )}
-          {uploadStatus && !uploading && (
-            <span className="text-xs text-emerald-700">{uploadStatus}</span>
-          )}
-        </div>
+
+        {uploadError && (
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+            {uploadError}
+          </p>
+        )}
+
         {uploadHistory.length > 0 && (
           <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs space-y-2">
             <div className="flex items-center justify-between">
@@ -2189,16 +2301,16 @@ export default function AdminMediaLibraryTab({
                           {entry.name}
                         </p>
                       )}
-                    <p className="text-[11px] text-gray-500">
-                      <span className="font-semibold">
-                        {historyStatusLabel(entry.status)}
-                      </span>
-                      {entry.detail && ` · ${entry.detail}`}
-                      {entry.backend && ` · ${sourceLabel(entry.backend)}`}
-                    </p>
-                    <p className="text-[10px] text-gray-400">
-                      {formatHistoryTimestamp(entry.timestamp)}
-                    </p>
+                      <p className="text-[11px] text-gray-500">
+                        <span className="font-semibold">
+                          {historyStatusLabel(entry.status)}
+                        </span>
+                        {entry.detail && ` · ${entry.detail}`}
+                        {entry.backend && ` · ${sourceLabel(entry.backend)}`}
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        {formatHistoryTimestamp(entry.timestamp)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-1">
@@ -2238,28 +2350,6 @@ export default function AdminMediaLibraryTab({
             </div>
           </div>
         )}
-        {uploadError && (
-          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
-            {uploadError}
-          </p>
-        )}
-
-
-        <details className="rounded border border-slate-200 bg-slate-50">
-          <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-slate-800">
-            {t(
-              "admin.mediaExternalUploadToggle",
-              "Upload using external software",
-            )}
-          </summary>
-          <div className="border-t border-slate-200 px-3 py-3">
-            <R2ConnectionPanel
-              uploadBackend={uploadBackend}
-              uploadInfo={uploadInfo}
-              uploadInfoDetails={uploadInfoDetails}
-            />
-          </div>
-        </details>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -2292,6 +2382,22 @@ export default function AdminMediaLibraryTab({
           </select>
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-600">
+          <span>{t("admin.mediaLineageFilter", "Asset role")}</span>
+          <select
+            value={lineageFilter}
+            onChange={(event) => setLineageFilter(event.target.value)}
+            className="border rounded px-2 py-1 text-xs bg-white"
+          >
+            <option value="all">{t("admin.mediaLineageAll", "All assets")}</option>
+            <option value="original">
+              {t("admin.mediaLineageOriginal", "Original")}
+            </option>
+            <option value="derived">
+              {t("admin.mediaLineageDerived", "Derived")}
+            </option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-xs text-gray-600">
           <span>{t("admin.mediaSortBy", "Sort by")}</span>
           <select
             value={sortOrder}
@@ -2320,6 +2426,8 @@ export default function AdminMediaLibraryTab({
         </label>
         {(sourceFilter !== "all" ||
           typeFilter !== "all" ||
+          lineageFilter !== "all" ||
+          showFocusedLineageOnly ||
           sortOrder !== "updated-desc" ||
           searchTerm) && (
           <button
@@ -2327,6 +2435,8 @@ export default function AdminMediaLibraryTab({
             onClick={() => {
               setSourceFilter("all");
               setTypeFilter("all");
+              setLineageFilter("all");
+              setShowFocusedLineageOnly(false);
               setSortOrder("updated-desc");
               setSearchInput("");
               setSearchTerm("");
@@ -2337,6 +2447,25 @@ export default function AdminMediaLibraryTab({
           </button>
         )}
       </div>
+
+      {focusedAssetLineage.hasLineage && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setShowFocusedLineageOnly((current) => !current)}
+            className={`px-2 py-1 rounded border ${
+              showFocusedLineageOnly ? "admin-pill-active" : "admin-pill"
+            }`}
+          >
+            {showFocusedLineageOnly
+              ? t("admin.mediaLineageAllRows", "Show all assets")
+              : t("admin.mediaLineageOnly", "Show lineage only")}
+          </button>
+          <span className="text-gray-500">
+            {t("admin.mediaAssetLineageHint", "Jump between original and variant attachments that share the same asset ID.")}
+          </span>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
         <span>
@@ -2465,19 +2594,27 @@ export default function AdminMediaLibraryTab({
               </tr>
             </thead>
             <tbody>
-              {rows.map((item) => (
-              <tr
-                key={item.id}
-                ref={(node) => registerMediaRowRef(item.id, node)}
-                onClick={() => setFocusedItemId(item.id)}
-                className={`border-t align-top ${
-                  focusedItemId === item.id
-                    ? "bg-slate-50"
-                    : flashFocusedItemId === item.id
-                      ? "bg-emerald-50"
-                      : ""
-                }`}
-              >
+              {rows.map((item) => {
+                const isFocusedRow = focusedItemId === item.id;
+                const rowLineageRole = resolveAssetLineageRole(item);
+                const rowVariantKind = normalizeEditorValue(
+                  item?.asset?.variantKind || "",
+                  80,
+                );
+                const rowCanOpenDerivation = hasDerivationsForItem(item);
+                return (
+                <tr
+                  key={item.id}
+                  ref={(node) => registerMediaRowRef(item.id, node)}
+                  onClick={() => setFocusedItemId(item.id)}
+                  className={`border-t align-top ${
+                    isFocusedRow
+                      ? "bg-slate-50"
+                      : flashFocusedItemId === item.id
+                        ? "bg-emerald-50"
+                        : ""
+                  }`}
+                >
                   <td className="px-3 py-2">
                     {canPreviewImage(item) ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -2523,6 +2660,20 @@ export default function AdminMediaLibraryTab({
                   </td>
                   <td className="px-3 py-2">
                     <div className="space-y-1 text-xs">
+                      {rowLineageRole !== "untracked" && (
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-slate-100 text-slate-700">
+                          {rowLineageRole === "derived"
+                            ? t("admin.mediaLineageDerived", "Derived")
+                            : t("admin.mediaLineageOriginal", "Original")}
+                          {rowLineageRole === "derived" &&
+                            rowVariantKind &&
+                            rowVariantKind.toLowerCase() !== "original" && (
+                              <span className="ml-1 normal-case font-medium">
+                                {rowVariantKind}
+                              </span>
+                            )}
+                        </span>
+                      )}
                       {(item.metadata?.altText || item.metadata?.caption) && (
                         <p className="text-gray-700 line-clamp-2">
                           {item.metadata?.altText || item.metadata?.caption}
@@ -2561,6 +2712,15 @@ export default function AdminMediaLibraryTab({
                       >
                         {t("admin.mediaAnnotate", "Annotate")}
                       </button>
+                      {rowCanOpenDerivation && (
+                        <button
+                          type="button"
+                          onClick={() => openDerivationFlow(item)}
+                          className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                        >
+                          {t("admin.mediaApplyDerivation", "Apply derivation")}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setFocusedItemId(item.id)}
@@ -2571,6 +2731,59 @@ export default function AdminMediaLibraryTab({
                           ? t("admin.mediaSelected", "Selected")
                           : t("admin.mediaSelect", "Select")}
                       </button>
+                      {isFocusedRow && focusedAssetLineage.hasLineage && (
+                        <div className="rounded border border-slate-200 bg-slate-50 p-2 space-y-1">
+                          <p className="text-[11px] font-semibold text-slate-700">
+                            {t("admin.mediaAssetLineageTitle", "Asset lineage")}
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {focusedAssetLineage.original?.item &&
+                              focusedAssetLineage.original.item.id !== item.id && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    focusItemById(focusedAssetLineage.original.item.id)
+                                  }
+                                  className="admin-pill px-2 py-1 rounded border text-[11px]"
+                                >
+                                  {t("admin.mediaAssetOriginal", "Original")}
+                                </button>
+                              )}
+                            {focusedAssetLineage.variants
+                              .filter(
+                                (variant) =>
+                                  variant?.linkedItem?.id &&
+                                  variant.linkedItem.id !== item.id,
+                              )
+                              .map((variant) => (
+                                <button
+                                  key={variant.key}
+                                  type="button"
+                                  onClick={() => focusItemById(variant.linkedItem.id)}
+                                  className="admin-pill px-2 py-1 rounded border text-[11px]"
+                                >
+                                  {variant.variantKind ||
+                                    t("admin.mediaVariant", "Variant")}
+                                </button>
+                              ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowFocusedLineageOnly((current) => !current)
+                            }
+                            className={`text-[11px] px-2 py-1 rounded border ${
+                              showFocusedLineageOnly
+                                ? "admin-pill-active"
+                                : "admin-pill"
+                            }`}
+                          >
+                            {showFocusedLineageOnly
+                              ? t("admin.mediaLineageAllRows", "Show all assets")
+                              : t("admin.mediaLineageOnly", "Show lineage only")}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-3 py-2">
@@ -2595,28 +2808,12 @@ export default function AdminMediaLibraryTab({
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
-
-      <SelectedAssetPanel
-        focusedItem={focusedItem}
-        focusedAssetLineage={focusedAssetLineage}
-        focusedAssetSupportsDerivations={focusedAssetSupportsDerivations}
-        availableDerivations={availableDerivations}
-        activeAssetFlow={activeAssetFlow}
-        onActivateDetailsFlow={() => setActiveAssetFlow("details")}
-        onOpenDerivationFlow={openDerivationFlow}
-        onClearFocus={() => setFocusedItemId("")}
-        onFocusItemById={focusItemById}
-        onCopyUrl={copyUrl}
-        onOpenViewer={openViewer}
-        onOpenEditor={openEditor}
-        onCreateProductFromAsset={createProductFromAsset}
-        creatingProduct={creatingProductFromAsset}
-      />
 
       {focusedAssetSupportsDerivations &&
         activeAssetFlow === "derivation" &&
