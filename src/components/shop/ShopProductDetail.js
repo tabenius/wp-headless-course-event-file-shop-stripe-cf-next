@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { t } from "@/lib/i18n";
 
 function formatPrice(priceCents, currency) {
@@ -23,19 +24,58 @@ function deriveBoughtUri(product) {
   return "";
 }
 
-export default function ShopProductDetail({
-  user,
-  product,
-  owned,
-  accessCheckFailed,
-  stripeEnabled,
-  checkoutStatus,
-}) {
+export default function ShopProductDetail({ product, stripeEnabled }) {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imageBroken, setImageBroken] = useState(false);
+  const [user, setUser] = useState(null);
+  const [owned, setOwned] = useState(false);
+  const [accessCheckFailed, setAccessCheckFailed] = useState(false);
+  const [ownershipLoaded, setOwnershipLoaded] = useState(false);
   const buyableUri = deriveBuyableUri(product);
   const boughtUri = deriveBoughtUri(product);
+
+  const checkoutStatus = searchParams.get("checkout") || "";
+  const checkoutSessionId = searchParams.get("session_id") || "";
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkOwnership() {
+      try {
+        const body = {
+          checkoutStatus,
+          checkoutSessionId,
+          checkoutProductId: checkoutStatus === "success" ? product.id : "",
+        };
+        const res = await fetch("/api/shop/ownership", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          if (!cancelled) setOwnershipLoaded(true);
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.user) setUser(data.user);
+        const productOwned =
+          Array.isArray(data.ownedProductIds) &&
+          data.ownedProductIds.includes(product.id);
+        setOwned(productOwned);
+        setAccessCheckFailed(Boolean(data.accessBatchFailed));
+      } catch {
+        if (!cancelled) setAccessCheckFailed(true);
+      } finally {
+        if (!cancelled) setOwnershipLoaded(true);
+      }
+    }
+    checkOwnership();
+    return () => {
+      cancelled = true;
+    };
+  }, [product.id, checkoutStatus, checkoutSessionId]);
 
   async function startCheckout() {
     if (!user?.email) {
@@ -112,7 +152,9 @@ export default function ShopProductDetail({
       ) : null}
       {error ? <p className="text-red-600">{error}</p> : null}
 
-      {accessCheckFailed && user?.email ? (
+      {!ownershipLoaded ? (
+        <div className="h-12 w-48 animate-pulse rounded bg-gray-200" />
+      ) : accessCheckFailed && user?.email ? (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-5 space-y-3">
           <p className="font-semibold text-amber-900">
             {t("errors.serviceTemporarilyUnavailable")}

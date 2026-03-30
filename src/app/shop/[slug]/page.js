@@ -1,22 +1,14 @@
 import { notFound } from "next/navigation";
-import { auth } from "@/auth";
 import ShopProductDetail from "@/components/shop/ShopProductDetail";
-import { grantDigitalAccess, hasDigitalAccess } from "@/lib/digitalAccessStore";
-import { grantCourseAccess } from "@/lib/courseAccess";
 import { getDigitalProductBySlug } from "@/lib/digitalProducts";
-import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
-import { appendServerLog } from "@/lib/serverLog";
+import { isStripeEnabled } from "@/lib/stripe";
 import { StorefrontDetailSkeleton } from "@/components/common/StorefrontSkeletons";
 import { Suspense } from "react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
-async function ShopProductPageContent({
-  params: paramsPromise,
-  searchParams: searchParamsPromise,
-}) {
+async function ShopProductPageContent({ params: paramsPromise }) {
   const params = await paramsPromise;
-  const searchParams = await searchParamsPromise;
   const slug = typeof params?.slug === "string" ? params.slug : "";
   let product;
   try {
@@ -26,70 +18,10 @@ async function ShopProductPageContent({
   }
   if (!product || !product.active) notFound();
 
-  const session = await auth();
-  const userEmail = session?.user?.email || "";
-
-  const checkoutStatus =
-    typeof searchParams?.checkout === "string" ? searchParams.checkout : "";
-  const checkoutSessionId =
-    typeof searchParams?.session_id === "string" ? searchParams.session_id : "";
-
-  if (userEmail && checkoutStatus === "success" && checkoutSessionId) {
-    try {
-      const stripeSession = await fetchStripeCheckoutSession(checkoutSessionId);
-      const paymentStatus = stripeSession?.payment_status;
-      const paidEmail = (
-        stripeSession?.customer_details?.email ||
-        stripeSession?.metadata?.user_email ||
-        ""
-      ).toLowerCase();
-      const purchaseKind = stripeSession?.metadata?.purchase_kind || "";
-      const paidProductId = stripeSession?.metadata?.digital_product_id || "";
-      const paidCourseUri = stripeSession?.metadata?.course_uri || "";
-
-      if (
-        paymentStatus === "paid" &&
-        paidEmail === userEmail.toLowerCase() &&
-        paidProductId === product.id
-      ) {
-        if (
-          purchaseKind === "digital_file" ||
-          purchaseKind === "course_product" ||
-          purchaseKind === "asset_product"
-        ) {
-          await grantDigitalAccess(product.id, userEmail);
-        }
-        if (purchaseKind === "course_product" && paidCourseUri) {
-          await grantCourseAccess(paidCourseUri, userEmail);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to confirm product purchase:", error);
-    }
-  }
-
-  let owned = false;
-  let accessCheckFailed = false;
-  if (userEmail) {
-    try {
-      owned = await hasDigitalAccess(product.id, userEmail);
-    } catch (err) {
-      accessCheckFailed = true;
-      appendServerLog({
-        level: "error",
-        msg: `hasDigitalAccess failed for product ${product.id} (user: ${userEmail}): ${err?.message || err}`,
-      }).catch(() => {});
-    }
-  }
-
   return (
     <ShopProductDetail
-      user={session?.user || null}
       product={product}
-      owned={owned}
-      accessCheckFailed={accessCheckFailed}
       stripeEnabled={isStripeEnabled()}
-      checkoutStatus={checkoutStatus}
     />
   );
 }
