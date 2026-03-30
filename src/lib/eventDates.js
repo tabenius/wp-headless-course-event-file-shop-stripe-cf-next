@@ -37,12 +37,52 @@ function isSameDay(a, b) {
   );
 }
 
+function toEndOfDay(date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    23,
+    59,
+    59,
+    999,
+  );
+}
+
 export function getEventStartIso(event) {
   return firstNonEmptyString(event, START_DATE_KEYS);
 }
 
 export function getEventEndIso(event) {
   return firstNonEmptyString(event, END_DATE_KEYS);
+}
+
+export function isEventUpcoming(event, now = new Date()) {
+  const startRaw = getEventStartIso(event);
+  const endRaw = getEventEndIso(event);
+  const boundaryRaw = endRaw || startRaw;
+  if (!boundaryRaw) return false;
+
+  const boundary = parseDate(boundaryRaw);
+  if (!boundary) return false;
+  const effectiveBoundary = hasExplicitTime(boundaryRaw)
+    ? boundary
+    : toEndOfDay(boundary);
+  return effectiveBoundary.getTime() >= now.getTime();
+}
+
+export function isEventPassed(event, now = new Date()) {
+  const startRaw = getEventStartIso(event);
+  const endRaw = getEventEndIso(event);
+  const boundaryRaw = endRaw || startRaw;
+  if (!boundaryRaw) return false;
+
+  const boundary = parseDate(boundaryRaw);
+  if (!boundary) return false;
+  const effectiveBoundary = hasExplicitTime(boundaryRaw)
+    ? boundary
+    : toEndOfDay(boundary);
+  return effectiveBoundary.getTime() < now.getTime();
 }
 
 export function formatEventDateRange(event, locale = "sv-SE") {

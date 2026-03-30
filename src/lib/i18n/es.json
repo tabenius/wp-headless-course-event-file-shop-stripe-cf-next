@@ -26,7 +26,8 @@
     "noDetails": "Sin detalles",
     "homeUpcomingEvents": "Próximos eventos",
     "homeViewAll": "Ver todo",
-    "homeNoImage": "Sin imagen"
+    "homeNoImage": "Sin imagen",
+    "eventPassed": "Finalizado"
   },
   "auth": {
     "signInTitle": "Iniciar sesión",

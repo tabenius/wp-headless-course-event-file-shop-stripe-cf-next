@@ -2,12 +2,14 @@ import Link from "next/link";
 import { FeaturedImage } from "../image/FeaturedImage";
 import { createExcerpt } from "@/lib/utils";
 import { decodeEntities } from "@/lib/decodeEntities";
-import { formatEventDateRange } from "@/lib/eventDates";
+import { formatEventDateRange, isEventPassed } from "@/lib/eventDates";
+import { t } from "@/lib/i18n";
 
 export default function EventListItem({ post }) {
   if (!post) return null;
   const { content, title, uri } = post;
   const dateLabel = formatEventDateRange(post);
+  const passed = isEventPassed(post);
 
   const venues =
     (post.eventVenues || post.location)?.edges
@@ -15,7 +17,13 @@ export default function EventListItem({ post }) {
       .filter((name) => typeof name === "string" && name.trim() !== "") || [];
 
   return (
-    <article className="container max-w-4xl px-10 py-6 mx-auto rounded-lg shadow-sm bg-gray-50 mb-4">
+    <article
+      className={`container max-w-4xl px-10 py-6 mx-auto rounded-lg shadow-sm mb-4 ${
+        passed
+          ? "bg-rose-50 border border-rose-300"
+          : "bg-gray-50 border border-transparent"
+      }`}
+    >
       <h2 className="mt-3">
         <Link
           href={uri || "#"}
@@ -55,8 +63,13 @@ export default function EventListItem({ post }) {
       )}
 
       {dateLabel && (
-        <div className="text-sm text-gray-600 mb-2" aria-label="Event date">
+        <div className="text-sm text-gray-600 mb-2 flex items-center gap-2" aria-label="Event date">
           {dateLabel}
+          {passed ? (
+            <span className="inline-flex items-center rounded-full bg-rose-700 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+              {t("common.eventPassed", "Passed")}
+            </span>
+          ) : null}
         </div>
       )}
 

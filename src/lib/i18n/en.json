@@ -26,7 +26,8 @@
     "noDetails": "No details",
     "homeUpcomingEvents": "Upcoming Events",
     "homeViewAll": "View all",
-    "homeNoImage": "No image"
+    "homeNoImage": "No image",
+    "eventPassed": "Passed"
   },
   "auth": {
     "signInTitle": "Sign in",

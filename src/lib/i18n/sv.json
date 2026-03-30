@@ -26,7 +26,8 @@
     "noDetails": "Inga detaljer",
     "homeUpcomingEvents": "Kommande evenemang",
     "homeViewAll": "Visa alla",
-    "homeNoImage": "Ingen bild"
+    "homeNoImage": "Ingen bild",
+    "eventPassed": "Passerat"
   },
   "auth": {
     "signInTitle": "Logga in",

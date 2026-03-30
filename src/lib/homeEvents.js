@@ -1,5 +1,5 @@
 import { fetchGraphQL } from "@/lib/client";
-import { getEventEndIso, getEventStartIso } from "@/lib/eventDates";
+import { getEventEndIso, getEventStartIso, isEventUpcoming } from "@/lib/eventDates";
 
 /**
  * Compatibility-first event loading:
@@ -85,24 +85,18 @@ function toRenderableEvents(nodes) {
     .filter(Boolean);
 }
 
-function parseDate(value) {
-  if (!value || typeof value !== "string") return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
 function sortByStartDateAsc(events) {
   return [...events].sort((a, b) => {
-    const aTime =
-      parseDate(a.startDate)?.getTime() ??
-      parseDate(a.endDate)?.getTime() ??
-      Number.POSITIVE_INFINITY;
-    const bTime =
-      parseDate(b.startDate)?.getTime() ??
-      parseDate(b.endDate)?.getTime() ??
-      Number.POSITIVE_INFINITY;
-    return aTime - bTime;
+    const aTime = new Date(a.startDate || a.endDate || "").getTime();
+    const bTime = new Date(b.startDate || b.endDate || "").getTime();
+    const aSafe = Number.isFinite(aTime) ? aTime : Number.POSITIVE_INFINITY;
+    const bSafe = Number.isFinite(bTime) ? bTime : Number.POSITIVE_INFINITY;
+    return aSafe - bSafe;
   });
+}
+
+function filterUpcomingEvents(events) {
+  return events.filter((event) => isEventUpcoming(event));
 }
 
 /**
@@ -129,22 +123,14 @@ export async function fetchHomeEvents() {
         { edgeCache: true },
       );
       const fallbackRaw = toRenderableEvents(extractEventNodes(fallbackData));
-      return { events: fallbackRaw, hasDates: false };
+      const fallbackUpcoming = sortByStartDateAsc(filterUpcomingEvents(fallbackRaw));
+      return { events: fallbackUpcoming, hasDates: false };
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const withDates = sortByStartDateAsc(raw);
-    const upcoming = withDates.filter((event) => {
-      const start = parseDate(event.startDate);
-      if (start) return start >= today;
-      const end = parseDate(event.endDate);
-      if (end) return end >= today;
-      return true; // keep undated events as best effort
-    });
-    const display = upcoming.length > 0 ? upcoming : withDates;
-    const hasDates = display.some((e) => e.startDate);
+    const upcoming = filterUpcomingEvents(withDates);
+    const display = sortByStartDateAsc(upcoming);
+    const hasDates = display.some((e) => e.startDate || e.endDate);
     return { events: display, hasDates };
   } catch {
     return { events: [], hasDates: false };
