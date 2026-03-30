@@ -59,7 +59,14 @@ function cleanup() {
 }
 
 const [bin, ...args] = cmd;
-const child = spawn(bin, args, { stdio: "inherit", shell: false });
+const child = spawn(bin, args, {
+  stdio: "inherit",
+  shell: false,
+  env: {
+    ...process.env,
+    RAGBAZ_BUILD_PHASE: "1",
+  },
+});
 
 child.on("exit", (code) => {
   cleanup();

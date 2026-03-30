@@ -244,6 +244,7 @@ function bucketize(log, buckets = 120) {
 export default function GraphqlAvailabilityPanel() {
   const [loading, setLoading] = useState(true);
   const [kvConfigured, setKvConfigured] = useState(false);
+  const [kvConfigStatus, setKvConfigStatus] = useState(null);
   const [enabled, setEnabled] = useState(false);
   const [temporaryEnabledUntil, setTemporaryEnabledUntil] = useState(null);
   const [effectiveEnabled, setEffectiveEnabled] = useState(false);
@@ -259,6 +260,11 @@ export default function GraphqlAvailabilityPanel() {
     try {
       const { json: data } = await adminFetch(API);
       setKvConfigured(data.kvConfigured ?? false);
+      setKvConfigStatus(
+        data.kvConfigStatus && typeof data.kvConfigStatus === "object"
+          ? data.kvConfigStatus
+          : null,
+      );
       setEnabled(data.settings?.enabled ?? false);
       setTemporaryEnabledUntil(
         typeof data.temporaryEnabledUntil === "string" &&
@@ -342,6 +348,21 @@ export default function GraphqlAvailabilityPanel() {
               </span>
             )}
           </p>
+          {!kvConfigured && kvConfigStatus && (
+            <p className="text-xs text-orange-700 mt-1">
+              Missing runtime keys:{" "}
+              <code className="font-mono">
+                {(Array.isArray(kvConfigStatus.missingKeys) &&
+                kvConfigStatus.missingKeys.length > 0
+                  ? kvConfigStatus.missingKeys
+                  : ["unknown"]
+                ).join(", ")}
+              </code>
+              {kvConfigStatus.bypassedDuringBuild
+                ? " (KV bypassed during build phase)"
+                : ""}
+            </p>
+          )}
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer select-none">

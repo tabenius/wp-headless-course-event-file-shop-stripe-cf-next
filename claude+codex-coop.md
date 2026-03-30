@@ -1,5 +1,21 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — KV configuration warning follow-up (runtime build-phase guard + admin diagnostics)
+
+### Codex — fixed false “KV not fully configured” state and exposed explicit missing-key diagnostics
+
+**Delivered:**
+- Hardened build-phase detection so deployed Worker runtime is not misclassified as build mode:
+  - `src/lib/buildUpstreamGuard.js` now short-circuits build detection when running in edge-like runtime (`globalThis.EdgeRuntime`), then checks explicit `RAGBAZ_BUILD_PHASE=1`.
+  - removed `npm_lifecycle_event` from build detection heuristics to avoid build-time lifecycle values bleeding into runtime behavior.
+- Updated build wrapper to set an explicit build marker:
+  - `scripts/build-with-lock.mjs` now spawns child builds with `RAGBAZ_BUILD_PHASE=1`.
+- Added GraphQL panel KV diagnostics parity with Page Performance:
+  - `src/components/admin/GraphqlAvailabilityPanel.js` now reads and shows `kvConfigStatus` details (`Missing runtime keys`, plus build-bypass note when relevant) instead of only generic “not fully configured”.
+
+**Validation:**
+- `npm run lint -- src/lib/buildUpstreamGuard.js scripts/build-with-lock.mjs src/components/admin/GraphqlAvailabilityPanel.js` (pass; existing repo warnings unchanged).
+
 ## 2026-03-30 (Codex) — welcome panel rebuilt to reality-first control room (no impress slides)
 
 ### Codex — removed onboarding story deck and aligned Welcome with current admin state
