@@ -24,7 +24,7 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="storefront-icon-button flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+        className="storefront-icon-button focus-ring-brand flex items-center justify-center w-8 h-8 rounded-full transition-colors"
         aria-label={t("nav.userMenu")}
         aria-expanded={open}
       >

@@ -5,6 +5,9 @@
   --background: var(--color-background);
   --foreground: var(--color-foreground);
   --font-button: var(--font-heading);
+  --focus-ring-color: var(--color-primary);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
 }
 
 @theme inline {
@@ -57,6 +60,11 @@ body {
     --font-button,
     var(--font-body, system-ui, -apple-system, "Segoe UI", sans-serif)
   );
+}
+
+.focus-ring-brand:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Fixed background via a pseudo-element avoids forced full-page composite */
@@ -290,19 +298,24 @@ a:focus {
 
 /* Storefront utility icon buttons (theme toggle + user menu) must never use CTA button colors */
 body:not(:has(.admin-layout)) .storefront-icon-button {
-  background: rgba(255, 241, 241, 0.92) !important;
-  color: #1a1a1a !important;
-  border: 1px solid rgba(109, 0, 62, 0.35) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-background) 92%,
+    transparent
+  ) !important;
+  color: var(--color-foreground) !important;
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 35%, transparent) !important;
   padding: 0 !important;
   box-shadow: none !important;
 }
 body:not(:has(.admin-layout)) .storefront-icon-button:hover {
-  background: #f0d0d0 !important;
-  color: #1a1a1a !important;
-}
-body:not(:has(.admin-layout)) .storefront-icon-button:focus-visible {
-  outline: 2px solid #6d003e;
-  outline-offset: 2px;
+  background: color-mix(
+    in srgb,
+    var(--color-background) 84%,
+    var(--color-muted)
+  ) !important;
+  color: var(--color-foreground) !important;
 }
 .dark-mode body:not(:has(.admin-layout)) header button.storefront-icon-button {
   background: rgba(24, 24, 24, 0.88) !important;
@@ -662,7 +675,7 @@ body:not(:has(.admin-layout)) :where(button, .btn, [role="button"], input[type="
   transform: scaleX(1);
 }
 [data-link-style="box"] a:hover {
-  outline: 2px solid var(--color-primary);
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
   border-radius: 2px;
   text-decoration: none;
 }

@@ -248,7 +248,7 @@ function vatPercentToInput(value) {
 }
 
 const SITE_STYLE_DEFAULTS = {
-  background: "#fff1f1",
+  background: "#f0d0d0",
   foreground: "#1a1a1a",
   primary: "#6d003e",
   secondary: "#ffb606",

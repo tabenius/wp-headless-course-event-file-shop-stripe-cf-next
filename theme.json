@@ -4,7 +4,7 @@
   "settings": {
     "color": {
       "palette": [
-        { "slug": "background", "name": "Background", "color": "#fff1f1" },
+        { "slug": "background", "name": "Background", "color": "#f0d0d0" },
         { "slug": "foreground", "name": "Foreground", "color": "#1a1a1a" },
         { "slug": "primary", "name": "Primary", "color": "#6d003e" },
         { "slug": "secondary", "name": "Secondary", "color": "#ffb606" },

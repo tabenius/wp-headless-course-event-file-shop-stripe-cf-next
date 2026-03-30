@@ -1,6 +1,6 @@
 /* Auto-generated from theme.json. Do not edit manually. */
 :root {
-  --color-background: #fff1f1;
+  --color-background: #f0d0d0;
   --color-foreground: #1a1a1a;
   --color-primary: #6d003e;
   --color-secondary: #ffb606;
@@ -8,12 +8,6 @@
   --color-muted: #686868;
   --font-body: var(--font-merriweather), Georgia, serif;
   --font-heading: var(--font-montserrat), "Helvetica Neue", sans-serif;
-  --font-display: var(--font-heading);
-  --font-subheading: var(--font-heading);
-  --font-button: var(--font-heading);
-  --font-color-display: var(--color-foreground);
-  --font-color-heading: var(--color-foreground);
-  --font-color-subheading: var(--color-foreground);
   --background: var(--color-background);
   --foreground: var(--color-foreground);
 }
@@ -33,6 +27,3 @@
 
 .font-body { font-family: var(--font-body); }
 .font-heading { font-family: var(--font-heading); }
-.font-display { font-family: var(--font-display); }
-.font-subheading { font-family: var(--font-subheading); }
-.font-button { font-family: var(--font-button); }

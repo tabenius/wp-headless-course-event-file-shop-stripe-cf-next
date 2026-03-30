@@ -88,7 +88,7 @@ export default function NavDropdown({
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className={`${buttonClassName}${isActive ? ` ${activeClassName}` : ""}`}
+          className={`${buttonClassName} focus-ring-brand${isActive ? ` ${activeClassName}` : ""}`}
         >
           {labelContent}
         </button>

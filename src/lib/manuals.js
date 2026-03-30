@@ -17,7 +17,7 @@ const STYLE_GUIDE = `
 ## Main site (public-facing)
 
 ### Colors
-- Background: #fff1f1 (very light rose/cream) — CSS var: --color-background
+- Background: #f0d0d0 (very light rose/cream) — CSS var: --color-background
 - Foreground / text: #1a1a1a — CSS var: --color-foreground
 - Primary: #6d003e (deep magenta / dark crimson) — CSS var: --color-primary
 - Secondary: #ffb606 (amber / golden yellow) — CSS var: --color-secondary

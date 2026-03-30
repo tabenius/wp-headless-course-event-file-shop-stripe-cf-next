@@ -49,7 +49,7 @@ export default function MobileNav({ items, authLinks }) {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="w-8 h-8 flex items-center justify-center text-xl"
+            className="focus-ring-brand w-8 h-8 flex items-center justify-center text-xl"
             aria-label={t("nav.closeMenu")}
           >
             &times;
@@ -116,7 +116,7 @@ export default function MobileNav({ items, authLinks }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="lg:hidden flex flex-col justify-center items-center w-10 h-10 gap-[5px]"
+        className="focus-ring-brand lg:hidden flex flex-col justify-center items-center w-10 h-10 gap-[5px]"
         aria-label={open ? t("nav.closeMenu") : t("nav.openMenu")}
         aria-expanded={open}
       >

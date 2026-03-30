@@ -34,7 +34,7 @@ export default function DarkModeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="storefront-icon-button flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+      className="storefront-icon-button focus-ring-brand flex items-center justify-center w-8 h-8 rounded-full transition-colors"
       aria-label={dark ? t("darkMode.lightMode") : t("darkMode.darkMode")}
       title={dark ? t("darkMode.lightMode") : t("darkMode.darkMode")}
     >
