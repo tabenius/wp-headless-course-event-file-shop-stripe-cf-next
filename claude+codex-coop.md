@@ -4076,3 +4076,4 @@ The following pages use `auth()` (which calls `cookies()` from `next/headers`) a
 **Result:** Root layout stays ISR-default (Codex change preserved). Auth-dependent pages are explicitly dynamic. Free content pages (`Post`, `Page` via catch-all) can benefit from ISR/static caching.
 
 - **2026-03-30 (Codex)**: Fixed remaining Style-tab BUGS by correcting `t("admin.styleRevisionCount")` interpolation usage (so `{count}` now resolves) and replacing the obsolete admin-only style-guide block with a live active-typography preview (display/heading/body/button/link) that follows current font roles + palette; added EN/SV/ES copy keys and checked both related BUGS.md items as completed.
+- **2026-03-30 (Codex)**: Fixed Info-tab runtime posture readability by removing the blue inverted styling from the “Measures and next actions” panel, switching it to neutral surface colors with high-contrast text/list rendering, and marked the related BUGS.md entry complete.
