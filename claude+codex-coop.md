@@ -1,5 +1,23 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — TTFB stabilization pass: non-blocking menu cold path + restore ISR defaults
+
+### Codex — removed global forced-dynamic rendering and de-risked header menu fetch path (commit pending)
+
+**Delivered:**
+- Changed root layout from forced dynamic (`dynamic = "force-dynamic"`, `revalidate = 0`) back to Next.js default route behavior so ISR/static can work where safe instead of penalizing all routes.
+- Refactored `src/lib/menu.js` to reduce cold-request blocking:
+  - menu URI existence checks are now non-blocking by default when sitemap cache is cold (`MENU_NON_BLOCKING_URI_EXISTENCE=1` default fail-open),
+  - added background-only sitemap warmup path,
+  - added throttled background menu snapshot refresh (`MENU_COLD_START_BG_REFRESH=1`, `MENU_REFRESH_MIN_INTERVAL_MS`) so first request returns quickly while refresh happens asynchronously,
+  - extracted shared upstream/fallback builders to keep the blocking path minimal.
+- Kept a strict fallback path available by env toggle: disabling cold-start background refresh reverts to synchronous fetch path.
+
+**Validation:**
+- `node --test tests/menu.test.js` (pass)
+- `npm run lint` (pass; existing warnings only)
+- `npm run cf:build` (pass; `/shop` shows ISR `Revalidate 5m`, middleware deprecation warning unchanged)
+
 ## 2026-03-30 (Codex) — storefront suspense + full-page skeleton loading pass
 
 ### Codex — implemented broad storefront loading skeleton architecture (commit pending)

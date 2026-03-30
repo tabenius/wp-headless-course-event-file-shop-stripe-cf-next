@@ -60,6 +60,9 @@ const MENU_SITEMAP_TIMEOUT_MS =
 const MENU_SNAPSHOT_KV_KEY = process.env.MENU_SNAPSHOT_KV_KEY || "menu:primary:v1";
 const MENU_SNAPSHOT_TTL_MS =
   Number.parseInt(process.env.MENU_SNAPSHOT_TTL_MS || "300000", 10) || 300000;
+const MENU_REFRESH_MIN_INTERVAL_MS =
+  Number.parseInt(process.env.MENU_REFRESH_MIN_INTERVAL_MS || "30000", 10) ||
+  30000;
 let sitemapCache = {
   expiresAt: 0,
   paths: null,
@@ -70,6 +73,27 @@ let menuSnapshotCache = {
   items: null,
   pending: null,
 };
+let menuRefreshState = {
+  pending: null,
+  lastStartedAt: 0,
+};
+
+function envFlagEnabled(rawValue, defaultEnabled = true) {
+  if (rawValue === undefined || rawValue === null || rawValue === "") {
+    return defaultEnabled;
+  }
+  const value = String(rawValue).trim().toLowerCase();
+  return !["0", "false", "no", "off"].includes(value);
+}
+
+const MENU_NON_BLOCKING_URI_EXISTENCE = envFlagEnabled(
+  process.env.MENU_NON_BLOCKING_URI_EXISTENCE,
+  true,
+);
+const MENU_COLD_START_BG_REFRESH = envFlagEnabled(
+  process.env.MENU_COLD_START_BG_REFRESH,
+  true,
+);
 
 export function resetMenuCaches() {
   menuUriExistenceCache.clear();
@@ -82,6 +106,10 @@ export function resetMenuCaches() {
     expiresAt: 0,
     items: null,
     pending: null,
+  };
+  menuRefreshState = {
+    pending: null,
+    lastStartedAt: 0,
   };
 }
 
@@ -350,11 +378,7 @@ async function loadSitemapPathSet() {
   return best;
 }
 
-async function getSitemapPathSet() {
-  const now = Date.now();
-  if (sitemapCache.paths && sitemapCache.expiresAt > now) {
-    return sitemapCache.paths;
-  }
+function startSitemapPathLoad() {
   if (sitemapCache.pending) {
     return sitemapCache.pending;
   }
@@ -371,6 +395,21 @@ async function getSitemapPathSet() {
   return sitemapCache.pending;
 }
 
+async function getSitemapPathSet({ wait = true } = {}) {
+  const now = Date.now();
+  if (sitemapCache.paths && sitemapCache.expiresAt > now) {
+    return sitemapCache.paths;
+  }
+  if (sitemapCache.pending) {
+    return wait ? sitemapCache.pending : null;
+  }
+  if (!wait) {
+    startSitemapPathLoad();
+    return null;
+  }
+  return startSitemapPathLoad();
+}
+
 async function doesWordPressUriExist(path) {
   if (shouldSkipUpstreamDuringBuild()) return true;
   const normalized = normalizeUriForLookup(path);
@@ -381,7 +420,9 @@ async function doesWordPressUriExist(path) {
     return cached.exists;
   }
 
-  const sitemapPaths = await getSitemapPathSet();
+  const sitemapPaths = await getSitemapPathSet({
+    wait: !MENU_NON_BLOCKING_URI_EXISTENCE,
+  });
   // Fail-open when sitemap cannot be read.
   const resolvedExists = sitemapPaths ? sitemapPaths.has(normalized) : true;
   menuUriExistenceCache.set(normalized, {
@@ -406,6 +447,63 @@ async function canRenderMenuHref(href) {
   }
 }
 
+async function buildFallbackNavigation() {
+  const filtered = await filterNavigationByExistence(
+    site.navigation,
+    canRenderMenuHref,
+  );
+  return await ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
+}
+
+async function fetchNavigationFromUpstreamOrFallback() {
+  try {
+    const data = await fetchGraphQL(MENU_QUERY, {}, 1800, { edgeCache: true });
+    const menuItems =
+      data?.menus?.edges?.[0]?.node?.menuItems?.edges?.map((e) => e.node) || [];
+
+    if (menuItems.length === 0) {
+      return await buildFallbackNavigation();
+    }
+
+    const mapped = menuItems.map((item) => {
+      const children =
+        item.childItems?.edges?.map((e) => mapItem(e.node)) || [];
+      return {
+        ...mapItem(item, { uppercase: true }),
+        ...(children.length > 0 ? { children } : {}),
+      };
+    });
+    const filtered = await filterNavigationByExistence(mapped, canRenderMenuHref);
+    return await ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
+  } catch {
+    return await buildFallbackNavigation();
+  }
+}
+
+function refreshMenuSnapshotInBackground() {
+  const now = Date.now();
+  if (menuRefreshState.pending) {
+    return menuRefreshState.pending;
+  }
+  if (now - menuRefreshState.lastStartedAt < MENU_REFRESH_MIN_INTERVAL_MS) {
+    return null;
+  }
+  menuRefreshState.lastStartedAt = now;
+  menuRefreshState.pending = (async () => {
+    try {
+      const navigation = await fetchNavigationFromUpstreamOrFallback();
+      if (Array.isArray(navigation) && navigation.length > 0) {
+        await writeMenuSnapshot(navigation);
+      }
+    } catch {
+      // Best effort refresh only.
+    } finally {
+      menuRefreshState.pending = null;
+    }
+  })();
+  return menuRefreshState.pending;
+}
+
 /**
  * Fetch the primary WordPress menu with submenus.
  * Falls back to site.json navigation if the menu is empty or the query fails.
@@ -419,52 +517,19 @@ export const getNavigation = cache(async function getNavigation() {
 
   const snapshot = await getMenuSnapshot();
   if (snapshot && snapshot.length > 0) {
+    if (MENU_COLD_START_BG_REFRESH) {
+      refreshMenuSnapshotInBackground();
+    }
     return ensureCoreMenuEntriesByExistence(snapshot, canRenderMenuHref);
   }
 
-  try {
-    const data = await fetchGraphQL(MENU_QUERY, {}, 1800, { edgeCache: true });
-    const menuItems =
-      data?.menus?.edges?.[0]?.node?.menuItems?.edges?.map((e) => e.node) || [];
-
-    if (menuItems.length === 0) {
-      const filtered = await filterNavigationByExistence(
-        site.navigation,
-        canRenderMenuHref,
-      );
-      const ensured = await ensureCoreMenuEntriesByExistence(
-        filtered,
-        canRenderMenuHref,
-      );
-      writeMenuSnapshot(ensured).catch(() => {});
-      return ensured;
-    }
-
-    const mapped = menuItems.map((item) => {
-      const children =
-        item.childItems?.edges?.map((e) => mapItem(e.node)) || [];
-      return {
-        ...mapItem(item, { uppercase: true }),
-        ...(children.length > 0 ? { children } : {}),
-      };
-    });
-    const filtered = await filterNavigationByExistence(mapped, canRenderMenuHref);
-    const ensured = await ensureCoreMenuEntriesByExistence(
-      filtered,
-      canRenderMenuHref,
-    );
-    writeMenuSnapshot(ensured).catch(() => {});
-    return ensured;
-  } catch {
-    const filtered = await filterNavigationByExistence(
-      site.navigation,
-      canRenderMenuHref,
-    );
-    const ensured = await ensureCoreMenuEntriesByExistence(
-      filtered,
-      canRenderMenuHref,
-    );
-    writeMenuSnapshot(ensured).catch(() => {});
-    return ensured;
+  if (MENU_COLD_START_BG_REFRESH) {
+    refreshMenuSnapshotInBackground();
+    const alwaysRenderHref = async () => true;
+    return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
   }
+
+  const navigation = await fetchNavigationFromUpstreamOrFallback();
+  writeMenuSnapshot(navigation).catch(() => {});
+  return navigation;
 });
