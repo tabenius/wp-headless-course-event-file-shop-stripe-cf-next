@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const STORAGE_KEY = "ragbaz_wp_config";
 
@@ -173,7 +174,7 @@ export default function WordPressSetupPage() {
                 <p className="mt-0.5">
                   Download{" "}
                   <a
-                    href="/downloads/ragbaz-articulate/ragbaz-bridge.zip"
+                    href="/downloads/ragbaz-bridge/ragbaz-bridge.zip"
                     className="text-blue-600 hover:underline font-medium"
                   >
                     ragbaz-bridge.zip
@@ -233,9 +234,9 @@ export default function WordPressSetupPage() {
           <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">
             Your configuration is stored in this browser&rsquo;s localStorage.
             To configure a different WordPress site, visit{" "}
-            <a href="/setup" className="text-blue-600 hover:underline">
+            <Link href="/setup" className="text-blue-600 hover:underline">
               /setup
-            </a>{" "}
+            </Link>{" "}
             again.
           </p>
         </div>

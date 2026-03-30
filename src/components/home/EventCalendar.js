@@ -28,26 +28,26 @@ function EventRow({ event }) {
   const badge = formatDateBadge(event);
 
   return (
-    <article className="flex flex-col gap-3 rounded-xl bg-[#fffdfb] p-3 ring-1 ring-[#f0d7eb] dark:bg-neutral-900/95 dark:ring-purple-400/30 lg:flex-row lg:items-center lg:gap-4">
+    <article className="flex flex-col gap-3 rounded-xl bg-[var(--color-background)] p-3 ring-1 ring-[var(--color-muted)] lg:flex-row lg:items-center lg:gap-4">
       <div className="shrink-0 lg:w-32">
         {badge ? (
           <div>
-            <div className="text-3xl font-black leading-none text-purple-700 dark:text-white">
+            <div className="text-3xl font-black leading-none text-[var(--color-primary)]">
               {badge.day}
             </div>
-            <div className="mt-0.5 text-[11px] font-semibold tracking-[0.14em] text-purple-600 dark:text-white">
+            <div className="mt-0.5 text-[11px] font-semibold tracking-[0.14em] text-[var(--color-primary)]">
               {badge.month} {badge.year}
             </div>
           </div>
         ) : (
-          <div className="text-sm font-bold text-purple-700 dark:text-white">UPCOMING</div>
+          <div className="text-sm font-bold text-[var(--color-primary)]">UPCOMING</div>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
         <Link
           href={event.uri}
-          className="block text-xl font-semibold leading-tight text-gray-900 hover:text-purple-700 dark:text-white dark:hover:text-white"
+          className="block text-xl font-semibold leading-tight text-[var(--color-foreground)] hover:text-[var(--color-primary)]"
           title={title}
         >
           {title}
@@ -57,7 +57,7 @@ function EventRow({ event }) {
         )}
       </div>
 
-      <Link href={event.uri} className="block overflow-hidden rounded-lg ring-1 ring-[#edd5e8] lg:w-48 lg:flex-none">
+      <Link href={event.uri} className="block overflow-hidden rounded-lg ring-1 ring-[var(--color-muted)] lg:w-48 lg:flex-none">
         {event.imageUrl ? (
           <Image
             src={event.imageUrl}
@@ -69,7 +69,7 @@ function EventRow({ event }) {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-32 w-full items-center justify-center bg-gradient-to-br from-[#fff8fc] to-[#fff4fa] text-[10px] font-semibold uppercase tracking-wide text-purple-600 dark:from-neutral-800 dark:to-neutral-900 dark:text-white lg:h-24">
+          <div className="flex h-32 w-full items-center justify-center bg-[var(--color-muted)] text-[10px] font-semibold uppercase tracking-wide text-[var(--color-foreground)] lg:h-24">
             {t("common.homeNoImage", "No image")}
           </div>
         )}
@@ -82,21 +82,21 @@ export default function EventCalendar({ events }) {
   if (!events?.length) return null;
 
   return (
-    <section className="border-b border-[#f0d7eb] bg-transparent dark:border-neutral-800">
+    <section className="border-b border-[var(--color-muted)] bg-transparent">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
             {t("common.homeUpcomingEvents", "Upcoming Events")}
           </h2>
           <Link
             href="/events"
-            className="text-sm font-medium text-purple-700 hover:underline dark:text-white"
+            className="text-sm font-medium text-[var(--color-primary)] hover:underline"
           >
             {t("common.homeViewAll", "View all")} →
           </Link>
         </div>
 
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-[#d89bcf] to-transparent" />
+        <div className="h-px w-full bg-[var(--color-muted)]" />
 
         <div className="mt-3 space-y-3">
           {events.slice(0, 8).map((event) => (

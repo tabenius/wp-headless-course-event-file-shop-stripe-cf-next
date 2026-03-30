@@ -7,7 +7,7 @@ const Footer = () => {
   const menuItemClass = "my-1";
   const menuItemLinkClass = "hover:underline";
   return (
-    <footer className="bg-[#fff1f1] text-[#1a1a1a] py-8 border-t border-[#333333]">
+    <footer className="border-t border-[var(--color-muted)] bg-[var(--color-background)] py-8 text-[var(--color-foreground)]">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Contact first on mobile, last on desktop */}

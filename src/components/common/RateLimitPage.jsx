@@ -19,10 +19,10 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
         <div className="flex items-start gap-3">
           <span className="text-3xl" aria-hidden>⏳</span>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
               Too Many Requests ({status})
             </h1>
-            <p className="mt-1 text-gray-600">
+            <p className="mt-1 text-[var(--color-foreground)]">
               The WordPress GraphQL server (or Varnish cache in front of it) is
               rate-limiting this storefront. Please wait a moment and then
               reload the page.
@@ -31,7 +31,7 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
         </div>
 
         {/* Instructions */}
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800 space-y-1">
+        <div className="space-y-1 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900 dark:border-yellow-500/40 dark:bg-yellow-900/20 dark:text-yellow-100">
           <p className="font-semibold">What you can do:</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Wait 30–60 seconds, then reload this page.</li>
@@ -41,7 +41,7 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
             </li>
             <li>
               Set the{" "}
-              <code className="font-mono bg-yellow-100 px-1 rounded">
+              <code className="rounded bg-yellow-100 px-1 font-mono dark:bg-yellow-900/40">
                 GRAPHQL_DELAY_MS
               </code>{" "}
               environment variable to add a delay between GraphQL calls.
@@ -52,12 +52,12 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
         {/* Request history */}
         {history.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold text-gray-700 mb-2">
+            <h2 className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">
               Recent GraphQL request attempts
             </h2>
-            <div className="rounded-lg border border-gray-200 overflow-hidden text-xs font-mono">
+            <div className="overflow-hidden rounded-lg border border-[var(--color-muted)] text-xs font-mono">
               <table className="w-full text-left">
-                <thead className="bg-gray-50 text-gray-500">
+                <thead className="bg-[var(--color-muted)] text-[var(--color-foreground)]">
                   <tr>
                     <th className="px-3 py-2 font-medium">Date / Time</th>
                     <th className="px-3 py-2 font-medium">Status</th>
@@ -80,10 +80,10 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
                       entry.status === 429 || entry.status === 503;
                     const isOk = entry.ok === true;
                     return (
-                      <tr key={i} className={isRateLimit ? "bg-red-50" : ""}>
-                        <td className="px-3 py-1.5 whitespace-nowrap text-gray-700">
+                      <tr key={i} className={isRateLimit ? "bg-red-50/70 dark:bg-red-900/25" : ""}>
+                        <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-foreground)]">
                           {dateStr}{" "}
-                          <span className="text-gray-500">{timeStr}</span>
+                          <span className="text-[var(--color-foreground)]">{timeStr}</span>
                         </td>
                         <td className="px-3 py-1.5 whitespace-nowrap">
                           <span
@@ -98,7 +98,7 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
                             {String(entry.status)}
                           </span>
                         </td>
-                        <td className="px-3 py-1.5 text-gray-400 truncate max-w-xs hidden sm:table-cell">
+                        <td className="hidden max-w-xs truncate px-3 py-1.5 text-[var(--color-foreground)] sm:table-cell">
                           {entry.endpoint}
                         </td>
                       </tr>
@@ -113,10 +113,10 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
         {/* Raw server response */}
         {responseBody && (
           <div>
-            <h2 className="text-sm font-semibold text-gray-700 mb-2">
+            <h2 className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">
               Raw server response
             </h2>
-            <pre className="overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-4 text-xs text-gray-700 whitespace-pre-wrap break-words max-h-64">
+            <pre className="max-h-64 overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-[var(--color-muted)] bg-[var(--color-muted)] p-4 text-xs text-[var(--color-foreground)]">
               {responseBody}
             </pre>
           </div>

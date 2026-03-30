@@ -262,7 +262,9 @@ function ShopIndexContent({
     <section className="max-w-6xl mx-auto px-6 py-16 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">{t("shop.title")}</h1>
-        <p className="text-gray-600 mt-2">{t("shop.subtitle")}</p>
+        <p className="mt-2 text-[var(--color-foreground)]">
+          {t("shop.subtitle")}
+        </p>
       </div>
 
       {accessBatchFailed && user?.email && (
@@ -328,7 +330,7 @@ function ShopIndexContent({
       )}
 
       {items.length === 0 && (
-        <p className="text-gray-500">{t("shop.noProducts")}</p>
+        <p className="text-[var(--color-foreground)]">{t("shop.noProducts")}</p>
       )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -361,7 +363,7 @@ function ShopIndexContent({
           return (
             <article
               key={item.id}
-              className="border rounded-lg bg-white overflow-hidden flex flex-col"
+              className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-muted)] bg-[var(--color-background)]"
             >
               {showImage ? (
                 <Image
@@ -381,7 +383,7 @@ function ShopIndexContent({
                   }
                 />
               ) : (
-                <div className="w-full h-44 bg-gray-100 flex items-center justify-center text-gray-300">
+                <div className="flex h-44 w-full items-center justify-center bg-[var(--color-muted)] text-[var(--color-background)]">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
@@ -399,7 +401,9 @@ function ShopIndexContent({
 
               <div className="p-5 space-y-3 flex-1 flex flex-col">
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-xl font-semibold">{item.name}</h2>
+                  <h2 className="text-xl font-semibold text-[var(--color-foreground)]">
+                    {item.name}
+                  </h2>
                   <span
                     className={`text-[11px] font-medium px-2 py-0.5 rounded whitespace-nowrap shrink-0 ${typeBadgeColor(item)}`}
                   >
@@ -408,17 +412,19 @@ function ShopIndexContent({
                 </div>
 
                 {item.description && (
-                  <p className="text-gray-700 line-clamp-3 text-sm">
+                  <p className="line-clamp-3 text-sm text-[var(--color-foreground)]">
                     {item.description}
                   </p>
                 )}
                 {item.duration && !/^0\s/.test(item.duration) && (
-                  <p className="text-xs text-gray-500">{item.duration}</p>
+                  <p className="text-xs text-[var(--color-foreground)]">
+                    {item.duration}
+                  </p>
                 )}
 
                 <div className="mt-auto pt-3">
                   {priceDisplay && (
-                    <p className="text-gray-800 font-semibold mb-3">
+                    <p className="mb-3 font-semibold text-[var(--color-foreground)]">
                       {priceDisplay}
                     </p>
                   )}
@@ -433,13 +439,13 @@ function ShopIndexContent({
                           {t("shop.openPurchasedAsset", "Open purchased asset")}
                         </Link>
                       ) : (
-                        <span className="text-green-700 text-sm font-semibold">
+                        <span className="text-sm font-semibold text-green-700 dark:text-green-300">
                           {t("shop.purchased")}
                         </span>
                       )
                     ) : (
                       ownershipPending ? (
-                        <span className="inline-block w-24 h-8 rounded bg-gray-200 animate-pulse" />
+                        <span className="inline-block h-8 w-24 animate-pulse rounded bg-[var(--color-muted)]" />
                       ) : (
                         <Link
                           href={item.uri}
@@ -465,7 +471,9 @@ function ShopIndexFallback() {
     <section className="max-w-6xl mx-auto px-6 py-16 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">{t("shop.title")}</h1>
-        <p className="text-gray-600 mt-2">{t("shop.subtitle")}</p>
+        <p className="mt-2 text-[var(--color-foreground)]">
+          {t("shop.subtitle")}
+        </p>
       </div>
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
         {t(

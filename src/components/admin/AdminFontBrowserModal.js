@@ -50,20 +50,20 @@ const FontRow = memo(({
   return (
     <div
       ref={rowRef}
-      className={`flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors ${
-        isCurrent ? "ring-2 ring-inset ring-slate-500 bg-slate-50/30" : ""
+      className={`flex items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-700/40 ${
+        isCurrent ? "ring-2 ring-inset ring-slate-400 bg-slate-700/30" : ""
       }`}
     >
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 flex items-center gap-2 flex-wrap">
+        <div className="mb-1 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
           {font.family}
-          {isVar && <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px]">Variable</span>}
+          {isVar && <span className="rounded bg-slate-600 px-1.5 py-0.5 text-[10px] text-slate-100">Variable</span>}
           {usedByRoles && usedByRoles.map((r) => (
-            <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">{r}</span>
+            <span key={r} className="rounded bg-slate-600 px-1.5 py-0.5 text-[10px] text-slate-100">{r}</span>
           ))}
         </div>
         <div
-          className="text-lg text-gray-800 truncate"
+          className="truncate text-lg text-slate-100"
           style={{ fontFamily: `'${font.family}', sans-serif` }}
         >
           {previewText}
@@ -71,15 +71,15 @@ const FontRow = memo(({
       </div>
       
       <div className="flex flex-col items-end gap-1 shrink-0">
-        {dlError && <span className="text-[10px] text-red-500">Error: {dlError}</span>}
+        {dlError && <span className="text-[10px] text-red-300">Error: {dlError}</span>}
         <div className="flex items-center gap-2">
           {isDl ? (
-            <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">Downloaded</span>
+            <span className="rounded bg-green-900/40 px-2 py-1 text-xs font-medium text-green-200">Downloaded</span>
           ) : (
             <button
               onClick={() => isVar ? onDownload(font.family) : onOpenWeightPicker(font.family)}
               disabled={isDling}
-              className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-white hover:border-gray-400 disabled:opacity-50 transition-all"
+              className="rounded-lg border border-slate-500 px-3 py-1.5 text-xs text-slate-100 transition-all hover:bg-slate-700 disabled:opacity-50"
             >
               {isDling ? "..." : "Download"}
             </button>
@@ -198,36 +198,44 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-12 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+      <div className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-600 bg-slate-800 text-slate-100 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-gray-900">Font Browser <span className="font-normal text-gray-400">({role})</span></h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-black transition-colors text-2xl">&times;</button>
+        <div className="flex items-center justify-between border-b border-slate-600 px-6 py-4">
+          <h2 className="text-lg font-bold text-slate-100">
+            Font Browser <span className="font-normal text-slate-300">({role})</span>
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-2xl text-slate-200 transition-colors hover:text-white"
+            aria-label="Close"
+          >
+            &times;
+          </button>
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 px-6 py-4 bg-gray-50 border-b">
+        <div className="grid grid-cols-1 gap-3 border-b border-slate-600 bg-slate-900/60 px-6 py-4 sm:grid-cols-3">
           <input
             type="text"
             placeholder="Search fonts..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-            className="px-3 py-2 border rounded-xl text-sm focus:ring-2 ring-slate-500 outline-none"
+            className="rounded-xl border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none ring-slate-400 placeholder:text-slate-300 focus:ring-2"
           />
           <select
             value={category}
             onChange={(e) => { setCategory(e.target.value); setVisibleCount(PAGE_SIZE); }}
-            className="px-3 py-2 border rounded-xl text-sm bg-white cursor-pointer"
+            className="cursor-pointer rounded-xl border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-slate-100"
           >
             {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
           </select>
           <div className="flex items-center px-2">
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
               <input
                 type="checkbox"
                 checked={variableOnly}
                 onChange={(e) => { setVariableOnly(e.target.checked); setVisibleCount(PAGE_SIZE); }}
-                className="w-4 h-4 text-slate-600 rounded"
+                className="h-4 w-4 rounded border-slate-500 bg-slate-700 text-slate-200"
               />
               Variable Fonts
             </label>
@@ -235,20 +243,24 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
         </div>
 
         {/* Live Preview Input */}
-        <div className="px-6 py-3 border-b bg-white">
-          <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Preview Text</label>
+        <div className="border-b border-slate-600 bg-slate-800 px-6 py-3">
+          <label className="mb-1 block text-[10px] font-bold uppercase text-slate-300">
+            Preview Text
+          </label>
           <input
             type="text"
             value={previewText}
             onChange={(e) => setPreviewText(e.target.value)}
-            className="w-full text-sm text-gray-600 focus:text-slate-600 outline-none"
+            className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100 outline-none focus:text-white"
           />
         </div>
 
         {/* List */}
         <div className="flex-1 overflow-y-auto scroll-smooth">
           {loading ? (
-            <div className="p-12 text-center animate-pulse text-gray-400">Fetching Google Fonts...</div>
+            <div className="animate-pulse p-12 text-center text-slate-300">
+              Fetching Google Fonts...
+            </div>
           ) : (
             <>
               {visible.map((font) => (
@@ -274,10 +286,16 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
 
         {/* Weight Picker Modal Overlay */}
         {weightPickerFamily && (
-          <div className="absolute inset-x-0 bottom-0 bg-white border-t p-6 shadow-up-lg z-10 animate-in slide-in-from-bottom">
+          <div className="absolute inset-x-0 bottom-0 z-10 animate-in border-t border-slate-600 bg-slate-800 p-6 shadow-up-lg slide-in-from-bottom">
             <div className="flex justify-between items-center mb-4">
-              <p className="font-bold text-gray-900">Weights for {weightPickerFamily}</p>
-              <button onClick={() => setWeightPickerFamily(null)} className="text-gray-400">&times;</button>
+              <p className="font-bold text-slate-100">Weights for {weightPickerFamily}</p>
+              <button
+                onClick={() => setWeightPickerFamily(null)}
+                className="text-xl text-slate-300 hover:text-white"
+                aria-label="Close weight picker"
+              >
+                &times;
+              </button>
             </div>
             <div className="flex flex-wrap gap-3 mb-6">
               {[300, 400, 500, 600, 700, 800].map(w => (
@@ -285,7 +303,9 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                   key={w}
                   onClick={() => setSelectedWeights(prev => prev.includes(w) ? prev.filter(x => x !== w) : [...prev, w])}
                   className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
-                    selectedWeights.includes(w) ? "bg-slate-600 border-slate-600 text-white" : "bg-white border-gray-200 text-gray-600"
+                    selectedWeights.includes(w)
+                      ? "bg-slate-500 border-slate-500 text-white"
+                      : "bg-slate-900 border-slate-600 text-slate-200 hover:bg-slate-700"
                   }`}
                 >
                   {w}

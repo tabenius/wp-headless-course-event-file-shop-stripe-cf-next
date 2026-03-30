@@ -116,7 +116,10 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
   return (
     <section className="max-w-4xl mx-auto px-6 py-16 space-y-6">
       <p>
-        <Link href="/shop" className="text-sm text-teal-800 hover:underline">
+        <Link
+          href="/shop"
+          className="text-sm text-[var(--color-primary)] hover:underline"
+        >
           {t("shop.backToShop")}
         </Link>
       </p>
@@ -134,13 +137,15 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
       ) : null}
 
       <h1 className="text-3xl font-bold">{product.name}</h1>
-      <p className="text-gray-600">{product.description}</p>
-      <p className="text-gray-700 font-semibold">
+      <p className="text-[var(--color-foreground)]">{product.description}</p>
+      <p className="font-semibold text-[var(--color-foreground)]">
         {t("common.price")}: {formatPrice(product.priceCents, product.currency)}
       </p>
 
       {checkoutStatus === "success" ? (
-        <p className="text-green-700">{t("shop.paymentSuccess")}</p>
+        <p className="text-green-700 dark:text-green-300">
+          {t("shop.paymentSuccess")}
+        </p>
       ) : null}
       {checkoutStatus === "cancel" ? (
         <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
@@ -150,10 +155,10 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
           </p>
         </div>
       ) : null}
-      {error ? <p className="text-red-600">{error}</p> : null}
+      {error ? <p className="text-red-600 dark:text-red-300">{error}</p> : null}
 
       {!ownershipLoaded ? (
-        <div className="h-12 w-48 animate-pulse rounded bg-gray-200" />
+        <div className="h-12 w-48 animate-pulse rounded bg-[var(--color-muted)]" />
       ) : accessCheckFailed && user?.email ? (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-5 space-y-3">
           <p className="font-semibold text-amber-900">

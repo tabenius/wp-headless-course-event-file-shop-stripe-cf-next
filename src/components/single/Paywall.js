@@ -118,7 +118,7 @@ export default function Paywall({
   }
 
   return (
-    <article className="max-w-2xl mx-auto px-6 py-24 space-y-6">
+    <article className="mx-auto max-w-2xl space-y-6 px-6 py-24 text-[var(--color-foreground)]">
       {courseImage && !imageBroken && (
         <div className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -135,7 +135,7 @@ export default function Paywall({
       </h1>
 
       {(displayPrice || courseDuration) && (
-        <div className="flex justify-center gap-6 text-lg text-gray-700">
+        <div className="flex justify-center gap-6 text-lg text-[var(--color-foreground)]">
           {displayPrice && (
             <span>
               <strong>{t("paywall.fee")}:</strong> {displayPrice}
@@ -151,19 +151,19 @@ export default function Paywall({
 
       {courseContent && (
         <div
-          className="text-gray-800 prose prose-p:my-4 max-w-none wp-content text-xl"
+          className="prose prose-p:my-4 max-w-none wp-content text-xl text-[var(--color-foreground)]"
           dangerouslySetInnerHTML={{ __html: transformContent(courseContent) }}
         />
       )}
 
-      <div className="text-center space-y-4 pt-4 border-t">
+      <div className="space-y-4 border-t border-[var(--color-muted)] pt-4 text-center">
         {!canBuy ? (
-          <p className="text-gray-500 italic">
+          <p className="italic text-[var(--color-foreground)]">
             {t("paywall.priceNotConfigured")}
           </p>
         ) : isLoggedIn ? (
           <>
-            <p className="text-gray-700">
+            <p className="text-[var(--color-foreground)]">
               {t("paywall.loggedInNeedPurchase", {
                 email: userEmail,
                 contentKind: kindLabel,
@@ -184,7 +184,9 @@ export default function Paywall({
           </>
         ) : (
           <div className="max-w-md mx-auto space-y-4">
-            <p className="text-sm text-gray-500">{t("paywall.guestBuyHint")}</p>
+            <p className="text-sm text-[var(--color-foreground)]">
+              {t("paywall.guestBuyHint")}
+            </p>
 
             <div className="space-y-3">
               <input
@@ -192,7 +194,7 @@ export default function Paywall({
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
                 placeholder={t("paywall.enterEmail")}
-                className="w-full border rounded px-4 py-3 text-center"
+                className="w-full rounded border border-[var(--color-muted)] bg-[var(--color-background)] px-4 py-3 text-center text-[var(--color-foreground)] placeholder:text-[var(--color-foreground)]"
                 autoComplete="email"
               />
               <input
@@ -201,7 +203,7 @@ export default function Paywall({
                 onChange={(e) => setGuestEmailConfirm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleGuestCheckout()}
                 placeholder={t("paywall.confirmEmail")}
-                className="w-full border rounded px-4 py-3 text-center"
+                className="w-full rounded border border-[var(--color-muted)] bg-[var(--color-background)] px-4 py-3 text-center text-[var(--color-foreground)] placeholder:text-[var(--color-foreground)]"
                 autoComplete="email"
               />
             </div>
@@ -219,7 +221,7 @@ export default function Paywall({
               {buyLabel}
             </button>
 
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[var(--color-foreground)]">
               {t("paywall.alreadyHaveAccount")}{" "}
               <Link
                 href={`/auth/signin?callbackUrl=${encodeURIComponent(courseUri)}`}
