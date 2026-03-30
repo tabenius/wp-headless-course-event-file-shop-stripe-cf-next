@@ -232,6 +232,20 @@ function toCents(units) {
   return Math.round(parsed * 100);
 }
 
+function normalizeProductModeValue(mode, product) {
+  const safe = String(mode || "")
+    .trim()
+    .toLowerCase();
+  if (safe === "asset" || safe === "manual_uri" || safe === "digital_file") {
+    return safe;
+  }
+  if (String(product?.assetId || "").trim()) return "asset";
+  if (String(product?.type || "").trim().toLowerCase() === "course") {
+    return "manual_uri";
+  }
+  return "digital_file";
+}
+
 function parseVatPercentInput(value) {
   if (value === "" || value === null || value === undefined) return null;
   const parsed =
@@ -547,12 +561,14 @@ function emptyProduct() {
     name: "",
     slug: "",
     type: "digital_file",
+    productMode: "digital_file",
     description: "",
     imageUrl: "",
     priceCents: 0,
     currency: "SEK",
     fileUrl: "",
     mimeType: "",
+    assetId: "",
     vatPercent: null,
     courseUri: "",
     active: true,
@@ -2151,10 +2167,62 @@ export default function AdminDashboard() {
               }
             : p,
         );
+        const selectedProduct = updated[shopIndex];
+        const selectedMode = normalizeProductModeValue(
+          selectedProduct?.productMode,
+          selectedProduct,
+        );
+        if (
+          selectedProduct?.type === "digital_file" &&
+          selectedMode === "digital_file"
+        ) {
+          const candidateUrl = String(selectedProduct?.fileUrl || "").trim();
+          if (!candidateUrl) {
+            throw new Error(
+              t(
+                "admin.productDirectUrlRequired",
+                "Direct URL mode requires a file URL.",
+              ),
+            );
+          }
+          const validateResponse = await fetch(
+            "/api/admin/products/validate-file-url",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: candidateUrl }),
+            },
+          );
+          const validateJson = await validateResponse
+            .json()
+            .catch(() => ({}));
+          if (!validateResponse.ok || !validateJson?.ok) {
+            throw new Error(
+              validateJson?.error ||
+                t(
+                  "admin.productUrlValidationFailed",
+                  "Could not validate file URL before save.",
+                ),
+            );
+          }
+          if (!validateJson?.reachable) {
+            const statusPart =
+              typeof validateJson?.status === "number"
+                ? ` (HTTP ${validateJson.status})`
+                : "";
+            throw new Error(
+              t(
+                "admin.productUrlUnreachable",
+                "File URL is not reachable and cannot be saved.",
+              ) + statusPart,
+            );
+          }
+        }
         const payload = updated.map((p) => ({
           name: p.name,
           slug: p.slug,
           type: p.type === "course" ? "course" : "digital_file",
+          productMode: normalizeProductModeValue(p.productMode, p),
           description: p.description,
           imageUrl: p.imageUrl,
           priceCents: Number.isFinite(p.priceCents)
@@ -2163,6 +2231,7 @@ export default function AdminDashboard() {
           currency: (p.currency || "SEK").toUpperCase(),
           fileUrl: p.fileUrl,
           mimeType: p.mimeType || "",
+          assetId: p.assetId || "",
           vatPercent:
             typeof p.vatPercent === "number" && Number.isFinite(p.vatPercent)
               ? p.vatPercent

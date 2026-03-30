@@ -29,6 +29,38 @@ function parseVatPercent(value) {
   return Math.max(0, Math.min(100, Math.round(numeric * 100) / 100));
 }
 
+function normalizeAssetId(value) {
+  const safe = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._:-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return safe.slice(0, 96);
+}
+
+function fallbackAssetIdFromItem(item) {
+  const native = normalizeAssetId(item?.asset?.assetId || "");
+  if (native) return native;
+  const source = normalizeAssetId(item?.source || "asset") || "asset";
+  const token = normalizeAssetId(
+    item?.key ||
+      item?.sourceId ||
+      item?.title ||
+      item?.url ||
+      Math.random().toString(36).slice(2),
+  );
+  return `${source}-${token}`.slice(0, 96);
+}
+
+function formatSize(bytes) {
+  const numeric = Number(bytes);
+  if (!Number.isFinite(numeric) || numeric <= 0) return "0 B";
+  if (numeric >= 1024 * 1024 * 1024) return `${(numeric / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  if (numeric >= 1024 * 1024) return `${(numeric / (1024 * 1024)).toFixed(1)} MB`;
+  if (numeric >= 1024) return `${(numeric / 1024).toFixed(1)} KB`;
+  return `${numeric} B`;
+}
+
 function BrokenImageIcon({ className = "" }) {
   return (
     <svg
@@ -388,6 +420,169 @@ function PriceAccessForm({
   );
 }
 
+function AssetPickerModal({ open, onClose, onSelect }) {
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+
+  const loadItems = useCallback(async (searchText = "") => {
+    setLoading(true);
+    setError("");
+    try {
+      const params = new URLSearchParams({
+        source: "all",
+        limit: "80",
+      });
+      if (searchText.trim()) params.set("search", searchText.trim());
+      const response = await fetch(`/api/admin/media-library?${params.toString()}`);
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || t("admin.imageBrowseLibraryLoadFailed"));
+      }
+      setItems(Array.isArray(json.items) ? json.items : []);
+    } catch (loadError) {
+      setItems([]);
+      setError(loadError?.message || t("admin.imageBrowseLibraryLoadFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    loadItems("");
+  }, [open, loadItems]);
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => {
+      loadItems(query);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [open, query, loadItems]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleEscape(event) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onClose?.();
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 px-4"
+      data-admin-modal="true"
+    >
+      <div className="w-full max-w-3xl max-h-[82vh] overflow-hidden rounded-xl border border-slate-300 bg-white shadow-xl">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">
+              {t("admin.productAssetPickerTitle", "Choose asset")}
+            </h3>
+            <p className="text-xs text-slate-500">
+              {t(
+                "admin.productAssetPickerHint",
+                "Select an item from the asset library. If no asset ID exists, one is generated from source and object key.",
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+          >
+            {t("common.close", "Close")}
+          </button>
+        </div>
+
+        <div className="border-b border-slate-200 px-4 py-3">
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t(
+              "admin.productAssetPickerSearch",
+              "Search by title, key, mime type or URL",
+            )}
+            className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div className="max-h-[56vh] overflow-auto px-4 py-3">
+          {loading ? (
+            <p className="text-sm text-slate-500">{t("common.loading")}</p>
+          ) : error ? (
+            <p className="text-sm text-red-600">{error}</p>
+          ) : items.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              {t("admin.imageBrowseLibraryEmpty")}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {items.map((item) => {
+                const assetId = fallbackAssetIdFromItem(item);
+                const safeUrl = String(item?.url || "").trim();
+                const canUse = Boolean(assetId && safeUrl);
+                const sizeText = formatSize(item?.sizeBytes);
+                return (
+                  <div
+                    key={item.id || `${item.source}-${item.key || item.url || item.title}`}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-900">
+                          {item?.title || item?.key || item?.url || "Untitled asset"}
+                        </p>
+                        <p className="truncate text-[11px] text-slate-500">
+                          {assetId} · {item?.mimeType || "application/octet-stream"} ·{" "}
+                          {sizeText} · {item?.source || "source"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!canUse}
+                        onClick={() =>
+                          onSelect?.({
+                            assetId,
+                            url: safeUrl,
+                            mimeType: item?.mimeType || "",
+                            title: item?.title || "",
+                          })
+                        }
+                        className="shrink-0 rounded border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t("admin.productAssetPickerUse", "Use asset")}
+                      </button>
+                    </div>
+                    {safeUrl ? (
+                      <p className="mt-1 truncate text-[11px] text-slate-500">{safeUrl}</p>
+                    ) : (
+                      <p className="mt-1 text-[11px] text-amber-700">
+                        {t(
+                          "admin.productAssetMissingUrl",
+                          "This asset has no public URL yet. Upload/annotate first.",
+                        )}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Tab: Access & Pricing ─────────────────────────────────────────────────────
 
 function AccessTab({
@@ -453,6 +648,8 @@ function AccessTab({
   const [vatDraft, setVatDraft] = useState({});
   const [vatCategoryDraft, setVatCategoryDraft] = useState("");
   const [vatRateDraft, setVatRateDraft] = useState("");
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [assetPickerProductIndex, setAssetPickerProductIndex] = useState(-1);
   const imageUploadOptions = [
     {
       id: "wordpress",
@@ -598,10 +795,20 @@ function AccessTab({
     isShopSelection && selectedShopProduct
       ? deriveDigitalProductCategories(selectedShopProduct).categories
       : [];
+  const selectedShopMode =
+    selectedShopProduct?.productMode ||
+    (selectedShopProduct?.assetId ? "asset" : "digital_file");
   const selectedCategories = extractCategoryNames(
     selectedWpItem?.categories,
     selectedShopCategories,
   );
+
+  useEffect(() => {
+    if (!isShopSelection) {
+      setAssetPickerOpen(false);
+      setAssetPickerProductIndex(-1);
+    }
+  }, [isShopSelection]);
 
   function setVatRateForSlug(slug, rawValue) {
     setVatDraft((prev) => {
@@ -760,7 +967,26 @@ function AccessTab({
     [handleSelection, selectedCourse],
   );
 
+  function openAssetPicker(index) {
+    setAssetPickerProductIndex(index);
+    setAssetPickerOpen(true);
+  }
+
+  function applyAssetSelection(selection) {
+    if (!selection || assetPickerProductIndex < 0) return;
+    updateProduct(assetPickerProductIndex, "productMode", "asset");
+    updateProduct(assetPickerProductIndex, "assetId", selection.assetId || "");
+    updateProduct(assetPickerProductIndex, "fileUrl", selection.url || "");
+    updateProduct(assetPickerProductIndex, "mimeType", selection.mimeType || "");
+    if ((products?.[assetPickerProductIndex]?.name || "").trim() === "" && selection.title) {
+      updateProduct(assetPickerProductIndex, "name", selection.title);
+    }
+    setAssetPickerOpen(false);
+    setAssetPickerProductIndex(-1);
+  }
+
   return (
+    <>
     <div
       className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:min-h-[520px]"
     >
@@ -1387,25 +1613,100 @@ function AccessTab({
                   </p>
                   {selectedShopProduct.type === "digital_file" ? (
                     <>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={selectedShopProduct.fileUrl}
-                          onChange={(e) =>
-                            updateProduct(shopIndex, "fileUrl", e.target.value)
-                          }
-                          className="flex-1 border rounded px-3 py-2 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => uploadFile(shopIndex, "fileUrl")}
-                          disabled={!!uploadingField}
-                          className="px-3 py-2 rounded border hover:bg-gray-50 text-sm whitespace-nowrap disabled:opacity-50"
-                        >
-                          {uploadingField === "fileUrl"
-                            ? t("common.loading")
-                            : t("admin.uploadFile")}
-                        </button>
+                      <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-medium text-slate-700">
+                            {t("admin.productSourceLabel", "Delivery source")}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateProduct(shopIndex, "productMode", "asset")}
+                            className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                              selectedShopMode === "asset"
+                                ? "admin-pill-active"
+                                : "admin-pill-subtle"
+                            }`}
+                          >
+                            {t("admin.productSourceAsset", "Asset")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateProduct(shopIndex, "productMode", "digital_file")}
+                            className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                              selectedShopMode === "digital_file"
+                                ? "admin-pill-active"
+                                : "admin-pill-subtle"
+                            }`}
+                          >
+                            {t("admin.productSourceDirectUrl", "Direct URL")}
+                          </button>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openAssetPicker(shopIndex)}
+                            className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                          >
+                            {selectedShopProduct.assetId
+                              ? t("admin.productAssetChange", "Change asset")
+                              : t("admin.productAssetChoose", "Choose asset")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => uploadFile(shopIndex, "fileUrl")}
+                            disabled={!!uploadingField}
+                            className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                          >
+                            {uploadingField === "fileUrl"
+                              ? t("common.loading")
+                              : t("admin.uploadFile")}
+                          </button>
+                        </div>
+
+                        {selectedShopProduct.assetId ? (
+                          <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-1">
+                            <p>
+                              <span className="font-semibold">
+                                {t("admin.productAssetId", "Asset ID")}:
+                              </span>{" "}
+                              <span className="font-mono">{selectedShopProduct.assetId}</span>
+                            </p>
+                            <p className="truncate">
+                              <span className="font-semibold">
+                                {t("admin.fileUrl", "File URL")}:
+                              </span>{" "}
+                              {selectedShopProduct.fileUrl || "—"}
+                            </p>
+                          </div>
+                        ) : selectedShopMode === "asset" ? (
+                          <p className="text-[11px] text-amber-700">
+                            {t(
+                              "admin.productAssetRequired",
+                              "Asset mode requires an asset selection.",
+                            )}
+                          </p>
+                        ) : null}
+
+                        {selectedShopMode === "digital_file" && (
+                          <>
+                            <input
+                              type="text"
+                              value={selectedShopProduct.fileUrl}
+                              onChange={(e) =>
+                                updateProduct(shopIndex, "fileUrl", e.target.value)
+                              }
+                              placeholder={t("admin.fileUrlPlaceholder")}
+                              className="w-full border rounded px-3 py-2 text-sm"
+                            />
+                            <p className="text-[11px] text-slate-500">
+                              {t(
+                                "admin.productUrlValidateOnSave",
+                                "This URL is validated with a HEAD check before save.",
+                              )}
+                            </p>
+                          </>
+                        )}
                       </div>
                       <p className="text-[11px] text-gray-500">
                         Backend:{" "}
@@ -1619,6 +1920,15 @@ function AccessTab({
         )}
       </div>
     </div>
+    <AssetPickerModal
+      open={assetPickerOpen}
+      onClose={() => {
+        setAssetPickerOpen(false);
+        setAssetPickerProductIndex(-1);
+      }}
+      onSelect={applyAssetSelection}
+    />
+    </>
   );
 }
 
