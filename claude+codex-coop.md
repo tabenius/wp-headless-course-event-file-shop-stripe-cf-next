@@ -1,5 +1,22 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — media library → products bridge (create product from selected asset)
+
+- Landed `907439a` — added a dedicated admin API route `POST /api/admin/products/from-asset` that:
+  - resolves/normalizes `assetId` from asset metadata or fallback source tokens,
+  - prevents duplicate asset-mode products,
+  - creates a default `digital_file` product in `asset` mode with safe defaults.
+- Added a new action in the selected asset panel (`Create product`) and wired it in `AdminMediaLibraryTab`.
+- UX behavior:
+  - shows success/info/error toast feedback,
+  - automatically jumps to the Products tab after create/existing detection so operator can continue configuration.
+- Added i18n keys for EN/SV/ES:
+  - `admin.mediaCreateProductFromAsset`
+  - `admin.mediaCreateProductFailed`
+  - `admin.mediaProductCreated`
+  - `admin.mediaProductAlreadyExists`
+- Validation: `npm run lint` (pass; warning-only baseline unchanged).
+
 ## 2026-03-30 (Codex) — asset-library upload area: external software panel relocation
 
 - Removed the near-upload `R2ManualIngestPanel` block from `AdminMediaLibraryTab`.
