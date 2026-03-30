@@ -13,6 +13,7 @@ import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
 import AdminSettingsPanel from "./AdminSettingsPanel";
 import AdminSecretsPanel from "./AdminSecretsPanel";
+import CyberduckBookmarkPanel from "./CyberduckBookmarkPanel";
 import TorusBanner from "./TorusBanner";
 
 function normalizeSection(value) {
@@ -466,6 +467,12 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
         {!uploadInfo?.s3 && !uploadInfo?.r2 && (
           <p className="text-[11px] text-gray-500">{t("admin.uploadCredentialsHint")}</p>
         )}
+        <CyberduckBookmarkPanel
+          uploadBackend={uploadBackend}
+          uploadInfo={uploadInfo}
+          uploadInfoDetails={uploadInfoDetails}
+          className="mt-1"
+        />
       </div>
 
       {/* ── Environment variables ── */}

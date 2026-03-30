@@ -2512,6 +2512,7 @@ export default function AdminDashboard() {
             uploadingField={uploadingField}
             uploadBackend={uploadBackend}
             uploadInfo={uploadInfo}
+            uploadInfoDetails={uploadInfoDetails}
             runtime={runtime}
             showImageGen={showImageGen}
             setShowImageGen={setShowImageGen}

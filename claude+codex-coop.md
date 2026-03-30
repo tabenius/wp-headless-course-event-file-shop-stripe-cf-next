@@ -1,5 +1,25 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — Cyberduck bookmark expander in Products + Info/Storage
+
+### Codex — added expandable Cyberduck info/download flow in requested admin contexts
+
+**Delivered:**
+- Added new reusable panel component:
+  - `src/components/admin/CyberduckBookmarkPanel.js`
+  - compact expandable `<details>` block with endpoint/bucket/region/public URL and a `.duck` bookmark download button.
+- Wired panel into digital product file upload UI:
+  - `src/components/admin/AdminProductsTab.js`
+  - appears in the `digital_file` editor area near file upload controls.
+- Wired panel into Info → Storage:
+  - `src/components/admin/AdminInfoHubTab.js`
+  - appears in Upload destination section.
+- Passed `uploadInfoDetails` through products tab boundary:
+  - `src/components/admin/AdminDashboard.js` now forwards this prop to `AdminProductsTab`.
+
+**Validation:**
+- `npm run lint -- src/components/admin/CyberduckBookmarkPanel.js src/components/admin/AdminProductsTab.js src/components/admin/AdminInfoHubTab.js src/components/admin/AdminDashboard.js` (pass; existing repo warnings unchanged).
+
 ## 2026-03-30 (Codex) — admin hash-route hardening (prevents concatenated `#/...` paths)
 
 ### Codex — normalized malformed/concatenated hash fragments across admin navigation

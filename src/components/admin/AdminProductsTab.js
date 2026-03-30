@@ -13,6 +13,7 @@ import ImageGenerationPanel from "./ImageGenerationPanel";
 import UserAccessPanel from "./UserAccessPanel";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
+import CyberduckBookmarkPanel from "./CyberduckBookmarkPanel";
 
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
@@ -411,6 +412,7 @@ function AccessTab({
   uploadingField,
   uploadBackend,
   uploadInfo,
+  uploadInfoDetails,
   runtime,
   showImageGen,
   setShowImageGen,
@@ -1423,8 +1425,14 @@ function AccessTab({
                           : t(
                               "admin.uploadNodeLimit",
                               "Multipart upload for large files.",
-                            )}
+                          )}
                       </p>
+                      <CyberduckBookmarkPanel
+                        uploadBackend={uploadBackend}
+                        uploadInfo={uploadInfo}
+                        uploadInfoDetails={uploadInfoDetails}
+                        className="mt-2"
+                      />
                     </>
                   ) : (
                     <input
@@ -1717,6 +1725,7 @@ export default function AdminProductsTab(props) {
     uploadingField,
     uploadBackend,
     uploadInfo,
+    uploadInfoDetails,
     runtime,
     showImageGen,
     setShowImageGen,
@@ -1788,6 +1797,7 @@ export default function AdminProductsTab(props) {
             uploadingField={uploadingField}
             uploadBackend={uploadBackend}
             uploadInfo={uploadInfo}
+            uploadInfoDetails={uploadInfoDetails}
             runtime={runtime}
             showImageGen={showImageGen}
             setShowImageGen={setShowImageGen}
