@@ -1,5 +1,9 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — upload guide cleanup + optional manual object mapping
+
+- Landed `6c7ee00` — WHY: upload operators need a minimal, actionable path (host/server, bucket/path, keys) without non-essential fields or forced KV-ingest workflow; checklist copy now focuses on actual upload inputs, bookmark download is promoted to the section header, guide surfaces use non-white sans styling, and the manual object-key/KV mapping form is now explicitly optional and hidden until opened.
+
 ## 2026-03-30 (Codex) — media library non-image previews: semantic icon thumbnails
 
 - Landed `92417f4` — WHY: MIME text blocks like `application/pdf` in preview cells are visually noisy and non-scannable; replaced them with a grouped icon/label thumbnail system (30+ common ext/mime mapped to <=12 icon families) so operators can parse mixed libraries faster while keeping real image thumbnails for images.
