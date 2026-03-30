@@ -24,6 +24,8 @@ export default function SelectedAssetPanel({
   onCopyUrl,
   onOpenViewer,
   onOpenEditor,
+  onCreateProductFromAsset,
+  creatingProduct,
 }) {
   if (!focusedItem) return null;
 
@@ -211,6 +213,16 @@ export default function SelectedAssetPanel({
         </div>
       )}
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => onCreateProductFromAsset?.(focusedItem)}
+          disabled={creatingProduct}
+          className="px-3 py-1.5 rounded border text-[11px] hover:bg-slate-100 text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {creatingProduct
+            ? t("common.loading", "Loading…")
+            : t("admin.mediaCreateProductFromAsset", "Create product")}
+        </button>
         <button
           type="button"
           onClick={() => onCopyUrl(focusedItem.url)}

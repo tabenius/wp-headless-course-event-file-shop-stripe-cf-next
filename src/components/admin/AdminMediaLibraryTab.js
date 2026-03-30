@@ -127,6 +127,7 @@ export default function AdminMediaLibraryTab({
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [creatingProductFromAsset, setCreatingProductFromAsset] = useState(false);
   const [uploadCount, setUploadCount] = useState(0);
   const [uploadError, setUploadError] = useState("");
   const [uploadStatus, setUploadStatus] = useState("");
@@ -838,6 +839,79 @@ export default function AdminMediaLibraryTab({
       window.setTimeout(() => setCopiedUrl(""), 1100);
     } catch {
       // Ignore clipboard errors in restricted environments.
+    }
+  }
+
+  async function createProductFromAsset(item) {
+    if (!item || creatingProductFromAsset) return;
+    setCreatingProductFromAsset(true);
+    try {
+      const payload = {
+        source: item.source || "",
+        sourceId: item.sourceId ?? null,
+        key: item.key || "",
+        title: item.title || "",
+        url: item.url || "",
+        mimeType: item.mimeType || "",
+        imageUrl: canPreviewImage(item) ? item.url || "" : "",
+        asset: item.asset || null,
+        assetId: item.asset?.assetId || "",
+      };
+      const response = await fetch("/api/admin/products/from-asset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json?.ok) {
+        throw new Error(
+          json?.error ||
+            t(
+              "admin.mediaCreateProductFailed",
+              "Could not create a product from this asset.",
+            ),
+        );
+      }
+      const baseMessage =
+        json?.created === false
+          ? t(
+              "admin.mediaProductAlreadyExists",
+              "A product for this asset already exists.",
+            )
+          : t(
+              "admin.mediaProductCreated",
+              "Product created from the selected asset.",
+            );
+      const productName = String(json?.product?.name || "").trim();
+      const toastMessage = productName
+        ? `${baseMessage} ${productName}`
+        : baseMessage;
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: {
+            type: json?.created === false ? "info" : "success",
+            message: toastMessage,
+          },
+        }),
+      );
+      window.dispatchEvent(
+        new CustomEvent("admin:switchTab", { detail: "products" }),
+      );
+    } catch (createError) {
+      const message =
+        createError instanceof Error
+          ? createError.message
+          : t(
+              "admin.mediaCreateProductFailed",
+              "Could not create a product from this asset.",
+            );
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: { type: "error", message },
+        }),
+      );
+    } finally {
+      setCreatingProductFromAsset(false);
     }
   }
 
@@ -2530,6 +2604,8 @@ export default function AdminMediaLibraryTab({
         onCopyUrl={copyUrl}
         onOpenViewer={openViewer}
         onOpenEditor={openEditor}
+        onCreateProductFromAsset={createProductFromAsset}
+        creatingProduct={creatingProductFromAsset}
       />
 
       {focusedAssetSupportsDerivations &&
