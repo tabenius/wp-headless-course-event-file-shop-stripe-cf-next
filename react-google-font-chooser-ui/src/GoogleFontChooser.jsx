@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import AxisKnob from "./AxisKnob";
 import { DEFAULT_FONT_CATALOG, FONT_CATEGORIES } from "./fontCatalog";
 import "./googleFontChooser.css";
+import {
+  buildCssSnippet,
+  buildVariationSettings,
+  collectInitialAxisValues,
+  getSimilarFonts,
+  normalizeAxisValue,
+  normalizeAxisState,
+} from "./utils";
 
 function slugifyFamily(family) {
   return String(family || "")
@@ -24,34 +33,13 @@ function ensureGoogleFontLoaded(family) {
   document.head.appendChild(link);
 }
 
-function buildVariationSettings(axisValues, axes) {
-  const pairs = axes
-    .map((axis) => [axis.tag, axisValues[axis.tag]])
-    .filter(([, value]) => Number.isFinite(Number(value)))
-    .map(([tag, value]) => `'${tag}' ${value}`);
-  return pairs.join(", ");
+function asArray(input) {
+  return Array.isArray(input) ? input : [];
 }
 
-function getSimilarFonts(selected, fonts) {
-  if (!selected?.family) return [];
-  const selectedLower = selected.family.toLowerCase();
-  const parts = selectedLower.split(/\s+/).filter(Boolean);
-
-  return fonts
-    .filter((font) => font.family !== selected.family)
-    .map((font) => {
-      const lower = font.family.toLowerCase();
-      let score = 0;
-      if (font.category === selected.category) score += 2;
-      if (lower.startsWith(parts[0] || "")) score += 1;
-      for (const part of parts) {
-        if (part.length > 2 && lower.includes(part)) score += 2;
-      }
-      return { font, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map((entry) => entry.font);
+function pushUnique(list, value, limit = 12) {
+  const next = [value, ...asArray(list).filter((row) => row !== value)];
+  return next.slice(0, limit);
 }
 
 export default function GoogleFontChooser({
@@ -59,74 +47,159 @@ export default function GoogleFontChooser({
   initialFamily = DEFAULT_FONT_CATALOG[0]?.family || "Inter",
   initialPreviewText = "The quick brown fox jumps over the lazy dog",
   initialFontSize = 52,
+  value,
+  onChange,
   onApply,
   className = "",
+  advancedDefault = false,
+  allowAdvancedToggle = true,
+  confirmBeforeSwitch = false,
+  storageKey = "rgfc-state",
+  similarLimit = 5,
 }) {
+  const safeFonts = asArray(fonts).length > 0 ? asArray(fonts) : DEFAULT_FONT_CATALOG;
+  const fallbackFont = safeFonts[0] || null;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [selectedFamily, setSelectedFamily] = useState(initialFamily);
-  const [previewText, setPreviewText] = useState(initialPreviewText);
-  const [fontSize, setFontSize] = useState(initialFontSize);
+  const [selectedFamily, setSelectedFamily] = useState(
+    value?.family || initialFamily || fallbackFont?.family || "Inter",
+  );
+  const [previewText, setPreviewText] = useState(
+    value?.previewText || initialPreviewText,
+  );
+  const [fontSize, setFontSize] = useState(
+    typeof value?.fontSize === "number" ? value.fontSize : initialFontSize,
+  );
   const [axisValues, setAxisValues] = useState({});
+  const [controlMode, setControlMode] = useState(
+    advancedDefault ? "knob" : "slider",
+  );
+  const [favorites, setFavorites] = useState([]);
+  const [recent, setRecent] = useState([]);
   const [copyState, setCopyState] = useState("idle");
 
   const filteredFonts = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return fonts.filter((font) => {
+    return safeFonts.filter((font) => {
       if (category !== "all" && font.category !== category) return false;
       if (!needle) return true;
       return font.family.toLowerCase().includes(needle);
     });
-  }, [category, fonts, search]);
+  }, [category, safeFonts, search]);
 
   const selectedFont = useMemo(
-    () => fonts.find((font) => font.family === selectedFamily) || fonts[0] || null,
-    [fonts, selectedFamily],
+    () =>
+      safeFonts.find((font) => font.family === selectedFamily) ||
+      fallbackFont ||
+      null,
+    [fallbackFont, safeFonts, selectedFamily],
   );
 
   useEffect(() => {
     if (!selectedFont) return;
     ensureGoogleFontLoaded(selectedFont.family);
-    setAxisValues((previous) => {
-      const next = { ...previous };
-      for (const axis of selectedFont.axes || []) {
-        if (!Object.prototype.hasOwnProperty.call(next, axis.tag)) {
-          next[axis.tag] = axis.default;
-        }
-      }
-      return next;
-    });
+    setAxisValues((previous) =>
+      collectInitialAxisValues(selectedFont.axes || [], previous),
+    );
   }, [selectedFont]);
 
+  useEffect(() => {
+    if (!value || typeof value !== "object") return;
+    if (typeof value.family === "string" && value.family.trim()) {
+      setSelectedFamily(value.family);
+    }
+    if (typeof value.previewText === "string") {
+      setPreviewText(value.previewText);
+    }
+    if (typeof value.fontSize === "number" && Number.isFinite(value.fontSize)) {
+      setFontSize(Math.max(16, Math.min(120, value.fontSize)));
+    }
+    if (value.axisValues && typeof value.axisValues === "object") {
+      setAxisValues(value.axisValues);
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !storageKey) return;
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(storageKey) || "{}");
+      setFavorites(asArray(parsed.favorites));
+      setRecent(asArray(parsed.recent));
+    } catch {
+      setFavorites([]);
+      setRecent([]);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !storageKey) return;
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ favorites, recent }),
+    );
+  }, [favorites, recent, storageKey]);
+
+  const normalizedAxisValues = useMemo(
+    () => normalizeAxisState(axisValues, selectedFont?.axes || []),
+    [axisValues, selectedFont],
+  );
+
   const similarFonts = useMemo(
-    () => getSimilarFonts(selectedFont, fonts),
-    [selectedFont, fonts],
+    () => getSimilarFonts(selectedFont, safeFonts, similarLimit),
+    [selectedFont, safeFonts, similarLimit],
   );
 
   const variationSettings = useMemo(
-    () => buildVariationSettings(axisValues, selectedFont?.axes || []),
-    [axisValues, selectedFont],
+    () => buildVariationSettings(normalizedAxisValues, selectedFont?.axes || []),
+    [normalizedAxisValues, selectedFont],
   );
 
   const previewStyle = useMemo(
     () => ({
-      fontFamily: selectedFont ? `'${selectedFont.family}', system-ui, sans-serif` : "system-ui, sans-serif",
+      fontFamily: selectedFont
+        ? `'${selectedFont.family}', system-ui, sans-serif`
+        : "system-ui, sans-serif",
       fontSize: `${fontSize}px`,
       fontVariationSettings: variationSettings || undefined,
     }),
     [fontSize, selectedFont, variationSettings],
   );
 
-  const cssSnippet = useMemo(() => {
-    const family = selectedFont?.family || "Inter";
-    return [
-      `font-family: '${family}', system-ui, sans-serif;`,
-      `font-size: ${fontSize}px;`,
-      variationSettings ? `font-variation-settings: ${variationSettings};` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-  }, [fontSize, selectedFont, variationSettings]);
+  const cssSnippet = useMemo(
+    () =>
+      buildCssSnippet({
+        family: selectedFont?.family || "Inter",
+        fontSize,
+        variationSettings,
+      }),
+    [fontSize, selectedFont, variationSettings],
+  );
+
+  useEffect(() => {
+    onChange?.({
+      family: selectedFont?.family || "",
+      category: selectedFont?.category || "",
+      fontSize,
+      axisValues: normalizedAxisValues,
+      variationSettings,
+      cssSnippet,
+      previewText,
+      controlMode,
+      favorites,
+      recent,
+    });
+  }, [
+    controlMode,
+    cssSnippet,
+    favorites,
+    fontSize,
+    normalizedAxisValues,
+    onChange,
+    previewText,
+    recent,
+    selectedFont,
+    variationSettings,
+  ]);
 
   async function copyCss() {
     try {
@@ -139,12 +212,47 @@ export default function GoogleFontChooser({
     }
   }
 
+  function chooseFamily(family) {
+    const safeFamily = String(family || "").trim();
+    if (!safeFamily || safeFamily === selectedFamily) return;
+    if (confirmBeforeSwitch && typeof window !== "undefined") {
+      const ok = window.confirm(`Load "${safeFamily}"?`);
+      if (!ok) return;
+    }
+    setSelectedFamily(safeFamily);
+    setRecent((previous) => pushUnique(previous, safeFamily));
+  }
+
+  function updateAxis(axis, rawValue) {
+    setAxisValues((previous) => ({
+      ...previous,
+      [axis.tag]: normalizeAxisValue(rawValue, axis),
+    }));
+  }
+
+  function resetAxis(axis) {
+    updateAxis(axis, axis.default);
+  }
+
+  function resetAllAxes() {
+    if (!selectedFont) return;
+    setAxisValues(collectInitialAxisValues(selectedFont.axes || [], {}));
+  }
+
+  function toggleFavorite(family) {
+    setFavorites((previous) =>
+      previous.includes(family)
+        ? previous.filter((row) => row !== family)
+        : pushUnique(previous, family),
+    );
+  }
+
   function applySelection() {
     onApply?.({
       family: selectedFont?.family || "",
       category: selectedFont?.category || "",
       fontSize,
-      axisValues,
+      axisValues: normalizedAxisValues,
       variationSettings,
       cssSnippet,
       previewText,
@@ -175,6 +283,42 @@ export default function GoogleFontChooser({
           ))}
         </div>
 
+        {favorites.length > 0 ? (
+          <div className="rgfc-section">
+            <div className="rgfc-section-title">Favorites</div>
+            <div className="rgfc-similar">
+              {favorites.map((family) => (
+                <button
+                  key={`fav-${family}`}
+                  type="button"
+                  className="rgfc-chip"
+                  onClick={() => chooseFamily(family)}
+                >
+                  {family}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {recent.length > 0 ? (
+          <div className="rgfc-section">
+            <div className="rgfc-section-title">Recent</div>
+            <div className="rgfc-similar">
+              {recent.map((family) => (
+                <button
+                  key={`recent-${family}`}
+                  type="button"
+                  className="rgfc-chip"
+                  onClick={() => chooseFamily(family)}
+                >
+                  {family}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="rgfc-font-list">
           {filteredFonts.map((font) => (
             <button
@@ -183,7 +327,7 @@ export default function GoogleFontChooser({
               className={`rgfc-font-row ${
                 selectedFont?.family === font.family ? "active" : ""
               }`}
-              onClick={() => setSelectedFamily(font.family)}
+              onClick={() => chooseFamily(font.family)}
             >
               <span className="rgfc-font-meta">
                 <span className="rgfc-font-family">{font.family}</span>
@@ -191,8 +335,32 @@ export default function GoogleFontChooser({
                   {font.category} · {(font.axes || []).length} axes
                 </span>
               </span>
-              <span style={{ fontFamily: `'${font.family}', system-ui, sans-serif` }}>
+              <span className="rgfc-row-actions">
+                <button
+                  type="button"
+                  className={`rgfc-star ${
+                    favorites.includes(font.family) ? "active" : ""
+                  }`}
+                  aria-label={
+                    favorites.includes(font.family)
+                      ? `Remove ${font.family} from favorites`
+                      : `Add ${font.family} to favorites`
+                  }
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleFavorite(font.family);
+                  }}
+                >
+                  {favorites.includes(font.family) ? "★" : "☆"}
+                </button>
+                <span
+                  style={{
+                    fontFamily: `'${font.family}', system-ui, sans-serif`,
+                  }}
+                >
                 Aa
+                </span>
               </span>
             </button>
           ))}
@@ -205,6 +373,30 @@ export default function GoogleFontChooser({
       </div>
 
       <div className="rgfc-card rgfc-right">
+        <div className="rgfc-bar">
+          {allowAdvancedToggle ? (
+            <div className="rgfc-mode-toggle" role="tablist" aria-label="Control mode">
+              <button
+                type="button"
+                className={`rgfc-mode ${controlMode === "slider" ? "active" : ""}`}
+                onClick={() => setControlMode("slider")}
+              >
+                Slider mode
+              </button>
+              <button
+                type="button"
+                className={`rgfc-mode ${controlMode === "knob" ? "active" : ""}`}
+                onClick={() => setControlMode("knob")}
+              >
+                Knob mode
+              </button>
+            </div>
+          ) : null}
+          <button type="button" className="rgfc-button" onClick={resetAllAxes}>
+            Reset all axes
+          </button>
+        </div>
+
         <div className="rgfc-preview-controls">
           <input
             type="text"
@@ -233,43 +425,61 @@ export default function GoogleFontChooser({
           {previewText}
         </div>
 
-        <div className="rgfc-axes">
-          {(selectedFont?.axes || []).map((axis) => (
-            <div key={axis.tag} className="rgfc-axis">
-              <div className="rgfc-axis-head">
-                <span>{axis.tag}</span>
-                <span>{axisValues[axis.tag] ?? axis.default}</span>
-              </div>
-              <input
-                type="range"
-                min={axis.min}
-                max={axis.max}
-                step={axis.step || 1}
-                value={axisValues[axis.tag] ?? axis.default}
-                onChange={(event) =>
-                  setAxisValues((previous) => ({
-                    ...previous,
-                    [axis.tag]:
-                      Number.parseFloat(event.target.value) || axis.default,
-                  }))
-                }
+        {controlMode === "knob" ? (
+          <div className="rgfc-knob-grid">
+            {(selectedFont?.axes || []).map((axis) => (
+              <AxisKnob
+                key={`knob-${axis.tag}`}
+                axis={axis}
+                value={normalizedAxisValues[axis.tag]}
+                onChange={(next) => updateAxis(axis, next)}
+                onReset={() => resetAxis(axis)}
               />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rgfc-axes">
+            {(selectedFont?.axes || []).map((axis) => (
+              <div key={axis.tag} className="rgfc-axis">
+                <div className="rgfc-axis-head">
+                  <span>{axis.tag}</span>
+                  <span>{normalizedAxisValues[axis.tag] ?? axis.default}</span>
+                </div>
+                <input
+                  type="range"
+                  min={axis.min}
+                  max={axis.max}
+                  step={axis.step || 1}
+                  value={normalizedAxisValues[axis.tag] ?? axis.default}
+                  onChange={(event) => updateAxis(axis, event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="rgfc-axis-reset"
+                  onClick={() => resetAxis(axis)}
+                >
+                  Reset
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {similarFonts.length > 0 ? (
-          <div className="rgfc-similar">
+          <div className="rgfc-section">
+            <div className="rgfc-section-title">Similar fonts</div>
+            <div className="rgfc-similar">
             {similarFonts.map((font) => (
               <button
                 key={font.family}
                 type="button"
                 className="rgfc-chip"
-                onClick={() => setSelectedFamily(font.family)}
+                onClick={() => chooseFamily(font.family)}
               >
                 {font.family}
               </button>
             ))}
+          </div>
           </div>
         ) : null}
 

@@ -29,15 +29,17 @@ Target outputs:
 Already landed:
 
 - `src/GoogleFontChooser.jsx` (reusable component)
+- `src/AxisKnob.jsx` (advanced axis control widget)
 - `src/fontCatalog.js` (starter catalog)
 - `src/googleFontChooser.css` (base styles)
+- `src/utils.js` (deterministic axis utilities)
 - `example.html` (usage reference)
 - draft artifacts co-located in this directory
 
 Current gaps:
 
 - direct browser demo is reference-only (not self-bundled runtime)
-- no dedicated unit tests yet
+- only utility tests are present (no UI interaction tests yet)
 - no Storybook-like interaction suite
 - no accessibility audit pass
 - no persistence bridge to storefront style settings yet
@@ -242,8 +244,10 @@ Mitigation: memoized filtering and optional virtualization in large lists.
 - [x] Initial reusable component structure.
 - [x] Example usage file.
 - [x] Synthesis of draft ideas.
+- [x] Deterministic axis math utilities and regression tests.
+- [x] Advanced control mode with knob widget.
+- [x] Favorites/recent local persistence in chooser.
 - [ ] Controlled mode and host persistence adapter.
-- [ ] Advanced knob controls.
 - [ ] A11y and keyboard audit.
-- [ ] Tests + catalog validation script.
+- [ ] UI interaction tests + catalog validation script.
 - [ ] AdminStyleTab integration and production rollout.

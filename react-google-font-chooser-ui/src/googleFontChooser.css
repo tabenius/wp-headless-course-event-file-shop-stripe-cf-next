@@ -24,6 +24,19 @@
   gap: 0.75rem;
 }
 
+.rgfc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rgfc-section-title {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .rgfc-right {
   padding: 1rem;
   display: flex;
@@ -84,6 +97,35 @@
   gap: 0.7rem;
 }
 
+.rgfc-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.rgfc-star {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  width: 1.55rem;
+  height: 1.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+}
+
+.rgfc-star:hover {
+  background: #f8fafc;
+}
+
+.rgfc-star.active {
+  border-color: #334155;
+  background: #334155;
+  color: #fff;
+}
+
 .rgfc-font-row:last-child {
   border-bottom: 0;
 }
@@ -132,6 +174,40 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.75rem;
+}
+
+.rgfc-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.rgfc-mode-toggle {
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.55rem;
+  overflow: hidden;
+}
+
+.rgfc-mode {
+  border: 0;
+  border-right: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  font-size: 0.75rem;
+  padding: 0.38rem 0.62rem;
+  cursor: pointer;
+}
+
+.rgfc-mode:last-child {
+  border-right: 0;
+}
+
+.rgfc-mode.active {
+  background: #334155;
+  color: #fff;
 }
 
 @media (max-width: 640px) {
@@ -185,6 +261,77 @@
 
 .rgfc-axis input[type="range"] {
   width: 100%;
+}
+
+.rgfc-axis-reset {
+  margin-top: 0.35rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.45rem;
+  background: #fff;
+  color: #334155;
+  font-size: 0.72rem;
+  padding: 0.22rem 0.48rem;
+  cursor: pointer;
+}
+
+.rgfc-axis-reset:hover {
+  background: #f8fafc;
+}
+
+.rgfc-knob-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.rgfc-knob-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rgfc-knob {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: ns-resize;
+}
+
+.rgfc-knob:focus-visible {
+  outline: 2px solid #334155;
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+.rgfc-knob.dragging {
+  cursor: grabbing;
+}
+
+.rgfc-knob-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rgfc-knob-tag {
+  font-size: 0.7rem;
+  color: #334155;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.rgfc-knob-reset {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  background: #fff;
+  color: #475569;
+  font-size: 0.68rem;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+}
+
+.rgfc-knob-reset:hover {
+  background: #f8fafc;
 }
 
 .rgfc-similar {
