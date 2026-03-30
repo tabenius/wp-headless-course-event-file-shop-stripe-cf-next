@@ -1,5 +1,16 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — zip policy cleanup: single ragbaz.xyz-hosted plugin artifact
+
+- Landed `6f1c9d9`.
+- Removed tracked binary plugin zips from this repo:
+  - `packages/ragbaz-bridge-plugin/dist/ragbaz-bridge.zip`
+  - `public/downloads/ragbaz-bridge/ragbaz-bridge.zip`
+- Added `.gitignore` guards so generated plugin zips are not tracked in `main`.
+- Updated plugin publish script to stop copying to `public/downloads/*` and publish only to ragbaz.xyz release checkout (`../ragbaz.xyz/release` or `./ragbaz.xyz/release`).
+- Standardized plugin download links to ragbaz.xyz hosted URL:
+  - health helper + setup page + docs now use `https://ragbaz.xyz/downloads/ragbaz-bridge/ragbaz-bridge.zip` (env override supported).
+
 ## 2026-03-30 (Codex) — media library → products bridge (create product from selected asset)
 
 - Landed `907439a` — added a dedicated admin API route `POST /api/admin/products/from-asset` that:
