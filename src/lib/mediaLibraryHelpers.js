@@ -577,6 +577,34 @@ export function resolveBucketRemotePath(details = {}) {
   return bucket ? `/${bucket}` : "";
 }
 
+function normalizePathForComparison(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const withLeadingSlash = raw.startsWith("/") ? raw : `/${raw}`;
+  const singleSlashes = withLeadingSlash.replace(/\/{2,}/g, "/");
+  if (singleSlashes.length <= 1) return "/";
+  return singleSlashes.replace(/\/+$/, "");
+}
+
+export function resolveBucketPathDisplayValue(details = {}) {
+  const bucket = String(details.bucket || "").trim();
+  const remotePath = resolveBucketRemotePath(details);
+  const normalizedBucketPath = bucket
+    ? normalizePathForComparison(`/${bucket}`)
+    : "";
+  const normalizedRemotePath = normalizePathForComparison(remotePath);
+
+  if (normalizedRemotePath && normalizedRemotePath === normalizedBucketPath) {
+    return normalizedRemotePath;
+  }
+  if (bucket && normalizedRemotePath) {
+    return `${bucket} / ${normalizedRemotePath}`;
+  }
+  if (normalizedRemotePath) return normalizedRemotePath;
+  if (bucket) return `/${bucket}`;
+  return "";
+}
+
 function parseAttachmentFilename(header) {
   const raw = String(header || "");
   if (!raw) return "";

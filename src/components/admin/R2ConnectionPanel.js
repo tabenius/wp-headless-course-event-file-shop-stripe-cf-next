@@ -4,7 +4,7 @@ import { useState } from "react";
 import { t } from "@/lib/i18n";
 import {
   downloadCyberduckBookmarkFromServer,
-  resolveBucketRemotePath,
+  resolveBucketPathDisplayValue,
   resolveStorageServerHost,
 } from "@/lib/mediaLibraryHelpers";
 
@@ -27,7 +27,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
   const showR2Docs = backendMode === "r2";
   const showS3Docs = backendMode === "s3";
   const serverHost = resolveStorageServerHost(clientDetails);
-  const remotePath = resolveBucketRemotePath(clientDetails);
+  const bucketPathDisplay = resolveBucketPathDisplayValue(clientDetails);
   const canDownloadBookmark = Boolean(
     serverHost && clientDetails.bucket && clientDetails.accessKeyId,
   );
@@ -38,10 +38,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
     {
       id: "bucketPath",
       label: t("admin.clientBucketPath", "Bucket / path"),
-      value:
-        clientDetails.bucket || remotePath
-          ? `${clientDetails.bucket || "—"} / ${remotePath || "—"}`
-          : t("common.noDetails"),
+      value: bucketPathDisplay || t("common.noDetails"),
     },
     { id: "accessKey", label: t("admin.clientAccessKey"), value: clientDetails.accessKeyId || t("common.noDetails") },
     { id: "secretKey", label: t("admin.clientSecretKey"), value: clientDetails.secretKey || t("common.noDetails"), secret: true },

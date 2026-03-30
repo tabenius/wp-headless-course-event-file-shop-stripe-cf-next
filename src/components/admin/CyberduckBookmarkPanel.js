@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
 import {
   downloadCyberduckBookmarkFromServer,
-  resolveBucketRemotePath,
+  resolveBucketPathDisplayValue,
   resolveStorageServerHost,
 } from "@/lib/mediaLibraryHelpers";
 
@@ -64,7 +64,7 @@ export default function CyberduckBookmarkPanel({
 
   const serverHost = resolveStorageServerHost(details || {});
   const canDownloadBookmark = hasBookmarkPrereqs(details || {}, serverHost);
-  const bucketPath = resolveBucketRemotePath(details || {});
+  const bucketPathDisplay = resolveBucketPathDisplayValue(details || {});
   const rows = [
     {
       id: "connectionType",
@@ -95,10 +95,7 @@ export default function CyberduckBookmarkPanel({
     {
       id: "bucketPath",
       label: t("admin.clientBucketPath", "Bucket / path"),
-      value:
-        details?.bucket || bucketPath
-          ? `${safeValue(details?.bucket)} / ${safeValue(bucketPath)}`
-          : safeValue(""),
+      value: bucketPathDisplay || safeValue(""),
     },
   ];
   const rootClass = `rounded-lg border border-slate-300 bg-slate-50 p-3 ${className}`.trim();
