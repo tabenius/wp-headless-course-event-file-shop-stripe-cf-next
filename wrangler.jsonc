@@ -17,6 +17,7 @@
     "DIGITAL_ACCESS_STORE": "cloudflare",
     "PRODUCT_STORE_BACKEND": "cloudflare",
     "DEFAULT_COURSE_FEE_CURRENCY": "SEK",
+    "CF_KV_NAMESPACE_ID": "0ac8a81b4e404ebbbc23172b59154191",
     "CF_KV_KEY": "course-access",
     "CF_USERS_KV_KEY": "course-users",
     "CF_DIGITAL_ACCESS_KV_KEY": "digital-access",
