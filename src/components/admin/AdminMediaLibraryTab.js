@@ -2173,7 +2173,7 @@ export default function AdminMediaLibraryTab({
         className="absolute -left-[10000px] top-auto h-px w-px opacity-0"
       />
 
-      <div className="space-y-2">
+      <div className="space-y-2 font-sans">
         <div
           role="button"
           tabIndex={0}
