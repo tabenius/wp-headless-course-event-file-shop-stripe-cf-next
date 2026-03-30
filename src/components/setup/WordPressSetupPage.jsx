@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const STORAGE_KEY = "ragbaz_wp_config";
+const BRIDGE_PLUGIN_DOWNLOAD_URL =
+  process.env.NEXT_PUBLIC_RAGBAZ_BRIDGE_PLUGIN_DOWNLOAD_URL ||
+  "https://ragbaz.xyz/downloads/ragbaz-bridge/ragbaz-bridge.zip";
 
 function loadFromStorage() {
   try {
@@ -174,8 +177,10 @@ export default function WordPressSetupPage() {
                 <p className="mt-0.5">
                   Download{" "}
                   <a
-                    href="/downloads/ragbaz-bridge/ragbaz-bridge.zip"
+                    href={BRIDGE_PLUGIN_DOWNLOAD_URL}
                     className="text-blue-600 hover:underline font-medium"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     ragbaz-bridge.zip
                   </a>{" "}

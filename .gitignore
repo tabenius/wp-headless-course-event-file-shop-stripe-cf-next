@@ -62,3 +62,7 @@ __pycache__/
 /docs/wordpress/mu-plugins/Articulate-LearnPress-Stripe.zip
 /.wrangler/
 .env.agents
+
+# generated plugin archives (publish from source; do not track binaries here)
+/packages/ragbaz-bridge-plugin/dist/*.zip
+/public/downloads/ragbaz-bridge/*.zip

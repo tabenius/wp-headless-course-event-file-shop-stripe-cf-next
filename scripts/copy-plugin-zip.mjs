@@ -17,19 +17,23 @@ const sourceZip = path.join(
 const sharedRagbazRoot = path.resolve(repoRoot, "..", "ragbaz.xyz");
 const sharedReleaseDir = path.join(sharedRagbazRoot, "release");
 const localReleaseDir = path.join(repoRoot, "ragbaz.xyz", "release");
-const releaseDestination =
-  existsSync(path.join(sharedRagbazRoot, "src", "index.js"))
-    ? sharedReleaseDir
-    : localReleaseDir;
-
-const destinations = [
-  path.join(repoRoot, "public", "downloads", "ragbaz-bridge"),
-  releaseDestination,
-];
+const destinations = [];
+if (existsSync(path.join(sharedRagbazRoot, "src", "index.js"))) {
+  destinations.push(sharedReleaseDir);
+} else if (existsSync(path.join(repoRoot, "ragbaz.xyz", "src", "index.js"))) {
+  destinations.push(localReleaseDir);
+}
 
 if (!existsSync(sourceZip)) {
   console.error(`Plugin zip not found at: ${sourceZip}`);
   process.exit(1);
+}
+
+if (destinations.length === 0) {
+  console.warn(
+    "No ragbaz.xyz checkout found (expected ../ragbaz.xyz or ./ragbaz.xyz). Skipping plugin zip publish step.",
+  );
+  process.exit(0);
 }
 
 for (const destinationDir of destinations) {
