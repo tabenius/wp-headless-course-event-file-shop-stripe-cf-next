@@ -42,3 +42,5 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG: the ? in-context helpers use as hot-keys F1 or ? and F1 is usually linked to the browsers help and '?' does not work either.
 [x] BUG: the ? in-context helpers link to general help that is not related to the context. Put something helpful for the user there or remove that ?-circle.
 [x] BUG: /sales: "Behöver du hjälp?" help is linked both above the header and just below the header "Betalningar" + description, it is pure unneccesary duplication
+[x] FEATURE: main /admin: the storefront admin ui should load faster by having suspense with placeholders that match what is being loaded, this will lower FCP dramatically.
+[x] BUG: storefront admin / mainbar status: it looks actionable now but the tooltip menu with action is still disappearing when mouse is not hovering, need delay or mouseclick persistence

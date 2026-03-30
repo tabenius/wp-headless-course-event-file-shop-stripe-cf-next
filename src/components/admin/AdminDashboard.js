@@ -54,6 +54,109 @@ const ADMIN_TABS_BASE = [
 const CHAT_BETA_STORAGE_KEY = "ragbaz_chat_beta_enabled";
 const ADMIN_TAB_SET = new Set([...ADMIN_TABS_BASE, "chat"]);
 
+function AdminSkeletonLine({ className = "" }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`animate-pulse rounded-md bg-gray-200/60 ${className}`}
+    />
+  );
+}
+
+function AdminSuspenseFallback({ variant = "default", title = "Loading" }) {
+  if (variant === "chat") {
+    return (
+      <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
+        <div className="rounded-lg border p-4 space-y-3">
+          <AdminSkeletonLine className="h-5 w-40" />
+          <AdminSkeletonLine className="h-16 w-full" />
+          <div className="grid grid-cols-2 gap-2">
+            <AdminSkeletonLine className="h-8 w-full" />
+            <AdminSkeletonLine className="h-8 w-full" />
+          </div>
+        </div>
+        <div className="rounded-lg border p-4 space-y-3">
+          <AdminSkeletonLine className="h-5 w-32" />
+          <AdminSkeletonLine className="h-3 w-full" />
+          <AdminSkeletonLine className="h-3 w-[92%]" />
+          <AdminSkeletonLine className="h-3 w-[80%]" />
+          <AdminSkeletonLine className="h-3 w-[88%]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "split") {
+    return (
+      <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:gap-6">
+        <div className="rounded-lg border p-4 space-y-3">
+          <AdminSkeletonLine className="h-5 w-32" />
+          <AdminSkeletonLine className="h-9 w-full" />
+          <AdminSkeletonLine className="h-9 w-full" />
+          <AdminSkeletonLine className="h-9 w-full" />
+          <AdminSkeletonLine className="h-9 w-full" />
+        </div>
+        <div className="rounded-lg border p-4 space-y-3">
+          <AdminSkeletonLine className="h-6 w-56" />
+          <AdminSkeletonLine className="h-3 w-full" />
+          <AdminSkeletonLine className="h-3 w-[95%]" />
+          <AdminSkeletonLine className="h-3 w-[82%]" />
+          <AdminSkeletonLine className="h-32 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "metrics") {
+    return (
+      <div className="space-y-4">
+        <div className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
+          <AdminSkeletonLine className="h-18 w-full rounded-lg" />
+          <AdminSkeletonLine className="h-18 w-full rounded-lg" />
+          <AdminSkeletonLine className="h-18 w-full rounded-lg" />
+          <AdminSkeletonLine className="h-18 w-full rounded-lg" />
+        </div>
+        <div className="rounded-lg border p-4 space-y-3">
+          <AdminSkeletonLine className="h-5 w-52" />
+          <AdminSkeletonLine className="h-40 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "style") {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg border p-4 space-y-3">
+          <AdminSkeletonLine className="h-5 w-40" />
+          <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
+            <AdminSkeletonLine className="h-10 w-full" />
+            <AdminSkeletonLine className="h-10 w-full" />
+            <AdminSkeletonLine className="h-10 w-full" />
+            <AdminSkeletonLine className="h-10 w-full" />
+          </div>
+        </div>
+        <div className="rounded-lg border p-4 space-y-3">
+          <AdminSkeletonLine className="h-5 w-44" />
+          <AdminSkeletonLine className="h-24 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border p-4 space-y-3" aria-live="polite">
+      <div className="text-xs text-gray-500">
+        {title}
+      </div>
+      <AdminSkeletonLine className="h-5 w-48" />
+      <AdminSkeletonLine className="h-3 w-full" />
+      <AdminSkeletonLine className="h-3 w-[92%]" />
+      <AdminSkeletonLine className="h-3 w-[84%]" />
+    </div>
+  );
+}
+
 function normalizeAdminTab(value) {
   const normalized = String(value || "")
     .trim()
@@ -2342,7 +2445,12 @@ export default function AdminDashboard() {
       <section className={dashboardSectionClass}>
       {activeTab === "welcome" && (
         <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+          fallback={
+            <AdminSuspenseFallback
+              variant="default"
+              title={t("admin.navWelcome", "Welcome")}
+            />
+          }
         >
           <AdminWelcomeTab
             onSeenRevision={handleWelcomeSeen}
@@ -2356,7 +2464,12 @@ export default function AdminDashboard() {
       {/* ── Media tab ── */}
       {activeTab === "media" && (
         <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+          fallback={
+            <AdminSuspenseFallback
+              variant="split"
+              title={t("admin.navMedia", "Asset library")}
+            />
+          }
         >
           <AdminMediaLibraryTab
             uploadBackend={uploadBackend}
@@ -2369,7 +2482,12 @@ export default function AdminDashboard() {
       {/* ── Unified Products & Access tab ── */}
       {activeTab === "products" && (
         <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+          fallback={
+            <AdminSuspenseFallback
+              variant="split"
+              title={t("admin.navProducts", "Products")}
+            />
+          }
         >
           <AdminProductsTab
             shopVisibleTypes={shopVisibleTypes}
@@ -2433,7 +2551,12 @@ export default function AdminDashboard() {
       {/* ── Support tab ── */}
       {activeTab === "support" && (
         <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+          fallback={
+            <AdminSuspenseFallback
+              variant="split"
+              title={t("admin.navSupport", "Support")}
+            />
+          }
         >
           <AdminSupportTab
             tickets={tickets}
@@ -2455,7 +2578,12 @@ export default function AdminDashboard() {
       {/* ── Sales tab ── */}
       {activeTab === "sales" && (
         <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+          fallback={
+            <AdminSuspenseFallback
+              variant="metrics"
+              title={t("admin.navSales", "Sales")}
+            />
+          }
         >
           <AdminSalesTab
             payments={payments}
@@ -2475,7 +2603,14 @@ export default function AdminDashboard() {
 
       {/* ── Style tab ── */}
       {activeTab === "style" && (
-        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}>
+        <Suspense
+          fallback={
+            <AdminSuspenseFallback
+              variant="style"
+              title={t("admin.navStyle", "Style")}
+            />
+          }
+        >
           <AdminStyleTab
             siteStyleTokens={siteStyleTokens}
             setSiteStyleTokens={setSiteStyleTokens}
@@ -2519,7 +2654,12 @@ export default function AdminDashboard() {
       {/* ── Info hub tab ── */}
       {activeTab === "info" && (
         <Suspense
-          fallback={<div className="p-6 text-sm text-gray-400">Loading…</div>}
+          fallback={
+            <AdminSuspenseFallback
+              variant="metrics"
+              title={t("admin.navSystem", "System")}
+            />
+          }
         >
           <AdminInfoHubTab
             buildTimestamp={buildTimestamp}
@@ -2564,7 +2704,14 @@ export default function AdminDashboard() {
       {/* ── Chat tab ── */}
       {activeTab === "chat" && (
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
-          <Suspense fallback={<div className="rounded border p-4 text-sm text-gray-500">Loading chat…</div>}>
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="chat"
+                title={t("admin.navChat", "Chat")}
+              />
+            }
+          >
             <ChatPanel
               chatMessages={chatMessages}
               chatInput={chatInput}

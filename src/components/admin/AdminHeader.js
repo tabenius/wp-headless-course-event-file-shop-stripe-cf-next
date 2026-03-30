@@ -176,9 +176,11 @@ export default function AdminHeader({ logoUrl }) {
   const [localeState, setLocaleState] = useState(getLocale);
   const [menuOpen, setMenuOpen] = useState(false);
   const [healthState, setHealthState] = useState("unknown");
-  const [showHealthTooltip, setShowHealthTooltip] = useState(false);
+  const [isHealthTooltipHovered, setIsHealthTooltipHovered] = useState(false);
+  const [isHealthTooltipPinned, setIsHealthTooltipPinned] = useState(false);
   const ragbazWordmarkRef = useRef(null);
   const subtitleRef = useRef(null);
+  const healthTooltipWrapRef = useRef(null);
   const menuDrawerRef = useRef(null);
   const menuToggleButtonRef = useRef(null);
   const lastFocusedBeforeMenuRef = useRef(null);
@@ -274,6 +276,28 @@ export default function AdminHeader({ logoUrl }) {
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isHealthTooltipPinned) return undefined;
+    function onPointerDown(event) {
+      const container = healthTooltipWrapRef.current;
+      if (!container) return;
+      if (container.contains(event.target)) return;
+      setIsHealthTooltipPinned(false);
+      setIsHealthTooltipHovered(false);
+    }
+    function onKeyDown(event) {
+      if (event.key !== "Escape") return;
+      setIsHealthTooltipPinned(false);
+      setIsHealthTooltipHovered(false);
+    }
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isHealthTooltipPinned]);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -452,6 +476,7 @@ export default function AdminHeader({ logoUrl }) {
     .pop()
     .toUpperCase();
   const tickerText = buildTickerText(tickerStats);
+  const showHealthTooltip = isHealthTooltipHovered || isHealthTooltipPinned;
   const adminIdentityLabel =
     adminEmail || t("admin.accountUnknown", "Admin");
 
@@ -532,9 +557,10 @@ export default function AdminHeader({ logoUrl }) {
           </div>
 
           <div
+            ref={healthTooltipWrapRef}
             className="relative flex shrink-0 items-center gap-3"
-            onMouseEnter={() => setShowHealthTooltip(true)}
-            onMouseLeave={() => setShowHealthTooltip(false)}
+            onMouseEnter={() => setIsHealthTooltipHovered(true)}
+            onMouseLeave={() => setIsHealthTooltipHovered(false)}
           >
             <button
               type="button"
@@ -557,11 +583,14 @@ export default function AdminHeader({ logoUrl }) {
             </button>
             <button
               type="button"
-              onClick={() => setShowHealthTooltip((prev) => !prev)}
-              onFocus={() => setShowHealthTooltip(true)}
-              onBlur={() => setShowHealthTooltip(false)}
+              onClick={() => {
+                setIsHealthTooltipPinned((prev) => !prev);
+                setIsHealthTooltipHovered(true);
+              }}
+              onFocus={() => setIsHealthTooltipHovered(true)}
               className="admin-header-control flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs focus:outline-none focus:ring-2"
               aria-label={t("admin.healthCheck", "Control check")}
+              aria-expanded={showHealthTooltip}
               title={healthLabelMap[healthState]}
             >
               <span>{t("admin.healthStatus", "Status")}</span>
@@ -589,14 +618,22 @@ export default function AdminHeader({ logoUrl }) {
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={runHealthCheckNow}
+                    onClick={() => {
+                      setIsHealthTooltipPinned(false);
+                      setIsHealthTooltipHovered(false);
+                      runHealthCheckNow();
+                    }}
                     className="admin-header-control inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
                   >
                     {t("admin.healthRunNow", "Run now")}
                   </button>
                   <button
                     type="button"
-                    onClick={() => switchTab("info/health")}
+                    onClick={() => {
+                      setIsHealthTooltipPinned(false);
+                      setIsHealthTooltipHovered(false);
+                      switchTab("info/health");
+                    }}
                     className="admin-header-control inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
                   >
                     {t("admin.healthOpenChecks", "Open checks")}

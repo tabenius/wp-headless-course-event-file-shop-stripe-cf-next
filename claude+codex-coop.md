@@ -1,5 +1,25 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — BUGS follow-up: admin loading placeholders + status tooltip persistence
+
+### Codex — implemented the latest two BUGS.md items (commit pending)
+
+**Delivered:**
+- Replaced generic `Loading…` fallbacks in admin tab Suspense boundaries with tab-shaped skeleton placeholders (`AdminSuspenseFallback`) for:
+  - Welcome, Media, Products, Support, Sales, Style, Info, Chat.
+- Added skeleton variants (`split`, `metrics`, `style`, `chat`) so placeholder structure matches expected panel layouts and improves perceived readiness/FCP.
+- Fixed header status tooltip interaction so actions remain usable without hover fragility:
+  - tooltip now supports click-pinning,
+  - closes on outside click or `Esc`,
+  - no longer collapses immediately on focus transitions.
+- Updated `BUGS.md` by marking both corresponding items as complete:
+  - admin suspense placeholder feature
+  - status tooltip persistence bug
+
+**Validation:**
+- `npx eslint src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js` (pass)
+- `npm run cf:build` (pass; existing middleware deprecation warning remains)
+
 ## 2026-03-29 (Codex) — header ticker + account pill + feedback strip compaction
 
 ### Codex — moved stats ticker into main header row and made account/logout always visible (commit pending)
