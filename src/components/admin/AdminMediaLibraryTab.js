@@ -2043,128 +2043,6 @@ export default function AdminMediaLibraryTab({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {sourceFilterOptions.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            onClick={() => setSourceFilter(option.id)}
-            className={`admin-pill px-3 py-1.5 rounded border text-sm ${
-              sourceFilter === option.id ? "admin-pill-active" : ""
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 text-xs text-gray-600">
-          <span>{t("admin.mediaTypeFilter", "Asset type")}</span>
-          <select
-            value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value)}
-            className="border rounded px-2 py-1 text-xs bg-white"
-          >
-            <option value="all">{t("admin.mediaTypeAll", "All")}</option>
-            <option value="image">{t("admin.mediaTypeImage", "Images")}</option>
-            <option value="data">{t("admin.mediaTypeData", "Data files")}</option>
-            <option value="other">{t("admin.mediaTypeOther", "Other")}</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-xs text-gray-600">
-          <span>{t("admin.mediaSortBy", "Sort by")}</span>
-          <select
-            value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value)}
-            className="border rounded px-2 py-1 text-xs bg-white"
-          >
-            <option value="updated-desc">
-              {t("admin.mediaSortUpdatedDesc", "Newest first")}
-            </option>
-            <option value="updated-asc">
-              {t("admin.mediaSortUpdatedAsc", "Oldest first")}
-            </option>
-            <option value="size-desc">
-              {t("admin.mediaSortSizeDesc", "Largest size")}
-            </option>
-            <option value="size-asc">
-              {t("admin.mediaSortSizeAsc", "Smallest size")}
-            </option>
-            <option value="name-asc">
-              {t("admin.mediaSortNameAsc", "Name A–Z")}
-            </option>
-            <option value="name-desc">
-              {t("admin.mediaSortNameDesc", "Name Z–A")}
-            </option>
-          </select>
-        </label>
-        {(sourceFilter !== "all" ||
-          typeFilter !== "all" ||
-          sortOrder !== "updated-desc" ||
-          searchTerm) && (
-          <button
-            type="button"
-            onClick={() => {
-              setSourceFilter("all");
-              setTypeFilter("all");
-              setSortOrder("updated-desc");
-              setSearchInput("");
-              setSearchTerm("");
-            }}
-            className="px-2 py-1 rounded border text-xs hover:bg-gray-50"
-          >
-            {t("admin.mediaClearFilters", "Clear filters")}
-          </button>
-        )}
-      </div>
-
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
-        <span>
-          {t("admin.mediaResultsSummary", {
-            shown: rowStats.shownCount,
-            total: rowStats.totalCount,
-          })}
-        </span>
-        <span>
-          {t("admin.mediaResultsSize", {
-            size: formatBytes(rowStats.totalBytes),
-          })}
-        </span>
-        <span>
-          {t("admin.mediaResultsBreakdown", {
-            images: rowStats.imageCount,
-            data: rowStats.dataCount,
-            other: rowStats.otherCount,
-          })}
-        </span>
-      </div>
-
-      <form
-        className="flex flex-col gap-2 sm:flex-row"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setSearchTerm(searchInput.trim());
-        }}
-      >
-        <input
-          type="search"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          placeholder={t(
-            "admin.mediaSearchPlaceholder",
-            "Search by filename, key, or URL",
-          )}
-          className="flex-1 border rounded px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          className="px-3 py-2 rounded border hover:bg-gray-50 text-sm"
-        >
-          {t("admin.mediaSearch", "Search")}
-        </button>
-      </form>
-
       <input
         ref={uploadInputRef}
         type="file"
@@ -2383,6 +2261,128 @@ export default function AdminMediaLibraryTab({
           </div>
         </details>
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        {sourceFilterOptions.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => setSourceFilter(option.id)}
+            className={`admin-pill px-3 py-1.5 rounded border text-sm ${
+              sourceFilter === option.id ? "admin-pill-active" : ""
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-xs text-gray-600">
+          <span>{t("admin.mediaTypeFilter", "Asset type")}</span>
+          <select
+            value={typeFilter}
+            onChange={(event) => setTypeFilter(event.target.value)}
+            className="border rounded px-2 py-1 text-xs bg-white"
+          >
+            <option value="all">{t("admin.mediaTypeAll", "All")}</option>
+            <option value="image">{t("admin.mediaTypeImage", "Images")}</option>
+            <option value="data">{t("admin.mediaTypeData", "Data files")}</option>
+            <option value="other">{t("admin.mediaTypeOther", "Other")}</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-xs text-gray-600">
+          <span>{t("admin.mediaSortBy", "Sort by")}</span>
+          <select
+            value={sortOrder}
+            onChange={(event) => setSortOrder(event.target.value)}
+            className="border rounded px-2 py-1 text-xs bg-white"
+          >
+            <option value="updated-desc">
+              {t("admin.mediaSortUpdatedDesc", "Newest first")}
+            </option>
+            <option value="updated-asc">
+              {t("admin.mediaSortUpdatedAsc", "Oldest first")}
+            </option>
+            <option value="size-desc">
+              {t("admin.mediaSortSizeDesc", "Largest size")}
+            </option>
+            <option value="size-asc">
+              {t("admin.mediaSortSizeAsc", "Smallest size")}
+            </option>
+            <option value="name-asc">
+              {t("admin.mediaSortNameAsc", "Name A–Z")}
+            </option>
+            <option value="name-desc">
+              {t("admin.mediaSortNameDesc", "Name Z–A")}
+            </option>
+          </select>
+        </label>
+        {(sourceFilter !== "all" ||
+          typeFilter !== "all" ||
+          sortOrder !== "updated-desc" ||
+          searchTerm) && (
+          <button
+            type="button"
+            onClick={() => {
+              setSourceFilter("all");
+              setTypeFilter("all");
+              setSortOrder("updated-desc");
+              setSearchInput("");
+              setSearchTerm("");
+            }}
+            className="px-2 py-1 rounded border text-xs hover:bg-gray-50"
+          >
+            {t("admin.mediaClearFilters", "Clear filters")}
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
+        <span>
+          {t("admin.mediaResultsSummary", {
+            shown: rowStats.shownCount,
+            total: rowStats.totalCount,
+          })}
+        </span>
+        <span>
+          {t("admin.mediaResultsSize", {
+            size: formatBytes(rowStats.totalBytes),
+          })}
+        </span>
+        <span>
+          {t("admin.mediaResultsBreakdown", {
+            images: rowStats.imageCount,
+            data: rowStats.dataCount,
+            other: rowStats.otherCount,
+          })}
+        </span>
+      </div>
+
+      <form
+        className="flex flex-col gap-2 sm:flex-row"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setSearchTerm(searchInput.trim());
+        }}
+      >
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          placeholder={t(
+            "admin.mediaSearchPlaceholder",
+            "Search by filename, key, or URL",
+          )}
+          className="flex-1 border rounded px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          className="px-3 py-2 rounded border hover:bg-gray-50 text-sm"
+        >
+          {t("admin.mediaSearch", "Search")}
+        </button>
+      </form>
 
       {sources && (
         <div className="flex flex-wrap gap-2 text-xs">
