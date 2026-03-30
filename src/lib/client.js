@@ -29,6 +29,8 @@ const GRAPHQL_EDGE_CACHE_TTL_SECONDS =
 const GRAPHQL_EDGE_CACHE_STALE_SECONDS =
   Number.parseInt(process.env.GRAPHQL_EDGE_CACHE_STALE_SECONDS || "120", 10) ||
   120;
+const GRAPHQL_AVAILABILITY_AUTO_RECORD_ENABLED =
+  process.env.GRAPHQL_AVAILABILITY_AUTO_RECORD === "1";
 let lastCallTs = 0;
 
 // ── Request history ───────────────────────────────────────────────────────────
@@ -146,6 +148,7 @@ function shouldRecordAvailabilityForCurrentRequest() {
 }
 
 function enqueueAvailabilityDatapoint(entry) {
+  if (!GRAPHQL_AVAILABILITY_AUTO_RECORD_ENABLED) return;
   if (!shouldRecordAvailabilityForCurrentRequest()) return;
   recordAvailabilityDatapoint(entry).catch(() => {});
 }
