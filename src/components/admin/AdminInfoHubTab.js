@@ -291,18 +291,18 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
             </div>
           </div>
 
-          <div className="rounded border border-blue-200 bg-blue-50 p-3">
-            <h3 className="text-sm font-semibold text-blue-900">
+          <div className="rounded border bg-gray-50 p-3">
+            <h3 className="text-sm font-semibold text-gray-900">
               Measures and next actions
             </h3>
             {measures.length > 0 ? (
-              <ul className="mt-2 space-y-1.5 text-xs text-blue-900">
+              <ul className="mt-2 space-y-1.5 pl-4 text-xs text-gray-800 list-disc">
                 {measures.map((measure, index) => (
                   <li key={`${measure}-${index}`}>{measure}</li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-xs text-blue-900">
+              <p className="mt-2 text-xs text-gray-700">
                 No immediate actions suggested from current readings.
               </p>
             )}
