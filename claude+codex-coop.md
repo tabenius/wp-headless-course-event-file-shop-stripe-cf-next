@@ -1,5 +1,18 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — events UX pass: clear passed-state + home upcoming-only
+
+### Codex — aligned event list behavior with date intent on `/events` and `/`
+
+**Delivered:**
+- `/events`: event cards now visibly flag passed events with a high-contrast status pill (`Passed` / `Passerat` / `Finalizado`) and subtle passed-state styling.
+- `/events`: ordering now prioritizes upcoming events first and moves passed events after upcoming ones.
+- Home event list: now strictly filters to upcoming events only (events with ended dates are excluded; undated fallback items are no longer shown as upcoming).
+- Added shared date helpers in `src/lib/eventDates.js`:
+  - `isEventUpcoming(event, now?)`
+  - `isEventPassed(event, now?)`
+- Added i18n key parity for passed-state label in EN/SV/ES (`common.eventPassed`).
+
 ## 2026-03-30 (Codex) — real-data-only GraphQL availability logging guard + build/protocol warnings
 
 ### Codex — kept static pages safe while preserving real GraphQL telemetry from dynamic contexts
