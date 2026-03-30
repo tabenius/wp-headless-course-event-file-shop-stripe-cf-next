@@ -35,7 +35,6 @@ import {
   canPreviewImage,
   isImageFile,
   detectAssetKind,
-  isSupportedUploadFile,
   canOpenDataViewer,
   resolveAssetType,
   parseTimestamp,
@@ -970,52 +969,36 @@ export default function AdminMediaLibraryTab({
     const list = Array.from(files || []).filter((file) => file instanceof File);
     if (list.length === 0) return;
 
-    const unsupported = list.filter((file) => !isSupportedUploadFile(file));
     const oversized = list.filter((file) => {
       const kind = detectAssetKind(file);
       const maxBytes = kind === "image" ? MAX_IMAGE_BYTES : MAX_DATA_ASSET_BYTES;
       return file.size > maxBytes;
     });
     const valid = list.filter((file) => {
-      if (!isSupportedUploadFile(file)) return false;
       const kind = detectAssetKind(file);
       const maxBytes = kind === "image" ? MAX_IMAGE_BYTES : MAX_DATA_ASSET_BYTES;
       return file.size <= maxBytes;
     });
 
-    const unsupportedMessage = t(
-      "admin.mediaUploadUnsupported",
-      "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
-    );
     const oversizedMessage = t("admin.mediaUploadTooLargeMixed", {
       imageMb: 20,
       dataMb: 100,
     });
-    const skippedEntries = [
-      ...unsupported.map((file) =>
-        buildUploadHistoryEntry({
-          name: file.name,
-          status: "skipped",
-          detail: unsupportedMessage,
-          backend: selectedUploadBackend,
-        }),
-      ),
-      ...oversized.map((file) =>
-        buildUploadHistoryEntry({
-          name: file.name,
-          status: "skipped",
-          detail: oversizedMessage,
-          backend: selectedUploadBackend,
-        }),
-      ),
-    ];
+    const skippedEntries = oversized.map((file) =>
+      buildUploadHistoryEntry({
+        name: file.name,
+        status: "skipped",
+        detail: oversizedMessage,
+        backend: selectedUploadBackend,
+      }),
+    );
 
     if (valid.length === 0) {
       setUploadHistory((prev) =>
         [...skippedEntries, ...prev].slice(0, HISTORY_MAX_ENTRIES),
       );
       setUploadStatus("");
-      setUploadError(unsupported.length > 0 ? unsupportedMessage : oversizedMessage);
+      setUploadError(oversizedMessage);
       return;
     }
 
@@ -1075,7 +1058,7 @@ export default function AdminMediaLibraryTab({
       }
     }
 
-    const skipped = oversized.length + unsupported.length;
+    const skipped = oversized.length;
     const failed = errors.length;
     const total = valid.length + skipped;
 
@@ -1107,7 +1090,6 @@ export default function AdminMediaLibraryTab({
         summaryParts.push(t("admin.mediaUploadFailed"));
       }
       if (skipped > 0) {
-        if (unsupported.length > 0) summaryParts.push(unsupportedMessage);
         if (oversized.length > 0) summaryParts.push(oversizedMessage);
       }
       if (errors[0]) summaryParts.push(errors[0]);
@@ -1178,8 +1160,8 @@ export default function AdminMediaLibraryTab({
     if (files.length === 0) {
       setUploadError(
         t(
-          "admin.mediaUploadUnsupported",
-          "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
+          "admin.mediaDropzoneNoFiles",
+          "No files were detected. Drag files from your computer or click to choose files.",
         ),
       );
       return;
@@ -2057,7 +2039,6 @@ export default function AdminMediaLibraryTab({
       <input
         ref={uploadInputRef}
         type="file"
-        accept="image/*,.json,.yaml,.yml,.csv,.md,.markdown,.sqlite,.sqlite3,.db"
         multiple
         onChange={handleUploadInputChange}
         className="absolute -left-[10000px] top-auto h-px w-px opacity-0"
@@ -2097,12 +2078,6 @@ export default function AdminMediaLibraryTab({
                       "admin.mediaDropzoneHint",
                       "Drag and drop files here, or click to select files.",
                     )}
-              </p>
-              <p className="text-xs text-gray-500">
-                {t(
-                  "admin.mediaDropzoneSupportedHint",
-                  "Supported: images, JSON, YAML, CSV, Markdown, and SQLite files.",
-                )}
               </p>
               <p className="text-xs text-gray-500">
                 {t(
