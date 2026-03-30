@@ -37,6 +37,17 @@ body {
   );
 }
 
+.font-submenu-13 {
+  font-family: var(
+    --font-submenu,
+    var(
+      --font-alternate,
+      var(--font-heading, system-ui, -apple-system, "Segoe UI", sans-serif)
+    )
+  );
+  font-size: 13px;
+}
+
 /* Fixed background via a pseudo-element avoids forced full-page composite */
 body::before {
   content: "";

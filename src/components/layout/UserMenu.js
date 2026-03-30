@@ -17,7 +17,7 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
   }, []);
 
   const itemClass =
-    "block whitespace-nowrap px-4 py-2 text-[13px] font-submenu text-[var(--color-foreground)] hover:bg-[var(--color-muted)]";
+    "block whitespace-nowrap px-4 py-2 font-submenu-13 text-[var(--color-foreground)] hover:bg-[var(--color-muted)]";
 
   return (
     <div ref={ref} className="relative">
@@ -47,7 +47,7 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded border border-[var(--color-muted)] bg-[var(--color-background)] py-1 shadow-lg">
           {isLoggedIn && userName && (
-            <span className="block border-b border-[var(--color-muted)] px-4 py-2 text-[13px] font-submenu text-[var(--color-foreground)]">
+            <span className="block border-b border-[var(--color-muted)] px-4 py-2 font-submenu-13 text-[var(--color-foreground)]">
               {userName}
             </span>
           )}

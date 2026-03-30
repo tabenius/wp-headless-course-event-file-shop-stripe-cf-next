@@ -25,8 +25,8 @@ export default function MobileNav({ items, authLinks }) {
     };
   }, [open]);
 
-  const menuItemClass =
-    "storefront-mobile-nav-link block font-submenu text-[13px] font-normal py-[6px] border-b border-[var(--color-muted)] text-[var(--color-foreground)] hover:text-[var(--color-primary)] leading-tight";
+  const menuItemBaseClass =
+    "storefront-mobile-nav-link block font-normal py-[6px] border-b border-[var(--color-muted)] text-[var(--color-foreground)] hover:text-[var(--color-primary)] leading-tight";
   const activeMobileClass = "text-[var(--color-primary)] font-semibold";
 
   const overlay = (
@@ -62,7 +62,7 @@ export default function MobileNav({ items, authLinks }) {
                 item.href && item.href !== "#" ? (
                   <NavLink
                     href={item.href}
-                    className={`${menuItemClass} font-semibold`}
+                    className={`${menuItemBaseClass} font-submenu-13 font-semibold`}
                     activeClassName={activeMobileClass}
                     onClick={() => setOpen(false)}
                   >
@@ -70,7 +70,7 @@ export default function MobileNav({ items, authLinks }) {
                   </NavLink>
                 ) : (
                   <span
-                    className={`${menuItemClass} font-semibold text-[var(--color-foreground)]`}
+                    className={`${menuItemBaseClass} font-submenu-13 font-semibold text-[var(--color-foreground)]`}
                   >
                     {item.label}
                   </span>
@@ -78,7 +78,7 @@ export default function MobileNav({ items, authLinks }) {
               ) : (
                 <NavLink
                   href={item.href}
-                  className={menuItemClass}
+                  className={`${menuItemBaseClass} font-submenu-13`}
                   activeClassName={activeMobileClass}
                   onClick={() => setOpen(false)}
                 >
@@ -89,7 +89,7 @@ export default function MobileNav({ items, authLinks }) {
                 <NavLink
                   key={child.href}
                   href={child.href}
-                  className={`${menuItemClass} pl-4 text-[12px]`}
+                  className={`${menuItemBaseClass} pl-4 font-submenu text-[12px]`}
                   activeClassName={activeMobileClass}
                   onClick={() => setOpen(false)}
                 >
@@ -100,7 +100,7 @@ export default function MobileNav({ items, authLinks }) {
           ))}
           <div className="flex items-center gap-2 py-2">
             <DarkModeToggle />
-            <span className="text-[13px] font-submenu">
+            <span className="font-submenu-13">
               {t("darkMode.label")}
             </span>
           </div>
