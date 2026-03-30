@@ -1,5 +1,21 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — products UI thumbnail size pass
+
+### Codex — made thumbnails visible in product list and enlarged detail thumbnails (commit pending)
+
+**Delivered:**
+- Updated Products → list rows to always render a thumbnail preview when available (WooCommerce/LearnPress/Events/shop items), with a robust fallback icon if missing/broken.
+- Increased product-list row visual height (about 2x compared to prior compact rows) to accommodate the thumbnail and improve scanning.
+- Increased title/meta readability in list rows to match the new denser visual layout.
+- Doubled detail header thumbnail size for:
+  - selected WordPress item detail card
+  - selected shop/download product detail card
+- Extended `ImagePickerButton` with a `sizeClass` prop so image picker sizing can be controlled per context.
+
+**Validation:**
+- `npx eslint src/components/admin/AdminProductsTab.js` (pass; existing `@next/next/no-img-element` warning only)
+
 ## 2026-03-30 (Codex) — BUGS follow-up: admin loading placeholders + status tooltip persistence
 
 ### Codex — implemented the latest two BUGS.md items (commit pending)

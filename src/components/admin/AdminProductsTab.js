@@ -112,6 +112,7 @@ function ImagePickerButton({
   onError,
   uploadBackend = "wordpress",
   uploadOptions = [],
+  sizeClass = "h-28 w-28",
 }) {
   return (
     <ImageUploader
@@ -124,7 +125,7 @@ function ImagePickerButton({
         <button
           type="button"
           onClick={openPicker}
-          className="group relative z-10 pointer-events-auto flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 shadow-[inset_0_0_0_2px_rgba(17,24,39,0.35),0_1px_2px_rgba(0,0,0,0.18)] transition-colors hover:border-gray-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-1"
+          className={`group relative z-10 pointer-events-auto flex ${sizeClass} shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 shadow-[inset_0_0_0_2px_rgba(17,24,39,0.35),0_1px_2px_rgba(0,0,0,0.18)] transition-colors hover:border-gray-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-1`}
           title={t("admin.uploadImage")}
           aria-label={t("admin.uploadImage")}
         >
@@ -882,6 +883,11 @@ function AccessTab({
                 source: "wc",
                 active: courses[p.uri]?.active,
                 categories: p.categories,
+                imageUrl:
+                  p?.featuredImage?.node?.sourceUrl ||
+                  p?.image?.sourceUrl ||
+                  p?.image ||
+                  "",
               })),
               ...wpCourses.map((c) => ({
                 uri: c.uri,
@@ -889,6 +895,11 @@ function AccessTab({
                 source: "lp",
                 active: courses[c.uri]?.active,
                 categories: c.categories,
+                imageUrl:
+                  c?.featuredImage?.node?.sourceUrl ||
+                  c?.image?.sourceUrl ||
+                  c?.image ||
+                  "",
               })),
               ...wpEvents.map((e) => ({
                 uri: e.uri,
@@ -896,6 +907,11 @@ function AccessTab({
                 source: "ev",
                 active: courses[e.uri]?.active,
                 categories: e.categories,
+                imageUrl:
+                  e?.featuredImage?.node?.sourceUrl ||
+                  e?.image?.sourceUrl ||
+                  e?.image ||
+                  "",
               })),
               ...products.map((p, i) => ({
                 uri: `__shop_${i}`,
@@ -903,6 +919,7 @@ function AccessTab({
                 source: "shop",
                 active: p.active,
                 categories: deriveDigitalProductCategories(p).categories,
+                imageUrl: p.imageUrl || "",
               })),
               ...otherCourseUris.map((uri) => ({
                 uri,
@@ -910,6 +927,7 @@ function AccessTab({
                 source: "other",
                 active: courses[uri]?.active,
                 categories: [],
+                imageUrl: "",
               })),
             ];
 
@@ -962,7 +980,7 @@ function AccessTab({
                   data-product-list-item="true"
                   data-product-uri={item.uri}
                   title={titleText}
-                  className={`w-full text-left px-2 py-2 flex items-center gap-1.5 border-b last:border-b-0 transition-colors ${
+                  className={`w-full text-left px-2 py-2.5 flex min-h-[78px] items-center gap-2 border-b last:border-b-0 transition-colors ${
                     isActive
                       ? "bg-slate-900 text-white border-l-2 border-l-slate-300"
                       : "hover:bg-gray-50 border-l-2 border-l-transparent"
@@ -973,9 +991,17 @@ function AccessTab({
                   >
                     {TYPE_LABEL[item.source]}
                   </span>
+                  <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-gray-300 bg-gray-100">
+                    <SafeProductImage
+                      src={item.imageUrl}
+                      alt={item.name || item.uri}
+                      className="h-full w-full object-cover"
+                      fallbackClassName="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400"
+                    />
+                  </span>
                   <div className="flex-1 min-w-0">
                     <span
-                      className={`admin-product-title block text-sm truncate ${
+                      className={`admin-product-title block text-base truncate ${
                         isActive ? "text-white" : "text-gray-800"
                       }`}
                       title={item.name || item.uri}
@@ -984,7 +1010,7 @@ function AccessTab({
                     </span>
                     {categoriesPreview && (
                       <span
-                        className={`block text-[10px] truncate ${
+                        className={`block text-xs truncate ${
                           isActive ? "text-white/75" : "text-gray-400"
                         }`}
                       >
@@ -1102,11 +1128,12 @@ function AccessTab({
                   <div>
                     {/* Item header */}
                     <div className="flex gap-4 mb-4">
-                      <ImagePickerButton
-                        imgUrl={imgUrl}
-                        uploadBackend="wordpress"
-                        uploadOptions={imageUploadOptions}
-                        onUploaded={(url) => {
+                    <ImagePickerButton
+                      imgUrl={imgUrl}
+                      sizeClass="h-56 w-56"
+                      uploadBackend="wordpress"
+                      uploadOptions={imageUploadOptions}
+                      onUploaded={(url) => {
                           const upd = (setter) =>
                             setter((prev) =>
                               prev.map((x) =>
@@ -1223,6 +1250,7 @@ function AccessTab({
                   <div className="flex items-center gap-3 min-w-0">
                     <ImagePickerButton
                       imgUrl={selectedShopProduct.imageUrl}
+                      sizeClass="h-56 w-56"
                       uploadBackend="wordpress"
                       uploadOptions={imageUploadOptions}
                       onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
