@@ -115,24 +115,44 @@ const SITE_STYLE_COLOR_FIELDS = [
     key: "background",
     labelKey: "admin.styleColorBackground",
     token: "--color-background",
+    semanticKey: "admin.styleColorSemanticBackground",
   },
   {
     key: "foreground",
     labelKey: "admin.styleColorForeground",
     token: "--color-foreground",
+    semanticKey: "admin.styleColorSemanticForeground",
   },
-  { key: "primary", labelKey: "admin.styleColorPrimary", token: "--color-primary" },
+  {
+    key: "primary",
+    labelKey: "admin.styleColorPrimary",
+    token: "--color-primary",
+    semanticKey: "admin.styleColorSemanticPrimary",
+  },
   {
     key: "secondary",
     labelKey: "admin.styleColorSecondary",
     token: "--color-secondary",
+    semanticKey: "admin.styleColorSemanticSecondary",
   },
   {
     key: "tertiary",
     labelKey: "admin.styleColorTertiary",
     token: "--color-tertiary",
+    semanticKey: "admin.styleColorSemanticTertiary",
   },
-  { key: "muted", labelKey: "admin.styleColorMuted", token: "--color-muted" },
+  {
+    key: "muted",
+    labelKey: "admin.styleColorMuted",
+    token: "--color-muted",
+    semanticKey: "admin.styleColorSemanticMuted",
+  },
+  {
+    key: "focusRing",
+    labelKey: "admin.styleColorFocusRing",
+    token: "--focus-ring-color",
+    semanticKey: "admin.styleColorSemanticFocusRing",
+  },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -175,6 +195,7 @@ export default function AdminStyleTab({
   applySiteStyleTokensToDom,
 }) {
   const [cssExpandedRole, setCssExpandedRole] = useState(null);
+  const [previewMode, setPreviewMode] = useState("both");
   const typographyColor1 = typographyPalette[0] || siteStyleTokens.foreground || "#111827";
   const typographyColor2 = typographyPalette[1] || typographyColor1;
 
@@ -187,12 +208,45 @@ export default function AdminStyleTab({
 
   const previewLinkUnderline =
     linkStyle?.underlineDefault === "always" ? "underline" : "none";
+  const previewSurfaces = [
+    {
+      id: "light",
+      label: t("admin.stylePreviewModeLight", "Light"),
+      tokens: {
+        background: siteStyleTokens.background || "#ffffff",
+        foreground: siteStyleTokens.foreground || "#111827",
+        primary: siteStyleTokens.primary || "#0f766e",
+        secondary: siteStyleTokens.secondary || "#d1d5db",
+        tertiary: siteStyleTokens.tertiary || "#4f46e5",
+        muted: siteStyleTokens.muted || "#9ca3af",
+        focusRing: siteStyleTokens.focusRing || siteStyleTokens.primary || "#0f766e",
+      },
+    },
+    {
+      id: "dark",
+      label: t("admin.stylePreviewModeDark", "Dark"),
+      tokens: {
+        background: "#1a1a1a",
+        foreground: "#ffffff",
+        primary: siteStyleTokens.primary || "#22c55e",
+        secondary: siteStyleTokens.secondary || "#475569",
+        tertiary: siteStyleTokens.tertiary || "#818cf8",
+        muted: "#52525b",
+        focusRing: siteStyleTokens.focusRing || siteStyleTokens.primary || "#22c55e",
+      },
+    },
+  ];
+  const visiblePreviewSurfaces =
+    previewMode === "both"
+      ? previewSurfaces
+      : previewSurfaces.filter((surface) => surface.id === previewMode);
 
   return (
     <>
-      <div className="border rounded p-5 space-y-8">
-        {/* ── Main site style ── */}
-        <div className="space-y-4">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="border rounded p-5 space-y-8">
+          {/* ── Main site style ── */}
+          <div className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="inline-flex items-center gap-1">
@@ -217,7 +271,8 @@ export default function AdminStyleTab({
             )}
           </p>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {SITE_STYLE_COLOR_FIELDS.map(({ key, labelKey, token }) => (
+            {SITE_STYLE_COLOR_FIELDS.map(
+              ({ key, labelKey, token, semanticKey }) => (
               <label
                 key={token}
                 className="flex items-center gap-3 border rounded p-3 bg-gray-50"
@@ -238,12 +293,16 @@ export default function AdminStyleTab({
                   <div className="text-xs text-gray-500 font-mono">
                     {siteStyleTokens[key]}
                   </div>
+                  <div className="text-[11px] text-gray-500 leading-snug mt-0.5">
+                    {t(semanticKey)}
+                  </div>
                   <div className="text-[10px] text-gray-400 font-mono">
                     {token}
                   </div>
                 </div>
               </label>
-            ))}
+              ),
+            )}
           </div>
           {/* ── Typography ───────────────────────────────────────────── */}
           <div className="space-y-4">
@@ -964,10 +1023,9 @@ export default function AdminStyleTab({
           )}
         </div>
 
-        <hr className="border-gray-200" />
+        </div>
 
-        {/* ── Active typography preview ── */}
-        <div className="space-y-4">
+        <aside className="xl:sticky xl:top-20 space-y-4 border rounded p-4">
           <div className="inline-flex items-center gap-1">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
               {t("admin.styleActivePreviewTitle", "Active typography preview")}
@@ -983,92 +1041,267 @@ export default function AdminStyleTab({
               "See how your current display, heading, body, button, and link roles render together.",
             )}
           </p>
-          <div
-            className="rounded border p-4 space-y-4"
-            style={{
-              background: siteStyleTokens.background,
-              color: siteStyleTokens.foreground,
-              borderColor: siteStyleTokens.muted,
-            }}
-          >
-            <div className="space-y-1">
-              <div className="text-[11px] uppercase tracking-wide opacity-70">
-                {t("admin.styleFontRoleDisplay")}
-              </div>
-              <h1
-                className="leading-tight"
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-display, var(--font-heading, system-ui, sans-serif))",
-                  color: resolveRoleColor("fontDisplay", siteStyleTokens.foreground),
-                  fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
-                }}
-              >
-                {t("admin.styleActivePreviewDisplaySample", "Design with clarity and speed.")}
-              </h1>
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-[11px] uppercase tracking-wide opacity-70">
-                {t("admin.styleFontRoleHeading")}
-              </div>
-              <h2
-                className="leading-snug"
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-heading, system-ui, sans-serif)",
-                  color: resolveRoleColor("fontHeading", siteStyleTokens.foreground),
-                }}
-              >
-                {t(
-                  "admin.styleActivePreviewHeadingSample",
-                  "Readable hierarchy for real content.",
-                )}
-              </h2>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[11px] uppercase tracking-wide opacity-70">
-                {t("admin.styleFontRoleBody")}
-              </div>
-              <p
-                className="text-sm leading-relaxed"
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-body, system-ui, sans-serif)",
-                }}
-              >
-                {t("admin.fontBrowserPreviewText")}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: "light", label: t("admin.stylePreviewModeLight", "Light") },
+              { id: "dark", label: t("admin.stylePreviewModeDark", "Dark") },
+              { id: "both", label: t("admin.stylePreviewModeBoth", "Both") },
+            ].map((option) => (
               <button
+                key={option.id}
                 type="button"
-                className="px-4 py-2 rounded text-sm font-medium"
-                style={{
-                  fontFamily: "var(--font-button, var(--font-body, system-ui, sans-serif))",
-                  background: siteStyleTokens.primary,
-                  color: siteStyleTokens.background,
-                }}
+                onClick={() => setPreviewMode(option.id)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  previewMode === option.id
+                    ? "border-slate-500 bg-slate-600 text-white"
+                    : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                }`}
               >
-                {t("admin.stylePrimaryButton")}
+                {option.label}
               </button>
-              <a
-                href="#"
-                onClick={(event) => event.preventDefault()}
-                className="text-sm hover:opacity-85"
-                style={{
-                  fontFamily: "var(--font-body, system-ui, sans-serif)",
-                  color: siteStyleTokens.primary,
-                  textDecoration: previewLinkUnderline,
-                }}
-              >
-                {t("admin.styleActivePreviewLinkSample", "Read the full guide")}
-              </a>
-            </div>
+            ))}
           </div>
-        </div>
+
+          <div className="space-y-3">
+            {visiblePreviewSurfaces.map((surface) => {
+              const previewTokens = surface.tokens;
+              const previewCtaStyle =
+                siteStyleTokens.ctaStyle?.type === "upstream"
+                  ? {
+                      backgroundColor: previewTokens.primary,
+                      color: previewTokens.background,
+                      borderRadius: "8px",
+                      border: "0",
+                      fontWeight: 600,
+                      padding: "0.625rem 1.25rem",
+                      fontSize: "0.875rem",
+                    }
+                  : ctaPreviewStyle(siteStyleTokens.ctaStyle, previewTokens);
+
+              return (
+                <section
+                  key={surface.id}
+                  className="space-y-3 rounded border p-3"
+                  style={{
+                    background: previewTokens.background,
+                    color: previewTokens.foreground,
+                    borderColor: previewTokens.muted,
+                  }}
+                >
+                  <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
+                    {surface.label}
+                  </div>
+
+                  <h1
+                    className="leading-tight"
+                    style={{
+                      margin: 0,
+                      fontFamily:
+                        "var(--font-display, var(--font-heading, system-ui, sans-serif))",
+                      color: resolveRoleColor("fontDisplay", previewTokens.foreground),
+                      fontSize: "clamp(1.35rem, 2.4vw, 1.9rem)",
+                    }}
+                  >
+                    {t("admin.styleActivePreviewDisplaySample", "Design with clarity and speed.")}
+                  </h1>
+
+                  <h2
+                    className="text-base leading-snug"
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--font-heading, system-ui, sans-serif)",
+                      color: resolveRoleColor("fontHeading", previewTokens.foreground),
+                    }}
+                  >
+                    {t(
+                      "admin.styleActivePreviewHeadingSample",
+                      "Readable hierarchy for real content.",
+                    )}
+                  </h2>
+
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--font-body, system-ui, sans-serif)",
+                    }}
+                  >
+                    {t("admin.fontBrowserPreviewText")}
+                  </p>
+
+                  <div className="space-y-1">
+                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                      {t("admin.styleButtonsPreview", "Buttons and outlines")}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        style={{
+                          ...previewCtaStyle,
+                          fontFamily:
+                            "var(--font-button, var(--font-body, system-ui, sans-serif))",
+                        }}
+                      >
+                        {t("admin.stylePrimaryButton")}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded px-4 py-2 text-sm"
+                        style={{
+                          fontFamily:
+                            "var(--font-button, var(--font-body, system-ui, sans-serif))",
+                          background: previewTokens.secondary,
+                          color: previewTokens.foreground,
+                          border: `1px solid ${previewTokens.muted}`,
+                        }}
+                      >
+                        {t("admin.stylePreviewSecondaryButton", "Secondary button")}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded px-4 py-2 text-sm"
+                        style={{
+                          fontFamily:
+                            "var(--font-button, var(--font-body, system-ui, sans-serif))",
+                          color: previewTokens.primary,
+                          border: `1px solid ${previewTokens.primary}`,
+                          background: "transparent",
+                        }}
+                      >
+                        {t("admin.styleOutlineButton")}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded px-3 py-1.5 text-xs"
+                        style={{
+                          fontFamily:
+                            "var(--font-button, var(--font-body, system-ui, sans-serif))",
+                          color: previewTokens.foreground,
+                          border: `1px solid ${previewTokens.muted}`,
+                          background: previewTokens.background,
+                          outline: `2px solid ${previewTokens.focusRing}`,
+                          outlineOffset: "1px",
+                        }}
+                      >
+                        {t("admin.stylePreviewFocusRing", "Focus outline")}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                      {t("admin.stylePreviewMenuTitle", "Menu and submenu")}
+                    </div>
+                    <div
+                      className="rounded border p-2"
+                      style={{
+                        borderColor: previewTokens.muted,
+                        background:
+                          "color-mix(in srgb, var(--color-background) 92%, transparent)",
+                      }}
+                    >
+                      <div
+                        className="flex flex-wrap items-center gap-3 text-[13px]"
+                        style={{
+                          fontFamily:
+                            "var(--font-submenu, var(--font-heading, system-ui, sans-serif))",
+                          color: previewTokens.foreground,
+                        }}
+                      >
+                        <span>{t("admin.stylePreviewMenuItem", "Home")}</span>
+                        <span>{t("admin.stylePreviewMenuItemCourses", "Courses")}</span>
+                        <span style={{ color: previewTokens.primary }}>
+                          {t("admin.stylePreviewMenuItemShop", "Shop")}
+                        </span>
+                      </div>
+                      <div
+                        className="mt-2 min-w-[160px] max-w-[220px] rounded border"
+                        style={{
+                          borderColor: previewTokens.muted,
+                          background: previewTokens.background,
+                        }}
+                      >
+                        <div
+                          className="border-b px-3 py-1.5 text-[13px]"
+                          style={{
+                            borderColor: previewTokens.muted,
+                            fontFamily:
+                              "var(--font-submenu, var(--font-heading, system-ui, sans-serif))",
+                            color: previewTokens.foreground,
+                          }}
+                        >
+                          {t("admin.stylePreviewSubmenuItem1", "Start here")}
+                        </div>
+                        <div
+                          className="px-3 py-1.5 text-[12px]"
+                          style={{
+                            fontFamily:
+                              "var(--font-submenu, var(--font-heading, system-ui, sans-serif))",
+                            color: previewTokens.foreground,
+                          }}
+                        >
+                          {t("admin.stylePreviewSubmenuItem2", "Popular now")}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                      {t("admin.stylePreviewLinkTitle", "Link behavior")}
+                    </div>
+                    <a
+                      href="#"
+                      onClick={(event) => event.preventDefault()}
+                      className="text-sm"
+                      style={{
+                        fontFamily: "var(--font-body, system-ui, sans-serif)",
+                        color: previewTokens.primary,
+                        textDecoration: previewLinkUnderline,
+                      }}
+                    >
+                      {t("admin.styleActivePreviewLinkSample", "Read the full guide")}
+                    </a>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                      {t("admin.styleFormPreview", "Form field")}
+                    </div>
+                    <input
+                      type="text"
+                      readOnly
+                      value={t("admin.styleFormPreviewValue", "Sample input text")}
+                      className="w-full rounded border px-2 py-1 text-xs"
+                      style={{
+                        borderColor: previewTokens.muted,
+                        background: previewTokens.background,
+                        color: previewTokens.foreground,
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                      {t("admin.styleStatusPreview", "Status pills")}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 text-[10px]">
+                      <span className="rounded px-2 py-0.5 bg-emerald-100 text-emerald-800">
+                        {t("admin.ok", "OK")}
+                      </span>
+                      <span className="rounded px-2 py-0.5 bg-amber-100 text-amber-800">
+                        {t("admin.warning", "Warning")}
+                      </span>
+                      <span className="rounded px-2 py-0.5 bg-red-100 text-red-800">
+                        {t("admin.error", "Error")}
+                      </span>
+                    </div>
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </aside>
       </div>
 
       {/* Font browser modal */}

@@ -254,6 +254,7 @@ const SITE_STYLE_DEFAULTS = {
   secondary: "#ffb606",
   tertiary: "#442e66",
   muted: "#686868",
+  focusRing: "#6d003e",
   fontHeading: "var(--font-montserrat), 'Helvetica Neue', sans-serif",
   fontBody: "var(--font-merriweather), Georgia, serif",
 };
@@ -382,6 +383,11 @@ const SITE_STYLE_COLOR_FIELDS = [
     token: "--color-tertiary",
   },
   { key: "muted", labelKey: "admin.styleColorMuted", token: "--color-muted" },
+  {
+    key: "focusRing",
+    labelKey: "admin.styleColorFocusRing",
+    token: "--focus-ring-color",
+  },
 ];
 
 const SITE_STYLE_FONT_PRESETS = [
@@ -415,6 +421,10 @@ function sanitizeSiteStyleTokens(input, fallback = SITE_STYLE_DEFAULTS) {
     secondary: normalizeStyleColor(source.secondary, fallback.secondary),
     tertiary: normalizeStyleColor(source.tertiary, fallback.tertiary),
     muted: normalizeStyleColor(source.muted, fallback.muted),
+    focusRing: normalizeStyleColor(
+      source.focusRing,
+      fallback.focusRing || fallback.primary,
+    ),
     fontHeading: normalizeStyleFont(source.fontHeading, fallback.fontHeading),
     fontBody: normalizeStyleFont(source.fontBody, fallback.fontBody),
     ctaStyle: normalizeCtaStyleClient(source.ctaStyle),
@@ -434,6 +444,10 @@ function readSiteStyleTokensFromDom(fallback = SITE_STYLE_DEFAULTS) {
       secondary: read("--color-secondary", fallback.secondary),
       tertiary: read("--color-tertiary", fallback.tertiary),
       muted: read("--color-muted", fallback.muted),
+      focusRing: read(
+        "--focus-ring-color",
+        fallback.focusRing || fallback.primary,
+      ),
       fontHeading: read("--font-heading", fallback.fontHeading),
       fontBody: read("--font-body", fallback.fontBody),
     },
@@ -451,6 +465,10 @@ function applySiteStyleTokensToDom(tokens) {
   root.style.setProperty("--color-secondary", safe.secondary);
   root.style.setProperty("--color-tertiary", safe.tertiary);
   root.style.setProperty("--color-muted", safe.muted);
+  root.style.setProperty(
+    "--focus-ring-color",
+    safe.focusRing || safe.primary,
+  );
   root.style.setProperty("--font-heading", safe.fontHeading);
   root.style.setProperty("--font-body", safe.fontBody);
   root.style.setProperty("--background", "var(--color-background)");

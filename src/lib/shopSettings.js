@@ -150,6 +150,7 @@ const DEFAULT_SITE_STYLE = {
   secondary: "#ffb606",
   tertiary: "#442e66",
   muted: "#686868",
+  focusRing: "#6d003e",
   fontDisplay: { ...DEFAULT_FONT_ROLES.fontDisplay },
   fontHeading: { ...DEFAULT_FONT_ROLES.fontHeading },
   fontSubheading: { ...DEFAULT_FONT_ROLES.fontSubheading },
@@ -257,6 +258,10 @@ function normalizeSiteStyle(input, fallback = DEFAULT_SITE_STYLE) {
     secondary: normalizeHexColor(source.secondary, fallback.secondary),
     tertiary: normalizeHexColor(source.tertiary, fallback.tertiary),
     muted: normalizeHexColor(source.muted, fallback.muted),
+    focusRing: normalizeHexColor(
+      source.focusRing,
+      fallback.focusRing || fallback.primary,
+    ),
     // Font role objects — normalizeFontRole coerces legacy strings to preset objects
     fontDisplay: normalizeFontRole(
       source.fontDisplay,
@@ -336,6 +341,7 @@ function areSiteStylesEqual(left, right) {
     a.secondary === b.secondary &&
     a.tertiary === b.tertiary &&
     a.muted === b.muted &&
+    a.focusRing === b.focusRing &&
     JSON.stringify(a.fontDisplay) === JSON.stringify(b.fontDisplay) &&
     JSON.stringify(a.fontHeading) === JSON.stringify(b.fontHeading) &&
     JSON.stringify(a.fontSubheading) === JSON.stringify(b.fontSubheading) &&
