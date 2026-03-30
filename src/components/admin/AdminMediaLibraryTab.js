@@ -2546,6 +2546,16 @@ export default function AdminMediaLibraryTab({
                       )}
                       <button
                         type="button"
+                        onClick={() => createProductFromAsset(item)}
+                        disabled={creatingProductFromAsset}
+                        className="text-xs px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {creatingProductFromAsset
+                          ? t("common.loading", "Loading…")
+                          : t("admin.mediaCreateProductFromAsset", "Create product")}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => openEditor(item)}
                         className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
                       >
