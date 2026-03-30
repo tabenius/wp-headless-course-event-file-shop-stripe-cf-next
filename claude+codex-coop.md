@@ -1,5 +1,17 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — BUGS last-item fix: bucket/path duplicate in upload guides
+
+- Landed `35a4050`.
+- Fixed duplicated bucket/path value formatting (`sofiacerne / /sofiacerne`) in both upload guide components.
+- Added shared formatter `resolveBucketPathDisplayValue` in `mediaLibraryHelpers`:
+  - when bucket and remote path represent the same target, display/copy only path (for example `/sofiacerne`),
+  - otherwise keep combined `bucket / path` output.
+- Applied in:
+  - `src/components/admin/R2ConnectionPanel.js`
+  - `src/components/admin/CyberduckBookmarkPanel.js`
+- Ticked corresponding BUGS.md item as completed.
+
 ## 2026-03-30 (Codex) — zip policy cleanup: single ragbaz.xyz-hosted plugin artifact
 
 - Landed `6f1c9d9`.
