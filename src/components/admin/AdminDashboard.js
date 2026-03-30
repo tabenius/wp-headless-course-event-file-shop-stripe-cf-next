@@ -994,7 +994,6 @@ export default function AdminDashboard() {
     },
     [activeTab, setError, uiFeedbackReadOnly],
   );
-  const [welcomeStoryVisible, setWelcomeStoryVisible] = useState(true);
   const [purging, setPurging] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState(null);
@@ -1107,10 +1106,9 @@ export default function AdminDashboard() {
     const next = deriveWelcomeRevisionState({
       revision: WELCOME_REVISION,
       storedRevision: stored,
-      defaultShowStory: true,
+      defaultShowStory: false,
     });
     setShouldShowWelcomeBadge(next.showRevisionBadge);
-    setWelcomeStoryVisible(next.showStory);
   }, []);
 
   useEffect(() => {
@@ -1193,9 +1191,6 @@ export default function AdminDashboard() {
 
       const tab = parseTabFromHash(window.location.hash);
       if (!tab) {
-        if (window.__RAGBAZ_IMPRESS_ACTIVE__) {
-          return;
-        }
         const fallback = ADMIN_TAB_SET.has(activeTabRef.current)
           ? activeTabRef.current
           : "welcome";
@@ -1234,15 +1229,6 @@ export default function AdminDashboard() {
     if (typeof window === "undefined") return;
     persistWelcomeRevision(window.localStorage, WELCOME_REVISION);
     setShouldShowWelcomeBadge(false);
-  }, []);
-
-  const hideWelcomeStory = useCallback(() => {
-    setWelcomeStoryVisible(false);
-    handleWelcomeSeen();
-  }, [handleWelcomeSeen]);
-
-  const replayWelcomeStory = useCallback(() => {
-    setWelcomeStoryVisible(true);
   }, []);
 
   // Derived values for shop product selection
@@ -2407,9 +2393,7 @@ export default function AdminDashboard() {
   }
 
   const dashboardSectionClass =
-    activeTab === "welcome" && welcomeStoryVisible
-      ? "w-full min-w-0 px-0 py-0"
-      : "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 space-y-6 sm:space-y-8";
+    "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 space-y-6 sm:space-y-8";
   const uiFeedbackFieldId = `tab:${activeTab}`;
   const uiFeedbackContextLabelMap = {
     welcome: t("admin.navWelcome", "Welcome"),
@@ -2423,7 +2407,7 @@ export default function AdminDashboard() {
   };
   const uiFeedbackContextLabel =
     uiFeedbackContextLabelMap[activeTab] || activeTab;
-  const showUiFeedbackBar = !(activeTab === "welcome" && welcomeStoryVisible);
+  const showUiFeedbackBar = true;
 
   return (
     <>
@@ -2455,9 +2439,16 @@ export default function AdminDashboard() {
           <AdminWelcomeTab
             onSeenRevision={handleWelcomeSeen}
             showRevisionBadge={shouldShowWelcomeBadge}
-            showStory={welcomeStoryVisible}
-            onHideStory={hideWelcomeStory}
-            onReplayStory={replayWelcomeStory}
+            healthChecks={healthChecks}
+            healthLoading={healthLoading}
+            wcProductsCount={wcProducts.length}
+            wpCoursesCount={wpCourses.length}
+            wpEventsCount={wpEvents.length}
+            digitalProductsCount={products.length}
+            usersCount={users.length}
+            ticketsCount={tickets.length}
+            ticketsLoading={ticketsLoading}
+            uploadBackend={uploadBackend}
           />
         </Suspense>
       )}

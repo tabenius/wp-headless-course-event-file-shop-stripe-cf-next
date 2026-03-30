@@ -13,10 +13,6 @@ html:has(.admin-layout),
 body:has(.admin-layout) {
   overflow-x: hidden;
 }
-html:has(.admin-layout):not(.impress-enabled),
-body:has(.admin-layout):not(.impress-enabled) {
-  overflow-y: auto !important;
-}
 .admin-layout {
   /* WATER: Solarized dark / ragbaz.xyz water */
   --admin-bg: #002b36;
@@ -103,10 +99,6 @@ body:has(.admin-layout)::before {
 .admin-docs-context-link:focus-visible {
   background-color: var(--admin-docs-link-hover);
   color: var(--admin-docs-link-text);
-}
-
-.welcome-story-force-white {
-  color: #fff !important;
 }
 
 /* Admin theme surfaces and utility mappings */
