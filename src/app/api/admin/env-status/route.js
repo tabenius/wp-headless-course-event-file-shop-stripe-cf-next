@@ -2,8 +2,8 @@
  * GET /api/admin/env-status
  *
  * Returns the status of every env var the app reads, grouped by service.
- * Secret values are returned as { set: true, secret: true, value: null }.
- * Non-secret values are returned with their actual string value.
+ * Values are returned for both secret and non-secret variables.
+ * Secret variables remain masked in the UI unless explicitly revealed by admin.
  *
  * Admin-only endpoint.
  */
@@ -47,7 +47,7 @@ function envVar(overrides, label, names, secret = false, hint = "") {
     label,
     names,
     set: Boolean(value),
-    value: secret ? null : (value || null),
+    value: value || null,
     secret,
     source: resolved.source,
     activeName: resolved.activeName,

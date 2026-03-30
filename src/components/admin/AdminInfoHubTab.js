@@ -501,7 +501,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
                 const displayValue = !hasValue
                   ? t("admin.envVarNotSet", "not set")
                   : isRevealed
-                    ? (v.secret ? "(secret)" : (v.value || ""))
+                    ? (v.value || "")
                     : "••••••••";
                 return (
                   <div
@@ -545,7 +545,7 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
                           {isRevealed ? t("admin.hideSecret", "Hide") : t("admin.showSecret", "Show")}
                         </button>
                       )}
-                      {hasValue && !v.secret && v.value && isRevealed && (
+                      {hasValue && v.value && isRevealed && (
                         <button
                           type="button"
                           onClick={() => copyEnvValue(key, v.value)}
