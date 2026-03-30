@@ -1938,10 +1938,8 @@ export default function AdminMediaLibraryTab({
             key={option.id}
             type="button"
             onClick={() => setSourceFilter(option.id)}
-            className={`px-3 py-1.5 rounded border text-sm ${
-              sourceFilter === option.id
-                ? "border-slate-700 bg-slate-700 text-slate-100"
-                : "border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
+            className={`admin-filter-pill px-3 py-1.5 rounded border text-sm ${
+              sourceFilter === option.id ? "admin-filter-pill-selected" : ""
             }`}
           >
             {option.label}

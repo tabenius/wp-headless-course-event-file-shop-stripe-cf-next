@@ -108,16 +108,36 @@ body:has(.admin-layout)::before {
 }
 .admin-layout .bg-gray-50,
 .admin-layout .hover\:bg-gray-50:hover {
-  background-color: var(--admin-bg) !important;
+  background-color: var(--admin-surface-alt) !important;
 }
 .admin-layout .bg-gray-100,
 .admin-layout .hover\:bg-gray-100:hover {
+  background-color: var(--admin-surface) !important;
+}
+.admin-layout .bg-slate-50,
+.admin-layout .hover\:bg-slate-50:hover {
   background-color: var(--admin-surface-alt) !important;
+}
+.admin-layout .bg-slate-100,
+.admin-layout .hover\:bg-slate-100:hover,
+.admin-layout .bg-slate-200,
+.admin-layout .hover\:bg-slate-200:hover {
+  background-color: var(--admin-surface) !important;
 }
 .admin-layout .border,
 .admin-layout .border-gray-200,
 .admin-layout .border-gray-100,
 .admin-layout .divide-gray-100 > * + * {
+  border-color: var(--admin-border) !important;
+}
+.admin-layout .border-slate-100,
+.admin-layout .border-slate-200,
+.admin-layout .border-slate-300,
+.admin-layout .border-slate-400,
+.admin-layout .border-slate-500,
+.admin-layout .border-slate-600,
+.admin-layout .border-slate-700,
+.admin-layout .border-slate-800 {
   border-color: var(--admin-border) !important;
 }
 
@@ -142,6 +162,11 @@ body:has(.admin-layout)::before {
 .admin-layout .text-slate-600 {
   color: var(--admin-muted) !important;
 }
+.admin-layout .text-slate-500,
+.admin-layout .text-slate-400,
+.admin-layout .text-slate-300 {
+  color: var(--admin-muted) !important;
+}
 
 .admin-layout input:not([type="checkbox"]):not([type="radio"]),
 .admin-layout select,
@@ -149,6 +174,21 @@ body:has(.admin-layout)::before {
   background-color: var(--admin-surface-alt) !important;
   border-color: var(--admin-border) !important;
   color: var(--admin-text) !important;
+}
+.admin-layout input::placeholder,
+.admin-layout textarea::placeholder {
+  color: var(--admin-muted) !important;
+  opacity: 0.95;
+}
+.admin-layout input[type="checkbox"],
+.admin-layout input[type="radio"] {
+  background-color: var(--admin-surface-alt) !important;
+  border-color: var(--admin-border) !important;
+}
+.admin-layout input[type="checkbox"]:checked,
+.admin-layout input[type="radio"]:checked {
+  background-color: var(--admin-accent-strong) !important;
+  border-color: var(--admin-accent-strong) !important;
 }
 
 .admin-layout .text-amber-900,
@@ -160,6 +200,15 @@ body:has(.admin-layout)::before {
 }
 .admin-layout .text-emerald-800 {
   color: var(--admin-success) !important;
+}
+.admin-layout .bg-emerald-100 {
+  background-color: rgba(132, 204, 22, 0.2) !important;
+}
+.admin-layout .bg-red-100 {
+  background-color: rgba(220, 50, 47, 0.2) !important;
+}
+.admin-layout .bg-amber-100 {
+  background-color: rgba(181, 137, 0, 0.2) !important;
 }
 
 /* Admin header chrome */
@@ -242,6 +291,20 @@ body:has(.admin-layout)::before {
 .admin-header-account-pill:focus-visible {
   outline: 2px solid var(--admin-accent);
   outline-offset: 1px;
+}
+
+.admin-filter-pill {
+  background-color: var(--admin-surface-alt) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.admin-filter-pill:hover {
+  background-color: var(--admin-surface) !important;
+}
+.admin-filter-pill-selected {
+  background-color: var(--admin-accent-strong) !important;
+  border-color: var(--admin-accent-strong) !important;
+  color: #0f172a !important;
 }
 
 .admin-header-ticker-inline {
