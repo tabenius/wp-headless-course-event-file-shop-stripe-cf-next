@@ -4074,3 +4074,5 @@ The following pages use `auth()` (which calls `cookies()` from `next/headers`) a
    Product info is public but `auth()` is called unconditionally to check ownership. Could be refactored: static product shell (ISR) + client island that calls `/api/shop/ownership?productId=X` to show "already purchased" badge and download link. This would let product pages cache via ISR while personalizing client-side. Marked `force-dynamic` for now as the safe path.
 
 **Result:** Root layout stays ISR-default (Codex change preserved). Auth-dependent pages are explicitly dynamic. Free content pages (`Post`, `Page` via catch-all) can benefit from ISR/static caching.
+
+- **2026-03-30 (Codex)**: Fixed remaining Style-tab BUGS by correcting `t("admin.styleRevisionCount")` interpolation usage (so `{count}` now resolves) and replacing the obsolete admin-only style-guide block with a live active-typography preview (display/heading/body/button/link) that follows current font roles + palette; added EN/SV/ES copy keys and checked both related BUGS.md items as completed.
