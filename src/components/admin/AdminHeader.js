@@ -26,8 +26,7 @@ const ADMIN_TAB_SET = new Set([
 ]);
 
 function parseTabHash(hashValue) {
-  const normalized = String(hashValue || "")
-    .replace(/^#\/?/, "")
+  const normalized = extractHashPath(hashValue)
     .split(/[/?&]/)[0]
     .trim()
     .toLowerCase();
@@ -35,11 +34,17 @@ function parseTabHash(hashValue) {
   return tab;
 }
 
+function extractHashPath(value) {
+  const raw = String(value || "").trim();
+  const lower = raw.toLowerCase();
+  const lastHashRoute = lower.lastIndexOf("#/");
+  const candidate =
+    lastHashRoute >= 0 ? lower.slice(lastHashRoute + 2) : lower.replace(/^#\/?/, "");
+  return candidate.replace(/^\/+/, "");
+}
+
 function normalizeTab(value) {
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^#\/?/, "");
+  const normalized = extractHashPath(value);
   const base = normalized.split(/[/?&]/)[0];
   if (!base) return null;
   if (
@@ -55,7 +60,7 @@ function normalizeTab(value) {
 }
 
 function hashForTabRoute(value) {
-  const normalized = String(value || "").trim().toLowerCase().replace(/^#\/?/, "");
+  const normalized = extractHashPath(value);
   if (
     normalized === "health" ||
     normalized === "status" ||

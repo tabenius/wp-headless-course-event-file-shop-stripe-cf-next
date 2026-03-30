@@ -28,11 +28,17 @@ function normalizeSection(value) {
   return "overview";
 }
 
+function extractHashPath(value) {
+  const raw = String(value || "").trim();
+  const lower = raw.toLowerCase();
+  const lastHashRoute = lower.lastIndexOf("#/");
+  const candidate =
+    lastHashRoute >= 0 ? lower.slice(lastHashRoute + 2) : lower.replace(/^#\/?/, "");
+  return candidate.replace(/^\/+/, "");
+}
+
 function sectionFromHash(hashValue) {
-  const normalized = String(hashValue || "")
-    .replace(/^#\/?/, "")
-    .trim()
-    .toLowerCase();
+  const normalized = extractHashPath(hashValue).trim().toLowerCase();
   const parts = normalized.split("/").filter(Boolean);
   if (parts[0] === "health") return "health";
   if (parts[0] === "settings") return "settings";

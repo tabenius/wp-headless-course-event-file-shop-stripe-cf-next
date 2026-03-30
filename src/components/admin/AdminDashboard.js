@@ -158,11 +158,7 @@ function AdminSuspenseFallback({ variant = "default", title = "Loading" }) {
 }
 
 function normalizeAdminTab(value) {
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^#\/?/, "")
-    .split(/[/?&]/)[0];
+  const normalized = extractHashPath(value).split(/[/?&]/)[0];
   if (!normalized) return null;
   if (
     normalized === "sandbox" ||
@@ -176,8 +172,17 @@ function normalizeAdminTab(value) {
   return ADMIN_TAB_SET.has(normalized) ? normalized : null;
 }
 
+function extractHashPath(value) {
+  const raw = String(value || "").trim();
+  const lower = raw.toLowerCase();
+  const lastHashRoute = lower.lastIndexOf("#/");
+  const candidate =
+    lastHashRoute >= 0 ? lower.slice(lastHashRoute + 2) : lower.replace(/^#\/?/, "");
+  return candidate.replace(/^\/+/, "");
+}
+
 function hashForAdminRoute(detail) {
-  const normalized = String(detail || "").trim().toLowerCase();
+  const normalized = extractHashPath(detail);
   if (
     normalized === "health" ||
     normalized === "info/health" ||
@@ -210,8 +215,7 @@ const log = (...args) => {
 };
 
 function parseTabFromHash(hashValue) {
-  const normalized = String(hashValue || "")
-    .replace(/^#\/?/, "")
+  const normalized = extractHashPath(hashValue)
     .split(/[/?&]/)[0]
     .trim()
     .toLowerCase();

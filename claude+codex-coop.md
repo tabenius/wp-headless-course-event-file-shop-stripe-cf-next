@@ -1,5 +1,20 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — admin hash-route hardening (prevents concatenated `#/...` paths)
+
+### Codex — normalized malformed/concatenated hash fragments across admin navigation
+
+**Delivered:**
+- Added robust hash-path extraction that takes the last canonical `#/...` segment when malformed hashes appear (example: `#/products#/info/stats`).
+- Applied this normalization in all relevant admin route handlers:
+  - `src/components/admin/AdminHeader.js`
+  - `src/components/admin/AdminDashboard.js`
+  - `src/components/admin/AdminInfoHubTab.js`
+- Route parsing and tab switching now ignore duplicated/concatenated hash fragments instead of drifting into invalid paths.
+
+**Validation:**
+- `npm run lint -- src/components/admin/AdminHeader.js src/components/admin/AdminDashboard.js src/components/admin/AdminInfoHubTab.js` (pass; existing repo warnings unchanged).
+
 ## 2026-03-30 (Codex) — KV warning clarity fix for Page Performance / GraphQL panels
 
 ### Codex — stopped reporting KV as “not configured” when only build-bypass is active
