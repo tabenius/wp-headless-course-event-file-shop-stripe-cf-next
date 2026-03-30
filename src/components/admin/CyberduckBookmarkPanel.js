@@ -73,7 +73,7 @@ export default function CyberduckBookmarkPanel({
     },
     {
       id: "server",
-      label: t("admin.clientHost", "Host / endpoint"),
+      label: t("admin.clientHost", "Host / server"),
       value: safeValue(serverHost),
     },
     {
@@ -93,24 +93,12 @@ export default function CyberduckBookmarkPanel({
       secret: true,
     },
     {
-      id: "region",
-      label: t("admin.clientRegion", "Region"),
-      value: safeValue(details?.region || "auto"),
-    },
-    {
-      id: "bucket",
-      label: t("admin.clientBucket", "Bucket"),
-      value: safeValue(details?.bucket),
-    },
-    {
-      id: "path",
-      label: t("admin.clientRemotePath", "Remote path"),
-      value: safeValue(bucketPath),
-    },
-    {
-      id: "publicUrl",
-      label: t("admin.clientPublicUrl", "Public URL"),
-      value: safeValue(details?.publicUrl),
+      id: "bucketPath",
+      label: t("admin.clientBucketPath", "Bucket / path"),
+      value:
+        details?.bucket || bucketPath
+          ? `${safeValue(details?.bucket)} / ${safeValue(bucketPath)}`
+          : safeValue(""),
     },
   ];
   const rootClass = `rounded-lg border border-slate-300 bg-slate-50 p-3 ${className}`.trim();
@@ -175,7 +163,7 @@ export default function CyberduckBookmarkPanel({
           return (
             <div
               key={row.id}
-              className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)_auto] items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1.5"
+              className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)_auto] items-center gap-2 rounded border border-slate-300 bg-slate-100 px-2 py-1.5 font-sans"
             >
               <span className="text-[11px] text-slate-600">{row.label}</span>
               <code

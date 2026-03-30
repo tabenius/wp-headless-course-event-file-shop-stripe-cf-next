@@ -14,6 +14,7 @@ import {
 
 export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCopyUrl, onOpenUrl }) {
   const [r2ManualInfo, setR2ManualInfo] = useState(uploadInfoDetails?.isR2 ? uploadInfoDetails : null);
+  const [showManualTools, setShowManualTools] = useState(false);
   const [r2ManualKey, setR2ManualKey] = useState(defaultR2ObjectKey);
   const [r2ManualTitle, setR2ManualTitle] = useState("");
   const [r2ManualAssetId, setR2ManualAssetId] = useState("");
@@ -204,60 +205,51 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
           <p className="text-xs font-semibold text-gray-700">
             {t(
               "admin.mediaR2ManualTitle",
-              "R2 manual ingest (CyberDuck workflow)",
+              "Optional object-key mapping (advanced)",
             )}
           </p>
           <p className="text-[11px] text-gray-500">
             {t(
               "admin.mediaR2ManualHint",
-              "Upload with CyberDuck, then preview by object key and save a KV asset record.",
+              "Not required for normal uploads. Open this only when a pre-uploaded object needs metadata or annotation mapping.",
             )}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={loadR2ManualRegistry}
-          disabled={r2ManualLoading || r2ManualPending}
-          className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100 disabled:opacity-50"
-        >
-          {r2ManualLoading
-            ? t("common.loading", "Loading…")
-            : t("admin.mediaRefresh", "Refresh")}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={loadR2ManualRegistry}
+            disabled={r2ManualLoading || r2ManualPending}
+            className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100 disabled:opacity-50"
+          >
+            {r2ManualLoading
+              ? t("common.loading", "Loading…")
+              : t("admin.mediaRefresh", "Refresh")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowManualTools((current) => !current)}
+            disabled={!r2ManualInfo?.ok}
+            className="px-2 py-1 rounded border text-[11px] bg-slate-100 text-slate-800 hover:bg-slate-200 disabled:opacity-50"
+          >
+            {showManualTools
+              ? t("admin.mediaR2ManualCloseTools", "Hide mapping tools")
+              : t("admin.mediaR2ManualOpenTools", "Open mapping tools")}
+          </button>
+        </div>
       </div>
 
-      {r2ManualInfo?.ok ? (
-        <div className="rounded border border-amber-200 bg-amber-50 p-2 text-[11px] space-y-2">
-          <p className="inline-flex rounded-md border border-slate-500 bg-slate-700 px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-slate-100">
-            {t("admin.clientChecklistTitle", "Client checklist")}
-          </p>
-          <div className="grid gap-1 sm:grid-cols-2">
-            <p className="text-amber-900">
-              {t("admin.clientProtocol", "Protocol")}: S3
-            </p>
-            <p className="text-amber-900 break-all">
-              {t("admin.clientHost", "Host")}: {r2ManualInfo.endpoint || "—"}
-            </p>
-            <p className="text-amber-900">
-              {t("admin.clientRegion", "Region")}: {r2ManualInfo.region || "auto"}
-            </p>
-            <p className="text-amber-900">
-              {t("admin.clientBucket", "Bucket")}: {r2ManualInfo.bucket || "—"}
-            </p>
-            <p className="text-amber-900 break-all sm:col-span-2">
-              {t("admin.clientPublicUrl", "Public URL")}: {r2ManualPublicUrl || "—"}
-            </p>
-          </div>
-        </div>
-      ) : (
+      {!r2ManualInfo?.ok ? (
         <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
           {t(
             "admin.mediaR2ManualNotConfigured",
             "R2 is not configured. Configure endpoint, bucket, keys, and public URL first.",
           )}
         </p>
-      )}
+      ) : null}
 
+      {showManualTools && r2ManualInfo?.ok && (
+        <>
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="space-y-1 text-[11px] text-gray-700 sm:col-span-2">
           <span>
@@ -501,6 +493,8 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

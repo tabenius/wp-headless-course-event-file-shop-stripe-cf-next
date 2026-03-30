@@ -28,23 +28,23 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
   const showS3Docs = backendMode === "s3";
   const serverHost = resolveStorageServerHost(clientDetails);
   const remotePath = resolveBucketRemotePath(clientDetails);
-  const pathStyleValue =
-    typeof clientDetails.pathStyle === "boolean"
-      ? clientDetails.pathStyle
-        ? t("admin.pathStyleEnabled")
-        : t("admin.pathStyleDisabled")
-      : t("common.noDetails");
+  const canDownloadBookmark = Boolean(
+    serverHost && clientDetails.bucket && clientDetails.accessKeyId,
+  );
 
   const checklistRows = [
     { id: "protocol", label: t("admin.clientProtocol"), value: "S3" },
-    { id: "host", label: t("admin.clientHost"), value: serverHost || t("common.noDetails") },
-    { id: "region", label: t("admin.clientRegion"), value: clientDetails.region || t("admin.clientRegionAuto") },
-    { id: "bucket", label: t("admin.clientBucket"), value: clientDetails.bucket || t("common.noDetails") },
-    { id: "remotePath", label: t("admin.clientRemotePath"), value: remotePath || t("common.noDetails") },
-    { id: "pathStyle", label: t("admin.clientPathStyle"), value: pathStyleValue },
+    { id: "host", label: t("admin.clientHost", "Host / server"), value: serverHost || t("common.noDetails") },
+    {
+      id: "bucketPath",
+      label: t("admin.clientBucketPath", "Bucket / path"),
+      value:
+        clientDetails.bucket || remotePath
+          ? `${clientDetails.bucket || "—"} / ${remotePath || "—"}`
+          : t("common.noDetails"),
+    },
     { id: "accessKey", label: t("admin.clientAccessKey"), value: clientDetails.accessKeyId || t("common.noDetails") },
     { id: "secretKey", label: t("admin.clientSecretKey"), value: clientDetails.secretKey || t("common.noDetails"), secret: true },
-    { id: "publicUrl", label: t("admin.clientPublicUrl"), value: clientDetails.publicUrl || t("common.noDetails") },
   ];
 
   async function copyValue(fieldId, value) {
@@ -87,9 +87,9 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             {t("admin.clientChecklistTitle")}
           </h3>
           <p className="text-[11px] text-gray-500">{t("admin.clientChecklistHint")}</p>
-          <div className="border rounded-xl p-3 bg-slate-50/70 border-slate-200 space-y-2">
+          <div className="border rounded-xl p-3 bg-slate-100/60 border-slate-300 space-y-2 font-sans">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-800">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 text-slate-800">
                 {backendMode === "r2" ? t("admin.uploadClientModeR2") : t("admin.uploadClientModeS3")}
               </span>
             </div>
@@ -102,7 +102,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
                 return (
                   <div
                     key={row.id}
-                    className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)_auto] gap-2 items-center bg-white border rounded px-2 py-1.5"
+                    className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)_auto] gap-2 items-center bg-slate-100 border border-slate-300 rounded px-2 py-1.5"
                   >
                     <span className="text-[11px] font-medium text-gray-500">{row.label}</span>
                     <span
@@ -143,10 +143,31 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
 
       {/* ── GUI client guides ── */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">
-          {t("admin.manualClientsTitle")}
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-gray-700 font-sans">
+            {t("admin.uploadClientsSectionTitle", "Upload with CyberDuck or WinSCP over R2 / S3")}
+          </h3>
+          <button
+            type="button"
+            onClick={handleBookmarkDownload}
+            disabled={bookmarkDownloading || !canDownloadBookmark}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-slate-700 text-slate-100 hover:bg-slate-800 disabled:opacity-50"
+          >
+            <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M8 12l-5-5h3V2h4v5h3L8 12z" />
+              <rect x="2" y="13" width="12" height="1.5" rx=".75" />
+            </svg>
+            {bookmarkDownloading
+              ? t("common.loading", "Loading…")
+              : t("admin.cyberduckDownloadProfile", "Download .duck bookmark")}
+          </button>
+        </div>
         <p className="text-xs text-gray-500">{t("admin.manualClientsHint")}</p>
+        {bookmarkError && (
+          <p className="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
+            {bookmarkError}
+          </p>
+        )}
         <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-gray-400">
           {showR2Docs && (
             <a
@@ -178,7 +199,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           )}
         </div>
 
-        <details className="rounded-xl border border-gray-200 bg-white p-3 open:border-slate-300 open:bg-gray-50">
+        <details className="rounded-xl border border-slate-300 bg-slate-100 p-3 open:border-slate-400 open:bg-slate-200/40">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
             <span className="flex items-center gap-3">
               <span className="h-7 w-7 flex-shrink-0">
@@ -212,7 +233,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           </div>
         </details>
 
-        <details className="rounded-xl border border-gray-200 bg-white p-3 open:border-amber-300 open:bg-gray-50">
+        <details className="rounded-xl border border-slate-300 bg-slate-100 p-3 open:border-slate-400 open:bg-slate-200/40">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
             <span className="flex items-center gap-3">
               <span className="h-7 w-7 flex-shrink-0">
@@ -251,25 +272,9 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
               <p className="text-[11px] text-gray-500 mb-2">
                 {t("admin.cyberduckProfileHint", "Download a pre-filled bookmark file with credentials included. Double-click it to open directly in CyberDuck.")}
               </p>
-              {bookmarkError && (
-                <p className="mb-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
-                  {bookmarkError}
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={handleBookmarkDownload}
-                disabled={bookmarkDownloading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
-              >
-                <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                  <path d="M8 12l-5-5h3V2h4v5h3L8 12z" />
-                  <rect x="2" y="13" width="12" height="1.5" rx=".75" />
-                </svg>
-                {bookmarkDownloading
-                  ? t("common.loading", "Loading…")
-                  : t("admin.cyberduckDownloadProfile", "Download .duck bookmark")}
-              </button>
+              <p className="text-[11px] text-gray-600">
+                {t("admin.cyberduckProfileNowInHeader", "Use the download button in the section header above to fetch the bookmark file.")}
+              </p>
             </div>
           )}
         </details>
