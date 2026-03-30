@@ -1866,8 +1866,8 @@ export default function AdminMediaLibraryTab({
             onClick={() => setSourceFilter(option.id)}
             className={`px-3 py-1.5 rounded border text-sm ${
               sourceFilter === option.id
-                ? "border-slate-500 bg-slate-50 text-slate-800"
-                : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                ? "border-slate-700 bg-slate-700 text-slate-100"
+                : "border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200"
             }`}
           >
             {option.label}

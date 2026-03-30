@@ -1,5 +1,18 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — media source filter contrast fix (Alla källor)
+
+### Codex — switched source filter chips to slate theme surfaces in Asset Library
+
+**Delivered:**
+- Updated source filter button styling in `src/components/admin/AdminMediaLibraryTab.js`:
+  - active: `bg-slate-700 text-slate-100`
+  - inactive: `bg-slate-100 text-slate-800` with slate hover
+- This removes white-on-white risk for the `Alla källor` label and aligns with normal slate theme contrast.
+
+**Validation:**
+- `npm run lint -- src/components/admin/AdminMediaLibraryTab.js` (pass; existing repo warnings unchanged).
+
 ## 2026-03-30 (Codex) — Cyberduck bookmark expander in Products + Info/Storage
 
 ### Codex — added expandable Cyberduck info/download flow in requested admin contexts
