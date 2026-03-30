@@ -1,5 +1,23 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — docs follow-up: always-visible cache copy button + refresh impact guidance
+
+### Codex — corrected usability gap in /docs performance page (ragbaz.xyz)
+
+**Delivered (in `ragbaz.xyz` repo):**
+- Moved the cache-refresh command card (with copy button) to render outside the collapsible mermaid block so it is visible without opening the diagram.
+- Added an explicit section in EN/SV/ES explaining impact tradeoffs:
+  - refresh now vs waiting for TTL,
+  - user-facing consistency impact,
+  - backend load implications.
+- Deployed and verified live markers on `/docs/en/performance-explained`:
+  - `Impact of refresh now vs waiting for TTL`
+  - `Cache refresh command (WP-CLI)` visible above `Mermaid diagram`.
+
+**Release:**
+- `ragbaz.xyz` commit: `4751195`
+- Worker version: `ddab87cb-f017-483d-b169-af44b403593e`
+
 ## 2026-03-30 (Codex) — docs cache-timing update + mermaid + cache-refresh action (ragbaz.xyz)
 
 ### Codex — updated multilingual /docs guidance with concrete cache rules and deployed to ragbaz.xyz
