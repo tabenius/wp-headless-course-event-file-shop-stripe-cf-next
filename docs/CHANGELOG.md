@@ -3,6 +3,23 @@
 This changelog summarizes major product-facing changes week by week.
 It is intentionally high-level and focused on user/admin experience.
 
+## Week of 2026-03-30
+
+- Improved **admin UI quality** across the dark theme:
+  - fixed hover button contrast, hamburger menu icon visibility, accordion text-on-white, and alternating table row contrast.
+  - restyled the UI feedback bar to be smaller and less intrusive.
+  - fixed payment status badges to display translated labels (EN/SV/ES) instead of raw Stripe status strings.
+  - converted the payments reload button to a compact icon button with loading animation.
+- Fixed **missing diacritics** across Swedish and Spanish translations (guide tooltips, docs links, operator hints).
+- Fixed **`{lang}` template substitution** in help link tooltips and made tooltips contextual (showing the guide topic instead of generic text).
+- Improved **storefront performance** via ISR architecture hardening:
+  - removed global `force-dynamic` from root layout (Codex), added explicit `force-dynamic` to all auth-dependent pages to prevent ISR caching of authenticated content.
+  - converted `/shop/[slug]` product pages from fully dynamic to **ISR with client-side ownership island** — product info is statically cached, ownership/auth checks happen client-side via API, improving TTFB and SEO for product pages.
+  - deferred `searchParams` resolution in the catch-all route so free content (posts, pages) remains ISR-eligible while paid content stays dynamic.
+- Added **sales trend chart** (SVG) with MA20/MA200 overlays and RSI-14 oscillator to the payments tab.
+- Fixed admin startup crash (`e.json is not a function`) caused by `adminFetch` wrapper misuse across multiple call sites.
+- Hardened **health check accuracy**: WordPress checks gated on CMS URL, OAuth provider status now detects placeholder credentials and probes authorization endpoints.
+
 ## Week of 2026-03-23
 
 - Introduced a significantly improved **Asset Derivation Editor** for media workflows:
