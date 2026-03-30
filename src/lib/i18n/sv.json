@@ -386,6 +386,7 @@
     "mediaDropzoneNoFiles": "Inga filer hittades. Dra filer från din dator eller klicka för att välja filer.",
     "mediaUploadLimits": "Bilder under {imageMb} MB och andra resurser under {dataMb} MB. WordPress-uppladdningar kan ha lägre gräns.",
     "mediaChooseFiles": "Välj filer",
+    "mediaExternalUploadToggle": "Ladda upp med extern programvara",
     "mediaWordPressId": "WordPress-ID",
     "mediaAssetLineageTitle": "Tillgångsrelationer",
     "mediaAssetLineageHint": "Hoppa mellan original och variantbilagor som delar samma tillgångs-ID.",

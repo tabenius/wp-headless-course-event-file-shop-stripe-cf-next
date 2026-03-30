@@ -386,6 +386,7 @@
     "mediaDropzoneNoFiles": "No files were detected. Drag files from your computer or click to choose files.",
     "mediaUploadLimits": "Images under {imageMb} MB and other assets under {dataMb} MB. WordPress uploads may cap these further.",
     "mediaChooseFiles": "Choose files",
+    "mediaExternalUploadToggle": "Upload using external software",
     "mediaWordPressId": "WordPress ID",
     "mediaAssetLineageTitle": "Asset lineage",
     "mediaAssetLineageHint": "Jump between original and variant attachments that share the same asset ID.",

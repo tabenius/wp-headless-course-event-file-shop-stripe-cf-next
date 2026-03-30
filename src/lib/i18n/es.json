@@ -386,6 +386,7 @@
     "mediaDropzoneNoFiles": "No se detectaron archivos. Arrastra archivos desde tu equipo o haz clic para elegirlos.",
     "mediaUploadLimits": "Imágenes por debajo de {imageMb} MB y otros activos por debajo de {dataMb} MB. WordPress podría imponer un límite inferior.",
     "mediaChooseFiles": "Elegir archivos",
+    "mediaExternalUploadToggle": "Subir con software externo",
     "mediaWordPressId": "ID de WordPress",
     "mediaAssetLineageTitle": "Linaje del activo",
     "mediaAssetLineageHint": "Salta entre adjuntos originales y variantes que comparten el mismo ID de activo.",

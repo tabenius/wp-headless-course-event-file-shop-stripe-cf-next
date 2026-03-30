@@ -1,5 +1,15 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — asset-library upload area: external software panel relocation
+
+- Removed the near-upload `R2ManualIngestPanel` block from `AdminMediaLibraryTab`.
+- Moved the existing external client guidance (`R2ConnectionPanel`) into a collapsible section directly attached to the bottom of the upload area:
+  - EN: `Upload using external software`
+  - SV: `Ladda upp med extern programvara`
+  - ES: `Subir con software externo`
+- Added i18n key `admin.mediaExternalUploadToggle` in EN/SV/ES.
+- Validation: `npx eslint src/components/admin/AdminMediaLibraryTab.js` + locale JSON parse checks (pass).
+
 ## 2026-03-30 (Codex) — media library panel extraction + derivation flow modularization
 
 - Refactored `AdminMediaLibraryTab` by breaking out major UI surfaces into dedicated components under `src/components/admin/media-library/`:

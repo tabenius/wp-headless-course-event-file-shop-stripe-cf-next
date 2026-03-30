@@ -51,7 +51,6 @@ import {
 } from "@/lib/mediaLibraryHelpers";
 import R2ConnectionPanel from "@/components/admin/R2ConnectionPanel";
 import MediaViewerPanel from "@/components/admin/MediaViewerPanel";
-import R2ManualIngestPanel from "@/components/admin/R2ManualIngestPanel";
 import AdminDocsContextLinks from "@/components/admin/AdminDocsContextLinks";
 import DerivationWorkspacePanel from "@/components/admin/media-library/DerivationWorkspacePanel";
 import FilePreviewTile from "@/components/admin/media-library/FilePreviewTile";
@@ -2294,12 +2293,21 @@ export default function AdminMediaLibraryTab({
         )}
 
 
-        <R2ManualIngestPanel
-          uploadInfoDetails={uploadInfoDetails}
-          onRefresh={() => setRefreshToken((c) => c + 1)}
-          onCopyUrl={copyUrl}
-          onOpenUrl={openHistoryUrl}
-        />
+        <details className="rounded border border-slate-200 bg-slate-50">
+          <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-slate-800">
+            {t(
+              "admin.mediaExternalUploadToggle",
+              "Upload using external software",
+            )}
+          </summary>
+          <div className="border-t border-slate-200 px-3 py-3">
+            <R2ConnectionPanel
+              uploadBackend={uploadBackend}
+              uploadInfo={uploadInfo}
+              uploadInfoDetails={uploadInfoDetails}
+            />
+          </div>
+        </details>
       </div>
 
       {sources && (
@@ -2618,11 +2626,6 @@ export default function AdminMediaLibraryTab({
         saveLoading={saveLoading}
       />
 
-      <R2ConnectionPanel
-        uploadBackend={uploadBackend}
-        uploadInfo={uploadInfo}
-        uploadInfoDetails={uploadInfoDetails}
-      />
     </div>
   );
 }
