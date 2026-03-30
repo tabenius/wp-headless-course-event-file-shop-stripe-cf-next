@@ -34,7 +34,7 @@ export default function AdminFieldHelpLink({ slug, topic = "", className = "" })
       rel="noopener noreferrer"
       title={tooltip}
       aria-label={aria}
-      className={`inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-slate-50 text-[10px] font-bold leading-none text-slate-700 hover:bg-slate-100 ${className}`.trim()}
+      className={`admin-help-pill inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-bold leading-none ${className}`.trim()}
     >
       ?
     </a>

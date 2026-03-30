@@ -802,7 +802,7 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
           <button
             type="button"
             onClick={() => setPolling((p) => !p)}
-            className={`px-2 py-0.5 rounded border ${polling ? "border-green-400 text-green-700 bg-green-50" : "border-gray-300 text-gray-500"}`}
+            className={`px-2 py-0.5 rounded border ${polling ? "admin-pill-live" : "admin-pill-subtle"}`}
           >
             {polling ? "● live" : "○ paused"}
           </button>
@@ -810,7 +810,7 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
             <button
               type="button"
               onClick={() => setClientLogs([])}
-              className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600"
+              className="admin-pill-subtle admin-pill-danger-hover px-2 py-0.5 rounded border"
             >
               clear
             </button>
@@ -818,7 +818,7 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
             <button
               type="button"
               onClick={clearServer}
-              className="px-2 py-0.5 rounded border border-gray-300 text-gray-500 hover:text-red-600"
+              className="admin-pill-subtle admin-pill-danger-hover px-2 py-0.5 rounded border"
             >
               clear
             </button>
@@ -832,7 +832,7 @@ function DebugLogPanel({ clientLogs, setClientLogs }) {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`px-3 py-1 rounded ${tab === t ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+            className={`px-3 py-1 rounded border ${tab === t ? "admin-pill-active" : "admin-pill-subtle"}`}
           >
             {t === "client"
               ? `Browser (${clientLogs.length})`

@@ -105,9 +105,9 @@ function MetricCard({ label, value, sub, accent = false }) {
 
 function StatusBadge({ status }) {
   const styles = {
-    succeeded: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-    pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-    failed: "bg-red-50 text-red-700 ring-1 ring-red-200",
+    succeeded: "admin-status-pill admin-status-pill-success",
+    pending: "admin-status-pill admin-status-pill-warning",
+    failed: "admin-status-pill admin-status-pill-danger",
   };
   const labels = {
     succeeded: t("admin.paymentStatusSucceeded", "Succeeded"),
@@ -117,7 +117,7 @@ function StatusBadge({ status }) {
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${
-        styles[status] || "bg-gray-100 text-gray-600 ring-1 ring-gray-200"
+        styles[status] || "admin-status-pill admin-status-pill-muted"
       }`}
     >
       {labels[status] || status}

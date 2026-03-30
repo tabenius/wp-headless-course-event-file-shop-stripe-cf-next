@@ -1938,8 +1938,8 @@ export default function AdminMediaLibraryTab({
             key={option.id}
             type="button"
             onClick={() => setSourceFilter(option.id)}
-            className={`admin-filter-pill px-3 py-1.5 rounded border text-sm ${
-              sourceFilter === option.id ? "admin-filter-pill-selected" : ""
+            className={`admin-pill px-3 py-1.5 rounded border text-sm ${
+              sourceFilter === option.id ? "admin-pill-active" : ""
             }`}
           >
             {option.label}
@@ -2276,18 +2276,18 @@ export default function AdminMediaLibraryTab({
       {sources && (
         <div className="flex flex-wrap gap-2 text-xs">
           <span
-            className={`px-2 py-1 rounded ${sources.wordpress?.ok ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"}`}
+            className={`admin-status-pill px-2 py-1 rounded ${sources.wordpress?.ok ? "admin-status-pill-info" : "admin-status-pill-muted"}`}
           >
             WordPress: {sources.wordpress?.count ?? 0}
           </span>
           <span
-            className={`px-2 py-1 rounded ${sources.r2?.ok ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}
+            className={`admin-status-pill px-2 py-1 rounded ${sources.r2?.ok ? "admin-status-pill-success" : "admin-status-pill-muted"}`}
           >
             R2: {sources.r2?.count ?? 0}
           </span>
           {(sources.s3?.enabled || sources.s3?.ok || sources.s3?.count) && (
             <span
-              className={`px-2 py-1 rounded ${sources.s3?.ok ? "bg-amber-50 text-amber-700" : "bg-gray-100 text-gray-600"}`}
+              className={`admin-status-pill px-2 py-1 rounded ${sources.s3?.ok ? "admin-status-pill-warning" : "admin-status-pill-muted"}`}
             >
               S3: {sources.s3?.count ?? 0}
             </span>
@@ -2550,7 +2550,7 @@ export default function AdminMediaLibraryTab({
                         onClick={() =>
                           focusItemById(focusedAssetLineage.original.item.id)
                         }
-                        className="px-2 py-1 rounded border text-[11px] bg-white text-slate-700 hover:bg-slate-100"
+                        className="admin-pill px-2 py-1 rounded border text-[11px]"
                       >
                         {focusedAssetLineage.original.item.title ||
                           `${t("admin.mediaWordPressId", "WordPress ID")} #${focusedAssetLineage.original.item.sourceId}`}
@@ -2596,8 +2596,8 @@ export default function AdminMediaLibraryTab({
                             onClick={() => focusItemById(variant.linkedItem.id)}
                             className={`px-2 py-1 rounded border text-[11px] ${
                               isCurrent
-                                ? "bg-slate-200 text-slate-900 border-slate-400"
-                                : "bg-white text-slate-700 hover:bg-slate-100"
+                                ? "admin-pill-active"
+                                : "admin-pill"
                             }`}
                           >
                             {label}
@@ -2613,8 +2613,8 @@ export default function AdminMediaLibraryTab({
                             rel="noreferrer"
                             className={`px-2 py-1 rounded border text-[11px] ${
                               isCurrent
-                                ? "bg-slate-200 text-slate-900 border-slate-400"
-                                : "bg-white text-slate-700 hover:bg-slate-100"
+                                ? "admin-pill-active"
+                                : "admin-pill"
                             }`}
                           >
                             {label}
@@ -2626,8 +2626,8 @@ export default function AdminMediaLibraryTab({
                           key={variant.key}
                           className={`px-2 py-1 rounded border text-[11px] ${
                             isCurrent
-                              ? "bg-slate-200 text-slate-900 border-slate-400"
-                              : "bg-white text-slate-700"
+                              ? "admin-pill-active"
+                              : "admin-pill"
                           }`}
                         >
                           {label}
@@ -3186,7 +3186,7 @@ export default function AdminMediaLibraryTab({
               type="button"
               onClick={saveDerivationTemplate}
               disabled={derivationSaveStatus === "saving"}
-              className="px-3 py-1.5 rounded bg-slate-700 text-white text-xs hover:bg-slate-600 disabled:opacity-50"
+              className="admin-pill-active px-3 py-1.5 rounded text-xs disabled:opacity-50"
             >
               {t("admin.mediaDerivationSave", "Save derivation")}
             </button>
@@ -3196,7 +3196,7 @@ export default function AdminMediaLibraryTab({
               disabled={
                 applyingDerivation || savingPreview || !canApplyDerivationNow()
               }
-              className="px-3 py-1.5 rounded bg-slate-700 text-white text-xs hover:bg-slate-600 disabled:opacity-50"
+              className="admin-pill-active px-3 py-1.5 rounded text-xs disabled:opacity-50"
             >
               {applyingDerivation
                 ? t("admin.mediaDerivationApplying", "Applying…")
@@ -3209,7 +3209,7 @@ export default function AdminMediaLibraryTab({
               disabled={
                 applyingDerivation || savingPreview || !canApplyDerivationNow()
               }
-              className="px-3 py-1.5 rounded bg-emerald-700 text-white text-xs hover:bg-emerald-600 disabled:opacity-50"
+              className="admin-pill-live px-3 py-1.5 rounded text-xs disabled:opacity-50"
             >
               {applyingDerivation || savingPreview
                 ? t("admin.mediaSavingDerivedAsset", "Saving…")
@@ -3219,7 +3219,7 @@ export default function AdminMediaLibraryTab({
               type="button"
               onClick={savePreviewToLibrary}
               disabled={!previewBlob || savingPreview || lastPreviewQuality === "fast"}
-              className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
+              className="admin-pill px-3 py-1.5 rounded border text-[11px] disabled:opacity-50"
             >
               {savingPreview
                 ? t("admin.mediaSavingDerivedAsset", "Saving…")

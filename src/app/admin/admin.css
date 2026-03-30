@@ -48,6 +48,39 @@ body:has(.admin-layout) {
   --admin-docs-link-border: #5f747d;
   --admin-docs-link-hover: #005066;
 
+  --admin-pill-bg: var(--admin-surface-alt);
+  --admin-pill-hover-bg: var(--admin-surface);
+  --admin-pill-border: var(--admin-border);
+  --admin-pill-text: var(--admin-text);
+  --admin-pill-subtle-bg: rgba(147, 161, 161, 0.14);
+  --admin-pill-subtle-hover-bg: rgba(147, 161, 161, 0.22);
+  --admin-pill-subtle-text: var(--admin-muted);
+  --admin-pill-active-bg: var(--admin-accent-strong);
+  --admin-pill-active-border: var(--admin-accent-strong);
+  --admin-pill-active-text: #0f172a;
+  --admin-pill-attention-bg: rgba(181, 137, 0, 0.2);
+  --admin-pill-attention-border: rgba(181, 137, 0, 0.55);
+  --admin-pill-attention-text: #f4d77a;
+  --admin-pill-attention-active-bg: #b58900;
+  --admin-pill-attention-active-border: #b58900;
+  --admin-pill-attention-active-text: #0b1d24;
+  --admin-pill-live-bg: rgba(132, 204, 22, 0.2);
+  --admin-pill-live-border: rgba(132, 204, 22, 0.55);
+  --admin-pill-live-text: #d9f99d;
+  --admin-pill-danger-hover: #fca5a5;
+
+  --admin-status-pill-border: rgba(95, 116, 125, 0.7);
+  --admin-status-pill-muted-bg: rgba(147, 161, 161, 0.18);
+  --admin-status-pill-muted-text: #d1d5db;
+  --admin-status-pill-info-bg: rgba(56, 189, 248, 0.22);
+  --admin-status-pill-info-text: #bae6fd;
+  --admin-status-pill-success-bg: rgba(132, 204, 22, 0.2);
+  --admin-status-pill-success-text: #d9f99d;
+  --admin-status-pill-warning-bg: rgba(181, 137, 0, 0.22);
+  --admin-status-pill-warning-text: #f4d77a;
+  --admin-status-pill-danger-bg: rgba(220, 50, 47, 0.24);
+  --admin-status-pill-danger-text: #fecaca;
+
   --admin-torus-bg: #073642;
   --admin-torus-scroller-color: #fdf6e3;
 
@@ -294,17 +327,94 @@ body:has(.admin-layout)::before {
 }
 
 .admin-filter-pill {
-  background-color: var(--admin-surface-alt) !important;
-  border-color: var(--admin-border) !important;
-  color: var(--admin-text) !important;
+  background-color: var(--admin-pill-bg) !important;
+  border-color: var(--admin-pill-border) !important;
+  color: var(--admin-pill-text) !important;
 }
 .admin-filter-pill:hover {
-  background-color: var(--admin-surface) !important;
+  background-color: var(--admin-pill-hover-bg) !important;
 }
 .admin-filter-pill-selected {
-  background-color: var(--admin-accent-strong) !important;
-  border-color: var(--admin-accent-strong) !important;
-  color: #0f172a !important;
+  background-color: var(--admin-pill-active-bg) !important;
+  border-color: var(--admin-pill-active-border) !important;
+  color: var(--admin-pill-active-text) !important;
+}
+
+.admin-pill {
+  background-color: var(--admin-pill-bg) !important;
+  border-color: var(--admin-pill-border) !important;
+  color: var(--admin-pill-text) !important;
+}
+.admin-pill:hover {
+  background-color: var(--admin-pill-hover-bg) !important;
+}
+.admin-pill-active {
+  background-color: var(--admin-pill-active-bg) !important;
+  border-color: var(--admin-pill-active-border) !important;
+  color: var(--admin-pill-active-text) !important;
+}
+.admin-pill-subtle {
+  background-color: var(--admin-pill-subtle-bg) !important;
+  border-color: var(--admin-pill-border) !important;
+  color: var(--admin-pill-subtle-text) !important;
+}
+.admin-pill-subtle:hover {
+  background-color: var(--admin-pill-subtle-hover-bg) !important;
+}
+.admin-pill-attention {
+  background-color: var(--admin-pill-attention-bg) !important;
+  border-color: var(--admin-pill-attention-border) !important;
+  color: var(--admin-pill-attention-text) !important;
+}
+.admin-pill-attention:hover {
+  background-color: rgba(181, 137, 0, 0.28) !important;
+}
+.admin-pill-attention-active {
+  background-color: var(--admin-pill-attention-active-bg) !important;
+  border-color: var(--admin-pill-attention-active-border) !important;
+  color: var(--admin-pill-attention-active-text) !important;
+}
+.admin-pill-live {
+  background-color: var(--admin-pill-live-bg) !important;
+  border-color: var(--admin-pill-live-border) !important;
+  color: var(--admin-pill-live-text) !important;
+}
+.admin-pill-danger-hover:hover {
+  color: var(--admin-pill-danger-hover) !important;
+}
+
+.admin-help-pill {
+  background-color: var(--admin-pill-subtle-bg) !important;
+  border-color: var(--admin-pill-border) !important;
+  color: var(--admin-pill-text) !important;
+}
+.admin-help-pill:hover {
+  background-color: var(--admin-pill-hover-bg) !important;
+}
+
+.admin-status-pill {
+  border: 1px solid var(--admin-status-pill-border);
+  font-weight: 500;
+}
+.admin-status-pill-muted {
+  background-color: var(--admin-status-pill-muted-bg) !important;
+  color: var(--admin-status-pill-muted-text) !important;
+}
+.admin-status-pill-info {
+  background-color: var(--admin-status-pill-info-bg) !important;
+  color: var(--admin-status-pill-info-text) !important;
+}
+.admin-status-pill-success {
+  background-color: var(--admin-status-pill-success-bg) !important;
+  color: var(--admin-status-pill-success-text) !important;
+}
+.admin-status-pill-warning {
+  background-color: var(--admin-status-pill-warning-bg) !important;
+  color: var(--admin-status-pill-warning-text) !important;
+}
+.admin-status-pill-danger {
+  background-color: var(--admin-status-pill-danger-bg) !important;
+  color: var(--admin-status-pill-danger-text) !important;
 }
 
 .admin-header-ticker-inline {

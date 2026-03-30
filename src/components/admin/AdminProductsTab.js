@@ -530,11 +530,11 @@ function AccessTab({
 
   const TYPE_LABEL = { wc: "WC", lp: "LP", ev: "EV", shop: "DL", other: "URI" };
   const TYPE_COLOR = {
-    wc: "bg-blue-100 text-blue-800",
-    lp: "bg-slate-100 text-slate-800",
-    ev: "bg-amber-100 text-amber-800",
-    shop: "bg-green-100 text-green-800",
-    other: "bg-gray-100 text-gray-600",
+    wc: "admin-status-pill admin-status-pill-info",
+    lp: "admin-status-pill admin-status-pill-muted",
+    ev: "admin-status-pill admin-status-pill-warning",
+    shop: "admin-status-pill admin-status-pill-success",
+    other: "admin-status-pill admin-status-pill-muted",
   };
 
   const allItemsCount =
@@ -793,11 +793,11 @@ function AccessTab({
                   className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                     typeFilter === key
                       ? urgent
-                        ? "bg-amber-500 text-white border-amber-500"
-                        : "bg-slate-600 text-white border-slate-600"
+                        ? "admin-pill-attention-active"
+                        : "admin-pill-active"
                       : urgent
-                        ? "text-amber-600 border-amber-300 hover:border-amber-500"
-                        : "text-gray-500 border-gray-300 hover:border-slate-400"
+                        ? "admin-pill-attention"
+                        : "admin-pill-subtle"
                   }`}
                 >
                   {label}
@@ -831,8 +831,8 @@ function AccessTab({
                   onClick={() => setTypeFilter(key)}
                   className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                     typeFilter === key
-                      ? "bg-slate-600 text-white border-slate-600"
-                      : "text-gray-500 border-gray-300 hover:border-slate-400"
+                      ? "admin-pill-active"
+                      : "admin-pill-subtle"
                   }`}
                 >
                   {label}
