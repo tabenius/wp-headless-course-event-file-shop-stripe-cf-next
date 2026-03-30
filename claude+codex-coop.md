@@ -1,5 +1,16 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — media library panel extraction + derivation flow modularization
+
+- Refactored `AdminMediaLibraryTab` by breaking out major UI surfaces into dedicated components under `src/components/admin/media-library/`:
+  - `FilePreviewTile.js` (file-type preview glyph/tile rendering)
+  - `SelectedAssetPanel.js` (selected asset details/actions/lineage)
+  - `DerivationWorkspacePanel.js` (full derivation apply/edit workspace)
+  - `MediaAnnotationEditorPanel.js` (asset metadata editor panel)
+- Kept feature behavior intact while moving the derivation workspace to an explicit selected-asset flow (apply/edit) and preserving image-only derivation visibility.
+- Added missing i18n keys (EN/SV/ES) for derivation workspace labels, including Swedish terminology updates (`Deriveringsmallar`, `deriveringar`, `derivat (härledd tillgång)`).
+- Validation: targeted ESLint pass for all touched components (warning-only baseline remains on `<img>` optimization), plus JSON parse validation for `en/sv/es` locale files.
+
 ## 2026-03-30 (Codex) — upload guide cleanup + optional manual object mapping
 
 - Landed `6c7ee00` — WHY: upload operators need a minimal, actionable path (host/server, bucket/path, keys) without non-essential fields or forced KV-ingest workflow; checklist copy now focuses on actual upload inputs, bookmark download is promoted to the section header, guide surfaces use non-white sans styling, and the manual object-key/KV mapping form is now explicitly optional and hidden until opened.

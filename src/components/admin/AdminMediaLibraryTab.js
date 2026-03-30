@@ -20,7 +20,6 @@ import {
   MAX_DATA_MB,
   HISTORY_MAX_ENTRIES,
   LS_LAST_OPENED_KEY,
-  resolveAssetFilePreview,
   formatBytes,
   formatResolution,
   formatUpdatedAt,
@@ -54,7 +53,10 @@ import R2ConnectionPanel from "@/components/admin/R2ConnectionPanel";
 import MediaViewerPanel from "@/components/admin/MediaViewerPanel";
 import R2ManualIngestPanel from "@/components/admin/R2ManualIngestPanel";
 import AdminDocsContextLinks from "@/components/admin/AdminDocsContextLinks";
-import AdminFieldHelpLink from "@/components/admin/AdminFieldHelpLink";
+import DerivationWorkspacePanel from "@/components/admin/media-library/DerivationWorkspacePanel";
+import FilePreviewTile from "@/components/admin/media-library/FilePreviewTile";
+import MediaAnnotationEditorPanel from "@/components/admin/media-library/MediaAnnotationEditorPanel";
+import SelectedAssetPanel from "@/components/admin/media-library/SelectedAssetPanel";
 
 const RGB_CHANNELS = ["r", "g", "b"];
 const QUICK_OPERATION_TYPES = [
@@ -103,118 +105,6 @@ function hexToRgb(value) {
   };
 }
 
-function FilePreviewGlyph({ group }) {
-  if (group === "pdf") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M15 3v4h4" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M8 14h8M8 17h6" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    );
-  }
-  if (group === "table") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <rect x="4" y="5" width="16" height="14" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M4 10h16M9 5v14M14 5v14" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    );
-  }
-  if (group === "code") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <path d="M9 8 5 12l4 4M15 8l4 4-4 4M13 6l-2 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (group === "database") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <ellipse cx="12" cy="6" rx="6.5" ry="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M5.5 6v9c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5V6" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M5.5 10.5c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    );
-  }
-  if (group === "archive") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <rect x="4" y="6" width="16" height="13" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M4 10h16M11 6v4h2V6" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    );
-  }
-  if (group === "audio") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <path d="M10 8v8.5a2.2 2.2 0 1 1-1.4-2.1V9.6l8-1.6v6.9a2.2 2.2 0 1 1-1.4-2.1V6.2L10 8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (group === "video") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <rect x="4" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="m17 10 3-2v8l-3-2z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (group === "presentation") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <rect x="4" y="5.5" width="16" height="10.5" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M12 16v3.5M9 19.5h6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  if (group === "font") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <path d="M12 5 6.5 19M12 5 17.5 19M8.2 14h7.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (group === "binary") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <rect x="7" y="7" width="10" height="10" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M4 9h3M4 12h3M4 15h3M17 9h3M17 12h3M17 15h3M9 4v3M12 4v3M15 4v3M9 17v3M12 17v3M15 17v3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  if (group === "document") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-        <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M15 3v4h4M8 12h8M8 15h8M8 18h6" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-file-preview-icon">
-      <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M15 3v4h4" fill="none" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-function FilePreviewTile({ item, compact = false }) {
-  const preview = resolveAssetFilePreview(item);
-  return (
-    <div
-      className={`admin-file-preview ${preview.className} ${
-        compact ? "admin-file-preview-sm" : "admin-file-preview-md"
-      }`}
-      title={item?.fileType || item?.mimeType || preview.label}
-      aria-label={item?.fileType || item?.mimeType || preview.label}
-    >
-      <FilePreviewGlyph group={preview.group} />
-      <span className="admin-file-preview-label">{preview.label}</span>
-    </div>
-  );
-}
-
 export default function AdminMediaLibraryTab({
   uploadBackend = "wordpress",
   uploadInfo = null,
@@ -260,7 +150,7 @@ export default function AdminMediaLibraryTab({
   const [applyProgressLabel, setApplyProgressLabel] = useState("");
   const [previewQuality, setPreviewQuality] = useState("full");
   const [lastPreviewQuality, setLastPreviewQuality] = useState("full");
-  const [showAllDerivations, setShowAllDerivations] = useState(false);
+  const [activeAssetFlow, setActiveAssetFlow] = useState("details");
   const [editorId, setEditorId] = useState("");
   const [editorName, setEditorName] = useState("");
   const [editorDescription, setEditorDescription] = useState("");
@@ -517,12 +407,6 @@ export default function AdminMediaLibraryTab({
     };
   }, [previewBlobUrl]);
 
-  useEffect(() => {
-    if (!selectedDerivationId && derivations.length > 0) {
-      setSelectedDerivationId(derivations[0].id);
-    }
-  }, [derivations, selectedDerivationId]);
-
   const rows = useMemo(() => {
     let nextRows = Array.isArray(items) ? [...items] : [];
     if (typeFilter === "image") {
@@ -650,12 +534,7 @@ export default function AdminMediaLibraryTab({
     [focusedItem],
   );
 
-  const focusedAssetTypeLabel = useMemo(() => {
-    if (!focusedAssetType) return "";
-    if (focusedAssetType === "image") return t("admin.mediaTypeImage", "Images");
-    if (focusedAssetType === "data") return t("admin.mediaTypeData", "Data files");
-    return t("admin.mediaTypeOther", "Other");
-  }, [focusedAssetType]);
+  const focusedAssetSupportsDerivations = focusedAssetType === "image";
 
   const focusedAssetLineage = useMemo(() => {
     const asset = focusedItem?.asset;
@@ -706,15 +585,13 @@ export default function AdminMediaLibraryTab({
     };
   }, [focusedItem, wordpressRowsBySourceId]);
 
-  const filteredDerivations = useMemo(() => {
-    if (showAllDerivations || !focusedAssetType) return derivations;
+  const availableDerivations = useMemo(() => {
+    if (!focusedAssetSupportsDerivations || !focusedAssetType) return [];
     return derivations.filter((entry) => {
       const assetTypes = Array.isArray(entry.assetTypes) ? entry.assetTypes : [];
       return assetTypes.length === 0 || assetTypes.includes(focusedAssetType);
     });
-  }, [derivations, focusedAssetType, showAllDerivations]);
-
-  const availableDerivations = showAllDerivations ? derivations : filteredDerivations;
+  }, [derivations, focusedAssetSupportsDerivations, focusedAssetType]);
 
   useEffect(() => {
     if (availableDerivations.length === 0) {
@@ -728,6 +605,12 @@ export default function AdminMediaLibraryTab({
       setSelectedDerivationId(availableDerivations[0].id);
     }
   }, [availableDerivations, selectedDerivationId]);
+
+  useEffect(() => {
+    if (!focusedAssetSupportsDerivations && activeAssetFlow !== "details") {
+      setActiveAssetFlow("details");
+    }
+  }, [activeAssetFlow, focusedAssetSupportsDerivations]);
 
   const derivationUnboundParameters = useMemo(
     () => getUnboundParameters(customOperations),
@@ -1692,6 +1575,68 @@ export default function AdminMediaLibraryTab({
     );
   }
 
+  function buildDraftDerivationId(seed = "image-derivation") {
+    const base = String(seed || "image-derivation")
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "image-derivation";
+    return `${base}-${Date.now().toString(36)}`;
+  }
+
+  function openDerivationFlow() {
+    if (!focusedAssetSupportsDerivations || availableDerivations.length === 0) {
+      return;
+    }
+    setActiveAssetFlow("derivation");
+    requestAnimationFrame(() => {
+      derivationPanelRef.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function startNewDerivationDraft() {
+    const sourceAssetId = focusedItem?.id || "";
+    setEditorId(buildDraftDerivationId("image-derivation"));
+    setEditorName("");
+    setEditorDescription("");
+    setEditorAssetTypes(["image"]);
+    setCollapsedOperationIndexes([]);
+    setFocusedOperationIndex(0);
+    setDerivationSaveStatus("");
+    setDerivationSaveError("");
+    setDerivationError("");
+    setCustomOperations([
+      {
+        type: "source",
+        params: sourceAssetId ? { assetId: sourceAssetId } : {},
+      },
+    ]);
+    openDerivationFlow();
+  }
+
+  function cloneSelectedDerivationTemplate() {
+    if (!selectedDerivation) return;
+    setEditorId(buildDraftDerivationId(`${selectedDerivation.id}-copy`));
+    setEditorName(
+      `${selectedDerivation.name || t("admin.mediaDerivationsTitle", "Derivation templates")} ${t("admin.mediaDerivationCloneSuffix", "copy")}`,
+    );
+    setEditorDescription(selectedDerivation.description || "");
+    setEditorAssetTypes(
+      Array.isArray(selectedDerivation.assetTypes) && selectedDerivation.assetTypes.length > 0
+        ? [...selectedDerivation.assetTypes]
+        : ["image"],
+    );
+    setCollapsedOperationIndexes([]);
+    setFocusedOperationIndex(-1);
+    setDerivationSaveStatus("");
+    setDerivationSaveError("");
+    setDerivationError("");
+    setCustomOperations(cloneOperations(selectedDerivation.operations || []));
+    openDerivationFlow();
+  }
+
   async function saveDerivationTemplate() {
     if (!editorId.trim() || !editorName.trim() || customOperations.length === 0) {
       setDerivationSaveStatus("error");
@@ -2564,827 +2509,94 @@ export default function AdminMediaLibraryTab({
         </div>
       )}
 
-      {focusedItem && (
-        <div className="rounded border border-slate-200 bg-slate-50 p-4 text-xs space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-xs font-semibold text-slate-800">
-                {t("admin.mediaSelectedAsset", "Selected asset")}
-              </p>
-              <p className="text-[11px] text-slate-700 break-all">
-                {focusedItem.title || focusedItem.key || focusedItem.url}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setFocusedItemId("")}
-              className="px-3 py-1 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
-            >
-              {t("common.clear", "Clear")}
-            </button>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <p className="text-slate-700">
-              {t("admin.mediaTypeLabel", "Type")}: {resolveAssetType(focusedItem)}
-            </p>
-            <p className="text-slate-700">
-              {t("admin.source", "Source")}: {sourceLabel(focusedItem.source)}
-            </p>
-            <p className="text-slate-700">
-              {t("admin.bucketSize", "Size")}: {formatBytes(focusedItem.sizeBytes)}
-            </p>
-            <p className="text-slate-700">
-              {t("admin.resolution", "Resolution")}:{" "}
-              {formatResolution(focusedItem.width, focusedItem.height)}
-            </p>
-            <p className="text-slate-700">
-              {t("admin.bucketLastModified", "Updated")}: {formatUpdatedAt(focusedItem.updatedAt)}
-            </p>
-            {focusedItem.source === "wordpress" && focusedItem.sourceId && (
-              <p className="text-slate-700">
-                {t("admin.mediaWordPressId", "WordPress ID")}: {focusedItem.sourceId}
-              </p>
-            )}
-          </div>
-          {focusedAssetLineage.hasLineage && (
-            <div className="rounded border border-slate-200 bg-white/70 p-2 space-y-2">
-              <div>
-                <p className="text-[11px] font-semibold text-slate-800">
-                  {t("admin.mediaAssetLineageTitle", "Asset lineage")}
-                </p>
-                <p className="text-[11px] text-slate-700">
-                  {t(
-                    "admin.mediaAssetLineageHint",
-                    "Jump between original and variant attachments that share the same asset ID.",
-                  )}
-                </p>
-              </div>
-              {(focusedAssetLineage.original?.item ||
-                focusedAssetLineage.original?.url) && (
-                <div className="space-y-1">
-                  <p className="text-[11px] font-semibold text-slate-800">
-                    {t("admin.mediaAssetOriginal", "Original")}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {focusedAssetLineage.original.item ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          focusItemById(focusedAssetLineage.original.item.id)
-                        }
-                        className="admin-pill px-2 py-1 rounded border text-[11px]"
-                      >
-                        {focusedAssetLineage.original.item.title ||
-                          `${t("admin.mediaWordPressId", "WordPress ID")} #${focusedAssetLineage.original.item.sourceId}`}
-                      </button>
-                    ) : (
-                      <a
-                        href={focusedAssetLineage.original.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] text-slate-700 hover:underline break-all"
-                      >
-                        {focusedAssetLineage.original.url}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-              {focusedAssetLineage.variants.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[11px] font-semibold text-slate-800">
-                    {t("admin.mediaAssetVariants", "Variants")} (
-                    {focusedAssetLineage.variants.length})
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {focusedAssetLineage.variants.map((variant) => {
-                      const isCurrent =
-                        variant.sourceId != null &&
-                        Number(variant.sourceId) === Number(focusedItem.sourceId);
-                      const labelParts = [
-                        variant.variantKind || t("admin.mediaVariant", "Variant"),
-                        variant.format || "",
-                        variant.sourceId != null
-                          ? `#${variant.sourceId}`
-                          : "",
-                        isCurrent ? t("admin.mediaCurrent", "current") : "",
-                      ].filter(Boolean);
-                      const label = labelParts.join(" · ");
-                      if (variant.linkedItem) {
-                        return (
-                          <button
-                            key={variant.key}
-                            type="button"
-                            onClick={() => focusItemById(variant.linkedItem.id)}
-                            className={`px-2 py-1 rounded border text-[11px] ${
-                              isCurrent
-                                ? "admin-pill-active"
-                                : "admin-pill"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        );
-                      }
-                      if (variant.url) {
-                        return (
-                          <a
-                            key={variant.key}
-                            href={variant.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`px-2 py-1 rounded border text-[11px] ${
-                              isCurrent
-                                ? "admin-pill-active"
-                                : "admin-pill"
-                            }`}
-                          >
-                            {label}
-                          </a>
-                        );
-                      }
-                      return (
-                        <span
-                          key={variant.key}
-                          className={`px-2 py-1 rounded border text-[11px] ${
-                            isCurrent
-                              ? "admin-pill-active"
-                              : "admin-pill"
-                          }`}
-                        >
-                          {label}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => copyUrl(focusedItem.url)}
-              className="px-3 py-1.5 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
-            >
-              {t("admin.bucketCopyUrl", "Copy URL")}
-            </button>
-            {(canOpenDataViewer(focusedItem) || canPreviewImage(focusedItem)) && (
-              <button
-                type="button"
-                onClick={() => openViewer(focusedItem)}
-                className="px-3 py-1.5 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
-              >
-                {t("admin.mediaViewFile", "View")}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => openEditor(focusedItem)}
-              className="px-3 py-1.5 rounded border text-[11px] hover:bg-slate-100 text-slate-700"
-            >
-              {t("admin.mediaAnnotate", "Annotate")}
-            </button>
-          </div>
-        </div>
-      )}
+      <SelectedAssetPanel
+        focusedItem={focusedItem}
+        focusedAssetLineage={focusedAssetLineage}
+        focusedAssetSupportsDerivations={focusedAssetSupportsDerivations}
+        availableDerivations={availableDerivations}
+        activeAssetFlow={activeAssetFlow}
+        onActivateDetailsFlow={() => setActiveAssetFlow("details")}
+        onOpenDerivationFlow={openDerivationFlow}
+        onClearFocus={() => setFocusedItemId("")}
+        onFocusItemById={focusItemById}
+        onCopyUrl={copyUrl}
+        onOpenViewer={openViewer}
+        onOpenEditor={openEditor}
+      />
 
-      {derivations.length > 0 && (
-        <div
-          ref={derivationPanelRef}
-          onKeyDown={handleDerivationPanelKeyDown}
-          className="rounded border border-slate-200 bg-slate-50 p-4 text-xs space-y-3"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800">
-                <span>{t("admin.mediaDerivationsTitle", "Derivation templates")}</span>
-                <AdminFieldHelpLink slug="technical-manual" />
-              </p>
-              <p className="text-[11px] text-slate-700">
-                {t(
-                  "admin.mediaDerivationsHint",
-                  "Choose an operation chain and tweak parameters before applying the derivation to the selected asset.",
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAllDerivations((current) => !current)}
-                className="px-3 py-1 rounded border text-[11px] bg-white"
-              >
-                {showAllDerivations
-                  ? t("admin.mediaDerivationShowMatching", "Show matching derivations")
-                  : t("admin.mediaDerivationShowAll", "Show all derivations")}
-              </button>
-              <select
-                className="border rounded px-2 py-1 text-xs bg-white"
-                value={selectedDerivationId}
-                onChange={(event) => setSelectedDerivationId(event.target.value)}
-              >
-                {availableDerivations.map((derivation) => (
-                  <option key={derivation.id} value={derivation.id}>
-                    {derivation.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <p className="text-[11px] text-slate-700">
-            {showAllDerivations
-              ? t("admin.mediaDerivationShowAllHint", "Showing all derivations.")
-              : focusedAssetType
-                ? t("admin.mediaDerivationMatchingHint", {
-                    type: focusedAssetTypeLabel,
-                  })
-                : t(
-                    "admin.mediaDerivationSelectAssetHint",
-                    "Select an asset to narrow derivation suggestions.",
-                  )}
-          </p>
-          <div className="space-y-3">
-            <div className="grid gap-3 lg:grid-cols-3">
-              <label className="space-y-1 text-[11px] text-gray-700">
-                <span className="inline-flex items-center gap-1">
-                  <span>{t("admin.mediaDerivationId", "Derivation ID")}</span>
-                  <AdminFieldHelpLink slug="technical-manual" />
-                </span>
-                <input
-                  type="text"
-                  value={editorId}
-                  onChange={(event) => setEditorId(event.target.value)}
-                  className="w-full border rounded px-2 py-1 text-xs"
-                />
-              </label>
-              <label className="space-y-1 text-[11px] text-gray-700">
-                <span className="inline-flex items-center gap-1">
-                  <span>{t("admin.mediaDerivationName", "Name")}</span>
-                  <AdminFieldHelpLink slug="technical-manual" />
-                </span>
-                <input
-                  type="text"
-                  value={editorName}
-                  onChange={(event) => setEditorName(event.target.value)}
-                  className="w-full border rounded px-2 py-1 text-xs"
-                />
-              </label>
-              <label className="space-y-1 text-[11px] text-gray-700 lg:col-span-3">
-                <span className="inline-flex items-center gap-1">
-                  <span>{t("admin.mediaDerivationDescription", "Description")}</span>
-                  <AdminFieldHelpLink slug="technical-manual" />
-                </span>
-                <input
-                  type="text"
-                  value={editorDescription}
-                  onChange={(event) => setEditorDescription(event.target.value)}
-                  className="w-full border rounded px-2 py-1 text-xs"
-                />
-              </label>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <span>{t("admin.mediaDerivationAssetTypes", "Applicable asset types")}</span>
-                <AdminFieldHelpLink slug="technical-manual" />
-              </span>
-              {[
-                { key: "image", label: t("admin.mediaTypeImage", "Images") },
-                { key: "data", label: t("admin.mediaTypeData", "Data files") },
-                { key: "other", label: t("admin.mediaTypeOther", "Other") },
-              ].map((option) => (
-                <label key={option.key} className="flex items-center gap-1 text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={editorAssetTypes.includes(option.key)}
-                    onChange={() => handleToggleAssetType(option.key)}
-                    className="h-4 w-4"
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          {customOperations.length > 0 && (
-            <div className="space-y-3 rounded border border-slate-100 bg-slate-50 p-3 text-[11px] text-slate-700">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 space-y-1">
-                  <p className="text-[11px] font-semibold text-slate-800">
-                    {t("admin.mediaDerivationSummaryTitle", "Derivation preview")}
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900 truncate">
-                    {editorName?.trim() || derivationPseudoName}
-                  </p>
-                  <p className="text-[11px] text-slate-600">
-                    {t("admin.mediaDerivationPseudoName", {
-                      name: derivationPseudoName,
-                    })}
-                  </p>
-                </div>
-                <span
-                  className={`rounded px-2 py-0.5 text-[11px] font-semibold ${
-                    derivationIsConcrete
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-amber-100 text-amber-800"
-                  }`}
-                >
-                  {derivationIsConcrete
-                    ? t("admin.mediaDerivationStatusConcrete", "Concrete derivation")
-                    : t("admin.mediaDerivationStatusAbstract", "Abstract derivation")}
-                </span>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold text-slate-800">
-                  {t("admin.mediaDerivationUnboundLabel", "Unbound parameters")}
-                </p>
-                {derivationUnboundParameters.length === 0 ? (
-                  <p className="text-[11px] text-slate-600">
-                    {t("admin.mediaDerivationAllBound", "All operation parameters are bound.")}
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {derivationUnboundParameters.map((entry, entryIndex) => (
-                      <span
-                        key={`${entry.operator}-${entry.param}-${entryIndex}`}
-                        className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700"
-                      >
-                        {entry.operator}: {entry.param}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold text-slate-800">
-                  {t(
-                    "admin.mediaDerivationInvalidNumericLabel",
-                    "Invalid numeric parameters",
-                  )}
-                </p>
-                {derivationInvalidParameters.length === 0 ? (
-                  <p className="text-[11px] text-slate-600">
-                    {t(
-                      "admin.mediaDerivationAllNumericValid",
-                      "All numeric parameters are valid.",
-                    )}
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {derivationInvalidParameters.map((entry, entryIndex) => (
-                      <span
-                        key={`${entry.operator}-${entry.param}-invalid-${entryIndex}`}
-                        className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] text-red-700"
-                      >
-                        {entry.operator}: {entry.param}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="rounded border border-slate-100 bg-white p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-slate-700">
-                    {t("admin.mediaDerivationMatrixTitle", "Operation matrix")}
-                  </p>
-                </div>
-                <div className="overflow-auto">
-                  <table className="min-w-full text-[11px] text-gray-600">
-                    <thead>
-                      <tr>
-                        <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
-                          {t("admin.mediaDerivationMatrixStepHeader", "Step")}
-                        </th>
-                        <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
-                          {t("admin.mediaDerivationMatrixOperatorHeader", "Operator")}
-                        </th>
-                        <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
-                          {t("admin.mediaDerivationMatrixParametersHeader", "Parameters")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {derivationMatrixRows.map((row) => (
-                        <tr key={`${row.operation.type}-${row.index}`}>
-                          <td className="px-2 py-1 text-[11px] font-semibold text-slate-800">
-                            {row.index + 1}
-                          </td>
-                          <td className="px-2 py-1">
-                            <p className="font-semibold text-slate-800">
-                              {row.schema?.label || row.operation.type}
-                            </p>
-                            {row.operation.type === "source" && (
-                              <p className="text-[10px] text-gray-500">
-                                {row.operation.params?.assetId
-                                  ? row.operation.params.assetId
-                                  : t("admin.mediaDerivationSourceUnbound", "Source is unbound")}
-                              </p>
-                            )}
-                          </td>
-                          <td className="px-2 py-1">
-                            {row.params.length === 0 ? (
-                              <span className="text-[10px] text-gray-500">—</span>
-                            ) : (
-                              <div className="flex flex-wrap gap-1">
-                                {row.params.map((param) => (
-                                  <span
-                                    key={`${row.index}-${param.key}`}
-                                    className={`rounded-full px-2 py-0.5 border text-[10px] ${
-                                      param.bound
-                                        ? "border-slate-200 bg-slate-50 text-slate-800"
-                                        : "border-amber-200 bg-amber-50 text-amber-800"
-                                    }`}
-                                  >
-                                    {param.bound
-                                      ? `${param.key}=${formatParameterValue(param.value)}`
-                                      : param.key}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-          {customOperations.length === 0 && (
-            <p className="text-[11px] text-slate-700">
-              {t("admin.mediaDerivationNoOperations", "Select a derivation to edit its operations.")}
-            </p>
-          )}
-          {customOperations.length > 0 && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={collapseAllOperations}
-                className="rounded border border-slate-200 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
-              >
-                {t("admin.mediaDerivationCollapseAll", "Collapse all")}
-              </button>
-              <button
-                type="button"
-                onClick={expandAllOperations}
-                className="rounded border border-slate-200 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
-              >
-                {t("admin.mediaDerivationExpandAll", "Expand all")}
-              </button>
-            </div>
-          )}
-          {customOperations.map((operation, index) => {
-            const schema = OPERATION_SCHEMAS[operation.type];
-            const registrySchema = OPERATION_REGISTRY[operation.type];
-            const isFirst = index === 0;
-            const isLast = index === customOperations.length - 1;
-            const isCollapsed = isOperationCollapsed(index);
-            const summaryParts = getOperationSummary(operation);
-            const isFocused = focusedOperationIndex === index;
-            return (
-              <div
-                key={`${operation.type}-${index}`}
-                className={`rounded border bg-white p-3 space-y-2 outline-none ${
-                  isFocused
-                    ? "border-slate-400 ring-2 ring-slate-200"
-                    : "border-slate-100"
-                }`}
-                tabIndex={0}
-                onKeyDown={(event) => handleOperationEditorKeyDown(event, index)}
-                onFocusCapture={() => setFocusedOperationIndex(index)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-slate-800">
-                      {schema?.label || operation.type}
-                    </p>
-                    {registrySchema?.tip && (
-                      <p className="text-[10px] text-slate-700 truncate">
-                        {registrySchema.tip}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[11px] text-slate-600">
-                      {t("admin.mediaDerivationStep", { n: index + 1 })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleOperationCollapsed(index)}
-                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                      title={isCollapsed
-                        ? t("admin.mediaDerivationExpandStep", "Expand step")
-                        : t("admin.mediaDerivationCollapseStep", "Collapse step")}
-                    >
-                      {isCollapsed
-                        ? t("admin.mediaDerivationExpandStepShort", "Open")
-                        : t("admin.mediaDerivationCollapseStepShort", "Fold")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMoveOperation(index, -1)}
-                      disabled={isFirst}
-                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                      title={t("admin.mediaDerivationMoveStepUp", "Move step up")}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMoveOperation(index, 1)}
-                      disabled={isLast}
-                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                      title={t("admin.mediaDerivationMoveStepDown", "Move step down")}
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDuplicateOperation(index)}
-                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                      title={t("admin.mediaDerivationDuplicateStep", "Duplicate step")}
-                    >
-                      {t("admin.mediaDerivationDuplicateStepShort", "Dup")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleBindMissingOperationParams(index)}
-                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                      title={t("admin.mediaDerivationBindMissingParams", "Bind missing params")}
-                    >
-                      {t("admin.mediaDerivationBindMissingShort", "Bind")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleResetOperationDefaults(index)}
-                      className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                      title={t("admin.mediaDerivationResetStepDefaults", "Reset to defaults")}
-                    >
-                      {t("admin.mediaDerivationResetStepDefaultsShort", "Reset")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveOperation(index)}
-                      className="rounded border border-red-200 px-1 py-0.5 text-[10px] text-red-600 hover:bg-red-50"
-                    >
-                      {t("admin.mediaDerivationRemoveStep", "Remove step")}
-                    </button>
-                  </div>
-                </div>
-                {registrySchema?.techTip && (
-                  <p className="text-[10px] text-slate-500">
-                    {registrySchema.techTip}
-                  </p>
-                )}
-                {isCollapsed && (
-                  <div className="flex flex-wrap gap-1">
-                    {summaryParts.length === 0 ? (
-                      <span className="text-[10px] text-slate-500">
-                        {t("admin.mediaDerivationNoParams", "No parameters")}
-                      </span>
-                    ) : (
-                      summaryParts.map((part, partIndex) => (
-                        <span
-                          key={`${operation.type}-${index}-summary-${partIndex}`}
-                          className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-800"
-                        >
-                          {part}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                )}
-                {!isCollapsed && (
-                  <>
-                {operation.type === "source" && (
-                  <p className="text-[11px] text-slate-600">
-                    {t(
-                      "admin.mediaDerivationSourceHint",
-                      "The source step tracks the asset you select in the table above.",
-                    )}
-                  </p>
-                )}
-                {schema?.parameters?.map((param) =>
-                  renderOperationParamField(operation, index, param),
-                )}
-                <p className="text-[10px] text-slate-500">
-                  {t(
-                    "admin.mediaDerivationStepHotkeys",
-                    "Tip: Alt+F fold, Alt+B bind, Alt+R reset, Alt+ArrowUp/Down move.",
-                  )}
-                </p>
-                  </>
-                )}
-              </div>
-            );
-          })}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">
-              <span className="text-[11px] font-semibold text-slate-700">
-                {t("admin.mediaDerivationQuickAdd", "Quick add")}
-              </span>
-              {quickOperationButtons.map((entry) => (
-                <button
-                  key={`quick-add-${entry.type}`}
-                  type="button"
-                  onClick={() => addOperationByType(entry.type)}
-                  className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
-                >
-                  {entry.schema?.icon ? `${entry.schema.icon} ` : ""}
-                  {entry.schema?.label || entry.type}
-                </button>
-              ))}
-            </div>
-            <label className="flex items-center gap-2 text-[11px] text-gray-700">
-              <span>{t("admin.mediaDerivationFindOperation", "Find operation")}</span>
-              <input
-                ref={operationSearchInputRef}
-                type="search"
-                value={operationSearchTerm}
-                onChange={(event) => setOperationSearchTerm(event.target.value)}
-                placeholder={t("admin.mediaDerivationFindOperationPlaceholder", "Search by name or effect")}
-                className="w-56 border rounded px-2 py-1 text-xs"
-              />
-            </label>
-            <label className="flex items-center gap-2 text-[11px] text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <span>{t("admin.mediaDerivationAddOperationLabel", "Add operation")}</span>
-                <AdminFieldHelpLink slug="technical-manual" />
-              </span>
-              <select
-                className="border rounded px-2 py-1 text-xs bg-white"
-                value={selectedVisibleOperationType}
-                onChange={(event) => setNewOperationType(event.target.value)}
-              >
-                {filteredOperationPickerGroups.length === 0 && (
-                  <option value="" disabled>
-                    {t("admin.mediaDerivationNoMatchingOperations", "No matching operations")}
-                  </option>
-                )}
-                {filteredOperationPickerGroups.map((group) => (
-                  <optgroup key={group.key} label={group.label}>
-                    {group.operations.map((operation) => (
-                      <option key={operation.type} value={operation.type}>
-                        {operation.icon ? `${operation.icon} ` : ""}
-                        {operation.label || operation.type}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={handleAddOperation}
-              disabled={!selectedVisibleOperationType || filteredOperationPickerGroups.length === 0}
-              className="px-3 py-1 rounded border text-[11px] bg-white"
-            >
-              {t("admin.mediaDerivationAddOperation", "Add operation")}
-            </button>
-            <span className="text-[10px] text-slate-600">
-              {t(
-                "admin.mediaDerivationPanelHotkeys",
-                "Panel hotkeys: Alt+/ search, Alt+N add, Alt+E collapse all, Alt+Shift+E expand all.",
-              )}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex items-center gap-2 text-[11px] text-slate-700">
-              <span>{t("admin.mediaDerivationPreviewQuality", "Preview quality")}</span>
-              <select
-                className="border rounded px-2 py-1 text-xs bg-white"
-                value={previewQuality}
-                onChange={(event) => setPreviewQuality(event.target.value)}
-                disabled={applyingDerivation}
-              >
-                <option value="full">
-                  {t("admin.mediaDerivationPreviewQualityFull", "Full")}
-                </option>
-                <option value="fast">
-                  {t("admin.mediaDerivationPreviewQualityFast", "Fast")}
-                </option>
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={saveDerivationTemplate}
-              disabled={derivationSaveStatus === "saving"}
-              className="admin-pill-active px-3 py-1.5 rounded text-xs disabled:opacity-50"
-            >
-              {t("admin.mediaDerivationSave", "Save derivation")}
-            </button>
-            <button
-              type="button"
-              onClick={applySelectedDerivation}
-              disabled={
-                applyingDerivation || savingPreview || !canApplyDerivationNow()
-              }
-              className="admin-pill-active px-3 py-1.5 rounded text-xs disabled:opacity-50"
-            >
-              {applyingDerivation
-                ? t("admin.mediaDerivationApplying", "Applying…")
-                : t("admin.mediaApplyDerivation", "Apply derivation")}
-
-            </button>
-            <button
-              type="button"
-              onClick={applyFullQualityAndSave}
-              disabled={
-                applyingDerivation || savingPreview || !canApplyDerivationNow()
-              }
-              className="admin-pill-live px-3 py-1.5 rounded text-xs disabled:opacity-50"
-            >
-              {applyingDerivation || savingPreview
-                ? t("admin.mediaSavingDerivedAsset", "Saving…")
-                : t("admin.mediaApplyDerivationAndSave", "Apply full-quality and save")}
-            </button>
-            <button
-              type="button"
-              onClick={savePreviewToLibrary}
-              disabled={!previewBlob || savingPreview || lastPreviewQuality === "fast"}
-              className="admin-pill px-3 py-1.5 rounded border text-[11px] disabled:opacity-50"
-            >
-              {savingPreview
-                ? t("admin.mediaSavingDerivedAsset", "Saving…")
-                : t("admin.mediaSaveDerivedAsset", "Save to library")}
-            </button>
-            {!focusedItem && (
-              <span className="text-[11px] text-slate-600">
-                {t("admin.mediaDerivationRequiresAsset", "Select an asset first.")}
-              </span>
-            )}
-            {focusedItem && derivationUnboundParameters.length > 0 && (
-              <span className="text-[11px] text-amber-700">
-                {t(
-                  "admin.mediaDerivationFillParameters",
-                  "Fill all operation parameters before applying the derivation.",
-                )}
-              </span>
-            )}
-            {focusedItem && derivationInvalidParameters.length > 0 && (
-              <span className="text-[11px] text-red-700">
-                {t(
-                  "admin.mediaDerivationFixInvalidNumeric",
-                  "Fix invalid numeric parameters before applying the derivation.",
-                )}
-              </span>
-            )}
-            {previewBlob && lastPreviewQuality === "fast" && (
-              <span className="text-[11px] text-amber-700">
-                {t(
-                  "admin.mediaDerivationFastPreviewSaveBlocked",
-                  "Save is blocked for Fast preview. Use Apply full-quality and save.",
-                )}
-              </span>
-            )}
-          </div>
-          {applyingDerivation && (
-            <div className="space-y-1 py-1">
-              <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-slate-500 transition-all duration-500 ease-out"
-                  style={{ width: `${applyProgress}%` }}
-                />
-              </div>
-              {applyProgressLabel && (
-                <p className="text-[10px] text-slate-400">{applyProgressLabel}</p>
-              )}
-            </div>
-          )}
-          {derivationSaveStatus === "saved" && (
-            <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
-              {t("admin.mediaDerivationSaveSuccess", "Derivation saved.")}
-            </p>
-          )}
-          {(derivationSaveError || derivationError) && (
-            <p className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1">
-              {derivationSaveError || derivationError}
-            </p>
-          )}
-          {previewBlobUrl && (
-            <div className="rounded border border-slate-100 bg-white p-3 space-y-2">
-              <p className="text-[11px] font-semibold text-slate-800">
-                {t("admin.mediaDerivationPreview", "Derivation preview")}
-              </p>
-              {lastPreviewQuality === "fast" && (
-                <p className="text-[11px] text-amber-700">
-                  {t(
-                    "admin.mediaDerivationPreviewQualityFastHint",
-                    "Fast preview may be downscaled for speed. Re-run with Full before saving final output.",
-                  )}
-                </p>
-              )}
-              <img
-                src={previewBlobUrl}
-                alt={t("admin.mediaDerivationPreviewAlt", "Derived image preview")}
-                className="max-w-full rounded border"
-                style={{ maxHeight: 300 }}
-              />
-              {savePreviewError && (
-                <p className="text-[11px] text-red-700">{savePreviewError}</p>
-              )}
-            </div>
-          )}
-        </div>
+      {focusedAssetSupportsDerivations &&
+        activeAssetFlow === "derivation" &&
+        availableDerivations.length > 0 && (
+        <DerivationWorkspacePanel
+          derivationPanelRef={derivationPanelRef}
+          handleDerivationPanelKeyDown={handleDerivationPanelKeyDown}
+          startNewDerivationDraft={startNewDerivationDraft}
+          cloneSelectedDerivationTemplate={cloneSelectedDerivationTemplate}
+          selectedDerivation={selectedDerivation}
+          setActiveAssetFlow={setActiveAssetFlow}
+          selectedDerivationId={selectedDerivationId}
+          setSelectedDerivationId={setSelectedDerivationId}
+          setDerivationSaveStatus={setDerivationSaveStatus}
+          setDerivationSaveError={setDerivationSaveError}
+          setDerivationError={setDerivationError}
+          availableDerivations={availableDerivations}
+          editorId={editorId}
+          setEditorId={setEditorId}
+          editorName={editorName}
+          setEditorName={setEditorName}
+          editorDescription={editorDescription}
+          setEditorDescription={setEditorDescription}
+          editorAssetTypes={editorAssetTypes}
+          handleToggleAssetType={handleToggleAssetType}
+          customOperations={customOperations}
+          derivationPseudoName={derivationPseudoName}
+          derivationIsConcrete={derivationIsConcrete}
+          derivationUnboundParameters={derivationUnboundParameters}
+          derivationInvalidParameters={derivationInvalidParameters}
+          derivationMatrixRows={derivationMatrixRows}
+          collapseAllOperations={collapseAllOperations}
+          expandAllOperations={expandAllOperations}
+          isOperationCollapsed={isOperationCollapsed}
+          getOperationSummary={getOperationSummary}
+          focusedOperationIndex={focusedOperationIndex}
+          setFocusedOperationIndex={setFocusedOperationIndex}
+          handleOperationEditorKeyDown={handleOperationEditorKeyDown}
+          toggleOperationCollapsed={toggleOperationCollapsed}
+          handleMoveOperation={handleMoveOperation}
+          handleDuplicateOperation={handleDuplicateOperation}
+          handleBindMissingOperationParams={handleBindMissingOperationParams}
+          handleResetOperationDefaults={handleResetOperationDefaults}
+          handleRemoveOperation={handleRemoveOperation}
+          renderOperationParamField={renderOperationParamField}
+          quickOperationButtons={quickOperationButtons}
+          addOperationByType={addOperationByType}
+          operationSearchInputRef={operationSearchInputRef}
+          operationSearchTerm={operationSearchTerm}
+          setOperationSearchTerm={setOperationSearchTerm}
+          selectedVisibleOperationType={selectedVisibleOperationType}
+          filteredOperationPickerGroups={filteredOperationPickerGroups}
+          setNewOperationType={setNewOperationType}
+          handleAddOperation={handleAddOperation}
+          previewQuality={previewQuality}
+          setPreviewQuality={setPreviewQuality}
+          applyingDerivation={applyingDerivation}
+          saveDerivationTemplate={saveDerivationTemplate}
+          derivationSaveStatus={derivationSaveStatus}
+          applySelectedDerivation={applySelectedDerivation}
+          savingPreview={savingPreview}
+          canApplyDerivationNow={canApplyDerivationNow}
+          applyFullQualityAndSave={applyFullQualityAndSave}
+          savePreviewToLibrary={savePreviewToLibrary}
+          previewBlob={previewBlob}
+          lastPreviewQuality={lastPreviewQuality}
+          focusedItem={focusedItem}
+          applyProgress={applyProgress}
+          applyProgressLabel={applyProgressLabel}
+          derivationSaveError={derivationSaveError}
+          derivationError={derivationError}
+          previewBlobUrl={previewBlobUrl}
+          savePreviewError={savePreviewError}
+        />
       )}
 
       <MediaViewerPanel
@@ -3394,264 +2606,17 @@ export default function AdminMediaLibraryTab({
         viewerData={viewerData}
         onClose={closeViewer}
       />
-      {selectedItem && editor && (
-        <div className="rounded border bg-gray-50 p-4 space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-800">
-                {t("admin.mediaAnnotate", "Annotate")}
-              </h3>
-              <p className="text-xs text-gray-500 break-all">
-                {selectedItem.title || selectedItem.url}
-              </p>
-              <p className="text-xs text-gray-500">
-                {t(
-                  "admin.mediaAnnotateHint",
-                  "Manage caption, alt text, tooltip, and rights metadata for this asset.",
-                )}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={closeEditor}
-              className="px-3 py-1.5 rounded border text-xs hover:bg-gray-100"
-            >
-              {t("common.close", "Close")}
-            </button>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="space-y-1 text-xs text-gray-600">
-              <span>{t("common.name", "Name")}</span>
-              <input
-                type="text"
-                value={editor.title}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    title: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600">
-              <span>{t("admin.imageLicenseLabel", "License")}</span>
-              <input
-                type="text"
-                value={editor.license}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    license: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
-              <span>{t("admin.imageCaption", "Caption")}</span>
-              <input
-                type="text"
-                value={editor.caption}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    caption: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600">
-              <span>{t("admin.imageAltText", "Alt text")}</span>
-              <input
-                type="text"
-                value={editor.altText}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    altText: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600">
-              <span>{t("admin.imageTooltip", "Tooltip")}</span>
-              <input
-                type="text"
-                value={editor.tooltip}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    tooltip: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
-              <span>{t("admin.imageDescription", "Description")}</span>
-              <textarea
-                value={editor.description}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-                rows={3}
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
-              <span>{t("admin.mediaUsageNotes", "Usage notes")}</span>
-              <textarea
-                value={editor.usageNotes}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    usageNotes: event.target.value,
-                  }))
-                }
-                rows={3}
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-                placeholder={t(
-                  "admin.mediaUsageNotesPlaceholder",
-                  "How should this asset be used, and by which systems?",
-                )}
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
-              <span>{t("admin.mediaStructuredMeta", "Structured metadata (JSON/YAML)")}</span>
-              <textarea
-                value={editor.structuredMeta}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    structuredMeta: event.target.value,
-                  }))
-                }
-                rows={5}
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800 font-mono"
-                placeholder={t(
-                  "admin.mediaStructuredMetaPlaceholder",
-                  "Example: columns with types, schema version, table semantics, etc.",
-                )}
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
-              <span>{t("admin.mediaSchemaRef", "Schema reference")}</span>
-              <input
-                type="text"
-                value={editor.schemaRef}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    schemaRef: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-                placeholder={t(
-                  "admin.mediaSchemaRefPlaceholder",
-                  "URL or key to external schema/contract documentation",
-                )}
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600">
-              <span>{t("admin.mediaOwnerUri", "Owner URI")}</span>
-              <input
-                type="text"
-                value={editor.ownerUri}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    ownerUri: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-                placeholder={t("admin.mediaOwnerUriPlaceholder", "/")}
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600">
-              <span>{t("admin.mediaAssetSlug", "Asset slug (optional)")}</span>
-              <input
-                type="text"
-                value={editor.assetSlug}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    assetSlug: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-                placeholder={t("admin.mediaAssetSlugPlaceholder", "optional-human-readable-label")}
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
-              <span>{t("admin.mediaAssetUri", "Asset URI (asset-id based)")}</span>
-              <input
-                type="text"
-                value={editor.assetUri}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    assetUri: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-                placeholder={t("admin.mediaAssetUriPlaceholder", "/asset/<asset-id>")}
-              />
-            </label>
-            <label className="space-y-1 text-xs text-gray-600">
-              <span>{t("admin.imageCopyrightHolderLabel", "Copyright holder")}</span>
-              <input
-                type="text"
-                value={editor.copyrightHolder}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    copyrightHolder: event.target.value,
-                  }))
-                }
-                className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-              />
-            </label>
-          </div>
-
-          {saveError && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
-              {saveError}
-            </p>
-          )}
-          {saveSuccess && (
-            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5">
-              {saveSuccess}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={suggestAnnotations}
-              className="px-3 py-1.5 rounded border text-xs hover:bg-gray-100"
-            >
-              {t("admin.mediaSuggestAlt", "Suggest alt/tooltip")}
-            </button>
-            <button
-              type="button"
-              onClick={saveAnnotations}
-              disabled={saveLoading}
-              className="px-3 py-1.5 rounded bg-gray-800 text-white text-xs hover:bg-gray-700 disabled:opacity-50"
-            >
-              {saveLoading
-                ? t("admin.mediaSavingMetadata", "Saving…")
-                : t("admin.mediaSaveMetadata", "Save metadata")}
-            </button>
-          </div>
-        </div>
-      )}
+      <MediaAnnotationEditorPanel
+        selectedItem={selectedItem}
+        editor={editor}
+        setEditor={setEditor}
+        closeEditor={closeEditor}
+        saveError={saveError}
+        saveSuccess={saveSuccess}
+        suggestAnnotations={suggestAnnotations}
+        saveAnnotations={saveAnnotations}
+        saveLoading={saveLoading}
+      />
 
       <R2ConnectionPanel
         uploadBackend={uploadBackend}
