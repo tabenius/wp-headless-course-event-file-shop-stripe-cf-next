@@ -3,19 +3,29 @@
 import { getLocale, t } from "@/lib/i18n";
 import { buildRagbazDocsUrl, normalizeDocsLanguage } from "@/lib/ragbazDocs";
 
+const SLUG_TOPIC_KEYS = {
+  "quick-start": "docsGuideQuickStart",
+  "product-value": "docsGuideProductValue",
+  "performance-explained": "docsGuidePerformance",
+  "technical-manual": "docsGuideTechnical",
+};
+
 export default function AdminFieldHelpLink({ slug, topic = "", className = "" }) {
   const docsLang = normalizeDocsLanguage(getLocale());
   const href = buildRagbazDocsUrl({ lang: docsLang, slug });
-  const tooltipBase = topic
+  const resolvedTopic =
+    topic || (SLUG_TOPIC_KEYS[slug] ? t(`admin.${SLUG_TOPIC_KEYS[slug]}`) : "");
+  const tooltip = resolvedTopic
     ? t("admin.docsOpenGuideTooltipFor", {
-        topic,
+        topic: resolvedTopic,
         lang: docsLang.toUpperCase(),
       })
     : t("admin.docsOpenGuideTooltip", {
         lang: docsLang.toUpperCase(),
       });
-  const tooltip = tooltipBase;
-  const aria = t("admin.docsOpenGuideAria", "Open related guide");
+  const aria = resolvedTopic
+    ? t("admin.docsOpenGuideAria", "Open related guide") + ": " + resolvedTopic
+    : t("admin.docsOpenGuideAria", "Open related guide");
 
   return (
     <a
