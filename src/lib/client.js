@@ -139,11 +139,13 @@ function getEdgeCache() {
 function shouldRecordAvailabilityForCurrentRequest() {
   try {
     const store = globalThis?.__openNextAls?.getStore?.();
+    // Unknown request context: fail closed to protect static/ISR routes.
+    if (!store || typeof store !== "object") return false;
     if (store?.isStaticGeneration === true) return false;
     if (store?.isISRRevalidation === true) return false;
     return true;
   } catch {
-    return true;
+    return false;
   }
 }
 

@@ -99,6 +99,16 @@ The lock is created automatically by `scripts/build-with-lock.mjs` and removed o
   - SiteToken JWT (if configured) → Relay secret header → Basic app password → Bearer token.
 - Keep relay secret distinct from storefront app-password/JWT credentials; relay can be rotated/disabled from plugin Connect UI.
 
+### GraphQL availability logging safety
+
+- `GRAPHQL_AVAILABILITY_AUTO_RECORD` is **off by default** and must stay off unless the user explicitly asks to enable it for a bounded diagnostic window.
+- Before enabling `GRAPHQL_AVAILABILITY_AUTO_RECORD=1`, the active agent must warn both:
+  - the user in-chat, and
+  - the other agent via `claude+codex-coop.md`,
+  about static/ISR static→dynamic risk and expected telemetry tradeoffs.
+- If enabled temporarily, record the start/stop intent in coop and turn it back off (`0`) after diagnostics.
+- Build scripts now emit a warning whenever `GRAPHQL_AVAILABILITY_AUTO_RECORD=1` is present; treat that warning as a required manual confirmation checkpoint.
+
 ---
 
 ## File ownership guide

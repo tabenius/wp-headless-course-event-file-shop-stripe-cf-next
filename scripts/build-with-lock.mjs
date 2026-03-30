@@ -17,6 +17,16 @@ if (cmd.length === 0) {
   process.exit(1);
 }
 
+if (process.env.GRAPHQL_AVAILABILITY_AUTO_RECORD === "1") {
+  console.warn(
+    "\n⚠️  GRAPHQL_AVAILABILITY_AUTO_RECORD=1 is enabled.\n" +
+      "   This can make static/ISR storefront routes flip to dynamic at runtime\n" +
+      "   if GraphQL availability logging touches KV during page render.\n" +
+      "   Recommended default: keep GRAPHQL_AVAILABILITY_AUTO_RECORD=0 and log via\n" +
+      "   admin/API actions instead.\n",
+  );
+}
+
 // Warn if a lock already exists (may be stale from a crashed build)
 if (existsSync(LOCK)) {
   try {

@@ -1,5 +1,19 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — real-data-only GraphQL availability logging guard + build/protocol warnings
+
+### Codex — kept static pages safe while preserving real GraphQL telemetry from dynamic contexts
+
+**Delivered:**
+- Kept `GRAPHQL_AVAILABILITY_AUTO_RECORD` gated off-by-default in `src/lib/client.js`.
+- Hardened request-context gating for GraphQL availability ingestion:
+  - logging now fails closed when request context is unknown (no ALS store),
+  - static generation and ISR revalidation contexts are explicitly excluded.
+- Added build-time warning in `scripts/build-with-lock.mjs` when `GRAPHQL_AVAILABILITY_AUTO_RECORD=1` is present.
+- Updated `AGENTS.md` protocol with a mandatory warning rule:
+  - before enabling `GRAPHQL_AVAILABILITY_AUTO_RECORD=1`, agents must warn both user and peer agent in coop, and treat it as temporary diagnostics only.
+- Rejected synthetic probe ingestion path for now to keep GraphQL availability logs based on real GraphQL call data only.
+
 ## 2026-03-30 (Codex) — fix static→dynamic runtime error on `/` from GraphQL availability KV reads
 
 ### Codex — made availability settings reads static-safe and isolated logging from static/ISR renders
