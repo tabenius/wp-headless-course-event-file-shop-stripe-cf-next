@@ -4,6 +4,7 @@
 :root {
   --background: var(--color-background);
   --foreground: var(--color-foreground);
+  --font-button: var(--font-heading);
 }
 
 @theme inline {
@@ -49,6 +50,13 @@ body {
     )
   );
   font-size: 12px;
+}
+
+.font-button {
+  font-family: var(
+    --font-button,
+    var(--font-body, system-ui, -apple-system, "Segoe UI", sans-serif)
+  );
 }
 
 /* Fixed background via a pseudo-element avoids forced full-page composite */
