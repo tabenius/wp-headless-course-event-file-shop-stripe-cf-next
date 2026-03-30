@@ -27,8 +27,9 @@ import { t } from "@/lib/i18n";
 import { appendServerLog } from "@/lib/serverLog";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { unstable_noStore as noStore } from "next/cache";
+import { StorefrontArticleSkeleton } from "@/components/common/StorefrontSkeletons";
 const DEBUG_WP_RESOLVE = process.env.STOREFRONT_RESOLVE_DEBUG === "1";
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
@@ -568,7 +569,7 @@ function buildJsonLd(node, uri) {
   };
 }
 
-export default async function ContentPage({
+async function ContentPageInner({
   params: paramsPromise,
   searchParams: searchParamsPromise,
 }) {
@@ -778,4 +779,12 @@ export default async function ContentPage({
     );
   }
   notFound();
+}
+
+export default function ContentPage(props) {
+  return (
+    <Suspense fallback={<StorefrontArticleSkeleton paragraphs={10} />}>
+      <ContentPageInner {...props} />
+    </Suspense>
+  );
 }

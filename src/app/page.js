@@ -4,11 +4,16 @@ import EventCalendar from "@/components/home/EventCalendar";
 import { fetchGraphQL, RateLimitError } from "@/lib/client";
 import { fetchHomeEvents } from "@/lib/homeEvents";
 import RateLimitPage from "@/components/common/RateLimitPage";
+import {
+  StorefrontArticleSkeleton,
+  StorefrontListSkeleton,
+} from "@/components/common/StorefrontSkeletons";
 import WordPressSetupPage from "@/components/setup/WordPressSetupPage";
 import { notFound } from "next/navigation";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
 import { shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
+import { Suspense } from "react";
 
 const GET_CONTENT_QUERY = `
 ${SinglePageFragment}
@@ -32,13 +37,35 @@ export default async function HomePage() {
     return <WordPressSetupPage />;
   }
 
-  let data, events, hasDates;
+  return (
+    <>
+      <Suspense fallback={<StorefrontListSkeleton items={4} withImage={false} />}>
+        <HomeEventsSection />
+      </Suspense>
+      <Suspense fallback={<StorefrontArticleSkeleton paragraphs={9} />}>
+        <HomeContentSection />
+      </Suspense>
+    </>
+  );
+}
+
+async function HomeEventsSection() {
+  try {
+    const { events, hasDates } = await fetchHomeEvents();
+    if (!events.length) return null;
+    return <EventCalendar events={events} hasDates={hasDates} />;
+  } catch {
+    return null;
+  }
+}
+
+async function HomeContentSection() {
+  let data;
   try {
     await probeStorefrontRagbazGraphql("/");
-    [data, { events, hasDates }] = await Promise.all([
-      fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800, { edgeCache: true }),
-      fetchHomeEvents(),
-    ]);
+    data = await fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800, {
+      edgeCache: true,
+    });
   } catch (err) {
     if (err instanceof RateLimitError) {
       return (
@@ -59,14 +86,7 @@ export default async function HomePage() {
 
   const contentType = data?.nodeByUri?.__typename;
   if (contentType === "Page") {
-    return (
-      <>
-        {events.length > 0 && (
-          <EventCalendar events={events} hasDates={hasDates} />
-        )}
-        <Page data={data.nodeByUri} />
-      </>
-    );
+    return <Page data={data.nodeByUri} />;
   }
   notFound();
 }

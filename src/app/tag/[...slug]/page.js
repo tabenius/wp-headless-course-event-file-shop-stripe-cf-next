@@ -1,5 +1,7 @@
 import { PostListFragment } from "@/lib/fragments/PostListFragment";
 import { BlogListingTemplate } from "@/components/blog/BlogListingTemplate";
+import { StorefrontListSkeleton } from "@/components/common/StorefrontSkeletons";
+import { Suspense } from "react";
 
 const TAG_POSTS_QUERY = `
   ${PostListFragment}
@@ -18,7 +20,15 @@ const TAG_POSTS_QUERY = `
   }
 `;
 
-export default async function TagPage({ params: paramsPromise }) {
+async function TagPageContent({ params: paramsPromise }) {
   const params = await paramsPromise;
   return BlogListingTemplate(TAG_POSTS_QUERY, params, "Tag");
+}
+
+export default function TagPage(props) {
+  return (
+    <Suspense fallback={<StorefrontListSkeleton items={5} withImage />}>
+      <TagPageContent {...props} />
+    </Suspense>
+  );
 }

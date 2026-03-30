@@ -1,5 +1,7 @@
 import { PostListFragment } from "@/lib/fragments/PostListFragment";
 import { BlogListingTemplate } from "@/components/blog/BlogListingTemplate";
+import { StorefrontListSkeleton } from "@/components/common/StorefrontSkeletons";
+import { Suspense } from "react";
 
 const CAT_POSTS_QUERY = `
   ${PostListFragment}
@@ -18,7 +20,15 @@ const CAT_POSTS_QUERY = `
   }
 `;
 
-export default async function CategoryPage({ params: paramsPromise }) {
+async function CategoryPageContent({ params: paramsPromise }) {
   const params = await paramsPromise;
   return BlogListingTemplate(CAT_POSTS_QUERY, params, "Category");
+}
+
+export default function CategoryPage(props) {
+  return (
+    <Suspense fallback={<StorefrontListSkeleton items={5} withImage />}>
+      <CategoryPageContent {...props} />
+    </Suspense>
+  );
 }

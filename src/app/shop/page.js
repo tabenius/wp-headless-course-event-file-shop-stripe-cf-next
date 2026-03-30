@@ -1,7 +1,9 @@
 import ShopIndex from "@/components/shop/ShopIndex";
+import { StorefrontGridSkeleton } from "@/components/common/StorefrontSkeletons";
 import { listAllShopItems } from "@/lib/shopProducts";
 import { isStripeEnabled } from "@/lib/stripe";
 import site from "@/lib/site";
+import { Suspense } from "react";
 
 export const metadata = {
   title: site.pages.shop.title,
@@ -10,7 +12,7 @@ export const metadata = {
 };
 export const revalidate = 300;
 
-export default async function ShopPage() {
+async function ShopPageContent() {
   const items = await listAllShopItems();
 
   return (
@@ -18,5 +20,13 @@ export default async function ShopPage() {
       items={items}
       stripeEnabled={isStripeEnabled()}
     />
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<StorefrontGridSkeleton items={8} />}>
+      <ShopPageContent />
+    </Suspense>
   );
 }

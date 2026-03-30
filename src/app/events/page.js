@@ -1,5 +1,7 @@
 import { fetchGraphQL } from "@/lib/client";
 import EventListItem from "@/components/cpt/EventListItem";
+import { StorefrontListSkeleton } from "@/components/common/StorefrontSkeletons";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Evenemang",
@@ -78,7 +80,7 @@ function extractEvents(data) {
   return data?.events?.edges?.map((e) => e?.node).filter(Boolean) || [];
 }
 
-export default async function EventsPage() {
+async function EventsPageContent() {
   const data = await fetchGraphQL(LIST_EVENTS_QUERY, {}, 1800, {
     edgeCache: true,
   });
@@ -103,5 +105,13 @@ export default async function EventsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function EventsPage() {
+  return (
+    <Suspense fallback={<StorefrontListSkeleton items={5} withImage />}>
+      <EventsPageContent />
+    </Suspense>
   );
 }

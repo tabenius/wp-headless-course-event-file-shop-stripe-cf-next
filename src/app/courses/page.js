@@ -2,7 +2,9 @@ import Link from "next/link";
 import { fetchGraphQL } from "@/lib/client";
 import { FeaturedImage } from "@/components/image/FeaturedImage";
 import { t } from "@/lib/i18n";
+import { StorefrontGridSkeleton } from "@/components/common/StorefrontSkeletons";
 import site from "@/lib/site";
+import { Suspense } from "react";
 
 export const metadata = {
   title: site.pages.courses.title,
@@ -39,7 +41,7 @@ const LIST_COURSES_QUERY = `
   }
 `;
 
-export default async function CoursesPage() {
+async function CoursesPageContent() {
   let data;
   try {
     data = await fetchGraphQL(LIST_COURSES_QUERY, {}, 1800, {
@@ -92,5 +94,13 @@ export default async function CoursesPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function CoursesPage() {
+  return (
+    <Suspense fallback={<StorefrontGridSkeleton items={6} />}>
+      <CoursesPageContent />
+    </Suspense>
   );
 }

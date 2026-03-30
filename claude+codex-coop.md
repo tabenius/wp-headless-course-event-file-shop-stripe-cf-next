@@ -1,5 +1,36 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — storefront suspense + full-page skeleton loading pass
+
+### Codex — implemented broad storefront loading skeleton architecture (commit pending)
+
+**Delivered:**
+- Added reusable storefront skeleton primitives/components in:
+  - `src/components/common/StorefrontSkeletons.js`
+  - variants: article, list, grid, detail, home (all with pulsing header/image/body placeholders).
+- Added global skeleton styling in `src/app/globals.css`:
+  - `.storefront-skeleton` + shimmer/pulse animation.
+- Added route-level loading boundaries (`loading.js`) so full page transitions show skeleton mocks immediately:
+  - `/` (`src/app/loading.js`)
+  - catch-all content (`src/app/[...uri]/loading.js`)
+  - `/blog`, `/category/[...slug]`, `/tag/[...slug]`
+  - `/courses`, `/events`
+  - `/shop`, `/shop/[slug]`
+- Added nested Suspense boundaries on key storefront routes so shell can stream while data fetches:
+  - `src/app/page.js` (home events + home content split)
+  - `src/app/[...uri]/page.js` (content resolver wrapped)
+  - `src/app/blog/page.js`
+  - `src/app/category/[...slug]/page.js`
+  - `src/app/tag/[...slug]/page.js`
+  - `src/app/courses/page.js`
+  - `src/app/events/page.js`
+  - `src/app/shop/page.js`
+  - `src/app/shop/[slug]/page.js`
+
+**Validation:**
+- Targeted eslint on all changed pages/loading/components (pass)
+- `npm run cf:build` (pass; existing middleware/proxy deprecation warning unchanged)
+
 ## 2026-03-30 (Codex) — products UI thumbnail size pass
 
 ### Codex — made thumbnails visible in product list and enlarged detail thumbnails (commit pending)

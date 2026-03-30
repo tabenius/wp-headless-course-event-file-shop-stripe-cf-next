@@ -6,8 +6,10 @@ import { grantCourseAccess } from "@/lib/courseAccess";
 import { getDigitalProductBySlug } from "@/lib/digitalProducts";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { appendServerLog } from "@/lib/serverLog";
+import { StorefrontDetailSkeleton } from "@/components/common/StorefrontSkeletons";
+import { Suspense } from "react";
 
-export default async function ShopProductPage({
+async function ShopProductPageContent({
   params: paramsPromise,
   searchParams: searchParamsPromise,
 }) {
@@ -87,6 +89,14 @@ export default async function ShopProductPage({
       stripeEnabled={isStripeEnabled()}
       checkoutStatus={checkoutStatus}
     />
+  );
+}
+
+export default function ShopProductPage(props) {
+  return (
+    <Suspense fallback={<StorefrontDetailSkeleton />}>
+      <ShopProductPageContent {...props} />
+    </Suspense>
   );
 }
 
