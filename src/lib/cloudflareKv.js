@@ -21,12 +21,27 @@ export function isCloudflareKvConfigured() {
 }
 
 export async function readCloudflareKvJson(key) {
+  return readCloudflareKvJsonWithOptions(key);
+}
+
+export async function readCloudflareKvJsonWithOptions(
+  key,
+  { cacheMode = "no-store", revalidateSeconds = null } = {},
+) {
   if (shouldBypassCloudflareKv()) return null;
   if (!hasCloudflareConfig()) return null;
-  const response = await fetch(getKvUrl(key), {
+  const fetchOptions = {
     headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
-    cache: "no-store",
-  });
+    cache: cacheMode,
+  };
+  if (
+    Number.isFinite(revalidateSeconds) &&
+    revalidateSeconds !== null &&
+    revalidateSeconds >= 0
+  ) {
+    fetchOptions.next = { revalidate: Math.floor(revalidateSeconds) };
+  }
+  const response = await fetch(getKvUrl(key), fetchOptions);
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`Cloudflare KV read failed (${response.status})`);

@@ -134,6 +134,22 @@ function getEdgeCache() {
   }
 }
 
+function shouldRecordAvailabilityForCurrentRequest() {
+  try {
+    const store = globalThis?.__openNextAls?.getStore?.();
+    if (store?.isStaticGeneration === true) return false;
+    if (store?.isISRRevalidation === true) return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function enqueueAvailabilityDatapoint(entry) {
+  if (!shouldRecordAvailabilityForCurrentRequest()) return;
+  recordAvailabilityDatapoint(entry).catch(() => {});
+}
+
 async function digestSha256Hex(value) {
   const input = new TextEncoder().encode(String(value || ""));
   const hash = await crypto.subtle.digest("SHA-256", input);
@@ -329,7 +345,7 @@ export async function fetchGraphQL(
         const latencyMs = Date.now() - attemptStart;
         addServerTiming("wp", latencyMs);
         recordAttempt(graphqlEndpoint, "network-error", false);
-        recordAvailabilityDatapoint({
+        enqueueAvailabilityDatapoint({
           ok: false,
           status: "network-error",
           endpoint: graphqlEndpoint,
@@ -339,7 +355,7 @@ export async function fetchGraphQL(
           query: queryPreview,
           variables: variablesPreview,
           responsePreview: trimText(fetchErr?.message || "", 1200),
-        }).catch(() => {});
+        });
         if (fetchErr.name === "AbortError") {
           const msg = `GraphQL timeout after ${EFFECTIVE_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
           console.error(msg);
@@ -375,7 +391,7 @@ export async function fetchGraphQL(
         if (debugGraphQL) console.error(lastError);
         if (response.status === 429) {
           // Stop immediately for 429 — callers can render dedicated rate-limit UI.
-          recordAvailabilityDatapoint({
+          enqueueAvailabilityDatapoint({
             ok: false,
             status: 429,
             endpoint: graphqlEndpoint,
@@ -385,10 +401,10 @@ export async function fetchGraphQL(
             query: queryPreview,
             variables: variablesPreview,
             responsePreview: trimText(firstLines(text, 6), 1200),
-          }).catch(() => {});
+          });
           throw new RateLimitError(text, 429);
         }
-        recordAvailabilityDatapoint({
+        enqueueAvailabilityDatapoint({
           ok: false,
           status: response.status,
           endpoint: graphqlEndpoint,
@@ -403,7 +419,7 @@ export async function fetchGraphQL(
           query: queryPreview,
           variables: variablesPreview,
           responsePreview: trimText(firstLines(text, 6), 1200),
-        }).catch(() => {});
+        });
         if (varnishHit) {
           await sleep(IS_BUILD_PHASE ? 900 : 250);
         } else {
@@ -426,7 +442,7 @@ export async function fetchGraphQL(
         if (debugGraphQL || isAuthError) console.error(lastError);
         if (isAuthError && auth.mode === "sitetoken") invalidateSiteTokenCache();
         const normalizedErrors = normalizeGraphqlErrors(result.errors);
-        recordAvailabilityDatapoint({
+        enqueueAvailabilityDatapoint({
           ok: false,
           status: `graphql-error`,
           endpoint: graphqlEndpoint,
@@ -436,18 +452,18 @@ export async function fetchGraphQL(
           query: queryPreview,
           variables: variablesPreview,
           errors: normalizedErrors,
-        }).catch(() => {});
+        });
         continue;
       }
 
       // Successful response — record availability
-      recordAvailabilityDatapoint({
+      enqueueAvailabilityDatapoint({
         ok: true,
         status: response.status,
         endpoint: graphqlEndpoint,
         latencyMs,
         operationName,
-      }).catch(() => {});
+      });
       const successData = result?.data || {};
       if (edgeCacheEnabled && cacheRequest) {
         await writeGraphqlEdgeCache(

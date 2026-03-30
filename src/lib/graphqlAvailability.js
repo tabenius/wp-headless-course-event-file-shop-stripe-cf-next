@@ -12,6 +12,7 @@
 import {
   isCloudflareKvConfigured,
   readCloudflareKvJson,
+  readCloudflareKvJsonWithOptions,
   writeCloudflareKvJson,
   deleteCloudflareKv,
 } from "./cloudflareKv.js";
@@ -37,6 +38,14 @@ let _settingsCacheTs = 0;
 let _tempCache = null;
 let _tempCacheTs = 0;
 
+async function readAvailabilitySettingsKv(key, ttlMs) {
+  const ttlSeconds = Math.max(1, Math.floor((Number(ttlMs) || 0) / 1000));
+  return await readCloudflareKvJsonWithOptions(key, {
+    cacheMode: "force-cache",
+    revalidateSeconds: ttlSeconds,
+  });
+}
+
 function normalizeEnabledUntil(raw) {
   const value =
     raw && typeof raw === "object" ? Number(raw.enabledUntil) : Number.NaN;
@@ -51,7 +60,7 @@ async function getTemporaryEnabledUntilMs() {
     return until && until > now ? until : null;
   }
   try {
-    _tempCache = await readCloudflareKvJson(TEMP_ENABLE_KEY);
+    _tempCache = await readAvailabilitySettingsKv(TEMP_ENABLE_KEY, TEMP_CACHE_TTL);
     _tempCacheTs = now;
     const until = normalizeEnabledUntil(_tempCache);
     if (!until || until <= now) return null;
@@ -73,7 +82,10 @@ export async function isAvailabilityLoggingEnabled() {
     return (await getTemporaryEnabledUntilMs()) !== null;
   }
   try {
-    const settings = await readCloudflareKvJson(SETTINGS_KEY);
+    const settings = await readAvailabilitySettingsKv(
+      SETTINGS_KEY,
+      SETTINGS_CACHE_TTL,
+    );
     _settingsCache = settings ?? { enabled: false };
     _settingsCacheTs = now;
     if (_settingsCache.enabled === true) return true;
@@ -94,7 +106,11 @@ export async function setAvailabilityLoggingEnabled(enabled) {
 export async function getAvailabilitySettings() {
   if (!isCloudflareKvConfigured()) return { enabled: false };
   try {
-    return (await readCloudflareKvJson(SETTINGS_KEY)) ?? { enabled: false };
+    return (
+      (await readAvailabilitySettingsKv(SETTINGS_KEY, SETTINGS_CACHE_TTL)) ?? {
+        enabled: false,
+      }
+    );
   } catch {
     return { enabled: false };
   }

@@ -1,5 +1,22 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — fix static→dynamic runtime error on `/` from GraphQL availability KV reads
+
+### Codex — made availability settings reads static-safe and isolated logging from static/ISR renders
+
+**Delivered:**
+- Added configurable KV read options in `src/lib/cloudflareKv.js` via:
+  - `readCloudflareKvJsonWithOptions(key, { cacheMode, revalidateSeconds })`
+  - existing `readCloudflareKvJson(key)` now delegates to the default (`no-store`) path for backward compatibility.
+- Updated `src/lib/graphqlAvailability.js` to read availability settings/temp-window keys through cached/static-safe reads (`force-cache` + bounded revalidate) instead of hard `no-store`.
+- Added an island-style guard in `src/lib/client.js`:
+  - availability datapoints are not recorded during static generation / ISR revalidation request contexts (`globalThis.__openNextAls` store checks),
+  - prevents telemetry side-effects from turning static page renders dynamic.
+
+**Validation:**
+- `npx eslint src/lib/cloudflareKv.js src/lib/graphqlAvailability.js src/lib/client.js` (pass)
+- `npm run cf:build` (pass; `/` remains static in route output, no static-to-dynamic error during build path)
+
 ## 2026-03-30 (Codex) — docs follow-up: always-visible cache copy button + refresh impact guidance
 
 ### Codex — corrected usability gap in /docs performance page (ragbaz.xyz)
