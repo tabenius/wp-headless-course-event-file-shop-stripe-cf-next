@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/adminRoute";
 import { readWcRestApiSettings } from "@/lib/adminSettingsStore";
 import { testWcConnection } from "@/lib/wooCommerceApi";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function POST(request) {
   const auth = await requireAdmin(request);

@@ -6,7 +6,7 @@ import {
   listUsersWithProductAccess,
 } from "@/lib/digitalAccessStore";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 // GET /api/admin/digital-access?productId=xxx — list users with access
 export async function GET(request) {

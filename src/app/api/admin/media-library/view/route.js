@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const MAX_VIEW_BYTES = 2 * 1024 * 1024;
 const MAX_VIEW_TEXT_CHARS = 120_000;

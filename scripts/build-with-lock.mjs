@@ -17,6 +17,74 @@ if (cmd.length === 0) {
   process.exit(1);
 }
 
+function hydrateBuildEnvFromDotenv() {
+  const shellProvided = new Set(Object.keys(process.env));
+  const files = [".env", ".env.production", ".env.local", ".env.production.local"];
+  const keyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+  for (const file of files) {
+    if (!existsSync(file)) continue;
+    const content = readFileSync(file, "utf8");
+    for (const rawLine of content.split(/\r?\n/)) {
+      let line = rawLine.trim();
+      if (!line || line.startsWith("#")) continue;
+      if (line.startsWith("export ")) line = line.slice(7).trim();
+      const eqIndex = line.indexOf("=");
+      if (eqIndex < 1) continue;
+      const key = line.slice(0, eqIndex).trim();
+      if (!keyPattern.test(key) || shellProvided.has(key)) continue;
+
+      let value = line.slice(eqIndex + 1).trim();
+      const startsDouble = value.startsWith("\"");
+      const startsSingle = value.startsWith("'");
+      if (startsDouble && value.endsWith("\"") && value.length >= 2) {
+        value = value.slice(1, -1).replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+      } else if (startsSingle && value.endsWith("'") && value.length >= 2) {
+        value = value.slice(1, -1);
+      } else {
+        value = value.replace(/\s+#.*$/, "").trim();
+      }
+      process.env[key] = value;
+    }
+  }
+}
+
+function firstSet(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim() !== "") return value.trim();
+  }
+  return "";
+}
+
+function assertCloudflareKvBuildConfig() {
+  const accountId = firstSet(
+    process.env.CLOUDFLARE_ACCOUNT_ID,
+    process.env.CF_ACCOUNT_ID,
+  );
+  const apiToken = firstSet(
+    process.env.CF_API_TOKEN,
+    process.env.CLOUDFLARE_API_TOKEN,
+  );
+  const namespaceId = firstSet(process.env.CF_KV_NAMESPACE_ID);
+
+  const missing = [];
+  if (!accountId) missing.push("CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID");
+  if (!apiToken) missing.push("CF_API_TOKEN/CLOUDFLARE_API_TOKEN");
+  if (!namespaceId) missing.push("CF_KV_NAMESPACE_ID");
+
+  if (missing.length > 0) {
+    console.error(
+      "\n❌ Build refused: Cloudflare KV is required.\n" +
+        `   Missing: ${missing.join(", ")}\n` +
+        "   Configure KV credentials before running build/cf:build.\n",
+    );
+    process.exit(1);
+  }
+}
+
+hydrateBuildEnvFromDotenv();
+assertCloudflareKvBuildConfig();
+
 if (process.env.GRAPHQL_AVAILABILITY_AUTO_RECORD === "1") {
   console.warn(
     "\n⚠️  GRAPHQL_AVAILABILITY_AUTO_RECORD=1 is enabled.\n" +

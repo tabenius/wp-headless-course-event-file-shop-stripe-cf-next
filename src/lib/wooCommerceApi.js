@@ -16,7 +16,17 @@ function normalizeBaseUrl(value) {
 function encodeBasicAuth(username, password) {
   const user = String(username || "");
   const pass = String(password || "");
-  return `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`;
+  const raw = `${user}:${pass}`;
+  if (typeof Buffer !== "undefined") {
+    return `Basic ${Buffer.from(raw).toString("base64")}`;
+  }
+  if (typeof btoa === "function") {
+    const bytes = new TextEncoder().encode(raw);
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return `Basic ${btoa(binary)}`;
+  }
+  throw new Error("Basic auth encoding is not available in this runtime.");
 }
 
 function normalizeConfig(input) {
@@ -120,4 +130,3 @@ export async function createWcOrder(sessionData, config) {
     body: payload,
   });
 }
-

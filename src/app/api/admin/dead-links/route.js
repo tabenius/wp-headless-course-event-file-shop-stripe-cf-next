@@ -7,7 +7,7 @@ import {
   summarizeLinkKinds,
 } from "@/lib/deadLinks";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const MAX_LINK_CHECKS = 200;
 const DEFAULT_LINK_CHECKS = 100;

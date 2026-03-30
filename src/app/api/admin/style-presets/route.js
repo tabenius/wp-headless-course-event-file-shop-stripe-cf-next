@@ -6,7 +6,7 @@ import {
   removeStylePreset,
 } from "@/lib/stylePresetsStore";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(request) {
   const auth = await requireAdmin(request);

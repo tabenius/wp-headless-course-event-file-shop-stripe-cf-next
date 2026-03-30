@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { fetchGraphQL } from "@/lib/client";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const QUERIES = {
   pages: `{ pages(first: 50) { edges { node { id uri title } } } }`,

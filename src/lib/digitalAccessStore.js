@@ -7,17 +7,6 @@ import {
 function getKvKey() {
   return process.env.CF_DIGITAL_ACCESS_KV_KEY || "digital-access";
 }
-const LOCAL_ACCESS_FILE = ".data/digital-access.json";
-
-let inMemoryState = { users: {} };
-
-function canUseFs() {
-  return (
-    typeof process !== "undefined" &&
-    process.versions?.node &&
-    process.env.NEXT_RUNTIME !== "edge"
-  );
-}
 
 function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
@@ -53,117 +42,35 @@ function sanitizeState(state) {
   return { users };
 }
 
-function shouldUseCloudflareBackend() {
-  return (
-    process.env.DIGITAL_ACCESS_STORE === "cloudflare" ||
-    isCloudflareKvConfigured()
+function assertKvConfigured() {
+  if (isCloudflareKvConfigured()) return;
+  throw new Error(
+    "Cloudflare KV is required for digital access store. Configure CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID, CF_API_TOKEN/CLOUDFLARE_API_TOKEN, and CF_KV_NAMESPACE_ID.",
   );
 }
 
-async function ensureLocalStore() {
-  if (!canUseFs()) return;
-  const [{ promises: fs }, path] = await Promise.all([
-    import("node:fs"),
-    import("node:path"),
-  ]);
-  const dataDir = path.join(process.cwd(), ".data");
-  const accessFile = path.join(process.cwd(), LOCAL_ACCESS_FILE);
-  await fs.mkdir(dataDir, { recursive: true });
-  try {
-    await fs.access(accessFile);
-  } catch {
-    await fs.writeFile(
-      accessFile,
-      JSON.stringify({ users: {} }, null, 2),
-      "utf8",
-    );
-  }
-}
-
-async function readLocalState() {
-  if (!canUseFs()) {
-    console.warn(
-      "Local digital access store unavailable in this runtime; using in-memory fallback.",
-    );
-    return inMemoryState;
-  }
-  try {
-    await ensureLocalStore();
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const accessFile = path.join(process.cwd(), LOCAL_ACCESS_FILE);
-    const raw = await fs.readFile(accessFile, "utf8");
-    return sanitizeState(JSON.parse(raw));
-  } catch (error) {
-    console.error(
-      "Local digital access store unavailable. Using in-memory fallback:",
-      error,
-    );
-    return inMemoryState;
-  }
-}
-
-async function writeLocalState(state) {
-  if (!canUseFs()) {
-    inMemoryState = state;
-    return;
-  }
-  try {
-    await ensureLocalStore();
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const accessFile = path.join(process.cwd(), LOCAL_ACCESS_FILE);
-    await fs.writeFile(accessFile, JSON.stringify(state, null, 2), "utf8");
-  } catch (error) {
-    console.error(
-      "Local digital access write unavailable. Updating in-memory fallback:",
-      error,
-    );
-    inMemoryState = state;
-  }
-}
-
 async function readCloudflareState() {
+  assertKvConfigured();
   const value = await readCloudflareKvJson(getKvKey());
   return value ? sanitizeState(value) : { users: {} };
 }
 
 async function writeCloudflareState(state) {
-  return writeCloudflareKvJson(getKvKey(), state);
+  assertKvConfigured();
+  const wrote = await writeCloudflareKvJson(getKvKey(), state);
+  if (!wrote) {
+    throw new Error("Cloudflare KV write failed for digital access store.");
+  }
+  return true;
 }
 
 async function getState() {
-  if (shouldUseCloudflareBackend()) {
-    try {
-      return await readCloudflareState();
-    } catch (error) {
-      console.error(
-        "Cloudflare KV digital access read failed, using local fallback:",
-        error,
-      );
-    }
-  }
-  return readLocalState();
+  return readCloudflareState();
 }
 
 async function saveState(state) {
   const safeState = sanitizeState(state);
-  if (shouldUseCloudflareBackend()) {
-    try {
-      const wrote = await writeCloudflareState(safeState);
-      if (wrote) return safeState;
-    } catch (error) {
-      console.error(
-        "Cloudflare KV digital access write failed, using local fallback:",
-        error,
-      );
-    }
-  }
-  await writeLocalState(safeState);
+  await writeCloudflareState(safeState);
   return safeState;
 }
 
@@ -237,7 +144,9 @@ export async function listUsersWithProductAccess(productId) {
 }
 
 export function getDigitalStorageInfo() {
-  return shouldUseCloudflareBackend()
-    ? { provider: "cloudflare-kv", key: getKvKey() }
-    : { provider: "local-file", path: LOCAL_ACCESS_FILE };
+  return {
+    provider: "cloudflare-kv",
+    key: getKvKey(),
+    configured: isCloudflareKvConfigured(),
+  };
 }
