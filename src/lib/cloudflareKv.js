@@ -1,10 +1,18 @@
 import { shouldSkipUpstreamDuringBuild } from "./buildUpstreamGuard.js";
 
+function getCloudflareAccountId() {
+  return (
+    process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || ""
+  );
+}
+
+function getCloudflareApiToken() {
+  return process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || "";
+}
+
 function hasCloudflareConfig() {
   return Boolean(
-    process.env.CLOUDFLARE_ACCOUNT_ID &&
-      process.env.CF_API_TOKEN &&
-      process.env.CF_KV_NAMESPACE_ID,
+    getCloudflareAccountId() && getCloudflareApiToken() && process.env.CF_KV_NAMESPACE_ID,
   );
 }
 
@@ -13,7 +21,7 @@ function shouldBypassCloudflareKv() {
 }
 
 function getKvUrl(key) {
-  return `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CF_KV_NAMESPACE_ID}/values/${key}`;
+  return `https://api.cloudflare.com/client/v4/accounts/${getCloudflareAccountId()}/storage/kv/namespaces/${process.env.CF_KV_NAMESPACE_ID}/values/${key}`;
 }
 
 export function isCloudflareKvConfigured() {
@@ -31,7 +39,7 @@ export async function readCloudflareKvJsonWithOptions(
   if (shouldBypassCloudflareKv()) return null;
   if (!hasCloudflareConfig()) return null;
   const fetchOptions = {
-    headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
+    headers: { Authorization: `Bearer ${getCloudflareApiToken()}` },
     cache: cacheMode,
   };
   if (
@@ -67,7 +75,7 @@ export async function writeCloudflareKvJson(
   if (expirationTtl) url += `?expiration_ttl=${expirationTtl}`;
   const response = await fetch(url, {
     method: "PUT",
-    headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
+    headers: { Authorization: `Bearer ${getCloudflareApiToken()}` },
     body: JSON.stringify(value),
   });
   if (!response.ok) {
@@ -81,7 +89,7 @@ export async function deleteCloudflareKv(key) {
   if (!hasCloudflareConfig()) return false;
   const response = await fetch(getKvUrl(key), {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}` },
+    headers: { Authorization: `Bearer ${getCloudflareApiToken()}` },
   });
   if (!response.ok && response.status !== 404) {
     throw new Error(`Cloudflare KV delete failed (${response.status})`);

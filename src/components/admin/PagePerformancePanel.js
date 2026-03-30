@@ -212,8 +212,10 @@ export default function PagePerformancePanel() {
             {!kvConfigured && (
               <span className="ml-1 text-orange-600">
                 Requires Cloudflare KV (
-                <code className="font-mono text-xs">CF_KV_NAMESPACE_ID</code>{" "}
-                not configured).
+                <code className="font-mono text-xs">
+                  CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID, CF_API_TOKEN/CLOUDFLARE_API_TOKEN, CF_KV_NAMESPACE_ID
+                </code>{" "}
+                not fully configured).
               </span>
             )}
           </p>
@@ -290,8 +292,8 @@ export default function PagePerformancePanel() {
 
       {log.length === 0 && !error && (
         <p className="text-sm text-gray-400">
-          No page performance data recorded yet. Data is collected automatically when
-          GraphQL availability logging is enabled.
+          No page performance data recorded yet. Data is collected automatically on page loads
+          when Cloudflare KV logging is configured.
         </p>
       )}
 
