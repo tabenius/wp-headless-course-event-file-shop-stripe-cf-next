@@ -8,7 +8,10 @@ import {
   getAvailabilityLog,
   clearAvailabilityLog,
 } from "@/lib/graphqlAvailability";
-import { isCloudflareKvConfigured } from "@/lib/cloudflareKv";
+import {
+  isCloudflareKvConfigured,
+  getCloudflareKvConfigStatus,
+} from "@/lib/cloudflareKv";
 
 async function requireAdmin(request) {
   const session = await auth();
@@ -35,6 +38,7 @@ export async function GET(request) {
   return new Response(
     JSON.stringify({
       kvConfigured: isCloudflareKvConfigured(),
+      kvConfigStatus: getCloudflareKvConfigStatus(),
       settings,
       temporaryEnabledUntil,
       effectiveEnabled: Boolean(settings?.enabled || temporaryEnabledUntil),

@@ -10,10 +10,35 @@ function getCloudflareApiToken() {
   return process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN || "";
 }
 
+export function getCloudflareKvConfigStatus() {
+  const hasAccountId = Boolean(getCloudflareAccountId());
+  const hasApiToken = Boolean(getCloudflareApiToken());
+  const hasNamespaceId = Boolean(process.env.CF_KV_NAMESPACE_ID);
+  const bypassedDuringBuild = shouldBypassCloudflareKv();
+  const missingKeys = [];
+  if (!hasAccountId) {
+    missingKeys.push("CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID");
+  }
+  if (!hasApiToken) {
+    missingKeys.push("CF_API_TOKEN/CLOUDFLARE_API_TOKEN");
+  }
+  if (!hasNamespaceId) {
+    missingKeys.push("CF_KV_NAMESPACE_ID");
+  }
+  return {
+    configured:
+      hasAccountId && hasApiToken && hasNamespaceId && !bypassedDuringBuild,
+    hasAccountId,
+    hasApiToken,
+    hasNamespaceId,
+    bypassedDuringBuild,
+    missingKeys,
+  };
+}
+
 function hasCloudflareConfig() {
-  return Boolean(
-    getCloudflareAccountId() && getCloudflareApiToken() && process.env.CF_KV_NAMESPACE_ID,
-  );
+  const status = getCloudflareKvConfigStatus();
+  return status.hasAccountId && status.hasApiToken && status.hasNamespaceId;
 }
 
 function shouldBypassCloudflareKv() {
@@ -25,7 +50,7 @@ function getKvUrl(key) {
 }
 
 export function isCloudflareKvConfigured() {
-  return hasCloudflareConfig() && !shouldBypassCloudflareKv();
+  return getCloudflareKvConfigStatus().configured;
 }
 
 export async function readCloudflareKvJson(key) {

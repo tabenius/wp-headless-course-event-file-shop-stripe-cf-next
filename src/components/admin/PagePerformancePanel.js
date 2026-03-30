@@ -121,6 +121,7 @@ function collectCurrentNavigationVitals() {
 export default function PagePerformancePanel() {
   const [loading, setLoading] = useState(true);
   const [kvConfigured, setKvConfigured] = useState(false);
+  const [kvConfigStatus, setKvConfigStatus] = useState(null);
   const [log, setLog] = useState([]);
   const [relayStatus, setRelayStatus] = useState(null);
   const [recordingNow, setRecordingNow] = useState(false);
@@ -134,6 +135,11 @@ export default function PagePerformancePanel() {
     try {
       const { json: data } = await adminFetch(API);
       setKvConfigured(data.kvConfigured ?? false);
+      setKvConfigStatus(
+        data.kvConfigStatus && typeof data.kvConfigStatus === "object"
+          ? data.kvConfigStatus
+          : null,
+      );
       setLog(Array.isArray(data.log) ? data.log : []);
       setRelayStatus(data.relayStatus && typeof data.relayStatus === "object" ? data.relayStatus : null);
     } catch (e) {
@@ -219,6 +225,19 @@ export default function PagePerformancePanel() {
               </span>
             )}
           </p>
+          {!kvConfigured && kvConfigStatus && (
+            <p className="text-xs text-orange-700 mt-1">
+              Missing runtime keys:{" "}
+              <code className="font-mono">
+                {(Array.isArray(kvConfigStatus.missingKeys) && kvConfigStatus.missingKeys.length > 0
+                  ? kvConfigStatus.missingKeys
+                  : ["unknown"]).join(", ")}
+              </code>
+              {kvConfigStatus.bypassedDuringBuild
+                ? " (KV bypassed during build phase)"
+                : ""}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <button

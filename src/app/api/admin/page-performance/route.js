@@ -6,7 +6,10 @@ import {
   setRagbazRelayStatus,
   getRagbazRelayStatus,
 } from "@/lib/graphqlAvailability";
-import { isCloudflareKvConfigured } from "@/lib/cloudflareKv";
+import {
+  isCloudflareKvConfigured,
+  getCloudflareKvConfigStatus,
+} from "@/lib/cloudflareKv";
 import { relayStorefrontVitalsToRagbazHome } from "@/lib/ragbazHomeRelay";
 
 /** POST /api/admin/page-performance — record a page load datapoint (called from client hook) */
@@ -71,7 +74,12 @@ export async function GET(request) {
     getRagbazRelayStatus(),
   ]);
   return new Response(
-    JSON.stringify({ kvConfigured: isCloudflareKvConfigured(), log, relayStatus }),
+    JSON.stringify({
+      kvConfigured: isCloudflareKvConfigured(),
+      kvConfigStatus: getCloudflareKvConfigStatus(),
+      log,
+      relayStatus,
+    }),
     {
       status: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
