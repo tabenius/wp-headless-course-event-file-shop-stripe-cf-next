@@ -33,6 +33,12 @@ const GRAPHQL_AVAILABILITY_AUTO_RECORD_ENABLED =
   process.env.GRAPHQL_AVAILABILITY_AUTO_RECORD === "1";
 let lastCallTs = 0;
 
+/**
+ * Cache of GraphQL type existence checks.
+ * Populated lazily on first call to hasGraphQLType().
+ */
+const _typeCache = new Map();
+
 // ── Request history ───────────────────────────────────────────────────────────
 /** @type {{ ts: number, endpoint: string, status: number|string, ok: boolean }[]} */
 const _requestHistory = [];
@@ -211,12 +217,6 @@ async function writeGraphqlEdgeCache(cacheRequest, data, ttlSeconds, staleSecond
     // Cache writes are best-effort only.
   }
 }
-
-/**
- * Cache of GraphQL type existence checks.
- * Populated lazily on first call to hasGraphQLType().
- */
-const _typeCache = new Map();
 
 /**
  * Check whether a named type exists in the WPGraphQL schema via introspection.

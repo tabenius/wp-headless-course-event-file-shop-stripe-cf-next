@@ -1,5 +1,9 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — TDZ lint hardening
+
+- Enforced `no-use-before-define` (variables/classes) in ESLint — WHY: TDZ regressions are easy to miss in refactors but can crash runtime paths under cyclic/module-load timing; a lint-time hard stop is cheaper and safer than post-deploy debugging. Also ignored `src/.next/**` in lint to avoid generated-artifact noise and fixed one real TDZ candidate in `src/lib/client.js` (`_typeCache` declaration order).
+
 ## 2026-03-30 (Codex) — Cyberduck instruction copy rewrite (EN/SV/ES) with dynamic bucket path
 
 ### Codex — rewrote Cyberduck setup instructions into numbered action flow
@@ -212,7 +216,7 @@
 **Delivered:**
 - Added configurable KV read options in `src/lib/cloudflareKv.js` via:
   - `readCloudflareKvJsonWithOptions(key, { cacheMode, revalidateSeconds })`
-  - existing `readCloudflareKvJson(key)` now delegates to the default (`no-store`) path for backward compatibility.
+  - existing `readCloudflareKvJson(key)` now delegates with ISR-safe defaults (`force-cache`, 60s revalidate). WHY: `no-store` was causing "static-to-dynamic at runtime" errors on all ISR pages; every KV read in a render path needs to be cache-safe by default.
 - Updated `src/lib/graphqlAvailability.js` to read availability settings/temp-window keys through cached/static-safe reads (`force-cache` + bounded revalidate) instead of hard `no-store`.
 - Added an island-style guard in `src/lib/client.js`:
   - availability datapoints are not recorded during static generation / ISR revalidation request contexts (`globalThis.__openNextAls` store checks),
