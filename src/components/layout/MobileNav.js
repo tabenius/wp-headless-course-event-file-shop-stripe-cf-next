@@ -62,7 +62,7 @@ export default function MobileNav({ items, authLinks }) {
                 item.href && item.href !== "#" ? (
                   <NavLink
                     href={item.href}
-                    className={`${menuItemBaseClass} font-submenu-13 font-semibold`}
+                    className={`${menuItemBaseClass} font-menu font-semibold`}
                     activeClassName={activeMobileClass}
                     onClick={() => setOpen(false)}
                   >
@@ -70,7 +70,7 @@ export default function MobileNav({ items, authLinks }) {
                   </NavLink>
                 ) : (
                   <span
-                    className={`${menuItemBaseClass} font-submenu-13 font-semibold text-[var(--color-foreground)]`}
+                    className={`${menuItemBaseClass} font-menu font-semibold text-[var(--color-foreground)]`}
                   >
                     {item.label}
                   </span>
@@ -78,7 +78,7 @@ export default function MobileNav({ items, authLinks }) {
               ) : (
                 <NavLink
                   href={item.href}
-                  className={`${menuItemBaseClass} font-submenu-13`}
+                  className={`${menuItemBaseClass} font-menu`}
                   activeClassName={activeMobileClass}
                   onClick={() => setOpen(false)}
                 >
@@ -89,7 +89,7 @@ export default function MobileNav({ items, authLinks }) {
                 <NavLink
                   key={child.href}
                   href={child.href}
-                  className={`${menuItemBaseClass} pl-4 font-submenu text-[12px]`}
+                  className={`${menuItemBaseClass} pl-4 font-submenu-nested`}
                   activeClassName={activeMobileClass}
                   onClick={() => setOpen(false)}
                 >
@@ -100,7 +100,7 @@ export default function MobileNav({ items, authLinks }) {
           ))}
           <div className="flex items-center gap-2 py-2">
             <DarkModeToggle />
-            <span className="font-submenu-13">
+            <span className="font-menu">
               {t("darkMode.label")}
             </span>
           </div>

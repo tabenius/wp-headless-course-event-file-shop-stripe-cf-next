@@ -27,6 +27,7 @@ body {
   );
 }
 
+.font-menu,
 .font-submenu {
   font-family: var(
     --font-submenu,
@@ -35,9 +36,11 @@ body {
       var(--font-heading, system-ui, -apple-system, "Segoe UI", sans-serif)
     )
   );
+  font-size: 13px;
 }
 
-.font-submenu-13 {
+.font-menu-nested,
+.font-submenu-nested {
   font-family: var(
     --font-submenu,
     var(
@@ -45,7 +48,7 @@ body {
       var(--font-heading, system-ui, -apple-system, "Segoe UI", sans-serif)
     )
   );
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* Fixed background via a pseudo-element avoids forced full-page composite */

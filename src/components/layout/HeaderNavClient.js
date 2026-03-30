@@ -55,21 +55,23 @@ export default function HeaderNavClient({ navigation = [] }) {
   }, []);
 
   const menuItemClass =
-    "font-submenu-13 font-normal text-[var(--color-foreground)] hover:underline focus:underline whitespace-nowrap";
+    "font-menu font-normal text-[var(--color-foreground)] hover:underline focus:underline whitespace-nowrap";
   const activeMenuClass =
     "text-[var(--color-primary)] underline underline-offset-4 decoration-2 decoration-[var(--color-primary)]";
   const mobileAuthClass =
-    "block font-submenu-13 font-normal py-[6px] border-b border-[var(--color-muted)] hover:text-[var(--color-primary)] leading-tight";
+    "block font-menu font-normal py-[6px] border-b border-[var(--color-muted)] hover:text-[var(--color-primary)] leading-tight";
+  const mobileAuthButtonClass =
+    "block font-button text-[13px] font-normal py-[6px] border-b border-[var(--color-muted)] hover:text-[var(--color-primary)] leading-tight";
 
   const mobileAuthLinks = isLoggedIn ? (
     <>
-      <span className="block font-submenu-13 text-gray-500 py-[6px]">
+      <span className="block font-menu text-gray-500 py-[6px]">
         {user.name || user.email}
       </span>
       <Link href="/me" className={mobileAuthClass}>
         {t("common.profile", "Profile")}
       </Link>
-      <SignOutButton className={mobileAuthClass} />
+      <SignOutButton className={mobileAuthButtonClass} />
     </>
   ) : (
     <>
@@ -83,7 +85,7 @@ export default function HeaderNavClient({ navigation = [] }) {
   );
 
   const userMenuSignOut = (
-    <SignOutButton className="block w-full whitespace-nowrap px-4 py-2 text-left font-submenu-13 text-[var(--color-foreground)] hover:bg-[var(--color-muted)]" />
+    <SignOutButton className="block w-full whitespace-nowrap px-4 py-2 text-left font-button text-[13px] text-[var(--color-foreground)] hover:bg-[var(--color-muted)]" />
   );
 
   return (

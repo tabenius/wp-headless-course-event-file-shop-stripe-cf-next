@@ -64,6 +64,12 @@ export default function NavDropdown({
     </>
   );
 
+  const buttonBaseClass = String(className || "")
+    .replace(/\bfont-(?:menu|menu-nested|submenu|submenu-nested)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const buttonClassName = `${buttonBaseClass} font-button text-[13px]`.trim();
+
   return (
     <div
       ref={containerRef}
@@ -82,7 +88,7 @@ export default function NavDropdown({
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className={`${className}${isActive ? ` ${activeClassName}` : ""}`}
+          className={`${buttonClassName}${isActive ? ` ${activeClassName}` : ""}`}
         >
           {labelContent}
         </button>
@@ -94,7 +100,7 @@ export default function NavDropdown({
             {parentHref && (
               <NavLink
                 href={parentHref}
-                className="storefront-nav-dropdown-link storefront-nav-dropdown-link-border block whitespace-nowrap border-b border-[var(--color-muted)] px-4 py-2 font-submenu-13 font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-muted)]/25"
+                className="storefront-nav-dropdown-link storefront-nav-dropdown-link-border block whitespace-nowrap border-b border-[var(--color-muted)] px-4 py-2 font-submenu font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-muted)]/25"
                 activeClassName="text-[var(--color-primary)]"
                 onClick={() => setOpen(false)}
               >
@@ -105,7 +111,7 @@ export default function NavDropdown({
               <NavLink
                 key={child.href}
                 href={child.href}
-                className="storefront-nav-dropdown-link block whitespace-nowrap px-4 py-2 font-submenu-13 text-[var(--color-foreground)] hover:bg-[var(--color-muted)]/25"
+                className="storefront-nav-dropdown-link block whitespace-nowrap px-4 py-2 font-submenu text-[var(--color-foreground)] hover:bg-[var(--color-muted)]/25"
                 activeClassName="text-[var(--color-primary)] font-semibold"
                 onClick={() => setOpen(false)}
               >
