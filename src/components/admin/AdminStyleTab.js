@@ -175,6 +175,18 @@ export default function AdminStyleTab({
   applySiteStyleTokensToDom,
 }) {
   const [cssExpandedRole, setCssExpandedRole] = useState(null);
+  const typographyColor1 = typographyPalette[0] || siteStyleTokens.foreground || "#111827";
+  const typographyColor2 = typographyPalette[1] || typographyColor1;
+
+  function resolveRoleColor(roleKey, fallback) {
+    const slot = fontRoles?.[roleKey]?.colorSlot;
+    if (slot === 2) return typographyColor2;
+    if (slot === 1) return typographyColor1;
+    return fallback || siteStyleTokens.foreground || "#111827";
+  }
+
+  const previewLinkUnderline =
+    linkStyle?.underlineDefault === "always" ? "underline" : "none";
 
   return (
     <>
@@ -643,7 +655,7 @@ export default function AdminStyleTab({
                 />
               </div>
               <span className="text-xs text-gray-500">
-                {t("admin.styleRevisionCount", "{count} saved revisions", {
+                {t("admin.styleRevisionCount", {
                   count: siteStyleHistory.length,
                 })}
               </span>
@@ -954,69 +966,108 @@ export default function AdminStyleTab({
 
         <hr className="border-gray-200" />
 
-        {/* ── Admin UI style ── */}
+        {/* ── Active typography preview ── */}
         <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              {t("admin.styleTitle")}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {t("admin.styleSummary")}
-            </p>
+          <div className="inline-flex items-center gap-1">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              {t("admin.styleActivePreviewTitle", "Active typography preview")}
+            </h3>
+            <AdminFieldHelpLink
+              slug="product-value"
+              topic={t("admin.styleActivePreviewTitle", "Active typography preview")}
+            />
           </div>
-          <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-            {[
-              { label: t("admin.styleAdminColorBackground"), hex: "#140022" },
-              { label: t("admin.styleAdminColorBorderAccent"), hex: "#4e21a6" },
-              { label: t("admin.styleAdminColorPurplePrimary"), hex: "#7c3aed" },
-              { label: t("admin.styleAdminColorPurpleLight"), hex: "#a78bfa" },
-              { label: t("admin.styleAdminColorSurface"), hex: "#ffffff" },
-              { label: t("admin.styleAdminColorTextMuted"), hex: "#6b7280" },
-            ].map(({ label, hex }) => (
-              <div
-                key={hex}
-                className="flex items-center gap-3 border rounded p-3 bg-gray-50"
+          <p className="text-sm text-gray-500">
+            {t(
+              "admin.styleActivePreviewSummary",
+              "See how your current display, heading, body, button, and link roles render together.",
+            )}
+          </p>
+          <div
+            className="rounded border p-4 space-y-4"
+            style={{
+              background: siteStyleTokens.background,
+              color: siteStyleTokens.foreground,
+              borderColor: siteStyleTokens.muted,
+            }}
+          >
+            <div className="space-y-1">
+              <div className="text-[11px] uppercase tracking-wide opacity-70">
+                {t("admin.styleFontRoleDisplay")}
+              </div>
+              <h1
+                className="leading-tight"
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-display, var(--font-heading, system-ui, sans-serif))",
+                  color: resolveRoleColor("fontDisplay", siteStyleTokens.foreground),
+                  fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
+                }}
               >
-                <div
-                  className="w-10 h-10 rounded border border-gray-200 shrink-0"
-                  style={{ background: hex }}
-                />
-                <div>
-                  <div className="text-sm font-medium text-gray-800">
-                    {label}
-                  </div>
-                  <div className="text-xs text-gray-500 font-mono">{hex}</div>
-                </div>
+                {t("admin.styleActivePreviewDisplaySample", "Design with clarity and speed.")}
+              </h1>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-[11px] uppercase tracking-wide opacity-70">
+                {t("admin.styleFontRoleHeading")}
               </div>
-            ))}
+              <h2
+                className="leading-snug"
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-heading, system-ui, sans-serif)",
+                  color: resolveRoleColor("fontHeading", siteStyleTokens.foreground),
+                }}
+              >
+                {t(
+                  "admin.styleActivePreviewHeadingSample",
+                  "Readable hierarchy for real content.",
+                )}
+              </h2>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-[11px] uppercase tracking-wide opacity-70">
+                {t("admin.styleFontRoleBody")}
+              </div>
+              <p
+                className="text-sm leading-relaxed"
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-body, system-ui, sans-serif)",
+                }}
+              >
+                {t("admin.fontBrowserPreviewText")}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                className="px-4 py-2 rounded text-sm font-medium"
+                style={{
+                  fontFamily: "var(--font-button, var(--font-body, system-ui, sans-serif))",
+                  background: siteStyleTokens.primary,
+                  color: siteStyleTokens.background,
+                }}
+              >
+                {t("admin.stylePrimaryButton")}
+              </button>
+              <a
+                href="#"
+                onClick={(event) => event.preventDefault()}
+                className="text-sm hover:opacity-85"
+                style={{
+                  fontFamily: "var(--font-body, system-ui, sans-serif)",
+                  color: siteStyleTokens.primary,
+                  textDecoration: previewLinkUnderline,
+                }}
+              >
+                {t("admin.styleActivePreviewLinkSample", "Read the full guide")}
+              </a>
+            </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-slate-600 font-semibold">
-                {t("admin.styleTypography")}
-              </div>
-              <p className="text-sm text-gray-600">
-                {t("admin.styleTypographyDetail")}
-              </p>
-            </div>
-            <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-slate-600 font-semibold">
-                {t("admin.styleColors")}
-              </div>
-              <p className="text-sm text-gray-600">
-                {t("admin.styleColorsDetail")}
-              </p>
-            </div>
-            <div className="border rounded p-4 bg-gray-50 space-y-2">
-              <div className="text-xs uppercase tracking-wide text-slate-600 font-semibold">
-                {t("admin.styleButtons")}
-              </div>
-              <p className="text-sm text-gray-600">
-                {t("admin.styleButtonsDetail")}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500">{t("admin.styleNote")}</p>
         </div>
       </div>
 

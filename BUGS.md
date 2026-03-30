@@ -44,3 +44,6 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG: /sales: "Behöver du hjälp?" help is linked both above the header and just below the header "Betalningar" + description, it is pure unneccesary duplication
 [x] FEATURE: main /admin: the storefront admin ui should load faster by having suspense with placeholders that match what is being loaded, this will lower FCP dramatically.
 [x] BUG: storefront admin / mainbar status: it looks actionable now but the tooltip menu with action is still disappearing when mouse is not hovering, need delay or mouseclick persistence
+[x] BUG: storefront admin / style editor: {count} sparade versioner and {count} is not replaced from this template.
+[x] BUG: storefront admin / style editor: There should be examples of the active typography in edit. The admin ui style guide can safely be removed.
+[ ] BUG: storefront admin / info: "Measures and next actions" same color as background, the whole panel seems inverted for no reason.
