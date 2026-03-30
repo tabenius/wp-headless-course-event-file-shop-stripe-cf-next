@@ -70,6 +70,11 @@ const organizationJsonLd = {
 // Tiny blurred placeholder inlined as data URI — paints instantly before bg loads
 const bgPlaceholder =
   "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAADwAgCdASogABUAPzmSvFg0qiWjqAqqkCcJaQAAO4n8gAD+7UM5ZWObmXzS3IAAAAA=";
+const defaultFontAlternate =
+  site?.styleDefaults?.fontAlternate ||
+  "var(--font-montserrat), 'Helvetica Neue', sans-serif";
+const defaultFontSubmenu =
+  site?.styleDefaults?.fontSubmenu || defaultFontAlternate;
 
 export default function RootLayout({ children }) {
   return (
@@ -106,7 +111,11 @@ export default function RootLayout({ children }) {
       </head>
       <body
         className={`${montserrat.variable} ${merriweather.variable} antialiased`}
-        style={{ "--bg-image": `url(${bgPlaceholder})` }}
+        style={{
+          "--bg-image": `url(${bgPlaceholder})`,
+          "--font-alternate": defaultFontAlternate,
+          "--font-submenu": defaultFontSubmenu,
+        }}
       >
         {/* Swap in the real bg after it loads */}
         <script
@@ -120,7 +129,7 @@ export default function RootLayout({ children }) {
           }}
         />
         <PagePerformanceLogger />
-        <main className="text-gray-800 min-h-screen pt-16 lg:pt-[68px]">
+        <main className="min-h-screen pt-16 text-[var(--color-foreground)] lg:pt-[68px]">
           <Header />
           {children}
           <Footer />

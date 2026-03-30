@@ -26,8 +26,8 @@ export default function MobileNav({ items, authLinks }) {
   }, [open]);
 
   const menuItemClass =
-    "storefront-mobile-nav-link block font-[family-name:var(--font-montserrat)] text-[13px] font-normal py-[6px] border-b border-[#f0d0d0] hover:text-[#6d003e] leading-tight";
-  const activeMobileClass = "text-[#6d003e] font-semibold";
+    "storefront-mobile-nav-link block font-submenu text-[13px] font-normal py-[6px] border-b border-[var(--color-muted)] text-[var(--color-foreground)] hover:text-[var(--color-primary)] leading-tight";
+  const activeMobileClass = "text-[var(--color-primary)] font-semibold";
 
   const overlay = (
     <>
@@ -41,7 +41,7 @@ export default function MobileNav({ items, authLinks }) {
 
       {/* Slide-out panel */}
       <nav
-        className={`storefront-mobile-nav-panel fixed top-0 right-0 h-full w-[min(72vw,288px)] bg-[#fff1f1] z-[9999] transform transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${
+        className={`storefront-mobile-nav-panel fixed top-0 right-0 z-[9999] h-full w-[min(72vw,288px)] overflow-y-auto bg-[var(--color-background)] text-[var(--color-foreground)] transform transition-transform duration-300 ease-in-out lg:hidden ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -70,7 +70,7 @@ export default function MobileNav({ items, authLinks }) {
                   </NavLink>
                 ) : (
                   <span
-                    className={`${menuItemClass} text-gray-700 font-semibold`}
+                    className={`${menuItemClass} font-semibold text-[var(--color-foreground)]`}
                   >
                     {item.label}
                   </span>
@@ -100,7 +100,7 @@ export default function MobileNav({ items, authLinks }) {
           ))}
           <div className="flex items-center gap-2 py-2">
             <DarkModeToggle />
-            <span className="text-[13px] font-[family-name:var(--font-montserrat)]">
+            <span className="text-[13px] font-submenu">
               {t("darkMode.label")}
             </span>
           </div>
@@ -121,17 +121,17 @@ export default function MobileNav({ items, authLinks }) {
         aria-expanded={open}
       >
         <span
-          className={`storefront-mobile-nav-burger-line block w-6 h-[2px] bg-[#1a1a1a] transition-transform duration-300 ${
+          className={`storefront-mobile-nav-burger-line block h-[2px] w-6 bg-current text-[var(--color-foreground)] transition-transform duration-300 ${
             open ? "translate-y-[7px] rotate-45" : ""
           }`}
         />
         <span
-          className={`storefront-mobile-nav-burger-line block w-6 h-[2px] bg-[#1a1a1a] transition-opacity duration-300 ${
+          className={`storefront-mobile-nav-burger-line block h-[2px] w-6 bg-current text-[var(--color-foreground)] transition-opacity duration-300 ${
             open ? "opacity-0" : ""
           }`}
         />
         <span
-          className={`storefront-mobile-nav-burger-line block w-6 h-[2px] bg-[#1a1a1a] transition-transform duration-300 ${
+          className={`storefront-mobile-nav-burger-line block h-[2px] w-6 bg-current text-[var(--color-foreground)] transition-transform duration-300 ${
             open ? "-translate-y-[7px] -rotate-45" : ""
           }`}
         />

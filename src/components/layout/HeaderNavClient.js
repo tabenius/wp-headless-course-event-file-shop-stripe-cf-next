@@ -55,15 +55,15 @@ export default function HeaderNavClient({ navigation = [] }) {
   }, []);
 
   const menuItemClass =
-    "font-[family-name:var(--font-montserrat)] text-[13px] font-normal hover:underline focus:underline whitespace-nowrap";
+    "font-submenu text-[13px] font-normal text-[var(--color-foreground)] hover:underline focus:underline whitespace-nowrap";
   const activeMenuClass =
-    "text-[#6d003e] underline underline-offset-4 decoration-2 decoration-[#6d003e]";
+    "text-[var(--color-primary)] underline underline-offset-4 decoration-2 decoration-[var(--color-primary)]";
   const mobileAuthClass =
-    "block font-[family-name:var(--font-montserrat)] text-[13px] font-normal py-[6px] border-b border-[#f0d0d0] hover:text-[#6d003e] leading-tight";
+    "block text-[13px] font-submenu font-normal py-[6px] border-b border-[var(--color-muted)] hover:text-[var(--color-primary)] leading-tight";
 
   const mobileAuthLinks = isLoggedIn ? (
     <>
-      <span className="block text-[13px] font-[family-name:var(--font-montserrat)] text-gray-500 py-[6px]">
+      <span className="block text-[13px] font-submenu text-gray-500 py-[6px]">
         {user.name || user.email}
       </span>
       <Link href="/me" className={mobileAuthClass}>
@@ -83,7 +83,7 @@ export default function HeaderNavClient({ navigation = [] }) {
   );
 
   const userMenuSignOut = (
-    <SignOutButton className="block px-4 py-2 text-[13px] font-[family-name:var(--font-montserrat)] text-[#1a1a1a] hover:bg-[#f0d0d0] whitespace-nowrap w-full text-left" />
+    <SignOutButton className="block w-full whitespace-nowrap px-4 py-2 text-left text-[13px] font-submenu text-[var(--color-foreground)] hover:bg-[var(--color-muted)]" />
   );
 
   return (
@@ -97,7 +97,7 @@ export default function HeaderNavClient({ navigation = [] }) {
                 item={item}
                 className={menuItemClass}
                 activeClassName={activeMenuClass}
-                dropdownClassName="storefront-nav-dropdown bg-[#fff1f1] border border-[#333333] rounded shadow-lg py-1 min-w-[180px]"
+                dropdownClassName="storefront-nav-dropdown min-w-[180px] rounded border border-[var(--color-muted)] bg-[var(--color-background)] py-1 shadow-lg"
               />
             ) : (
               <NavLink

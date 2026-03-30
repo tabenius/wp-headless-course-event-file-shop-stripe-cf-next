@@ -18,6 +18,10 @@
     "favicon": "/img/favicon.png",
     "apple": "/img/apple-icon.png"
   },
+  "styleDefaults": {
+    "fontAlternate": "var(--font-montserrat), 'Helvetica Neue', sans-serif",
+    "fontSubmenu": "var(--font-montserrat), 'Helvetica Neue', sans-serif"
+  },
   "backgroundImage": "/img/bg.webp",
   "contact": {
     "email": "support@example.com",

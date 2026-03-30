@@ -20,6 +20,23 @@ body {
   line-height: 1.75;
 }
 
+.font-alternate {
+  font-family: var(
+    --font-alternate,
+    var(--font-heading, system-ui, -apple-system, "Segoe UI", sans-serif)
+  );
+}
+
+.font-submenu {
+  font-family: var(
+    --font-submenu,
+    var(
+      --font-alternate,
+      var(--font-heading, system-ui, -apple-system, "Segoe UI", sans-serif)
+    )
+  );
+}
+
 /* Fixed background via a pseudo-element avoids forced full-page composite */
 body::before {
   content: "";
@@ -419,6 +436,133 @@ body:not(:has(.admin-layout)) .shop-cta:focus {
 }
 .dark-mode body:not(:has(.admin-layout)) .bg-gray-50 {
   background-color: #222 !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-gray-100 {
+  background-color: #2e2e2e !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-gray-200 {
+  background-color: #333 !important;
+}
+
+/* Alert/banner backgrounds in dark mode */
+.dark-mode body:not(:has(.admin-layout)) .bg-amber-50 {
+  background-color: rgba(180, 120, 30, 0.18) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-yellow-50 {
+  background-color: rgba(180, 140, 20, 0.18) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-blue-50 {
+  background-color: rgba(60, 100, 180, 0.18) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-red-50 {
+  background-color: rgba(180, 50, 50, 0.18) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-teal-50 {
+  background-color: rgba(40, 140, 120, 0.18) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-green-50 {
+  background-color: rgba(40, 140, 60, 0.18) !important;
+}
+
+/* Alert/banner borders in dark mode */
+.dark-mode body:not(:has(.admin-layout)) .border-amber-300 {
+  border-color: rgba(200, 140, 40, 0.4) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .border-yellow-300 {
+  border-color: rgba(200, 160, 30, 0.4) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .border-blue-200 {
+  border-color: rgba(80, 120, 200, 0.35) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .border-red-300 {
+  border-color: rgba(200, 60, 60, 0.4) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .border-teal-200 {
+  border-color: rgba(60, 160, 140, 0.35) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Badge backgrounds in dark mode — darken light badges for readability */
+.dark-mode body:not(:has(.admin-layout)) .bg-blue-100 {
+  background-color: rgba(60, 100, 200, 0.25) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-green-100 {
+  background-color: rgba(40, 160, 80, 0.25) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-amber-100 {
+  background-color: rgba(200, 140, 40, 0.25) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .bg-purple-100 {
+  background-color: rgba(140, 60, 200, 0.25) !important;
+}
+
+/* Badge text in dark mode — lighten dark text for contrast */
+.dark-mode body:not(:has(.admin-layout)) .text-blue-800 {
+  color: #93c5fd !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-green-800 {
+  color: #86efac !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-amber-800 {
+  color: #fcd34d !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-purple-800 {
+  color: #d8b4fe !important;
+}
+
+/* Colored text in dark mode — lighten for readability */
+.dark-mode body:not(:has(.admin-layout)) .text-amber-900 {
+  color: #fcd34d !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-yellow-800 {
+  color: #fde68a !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-yellow-700 {
+  color: #fde68a !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-red-800 {
+  color: #fca5a5 !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-red-600 {
+  color: #fca5a5 !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-green-700 {
+  color: #86efac !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-teal-800,
+.dark-mode body:not(:has(.admin-layout)) .text-teal-900 {
+  color: #5eead4 !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .text-blue-900 {
+  color: #93c5fd !important;
+}
+
+/* Inputs in dark mode (Paywall email fields, etc.) */
+.dark-mode body:not(:has(.admin-layout)) input[type="email"],
+.dark-mode body:not(:has(.admin-layout)) input[type="text"],
+.dark-mode body:not(:has(.admin-layout)) input[type="password"],
+.dark-mode body:not(:has(.admin-layout)) textarea {
+  background-color: #2a2a2a !important;
+  color: #e8e0e0 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.dark-mode body:not(:has(.admin-layout)) input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Prose/content area in dark mode */
+.dark-mode body:not(:has(.admin-layout)) .prose {
+  color: #e8e0e0 !important;
+}
+.dark-mode body:not(:has(.admin-layout)) .prose strong {
+  color: #fff !important;
+}
+
+/* Skeleton pulse in dark mode */
+.dark-mode body:not(:has(.admin-layout)) .animate-pulse {
+  background-color: #333 !important;
 }
 
 /* Homepage events date row: explicit contrast colors by theme */
