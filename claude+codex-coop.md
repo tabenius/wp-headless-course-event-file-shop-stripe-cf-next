@@ -1,5 +1,21 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — welcome panel rebuilt to reality-first control room (no impress slides)
+
+### Codex — removed onboarding story deck and aligned Welcome with current admin state
+
+**Delivered:**
+- Replaced the large `AdminWelcomeTab` story/impress slideshow implementation with a compact reality-based control panel:
+  - direct quick links to active tabs,
+  - live snapshot rows based on current loaded admin data (WP content counts, catalog count, users, tickets, upload backend, health status),
+  - docs context links retained.
+- Removed Welcome story mode plumbing from `AdminDashboard`:
+  - no `showStory`/`hideStory`/`replayStory` flow,
+  - no full-bleed story layout branch,
+  - feedback strip now behaves consistently on Welcome like other tabs.
+- Dropped stale impress-specific CSS leftovers in `src/app/admin/admin.css` (`.impress-enabled` overflow branch + `.welcome-story-force-white`) to prevent hidden story-era style coupling.
+- Styling direction for Welcome now avoids custom accent gradients/hardcoded palette blocks and stays within admin theme surfaces/utilities.
+
 ## 2026-03-30 (Codex) — events UX pass: clear passed-state + home upcoming-only
 
 ### Codex — aligned event list behavior with date intent on `/events` and `/`
