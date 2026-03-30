@@ -1,5 +1,29 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — worker Server-Timing diagnostics (`app_ms`, `wp_ms`, `menu_ms`)
+
+### Codex — added lightweight response timing headers for production TTFB diagnosis (commit pending)
+
+**Delivered:**
+- Added request-scoped timing accumulator helper:
+  - `src/lib/serverTiming.js`
+  - stores per-request aggregates in CF request context (`ctx.__ragbazTiming`) when available.
+- Instrumented GraphQL client latency:
+  - `src/lib/client.js` now records aggregate upstream WordPress GraphQL time as `wp_ms` (+ `wp_count`).
+- Instrumented navigation resolution latency:
+  - `src/lib/menu.js` now records `getNavigation()` wall time as `menu_ms` (+ `menu_count`) including snapshot/fallback paths.
+- Extended CF worker post-build patching:
+  - `scripts/patch-cf-worker.mjs` now injects a tiny `Server-Timing` header emitter into `.open-next/worker.js`.
+  - Header now includes:
+    - `app_ms` total worker handling time,
+    - `wp_ms` aggregate WordPress GraphQL latency during request,
+    - `menu_ms` menu resolution time.
+  - Preserves existing `Server-Timing` values if present by appending.
+
+**Validation:**
+- `npm run lint` (pass; existing warnings only)
+- `npm run cf:build` (pass; patch step logs `added server-timing response headers`)
+
 ## 2026-03-30 (Codex) — TTFB stabilization pass: non-blocking menu cold path + restore ISR defaults
 
 ### Codex — removed global forced-dynamic rendering and de-risked header menu fetch path (commit pending)

@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const HANDLER = resolve(".open-next/server-functions/default/handler.mjs");
+const WORKER = resolve(".open-next/worker.js");
 
 // ---------------------------------------------------------------------------
 // 1. loadManifest patch
@@ -148,11 +149,128 @@ stubWasm(
     );
   }
 
-  if (hoisted.length > 0) {
+if (hoisted.length > 0) {
     // Inject hoisted variables after the banner import line.
     const bannerEnd = handler.indexOf("\n") + 1;
     handler = handler.slice(0, bannerEnd) + hoisted.join("") + "\n" + handler.slice(bannerEnd);
     writeFileSync(HANDLER, handler, "utf8");
     console.log(`patch-cf-worker: i18n dedup total saved ~${(totalSaved / 1024).toFixed(0)} KB raw`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 5. Add lightweight Server-Timing headers for request diagnostics.
+//
+//    Exposes:
+//    - app_ms  : total worker handling duration
+//    - wp_ms   : aggregate GraphQL upstream latency (recorded in app code)
+//    - menu_ms : menu resolution duration (recorded in app code)
+// ---------------------------------------------------------------------------
+{
+  let workerSrc;
+  try {
+    workerSrc = readFileSync(WORKER, "utf8");
+  } catch (err) {
+    console.error(`patch-cf-worker: cannot read ${WORKER}:`, err.message);
+    process.exit(1);
+  }
+
+  if (workerSrc.includes("__appendServerTiming")) {
+    let healed = workerSrc;
+    healed = healed.replace(
+      "if (!(response instanceof Response)) return __appendServerTiming(response);",
+      "if (!(response instanceof Response)) return response;",
+    );
+    healed = healed.replace(
+      `const response = maybeGetSkewProtectionResponse(request);
+            if (response) {
+                return response;
+            }`,
+      `const response = maybeGetSkewProtectionResponse(request);
+            if (response) {
+                return __appendServerTiming(response);
+            }`,
+    );
+    if (healed !== workerSrc) {
+      writeFileSync(WORKER, healed, "utf8");
+      console.log("patch-cf-worker: healed existing server-timing patch.");
+    } else {
+      console.log("patch-cf-worker: server-timing patch already present, skipping.");
+    }
+  } else {
+    const fetchNeedle = "async fetch(request, env, ctx) {";
+    const fetchPatch = `async fetch(request, env, ctx) {
+        const __timingStartedAt = Date.now();
+        if (ctx && typeof ctx === "object") {
+            ctx.__ragbazTiming = { wpMs: 0, wpCount: 0, menuMs: 0, menuCount: 0 };
+        }
+        const __appendServerTiming = (response) => {
+            try {
+                if (!(response instanceof Response)) return response;
+                const timing = ctx && typeof ctx === "object" ? ctx.__ragbazTiming : null;
+                const appMs = Math.max(0, Date.now() - __timingStartedAt);
+                const wpMs = Math.max(0, Number(timing?.wpMs || 0));
+                const menuMs = Math.max(0, Number(timing?.menuMs || 0));
+                const wpCount = Math.max(0, Number(timing?.wpCount || 0));
+                const menuCount = Math.max(0, Number(timing?.menuCount || 0));
+                const segments = [
+                    \`app_ms;dur=\${Math.round(appMs)}\`,
+                    \`wp_ms;dur=\${Math.round(wpMs)}\`,
+                    \`menu_ms;dur=\${Math.round(menuMs)}\`,
+                ];
+                if (wpCount > 0) segments.push(\`wp_count;dur=\${wpCount}\`);
+                if (menuCount > 0) segments.push(\`menu_count;dur=\${menuCount}\`);
+                const existing = response.headers.get("server-timing");
+                response.headers.set(
+                    "server-timing",
+                    existing ? \`\${existing}, \${segments.join(", ")}\` : segments.join(", ")
+                );
+            } catch {
+                // Never fail the request due to diagnostics headers.
+            }
+            return response;
+        };`;
+
+    const replacements = [
+      [fetchNeedle, fetchPatch],
+      [
+        `const response = maybeGetSkewProtectionResponse(request);
+            if (response) {
+                return response;
+            }`,
+        `const response = maybeGetSkewProtectionResponse(request);
+            if (response) {
+                return __appendServerTiming(response);
+            }`,
+      ],
+      [
+        "return handleCdnCgiImageRequest(url, env);",
+        "return __appendServerTiming(handleCdnCgiImageRequest(url, env));",
+      ],
+      [
+        "return await handleImageRequest(url, request.headers, env);",
+        "return __appendServerTiming(await handleImageRequest(url, request.headers, env));",
+      ],
+      ["return reqOrResp;", "return __appendServerTiming(reqOrResp);"],
+      [
+        "return handler(reqOrResp, env, ctx, request.signal);",
+        "return __appendServerTiming(await handler(reqOrResp, env, ctx, request.signal));",
+      ],
+    ];
+
+    let patched = workerSrc;
+    let changed = false;
+    for (const [needle, replacement] of replacements) {
+      if (!patched.includes(needle)) continue;
+      patched = patched.replace(needle, replacement);
+      changed = true;
+    }
+
+    if (!changed) {
+      console.warn("patch-cf-worker: server-timing patch did not match worker template.");
+    } else {
+      writeFileSync(WORKER, patched, "utf8");
+      console.log("patch-cf-worker: added server-timing response headers.");
+    }
   }
 }

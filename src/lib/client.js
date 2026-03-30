@@ -7,6 +7,7 @@ import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { getStorefrontCacheEpoch } from "@/lib/storefrontCache";
 import { isBuildPhase, shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
+import { addServerTiming } from "@/lib/serverTiming";
 
 const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
@@ -326,6 +327,7 @@ export async function fetchGraphQL(
       } catch (fetchErr) {
         clearTimeout(tid);
         const latencyMs = Date.now() - attemptStart;
+        addServerTiming("wp", latencyMs);
         recordAttempt(graphqlEndpoint, "network-error", false);
         recordAvailabilityDatapoint({
           ok: false,
@@ -351,6 +353,7 @@ export async function fetchGraphQL(
       clearTimeout(tid);
       lastCallTs = Date.now();
       const latencyMs = lastCallTs - attemptStart;
+      addServerTiming("wp", latencyMs);
       recordAttempt(graphqlEndpoint, response.status, response.ok);
       const contentType = response.headers.get("content-type") || "";
       if (debugGraphQL) {

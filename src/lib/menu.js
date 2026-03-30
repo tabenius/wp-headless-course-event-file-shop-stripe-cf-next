@@ -8,6 +8,7 @@ import {
 } from "@/lib/menuFilter";
 import { cache } from "react";
 import { readCloudflareKvJson, writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import { addServerTiming } from "@/lib/serverTiming";
 
 const MENU_QUERY = `
   query GetPrimaryMenu {
@@ -510,26 +511,31 @@ function refreshMenuSnapshotInBackground() {
  * Returns items with optional `children` arrays.
  */
 export const getNavigation = cache(async function getNavigation() {
-  if (shouldSkipUpstreamDuringBuild()) {
-    const alwaysRenderHref = async () => true;
-    return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
-  }
+  const startedAt = Date.now();
+  try {
+    if (shouldSkipUpstreamDuringBuild()) {
+      const alwaysRenderHref = async () => true;
+      return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
+    }
 
-  const snapshot = await getMenuSnapshot();
-  if (snapshot && snapshot.length > 0) {
+    const snapshot = await getMenuSnapshot();
+    if (snapshot && snapshot.length > 0) {
+      if (MENU_COLD_START_BG_REFRESH) {
+        refreshMenuSnapshotInBackground();
+      }
+      return ensureCoreMenuEntriesByExistence(snapshot, canRenderMenuHref);
+    }
+
     if (MENU_COLD_START_BG_REFRESH) {
       refreshMenuSnapshotInBackground();
+      const alwaysRenderHref = async () => true;
+      return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
     }
-    return ensureCoreMenuEntriesByExistence(snapshot, canRenderMenuHref);
-  }
 
-  if (MENU_COLD_START_BG_REFRESH) {
-    refreshMenuSnapshotInBackground();
-    const alwaysRenderHref = async () => true;
-    return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
+    const navigation = await fetchNavigationFromUpstreamOrFallback();
+    writeMenuSnapshot(navigation).catch(() => {});
+    return navigation;
+  } finally {
+    addServerTiming("menu", Date.now() - startedAt);
   }
-
-  const navigation = await fetchNavigationFromUpstreamOrFallback();
-  writeMenuSnapshot(navigation).catch(() => {});
-  return navigation;
 });
