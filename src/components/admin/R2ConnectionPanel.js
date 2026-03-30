@@ -248,7 +248,11 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             <p>{t("admin.cyberduckStepProtocol")}</p>
             <p>{t("admin.cyberduckStepServer")}</p>
             <p>{t("admin.cyberduckStepAuth")}</p>
-            <p>{t("admin.cyberduckStepPath")}</p>
+            <p>
+              {t("admin.cyberduckStepPath", {
+                bucket_name: clientDetails.bucket || "bucket_name",
+              })}
+            </p>
           </div>
           {(serverHost || clientDetails.endpoint) && (
             <div className="mt-3 pt-3 border-t border-amber-200">

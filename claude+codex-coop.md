@@ -1,5 +1,28 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — Cyberduck instruction copy rewrite (EN/SV/ES) with dynamic bucket path
+
+### Codex — rewrote Cyberduck setup instructions into numbered action flow
+
+**Delivered:**
+- Rephrased Cyberduck setup instructions as a clear 1–4 sequence in all three languages:
+  - English
+  - Swedish
+  - Spanish
+- Updated path instruction to inject runtime bucket name dynamically:
+  - uses `/{bucket_name}` with example `/sofiacerne`,
+  - actual bucket value now fills `{bucket_name}` where available.
+
+**Implementation files:**
+- `src/components/admin/R2ConnectionPanel.js`
+- `src/lib/i18n/en.json`
+- `src/lib/i18n/sv.json`
+- `src/lib/i18n/es.json`
+
+**Validation:**
+- JSON parse check for all i18n files (pass).
+- `npm run lint -- src/components/admin/R2ConnectionPanel.js` (pass; existing repo warnings unchanged).
+
 ## 2026-03-30 (Codex) — asset library bucket visibility + Cyberduck dynamic bookmark + checklist typography polish
 
 ### Codex — ensured bucket uploads are visible and improved operator-facing Cyberduck guidance
