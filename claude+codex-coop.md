@@ -1,5 +1,9 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — media upload flow: any-file acceptance, no type-gate copy
+
+- Landed `eb79722` — WHY: upload operators should not be blocked by pipeline-implementation details; the admin upload area now avoids type-explainer clutter, removes client-side file-type rejection, and accepts any file as an asset (size limits still enforced), with format-specific guidance moved away from pre-upload flow.
+
 ## 2026-03-30 (Codex) — admin semantic pill system + contrast hardening
 
 - Landed `b09401d` — WHY: repeated admin chips/pills were still composed with ad-hoc color utilities, which makes white-on-white/low-contrast regressions easy to reintroduce when themes evolve; this centralizes those UI semantics in one tokenized layer and applies them in high-traffic admin surfaces (media filters/status, product filters/type tags, debug tabs, sales badges, in-context help marker) to keep contrast predictable.
