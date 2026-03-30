@@ -111,7 +111,7 @@
   "contactApi": {
     "requiredFields": "Alla fält krävs.",
     "emailSendFailed": "Det gick inte att skicka e-posten just nu.",
-    "notConfigured": "E-postleverans är inte konfigurerad. Ange RESEND_API_KEY och RESEND_FROM_EMAIL.",
+    "notConfigured": "E-postleverans är inte konfigurerad. Ange RESEND_API_KEY och RESEND_FROM_EMAIL (eller RESEND_FROM).",
     "sendError": "Det gick inte att skicka meddelandet just nu.",
     "sent": "Tack! Vi återkommer snarast.",
     "subject": "Kontaktformulär: {name}"

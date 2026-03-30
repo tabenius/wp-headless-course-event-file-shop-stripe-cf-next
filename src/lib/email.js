@@ -3,10 +3,11 @@
  * Optionally BCC tenant-defined notification inboxes.
  */
 import { tenantConfig } from "@/lib/tenantConfig";
+import { getResendApiKey, getResendFromAddress } from "@/lib/resendConfig";
 
 export async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const apiKey = getResendApiKey();
+  const from = getResendFromAddress();
   if (!apiKey || !from) {
     throw new Error("Email service is not configured");
   }

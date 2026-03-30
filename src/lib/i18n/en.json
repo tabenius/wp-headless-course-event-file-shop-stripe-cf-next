@@ -111,7 +111,7 @@
   "contactApi": {
     "requiredFields": "All fields are required.",
     "emailSendFailed": "Could not send the email right now.",
-    "notConfigured": "Email delivery is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    "notConfigured": "Email delivery is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL (or RESEND_FROM).",
     "sendError": "Could not send the message right now.",
     "sent": "Thank you! We’ll get back to you shortly.",
     "subject": "Contact form: {name}"

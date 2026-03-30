@@ -4,6 +4,7 @@ import site from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { tenantConfig } from "@/lib/tenantConfig";
+import { getResendApiKey, getResendFromAddress, isResendConfigured } from "@/lib/resendConfig";
 
 const ContactSchema = z.object({
   name: z.string().trim().min(2, t("authErrors.nameTooShort")),
@@ -51,9 +52,11 @@ export async function POST(request) {
 
     const to = getTargetEmail();
 
-    if (process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL) {
+    if (isResendConfigured()) {
+      const resendApiKey = getResendApiKey();
+      const resendFrom = getResendFromAddress();
       const payload = {
-        from: process.env.RESEND_FROM_EMAIL,
+        from: resendFrom,
         to: [to],
         subject: t("contactApi.subject").replace("{name}", name),
         reply_to: email,
@@ -62,7 +65,7 @@ export async function POST(request) {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          Authorization: `Bearer ${resendApiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),

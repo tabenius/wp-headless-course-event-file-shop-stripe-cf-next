@@ -3,7 +3,7 @@ export const ADMIN_ENV_GROUPS = [
     id: "app",
     label: "App / Auth",
     vars: [
-      { label: "Site URL", names: ["NEXT_PUBLIC_SITE_URL"] },
+      { label: "Site URL", names: ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_WORDPRESS_URL"] },
       { label: "Admin emails", names: ["ADMIN_EMAILS"] },
       { label: "Admin passwords", names: ["ADMIN_PASSWORDS"], secret: true },
       { label: "Admin username (legacy)", names: ["ADMIN_USERNAME"] },
@@ -76,7 +76,7 @@ export const ADMIN_ENV_GROUPS = [
     label: "Email (Resend)",
     vars: [
       { label: "API key", names: ["RESEND_API_KEY"], secret: true },
-      { label: "From address", names: ["RESEND_FROM", "EMAIL_FROM"] },
+      { label: "From address", names: ["RESEND_FROM_EMAIL", "RESEND_FROM", "EMAIL_FROM"] },
     ],
   },
 ];
@@ -96,4 +96,3 @@ export function envLooksSecret(name) {
     key.endsWith("_KEY")
   );
 }
-

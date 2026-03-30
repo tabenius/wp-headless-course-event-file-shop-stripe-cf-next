@@ -111,7 +111,7 @@
   "contactApi": {
     "requiredFields": "Todos los campos son obligatorios.",
     "emailSendFailed": "No se pudo enviar el correo en este momento.",
-    "notConfigured": "El envío de correo no está configurado. Define RESEND_API_KEY y RESEND_FROM_EMAIL.",
+    "notConfigured": "El envío de correo no está configurado. Define RESEND_API_KEY y RESEND_FROM_EMAIL (o RESEND_FROM).",
     "sendError": "No se pudo enviar el mensaje en este momento.",
     "sent": "¡Gracias! Te responderemos pronto.",
     "subject": "Formulario de contacto: {name}"

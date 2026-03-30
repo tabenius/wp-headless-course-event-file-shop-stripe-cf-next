@@ -121,7 +121,7 @@ export default function AdminSandboxTab({
               <div className="text-gray-500">
                 {resendConfigured
                   ? "Resend API"
-                  : "Not configured — set RESEND_API_KEY and RESEND_FROM_EMAIL"}
+                  : "Not configured — set RESEND_API_KEY and RESEND_FROM_EMAIL (or RESEND_FROM)"}
               </div>
             </div>
             <div className="bg-gray-50 rounded p-3 space-y-1">

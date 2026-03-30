@@ -15,6 +15,7 @@ import {
   isS3Configured,
   isS3Upload,
 } from "@/lib/s3upload";
+import { isResendConfigured } from "@/lib/resendConfig";
 
 const graphqlFieldSupportCache = new Map();
 
@@ -222,9 +223,7 @@ export async function GET(request) {
       wcProducts,
       wpEvents,
       storage: getCourseStorageInfo(),
-      resendConfigured: !!(
-        process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL
-      ),
+      resendConfigured: isResendConfigured(),
       upload: {
         backend: uploadBackend,
         wordpress: true,
