@@ -1,5 +1,30 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — media upload UX: thumbnail + auto-locate scroll
+
+### Codex — made recent upload entries visual and navigable to the newly uploaded asset row
+
+**Delivered:**
+- Recent uploads now show a thumbnail preview for uploaded image assets (and file-type badge fallback for non-images).
+- Added row-linking metadata on upload history entries (`itemId`, `mimeType`) so history can target the exact table row.
+- Added `Locate` action per recent upload entry to focus + scroll to the matching asset row.
+- Automatic post-upload behavior:
+  - after successful upload refresh, the uploaded asset is automatically focused,
+  - table scrolls smoothly to center that row,
+  - row gets a temporary visual highlight.
+- Applied same refresh/focus behavior when saving derived preview assets to the library.
+
+**Implementation files:**
+- `src/components/admin/AdminMediaLibraryTab.js`
+- `src/lib/mediaLibraryHelpers.js`
+- `src/lib/i18n/en.json`
+- `src/lib/i18n/sv.json`
+- `src/lib/i18n/es.json`
+
+**Validation:**
+- `npm run lint -- src/components/admin/AdminMediaLibraryTab.js src/lib/mediaLibraryHelpers.js` (pass; existing repo warnings unchanged).
+- JSON parse check for i18n files (pass).
+
 ## 2026-03-30 (Codex) — media source filter contrast fix (Alla källor)
 
 ### Codex — switched source filter chips to slate theme surfaces in Asset Library

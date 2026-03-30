@@ -221,7 +221,15 @@ export function parseSize(value) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 }
 
-export function buildUploadHistoryEntry({ name, status, detail, url, backend }) {
+export function buildUploadHistoryEntry({
+  name,
+  status,
+  detail,
+  url,
+  backend,
+  mimeType,
+  itemId,
+}) {
   return {
     id: `${status}-${name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     name: String(name || "untitled"),
@@ -229,6 +237,8 @@ export function buildUploadHistoryEntry({ name, status, detail, url, backend }) 
     detail: String(detail || ""),
     url: String(url || ""),
     backend: String(backend || ""),
+    mimeType: String(mimeType || ""),
+    itemId: String(itemId || ""),
     timestamp: Date.now(),
   };
 }

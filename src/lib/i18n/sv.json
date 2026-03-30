@@ -399,6 +399,7 @@
     "mediaUploadTooLargeMixed": "Vissa filer överskred storleksgränserna (bilder: {imageMb} MB, datafiler: {dataMb} MB).",
     "mediaUploadFailed": "En eller flera uppladdningar misslyckades.",
     "mediaUploadUnsupported": "Endast bilder, JSON, YAML, CSV, Markdown och SQLite-filer stöds.",
+    "mediaLocate": "Visa i lista",
     "mediaViewFile": "Visa",
     "mediaViewerTitle": "Resursvisare",
     "mediaViewerLoading": "Laddar visaren…",

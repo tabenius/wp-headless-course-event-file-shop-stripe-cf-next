@@ -399,6 +399,7 @@
     "mediaUploadTooLargeMixed": "Algunos archivos excedieron los límites de tamaño (imágenes: {imageMb} MB, archivos de datos: {dataMb} MB).",
     "mediaUploadFailed": "Una o más subidas fallaron.",
     "mediaUploadUnsupported": "Solo se admiten imágenes, JSON, YAML, CSV, Markdown y archivos SQLite.",
+    "mediaLocate": "Ubicar en lista",
     "mediaViewFile": "Ver",
     "mediaViewerTitle": "Visor de recursos",
     "mediaViewerLoading": "Cargando visor…",

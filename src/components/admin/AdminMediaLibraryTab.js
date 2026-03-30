@@ -135,6 +135,8 @@ export default function AdminMediaLibraryTab({
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedUploadBackend, setSelectedUploadBackend] = useState("wordpress");
   const [focusedItemId, setFocusedItemId] = useState("");
+  const [pendingFocusItemId, setPendingFocusItemId] = useState("");
+  const [flashFocusedItemId, setFlashFocusedItemId] = useState("");
   const [viewerItem, setViewerItem] = useState(null);
   const [viewerLoading, setViewerLoading] = useState(false);
   const [viewerError, setViewerError] = useState("");
@@ -483,6 +485,29 @@ export default function AdminMediaLibraryTab({
     });
   }, []);
 
+  useEffect(() => {
+    if (!pendingFocusItemId) return undefined;
+    const rowExists = rows.some((item) => item.id === pendingFocusItemId);
+    if (!rowExists) return undefined;
+
+    setFocusedItemId(pendingFocusItemId);
+    setFlashFocusedItemId(pendingFocusItemId);
+    requestAnimationFrame(() => {
+      mediaRowsRef.current.get(pendingFocusItemId)?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+    setPendingFocusItemId("");
+    const highlightedId = pendingFocusItemId;
+    const timeoutId = window.setTimeout(() => {
+      setFlashFocusedItemId((current) =>
+        current === highlightedId ? "" : current,
+      );
+    }, 1800);
+    return () => window.clearTimeout(timeoutId);
+  }, [pendingFocusItemId, rows]);
+
   const selectedItem = useMemo(
     () => items.find((item) => item.id === selectedId) || null,
     [items, selectedId],
@@ -684,6 +709,28 @@ export default function AdminMediaLibraryTab({
     if (!url) return;
     window.open(url, "_blank", "noreferrer");
   };
+
+  const resolveUploadedItemId = useCallback((uploadJson, fallbackBackend) => {
+    const backend = String(
+      uploadJson?.backend || fallbackBackend || "",
+    ).toLowerCase();
+    if (backend === "wordpress") {
+      const sourceId = Number.parseInt(
+        String(uploadJson?.id ?? uploadJson?.sourceId ?? ""),
+        10,
+      );
+      if (Number.isFinite(sourceId) && sourceId > 0) {
+        return `wordpress:${sourceId}`;
+      }
+      return "";
+    }
+    if (backend === "r2") {
+      const key = String(uploadJson?.key || "").trim();
+      if (key) return `r2:${key}`;
+      return "";
+    }
+    return "";
+  }, []);
 
   const formatHistoryTimestamp = (value) => {
     if (!value) return "";
@@ -963,6 +1010,7 @@ export default function AdminMediaLibraryTab({
     let succeeded = 0;
     const errors = [];
     const attemptEntries = [];
+    let firstUploadedItemId = "";
 
     for (const file of valid) {
       const entry = buildUploadHistoryEntry({
@@ -992,6 +1040,11 @@ export default function AdminMediaLibraryTab({
         entry.url = json?.url || entry.url;
         entry.detail = json?.title || "";
         entry.backend = json?.backend || entry.backend;
+        entry.mimeType = json?.mimeType || file.type || "";
+        entry.itemId = resolveUploadedItemId(json, selectedUploadBackend);
+        if (!firstUploadedItemId && entry.itemId) {
+          firstUploadedItemId = entry.itemId;
+        }
         succeeded += 1;
       } catch (uploadSingleError) {
         entry.status = "error";
@@ -1025,6 +1078,9 @@ export default function AdminMediaLibraryTab({
         }),
       );
       setRefreshToken((value) => value + 1);
+      if (firstUploadedItemId) {
+        setPendingFocusItemId(firstUploadedItemId);
+      }
     } else {
       setUploadStatus("");
     }
@@ -1761,8 +1817,14 @@ export default function AdminMediaLibraryTab({
         detail: t("admin.mediaDerivationApplied", "Derived asset saved"),
         url: json.asset?.url,
         backend: selectedUploadBackend,
+        mimeType: json?.mimeType || blob.type || "",
+        itemId: resolveUploadedItemId(json, selectedUploadBackend),
       });
       setUploadHistory((prev) => [entry, ...prev].slice(0, HISTORY_MAX_ENTRIES));
+      setRefreshToken((value) => value + 1);
+      if (entry.itemId) {
+        setPendingFocusItemId(entry.itemId);
+      }
       setPreviewBlobUrl(null);
       setPreviewBlob(null);
       return true;
@@ -2108,10 +2170,39 @@ export default function AdminMediaLibraryTab({
                   key={entry.id}
                   className="flex flex-wrap items-start justify-between gap-2"
                 >
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-800 break-all">
-                      {entry.name}
-                    </p>
+                  <div className="min-w-0 flex items-start gap-2">
+                    {entry.status === "uploaded" && entry.url ? (
+                      canPreviewImage(entry) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={entry.url}
+                          alt=""
+                          className="h-10 w-10 rounded border object-cover bg-gray-100 shrink-0"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded border bg-gray-100 text-[9px] text-gray-500 flex items-center justify-center shrink-0 px-1 text-center">
+                          {extFromFileName(entry.name || entry.url || "") || "FILE"}
+                        </div>
+                      )
+                    ) : null}
+                    <div className="min-w-0">
+                      {entry.itemId ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFlashFocusedItemId(entry.itemId);
+                            focusItemById(entry.itemId);
+                          }}
+                          className="text-xs font-medium text-slate-800 break-all hover:underline text-left"
+                        >
+                          {entry.name}
+                        </button>
+                      ) : (
+                        <p className="text-xs font-medium text-gray-800 break-all">
+                          {entry.name}
+                        </p>
+                      )}
                     <p className="text-[11px] text-gray-500">
                       <span className="font-semibold">
                         {historyStatusLabel(entry.status)}
@@ -2122,8 +2213,21 @@ export default function AdminMediaLibraryTab({
                     <p className="text-[10px] text-gray-400">
                       {formatHistoryTimestamp(entry.timestamp)}
                     </p>
+                    </div>
                   </div>
                   <div className="flex gap-1">
+                    {entry.itemId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFlashFocusedItemId(entry.itemId);
+                          focusItemById(entry.itemId);
+                        }}
+                        className="px-2 py-0.5 rounded border text-[11px] text-gray-600 hover:bg-gray-100"
+                      >
+                        {t("admin.mediaLocate", "Locate")}
+                      </button>
+                    )}
                     {entry.url && (
                       <button
                         type="button"
@@ -2243,7 +2347,11 @@ export default function AdminMediaLibraryTab({
                 ref={(node) => registerMediaRowRef(item.id, node)}
                 onClick={() => setFocusedItemId(item.id)}
                 className={`border-t align-top ${
-                  focusedItemId === item.id ? "bg-slate-50" : ""
+                  focusedItemId === item.id
+                    ? "bg-slate-50"
+                    : flashFocusedItemId === item.id
+                      ? "bg-emerald-50"
+                      : ""
                 }`}
               >
                   <td className="px-3 py-2">
