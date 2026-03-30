@@ -14,6 +14,8 @@ import { createTicket } from "@/lib/supportTickets";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import site from "@/lib/site";
 
+export const runtime = "nodejs";
+
 const CheckoutSchema = z
   .object({
     contentUri: z.string().trim().min(1).optional(),

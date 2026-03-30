@@ -5,6 +5,8 @@ import { hasDigitalAccess } from "@/lib/digitalAccessStore";
 import { getDigitalProductById } from "@/lib/digitalProducts";
 import { t } from "@/lib/i18n";
 
+export const runtime = "nodejs";
+
 function getFileName(fileUrl, fallbackId) {
   try {
     const pathname = new URL(fileUrl).pathname;

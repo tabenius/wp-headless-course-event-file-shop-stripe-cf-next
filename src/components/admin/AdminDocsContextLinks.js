@@ -52,7 +52,7 @@ export default function AdminDocsContextLinks({
           target="_blank"
           rel="noopener noreferrer"
           className="admin-docs-context-link inline-flex items-center rounded-full border px-2.5 py-1 font-medium"
-          title={t("admin.docsOpenGuideTooltip", "Open guide on RAGBAZ.xyz ({lang}).", {
+          title={t("admin.docsOpenGuideTooltip", {
             lang: docsLang.toUpperCase(),
           })}
         >

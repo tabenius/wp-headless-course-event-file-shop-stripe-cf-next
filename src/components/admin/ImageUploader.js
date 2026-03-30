@@ -1221,15 +1221,11 @@ export default function ImageUploader({
                       <span>{t("admin.imageDerivedWorkToggle", "Mark as derived work")}</span>
                     </label>
                     <p className="text-[11px] text-gray-500">
-                      {t(
-                        "admin.imageVariantCurrent",
-                        "Current variant type: {kind}",
-                        {
-                          kind: isDerivedWork
-                            ? t("admin.imageVariantKindDerivedWork")
-                            : t("admin.imageVariantKindCompressed"),
-                        },
-                      )}
+                      {t("admin.imageVariantCurrent", {
+                        kind: isDerivedWork
+                          ? t("admin.imageVariantKindDerivedWork")
+                          : t("admin.imageVariantKindCompressed"),
+                      })}
                     </p>
                     <p className="text-[11px] text-gray-500">
                       {t("admin.imageVariantKindHint")}

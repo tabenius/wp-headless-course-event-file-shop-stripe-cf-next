@@ -847,7 +847,7 @@ function DocsPanel() {
           target="_blank"
           rel="noopener noreferrer"
           className="rounded border bg-sky-50 px-4 py-3 hover:bg-sky-100 transition-colors"
-          title={t("admin.docsOpenGuideTooltip", "Open guide on RAGBAZ.xyz ({lang}).", {
+          title={t("admin.docsOpenGuideTooltip", {
             lang: docsLang.toUpperCase(),
           })}
         >
@@ -866,7 +866,7 @@ function DocsPanel() {
           target="_blank"
           rel="noopener noreferrer"
           className="rounded border bg-sky-50 px-4 py-3 hover:bg-sky-100 transition-colors"
-          title={t("admin.docsOpenGuideTooltip", "Open guide on RAGBAZ.xyz ({lang}).", {
+          title={t("admin.docsOpenGuideTooltip", {
             lang: docsLang.toUpperCase(),
           })}
         >

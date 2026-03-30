@@ -987,11 +987,10 @@ export default function AdminMediaLibraryTab({
       "admin.mediaUploadUnsupported",
       "Only images, JSON, YAML, CSV, Markdown, and SQLite files are supported.",
     );
-    const oversizedMessage = t(
-      "admin.mediaUploadTooLargeMixed",
-      "Some files exceeded size limits (images: {imageMb} MB, data files: {dataMb} MB).",
-      { imageMb: 20, dataMb: 100 },
-    );
+    const oversizedMessage = t("admin.mediaUploadTooLargeMixed", {
+      imageMb: 20,
+      dataMb: 100,
+    });
     const skippedEntries = [
       ...unsupported.map((file) =>
         buildUploadHistoryEntry({
@@ -2013,18 +2012,18 @@ export default function AdminMediaLibraryTab({
 
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
         <span>
-          {t("admin.mediaResultsSummary", "{shown} shown / {total} total", {
+          {t("admin.mediaResultsSummary", {
             shown: rowStats.shownCount,
             total: rowStats.totalCount,
           })}
         </span>
         <span>
-          {t("admin.mediaResultsSize", "Size: {size}", {
+          {t("admin.mediaResultsSize", {
             size: formatBytes(rowStats.totalBytes),
           })}
         </span>
         <span>
-          {t("admin.mediaResultsBreakdown", "Images: {images} · Data: {data} · Other: {other}", {
+          {t("admin.mediaResultsBreakdown", {
             images: rowStats.imageCount,
             data: rowStats.dataCount,
             other: rowStats.otherCount,
@@ -2114,14 +2113,10 @@ export default function AdminMediaLibraryTab({
                 )}
               </p>
               <p className="text-[11px] text-gray-500">
-                {t(
-                  "admin.mediaUploadLimits",
-                  "Images under {imageMb} MB and other assets under {dataMb} MB. WordPress uploads may cap these further.",
-                  {
-                    imageMb: MAX_IMAGE_MB,
-                    dataMb: MAX_DATA_MB,
-                  },
-                )}
+                {t("admin.mediaUploadLimits", {
+                  imageMb: MAX_IMAGE_MB,
+                  dataMb: MAX_DATA_MB,
+                })}
               </p>
             </div>
             <button
@@ -2720,11 +2715,9 @@ export default function AdminMediaLibraryTab({
             {showAllDerivations
               ? t("admin.mediaDerivationShowAllHint", "Showing all derivations.")
               : focusedAssetType
-                ? t(
-                    "admin.mediaDerivationMatchingHint",
-                    "Showing derivations for {type} assets.",
-                    { type: focusedAssetTypeLabel },
-                  )
+                ? t("admin.mediaDerivationMatchingHint", {
+                    type: focusedAssetTypeLabel,
+                  })
                 : t(
                     "admin.mediaDerivationSelectAssetHint",
                     "Select an asset to narrow derivation suggestions.",
@@ -2802,11 +2795,9 @@ export default function AdminMediaLibraryTab({
                     {editorName?.trim() || derivationPseudoName}
                   </p>
                   <p className="text-[11px] text-slate-600">
-                    {t(
-                      "admin.mediaDerivationPseudoName",
-                      "Pseudo name: {name}",
-                      { name: derivationPseudoName },
-                    )}
+                    {t("admin.mediaDerivationPseudoName", {
+                      name: derivationPseudoName,
+                    })}
                   </p>
                 </div>
                 <span
@@ -2994,7 +2985,7 @@ export default function AdminMediaLibraryTab({
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-[11px] text-slate-600">
-                      {t("admin.mediaDerivationStep", "Step {n}", { n: index + 1 })}
+                      {t("admin.mediaDerivationStep", { n: index + 1 })}
                     </span>
                     <button
                       type="button"

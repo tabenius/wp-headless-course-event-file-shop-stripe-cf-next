@@ -335,7 +335,8 @@ async function fetchRestFallback(uri, wordpressUrl = null) {
           Accept: "application/json",
           ...(auth.authorization ? { Authorization: auth.authorization } : {}),
         },
-        cache: "no-store",
+        cache: "force-cache",
+        next: { revalidate: 60 },
         signal: AbortSignal.timeout(8000),
       });
     } catch (err) {
@@ -401,7 +402,8 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
           Accept: "application/json",
           ...(auth.authorization ? { Authorization: auth.authorization } : {}),
         },
-        cache: "no-store",
+        cache: "force-cache",
+        next: { revalidate: 60 },
         signal: AbortSignal.timeout(8000),
       },
     );

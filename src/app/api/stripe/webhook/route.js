@@ -10,6 +10,8 @@ import {
 } from "@/lib/adminSettingsStore";
 import { createWcOrder } from "@/lib/wooCommerceApi";
 
+export const runtime = "nodejs";
+
 function parseSignature(headerValue) {
   if (typeof headerValue !== "string") return {};
   const entries = headerValue.split(",").map((part) => part.trim());

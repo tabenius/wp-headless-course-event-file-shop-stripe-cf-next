@@ -52,7 +52,7 @@ export default function MediaViewerPanel({ viewerItem, viewerLoading, viewerErro
         <div className="space-y-2">
           {viewerData.summary && (
             <p className="text-xs text-gray-600">
-              {t("admin.mediaJsonSummary", "Root: {type}, keys: {count}", {
+              {t("admin.mediaJsonSummary", {
                 type: viewerData.summary.rootType || "unknown",
                 count:
                   viewerData.summary.keyCount === null

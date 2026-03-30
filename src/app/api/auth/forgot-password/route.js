@@ -5,6 +5,8 @@ import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
 import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
 
+export const runtime = "nodejs";
+
 const RESET_TTL = 86400; // 24 hours
 
 async function sendResetEmail(to, resetUrl) {

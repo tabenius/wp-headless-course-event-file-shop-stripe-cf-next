@@ -1,5 +1,13 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — lint guard expansion: i18n parity + render no-store + edge/node runtime
+
+- Added three enforceable lint guards in `eslint.config.mjs` and cleaned violating callsites — WHY: these regressions are expensive in production (bad translations, static-to-dynamic flips, and edge/node runtime mismatches) but cheap to catch at commit time.
+- Added `custom-rules/i18n-locale-parity` to enforce EN/SV/ES key and `{placeholder}` parity; fixed discovered Spanish placeholder drift (`apiErrors.uploadWpFailed`, `paywall.loggedInNeedPurchase`).
+- Added `custom-rules/no-render-no-store` to block `cache: "no-store"` in render-entry files unless explicitly allowlisted; updated REST fallbacks in `src/app/[...uri]/page.js` to `force-cache` + revalidate.
+- Added `custom-rules/no-node-imports-in-edge-context`; set explicit `runtime = "nodejs"` in Node-builtin API routes (`stripe/checkout`, `stripe/webhook`, `digital/download`, `auth/forgot-password`).
+- Resolved existing `t()` 3-arg violations in affected admin files so lint is back to pass (warnings-only baseline).
+
 ## 2026-03-30 (Codex) — TDZ lint hardening
 
 - Enforced `no-use-before-define` (variables/classes) in ESLint — WHY: TDZ regressions are easy to miss in refactors but can crash runtime paths under cyclic/module-load timing; a lint-time hard stop is cheaper and safer than post-deploy debugging. Also ignored `src/.next/**` in lint to avoid generated-artifact noise and fixed one real TDZ candidate in `src/lib/client.js` (`_typeCache` declaration order).
