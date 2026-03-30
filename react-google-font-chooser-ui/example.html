@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>react-google-font-chooser-ui Example</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .panel {
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: #fff;
+        padding: 18px;
+        margin-top: 16px;
+      }
+      .muted {
+        color: #475569;
+        font-size: 14px;
+      }
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>react-google-font-chooser-ui</h1>
+      <p class="muted">
+        This example shows how to mount <code>GoogleFontChooser</code> in a React host app.
+      </p>
+
+      <section class="panel">
+        <h2>Usage</h2>
+        <p class="muted">
+          Use this snippet inside your React/Next component file.
+        </p>
+        <pre><code>import { GoogleFontChooser } from "./src";
+
+export default function FontChooserExample() {
+  return (
+    &lt;GoogleFontChooser
+      initialFamily="Inter"
+      initialPreviewText="Typography for RAGBAZ storefront"
+      onApply={(selection) =&gt; {
+        console.log("Applied selection:", selection);
+        // Persist to your style settings here.
+      }}
+    /&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Files</h2>
+        <pre><code>react-google-font-chooser-ui/
+  src/GoogleFontChooser.jsx
+  src/fontCatalog.js
+  src/googleFontChooser.css
+  src/index.js
+  draft-font-editor-1
+  draft-font-editor-2
+  draft-ideas-synthesis.md
+  plans/implementation-plan.md</code></pre>
+      </section>
+    </main>
+  </body>
+</html>

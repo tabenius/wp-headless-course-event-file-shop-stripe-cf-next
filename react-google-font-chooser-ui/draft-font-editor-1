@@ -1,0 +1,452 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+// ─── Inject viewport meta to block browser pinch-zoom interference ───────────
+function ensureViewportMeta() {
+  let meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "viewport";
+    document.head.appendChild(meta);
+  }
+  meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+}
+
+// ─── Google Fonts ────────────────────────────────────────────────────────────
+const FONTS = [
+  { name: "Playfair Display", category: "serif" },
+  { name: "DM Serif Display", category: "serif" },
+  { name: "Cormorant Garamond", category: "serif" },
+  { name: "Libre Baskerville", category: "serif" },
+  { name: "Josefin Sans", category: "sans-serif" },
+  { name: "Outfit", category: "sans-serif" },
+  { name: "DM Sans", category: "sans-serif" },
+  { name: "Sora", category: "sans-serif" },
+  { name: "Space Mono", category: "monospace" },
+  { name: "Fira Code", category: "monospace" },
+  { name: "IBM Plex Mono", category: "monospace" },
+  { name: "Dancing Script", category: "handwriting" },
+  { name: "Caveat", category: "handwriting" },
+];
+
+function loadGoogleFont(name) {
+  const id = `gfont-${name.replace(/\s+/g, "-")}`;
+  if (!document.getElementById(id)) {
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name)}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
+    document.head.appendChild(link);
+  }
+}
+
+const CAT_COLORS = {
+  serif: "#c8a97e",
+  "sans-serif": "#7ec8c8",
+  monospace: "#a97ec8",
+  handwriting: "#c87ea9",
+};
+
+// ─── Knob Math ────────────────────────────────────────────────────────────────
+const MIN_ANGLE = -135;
+const MAX_ANGLE = 135;
+
+function valueToAngle(v, min, max) {
+  return MIN_ANGLE + ((v - min) / (max - min)) * (MAX_ANGLE - MIN_ANGLE);
+}
+function clampStep(v, min, max, step) {
+  const c = Math.min(max, Math.max(min, v));
+  return parseFloat((Math.round(c / step) * step).toFixed(6));
+}
+
+// ─── Knob ─────────────────────────────────────────────────────────────────────
+function Knob({ label, value, min, max, step, size = 72, color, onChange, formatValue }) {
+  const svgRef = useRef(null);
+  const st = useRef({ active: false, startY: 0, startVal: 0,
+                          pinching: false, pinchDist0: 0, pinchVal0: 0 });
+
+  const angle = valueToAngle(value, min, max);
+  const cx = size / 2, cy = size / 2;
+  const r = size / 2 - 6;
+  const trackR = r - 4;
+
+  function polar(deg, rad) {
+    const a = ((deg - 90) * Math.PI) / 180;
+    return { x: cx + rad * Math.cos(a), y: cy + rad * Math.sin(a) };
+  }
+  function arc(a0, a1, rad) {
+    const s = polar(a0, rad), e = polar(a1, rad);
+    return `M ${s.x} ${s.y} A ${rad} ${rad} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} 1 ${e.x} ${e.y}`;
+  }
+  const dot = polar(angle, r - 8);
+
+  // ── Pointer events (mouse + single touch via pointer API) ─────────────────
+  const onPointerDown = useCallback((e) => {
+    if (st.current.pinching) return;
+    st.current.active = true;
+    st.current.startY = e.clientY;
+    st.current.startVal = value;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  }, [value]);
+
+  const onPointerMove = useCallback((e) => {
+    if (!st.current.active || st.current.pinching) return;
+    const dy = st.current.startY - e.clientY;
+    onChange(clampStep(st.current.startVal + dy * (max - min) / 200, min, max, step));
+    e.preventDefault();
+  }, [min, max, step, onChange]);
+
+  const onPointerUp = useCallback(() => { st.current.active = false; }, []);
+
+  // ── Wheel ─────────────────────────────────────────────────────────────────
+  const onWheel = useCallback((e) => {
+    e.preventDefault();
+    onChange(clampStep(value + (e.deltaY < 0 ? step : -step), min, max, step));
+  }, [value, min, max, step, onChange]);
+
+  // ── Touch: single-drag + two-finger pinch ─────────────────────────────────
+  const onTouchStart = useCallback((e) => {
+    e.preventDefault();
+    const t = e.touches;
+    if (t.length === 2) {
+      st.current.active = false;
+      st.current.pinching = true;
+      st.current.pinchDist0 = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+      st.current.pinchVal0 = value;
+    } else {
+      st.current.active = true;
+      st.current.pinching = false;
+      st.current.startY = t[0].clientY;
+      st.current.startVal = value;
+    }
+  }, [value]);
+
+  const onTouchMove = useCallback((e) => {
+    e.preventDefault();
+    const t = e.touches;
+    if (st.current.pinching && t.length === 2) {
+      const dist = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+      const delta = (dist - st.current.pinchDist0) * (max - min) / 300;
+      onChange(clampStep(st.current.pinchVal0 + delta, min, max, step));
+    } else if (st.current.active && t.length === 1) {
+      const dy = st.current.startY - t[0].clientY;
+      onChange(clampStep(st.current.startVal + dy * (max - min) / 200, min, max, step));
+    }
+  }, [min, max, step, onChange]);
+
+  const onTouchEnd = useCallback((e) => {
+    e.preventDefault();
+    if (e.touches.length < 2) st.current.pinching = false;
+    if (e.touches.length === 0) st.current.active = false;
+  }, []);
+
+  // Attach non-passive listeners so preventDefault works on Android Chrome/Brave
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const p = { passive: false };
+    el.addEventListener("wheel", onWheel, p);
+    el.addEventListener("touchstart", onTouchStart, p);
+    el.addEventListener("touchmove", onTouchMove, p);
+    el.addEventListener("touchend", onTouchEnd, p);
+    el.addEventListener("touchcancel", onTouchEnd, p);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [onWheel, onTouchStart, onTouchMove, onTouchEnd]);
+
+  const id = label.replace(/\s+/g, "-");
+  const val = formatValue ? formatValue(value) : `${value}`;
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+                  userSelect:"none", WebkitUserSelect:"none" }}>
+      <svg
+        ref={svgRef}
+        width={size} height={size}
+        style={{ cursor:"ns-resize", overflow:"visible",
+                 touchAction:"none", WebkitTapHighlightColor:"transparent" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+      >
+        <defs>
+          <radialGradient id={`kg-${id}`} cx="40%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#3a3a3a"/>
+            <stop offset="100%" stopColor="#1a1a1a"/>
+          </radialGradient>
+          <filter id={`ks-${id}`}>
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,.6)"/>
+          </filter>
+        </defs>
+
+        <circle cx={cx} cy={cy} r={r+4} fill="none" stroke={color} strokeWidth="1" opacity="0.12"/>
+        <path d={arc(MIN_ANGLE, MAX_ANGLE, trackR)} fill="none" stroke="#2a2a2a" strokeWidth="4" strokeLinecap="round"/>
+        <path d={arc(MIN_ANGLE, angle, trackR)} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
+              style={{filter:`drop-shadow(0 0 3px ${color})`}}/>
+        <circle cx={cx} cy={cy} r={r-10} fill={`url(#kg-${id})`} style={{filter:`url(#ks-${id})`}}/>
+        <circle cx={cx} cy={cy} r={r-10} fill="none" stroke="#444" strokeWidth="0.5"/>
+        <circle cx={dot.x} cy={dot.y} r={2.5} fill={color} style={{filter:`drop-shadow(0 0 4px ${color})`}}/>
+        <text x={cx} y={cy+1} textAnchor="middle" dominantBaseline="middle"
+              fill="#ddd" fontSize={size < 80 ? "9" : "10"} fontFamily="'Space Mono',monospace" fontWeight="400">
+          {val}
+        </text>
+      </svg>
+      <span style={{ fontSize:9, letterSpacing:"0.12em", textTransform:"uppercase",
+                     color:"#555", fontFamily:"'Space Mono',monospace", textAlign:"center" }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ─── Font Selector ────────────────────────────────────────────────────────────
+const CATEGORIES = ["all", "serif", "sans-serif", "monospace", "handwriting"];
+
+function FontSelector({ selected, onSelect }) {
+  const [cat, setCat] = useState("all");
+  const filtered = cat === "all" ? FONTS : FONTS.filter(f => f.category === cat);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+      <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+        {CATEGORIES.map(c => {
+          const acc = CAT_COLORS[c] || "#888";
+          const active = cat === c;
+          return (
+            <button key={c} onClick={() => setCat(c)} style={{
+              padding:"4px 10px", borderRadius:20, border:"1px solid",
+              borderColor: active ? acc : "#2a2a2a",
+              background: active ? acc + "22" : "transparent",
+              color: active ? acc : "#444",
+              cursor:"pointer", fontSize:10, letterSpacing:"0.1em",
+              fontFamily:"'Space Mono',monospace", textTransform:"uppercase",
+              WebkitTapHighlightColor:"transparent",
+            }}>{c}</button>
+          );
+        })}
+      </div>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:5, maxHeight:110, overflowY:"auto" }}>
+        {filtered.map(f => {
+          const acc = CAT_COLORS[f.category] || "#888";
+          const sel = f.name === selected;
+          return (
+            <button key={f.name} onClick={() => onSelect(f.name)} style={{
+              padding:"5px 12px", borderRadius:4, border:"1px solid",
+              borderColor: sel ? acc : "#222",
+              background: sel ? acc + "18" : "#141414",
+              color: sel ? acc : "#666",
+              cursor:"pointer", fontFamily:`'${f.name}',${f.category}`, fontSize:13,
+              WebkitTapHighlightColor:"transparent",
+            }}>{f.name}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Gesture hint ─────────────────────────────────────────────────────────────
+function GestureHint() {
+  const [show, setShow] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setShow(false), 4500); return () => clearTimeout(t); }, []);
+  if (!show) return null;
+  return (
+    <div style={{
+      position:"fixed", bottom:20, left:"50%", transform:"translateX(-50%)",
+      background:"#181818", border:"1px solid #2a2a2a", borderRadius:24,
+      padding:"8px 18px", fontSize:10, color:"#555",
+      fontFamily:"'Space Mono',monospace", letterSpacing:"0.1em",
+      pointerEvents:"none", zIndex:200,
+      display:"flex", gap:14, alignItems:"center", whiteSpace:"nowrap",
+      opacity:1, animation:"ghfade 1.2s 3.2s forwards",
+    }}>
+      ☝ drag up/down &nbsp;│&nbsp; 🤏 pinch to sweep
+    </div>
+  );
+}
+
+// ─── Knob definitions ─────────────────────────────────────────────────────────
+const KNOB_DEFS = [
+  { key:"size", label:"Size", min:10, max:96, step:1, color:"#e8c87a", size:80,
+    formatValue: v => `${Math.round(v)}px` },
+  { key:"lineHeight", label:"Leading", min:0.8, max:3.0, step:0.05, color:"#7ac8e8", size:72,
+    formatValue: v => v.toFixed(2) },
+  { key:"letterSpacing", label:"Track", min:-0.1, max:0.5, step:0.01, color:"#a8c87a", size:72,
+    formatValue: v => (v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2)) },
+  { key:"wordSpacing", label:"Word Sp", min:-0.1, max:1.0, step:0.05, color:"#c87a7a", size:72,
+    formatValue: v => (v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2)) },
+  { key:"weight", label:"Weight", min:100, max:900, step:100, color:"#c87ac8", size:80,
+    formatValue: v => String(Math.round(v / 100) * 100) },
+];
+
+const PREVIEW_TEXTS = [
+  "The quick brown fox jumps over the lazy dog.",
+  "Typography is the art of arranging type.",
+  "Form follows function, beauty follows both.",
+  "Simplicity is the ultimate sophistication.",
+  "In the beginning was the Word.",
+];
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+export default function TypographyKnobs() {
+  const [font, setFont] = useState("Playfair Display");
+  const [previewIdx, setPreviewIdx] = useState(0);
+  const [customText, setCustomText] = useState("");
+  const isMobile = useRef(typeof window !== "undefined" && window.innerWidth < 640).current;
+  const [vals, setVals] = useState({ size:36, lineHeight:1.4, letterSpacing:0, wordSpacing:0, weight:400 });
+
+  useEffect(() => {
+    ensureViewportMeta();
+    loadGoogleFont("Space Mono");
+  }, []);
+  useEffect(() => { loadGoogleFont(font); }, [font]);
+
+  const set = (key) => (v) => setVals(p => ({ ...p, [key]: v }));
+
+  const fontData = FONTS.find(f => f.name === font);
+  const accent = CAT_COLORS[fontData?.category] || "#e8c87a";
+  const previewText = customText || PREVIEW_TEXTS[previewIdx];
+  const kScale = isMobile ? 0.82 : 1;
+
+  return (
+    <div style={{
+      minHeight:"100vh", background:"#0e0e0e", color:"#ccc",
+      fontFamily:"'Space Mono',monospace",
+      padding: isMobile ? "18px 12px 100px" : "32px 24px",
+      boxSizing:"border-box",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        @keyframes ghfade { to { opacity:0; } }
+        ::-webkit-scrollbar { width:4px; }
+        ::-webkit-scrollbar-track { background:#111; }
+        ::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+        * { box-sizing:border-box; }
+        button,input { -webkit-tap-highlight-color:transparent; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ marginBottom:20 }}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
+          <h1 style={{ margin:0, fontSize:10, letterSpacing:"0.35em", textTransform:"uppercase",
+                       color:"#333", fontFamily:"'Space Mono',monospace", fontWeight:400 }}>
+            Type · Studio
+          </h1>
+          <span style={{ fontSize:10, color:accent, letterSpacing:"0.15em", opacity:0.8 }}>◆ {font}</span>
+        </div>
+        <div style={{ marginTop:3, height:1, background:`linear-gradient(90deg, ${accent}44 0%, #1a1a1a 70%)` }}/>
+      </div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap:16, maxWidth:820, margin:"0 auto" }}>
+
+        {/* Knob panel */}
+        <div style={{
+          background:"#111", border:"1px solid #1e1e1e", borderRadius:12,
+          padding: isMobile ? "22px 10px 14px" : "28px 24px 20px",
+          position:"relative", overflow:"hidden",
+        }}>
+          <div style={{ position:"absolute", top:9, left:14, fontSize:9, letterSpacing:"0.3em",
+                        color:"#252525", textTransform:"uppercase" }}>Control Surface</div>
+          <div style={{ position:"absolute", inset:0, opacity:0.025, pointerEvents:"none",
+                        backgroundImage:"radial-gradient(circle,#fff 1px,transparent 1px)",
+                        backgroundSize:"22px 22px" }}/>
+          <div style={{
+            display:"flex", flexWrap: isMobile ? "wrap" : "nowrap",
+            justifyContent:"space-around", alignItems:"center",
+            gap: isMobile ? 14 : 10,
+          }}>
+            {KNOB_DEFS.map(d => (
+              <Knob key={d.key} label={d.label} value={vals[d.key]}
+                min={d.min} max={d.max} step={d.step}
+                size={Math.round(d.size * kScale)}
+                color={d.color} onChange={set(d.key)} formatValue={d.formatValue}/>
+            ))}
+          </div>
+        </div>
+
+        {/* CSS readout */}
+        <div style={{
+          background:"#0a0a0a", border:"1px solid #1a1a1a", borderRadius:8,
+          padding:"9px 14px", display:"flex", gap:12, flexWrap:"wrap",
+          fontFamily:"'Space Mono',monospace", fontSize:10, overflowX:"auto",
+        }}>
+          {[
+            ["font-family", `'${font}'`],
+            ["font-size", `${vals.size}px`],
+            ["font-weight", vals.weight],
+            ["line-height", vals.lineHeight.toFixed(2)],
+            ["letter-spacing", `${vals.letterSpacing.toFixed(3)}em`],
+            ["word-spacing", `${vals.wordSpacing.toFixed(3)}em`],
+          ].map(([p, v]) => (
+            <span key={p} style={{ whiteSpace:"nowrap" }}>
+              <span style={{ color:"#333" }}>{p}: </span>
+              <span style={{ color:accent }}>{v}</span>
+              <span style={{ color:"#252525" }}>;</span>
+            </span>
+          ))}
+        </div>
+
+        {/* Font selector */}
+        <div style={{ background:"#111", border:"1px solid #1e1e1e", borderRadius:12, padding:"14px 14px" }}>
+          <div style={{ fontSize:9, letterSpacing:"0.3em", color:"#252525", textTransform:"uppercase", marginBottom:10 }}>
+            Google Font Selection
+          </div>
+          <FontSelector selected={font} onSelect={setFont}/>
+        </div>
+
+        {/* Preview */}
+        <div style={{
+          background:"#111", border:`1px solid ${accent}22`, borderRadius:12,
+          padding: isMobile ? "18px 14px 14px" : "28px 28px 18px",
+        }}>
+          <div style={{ fontSize:9, letterSpacing:"0.3em", color:"#252525", textTransform:"uppercase", marginBottom:14 }}>
+            Live Preview
+          </div>
+          <div style={{
+            fontFamily: `'${font}',${fontData?.category || "sans-serif"}`,
+            fontSize: Math.min(vals.size, isMobile ? 52 : 96),
+            fontWeight: vals.weight,
+            lineHeight: vals.lineHeight,
+            letterSpacing: `${vals.letterSpacing}em`,
+            wordSpacing: `${vals.wordSpacing}em`,
+            color:"#e8e8e8", minHeight:56, wordBreak:"break-word",
+            transition:"font-family 0.3s",
+          }}>
+            {previewText}
+          </div>
+          <div style={{ marginTop:14, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+            {PREVIEW_TEXTS.map((_, i) => (
+              <button key={i} onClick={() => { setPreviewIdx(i); setCustomText(""); }} style={{
+                width:26, height:26, borderRadius:"50%", border:"1px solid",
+                borderColor: i === previewIdx && !customText ? accent : "#1e1e1e",
+                background: i === previewIdx && !customText ? accent+"22" : "transparent",
+                color: i === previewIdx && !customText ? accent : "#333",
+                cursor:"pointer", fontSize:9, fontFamily:"'Space Mono',monospace",
+                WebkitTapHighlightColor:"transparent", minWidth:26,
+              }}>{i+1}</button>
+            ))}
+            <input
+              value={customText} onChange={e => setCustomText(e.target.value)}
+              placeholder="Custom text…"
+              style={{
+                flex:1, minWidth:100, background:"#0a0a0a",
+                border:"1px solid #1a1a1a", borderRadius:4, color:"#777",
+                fontFamily:"'Space Mono',monospace", fontSize:11,
+                padding:"5px 10px", outline:"none",
+              }}
+              onFocus={e => e.target.style.borderColor = accent}
+              onBlur={e => e.target.style.borderColor = "#1a1a1a"}
+            />
+          </div>
+        </div>
+
+      </div>
+
+      {isMobile && <GestureHint/>}
+    </div>
+  );
+}

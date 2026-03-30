@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Type Laboratory — Variable Font Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1108;
+    --wood: #2a1c0e;
+    --wood-light: #3d2b14;
+    --brass: #b8922a;
+    --brass-bright: #d4aa3f;
+    --brass-dim: #7a5f1a;
+    --brass-dark: #4a3a10;
+    --cream: #f2e8d5;
+    --cream-dark: #d8c9a8;
+    --amber: #c8841a;
+    --rust: #8b3a1a;
+    --verdigris: #3a8b70;
+    --panel-bg: #1e1208;
+    --knob-track: #0f0a04;
+    --font-ui: 'Cinzel', serif;
+    --font-body: 'IM Fell English', serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 15% 10%, rgba(184,146,42,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 90%, rgba(184,146,42,0.05) 0%, transparent 50%);
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    text-align: center;
+    padding: 2rem 2rem 1.2rem;
+    border-bottom: 1px solid var(--brass-dim);
+    position: relative;
+  }
+  .masthead-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .masthead-ornament .rule {
+    flex: 1; height: 1px; max-width: 140px;
+    background: linear-gradient(90deg, transparent, var(--brass-dim));
+  }
+  .masthead-ornament .rule:last-child {
+    background: linear-gradient(270deg, transparent, var(--brass-dim));
+  }
+  .masthead h1 {
+    font-size: clamp(1.4rem, 3.5vw, 2.4rem);
+    letter-spacing: 0.35em;
+    color: var(--brass-bright);
+    text-transform: uppercase;
+    font-weight: 600;
+    text-shadow: 0 0 40px rgba(212,170,63,0.35);
+  }
+  .masthead .subtitle {
+    font-family: var(--font-body);
+    font-style: italic;
+    color: var(--cream-dark);
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    margin-top: 0.25rem;
+  }
+  .masthead .edition {
+    font-size: 0.5rem;
+    letter-spacing: 0.5em;
+    color: var(--brass-dark);
+    margin-top: 0.6rem;
+    text-transform: uppercase;
+  }
+  .masthead-bottom-rule {
+    position: absolute;
+    bottom: -0.55rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    padding: 0 1rem;
+    color: var(--brass-dim);
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    white-space: nowrap;
+  }
+
+  /* ── LAYOUT ── */
+  .console {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+  }
+  @media (max-width: 920px) { .console { grid-template-columns: 1fr; } }
+  .left-col, .right-col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--brass-dim);
+    border-radius: 2px;
+    position: relative;
+    box-shadow: inset 0 1px 0 rgba(184,146,42,0.12), 0 6px 24px rgba(0,0,0,0.6);
+  }
+  .panel::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(184,146,42,0.06);
+    border-radius: 1px;
+    pointer-events: none;
+  }
+  .panel-header {
+    padding: 0.55rem 1.2rem;
+    border-bottom: 1px solid rgba(184,146,42,0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: linear-gradient(180deg, rgba(184,146,42,0.07), transparent);
+  }
+  .ph-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--brass-dim);
+    box-shadow: 0 0 5px var(--brass);
+    flex-shrink: 0;
+  }
+  .ph-dot.lit { background: var(--brass-bright); }
+  .ph-label {
+    font-size: 0.52rem;
+    letter-spacing: 0.5em;
+    color: var(--brass);
+    text-transform: uppercase;
+    flex: 1;
+  }
+  .ph-badge {
+    font-size: 0.46rem;
+    letter-spacing: 0.3em;
+    color: var(--brass-dim);
+    border: 1px solid var(--brass-dark);
+    padding: 0.12rem 0.5rem;
+    border-radius: 2px;
+  }
+  .panel-body { padding: 1.2rem; }
+
+  /* ── FONT CHOOSER ── */
+  .chooser-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .field-lbl {
+    font-size: 0.48rem;
+    letter-spacing: 0.4em;
+    color: var(--brass-dim);
+    text-transform: uppercase;
+  }
+  select {
+    background: var(--wood);
+    border: 1px solid var(--brass-dim);
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    padding: 0.4rem 2.2rem 0.4rem 0.7rem;
+    border-radius: 2px;
+    cursor: pointer;
+    appearance: none;
+    min-width: 240px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23b8922a'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+  }
+  select:focus { outline: 1px solid var(--brass); }
+
+  .size-row { display: flex; align-items: center; gap: 0.75rem; }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 130px; height: 4px;
+    background: linear-gradient(90deg, var(--brass) var(--pct,22%), var(--wood-light) var(--pct,22%));
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--brass-bright), var(--brass-dark));
+    border: 1px solid var(--brass-dim);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    cursor: grab;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--brass-bright), var(--brass-dark));
+    border: 1px solid var(--brass-dim);
+    cursor: grab;
+  }
+  .size-val {
+    font-size: 0.7rem;
+    color: var(--brass);
+    min-width: 3.2rem;
+    font-family: 'Courier New', monospace;
+  }
+  .loading-pill {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.8rem;
+    color: var(--brass-dim);
+    display: none;
+  }
+  .loading-pill.show { display: block; }
+
+  /* ── KNOBS ── */
+  .knobs-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 1.2rem;
+    padding: 0.4rem 0;
+  }
+  .knob-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    user-select: none;
+  }
+  .knob-svg { display: block; cursor: ns-resize; }
+  .knob-tag {
+    font-size: 0.48rem;
+    letter-spacing: 0.45em;
+    color: var(--brass-dim);
+    text-transform: uppercase;
+  }
+  .knob-readout {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: var(--brass-bright);
+    background: var(--knob-track);
+    border: 1px solid var(--brass-dark);
+    border-radius: 2px;
+    padding: 1px 5px;
+    min-width: 52px;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+  .knob-name {
+    font-size: 0.55rem;
+    color: var(--cream-dark);
+    letter-spacing: 0.1em;
+    font-family: var(--font-body);
+  }
+
+  /* ── TOGGLES ── */
+  .toggles-grid { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; }
+  .toggle-unit { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+  .toggle-tag {
+    font-size: 0.48rem;
+    letter-spacing: 0.45em;
+    color: var(--brass-dim);
+    text-transform: uppercase;
+  }
+  .toggle-name {
+    font-size: 0.55rem;
+    color: var(--cream-dark);
+    letter-spacing: 0.08em;
+    font-family: var(--font-body);
+  }
+  .toggle-sw {
+    position: relative;
+    width: 46px; height: 24px;
+    background: var(--knob-track);
+    border: 1px solid var(--brass-dim);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+  }
+  .toggle-sw::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 33%, var(--brass), var(--brass-dark));
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    transition: transform 0.2s ease, box-shadow 0.2s;
+  }
+  .toggle-sw.on {
+    background: rgba(184,146,42,0.2);
+    border-color: var(--brass-bright);
+  }
+  .toggle-sw.on::after {
+    transform: translateX(22px);
+    background: radial-gradient(circle at 38% 33%, var(--brass-bright), var(--brass));
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 8px rgba(212,170,63,0.5);
+  }
+  .toggle-val {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    color: var(--brass-dim);
+    transition: color 0.2s;
+  }
+  .toggle-sw.on ~ .toggle-val { color: var(--brass-bright); }
+
+  /* ── PREVIEW ── */
+  .paper {
+    background: var(--cream);
+    border-radius: 2px;
+    padding: 1.5rem 1.5rem 1.5rem 1.8rem;
+    margin-top: 0.4rem;
+    position: relative;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 10px rgba(0,0,0,0.5);
+  }
+  .paper::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(180deg, var(--rust), var(--amber));
+    border-radius: 2px 0 0 2px;
+  }
+  .preview-text {
+    color: var(--ink);
+    min-height: 110px;
+    outline: none;
+    line-height: 1.45;
+    caret-color: var(--brass);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ── CSS OUTPUT ── */
+  .css-out {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: var(--cream-dark);
+    background: var(--knob-track);
+    border: 1px solid var(--brass-dark);
+    border-radius: 2px;
+    padding: 0.8rem 3rem 0.8rem 1rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+    position: relative;
+  }
+  .css-k { color: var(--amber); }
+  .css-s { color: var(--verdigris); }
+  .css-v { color: var(--brass-bright); }
+  .copy-btn {
+    position: absolute;
+    top: 0.5rem; right: 0.5rem;
+    background: var(--brass-dark);
+    border: 1px solid var(--brass-dim);
+    color: var(--cream-dark);
+    font-family: var(--font-ui);
+    font-size: 0.44rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.6rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--brass); color: var(--ink); }
+
+  .empty-hint {
+    font-family: var(--font-body);
+    font-style: italic;
+    color: var(--brass-dim);
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.48rem;
+    letter-spacing: 0.4em;
+    color: var(--brass-dark);
+    border-top: 1px solid rgba(184,146,42,0.12);
+    font-family: var(--font-body);
+    font-style: italic;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-ornament">
+    <span class="rule"></span>
+    <h1>Type Laboratory</h1>
+    <span class="rule"></span>
+  </div>
+  <p class="subtitle">Variable Font Axis Control Console</p>
+  <p class="edition">Precision Typographic Instruments · Est. MMXXVI</p>
+  <span class="masthead-bottom-rule">— ✦ —</span>
+</header>
+
+<main class="console">
+  <div class="left-col">
+
+    <!-- FONT SELECTION -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="ph-dot lit"></div>
+        <span class="ph-label">Typeface Selection</span>
+        <span class="ph-badge" id="axes-badge">0 axes</span>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="panel-body">
+        <div class="chooser-row">
+          <div class="field">
+            <span class="field-lbl">Font Family</span>
+            <select id="font-select"></select>
+          </div>
+          <div class="field">
+            <span class="field-lbl">Preview Size</span>
+            <div class="size-row">
+              <input type="range" id="size-slider" min="12" max="110" value="36">
+              <span class="size-val" id="size-val">36 px</span>
+            </div>
+          </div>
+          <span class="loading-pill" id="loading">Loading font…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KNOBS -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="ph-dot lit"></div>
+        <span class="ph-label">Numeric Axes</span>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="panel-body">
+        <div class="knobs-grid" id="knobs-grid">
+          <p class="empty-hint">Select a typeface above…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOGGLES (shown when font has discrete axes) -->
+    <div class="panel" id="toggles-panel" style="display:none">
+      <div class="panel-header">
+        <div class="ph-dot lit"></div>
+        <span class="ph-label">Discrete Axes</span>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="panel-body">
+        <div class="toggles-grid" id="toggles-grid"></div>
+      </div>
+    </div>
+
+  </div><!-- /left-col -->
+
+  <div class="right-col">
+
+    <!-- PREVIEW -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="ph-dot lit"></div>
+        <span class="ph-label">Live Proof</span>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="panel-body">
+        <div class="paper">
+          <div
+            id="preview-text"
+            class="preview-text"
+            contenteditable="true"
+            spellcheck="false"
+          >The quick brown fox jumps over the lazy dog.
+
+Sphinx of black quartz, judge my vow.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSS OUTPUT -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="ph-dot lit"></div>
+        <span class="ph-label">CSS Output</span>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="panel-body">
+        <div class="css-out" id="css-out">
+          <button class="copy-btn" onclick="copyCSS()">Copy</button><span id="css-html">Select a font…</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /right-col -->
+</main>
+
+<footer>All measurements in design units · OpenType variable font specification · Google Fonts collection</footer>
+
+<script>
+// ── FONT CATALOGUE ─────────────────────────────────────────────────────────
+const FONTS = [
+  { name:'Fraunces',
+    gid:'Fraunces:opsz,wght,SOFT,WONK@9..144,100..900,0..100,0..1',
+    axes:[
+      {tag:'wght',name:'Weight',   min:100,max:900, def:400,step:1,  type:'knob'},
+      {tag:'opsz',name:'Opt Size', min:9,  max:144, def:14, step:1,  type:'knob'},
+      {tag:'SOFT',name:'Softness', min:0,  max:100, def:0,  step:1,  type:'knob'},
+      {tag:'WONK',name:'Wonky',    min:0,  max:1,   def:0,  step:1,  type:'toggle'},
+    ]
+  },
+  { name:'Recursive',
+    gid:'Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1',
+    axes:[
+      {tag:'wght',name:'Weight',  min:300, max:1000,def:400,step:1,   type:'knob'},
+      {tag:'slnt',name:'Slant',   min:-15, max:0,   def:0,  step:1,   type:'knob'},
+      {tag:'CASL',name:'Casual',  min:0,   max:1,   def:0,  step:0.01,type:'knob'},
+      {tag:'MONO',name:'Mono',    min:0,   max:1,   def:0,  step:1,   type:'toggle'},
+      {tag:'CRSV',name:'Cursive', min:0,   max:1,   def:0,  step:1,   type:'toggle'},
+    ]
+  },
+  { name:'Roboto Flex',
+    gid:'Roboto+Flex:opsz,wght,wdth,GRAD@8..144,100..900,25..151,-200..150',
+    axes:[
+      {tag:'wght',name:'Weight',  min:100,max:900, def:400,step:1, type:'knob'},
+      {tag:'wdth',name:'Width',   min:25, max:151, def:100,step:1, type:'knob'},
+      {tag:'opsz',name:'Opt Size',min:8,  max:144, def:14, step:1, type:'knob'},
+      {tag:'GRAD',name:'Grade',   min:-200,max:150,def:0,  step:1, type:'knob'},
+    ]
+  },
+  { name:'Commissioner',
+    gid:'Commissioner:wght,slnt,FLAR,VOLM@100..900,-12..0,0..100,0..200',
+    axes:[
+      {tag:'wght',name:'Weight', min:100,max:900,  def:400,step:1, type:'knob'},
+      {tag:'slnt',name:'Slant',  min:-12,max:0,    def:0,  step:1, type:'knob'},
+      {tag:'FLAR',name:'Flare',  min:0,  max:100,  def:0,  step:1, type:'knob'},
+      {tag:'VOLM',name:'Volume', min:0,  max:200,  def:0,  step:1, type:'knob'},
+    ]
+  },
+  { name:'Playfair Display',
+    gid:'Playfair+Display:ital,wght@0..1,400..900',
+    axes:[
+      {tag:'wght',name:'Weight', min:400,max:900,def:400,step:1, type:'knob'},
+      {tag:'ital',name:'Italic', min:0,  max:1,  def:0,  step:1, type:'toggle'},
+    ]
+  },
+  { name:'Cormorant',
+    gid:'Cormorant:ital,wght@0..1,300..700',
+    axes:[
+      {tag:'wght',name:'Weight', min:300,max:700,def:400,step:1, type:'knob'},
+      {tag:'ital',name:'Italic', min:0,  max:1,  def:0,  step:1, type:'toggle'},
+    ]
+  },
+  { name:'Literata',
+    gid:'Literata:ital,opsz,wght@0..1,7..72,200..900',
+    axes:[
+      {tag:'wght',name:'Weight',  min:200,max:900,def:400,step:1, type:'knob'},
+      {tag:'opsz',name:'Opt Size',min:7,  max:72, def:14, step:1, type:'knob'},
+      {tag:'ital',name:'Italic',  min:0,  max:1,  def:0,  step:1, type:'toggle'},
+    ]
+  },
+  { name:'Raleway',
+    gid:'Raleway:ital,wght@0..1,100..900',
+    axes:[
+      {tag:'wght',name:'Weight', min:100,max:900,def:400,step:1, type:'knob'},
+      {tag:'ital',name:'Italic', min:0,  max:1,  def:0,  step:1, type:'toggle'},
+    ]
+  },
+  { name:'Nunito',
+    gid:'Nunito:ital,wght@0..1,200..1000',
+    axes:[
+      {tag:'wght',name:'Weight', min:200,max:1000,def:400,step:1, type:'knob'},
+      {tag:'ital',name:'Italic', min:0,  max:1,   def:0,  step:1, type:'toggle'},
+    ]
+  },
+  { name:'Encode Sans',
+    gid:'Encode+Sans:wdth,wght@75..125,100..900',
+    axes:[
+      {tag:'wght',name:'Weight', min:100,max:900,def:400,step:1, type:'knob'},
+      {tag:'wdth',name:'Width',  min:75, max:125,def:100,step:1, type:'knob'},
+    ]
+  },
+  { name:'Source Serif 4',
+    gid:'Source+Serif+4:ital,opsz,wght@0..1,8..60,200..900',
+    axes:[
+      {tag:'wght',name:'Weight',  min:200,max:900,def:400,step:1, type:'knob'},
+      {tag:'opsz',name:'Opt Size',min:8,  max:60, def:14, step:1, type:'knob'},
+      {tag:'ital',name:'Italic',  min:0,  max:1,  def:0,  step:1, type:'toggle'},
+    ]
+  },
+  { name:'DM Sans',
+    gid:'DM+Sans:ital,opsz,wght@0..1,9..40,100..1000',
+    axes:[
+      {tag:'wght',name:'Weight',  min:100,max:1000,def:400,step:1, type:'knob'},
+      {tag:'opsz',name:'Opt Size',min:9,  max:40,  def:14, step:1, type:'knob'},
+      {tag:'ital',name:'Italic',  min:0,  max:1,   def:0,  step:1, type:'toggle'},
+    ]
+  },
+  { name:'Big Shoulders Display',
+    gid:'Big+Shoulders+Display:wght@100..900',
+    axes:[
+      {tag:'wght',name:'Weight', min:100,max:900,def:400,step:1, type:'knob'},
+    ]
+  },
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let current = null;
+let vals = {};
+let loadedFonts = new Set();
+const preview = document.getElementById('preview-text');
+const fontSel = document.getElementById('font-select');
+const sizeSlider = document.getElementById('size-slider');
+const sizeValEl = document.getElementById('size-val');
+const knobsGrid = document.getElementById('knobs-grid');
+const togglesGrid = document.getElementById('toggles-grid');
+const togglesPanel = document.getElementById('toggles-panel');
+const axesBadge = document.getElementById('axes-badge');
+const loadingEl = document.getElementById('loading');
+
+// ── POPULATE ───────────────────────────────────────────────────────────────
+FONTS.forEach((f,i) => {
+  const o = document.createElement('option');
+  o.value = i; o.textContent = f.name;
+  fontSel.appendChild(o);
+});
+fontSel.value = '0';
+fontSel.addEventListener('change', () => loadFont(+fontSel.value));
+
+// ── SIZE SLIDER ────────────────────────────────────────────────────────────
+function updateSlider() {
+  const v = +sizeSlider.value;
+  sizeValEl.textContent = v + ' px';
+  const pct = ((v-12)/(110-12)*100).toFixed(1)+'%';
+  sizeSlider.style.setProperty('--pct', pct);
+  preview.style.fontSize = v + 'px';
+}
+sizeSlider.addEventListener('input', updateSlider);
+
+// ── LOAD FONT ──────────────────────────────────────────────────────────────
+function loadFont(idx) {
+  const f = FONTS[idx];
+  current = f;
+  vals = {};
+  f.axes.forEach(a => vals[a.tag] = a.def);
+  axesBadge.textContent = f.axes.length + ' axis' + (f.axes.length!==1?'es':'');
+  if (!loadedFonts.has(f.name)) {
+    loadedFonts.add(f.name);
+    loadingEl.classList.add('show');
+    const lnk = document.createElement('link');
+    lnk.rel = 'stylesheet';
+    lnk.href = `https://fonts.googleapis.com/css2?family=${f.gid}&display=swap`;
+    lnk.onload = () => loadingEl.classList.remove('show');
+    document.head.appendChild(lnk);
+  }
+  preview.style.fontFamily = `'${f.name}', serif`;
+  buildUI(f);
+  applyFVS();
+  renderCSS();
+}
+
+// ── BUILD UI ───────────────────────────────────────────────────────────────
+function buildUI(f) {
+  knobsGrid.innerHTML = '';
+  togglesGrid.innerHTML = '';
+  let hasToggles = false;
+  f.axes.forEach(a => {
+    if (a.type === 'knob') knobsGrid.appendChild(mkKnob(a));
+    else { togglesGrid.appendChild(mkToggle(a)); hasToggles = true; }
+  });
+  togglesPanel.style.display = hasToggles ? '' : 'none';
+}
+
+// ── KNOB ───────────────────────────────────────────────────────────────────
+const CX=36,CY=36,R=28;
+const START=210, SWEEP=300;
+function r2d(d){ return d*Math.PI/180; }
+function arc(a1,a2){
+  const s=r2d(a1-90),e=r2d(a2-90);
+  const x1=CX+R*Math.cos(s),y1=CY+R*Math.sin(s);
+  const x2=CX+R*Math.cos(e),y2=CY+R*Math.sin(e);
+  const lg=(a2-a1)>180?1:0;
+  return `M${x1},${y1} A${R},${R},0,${lg},1,${x2},${y2}`;
+}
+function v2deg(ax,v){ return START+((v-ax.min)/(ax.max-ax.min))*SWEEP; }
+function deg2dot(d,r=20){ const rad=r2d(d-90); return {x:CX+r*Math.cos(rad),y:CY+r*Math.sin(rad)}; }
+
+function mkKnob(ax) {
+  const el = document.createElement('div');
+  el.className='knob-unit'; el.dataset.tag=ax.tag;
+  const v=vals[ax.tag], ang=v2deg(ax,v), dot=deg2dot(ang);
+
+  // ticks
+  let ticks='';
+  for(let i=0;i<=10;i++){
+    const d=START+(i/10)*SWEEP, rad=r2d(d-90);
+    const r1=33, r2=i%5===0?37:35;
+    ticks+=`<line x1="${CX+r1*Math.cos(rad)}" y1="${CY+r1*Math.sin(rad)}" x2="${CX+r2*Math.cos(rad)}" y2="${CY+r2*Math.sin(rad)}" stroke="${i%5===0?'#6a4f18':'#2e1e08'}" stroke-width="${i%5===0?1.2:0.7}" stroke-linecap="round"/>`;
+  }
+
+  el.innerHTML=`
+    <svg class="knob-svg" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="g_${ax.tag}" cx="38%" cy="32%" r="62%">
+          <stop offset="0%" stop-color="#4e3c18"/>
+          <stop offset="100%" stop-color="#191006"/>
+        </radialGradient>
+        <radialGradient id="h_${ax.tag}" cx="35%" cy="30%" r="50%">
+          <stop offset="0%" stop-color="#2a1c08"/>
+          <stop offset="100%" stop-color="#0d0804"/>
+        </radialGradient>
+        <filter id="sh_${ax.tag}" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.75"/>
+        </filter>
+      </defs>
+      ${ticks}
+      <path d="${arc(START,START+SWEEP)}" fill="none" stroke="#0a0704" stroke-width="5" stroke-linecap="round"/>
+      <path class="ka" d="${arc(START,ang)}" fill="none" stroke="#b8922a" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="${CX}" cy="${CY}" r="24" fill="url(#g_${ax.tag})" stroke="#6a4f18" stroke-width="1.5" filter="url(#sh_${ax.tag})"/>
+      <circle cx="${CX}" cy="${CY}" r="24" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <circle cx="${CX}" cy="${CY}" r="10" fill="url(#h_${ax.tag})" stroke="#2e1e08" stroke-width="1"/>
+      <circle class="kd" cx="${dot.x}" cy="${dot.y}" r="3.8" fill="#d4aa3f" style="filter:drop-shadow(0 0 5px rgba(212,170,63,.9))"/>
+    </svg>
+    <span class="knob-tag">${ax.tag}</span>
+    <span class="knob-name">${ax.name}</span>
+    <span class="knob-readout" id="ro_${ax.tag}">${fmtV(ax,v)}</span>`;
+
+  attachKnob(el, ax);
+  return el;
+}
+
+function fmtV(ax,v){
+  if(ax.step<1) return parseFloat(v).toFixed(2);
+  return Math.round(v).toString();
+}
+
+function attachKnob(el,ax){
+  const svg=el.querySelector('.knob-svg');
+  let dy=null, dv=null;
+
+  svg.addEventListener('mousedown',e=>{dy=e.clientY;dv=vals[ax.tag];e.preventDefault();},{passive:false});
+  window.addEventListener('mousemove',e=>{
+    if(dy===null) return;
+    const delta=dy-e.clientY;
+    let nv=dv+delta*((ax.max-ax.min)/200);
+    nv=clamp(ax,nv); setVal(ax,nv);
+  });
+  window.addEventListener('mouseup',()=>{dy=null;dv=null;});
+
+  svg.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const s=e.shiftKey?ax.step*10:ax.step;
+    const nv=clamp(ax,vals[ax.tag]+(e.deltaY<0?1:-1)*s);
+    setVal(ax,nv);
+  },{passive:false});
+
+  let ty=null,tv=null;
+  svg.addEventListener('touchstart',e=>{ty=e.touches[0].clientY;tv=vals[ax.tag];e.preventDefault();},{passive:false});
+  svg.addEventListener('touchmove',e=>{
+    if(ty===null) return;
+    const delta=ty-e.touches[0].clientY;
+    let nv=tv+delta*((ax.max-ax.min)/140);
+    nv=clamp(ax,nv); setVal(ax,nv); e.preventDefault();
+  },{passive:false});
+  svg.addEventListener('touchend',()=>{ty=null;});
+}
+
+function clamp(ax,v){
+  return Math.min(ax.max,Math.max(ax.min, Math.round(v/ax.step)*ax.step));
+}
+
+function setVal(ax,v){
+  vals[ax.tag]=v;
+  const el=document.querySelector(`.knob-unit[data-tag="${ax.tag}"]`);
+  if(el){
+    const ang=v2deg(ax,v), dot=deg2dot(ang);
+    el.querySelector('.ka').setAttribute('d',arc(START,ang));
+    const kd=el.querySelector('.kd');
+    kd.setAttribute('cx',dot.x); kd.setAttribute('cy',dot.y);
+    el.querySelector('.knob-readout').textContent=fmtV(ax,v);
+  }
+  applyFVS(); renderCSS();
+}
+
+// ── TOGGLE ─────────────────────────────────────────────────────────────────
+function mkToggle(ax){
+  const el=document.createElement('div');
+  el.className='toggle-unit';
+  const on=vals[ax.tag]===ax.max;
+  el.innerHTML=`
+    <span class="toggle-tag">${ax.tag}</span>
+    <span class="toggle-name">${ax.name}</span>
+    <div class="toggle-sw${on?' on':''}" data-tag="${ax.tag}"></div>
+    <span class="toggle-val">${on?ax.max:ax.min}</span>`;
+  el.querySelector('.toggle-sw').addEventListener('click',function(){
+    const nowOn=this.classList.toggle('on');
+    const v=nowOn?ax.max:ax.min;
+    vals[ax.tag]=v;
+    this.nextElementSibling.textContent=v;
+    applyFVS(); renderCSS();
+  });
+  return el;
+}
+
+// ── APPLY FVS ──────────────────────────────────────────────────────────────
+function applyFVS(){
+  if(!current) return;
+  const fvs=current.axes.map(a=>`'${a.tag}' ${vals[a.tag]}`).join(', ');
+  preview.style.fontVariationSettings=fvs;
+}
+
+// ── RENDER CSS ─────────────────────────────────────────────────────────────
+function renderCSS(){
+  if(!current){ document.getElementById('css-html').textContent='Select a font…'; return; }
+  const sz=sizeSlider.value;
+  const lines=current.axes.map(a=>
+    `  <span class="css-s">'${a.tag}'</span> <span class="css-v">${vals[a.tag]}</span>`
+  ).join(',\n');
+  document.getElementById('css-html').innerHTML=
+    `<span class="css-k">font-family</span>: <span class="css-s">'${current.name}'</span>, serif;\n`+
+    `<span class="css-k">font-size</span>: <span class="css-v">${sz}px</span>;\n`+
+    `<span class="css-k">font-variation-settings</span>:\n${lines};`;
+}
+
+function copyCSS(){
+  if(!current) return;
+  const fvs=current.axes.map(a=>`'${a.tag}' ${vals[a.tag]}`).join(', ');
+  const txt=`font-family: '${current.name}', serif;\nfont-size: ${sizeSlider.value}px;\nfont-variation-settings: ${fvs};`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=document.querySelector('.copy-btn');
+    b.textContent='✓ Copied'; setTimeout(()=>b.textContent='Copy',1500);
+  });
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+loadFont(0);
+updateSlider();
+</script>
+</body>
+</html>

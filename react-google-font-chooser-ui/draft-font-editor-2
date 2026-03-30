@@ -1,0 +1,332 @@
+<!DOCTYPE html><html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Variable Font Explorer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', system-ui, sans-serif; }
+.preview {
+font-variation-settings: var(--vf-settings, 'wght' 400);
+transition: font-variation-settings 0.3s ease;
+line-height: 1.1;
+}
+.modal {
+animation: modalPop 0.2s ease forwards;
+}
+@keyframes modalPop {
+from { transform: scale(0.95); opacity: 0; }
+to { transform: scale(1); opacity: 1; }
+}
+</style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen pb-20">
+<div class="max-w-2xl mx-auto p-4 md:p-6">
+
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+<div class="flex-1">
+<h1 class="text-3xl font-semibold tracking-tight">Variable Fonts</h1>
+<p class="text-zinc-400 text-sm">Google Fonts • Live axes • Mobile optimized</p>
+</div>
+<input id="search"
+type="text"
+placeholder="Search or type font name..."
+class="bg-zinc-900 border border-zinc-700 rounded-3xl px-5 py-3.5 w-full sm:w-72 focus:outline-none focus:border-violet-500 text-base placeholder:text-zinc-400">
+</div>
+
+<!-- Font List -->
+<div id="font-list"
+class="bg-zinc-900 rounded-3xl border border-zinc-800 h-[260px] md:h-[300px] overflow-y-auto mb-6 p-2">
+<!-- Populated by JS -->
+</div>
+
+<!-- Preview & Controls -->
+<div class="bg-zinc-900 rounded-3xl border border-zinc-800 p-5 md:p-8 flex flex-col">
+
+<!-- Selected Font -->
+<div class="flex items-center justify-between mb-4">
+<div id="selected-font" class="text-2xl font-medium truncate">Select a font</div>
+<div id="font-axes-count" class="text-xs bg-zinc-800 px-3 py-1.5 rounded-3xl text-zinc-400"></div>
+</div>
+
+<!-- Live Preview -->
+<div id="preview"
+class="preview bg-zinc-950 border border-zinc-800 rounded-3xl p-8 min-h-[180px] md:min-h-[220px] text-5xl md:text-6xl flex items-center justify-center text-center mb-6">
+The quick brown fox jumps over the lazy dog
+</div>
+
+<!-- Similar Fonts -->
+<div id="similar-section" class="mb-6 hidden">
+<div class="flex items-center justify-between text-sm text-zinc-400 mb-3 px-1">
+<span class="font-medium">Fonts with similar names</span>
+<span onclick="hideSimilar()" class="text-xs underline cursor-pointer">hide</span>
+</div>
+<div id="similar-list" class="flex gap-3 overflow-x-auto pb-2 snap-x">
+<!-- Populated by JS -->
+</div>
+</div>
+
+<!-- Controls -->
+<div id="controls" class="space-y-7 flex-1 overflow-y-auto pr-2">
+<!-- Dynamically added sliders -->
+</div>
+
+<!-- CSS Output -->
+<div class="mt-8 pt-6 border-t border-zinc-800">
+<div class="text-xs text-zinc-500 mb-2">Copy this CSS:</div>
+<div id="css-output"
+class="font-mono text-xs bg-black p-4 rounded-3xl overflow-x-auto whitespace-pre text-emerald-300 leading-relaxed">
+</div>
+</div>
+</div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirm-modal" onclick="if(event.target.id === 'confirm-modal') hideModal()"
+class="hidden fixed inset-0 bg-black/70 flex items-end md:items-center justify-center z-50">
+<div onclick="event.stopImmediatePropagation()"
+class="modal bg-zinc-900 w-full md:w-auto md:min-w-[340px] rounded-t-3xl md:rounded-3xl p-6 md:p-8 border border-zinc-700">
+<div class="text-center">
+<div id="modal-font-name" class="text-3xl font-semibold mb-2"></div>
+
+<!-- Small preview in modal -->
+<div id="modal-preview"
+class="preview bg-zinc-950 border border-zinc-800 rounded-2xl p-6 my-6 text-4xl min-h-[110px] flex items-center justify-center">
+Aa
+</div>
+
+<p class="text-zinc-400 text-sm mb-6">Load this variable font and explore its axes?</p>
+
+<div class="flex gap-3">
+<button onclick="hideModal()"
+class="flex-1 py-4 rounded-3xl border border-zinc-700 font-medium text-zinc-300 active:bg-zinc-800">
+Cancel
+</button>
+<button onclick="confirmSelection()"
+class="flex-1 py-4 rounded-3xl bg-violet-600 font-semibold active:bg-violet-500">
+Yes, load font
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+// Expanded list of real Google Fonts variable fonts (2026 data)
+const variableFonts = [
+{ family: "Inter", axes: [{tag:"wght", min:100, max:900, default:400}, {tag:"opsz", min:14, max:32, default:14}] },
+{ family: "Roboto Flex", axes: [{tag:"wght", min:100, max:1000, default:400}, {tag:"opsz", min:8, max:144, default:14}, {tag:"wdth", min:25, max:151, default:100}, {tag:"GRAD", min:-50, max:200, default:0}] },
+{ family: "Fraunces", axes: [{tag:"wght", min:100, max:900, default:400}, {tag:"opsz", min:9, max:144, default:14}, {tag:"SOFT", min:0, max:100, default:0}, {tag:"WONK", min:0, max:1, default:0}] },
+{ family: "Bricolage Grotesque", axes: [{tag:"wght", min:200, max:800, default:400}, {tag:"opsz", min:12, max:96, default:14}, {tag:"wdth", min:75, max:100, default:100}] },
+{ family: "Commissioner", axes: [{tag:"wght", min:100, max:900, default:400}, {tag:"slnt", min:-12, max:0, default:0}] },
+{ family: "Doto", axes: [{tag:"wght", min:100, max:900, default:400}, {tag:"ROND", min:0, max:100, default:0}] },
+{ family: "Geologica", axes: [{tag:"wght", min:100, max:900, default:400}, {tag:"slnt", min:-12, max:0, default:0}] },
+{ family: "Recursive", axes: [{tag:"wght", min:300, max:1000, default:400}, {tag:"slnt", min:-15, max:0, default:0}, {tag:"CRMP", min:0, max:1, default:0}, {tag:"MONO", min:0, max:1, default:0}] },
+{ family: "Manrope", axes: [{tag:"wght", min:200, max:800, default:400}] },
+{ family: "Space Grotesk", axes: [{tag:"wght", min:300, max:700, default:400}] },
+{ family: "Instrument Sans", axes: [{tag:"wght", min:400, max:700, default:400}] },
+{ family: "Hubot Sans", axes: [{tag:"wght", min:200, max:900, default:400}, {tag:"wdth", min:75, max:125, default:100}] },
+{ family: "Obviously", axes: [{tag:"wght", min:100, max:900, default:400}, {tag:"wdth", min:75, max:125, default:100}] },
+{ family: "Sora", axes: [{tag:"wght", min:100, max:800, default:400}] },
+{ family: "Clash Grotesk", axes: [{tag:"wght", min:200, max:700, default:400}] }
+];
+
+let currentFont = null;
+let currentSettings = {};
+let pendingFont = null; // for confirmation
+
+// Simple similarity scorer for "fonts with similar names"
+function getSimilarFonts(selectedFamily) {
+const selectedLower = selectedFamily.toLowerCase();
+const words = selectedLower.split(/\s+/);
+
+return variableFonts
+.filter(f => f.family !== selectedFamily)
+.map(f => {
+const nameLower = f.family.toLowerCase();
+let score = 0;
+if (nameLower.includes(selectedLower) || selectedLower.includes(nameLower)) score += 3;
+words.forEach(w => {
+if (nameLower.includes(w) && w.length > 2) score += 2;
+});
+if (nameLower.startsWith(words[0])) score += 1;
+return { ...f, score };
+})
+.sort((a, b) => b.score - a.score)
+.slice(0, 5);
+}
+
+function renderFontList(filtered) {
+const container = document.getElementById('font-list');
+container.innerHTML = filtered.map(font => `
+<div onclick="showConfirmation('${font.family}')"
+class="px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer transition-all flex items-center justify-between mb-1 active:scale-95">
+<div class="min-w-0 flex-1">
+<div class="font-medium text-base truncate">${font.family}</div>
+<div class="text-xs text-zinc-500">${font.axes.length} axes</div>
+</div>
+<div class="preview text-3xl ml-4"
+style="font-family: '${font.family}', system-ui; --vf-settings: \( {font.axes.map(a => `' \){a.tag}' ${a.default}`).join(', ')}">
+Aa
+</div>
+</div>
+`).join('');
+}
+
+window.showConfirmation = function(family) {
+pendingFont = variableFonts.find(f => f.family === family);
+if (!pendingFont) return;
+
+const modal = document.getElementById('confirm-modal');
+const modalName = document.getElementById('modal-font-name');
+const modalPreview = document.getElementById('modal-preview');
+
+modalName.textContent = pendingFont.family;
+
+// Small preview in modal
+const settingsStr = pendingFont.axes.map(a => `'${a.tag}' ${a.default}`).join(', ');
+modalPreview.style.fontFamily = `'${pendingFont.family}', system-ui`;
+modalPreview.style.setProperty('--vf-settings', settingsStr);
+modalPreview.textContent = 'Aa';
+
+modal.classList.remove('hidden');
+modal.classList.add('flex');
+}
+
+window.hideModal = function() {
+const modal = document.getElementById('confirm-modal');
+modal.classList.add('hidden');
+modal.classList.remove('flex');
+pendingFont = null;
+}
+
+window.confirmSelection = function() {
+if (!pendingFont) return;
+hideModal();
+
+// Actually load the font
+currentFont = pendingFont;
+document.getElementById('selected-font').textContent = currentFont.family;
+document.getElementById('font-axes-count').textContent = `${currentFont.axes.length} axes`;
+
+// Load Google Fonts stylesheet
+const linkId = 'google-font-link';
+let link = document.getElementById(linkId);
+if (!link) {
+link = document.createElement('link');
+link.id = linkId;
+link.rel = 'stylesheet';
+document.head.appendChild(link);
+}
+link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(currentFont.family)}:wght@100..900&display=swap`;
+
+// Build sliders
+const controlsContainer = document.getElementById('controls');
+controlsContainer.innerHTML = currentFont.axes.map(axis => `
+<div class="space-y-3">
+<div class="flex justify-between items-baseline">
+<span class="font-medium text-sm">${axis.tag}</span>
+<span id="val-\( {axis.tag}" class="tabular-nums font-mono text-lg font-medium text-violet-400"> \){axis.default}</span>
+</div>
+<input type="range"
+min="${axis.min}"
+max="${axis.max}"
+value="${axis.default}"
+step="0.1"
+oninput="updateAxis('${axis.tag}', this.value)"
+class="w-full h-2 bg-zinc-800 rounded-full accent-violet-500 cursor-pointer">
+</div>
+`).join('');
+
+// Reset settings
+currentSettings = {};
+currentFont.axes.forEach(a => currentSettings[a.tag] = a.default);
+
+// Show similar fonts section
+showSimilarFonts();
+
+updatePreview();
+}
+
+function showSimilarFonts() {
+const section = document.getElementById('similar-section');
+const container = document.getElementById('similar-list');
+const similars = getSimilarFonts(currentFont.family);
+
+if (similars.length === 0) {
+section.classList.add('hidden');
+return;
+}
+
+container.innerHTML = similars.map(font => `
+<div onclick="showConfirmation('${font.family}')"
+class="snap-center bg-zinc-800 hover:bg-zinc-700 rounded-3xl p-3 min-w-[110px] cursor-pointer transition-colors">
+<div class="preview text-4xl text-center mb-2"
+style="font-family: '${font.family}', system-ui; --vf-settings: \( {font.axes.map(a => `' \){a.tag}' ${a.default}`).join(', ')}">
+Aa
+</div>
+<div class="text-center">
+<div class="text-sm font-medium truncate">${font.family}</div>
+<div class="text-[10px] text-zinc-500">${font.axes.length} axes</div>
+</div>
+</div>
+`).join('');
+
+section.classList.remove('hidden');
+}
+
+window.hideSimilar = function() {
+document.getElementById('similar-section').classList.add('hidden');
+}
+
+window.updateAxis = function(tag, value) {
+currentSettings[tag] = parseFloat(value);
+document.getElementById(`val-${tag}`).textContent = parseFloat(value).toFixed(1);
+updatePreview();
+}
+
+function updatePreview() {
+const previewEl = document.getElementById('preview');
+if (!currentFont) return;
+
+const settingsStr = Object.entries(currentSettings)
+.map(([tag, val]) => `'${tag}' ${val}`)
+.join(', ');
+
+previewEl.style.fontFamily = `'${currentFont.family}', system-ui`;
+previewEl.style.setProperty('--vf-settings', settingsStr);
+
+// Update CSS
+document.getElementById('css-output').innerHTML =
+`font-family: "${currentFont.family}";<br>font-variation-settings: ${settingsStr};`;
+}
+
+// Search with live filtering
+document.getElementById('search').addEventListener('input', (e) => {
+const term = e.target.value.toLowerCase().trim();
+let filtered = variableFonts;
+
+if (term) {
+filtered = variableFonts.filter(f =>
+f.family.toLowerCase().includes(term)
+);
+}
+
+renderFontList(filtered);
+});
+
+// Tailwind
+tailwind.config = { content: ["*"] };
+
+// Initial render
+renderFontList(variableFonts);
+
+// Auto-select a nice starter font
+setTimeout(() => {
+showConfirmation("Roboto Flex");
+}, 600);
+</script>
+</body>
+</html>
