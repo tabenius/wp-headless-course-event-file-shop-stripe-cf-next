@@ -26,8 +26,9 @@ export function getCloudflareKvConfigStatus() {
     missingKeys.push("CF_KV_NAMESPACE_ID");
   }
   return {
-    configured:
-      hasAccountId && hasApiToken && hasNamespaceId && !bypassedDuringBuild,
+    // "configured" should reflect whether required runtime keys are present.
+    // Build-time bypass is reported separately.
+    configured: hasAccountId && hasApiToken && hasNamespaceId,
     hasAccountId,
     hasApiToken,
     hasNamespaceId,

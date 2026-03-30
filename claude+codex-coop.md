@@ -1,5 +1,20 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — KV warning clarity fix for Page Performance / GraphQL panels
+
+### Codex — stopped reporting KV as “not configured” when only build-bypass is active
+
+**Delivered:**
+- Updated `src/lib/cloudflareKv.js` so `getCloudflareKvConfigStatus().configured` reflects key presence only:
+  - `CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID`
+  - `CF_API_TOKEN/CLOUDFLARE_API_TOKEN`
+  - `CF_KV_NAMESPACE_ID`
+- Build bypass is still preserved via separate `bypassedDuringBuild` signal, but no longer forces `configured=false`.
+- This removes false “not fully configured” warnings in admin panels when runtime env is correctly set.
+
+**Validation:**
+- `npm run lint -- src/lib/cloudflareKv.js` (pass; existing repo warnings unchanged).
+
 ## 2026-03-30 (Codex) — KV configuration warning follow-up (runtime build-phase guard + admin diagnostics)
 
 ### Codex — fixed false “KV not fully configured” state and exposed explicit missing-key diagnostics
