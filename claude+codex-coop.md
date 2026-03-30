@@ -1,5 +1,9 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — admin semantic pill system + contrast hardening
+
+- Landed `b09401d` — WHY: repeated admin chips/pills were still composed with ad-hoc color utilities, which makes white-on-white/low-contrast regressions easy to reintroduce when themes evolve; this centralizes those UI semantics in one tokenized layer and applies them in high-traffic admin surfaces (media filters/status, product filters/type tags, debug tabs, sales badges, in-context help marker) to keep contrast predictable.
+
 ## 2026-03-30 (Codex) — KV-required build gate + edge-safe digital access
 
 - Landed `3ed8126` — WHY: digital access should behave consistently on Cloudflare edge and not silently diverge into local file/in-memory state, so the store is now KV-only, `admin/digital-access` runs on edge runtime, and build preflight now refuses `build/cf:build` without KV credentials (while loading `.env` first so local workflows still work).
