@@ -3896,3 +3896,41 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 - Validation:
   - `npx eslint src/components/admin/AdminHeader.js src/components/admin/AdminThemeWrapper.js src/lib/adminHotkeys.js src/app/admin/layout.js`
   - `node --check` for updated JS files
+
+### Claude — review of Codex ISR/force-dynamic changes (2026-03-30)
+
+**Context:** Codex commit `2f176f9` removed global `force-dynamic` from root `layout.js` and refactored `menu.js` for non-blocking cold starts to reduce TTFB. This is the second time `force-dynamic` has been removed from the root layout — the first time (earlier Codex commit around line 953 of this file) caused 500 errors on `/courses/`, `/auth/register/`, `/auth/signin/`, requiring emergency restoration in commit `96b2e1c`.
+
+**Risk assessment — pages relying on implicit dynamic detection:**
+
+The following pages use `auth()` (which calls `cookies()` from `next/headers`) and/or `await searchParams` but have NO explicit `export const dynamic = "force-dynamic"`. They rely on Next.js automatically opting into dynamic rendering when it detects `cookies()` usage at render time:
+
+| Page | Runtime APIs | Risk |
+|------|-------------|------|
+| `src/app/[...uri]/page.js` | `auth()`, `searchParams`, `params`, `unstable_noStore` | **CRITICAL** — catch-all handling most traffic |
+| `src/app/shop/[slug]/page.js` | `auth()`, `searchParams`, `params` | **HIGH** — Stripe checkout flow |
+| `src/app/me/page.js` | `auth()`, `redirect()` | HIGH — user dashboard |
+| `src/app/inventory/page.js` | `auth()`, `redirect()` | HIGH — user inventory |
+| `src/app/inventory/[assetId]/page.js` | `auth()`, `params` | HIGH — asset detail |
+| `src/app/profile/[username]/page.js` | `auth()`, `params` | HIGH — public profiles |
+| `src/app/avatar/[avatarId]/page.js` | `auth()`, `params` | MEDIUM |
+| `src/app/assets/[assetId]/page.js` | `adminAuth()`, `params` | MEDIUM — admin only |
+
+**Predicted failure modes:**
+
+1. **Build-time static generation attempt:** Without `force-dynamic`, Next.js may attempt to statically pre-render these pages at build time. If `auth()`/`cookies()` is called during build, it will throw because there is no request context. The `@opennextjs/cloudflare` adapter's handling of implicit dynamic detection from `cookies()` may differ from Vercel's — this was the exact cause of the 500s fixed by commit `96b2e1c`.
+
+2. **ISR caching of authenticated content:** If implicit dynamic detection works at build time but ISR caching kicks in at runtime, a first visitor's auth state (or lack thereof) could be cached and served to subsequent visitors. This would manifest as: logged-in user sees "not authenticated" page, or anonymous user sees another user's content.
+
+3. **`unstable_noStore()` in `[...uri]/page.js`:** This is a weaker signal than `force-dynamic`. It opts out of the data cache but may not prevent the route from being statically generated at build time, depending on the adapter.
+
+4. **`generateMetadata` in `shop/[slug]/page.js`:** Uses `searchParams` and `process.env` reads. If the page is pre-rendered, metadata generation could fail or produce stale results.
+
+**What to watch for:**
+- 500 errors on any of the listed pages after deploy
+- Stale or wrong auth state being served (cached ISR pages)
+- Build failures mentioning `cookies()` or `headers()` called outside request context
+- The `/courses/` route was the original 500 trigger — verify it still works
+
+**Recommendation:**
+If any 500s recur, add explicit `export const dynamic = "force-dynamic"` to the affected page files rather than restoring it globally on the root layout. This preserves ISR benefits for truly static pages (`/`, `/blog`, `/events`) while protecting auth-dependent routes. The safest approach would be to proactively add `force-dynamic` to all 8 pages listed above.
