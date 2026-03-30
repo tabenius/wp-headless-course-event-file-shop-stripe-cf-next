@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.js",
+  "scripts": {
+    "bundle:single-html": "node build/bundle-single-html.mjs"
+  },
   "exports": {
     ".": "./src/index.js"
   }

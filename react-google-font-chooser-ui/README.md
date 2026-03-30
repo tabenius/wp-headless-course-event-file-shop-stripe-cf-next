@@ -49,3 +49,15 @@ export default function Demo() {
 node --test react-google-font-chooser-ui/tests/utils.test.mjs
 npx eslint react-google-font-chooser-ui/src/*.js react-google-font-chooser-ui/src/*.jsx
 ```
+
+## Single-file demo bundle
+
+Build one self-contained HTML demo (admin-water palette):
+
+```bash
+npm run bundle:single-html --workspace react-google-font-chooser-ui
+```
+
+Output:
+
+- `react-google-font-chooser-ui/dist/google-font-chooser-single.html`
