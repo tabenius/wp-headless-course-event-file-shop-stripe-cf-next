@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 import {
-  downloadCyberduckBookmark,
   downloadCyberduckBookmarkFromServer,
   resolveBucketRemotePath,
   resolveStorageServerHost,
@@ -69,18 +68,11 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
         fileNameHint: `${(clientDetails.bucket || backend).replace(/[^a-z0-9._-]/gi, "-")}.duck`,
       });
     } catch (error) {
-      try {
-        downloadCyberduckBookmark({
-          ...clientDetails,
-          endpoint: serverHost || clientDetails.endpoint || "",
-        });
-      } catch {
-        setBookmarkError(
-          error instanceof Error
-            ? error.message
-            : t("common.downloadFailed", "Download failed. Please try again soon."),
-        );
-      }
+      setBookmarkError(
+        error instanceof Error
+          ? error.message
+          : t("common.downloadFailed", "Download failed. Please try again soon."),
+      );
     } finally {
       setBookmarkDownloading(false);
     }
@@ -257,7 +249,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           {(serverHost || clientDetails.endpoint) && (
             <div className="mt-3 pt-3 border-t border-amber-200">
               <p className="text-[11px] text-gray-500 mb-2">
-                {t("admin.cyberduckProfileHint", "Download a pre-filled bookmark file. Double-click it to open directly in CyberDuck. You will be prompted for the secret key on first connect.")}
+                {t("admin.cyberduckProfileHint", "Download a pre-filled bookmark file with credentials included. Double-click it to open directly in CyberDuck.")}
               </p>
               {bookmarkError && (
                 <p className="mb-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">

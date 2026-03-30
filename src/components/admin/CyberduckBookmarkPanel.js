@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
 import {
-  downloadCyberduckBookmark,
   downloadCyberduckBookmarkFromServer,
   resolveBucketRemotePath,
   resolveStorageServerHost,
@@ -139,18 +138,11 @@ export default function CyberduckBookmarkPanel({
         fileNameHint: `${(details?.bucket || "r2-bucket").replace(/[^a-z0-9._-]/gi, "-")}.duck`,
       });
     } catch (error) {
-      try {
-        downloadCyberduckBookmark({
-          ...details,
-          endpoint: serverHost || details?.endpoint || "",
-        });
-      } catch {
-        setBookmarkError(
-          error instanceof Error
-            ? error.message
-            : t("common.downloadFailed", "Download failed. Please try again soon."),
-        );
-      }
+      setBookmarkError(
+        error instanceof Error
+          ? error.message
+          : t("common.downloadFailed", "Download failed. Please try again soon."),
+      );
     } finally {
       setDownloadingBookmark(false);
     }

@@ -60,7 +60,7 @@ export async function readCloudflareKvJson(key) {
 
 export async function readCloudflareKvJsonWithOptions(
   key,
-  { cacheMode = "no-store", revalidateSeconds = null } = {},
+  { cacheMode = "force-cache", revalidateSeconds = 60 } = {},
 ) {
   if (shouldBypassCloudflareKv()) return null;
   if (!hasCloudflareConfig()) return null;

@@ -58,11 +58,12 @@ function resolveBackend(request) {
   return allowed.has(envBackend) ? envBackend : "wordpress";
 }
 
-function buildBookmarkXml({ server, bucket, region, accessKeyId, backend }) {
+function buildBookmarkXml({ server, bucket, region, accessKeyId, secretKey, backend }) {
   const safeServer = normalizeEndpointHost(server);
   const safeBucket = String(bucket || "").trim();
   const safeRegion = String(region || "auto");
   const safeKey = String(accessKeyId || "").trim();
+  const safeSecret = String(secretKey || "").trim();
   const nickname = safeBucket
     ? `${String(backend || "r2").toUpperCase()} · ${safeBucket}`
     : String(backend || "r2").toUpperCase();
@@ -70,6 +71,9 @@ function buildBookmarkXml({ server, bucket, region, accessKeyId, backend }) {
     typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const passwordEntry = safeSecret
+    ? `\n\t<key>Password</key>\n\t<string>${escXml(safeSecret)}</string>`
+    : "";
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -85,7 +89,7 @@ function buildBookmarkXml({ server, bucket, region, accessKeyId, backend }) {
 \t<key>Region</key>
 \t<string>${escXml(safeRegion)}</string>
 \t<key>Username</key>
-\t<string>${escXml(safeKey)}</string>
+\t<string>${escXml(safeKey)}</string>${passwordEntry}
 \t<key>Path</key>
 \t<string>${safeBucket ? `/${escXml(safeBucket)}` : ""}</string>
 \t<key>Anonymous Login</key>
@@ -112,6 +116,8 @@ export async function GET(request) {
     process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
   const accessKeyId =
     process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
+  const secretKey =
+    process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY || "";
   const server =
     backend === "r2"
       ? buildR2ServerHost(
@@ -140,6 +146,7 @@ export async function GET(request) {
     bucket,
     region,
     accessKeyId,
+    secretKey,
     backend,
   });
   const fileToken = safeFileToken(bucket, backend);

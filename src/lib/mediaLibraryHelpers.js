@@ -375,42 +375,6 @@ export function resolveBucketRemotePath(details = {}) {
   return bucket ? `/${bucket}` : "";
 }
 
-export function generateCyberduckBookmark({ endpoint, bucket, region, accessKeyId }) {
-  const hostname = normalizeEndpointHost(endpoint);
-  const safeBucket = String(bucket || "");
-  const safeRegion = String(region || "auto");
-  const safeKey = String(accessKeyId || "");
-  const nickname = safeBucket ? `R2 · ${safeBucket}` : "R2 bucket";
-  const uuid =
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-\t<key>Protocol</key>
-\t<string>s3</string>
-\t<key>Nickname</key>
-\t<string>${escXml(nickname)}</string>
-\t<key>Hostname</key>
-\t<string>${escXml(hostname)}</string>
-\t<key>Port</key>
-\t<string>443</string>
-\t<key>Region</key>
-\t<string>${escXml(safeRegion)}</string>
-\t<key>Username</key>
-\t<string>${escXml(safeKey)}</string>
-\t<key>Path</key>
-\t<string>${safeBucket ? `/${escXml(safeBucket)}` : ""}</string>
-\t<key>Anonymous Login</key>
-\t<false/>
-\t<key>UUID</key>
-\t<string>${escXml(uuid)}</string>
-</dict>
-</plist>`;
-}
-
 function parseAttachmentFilename(header) {
   const raw = String(header || "");
   if (!raw) return "";
@@ -457,15 +421,3 @@ export async function downloadCyberduckBookmarkFromServer({
   URL.revokeObjectURL(url);
 }
 
-export function downloadCyberduckBookmark(details) {
-  const xml = generateCyberduckBookmark(details);
-  const blob = new Blob([xml], { type: "application/octet-stream" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${(details.bucket || "r2-bucket").replace(/[^a-z0-9._-]/gi, "-")}.duck`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}

@@ -132,6 +132,9 @@ But here are natural areas of focus:
 ## Coordination protocol
 
 1. **`claude+codex-coop.md`** is the shared worklog. Append a bullet after every landed feature. Read it at the start of each session.
+   - **WHY over WHAT**: Each coop entry must state **why** a decision was made (the reasoning, tradeoff, or constraint). The **what** should be a commit reference plus at most one line — the diff already tells the story.
+   - Example: `- ISR for /shop/[slug] (abc1234) — WHY: product pages are public, caching improves TTFB 3×; ownership moved to client island to avoid force-dynamic.`
+   - Bad: `- Converted /shop/[slug] to ISR with revalidate=300, moved ownership check to useEffect, created /api/shop/ownership endpoint, updated ShopProductDetail props...` (too much WHAT, no WHY).
 2. **This file (`AGENTS.md`)** is for standing instructions, priorities, and architecture notes. Update it when priorities shift or new patterns are established.
 3. **Branch**: both agents work on `main`. Commit and push after each logical unit of work so the other agent can pull and see the change. Avoid long-running local-only branches.
 4. Before touching a file the other agent recently committed, pull first.
