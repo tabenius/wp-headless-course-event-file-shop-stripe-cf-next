@@ -13,6 +13,7 @@ import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
 import AdminSettingsPanel from "./AdminSettingsPanel";
 import AdminSecretsPanel from "./AdminSecretsPanel";
+import TorusBanner from "./TorusBanner";
 
 function normalizeSection(value) {
   const safe = String(value || "").trim().toLowerCase();
@@ -953,6 +954,7 @@ export default function AdminInfoHubTab({
 
   return (
     <div className="space-y-4">
+      <TorusBanner />
       <div className="border rounded bg-white p-2 flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-2">
           {sections.map((entry) => (

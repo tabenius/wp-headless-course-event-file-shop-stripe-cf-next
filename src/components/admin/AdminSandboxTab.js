@@ -3,7 +3,6 @@
 import { t } from "@/lib/i18n";
 import { tenantConfig } from "@/lib/tenantConfig";
 import DebugLogPanel from "./DebugLogPanel";
-import TorusBanner from "./TorusBanner";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
@@ -29,7 +28,6 @@ export default function AdminSandboxTab({
 }) {
   return (
     <div className="space-y-6">
-      <TorusBanner />
       <div className="border rounded p-5 space-y-6 bg-white">
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-1">
