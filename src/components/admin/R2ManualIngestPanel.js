@@ -228,7 +228,7 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
 
       {r2ManualInfo?.ok ? (
         <div className="rounded border border-amber-200 bg-amber-50 p-2 text-[11px] space-y-2">
-          <p className="font-semibold text-amber-800">
+          <p className="inline-flex rounded-md border border-slate-500 bg-slate-700 px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-slate-100">
             {t("admin.clientChecklistTitle", "Client checklist")}
           </p>
           <div className="grid gap-1 sm:grid-cols-2">

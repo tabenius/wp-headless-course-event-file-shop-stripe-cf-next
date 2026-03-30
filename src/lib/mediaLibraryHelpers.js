@@ -66,12 +66,16 @@ export function formatUpdatedAt(iso) {
 }
 
 export function sourceLabel(source) {
-  return source === "wordpress" ? "WordPress" : source === "r2" ? "R2" : "—";
+  if (source === "wordpress") return "WordPress";
+  if (source === "r2") return "R2";
+  if (source === "s3") return "S3";
+  return "—";
 }
 
 export function sourceBadgeClass(source) {
   if (source === "wordpress") return "bg-blue-100 text-blue-800";
   if (source === "r2") return "bg-emerald-100 text-emerald-800";
+  if (source === "s3") return "bg-amber-100 text-amber-800";
   return "bg-gray-100 text-gray-700";
 }
 
@@ -345,8 +349,34 @@ export function escXml(value) {
     .replace(/'/g, "&apos;");
 }
 
+export function normalizeEndpointHost(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .split("/")[0]
+    .trim();
+}
+
+export function buildR2ServerHost(accountId) {
+  const safeAccountId = String(accountId || "").trim();
+  if (!safeAccountId) return "";
+  return `${safeAccountId}.r2.cloudflarestorage.com`;
+}
+
+export function resolveStorageServerHost(details = {}) {
+  const directHost = normalizeEndpointHost(details.server || details.endpoint || "");
+  if (directHost) return directHost;
+  return buildR2ServerHost(details.accountId);
+}
+
+export function resolveBucketRemotePath(details = {}) {
+  if (details.remotePath) return String(details.remotePath).trim();
+  const bucket = String(details.bucket || "").trim();
+  return bucket ? `/${bucket}` : "";
+}
+
 export function generateCyberduckBookmark({ endpoint, bucket, region, accessKeyId }) {
-  const hostname = String(endpoint || "").replace(/^https?:\/\//, "").split("/")[0];
+  const hostname = normalizeEndpointHost(endpoint);
   const safeBucket = String(bucket || "");
   const safeRegion = String(region || "auto");
   const safeKey = String(accessKeyId || "");
@@ -379,6 +409,52 @@ export function generateCyberduckBookmark({ endpoint, bucket, region, accessKeyI
 \t<string>${escXml(uuid)}</string>
 </dict>
 </plist>`;
+}
+
+function parseAttachmentFilename(header) {
+  const raw = String(header || "");
+  if (!raw) return "";
+  const encodedMatch = raw.match(/filename\*=UTF-8''([^;]+)/i);
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1].trim());
+    } catch {
+      return encodedMatch[1].trim();
+    }
+  }
+  const plainMatch = raw.match(/filename="?([^\";]+)"?/i);
+  return plainMatch?.[1]?.trim() || "";
+}
+
+export async function downloadCyberduckBookmarkFromServer({
+  backend = "r2",
+  fileNameHint = "r2-bucket.duck",
+} = {}) {
+  const params = new URLSearchParams();
+  if (backend) params.set("backend", backend);
+  const response = await fetch(`/api/admin/upload-info/cyberduck-bookmark?${params.toString()}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({}));
+    throw new Error(
+      json?.error || `Bookmark download failed (${response.status}).`,
+    );
+  }
+  const blob = await response.blob();
+  const headerFileName = parseAttachmentFilename(
+    response.headers.get("content-disposition") || "",
+  );
+  const fileName = headerFileName || String(fileNameHint || "r2-bucket.duck");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function downloadCyberduckBookmark(details) {

@@ -1,5 +1,40 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — asset library bucket visibility + Cyberduck dynamic bookmark + checklist typography polish
+
+### Codex — ensured bucket uploads are visible and improved operator-facing Cyberduck guidance
+
+**Delivered:**
+- Media library now lists bucket objects from root by default (`prefix=""`), so Cyberduck uploads at bucket root (including `.pdf`) are no longer hidden by an implicit `uploads/` prefix.
+- Added S3 source support in media library API/UI while preserving build-time S3 gating:
+  - API source filter now supports `s3` (alongside `wordpress` and `r2`),
+  - source appears in UI only when `uploadInfo.s3Enabled` indicates S3 support is enabled,
+  - metadata save path now supports both `r2` and `s3` bucket sources.
+- Added computed server host fields in upload info payload (`accountId`, `server`, `remotePath`) so UI can show explicit host/path values.
+- Added dynamic server-generated Cyberduck bookmark endpoint:
+  - `GET /api/admin/upload-info/cyberduck-bookmark?backend=r2|s3`
+  - returns `.duck` attachment generated from runtime env (admin-auth protected).
+- Updated Cyberduck panels to:
+  - show computed server host (`<account-id>.r2.cloudflarestorage.com` for R2),
+  - prefer server-side bookmark download with client-side fallback,
+  - show download errors inline.
+- Typography update for `R2 / S3 uppladdningschecklista`:
+  - switched to sans-serif, tighter uppercase presentation,
+  - non-white standout background with stronger contrast in both checklist locations.
+
+**Implementation files:**
+- `src/app/api/admin/media-library/route.js`
+- `src/app/api/admin/upload-info/route.js`
+- `src/app/api/admin/upload-info/cyberduck-bookmark/route.js`
+- `src/components/admin/AdminMediaLibraryTab.js`
+- `src/components/admin/CyberduckBookmarkPanel.js`
+- `src/components/admin/R2ConnectionPanel.js`
+- `src/components/admin/R2ManualIngestPanel.js`
+- `src/lib/mediaLibraryHelpers.js`
+
+**Validation:**
+- `npm run lint -- src/app/api/admin/media-library/route.js src/app/api/admin/upload-info/route.js src/app/api/admin/upload-info/cyberduck-bookmark/route.js src/components/admin/AdminMediaLibraryTab.js src/components/admin/CyberduckBookmarkPanel.js src/components/admin/R2ConnectionPanel.js src/components/admin/R2ManualIngestPanel.js src/lib/mediaLibraryHelpers.js` (pass; existing repo warnings unchanged).
+
 ## 2026-03-30 (Codex) — media upload UX: thumbnail + auto-locate scroll
 
 ### Codex — made recent upload entries visual and navigable to the newly uploaded asset row

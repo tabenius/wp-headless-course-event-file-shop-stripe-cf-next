@@ -33,6 +33,14 @@ function buildR2Endpoint() {
   return accountId ? `${accountId}.r2.cloudflarestorage.com` : "";
 }
 
+function normalizeEndpointHost(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .split("/")[0]
+    .trim();
+}
+
 export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
@@ -63,17 +71,23 @@ export async function GET(request) {
   }
 
   const isR2 = backend === "r2";
+  const accountId =
+    process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || "";
   const endpoint = isR2
     ? buildR2Endpoint()
-    : (process.env.S3_ENDPOINT || "").replace(/^https?:\/\//, "");
+    : normalizeEndpointHost(process.env.S3_ENDPOINT || "");
+  const remotePath = bucket ? `/${bucket}` : "";
 
   return NextResponse.json({
     ok: true,
     backend,
     isR2,
     s3Enabled,
+    accountId: isR2 && accountId ? accountId : null,
+    server: endpoint || null,
     endpoint: endpoint || null,
     bucket: bucket || null,
+    remotePath: remotePath || null,
     region: isR2 ? "auto" : process.env.S3_REGION || "us-east-1",
     accessKeyId: accessKeyId || null,
     secretKey: secretKey || null,

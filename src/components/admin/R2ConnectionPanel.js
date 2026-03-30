@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import { t } from "@/lib/i18n";
-import { downloadCyberduckBookmark } from "@/lib/mediaLibraryHelpers";
+import {
+  downloadCyberduckBookmark,
+  downloadCyberduckBookmarkFromServer,
+  resolveBucketRemotePath,
+  resolveStorageServerHost,
+} from "@/lib/mediaLibraryHelpers";
 
 export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInfoDetails }) {
   const [showSecret, setShowSecret] = useState(false);
   const [copiedField, setCopiedField] = useState("");
+  const [bookmarkDownloading, setBookmarkDownloading] = useState(false);
+  const [bookmarkError, setBookmarkError] = useState("");
 
   const clientDetails = uploadInfoDetails || {};
   const s3Enabled = Boolean(uploadInfo?.s3Enabled || clientDetails.s3Enabled);
@@ -20,7 +27,8 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
   })();
   const showR2Docs = backendMode === "r2";
   const showS3Docs = backendMode === "s3";
-  const remotePath = clientDetails.bucket ? `/${clientDetails.bucket}` : "";
+  const serverHost = resolveStorageServerHost(clientDetails);
+  const remotePath = resolveBucketRemotePath(clientDetails);
   const pathStyleValue =
     typeof clientDetails.pathStyle === "boolean"
       ? clientDetails.pathStyle
@@ -30,7 +38,7 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
 
   const checklistRows = [
     { id: "protocol", label: t("admin.clientProtocol"), value: "S3" },
-    { id: "host", label: t("admin.clientHost"), value: clientDetails.endpoint || t("common.noDetails") },
+    { id: "host", label: t("admin.clientHost"), value: serverHost || t("common.noDetails") },
     { id: "region", label: t("admin.clientRegion"), value: clientDetails.region || t("admin.clientRegionAuto") },
     { id: "bucket", label: t("admin.clientBucket"), value: clientDetails.bucket || t("common.noDetails") },
     { id: "remotePath", label: t("admin.clientRemotePath"), value: remotePath || t("common.noDetails") },
@@ -51,12 +59,39 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
     } catch { /* ignore */ }
   }
 
+  async function handleBookmarkDownload() {
+    setBookmarkError("");
+    setBookmarkDownloading(true);
+    const backend = backendMode === "s3" ? "s3" : "r2";
+    try {
+      await downloadCyberduckBookmarkFromServer({
+        backend,
+        fileNameHint: `${(clientDetails.bucket || backend).replace(/[^a-z0-9._-]/gi, "-")}.duck`,
+      });
+    } catch (error) {
+      try {
+        downloadCyberduckBookmark({
+          ...clientDetails,
+          endpoint: serverHost || clientDetails.endpoint || "",
+        });
+      } catch {
+        setBookmarkError(
+          error instanceof Error
+            ? error.message
+            : t("common.downloadFailed", "Download failed. Please try again soon."),
+        );
+      }
+    } finally {
+      setBookmarkDownloading(false);
+    }
+  }
+
   return (
     <>
       {/* ── S3/R2 connection details ── */}
       {backendMode && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">
+          <h3 className="inline-flex rounded-md border border-slate-500 bg-slate-700 px-3 py-1 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-slate-100">
             {t("admin.clientChecklistTitle")}
           </h3>
           <p className="text-[11px] text-gray-500">{t("admin.clientChecklistHint")}</p>
@@ -215,21 +250,29 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             <p>{t("admin.cyberduckStepAuth")}</p>
             <p>{t("admin.cyberduckStepPath")}</p>
           </div>
-          {clientDetails.endpoint && (
+          {(serverHost || clientDetails.endpoint) && (
             <div className="mt-3 pt-3 border-t border-amber-200">
               <p className="text-[11px] text-gray-500 mb-2">
                 {t("admin.cyberduckProfileHint", "Download a pre-filled bookmark file. Double-click it to open directly in CyberDuck. You will be prompted for the secret key on first connect.")}
               </p>
+              {bookmarkError && (
+                <p className="mb-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
+                  {bookmarkError}
+                </p>
+              )}
               <button
                 type="button"
-                onClick={() => downloadCyberduckBookmark(clientDetails)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-700"
+                onClick={handleBookmarkDownload}
+                disabled={bookmarkDownloading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
               >
                 <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
                   <path d="M8 12l-5-5h3V2h4v5h3L8 12z" />
                   <rect x="2" y="13" width="12" height="1.5" rx=".75" />
                 </svg>
-                {t("admin.cyberduckDownloadProfile", "Download .duck bookmark")}
+                {bookmarkDownloading
+                  ? t("common.loading", "Loading…")
+                  : t("admin.cyberduckDownloadProfile", "Download .duck bookmark")}
               </button>
             </div>
           )}

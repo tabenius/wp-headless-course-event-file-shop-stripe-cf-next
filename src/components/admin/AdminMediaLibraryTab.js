@@ -214,6 +214,16 @@ export default function AdminMediaLibraryTab({
     [enabledUploadOptions, uploadBackend],
   );
 
+  const sourceFilterOptions = useMemo(
+    () => [
+      { id: "all", label: t("admin.mediaAllSources", "All sources") },
+      { id: "wordpress", label: "WordPress" },
+      { id: "r2", label: "R2" },
+      ...(uploadInfo?.s3Enabled ? [{ id: "s3", label: "S3" }] : []),
+    ],
+    [uploadInfo?.s3Enabled],
+  );
+
   const operationPickerGroups = useMemo(() => getOperationsByCategory(), []);
   const addableOperationTypes = useMemo(
     () => operationPickerGroups.flatMap((group) => group.operations.map((entry) => entry.type)),
@@ -271,6 +281,13 @@ export default function AdminMediaLibraryTab({
       setSelectedUploadBackend(preferredUploadBackend);
     }
   }, [enabledUploadOptions, preferredUploadBackend, selectedUploadBackend]);
+
+  useEffect(() => {
+    const sourceExists = sourceFilterOptions.some((option) => option.id === sourceFilter);
+    if (!sourceExists) {
+      setSourceFilter("all");
+    }
+  }, [sourceFilter, sourceFilterOptions]);
 
   useEffect(() => {
     if (addableOperationTypes.length === 0) {
@@ -1899,7 +1916,7 @@ export default function AdminMediaLibraryTab({
           <p className="text-sm text-gray-500 mt-1">
             {t(
               "admin.mediaLibrarySummary",
-              "Combined library from WordPress media and Cloudflare R2.",
+              "Combined library from WordPress media and configured bucket storage.",
             )}
           </p>
         </div>
@@ -1917,11 +1934,7 @@ export default function AdminMediaLibraryTab({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {[
-          { id: "all", label: t("admin.mediaAllSources", "All sources") },
-          { id: "wordpress", label: "WordPress" },
-          { id: "r2", label: "R2" },
-        ].map((option) => (
+        {sourceFilterOptions.map((option) => (
           <button
             key={option.id}
             type="button"
@@ -2279,6 +2292,13 @@ export default function AdminMediaLibraryTab({
           >
             R2: {sources.r2?.count ?? 0}
           </span>
+          {(sources.s3?.enabled || sources.s3?.ok || sources.s3?.count) && (
+            <span
+              className={`px-2 py-1 rounded ${sources.s3?.ok ? "bg-amber-50 text-amber-700" : "bg-gray-100 text-gray-600"}`}
+            >
+              S3: {sources.s3?.count ?? 0}
+            </span>
+          )}
         </div>
       )}
 

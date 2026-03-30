@@ -59,7 +59,7 @@ function toSafeSearch(value) {
 
 function toSafePrefix(value) {
   const safe = String(value || "").trim();
-  if (!safe) return "uploads/";
+  if (!safe || safe === "/") return "";
   return safe.slice(0, 160);
 }
 
@@ -594,14 +594,17 @@ async function fetchWordPressMedia({ limit, search }) {
   return rows.map((row) => normalizeWordPressMediaRow(row));
 }
 
-async function fetchR2Media({ limit, prefix, search }) {
-  if (!isS3Configured("r2")) {
-    throw new Error("R2 is not configured.");
+async function fetchBucketMedia({ backend, limit, prefix, search }) {
+  if (backend !== "r2" && backend !== "s3") {
+    throw new Error("Invalid bucket backend.");
+  }
+  if (!isS3Configured(backend)) {
+    throw new Error(`${backend.toUpperCase()} is not configured.`);
   }
   let objects = await listBucketObjects({
     prefix,
     limit: Math.min(Math.max(limit * 2, limit), MAX_LIMIT),
-    backend: "r2",
+    backend,
   });
 
   if (search) {
@@ -616,8 +619,8 @@ async function fetchR2Media({ limit, prefix, search }) {
     const key = object?.key || "";
     const title = key || object?.url || "R2 object";
     return {
-      id: `r2:${key || Math.random().toString(36).slice(2)}`,
-      source: "r2",
+      id: `${backend}:${key || Math.random().toString(36).slice(2)}`,
+      source: backend,
       sourceId: null,
       key,
       title,
@@ -681,7 +684,7 @@ async function fetchR2Media({ limit, prefix, search }) {
     .slice(0, Math.min(limit, PROBE_METADATA_LIMIT));
   await runWithConcurrency(metadataRows, PROBE_CONCURRENCY, async (row) => {
     try {
-      const head = await headBucketObject({ key: row.key, backend: "r2" });
+      const head = await headBucketObject({ key: row.key, backend });
       if (head.contentType && !row.mimeType) {
         row.mimeType = head.contentType;
         row.fileType = typeLabelFromMime(head.contentType, row.key);
@@ -770,7 +773,7 @@ const R2_MANAGED_METADATA_KEYS = [
 
 function toPatchPayload(body) {
   const source = sanitizeText(body?.source, 24).toLowerCase();
-  if (source !== "wordpress" && source !== "r2") {
+  if (source !== "wordpress" && source !== "r2" && source !== "s3") {
     const error = new Error("Invalid media source.");
     error.statusCode = 400;
     throw error;
@@ -783,9 +786,9 @@ function toPatchPayload(body) {
     error.statusCode = 400;
     throw error;
   }
-  const key = source === "r2" ? sanitizeText(body?.key, 512) : "";
-  if (source === "r2" && !key) {
-    const error = new Error("R2 object key is required.");
+  const key = source === "wordpress" ? "" : sanitizeText(body?.key, 512);
+  if (source !== "wordpress" && !key) {
+    const error = new Error("Object key is required for bucket assets.");
     error.statusCode = 400;
     throw error;
   }
@@ -907,12 +910,15 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights, a
   return normalizeWordPressMediaRow(row);
 }
 
-async function updateR2ObjectMetadata({ key, metadata, rights, asset }) {
-  if (!isS3Configured("r2")) {
-    throw new Error("R2 is not configured.");
+async function updateBucketObjectMetadata({ backend, key, metadata, rights, asset }) {
+  if (backend !== "r2" && backend !== "s3") {
+    throw new Error("Invalid bucket backend.");
+  }
+  if (!isS3Configured(backend)) {
+    throw new Error(`${backend.toUpperCase()} is not configured.`);
   }
   await replaceBucketObjectMetadata({
-    backend: "r2",
+    backend,
     key,
     metadata: {
       asset_title: metadata.title,
@@ -942,11 +948,12 @@ export async function GET(request) {
   const sourceRaw = String(
     request.nextUrl.searchParams.get("source") || "all",
   ).toLowerCase();
-  const sourceParam = ["all", "wordpress", "r2"].includes(sourceRaw)
+  const sourceParam = ["all", "wordpress", "r2", "s3"].includes(sourceRaw)
     ? sourceRaw
     : "all";
   const includeWordPress = sourceParam === "all" || sourceParam === "wordpress";
   const includeR2 = sourceParam === "all" || sourceParam === "r2";
+  const includeS3 = sourceParam === "s3" || (sourceParam === "all" && isS3Configured("s3"));
   const limit = clampLimit(request.nextUrl.searchParams.get("limit"));
   const search = toSafeSearch(request.nextUrl.searchParams.get("search"));
   const prefix = toSafePrefix(request.nextUrl.searchParams.get("prefix"));
@@ -954,10 +961,12 @@ export async function GET(request) {
   const sources = {
     wordpress: { enabled: includeWordPress, ok: false, error: null, count: 0 },
     r2: { enabled: includeR2, ok: false, error: null, count: 0 },
+    s3: { enabled: includeS3, ok: false, error: null, count: 0 },
   };
   const warnings = [];
   let wordpressItems = [];
   let r2Items = [];
+  let s3Items = [];
 
   if (includeWordPress) {
     try {
@@ -973,7 +982,7 @@ export async function GET(request) {
 
   if (includeR2) {
     try {
-      r2Items = await fetchR2Media({ limit, prefix, search });
+      r2Items = await fetchBucketMedia({ backend: "r2", limit, prefix, search });
       sources.r2.ok = true;
       sources.r2.count = r2Items.length;
     } catch (error) {
@@ -983,7 +992,19 @@ export async function GET(request) {
     }
   }
 
-  const items = sortByNewest([...wordpressItems, ...r2Items]);
+  if (includeS3) {
+    try {
+      s3Items = await fetchBucketMedia({ backend: "s3", limit, prefix, search });
+      sources.s3.ok = true;
+      sources.s3.count = s3Items.length;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load S3 media.";
+      sources.s3.error = message;
+      warnings.push(`S3: ${message}`);
+    }
+  }
+
+  const items = sortByNewest([...wordpressItems, ...r2Items, ...s3Items]);
   return NextResponse.json({
     ok: true,
     items,
@@ -1004,7 +1025,7 @@ export async function POST(request) {
       const item = await updateWordPressAttachmentMetadata(patch);
       return NextResponse.json({ ok: true, item });
     }
-    await updateR2ObjectMetadata(patch);
+    await updateBucketObjectMetadata({ ...patch, backend: patch.source });
     return NextResponse.json({ ok: true });
   } catch (error) {
     const status = Number(error?.statusCode) || 500;
