@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { getOwnAvatar, listOwnAvatarRelationships } from "@/lib/avatarStore";
 import AvatarMePanel from "@/components/profile/AvatarMePanel";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "My Avatar",
   alternates: { canonical: "/me" },

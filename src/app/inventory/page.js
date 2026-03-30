@@ -7,6 +7,8 @@ import { listDigitalProducts } from "@/lib/digitalProducts";
 import { listAllShopItems } from "@/lib/shopProducts";
 import { appendServerLog } from "@/lib/serverLog";
 
+export const dynamic = "force-dynamic";
+
 function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }

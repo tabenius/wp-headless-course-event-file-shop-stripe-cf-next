@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getAvatarForProfileHandle } from "@/lib/avatarStore";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Avatar Profile",
 };

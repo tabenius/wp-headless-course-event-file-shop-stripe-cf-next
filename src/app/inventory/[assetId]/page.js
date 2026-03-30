@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { hasDigitalAccess } from "@/lib/digitalAccessStore";
 import { getDigitalProductByAssetId } from "@/lib/digitalProducts";
 
+export const dynamic = "force-dynamic";
+
 export default async function InventoryAssetPage({ params: paramsPromise }) {
   const params = await paramsPromise;
   const assetIdRaw = typeof params?.assetId === "string" ? params.assetId : "";

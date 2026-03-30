@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { adminAuth } from "@/auth";
 import { getDigitalProductByAssetId } from "@/lib/digitalProducts";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminAssetPage({ params: paramsPromise }) {
   const adminSession = await adminAuth();
   if (!adminSession) {

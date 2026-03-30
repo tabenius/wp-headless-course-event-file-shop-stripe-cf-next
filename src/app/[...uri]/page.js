@@ -574,7 +574,6 @@ async function ContentPageInner({
   searchParams: searchParamsPromise,
 }) {
   const params = await paramsPromise;
-  const searchParams = await searchParamsPromise;
   const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
   const normalizedSegments = uriSegments
     .filter((segment) => typeof segment === "string")
@@ -662,6 +661,7 @@ async function ContentPageInner({
         }).catch(() => {});
       }
     }
+    const searchParams = await searchParamsPromise;
     const checkoutStatus =
       typeof searchParams?.checkout === "string" ? searchParams.checkout : "";
     const checkoutSessionId =

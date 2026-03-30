@@ -3956,5 +3956,21 @@ The following pages use `auth()` (which calls `cookies()` from `next/headers`) a
 - Build failures mentioning `cookies()` or `headers()` called outside request context
 - The `/courses/` route was the original 500 trigger — verify it still works
 
-**Recommendation:**
-If any 500s recur, add explicit `export const dynamic = "force-dynamic"` to the affected page files rather than restoring it globally on the root layout. This preserves ISR benefits for truly static pages (`/`, `/blog`, `/events`) while protecting auth-dependent routes. The safest approach would be to proactively add `force-dynamic` to all 8 pages listed above.
+**Actions taken:**
+
+1. **Added explicit `force-dynamic` to 7 auth-dependent pages:**
+   - `src/app/me/page.js`
+   - `src/app/inventory/page.js`
+   - `src/app/inventory/[assetId]/page.js`
+   - `src/app/profile/[username]/page.js`
+   - `src/app/avatar/[avatarId]/page.js`
+   - `src/app/assets/[assetId]/page.js`
+   - `src/app/shop/[slug]/page.js`
+
+2. **Deferred `await searchParams` in `src/app/[...uri]/page.js`:**
+   The catch-all already conditionally calls `auth()` + `noStore()` only for paid content types (`isPaidAccessType`). But `await searchParams` was resolved unconditionally at the top, forcing ALL content types dynamic. Moved it into the paid-access branch so `Post` and `Page` types remain ISR-eligible. This is the "auth as island" pattern at the route level — free content never touches cookies/searchParams, paid content opts into dynamic via `noStore()` + `auth()`.
+
+3. **Future island opportunity — `/shop/[slug]`:**
+   Product info is public but `auth()` is called unconditionally to check ownership. Could be refactored: static product shell (ISR) + client island that calls `/api/shop/ownership?productId=X` to show "already purchased" badge and download link. This would let product pages cache via ISR while personalizing client-side. Marked `force-dynamic` for now as the safe path.
+
+**Result:** Root layout stays ISR-default (Codex change preserved). Auth-dependent pages are explicitly dynamic. Free content pages (`Post`, `Page` via catch-all) can benefit from ISR/static caching.

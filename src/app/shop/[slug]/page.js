@@ -9,6 +9,8 @@ import { appendServerLog } from "@/lib/serverLog";
 import { StorefrontDetailSkeleton } from "@/components/common/StorefrontSkeletons";
 import { Suspense } from "react";
 
+export const dynamic = "force-dynamic";
+
 async function ShopProductPageContent({
   params: paramsPromise,
   searchParams: searchParamsPromise,
