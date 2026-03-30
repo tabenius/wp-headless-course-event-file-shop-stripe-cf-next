@@ -417,6 +417,95 @@ body:has(.admin-layout)::before {
   color: var(--admin-status-pill-danger-text) !important;
 }
 
+.admin-file-preview {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface-alt);
+  color: var(--admin-text);
+  text-align: center;
+  overflow: hidden;
+}
+.admin-file-preview-sm {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+.admin-file-preview-md {
+  width: 3rem;
+  height: 3rem;
+}
+.admin-file-preview-icon {
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.95;
+  flex-shrink: 0;
+}
+.admin-file-preview-label {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  max-width: 100%;
+  padding: 0 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-file-preview-file {
+  background: rgba(147, 161, 161, 0.14);
+  color: #d1d5db;
+}
+.admin-file-preview-document {
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+.admin-file-preview-pdf {
+  background: rgba(220, 50, 47, 0.24);
+  color: #fecaca;
+}
+.admin-file-preview-table {
+  background: rgba(132, 204, 22, 0.2);
+  color: #d9f99d;
+}
+.admin-file-preview-code {
+  background: rgba(56, 189, 248, 0.22);
+  color: #bae6fd;
+}
+.admin-file-preview-database {
+  background: rgba(45, 212, 191, 0.22);
+  color: #99f6e4;
+}
+.admin-file-preview-archive {
+  background: rgba(181, 137, 0, 0.24);
+  color: #fef08a;
+}
+.admin-file-preview-audio {
+  background: rgba(147, 51, 234, 0.24);
+  color: #e9d5ff;
+}
+.admin-file-preview-video {
+  background: rgba(236, 72, 153, 0.24);
+  color: #fbcfe8;
+}
+.admin-file-preview-presentation {
+  background: rgba(249, 115, 22, 0.24);
+  color: #fed7aa;
+}
+.admin-file-preview-font {
+  background: rgba(96, 165, 250, 0.2);
+  color: #dbeafe;
+}
+.admin-file-preview-binary {
+  background: rgba(100, 116, 139, 0.24);
+  color: #cbd5e1;
+}
+
 .admin-header-ticker-inline {
   background: var(--admin-header-ticker-bg) !important;
   border-color: var(--admin-header-border) !important;

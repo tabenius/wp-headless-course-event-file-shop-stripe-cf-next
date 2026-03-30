@@ -29,10 +29,212 @@ export const PRESET_CROP_OPTIONS = [
 
 export const LS_LAST_OPENED_KEY = "mediaLibraryLastOpenedAt";
 
+const TABLE_EXTENSIONS = new Set([
+  "csv",
+  "tsv",
+  "xls",
+  "xlsx",
+  "ods",
+  "numbers",
+]);
+const CODE_EXTENSIONS = new Set([
+  "json",
+  "yaml",
+  "yml",
+  "xml",
+  "html",
+  "htm",
+  "css",
+  "js",
+  "mjs",
+  "cjs",
+  "jsx",
+  "ts",
+  "tsx",
+  "sql",
+  "graphql",
+  "gql",
+]);
+const DOCUMENT_EXTENSIONS = new Set([
+  "txt",
+  "md",
+  "markdown",
+  "rtf",
+  "doc",
+  "docx",
+  "odt",
+  "epub",
+  "pages",
+]);
+const PRESENTATION_EXTENSIONS = new Set([
+  "ppt",
+  "pptx",
+  "odp",
+  "key",
+]);
+const DATABASE_EXTENSIONS = new Set([
+  "sqlite",
+  "sqlite3",
+  "db",
+  "mdb",
+  "accdb",
+]);
+const ARCHIVE_EXTENSIONS = new Set([
+  "zip",
+  "tar",
+  "gz",
+  "tgz",
+  "bz2",
+  "xz",
+  "7z",
+  "rar",
+]);
+const AUDIO_EXTENSIONS = new Set([
+  "mp3",
+  "wav",
+  "flac",
+  "ogg",
+  "m4a",
+  "aac",
+  "opus",
+]);
+const VIDEO_EXTENSIONS = new Set([
+  "mp4",
+  "mov",
+  "mkv",
+  "webm",
+  "avi",
+  "mpeg",
+  "mpg",
+  "m4v",
+]);
+const FONT_EXTENSIONS = new Set([
+  "ttf",
+  "otf",
+  "woff",
+  "woff2",
+]);
+const BINARY_EXTENSIONS = new Set([
+  "exe",
+  "msi",
+  "apk",
+  "dmg",
+  "pkg",
+  "bin",
+  "iso",
+]);
+
 export function extFromFileName(name) {
   const safe = String(name || "").toLowerCase();
   const match = safe.match(/\.([a-z0-9]+)$/i);
   return match ? match[1] : "";
+}
+
+function normalizeMimeType(mimeType) {
+  return String(mimeType || "")
+    .trim()
+    .toLowerCase()
+    .split(";")[0];
+}
+
+function detectPreviewGroup(ext, mime) {
+  if (mime === "application/pdf" || ext === "pdf") return "pdf";
+  if (mime.startsWith("audio/") || AUDIO_EXTENSIONS.has(ext)) return "audio";
+  if (mime.startsWith("video/") || VIDEO_EXTENSIONS.has(ext)) return "video";
+  if (
+    mime.startsWith("font/") ||
+    mime.includes("font") ||
+    FONT_EXTENSIONS.has(ext)
+  ) {
+    return "font";
+  }
+  if (
+    mime.includes("sqlite") ||
+    mime.includes("database") ||
+    DATABASE_EXTENSIONS.has(ext)
+  ) {
+    return "database";
+  }
+  if (
+    mime.includes("spreadsheet") ||
+    mime.includes("ms-excel") ||
+    mime === "text/csv" ||
+    mime === "text/tab-separated-values" ||
+    TABLE_EXTENSIONS.has(ext)
+  ) {
+    return "table";
+  }
+  if (
+    mime.includes("zip") ||
+    mime.includes("compressed") ||
+    mime.includes("x-tar") ||
+    mime.includes("x-7z") ||
+    mime.includes("rar") ||
+    ARCHIVE_EXTENSIONS.has(ext)
+  ) {
+    return "archive";
+  }
+  if (
+    mime.includes("presentation") ||
+    mime.includes("powerpoint") ||
+    PRESENTATION_EXTENSIONS.has(ext)
+  ) {
+    return "presentation";
+  }
+  if (
+    mime.includes("javascript") ||
+    mime.includes("json") ||
+    mime.includes("yaml") ||
+    mime.includes("xml") ||
+    mime.includes("sql") ||
+    mime.includes("graphql") ||
+    CODE_EXTENSIONS.has(ext)
+  ) {
+    return "code";
+  }
+  if (
+    mime.includes("wordprocessingml") ||
+    mime.includes("msword") ||
+    mime.includes("opendocument.text") ||
+    mime === "text/plain" ||
+    mime === "text/markdown" ||
+    DOCUMENT_EXTENSIONS.has(ext)
+  ) {
+    return "document";
+  }
+  if (
+    mime === "application/octet-stream" ||
+    mime.includes("x-msdownload") ||
+    BINARY_EXTENSIONS.has(ext)
+  ) {
+    return "binary";
+  }
+  if (mime.startsWith("text/")) return "document";
+  return "file";
+}
+
+function derivePreviewLabel(ext, group) {
+  if (ext && ext.length <= 5) return ext.toUpperCase();
+  if (group === "database") return "DB";
+  if (group === "presentation") return "PPT";
+  if (group === "archive") return "ZIP";
+  if (group === "document") return "DOC";
+  if (group === "binary") return "BIN";
+  return group.toUpperCase();
+}
+
+export function resolveAssetFilePreview(item) {
+  const name = String(
+    item?.name || item?.title || item?.key || item?.url || "",
+  );
+  const ext = extFromFileName(name);
+  const mime = normalizeMimeType(item?.mimeType || item?.fileType || "");
+  const group = detectPreviewGroup(ext, mime);
+  return {
+    group,
+    label: derivePreviewLabel(ext, group),
+    className: `admin-file-preview-${group}`,
+  };
 }
 
 export function formatBytes(bytes) {
@@ -420,4 +622,3 @@ export async function downloadCyberduckBookmarkFromServer({
   a.remove();
   URL.revokeObjectURL(url);
 }
-
