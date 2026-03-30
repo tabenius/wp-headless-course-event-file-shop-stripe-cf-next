@@ -1,5 +1,9 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — media library non-image previews: semantic icon thumbnails
+
+- Landed `92417f4` — WHY: MIME text blocks like `application/pdf` in preview cells are visually noisy and non-scannable; replaced them with a grouped icon/label thumbnail system (30+ common ext/mime mapped to <=12 icon families) so operators can parse mixed libraries faster while keeping real image thumbnails for images.
+
 ## 2026-03-30 (Codex) — media upload flow: any-file acceptance, no type-gate copy
 
 - Landed `eb79722` — WHY: upload operators should not be blocked by pipeline-implementation details; the admin upload area now avoids type-explainer clutter, removes client-side file-type rejection, and accepts any file as an asset (size limits still enforced), with format-specific guidance moved away from pre-upload flow.
