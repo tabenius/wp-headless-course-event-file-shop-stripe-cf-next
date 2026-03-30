@@ -7,7 +7,10 @@ import {
   filterNavigationByExistence,
 } from "@/lib/menuFilter";
 import { cache } from "react";
-import { readCloudflareKvJson, writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import {
+  readCloudflareKvJsonWithOptions,
+  writeCloudflareKvJson,
+} from "@/lib/cloudflareKv";
 import { addServerTiming } from "@/lib/serverTiming";
 
 const MENU_QUERY = `
@@ -223,7 +226,16 @@ async function getMenuSnapshot() {
 
   menuSnapshotCache.pending = (async () => {
     try {
-      const payload = await readCloudflareKvJson(MENU_SNAPSHOT_KV_KEY);
+      const payload = await readCloudflareKvJsonWithOptions(
+        MENU_SNAPSHOT_KV_KEY,
+        {
+          cacheMode: "force-cache",
+          revalidateSeconds: Math.max(
+            1,
+            Math.floor(MENU_SNAPSHOT_TTL_MS / 1000),
+          ),
+        },
+      );
       const items = normalizeSnapshotItems(payload?.items);
       if (items && items.length > 0) {
         menuSnapshotCache.items = items;

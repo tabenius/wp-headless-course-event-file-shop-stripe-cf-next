@@ -3,6 +3,16 @@ function normalizeUrl(value) {
   return trimmed ? trimmed.replace(/\/+$/, "") : "";
 }
 
+function isStaticOrIsrRenderContext() {
+  try {
+    const store = globalThis?.__openNextAls?.getStore?.();
+    if (!store || typeof store !== "object") return false;
+    return store.isStaticGeneration === true || store.isISRRevalidation === true;
+  } catch {
+    return false;
+  }
+}
+
 function parseWpConfigCookie(rawValue) {
   const raw = typeof rawValue === "string" ? rawValue.trim() : "";
   if (!raw) return "";
@@ -26,6 +36,13 @@ function parseWpConfigCookie(rawValue) {
 }
 
 export async function resolveWordPressUrl() {
+  const envUrl =
+    normalizeUrl(process.env.NEXT_PUBLIC_WORDPRESS_URL) ||
+    normalizeUrl(process.env.WORDPRESS_API_URL) ||
+    null;
+  if (envUrl) return envUrl;
+  if (isStaticOrIsrRenderContext()) return null;
+
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
@@ -35,10 +52,5 @@ export async function resolveWordPressUrl() {
     // Not in request context (e.g. build-time generation). Fall back to env.
   }
 
-  return (
-    normalizeUrl(process.env.NEXT_PUBLIC_WORDPRESS_URL) ||
-    normalizeUrl(process.env.WORDPRESS_API_URL) ||
-    null
-  );
+  return envUrl;
 }
-

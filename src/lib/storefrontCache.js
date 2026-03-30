@@ -1,4 +1,7 @@
-import { readCloudflareKvJson, writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import {
+  readCloudflareKvJsonWithOptions,
+  writeCloudflareKvJson,
+} from "@/lib/cloudflareKv";
 
 const STOREFRONT_CACHE_STATE_KEY = "storefront:cache:state";
 const STOREFRONT_CACHE_EPOCH_TTL_MS =
@@ -17,7 +20,16 @@ function toSafeEpoch(value) {
 
 async function readEpochFromKv() {
   try {
-    const payload = await readCloudflareKvJson(STOREFRONT_CACHE_STATE_KEY);
+    const payload = await readCloudflareKvJsonWithOptions(
+      STOREFRONT_CACHE_STATE_KEY,
+      {
+        cacheMode: "force-cache",
+        revalidateSeconds: Math.max(
+          1,
+          Math.floor(STOREFRONT_CACHE_EPOCH_TTL_MS / 1000),
+        ),
+      },
+    );
     if (!payload || typeof payload !== "object") return null;
     return toSafeEpoch(payload.epoch);
   } catch {
@@ -62,4 +74,3 @@ export async function bumpStorefrontCacheEpoch() {
   }
   return next;
 }
-
