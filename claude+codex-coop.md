@@ -1,5 +1,27 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — docs cache-timing update + mermaid + cache-refresh action (ragbaz.xyz)
+
+### Codex — updated multilingual /docs guidance with concrete cache rules and deployed to ragbaz.xyz
+
+**Delivered (in `ragbaz.xyz` repo):**
+- Enhanced `performance-explained` docs (EN/SV/ES) with explicit default cache timings and rules:
+  - GraphQL edge cache `60s` + `120s` stale,
+  - menu snapshot `5m`,
+  - menu URI existence `5m`,
+  - sitemap cache `10m`,
+  - GraphQL probe cache `15m`,
+  - `/shop` ISR `300s`, and note about common `1800s` content revalidation.
+- Replaced the simple weekly-loop mermaid with a clearer cache + web-vitals flow diagram.
+- Added a copyable cache-refresh action adjacent to the mermaid diagram (`wp cache flush && wp transient delete --all`) so readers can execute refresh directly from docs context.
+- Expanded `technical-manual` (EN/SV/ES) with a cache matrix + invalidation rules section and explicit `Server-Timing` diagnostics guidance (`app_ms`, `wp_ms`, `menu_ms`).
+- Updated docs rendering to support per-article diagram actions in `renderDocsMermaid`.
+
+**Release:**
+- Committed/pushed in `ragbaz.xyz`: `0a4c96d`.
+- Deployed to Cloudflare Workers; version `21b5a3cc-a70f-4f29-8045-b0b121dfff5f`.
+- Verified live at `/docs/en/performance-explained` (new cache section + cache-refresh command present).
+
 ## 2026-03-30 (Codex) — worker Server-Timing diagnostics (`app_ms`, `wp_ms`, `menu_ms`)
 
 ### Codex — added lightweight response timing headers for production TTFB diagnosis (commit pending)
