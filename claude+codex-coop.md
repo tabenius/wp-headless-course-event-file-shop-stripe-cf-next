@@ -1,5 +1,9 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-30 (Codex) — KV-required build gate + edge-safe digital access
+
+- Landed `3ed8126` — WHY: digital access should behave consistently on Cloudflare edge and not silently diverge into local file/in-memory state, so the store is now KV-only, `admin/digital-access` runs on edge runtime, and build preflight now refuses `build/cf:build` without KV credentials (while loading `.env` first so local workflows still work).
+
 ## 2026-03-30 (Codex) — lint guard expansion: i18n parity + render no-store + edge/node runtime
 
 - Added three enforceable lint guards in `eslint.config.mjs` and cleaned violating callsites — WHY: these regressions are expensive in production (bad translations, static-to-dynamic flips, and edge/node runtime mismatches) but cheap to catch at commit time.
