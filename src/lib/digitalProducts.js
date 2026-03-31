@@ -112,6 +112,8 @@ function sanitizeProduct(product, seenSlugs) {
     typeof rawPrice === "number" && Number.isFinite(rawPrice)
       ? Math.max(0, Math.floor(rawPrice))
       : Math.max(0, Number.parseInt(String(rawPrice || "0"), 10) || 0);
+  const free = product?.free === true;
+  const effectivePriceCents = free ? 0 : priceCents;
 
   const fileUrl =
     typeof product?.fileUrl === "string" ? product.fileUrl.trim() : "";
@@ -142,7 +144,8 @@ function sanitizeProduct(product, seenSlugs) {
     imageUrl,
     type: productMode === "manual_uri" ? "course" : "digital_file",
     productMode,
-    priceCents,
+    priceCents: effectivePriceCents,
+    free,
     currency: normalizeCurrency(product?.currency),
     fileUrl: productMode === "digital_file" ? fileUrl : "",
     courseUri: productMode === "manual_uri" ? courseUri : "",
@@ -314,4 +317,14 @@ export async function saveDigitalProducts(products) {
   const safeProducts = sanitizeProducts(products);
   await writeProducts(safeProducts);
   return safeProducts;
+}
+
+export function isProductListable(product) {
+  if (!product?.active) return false;
+  if (product.free === true) return true;
+  return typeof product.priceCents === "number" && product.priceCents > 0;
+}
+
+export function sanitizeProductForTest(product) {
+  return sanitizeProduct(product, new Set());
 }
