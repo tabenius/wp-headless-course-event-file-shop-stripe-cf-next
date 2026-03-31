@@ -1,5 +1,18 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — media lineage semantics + copy-icon micro UX
+
+- Tightened Media library lineage classification semantics:
+  - `Derived` now means explicit operator-derived work only (`variantKind = derived-work`).
+  - File type (for example `image/png`, `application/zip`) no longer implies derived.
+  - `Original` filter now includes untracked/non-derived assets.
+- Updated derivation-save upload path to explicitly tag outputs as operator-derived:
+  - sends `assetRole=variant`,
+  - sends `variantKind=derived-work`,
+  - carries source linkage (`originalUrl`, WordPress `originalId` when available, plus source `assetId`/`ownerUri` when present).
+- Replaced `Kopiera URL` text buttons in Media table/upload history with standard copy icon buttons (kept accessible aria labels/tooltips and copied state hint).
+- Validation: `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass).
+
 ## 2026-03-30 (Codex) — media library UX pass: remove selected panel, inline lineage controls, and upload-order fix
 
 - Removed the separate `SelectedAssetPanel` and deleted `src/components/admin/media-library/SelectedAssetPanel.js` to keep asset work in one list-first flow.

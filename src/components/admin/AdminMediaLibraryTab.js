@@ -103,6 +103,22 @@ function hexToRgb(value) {
   };
 }
 
+function CopyIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={className}
+    >
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
 function resolveAssetLineageRole(item) {
   const asset = item?.asset;
   if (!asset || typeof asset !== "object") return "untracked";
@@ -110,11 +126,7 @@ function resolveAssetLineageRole(item) {
     String(asset.variantKind || asset.role || ""),
     80,
   ).toLowerCase();
-  const hasOriginalPointer = Boolean(
-    normalizeEditorValue(asset.originalId || "", 96) ||
-      normalizeEditorValue(asset.originalUrl || "", 1024),
-  );
-  if ((variantKind && variantKind !== "original") || hasOriginalPointer) {
+  if (variantKind === "derived-work") {
     return "derived";
   }
   return "original";
@@ -475,7 +487,10 @@ export default function AdminMediaLibraryTab({
     }
 
     if (lineageFilter === "original") {
-      nextRows = nextRows.filter((item) => resolveAssetLineageRole(item) === "original");
+      nextRows = nextRows.filter((item) => {
+        const role = resolveAssetLineageRole(item);
+        return role === "original" || role === "untracked";
+      });
     } else if (lineageFilter === "derived") {
       nextRows = nextRows.filter((item) => resolveAssetLineageRole(item) === "derived");
     }
@@ -2017,6 +2032,25 @@ export default function AdminMediaLibraryTab({
       const filename = `${selectedDerivation?.id || "derived"}-${Date.now()}.${ext}`;
       const formData = new FormData();
       formData.append("file", blob, filename);
+      formData.append("assetRole", "variant");
+      formData.append("variantKind", "derived-work");
+      if (focusedItem?.url) {
+        formData.append("originalUrl", String(focusedItem.url));
+      }
+      if (
+        focusedItem?.source === "wordpress" &&
+        Number.isFinite(Number.parseInt(String(focusedItem?.sourceId ?? ""), 10))
+      ) {
+        formData.append("originalId", String(focusedItem.sourceId));
+      }
+      const sourceAssetId = normalizeEditorValue(focusedItem?.asset?.assetId || "", 96);
+      if (sourceAssetId) {
+        formData.append("assetId", sourceAssetId);
+      }
+      const sourceOwnerUri = normalizeOwnerUri(focusedItem?.asset?.ownerUri || "/");
+      if (sourceOwnerUri) {
+        formData.append("ownerUri", sourceOwnerUri);
+      }
       const query = new URLSearchParams({ backend: selectedUploadBackend });
       const response = await fetch(`/api/admin/upload?${query.toString()}`, {
         method: "POST",
@@ -2330,9 +2364,12 @@ export default function AdminMediaLibraryTab({
                       <button
                         type="button"
                         onClick={() => copyUrl(entry.url)}
-                        className="px-2 py-0.5 rounded border text-[11px] text-gray-600 hover:bg-gray-100"
+                        className="inline-flex items-center justify-center px-1.5 py-1 rounded border text-[11px] text-gray-600 hover:bg-gray-100"
+                        aria-label={t("admin.bucketCopyUrl", "Copy URL")}
+                        title={t("admin.bucketCopyUrl", "Copy URL")}
                       >
-                        {t("admin.bucketCopyUrl", "Copy URL")}
+                        <CopyIcon className="h-3.5 w-3.5" />
+                        <span className="sr-only">{t("admin.bucketCopyUrl", "Copy URL")}</span>
                       </button>
                     )}
                     {entry.url && (
@@ -2799,11 +2836,28 @@ export default function AdminMediaLibraryTab({
                       <button
                         type="button"
                         onClick={() => copyUrl(item.url)}
-                        className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                        className="inline-flex items-center justify-center text-xs px-1.5 py-1 rounded border hover:bg-gray-50"
+                        aria-label={
+                          copiedUrl === item.url
+                            ? t("admin.clientCopied", "Copied")
+                            : t("admin.bucketCopyUrl", "Copy URL")
+                        }
+                        title={
+                          copiedUrl === item.url
+                            ? t("admin.clientCopied", "Copied")
+                            : t("admin.bucketCopyUrl", "Copy URL")
+                        }
                       >
-                        {copiedUrl === item.url
-                          ? t("admin.clientCopied", "Copied")
-                          : t("admin.bucketCopyUrl", "Copy URL")}
+                        <CopyIcon
+                          className={`h-3.5 w-3.5 ${
+                            copiedUrl === item.url ? "text-emerald-700" : ""
+                          }`}
+                        />
+                        <span className="sr-only">
+                          {copiedUrl === item.url
+                            ? t("admin.clientCopied", "Copied")
+                            : t("admin.bucketCopyUrl", "Copy URL")}
+                        </span>
                       </button>
                     </div>
                   </td>
