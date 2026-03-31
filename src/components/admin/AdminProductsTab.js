@@ -221,6 +221,8 @@ function ImagePickerButton({
 function PriceAccessForm({
   price,
   setPrice,
+  free,
+  setFree,
   currency,
   setCurrency,
   vatPercent,
@@ -240,7 +242,7 @@ function PriceAccessForm({
   autoSaveTrigger,
 }) {
   const parsedPrice = Number.parseFloat(String(price || "").replace(",", "."));
-  const freeAccessEnabled = Number.isFinite(parsedPrice) && parsedPrice === 0;
+  const freeAccessEnabled = Boolean(free);
   const latestSaveUnifiedRef = useRef(saveUnified);
 
   useEffect(() => {
@@ -267,16 +269,24 @@ function PriceAccessForm({
             type="checkbox"
             checked={freeAccessEnabled}
             onChange={(e) => {
-              if (e.target.checked) {
+              const checked = e.target.checked;
+              setFree?.(checked);
+              if (checked) {
                 setPrice("0");
-                return;
+              } else {
+                setPrice("");
               }
-              setPrice("");
             }}
             className="accent-slate-600"
           />
-          <span>{t("admin.freeAccess")}</span>
+          <span>{t("admin.productFree")}</span>
         </label>
+        {freeAccessEnabled && (
+          <p className="text-xs text-green-600">{t("admin.productFreeHint")}</p>
+        )}
+        {!freeAccessEnabled && Number.isFinite(parsedPrice) && parsedPrice === 0 && (
+          <p className="text-xs text-amber-600">{t("admin.productPriceAmbiguous")}</p>
+        )}
         <div className="flex gap-2">
           <input
             type="number"
@@ -1148,6 +1158,8 @@ function AccessTab({
                 active: p.active,
                 categories: deriveDigitalProductCategories(p).categories,
                 imageUrl: p.imageUrl || "",
+                free: p.free,
+                priceCents: p.priceCents,
               })),
               ...otherCourseUris.map((uri) => ({
                 uri,
@@ -1255,6 +1267,11 @@ function AccessTab({
                       }`}
                     >
                       Off
+                    </span>
+                  )}
+                  {!item.free && item.priceCents === 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium shrink-0">
+                      {t("admin.productPriceAmbiguous")}
                     </span>
                   )}
                   <span
@@ -1620,7 +1637,11 @@ function AccessTab({
                           </span>
                           <button
                             type="button"
-                            onClick={() => updateProduct(shopIndex, "productMode", "asset")}
+                            onClick={() => {
+                              updateProduct(shopIndex, "productMode", "asset");
+                              updateProduct(shopIndex, "courseUri", "");
+                              updateProduct(shopIndex, "fileUrl", "");
+                            }}
                             className={`rounded-full border px-2.5 py-1 text-[11px] ${
                               selectedShopMode === "asset"
                                 ? "admin-pill-active"
@@ -1631,7 +1652,11 @@ function AccessTab({
                           </button>
                           <button
                             type="button"
-                            onClick={() => updateProduct(shopIndex, "productMode", "digital_file")}
+                            onClick={() => {
+                              updateProduct(shopIndex, "productMode", "digital_file");
+                              updateProduct(shopIndex, "courseUri", "");
+                              updateProduct(shopIndex, "assetId", "");
+                            }}
                             className={`rounded-full border px-2.5 py-1 text-[11px] ${
                               selectedShopMode === "digital_file"
                                 ? "admin-pill-active"
@@ -1764,6 +1789,8 @@ function AccessTab({
             <PriceAccessForm
               price={price}
               setPrice={setPrice}
+              free={selectedShopProduct?.free ?? false}
+              setFree={(val) => updateProduct(shopIndex, "free", val)}
               currency={currency}
               setCurrency={setCurrency}
               vatPercent={vatPercent}
