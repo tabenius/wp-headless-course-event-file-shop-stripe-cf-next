@@ -57,7 +57,7 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG: derivation apply flow: when previewing or applying a derivation to an asset, the selected asset does not follow into the apply derivation flow — the first source operator requires an asset ID but does not receive the currently selected asset's ID, so the derivation fails or prompts for a source that is already selected. Prio: medium. Impact: operator must re-select the asset or manually enter the asset ID to run any derivation. FIX: inject focusedItem ID into source operations when cloning from template (effect dependency timing issue).
 [x] FEATURE: after entitlement check, hand off a short-lived signed URL (instead of direct origin file URL) for digital downloads and large media files.
 [x] UI BUG: Bucket / sökväg: sofiacerne / /sofiacerne, actually bucket and path / sökväg is the same in this context so do not list the bucket name twice (and that destroys the copy too which should just be /sofiacerne)
-[ ] BUG: /api/site-style returns 500
+[x] BUG: /api/site-style returns 500
 [x] admin BUG: Menu does not take you the destination but a ctrl-shift-reload does
 [x] admin BUG /products: not all products get in to the list even though I can edit access settings after I just created a digital download product from the biggest .mp4 in R2. In this case no slug, name etc was presented should be dl- prefixed in this case.
 [x] /shop: contains no products even though there are products and I just created a digital download product *Mandala.mp4.

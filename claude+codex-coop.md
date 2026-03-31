@@ -1,5 +1,12 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — BUG closeout: `/api/site-style` fail-open behavior
+
+- Verified `src/app/api/site-style/route.js` now fail-opens on exceptions:
+  - returns `200` with `{ ok: true, fallback: true, siteStyle: DEFAULT_SITE_STYLE }`
+  - avoids 500 regressions for storefront style bootstrap.
+- Marked BUGS entry complete: `/api/site-style returns 500`.
+
 ## 2026-03-31 (Codex) — signed download handoff after entitlement
 
 - Implemented short-lived signed URL handoff for owned digital downloads in both routes:
