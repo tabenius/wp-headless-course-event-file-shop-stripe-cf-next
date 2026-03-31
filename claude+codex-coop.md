@@ -1,5 +1,15 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — P1 fix: robust OG metadata for /shop/{slug}
+
+- Hardened product-page metadata generation in `src/app/shop/[slug]/page.js`:
+  - added deterministic canonical URL via runtime site base URL,
+  - added fallback OG/Twitter description when product description is empty,
+  - added fallback OG image chain: `imageUrl` -> image `fileUrl` -> site logo,
+  - added `alternates.canonical` and upgraded OG payload reliability for social scrapers.
+- Goal: prevent share cards with title-only output (missing image/description).
+- Validation: targeted ESLint pass for metadata/page files (warnings-only baseline unchanged).
+
 ## 2026-03-31 (Codex) — P0 hardening: free-claim flow + site-style fallback + asset-product diagnostics
 
 - Kept and landed improved Admin assets -> Create-product diagnostics:

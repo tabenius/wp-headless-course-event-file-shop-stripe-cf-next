@@ -4,6 +4,7 @@ import { getDigitalProductBySlug } from "@/lib/digitalProducts";
 import { isStripeEnabled } from "@/lib/stripe";
 import { StorefrontDetailSkeleton } from "@/components/common/StorefrontSkeletons";
 import { Suspense } from "react";
+import site from "@/lib/site";
 
 export const revalidate = 300;
 
@@ -34,6 +35,31 @@ export default function ShopProductPage(props) {
   );
 }
 
+function inferOgDescription(product) {
+  const explicit = String(product?.description || "").trim();
+  if (explicit) return explicit;
+  const isFree = product?.free === true || Number(product?.priceCents || 0) <= 0;
+  const kind = product?.type === "course" ? "course" : "digital file";
+  if (isFree) return `${product?.name || "Product"} is a free ${kind}.`;
+  const amount = Number.isFinite(Number(product?.priceCents))
+    ? Math.max(0, Math.round(Number(product.priceCents) / 100))
+    : 0;
+  const currency = String(product?.currency || "SEK").toUpperCase();
+  return `${product?.name || "Product"} is available as a ${kind} for ${amount} ${currency}.`;
+}
+
+function inferOgImages(product) {
+  const imageUrl = String(product?.imageUrl || "").trim();
+  if (imageUrl) {
+    return [{ url: imageUrl, alt: product?.name || "Product image" }];
+  }
+  const fileUrl = String(product?.fileUrl || "").trim();
+  if (fileUrl && String(product?.mimeType || "").toLowerCase().startsWith("image/")) {
+    return [{ url: fileUrl, alt: product?.name || "Product image" }];
+  }
+  return [{ url: site.logoUrl, alt: site.logo?.alt || site.name || "Storefront logo" }];
+}
+
 export async function generateMetadata({ params: paramsPromise }) {
   const params = await paramsPromise;
   const slug = typeof params?.slug === "string" ? params.slug : "";
@@ -44,29 +70,20 @@ export async function generateMetadata({ params: paramsPromise }) {
     return { title: "Shop" };
   }
   if (!product) return { title: "Shop" };
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_WORDPRESS_URL ||
-    "https://example.com";
-  const canonical = `${baseUrl.replace(/\/+$/, "")}/shop/${encodeURIComponent(product.slug)}`;
-  const description = product.description || "";
-  const images = product.imageUrl
-    ? [
-        {
-          url: product.imageUrl,
-          alt: product.name,
-        },
-      ]
-    : [];
+  const baseUrl = String(site.url || "https://example.com").replace(/\/+$/, "");
+  const canonical = `${baseUrl}/shop/${encodeURIComponent(product.slug)}`;
+  const description = inferOgDescription(product);
+  const images = inferOgImages(product);
 
   return {
     title: `${product.name} | Shop`,
     description,
+    alternates: { canonical },
     openGraph: {
       title: `${product.name} | Shop`,
       description,
       url: canonical,
-      type: "website",
+      type: "article",
       images,
     },
     twitter: {
