@@ -2691,7 +2691,7 @@ export default function AdminMediaLibraryTab({
                   onClick={() => setFocusedItemId(item.id)}
                   className={`border-t align-top cursor-pointer transition-colors ${
                     isFocusedRow
-                      ? "bg-blue-100 ring-1 ring-inset ring-blue-300"
+                      ? "bg-blue-700 text-white [&_p]:!text-blue-100 [&_td]:!text-blue-100 ring-1 ring-inset ring-blue-300"
                       : flashFocusedItemId === item.id
                         ? "bg-emerald-50"
                         : "hover:bg-gray-50"
