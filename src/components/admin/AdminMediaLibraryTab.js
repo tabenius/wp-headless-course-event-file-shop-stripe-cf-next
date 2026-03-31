@@ -773,7 +773,16 @@ export default function AdminMediaLibraryTab({
       setCustomOperations([]);
       return;
     }
-    setCustomOperations(cloneOperations(selectedDerivation.operations));
+    const cloned = cloneOperations(selectedDerivation.operations);
+    const targetId = focusedItem?.id || "";
+    if (targetId) {
+      for (const op of cloned) {
+        if (op.type === "source") {
+          op.params = { ...op.params, assetId: targetId };
+        }
+      }
+    }
+    setCustomOperations(cloned);
     setEditorId(selectedDerivation.id || "");
     setEditorName(selectedDerivation.name || "");
     setEditorDescription(selectedDerivation.description || "");
