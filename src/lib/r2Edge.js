@@ -207,6 +207,8 @@ export async function presignR2Url({
   urlObj.searchParams.set("X-Amz-Expires", String(expiresIn));
   urlObj.searchParams.set("X-Amz-SignedHeaders", "host");
 
+  // S3 V4 requires lexicographic sort of query params in canonical request
+  urlObj.searchParams.sort();
   const canonicalRequest = [
     method.toUpperCase(),
     urlObj.pathname,

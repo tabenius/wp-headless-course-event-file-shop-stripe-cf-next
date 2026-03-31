@@ -1,6 +1,7 @@
 import {
   isCloudflareKvConfigured,
   readCloudflareKvJson,
+  readCloudflareKvJsonWithOptions,
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 
@@ -55,6 +56,14 @@ async function readCloudflareState() {
   return value ? sanitizeState(value) : { users: {} };
 }
 
+async function readCloudflareStateUncached() {
+  assertKvConfigured();
+  const value = await readCloudflareKvJsonWithOptions(getKvKey(), {
+    cacheMode: "no-store",
+  });
+  return value ? sanitizeState(value) : { users: {} };
+}
+
 async function writeCloudflareState(state) {
   assertKvConfigured();
   const wrote = await writeCloudflareKvJson(getKvKey(), state);
@@ -99,6 +108,21 @@ export async function hasDigitalAccess(productId, email) {
   if (!safeProductId || !safeEmail) return false;
 
   const state = await getState();
+  const user = state.users[safeEmail];
+  if (!user || !Array.isArray(user.productIds)) return false;
+  return user.productIds.includes(safeProductId);
+}
+
+/**
+ * Same as hasDigitalAccess but bypasses KV fetch cache.
+ * Use in write-then-read paths (e.g. immediately after granting access).
+ */
+export async function hasDigitalAccessUncached(productId, email) {
+  const safeProductId = normalizeProductId(productId);
+  const safeEmail = normalizeEmail(email);
+  if (!safeProductId || !safeEmail) return false;
+
+  const state = await readCloudflareStateUncached();
   const user = state.users[safeEmail];
   if (!user || !Array.isArray(user.productIds)) return false;
   return user.productIds.includes(safeProductId);

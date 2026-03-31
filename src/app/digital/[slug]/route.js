@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { hasDigitalAccess } from "@/lib/digitalAccessStore";
+import { hasDigitalAccessUncached, grantDigitalAccess } from "@/lib/digitalAccessStore";
 import { getDigitalProductBySlug, isProductListable } from "@/lib/digitalProducts";
 import { createSignedDownloadUrl } from "@/lib/s3upload";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 function getFileName(product) {
   const candidates = [product.name, product.assetId, product.slug, product.id];
@@ -68,12 +68,12 @@ export async function GET(request, { params }) {
     return NextResponse.redirect(new URL(loginUrl, request.url));
   }
 
-  let canDownload = await hasDigitalAccess(product.id, session.user.email);
+  // Use uncached read — user may have just claimed moments ago
+  let canDownload = await hasDigitalAccessUncached(product.id, session.user.email);
   const isFreeProduct =
     product.free === true || Number(product.priceCents || 0) <= 0;
   if (!canDownload && isFreeProduct) {
     // Auto-grant for free products on first visit
-    const { grantDigitalAccess } = await import("@/lib/digitalAccessStore");
     await grantDigitalAccess(product.id, session.user.email);
     canDownload = true;
   }
@@ -102,22 +102,10 @@ export async function GET(request, { params }) {
       });
     }
 
-    const upstream = await fetch(fileUrl, { cache: "no-store" });
-    if (!upstream.ok || !upstream.body) {
-      return new NextResponse("File not available", { status: 502 });
-    }
-
-    const fileName = getFileName(product);
-    const contentType =
-      upstream.headers.get("content-type") || "application/octet-stream";
-    const contentLength = upstream.headers.get("content-length");
-
-    return new NextResponse(upstream.body, {
-      status: 200,
+    // Fallback: redirect to raw URL (avoid proxying large files through the worker)
+    return NextResponse.redirect(fileUrl, {
+      status: 302,
       headers: {
-        "Content-Type": contentType,
-        ...(contentLength ? { "Content-Length": contentLength } : {}),
-        "Content-Disposition": `attachment; filename="${fileName}"`,
         "Cache-Control": "private, no-store",
       },
     });

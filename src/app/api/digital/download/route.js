@@ -1,21 +1,28 @@
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { hasDigitalAccess } from "@/lib/digitalAccessStore";
-import { getDigitalProductById } from "@/lib/digitalProducts";
+import { hasDigitalAccessUncached } from "@/lib/digitalAccessStore";
+import { getDigitalProductById, isProductListable } from "@/lib/digitalProducts";
 import { createSignedDownloadUrl } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 function getFileName(fileUrl, fallbackId) {
   try {
     const pathname = new URL(fileUrl).pathname;
-    const name = path.basename(pathname || "").trim();
+    const segments = pathname.split("/").filter(Boolean);
+    const name = (segments.at(-1) || "").trim();
     return name || `${fallbackId}.bin`;
   } catch {
     return `${fallbackId}.bin`;
   }
+}
+
+function sanitizeDispositionFilename(raw) {
+  return String(raw || "")
+    .replace(/[\r\n"\\]/g, "_")
+    .trim()
+    .slice(0, 180);
 }
 
 function getSignedUrlTtlSeconds() {
@@ -46,7 +53,7 @@ export async function GET(request) {
   }
 
   const product = await getDigitalProductById(productId);
-  if (!product || !product.active) {
+  if (!product || !isProductListable(product)) {
     return NextResponse.json(
       { ok: false, error: t("apiErrors.productNotFound") },
       { status: 404 },
@@ -59,7 +66,8 @@ export async function GET(request) {
     );
   }
 
-  const canDownload = await hasDigitalAccess(product.id, session.user.email);
+  // Use uncached read — user may have just claimed access moments ago
+  const canDownload = await hasDigitalAccessUncached(product.id, session.user.email);
   if (!canDownload) {
     return NextResponse.json(
       { ok: false, error: t("apiErrors.noFileAccess") },
@@ -68,10 +76,11 @@ export async function GET(request) {
   }
 
   try {
+    const rawName = getFileName(product.fileUrl, product.id);
     const signedUrl = await createSignedDownloadUrl({
       fileUrl: product.fileUrl,
       expiresIn: getSignedUrlTtlSeconds(),
-      downloadFileName: getFileName(product.fileUrl, product.id),
+      downloadFileName: rawName,
     });
     if (signedUrl) {
       return NextResponse.redirect(signedUrl, {
@@ -82,25 +91,10 @@ export async function GET(request) {
       });
     }
 
-    const upstream = await fetch(product.fileUrl, { cache: "no-store" });
-    if (!upstream.ok || !upstream.body) {
-      return NextResponse.json(
-        { ok: false, error: t("apiErrors.fileFetchFailed") },
-        { status: 502 },
-      );
-    }
-
-    const fileName = getFileName(product.fileUrl, product.id);
-    const contentType =
-      upstream.headers.get("content-type") || "application/octet-stream";
-    const contentLength = upstream.headers.get("content-length");
-
-    return new NextResponse(upstream.body, {
-      status: 200,
+    // Fallback: redirect to raw URL (avoid proxying large files through the worker)
+    return NextResponse.redirect(product.fileUrl, {
+      status: 302,
       headers: {
-        "Content-Type": contentType,
-        ...(contentLength ? { "Content-Length": contentLength } : {}),
-        "Content-Disposition": `attachment; filename=\"${fileName}\"`,
         "Cache-Control": "private, no-store",
       },
     });
