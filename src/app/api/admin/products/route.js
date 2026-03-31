@@ -37,14 +37,6 @@ export async function DELETE(request) {
       );
     }
 
-    const mode = target.productMode || "";
-    if (mode === "manual_uri") {
-      return NextResponse.json(
-        { ok: false, error: "Course products cannot be deleted from here. Remove the course assignment instead." },
-        { status: 400 },
-      );
-    }
-
     const remaining = products.filter((p) => p?.slug !== slug);
     const saved = await saveDigitalProducts(remaining);
     return NextResponse.json({ ok: true, deleted: slug, products: saved });

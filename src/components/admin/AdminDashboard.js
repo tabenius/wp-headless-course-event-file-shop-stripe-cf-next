@@ -2082,21 +2082,6 @@ export default function AdminDashboard() {
   async function removeShopProduct(index) {
     const product = products[index];
     if (!product) return;
-    const mode = product.productMode || "";
-    if (mode === "manual_uri") {
-      window.dispatchEvent(
-        new CustomEvent("toast", {
-          detail: {
-            type: "error",
-            message: t(
-              "admin.cannotDeleteCourseProduct",
-              "Course products cannot be deleted here. Remove the course assignment instead.",
-            ),
-          },
-        }),
-      );
-      return;
-    }
     if (!window.confirm(t("admin.confirmRemoveProduct"))) return;
     const slug = product.slug;
     if (slug) {
