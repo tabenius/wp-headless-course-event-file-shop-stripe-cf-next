@@ -1241,7 +1241,7 @@ export default function AdminDashboard() {
       }
       setActiveTab(tab);
       window.dispatchEvent(
-        new CustomEvent("admin:switchTab", { detail: window.location.hash }),
+        new CustomEvent("admin:switchTab", { detail: tab }),
       );
     }
     onHashChange();

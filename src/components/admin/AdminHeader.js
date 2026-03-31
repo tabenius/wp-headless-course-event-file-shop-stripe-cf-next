@@ -433,7 +433,11 @@ export default function AdminHeader({ logoUrl }) {
         const response = await fetch("/api/admin/stats-ticker");
         if (!response.ok) return;
         const json = await response.json().catch(() => null);
-        if (!cancelled && json?.ok) setTickerStats(json.stats);
+        if (!cancelled && json?.ok) setTickerStats({
+          ...json.stats,
+          _availableStripe: json.availableStripe === true,
+          _availableAnalytics: json.availableAnalytics === true,
+        });
       } catch {
         // Silently ignore — ticker is best-effort
       }
@@ -472,8 +476,12 @@ export default function AdminHeader({ logoUrl }) {
     if (stats.weeklyAvgHitsPerDay != null) {
       parts.push(`${t("admin.statsTickerHitsPerDay", "Avg hits/day")}: ${stats.weeklyAvgHitsPerDay.toLocaleString()}`);
     }
-    return parts.length > 0
-      ? parts.join("  ·  ")
+    if (parts.length > 0) return parts.join("  ·  ");
+    const missing = [];
+    if (!stats._availableStripe) missing.push("Stripe");
+    if (!stats._availableAnalytics) missing.push("Analytics");
+    return missing.length > 0
+      ? `${t("admin.statsTickerUnavailable", "Stats unavailable")} — ${missing.join(", ")} ${t("admin.statsTickerNotConnected", "not connected")}`
       : t("admin.statsTickerUnavailable", "Stats unavailable");
   }
 
