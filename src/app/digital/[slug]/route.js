@@ -69,7 +69,9 @@ export async function GET(request, { params }) {
   }
 
   let canDownload = await hasDigitalAccess(product.id, session.user.email);
-  if (!canDownload && product.free === true) {
+  const isFreeProduct =
+    product.free === true || Number(product.priceCents || 0) <= 0;
+  if (!canDownload && isFreeProduct) {
     // Auto-grant for free products on first visit
     const { grantDigitalAccess } = await import("@/lib/digitalAccessStore");
     await grantDigitalAccess(product.id, session.user.email);

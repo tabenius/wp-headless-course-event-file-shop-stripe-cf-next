@@ -32,7 +32,9 @@ export async function POST(request) {
       );
     }
 
-    if (product.free !== true) {
+    const isFreeProduct =
+      product.free === true || Number(product.priceCents || 0) <= 0;
+    if (!isFreeProduct) {
       return NextResponse.json(
         { ok: false, error: "This product is not free." },
         { status: 400 },
@@ -45,7 +47,7 @@ export async function POST(request) {
       return NextResponse.json({
         ok: true,
         alreadyOwned: true,
-        redirectUrl: `/digital/${encodeURIComponent(product.slug)}`,
+        redirectUrl: `/digital/${encodeURIComponent(product.slug || product.id)}`,
       });
     }
 
@@ -54,7 +56,7 @@ export async function POST(request) {
     return NextResponse.json({
       ok: true,
       alreadyOwned: false,
-      redirectUrl: `/digital/${encodeURIComponent(product.slug)}`,
+      redirectUrl: `/digital/${encodeURIComponent(product.slug || product.id)}`,
     });
   } catch (error) {
     console.error("Digital free-claim failed:", error);

@@ -96,7 +96,6 @@ function typeBadgeColor(item) {
 
 function ShopIndexContent({
   items,
-  stripeEnabled,
 }) {
   const searchParams = useSearchParams();
   const checkoutStatus =
@@ -111,8 +110,6 @@ function ShopIndexContent({
     typeof searchParams?.get("product_id") === "string"
       ? searchParams.get("product_id")
       : "";
-  const [loadingId, setLoadingId] = useState("");
-  const [error, setError] = useState("");
   const [brokenImages, setBrokenImages] = useState({});
   const [ownershipReady, setOwnershipReady] = useState(false);
   const [user, setUser] = useState(null);
@@ -215,37 +212,6 @@ function ShopIndexContent({
     setOwnershipRetryTick((current) => current + 1);
   }
 
-  // Digital product checkout via /api/digital/checkout
-  async function startDigitalCheckout(productSlug) {
-    if (!user?.email) {
-      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent("/shop")}`;
-      return;
-    }
-    if (!stripeEnabled) {
-      setError(t("shop.paymentNotAvailable"));
-      return;
-    }
-    setError("");
-    setLoadingId(productSlug);
-    try {
-      const response = await fetch("/api/digital/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productSlug }),
-      });
-      const json = await response.json();
-      if (!response.ok || !json?.ok || !json?.url) {
-        setError(json?.error || t("shop.checkoutFailed"));
-        return;
-      }
-      window.location.href = json.url;
-    } catch {
-      setError(t("shop.checkoutFailed"));
-    } finally {
-      setLoadingId("");
-    }
-  }
-
   function isOwned(item) {
     if (item.source === "digital") {
       return ownedProductIds?.includes(item.id);
@@ -294,15 +260,6 @@ function ShopIndexContent({
           </p>
         </div>
       )}
-      {error && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4">
-          <p className="text-red-800">{error}</p>
-          <p className="text-red-600 text-sm mt-1">
-            {t("shop.checkoutRetryHint")}
-          </p>
-        </div>
-      )}
-
       {ownershipPending && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
           {t(
@@ -348,18 +305,32 @@ function ShopIndexContent({
           const imageLoader = buildImageLoader(imageSources, imageUrl);
           const showImage = imageUrl && !brokenImages[item.id];
           const owned = isOwned(item);
-          const loading = loadingId === item.slug;
-          const isDigital = item.source === "digital";
           const boughtUri = resolveProductHref(item);
           const effectiveCents =
             item.priceCents > 0 ? item.priceCents : parseWpPrice(item.price);
           const priceDisplay = formatPrice(effectiveCents, item.currency) || "";
+          const cardHref =
+            !owned && !ownershipPending && typeof item.uri === "string" && item.uri
+              ? item.uri
+              : "";
 
           return (
             <article
               key={item.id}
-              className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-muted)] bg-[var(--color-background)]"
+              className={`relative flex flex-col overflow-hidden rounded-lg border-2 bg-[var(--color-background)] ${
+                cardHref
+                  ? "border-[var(--color-muted)] transition-colors hover:border-amber-500"
+                  : "border-[var(--color-muted)]"
+              }`}
             >
+              {cardHref ? (
+                <Link
+                  href={cardHref}
+                  aria-label={`${t("shop.viewAndBuy")} ${item.name}`}
+                  className="absolute inset-0 z-10 rounded-lg"
+                />
+              ) : null}
+
               {showImage ? (
                 <Image
                   src={imageUrl}
@@ -396,14 +367,21 @@ function ShopIndexContent({
 
               <div className="p-5 space-y-3 flex-1 flex flex-col">
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-xl font-semibold text-[var(--color-foreground)]">
+                  <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
                     {item.name}
                   </h2>
-                  <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded whitespace-nowrap shrink-0 ${typeBadgeColor(item)}`}
-                  >
-                    {typeLabel(item)}
-                  </span>
+                  <div className="ml-2 flex shrink-0 flex-col items-end gap-1">
+                    <span
+                      className={`text-[11px] font-medium px-2 py-0.5 rounded whitespace-nowrap font-sans ${typeBadgeColor(item)}`}
+                    >
+                      {typeLabel(item)}
+                    </span>
+                    {priceDisplay ? (
+                      <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                        {priceDisplay}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
 
                 {item.description && (
@@ -418,12 +396,6 @@ function ShopIndexContent({
                 )}
 
                 <div className="mt-auto pt-3">
-                  {priceDisplay && (
-                    <p className="mb-3 font-semibold text-[var(--color-foreground)]">
-                      {priceDisplay}
-                    </p>
-                  )}
-
                   <div className="flex gap-2 items-center">
                     {owned ? (
                       boughtUri ? (
@@ -442,12 +414,9 @@ function ShopIndexContent({
                       ownershipPending ? (
                         <span className="inline-block h-8 w-24 animate-pulse rounded bg-[var(--color-muted)]" />
                       ) : (
-                        <Link
-                          href={item.uri}
-                          className="px-4 py-2 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 text-sm"
-                        >
+                        <span className="text-sm font-medium text-[var(--color-primary)]">
                           {t("shop.viewAndBuy")}
-                        </Link>
+                        </span>
                       )
                     )}
                   </div>

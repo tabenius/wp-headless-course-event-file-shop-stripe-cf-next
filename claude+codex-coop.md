@@ -1,5 +1,21 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — shop/products UX fix pack (cards + free claim + detail text)
+
+- Shop detail (`ShopProductDetail`) now preserves manual line breaks/spacing in descriptions via pre-wrap serif rendering.
+- Free-download flow hardened:
+  - zero-priced products are now treated as free in claim/download paths (not only explicit `free: true`),
+  - claim + `/digital/{slug}` now auto-grant access for free-like products and redirect consistently.
+- Shop catalog card UX updated (`ShopIndex`):
+  - product title reduced to `h2`-style `text-lg`,
+  - type pill stays at top-right, price moved directly under the pill,
+  - removed standalone `View & Buy` button for unowned items and made the full card clickable,
+  - added requested amber 2px hover border behavior for clickable cards.
+- Marked BUGS entries complete for:
+  - multiline digital product description rendering,
+  - misleading free-claim/payment message flow,
+  - shop card layout/click-flow redesign.
+
 ## 2026-03-31 (Codex) — BUG closeout: `/api/site-style` fail-open behavior
 
 - Verified `src/app/api/site-style/route.js` now fail-opens on exceptions:

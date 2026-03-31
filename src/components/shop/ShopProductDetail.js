@@ -29,6 +29,8 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
   const [ownershipLoaded, setOwnershipLoaded] = useState(false);
   const buyableUri = deriveBuyableUri(product);
   const boughtUri = resolveProductHref(product);
+  const isFreeProduct =
+    product?.free === true || Number(product?.priceCents || 0) <= 0;
 
   const checkoutStatus = searchParams.get("checkout") || "";
   const checkoutSessionId = searchParams.get("session_id") || "";
@@ -96,7 +98,9 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
         return;
       }
       if (response.ok && json?.ok) {
-        window.location.href = json.redirectUrl || `/digital/${encodeURIComponent(product.slug)}`;
+        window.location.href =
+          json.redirectUrl ||
+          `/digital/${encodeURIComponent(product.slug || product.id)}`;
       } else {
         setError(
           json?.error ||
@@ -121,6 +125,10 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
   async function startCheckout() {
     if (!user?.email) {
       window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(buyableUri)}`;
+      return;
+    }
+    if (isFreeProduct) {
+      await claimFreeProduct();
       return;
     }
     if (!stripeEnabled) {
@@ -178,10 +186,12 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
       ) : null}
 
       <h1 className="text-3xl font-bold">{product.name}</h1>
-      <p className="text-[var(--color-foreground)]">{product.description}</p>
+      <p className="whitespace-pre-wrap font-serif leading-relaxed text-[var(--color-foreground)]">
+        {product.description}
+      </p>
       <p className="font-semibold text-[var(--color-foreground)]">
         {t("common.price")}:{" "}
-        {product.free ? (
+        {isFreeProduct ? (
           <span className="text-lg font-bold text-green-700">{t("shop.freeProduct")}</span>
         ) : (
           <span className="text-lg font-bold">
@@ -238,7 +248,7 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
           </div>
         )
       ) : (
-        product.free ? (
+        isFreeProduct ? (
           <button
             type="button"
             onClick={claimFreeProduct}
