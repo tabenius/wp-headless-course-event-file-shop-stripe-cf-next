@@ -1347,11 +1347,8 @@ function AccessTab({
                 );
                 if (!wpItem) return null;
                 const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
-                const wpPrice = (
-                  wpItem?.price ||
-                  wpItem?.priceRendered ||
-                  ""
-                ).replace(/&nbsp;/g, " ");
+                const rawPrice = wpItem?.price || wpItem?.priceRendered || "";
+                const wpPrice = (typeof rawPrice === "string" ? rawPrice : String(rawPrice)).replace(/&nbsp;/g, " ");
                 const wpParsedCents = parsePriceCents(wpPrice);
                 const wpCategories = extractCategoryNames(wpItem?.categories);
                 const sourceLabel =
