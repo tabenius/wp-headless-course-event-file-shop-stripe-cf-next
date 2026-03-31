@@ -1282,6 +1282,22 @@ export default function AdminDashboard() {
     return () => window.removeEventListener("admin:selectProduct", onSelectProduct);
   }, []);
 
+  const handleWelcomeSeen = useCallback(() => {
+    if (typeof window === "undefined") return;
+    persistWelcomeRevision(window.localStorage, WELCOME_REVISION);
+    setShouldShowWelcomeBadge(false);
+  }, []);
+
+  // Derived values for shop product selection
+  const isShopSelection = selectedContent.startsWith("__shop_");
+  const shopIndex = isShopSelection
+    ? Number.parseInt(selectedContent.replace("__shop_", ""), 10)
+    : -1;
+  const selectedShopProduct =
+    isShopSelection && shopIndex >= 0 && shopIndex < products.length
+      ? products[shopIndex]
+      : null;
+
   useEffect(() => {
     if (typeof window === "undefined" || !ADMIN_TAB_SET.has(activeTab)) return;
     if (
@@ -1298,22 +1314,6 @@ export default function AdminDashboard() {
     const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
     window.history.replaceState(null, "", nextUrl);
   }, [activeTab, selectedShopProduct]);
-
-  const handleWelcomeSeen = useCallback(() => {
-    if (typeof window === "undefined") return;
-    persistWelcomeRevision(window.localStorage, WELCOME_REVISION);
-    setShouldShowWelcomeBadge(false);
-  }, []);
-
-  // Derived values for shop product selection
-  const isShopSelection = selectedContent.startsWith("__shop_");
-  const shopIndex = isShopSelection
-    ? Number.parseInt(selectedContent.replace("__shop_", ""), 10)
-    : -1;
-  const selectedShopProduct =
-    isShopSelection && shopIndex >= 0 && shopIndex < products.length
-      ? products[shopIndex]
-      : null;
   const isWpSelection =
     selectedContent && !selectedContent.startsWith("__") && selectedContent !== "";
 
