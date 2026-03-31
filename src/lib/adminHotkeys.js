@@ -1,6 +1,6 @@
 export const ADMIN_TAB_HOTKEYS = [
   { tab: "sales", combo: "Ctrl+Alt+1", match: { code: "Digit1", key: "1" } },
-  { tab: "media", combo: "Ctrl+Alt+2", match: { code: "Digit2", key: "2" } },
+  { tab: "assets", combo: "Ctrl+Alt+2", match: { code: "Digit2", key: "2" } },
   { tab: "products", combo: "Ctrl+Alt+3", match: { code: "Digit3", key: "3" } },
   { tab: "support", combo: "Ctrl+Alt+4", match: { code: "Digit4", key: "4" } },
   { tab: "style", combo: "Ctrl+Alt+5", match: { code: "Digit5", key: "5" } },

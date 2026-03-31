@@ -2195,7 +2195,7 @@ export default function AdminMediaLibraryTab({
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <AdminDocsContextLinks tab="media" compact />
+          <AdminDocsContextLinks tab="assets" compact />
           <button
             type="button"
             onClick={() => setRefreshToken((value) => value + 1)}

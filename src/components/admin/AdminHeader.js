@@ -55,7 +55,7 @@ function BuildTimestamp() {
 const ADMIN_TAB_SET = new Set([
   "welcome",
   "sales",
-  "media",
+  "assets",
   "products",
   "chat",
   "style",
@@ -134,8 +134,8 @@ function getNavItems(chatBetaEnabled) {
     },
     {
       label: t("admin.navMedia", "Asset library"),
-      tab: "media",
-      hotkey: getAdminTabHotkeyLabel("media"),
+      tab: "assets",
+      hotkey: getAdminTabHotkeyLabel("assets"),
     },
     {
       label: t("admin.navProducts"),

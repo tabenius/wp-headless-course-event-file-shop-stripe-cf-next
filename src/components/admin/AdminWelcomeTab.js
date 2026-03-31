@@ -59,7 +59,7 @@ function quickActions() {
       ),
     },
     {
-      tab: "media",
+      tab: "assets",
       title: t("admin.navMedia", "Asset library"),
       body: t(
         "admin.cardMediaBody",

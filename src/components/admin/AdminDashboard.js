@@ -43,7 +43,7 @@ const ChatPanel = lazy(() => import("./ChatPanel"));
 
 const ADMIN_TABS_BASE = [
   "sales",
-  "media",
+  "assets",
   "products",
   "support",
   "style",
@@ -1586,7 +1586,7 @@ export default function AdminDashboard() {
     if (activeTab === "support") {
       loadTickets();
     }
-    if (activeTab === "media" || activeTab === "info") {
+    if (activeTab === "assets" || activeTab === "info") {
       loadUploadInfo();
     }
     if (activeTab === "info") {
@@ -2660,7 +2660,7 @@ export default function AdminDashboard() {
         </Suspense>
       )}
       {/* ── Media tab ── */}
-      {activeTab === "media" && (
+      {activeTab === "assets" && (
         <Suspense
           fallback={
             <AdminSuspenseFallback

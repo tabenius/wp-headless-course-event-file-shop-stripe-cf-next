@@ -76,7 +76,18 @@ async function HomeContentSection() {
         />
       );
     }
-    throw err;
+    const reason = err?.message || String(err) || "Unknown error";
+    console.error("[HomePage] Content fetch failed:", reason);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] px-6 text-center space-y-4">
+        <p className="text-5xl">⚠️</p>
+        <h1 className="text-2xl font-semibold text-gray-800">This site is temporarily unavailable</h1>
+        <p className="text-gray-500 max-w-md">
+          The content server could not be reached. This is usually a temporary issue — please try again in a moment.
+        </p>
+        <p className="text-xs text-gray-400 font-mono">{reason}</p>
+      </div>
+    );
   }
 
   if (!data?.nodeByUri) {
