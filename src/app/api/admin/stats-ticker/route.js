@@ -139,44 +139,55 @@ export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth?.error) return auth.error;
 
-  const stripeSecretKey = await getStripeSecretKey();
-  const results = await Promise.allSettled([
-    // Stripe summary
-    stripeSecretKey
-      ? fetchStripeSummary()
-      : Promise.reject(new Error("no stripe key")),
+  try {
+    const stripeSecretKey = await getStripeSecretKey();
+    const results = await Promise.allSettled([
+      // Stripe summary
+      stripeSecretKey
+        ? fetchStripeSummary()
+        : Promise.reject(new Error("no stripe key")),
 
-    // Weekly hits
-    (() => {
-      const token = process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
-      const zoneId = process.env.CF_ZONE_ID;
-      const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;
-      if (!token) return Promise.reject(new Error("no cf token"));
-      if (zoneId) return fetchWeeklyHitsZone(token, zoneId);
-      if (accountId) return fetchWeeklyHitsWorkers(token, accountId);
-      return Promise.reject(new Error("no cf zone or account"));
-    })(),
-  ]);
+      // Weekly hits
+      (() => {
+        const token = process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
+        const zoneId = process.env.CF_ZONE_ID;
+        const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;
+        if (!token) return Promise.reject(new Error("no cf token"));
+        if (zoneId) return fetchWeeklyHitsZone(token, zoneId);
+        if (accountId) return fetchWeeklyHitsWorkers(token, accountId);
+        return Promise.reject(new Error("no cf zone or account"));
+      })(),
+    ]);
 
-  const stripeResult = results[0];
-  const hitsResult = results[1];
+    const stripeResult = results[0];
+    const hitsResult = results[1];
 
-  const stripeSummary = stripeResult.status === "fulfilled" ? stripeResult.value : null;
-  const weeklyAvgHitsPerDay = hitsResult.status === "fulfilled" ? hitsResult.value : null;
+    const stripeSummary = stripeResult.status === "fulfilled" ? stripeResult.value : null;
+    const weeklyAvgHitsPerDay = hitsResult.status === "fulfilled" ? hitsResult.value : null;
 
-  const defaultCurrency = (process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK").toUpperCase();
+    const defaultCurrency = (process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK").toUpperCase();
 
-  return NextResponse.json({
-    ok: true,
-    stats: {
-      revenue: stripeSummary?.revenue ?? null,
-      currency: defaultCurrency,
-      transactions: stripeSummary?.transactions ?? null,
-      customers: stripeSummary?.customers ?? null,
-      salesPerUser: stripeSummary?.salesPerUser ?? null,
-      weeklyAvgHitsPerDay,
-    },
-    availableStripe: stripeResult.status === "fulfilled",
-    availableAnalytics: hitsResult.status === "fulfilled",
-  });
+    return NextResponse.json({
+      ok: true,
+      stats: {
+        revenue: stripeSummary?.revenue ?? null,
+        currency: defaultCurrency,
+        transactions: stripeSummary?.transactions ?? null,
+        customers: stripeSummary?.customers ?? null,
+        salesPerUser: stripeSummary?.salesPerUser ?? null,
+        weeklyAvgHitsPerDay,
+      },
+      availableStripe: stripeResult.status === "fulfilled",
+      availableAnalytics: hitsResult.status === "fulfilled",
+    });
+  } catch (error) {
+    console.error("Stats ticker error:", error);
+    return NextResponse.json({
+      ok: true,
+      stats: { revenue: null, currency: "SEK", transactions: null, customers: null, salesPerUser: null, weeklyAvgHitsPerDay: null },
+      availableStripe: false,
+      availableAnalytics: false,
+      error: error?.message || "unknown",
+    });
+  }
 }
