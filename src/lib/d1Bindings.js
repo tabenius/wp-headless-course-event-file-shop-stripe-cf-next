@@ -35,7 +35,7 @@ export async function getD1Database() {
     const loader = await loadContextLoader();
     if (!loader) return null;
     const ctx = await loader({ async: true });
-    return ctx?.env?.D1_DIGITAL_ACCESS ?? null;
+    return ctx?.env?.DB ?? null;
   } catch (err) {
     if (!_warnedOnce) {
       _warnedOnce = true;

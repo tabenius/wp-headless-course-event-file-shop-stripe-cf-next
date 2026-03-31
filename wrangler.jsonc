@@ -48,7 +48,7 @@
   ],
   "d1_databases": [
     {
-      "binding": "D1_DIGITAL_ACCESS",
+      "binding": "DB",
       "database_name": "sofiacerne",
       "database_id": "64f99034-504d-4389-ab45-fd85cf63ae3f"
     }
