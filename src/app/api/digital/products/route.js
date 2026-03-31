@@ -18,9 +18,9 @@ export async function GET() {
         priceCents: product.priceCents,
         currency: product.currency,
         // fileUrl intentionally omitted — never expose raw storage URLs to clients
-        // courseUri only for manual_uri (course/event) products
+        // contentUri only for manual_uri (course/event) products
         ...(product.type === "course" || product.productMode === "manual_uri"
-          ? { courseUri: product.courseUri }
+          ? { contentUri: product.contentUri }
           : {}),
         assetId: product.assetId,
         mimeType: product.mimeType,

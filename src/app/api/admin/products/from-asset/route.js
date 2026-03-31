@@ -149,7 +149,7 @@ export async function POST(request) {
       mimeType,
       assetId,
       vatPercent: null,
-      courseUri: "",
+      contentUri: "",
       active: false,
     };
 

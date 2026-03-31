@@ -570,7 +570,7 @@ function emptyProduct() {
     mimeType: "",
     assetId: "",
     vatPercent: null,
-    courseUri: "",
+    contentUri: "",
     active: true,
     slugEdited: false,
   };
@@ -622,7 +622,7 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
   function uriLabel(uri) {
     const wp = allWpContent.find((item) => item.uri === uri);
     if (wp) return wp.title || wp.name || uri;
-    const shop = products.find((p) => p.courseUri === uri);
+    const shop = products.find((p) => p.contentUri === uri);
     if (shop) return shop.name || uri;
     return uri;
   }
@@ -1301,7 +1301,7 @@ export default function AdminDashboard() {
       return "";
     if (isShopSelection) {
       return selectedShopProduct?.type === "course"
-        ? selectedShopProduct.courseUri
+        ? selectedShopProduct.contentUri
         : "";
     }
     return selectedCourse;
@@ -1984,7 +1984,7 @@ export default function AdminDashboard() {
       setSelectedCourseActive(true);
       const isCourseProd = selectedShopProduct.type === "course";
       if (isCourseProd) {
-        const uri = selectedShopProduct.courseUri || "";
+        const uri = selectedShopProduct.contentUri || "";
         setAllowedUsers(
           uri && courses[uri] && Array.isArray(courses[uri].allowedUsers)
             ? courses[uri].allowedUsers
@@ -2045,7 +2045,7 @@ export default function AdminDashboard() {
       knownCourses.filter(
         (uri) =>
           !allWpContent.some((item) => item.uri === uri) &&
-          !products.some((p) => p.courseUri === uri || p.slug === uri),
+          !products.some((p) => p.contentUri === uri || p.slug === uri),
       ),
     [knownCourses, allWpContent, products],
   );
@@ -2279,7 +2279,7 @@ export default function AdminDashboard() {
             typeof p.vatPercent === "number" && Number.isFinite(p.vatPercent)
               ? p.vatPercent
               : null,
-          courseUri: p.type === "course" ? (p.courseUri || "") : "",
+          contentUri: p.type === "course" ? (p.contentUri || "") : "",
           active: p.active !== false,
         }));
 

@@ -50,9 +50,9 @@ function normalizeVatPercent(vatPercent) {
   return Math.round(parsed * 100) / 100;
 }
 
-function normalizeCourseUri(courseUri) {
-  if (typeof courseUri !== "string") return "";
-  const trimmed = courseUri.trim();
+function normalizeContentUri(contentUri) {
+  if (typeof contentUri !== "string") return "";
+  const trimmed = contentUri.trim();
   if (!trimmed) return "";
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
@@ -116,13 +116,13 @@ function sanitizeProduct(product, seenSlugs) {
 
   const fileUrl =
     typeof product?.fileUrl === "string" ? product.fileUrl.trim() : "";
-  const courseUri = normalizeCourseUri(product?.courseUri);
+  const contentUri = normalizeContentUri(product?.contentUri);
   const mimeType = normalizeMimeType(product?.mimeType || product?.contentType);
   const vatPercent = normalizeVatPercent(product?.vatPercent);
 
   if (imageUrl && !isValidHttpUrl(imageUrl)) return null;
   if (productMode === "digital_file" && !isValidHttpUrl(fileUrl)) return null;
-  if (productMode === "manual_uri" && !courseUri) return null;
+  if (productMode === "manual_uri" && !contentUri) return null;
   if (productMode === "asset" && !assetId) return null;
 
   const normalizedType =
@@ -147,7 +147,7 @@ function sanitizeProduct(product, seenSlugs) {
     free,
     currency: normalizeCurrency(product?.currency),
     fileUrl: productMode === "digital_file" ? fileUrl : "",
-    courseUri: productMode === "manual_uri" ? courseUri : "",
+    contentUri: productMode === "manual_uri" ? contentUri : "",
     mimeType: productMode === "digital_file" || productMode === "asset" ? mimeType : "",
     assetId: productMode === "asset" ? assetId : "",
     vatPercent,

@@ -37,7 +37,7 @@ export default function UserAccessPanel({
   function uriLabel(uri) {
     const wp = allWpContent.find((item) => item.uri === uri);
     if (wp) return wp.title || wp.name || uri;
-    const shop = products.find((p) => p.courseUri === uri);
+    const shop = products.find((p) => p.contentUri === uri);
     if (shop) return shop.name || uri;
     return uri;
   }

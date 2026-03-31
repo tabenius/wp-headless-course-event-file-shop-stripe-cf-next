@@ -1636,7 +1636,7 @@ function AccessTab({
                             type="button"
                             onClick={() => {
                               updateProduct(shopIndex, "productMode", "asset");
-                              updateProduct(shopIndex, "courseUri", "");
+                              updateProduct(shopIndex, "contentUri", "");
                               updateProduct(shopIndex, "fileUrl", "");
                             }}
                             className={`rounded-full border px-2.5 py-1 text-[11px] ${
@@ -1651,7 +1651,7 @@ function AccessTab({
                             type="button"
                             onClick={() => {
                               updateProduct(shopIndex, "productMode", "digital_file");
-                              updateProduct(shopIndex, "courseUri", "");
+                              updateProduct(shopIndex, "contentUri", "");
                               updateProduct(shopIndex, "assetId", "");
                             }}
                             className={`rounded-full border px-2.5 py-1 text-[11px] ${
@@ -1764,9 +1764,9 @@ function AccessTab({
                   ) : (
                     <input
                       type="text"
-                      value={selectedShopProduct.courseUri}
+                      value={selectedShopProduct.contentUri}
                       onChange={(e) =>
-                        updateProduct(shopIndex, "courseUri", e.target.value)
+                        updateProduct(shopIndex, "contentUri", e.target.value)
                       }
                       className="w-full border rounded px-3 py-2 text-sm"
                     />

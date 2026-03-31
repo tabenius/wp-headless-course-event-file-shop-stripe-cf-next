@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { t } from "@/lib/i18n";
+import { resolveProductHref } from "@/lib/productRoutes";
 
 const OWNERSHIP_MAX_ATTEMPTS = 3;
 const OWNERSHIP_TIMEOUT_MS = 8000;
@@ -92,12 +93,6 @@ function typeBadgeColor(item) {
   }
 }
 
-function deriveBoughtUri(item) {
-  if (item?.productMode === "asset" && item?.assetId) {
-    return `/inventory/${encodeURIComponent(item.assetId)}`;
-  }
-  return "";
-}
 
 function ShopIndexContent({
   items,
@@ -355,7 +350,7 @@ function ShopIndexContent({
           const owned = isOwned(item);
           const loading = loadingId === item.slug;
           const isDigital = item.source === "digital";
-          const boughtUri = deriveBoughtUri(item);
+          const boughtUri = resolveProductHref(item);
           const effectiveCents =
             item.priceCents > 0 ? item.priceCents : parseWpPrice(item.price);
           const priceDisplay = formatPrice(effectiveCents, item.currency) || "";

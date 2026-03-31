@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { t } from "@/lib/i18n";
+import { resolveProductHref } from "@/lib/productRoutes";
 
 function formatPrice(priceCents, currency) {
   return `${(priceCents / 100).toFixed(0)} ${String(currency || "SEK").toUpperCase()}`;
@@ -17,13 +18,6 @@ function deriveBuyableUri(product) {
   return `/shop/${encodeURIComponent(product?.slug || "")}`;
 }
 
-function deriveBoughtUri(product) {
-  if (product?.productMode === "asset" && product?.assetId) {
-    return `/inventory/${encodeURIComponent(product.assetId)}`;
-  }
-  return "";
-}
-
 export default function ShopProductDetail({ product, stripeEnabled }) {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -34,7 +28,7 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
   const [accessCheckFailed, setAccessCheckFailed] = useState(false);
   const [ownershipLoaded, setOwnershipLoaded] = useState(false);
   const buyableUri = deriveBuyableUri(product);
-  const boughtUri = deriveBoughtUri(product);
+  const boughtUri = resolveProductHref(product);
 
   const checkoutStatus = searchParams.get("checkout") || "";
   const checkoutSessionId = searchParams.get("session_id") || "";
@@ -204,34 +198,18 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
           </a>
         </div>
       ) : owned ? (
-        product.productMode === "asset" && boughtUri ? (
+        boughtUri ? (
           <Link
             href={boughtUri}
-            className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600"
+            className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600 font-semibold"
           >
-            {t("shop.openPurchasedAsset", "Open purchased asset")}
+            {product.productMode === "manual_uri"
+              ? t("shop.openCourse")
+              : t("shop.openPurchasedAsset", "Access")}
           </Link>
-        ) : product.type === "digital_file" ? (
-          <a
-            href={`/api/digital/download?productId=${encodeURIComponent(product.id)}`}
-            className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600"
-          >
-            {t("shop.downloadFile")}
-          </a>
         ) : (
-          <div className="rounded-lg border border-teal-200 bg-teal-50 p-5 space-y-4">
-            <h2 className="text-xl font-semibold text-teal-900">
-              {t("shop.courseAccessTitle")}
-            </h2>
+          <div className="rounded-lg border border-teal-200 bg-teal-50 p-5">
             <p className="text-teal-800">{t("shop.courseAccessDescSimple")}</p>
-            {product.courseUri && (
-              <Link
-                href={product.courseUri}
-                className="inline-block px-5 py-3 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600 font-semibold"
-              >
-                {t("shop.openCourse")}
-              </Link>
-            )}
           </div>
         )
       ) : (

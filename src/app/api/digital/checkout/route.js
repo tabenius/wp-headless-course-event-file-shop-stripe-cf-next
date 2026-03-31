@@ -70,7 +70,7 @@ export async function POST(request) {
         Number.isFinite(product.vatPercent)
           ? { vat_percent: String(product.vatPercent) }
           : {}),
-        ...(product.courseUri ? { course_uri: product.courseUri } : {}),
+        ...(product.contentUri ? { course_uri: product.contentUri } : {}),
       },
     });
 
