@@ -88,4 +88,4 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG (P0, codex regression): hasDigitalAccess uses 60s cached KV read — after claiming a free product, download returns 403 for up to 60s. Fixed: added hasDigitalAccessUncached for write-then-read paths.
 [x] BUG (P1, codex regression): download routes proxied entire file through worker (fetch + stream) — OOM/timeout for large files. Fixed: fallback is now redirect to raw URL instead of proxy.
 [x] BUG (P2): presigned R2 URLs used unsorted query params in canonical request — S3v4 spec requires lexicographic sort. Fixed: urlObj.searchParams.sort() before signing.
-[ ] BUG (P1, latent): grantDigitalAccess uses read-modify-write on a single KV blob without locking — concurrent claims can overwrite each other. Needs per-user key design or atomic write.
+[x] BUG (P1, latent): grantDigitalAccess uses read-modify-write on a single KV blob without locking — concurrent claims can overwrite each other. Fixed: per-user KV keys (digital-access:user:{email}) + per-product reverse index.
