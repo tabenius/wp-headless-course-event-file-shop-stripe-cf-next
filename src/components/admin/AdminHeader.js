@@ -556,10 +556,10 @@ export default function AdminHeader({ logoUrl }) {
             </div>
             <Link
               href="/admin#/welcome"
-              className="admin-header-brand-link flex flex-col items-start justify-center gap-0.5 transition-colors"
+              className="admin-header-brand-link flex flex-col items-center justify-center gap-0.5 transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
-              <span ref={ragbazWordmarkRef} className="ml-6 inline-flex">
+              <span ref={ragbazWordmarkRef} className="inline-flex">
                 <RagbazLogo
                   wordmarkOnly
                   noLetterSpacing
@@ -573,12 +573,11 @@ export default function AdminHeader({ logoUrl }) {
                 ref={subtitleRef}
                 className="whitespace-nowrap font-semibold uppercase tracking-[0.11em] leading-none"
                 style={{
-                  marginLeft: "1.5rem",
                   marginTop: "2px",
                   color: "var(--admin-brand-subtitle)",
                   fontSize: "9.5px",
                   transform: `scaleX(${subtitleScaleX})`,
-                  transformOrigin: "left center",
+                  transformOrigin: "center center",
                 }}
               >
                 ARTICULATE STOREFRONT
