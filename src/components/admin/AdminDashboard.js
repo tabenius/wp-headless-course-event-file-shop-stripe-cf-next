@@ -2072,7 +2072,11 @@ export default function AdminDashboard() {
     courses,
     allWpContent,
     isShopSelection,
-    selectedShopProduct,
+    // Use slug (stable string) not the object reference — setProducts after save creates new
+    // object references for every product, which would otherwise re-trigger this effect and
+    // re-fetch digital-access before the grant/revoke requests finish, overwriting allowedUsers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    selectedShopProduct?.slug,
   ]);
 
   const knownCourses = useMemo(
