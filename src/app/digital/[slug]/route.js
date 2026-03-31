@@ -58,7 +58,13 @@ export async function GET(request, { params }) {
     return NextResponse.redirect(new URL(loginUrl, request.url));
   }
 
-  const canDownload = await hasDigitalAccess(product.id, session.user.email);
+  let canDownload = await hasDigitalAccess(product.id, session.user.email);
+  if (!canDownload && product.free === true) {
+    // Auto-grant for free products on first visit
+    const { grantDigitalAccess } = await import("@/lib/digitalAccessStore");
+    await grantDigitalAccess(product.id, session.user.email);
+    canDownload = true;
+  }
   if (!canDownload) {
     const shopUrl = `/shop/${encodeURIComponent(product.slug || product.id)}`;
     return NextResponse.redirect(new URL(shopUrl, request.url));

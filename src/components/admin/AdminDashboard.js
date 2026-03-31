@@ -714,20 +714,19 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
               Access backends
             </h3>
             <p className="text-xs text-gray-500">
-              Course access is written to WordPress via GraphQL, and mirrored to
-              Cloudflare KV if it is configured.
+              WordPress course access is written via GraphQL and optionally mirrored to KV.
+              Digital product access uses its own KV store (always active).
             </p>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="px-3 py-1 rounded bg-green-50 text-green-800 border border-green-200">
+                Digital access KV: active
+              </span>
+              <span className="px-3 py-1 rounded bg-green-50 text-green-800 border border-green-200">
                 WordPress GraphQL: active
               </span>
-              {storage?.replicas?.includes?.("cloudflare-kv") ? (
+              {storage?.replicas?.includes?.("cloudflare-kv") && (
                 <span className="px-3 py-1 rounded bg-green-50 text-green-800 border border-green-200">
-                  Cloudflare KV mirror: active
-                </span>
-              ) : (
-                <span className="px-3 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                  Cloudflare KV mirror: disabled
+                  WP course KV mirror: active
                 </span>
               )}
             </div>
@@ -1983,18 +1982,25 @@ export default function AdminDashboard() {
       setCurrency((selectedShopProduct.currency || "SEK").toUpperCase());
       setVatPercent(vatPercentToInput(selectedShopProduct.vatPercent));
       setSelectedCourseActive(true);
-      const uri =
-        selectedShopProduct.type === "course"
-          ? selectedShopProduct.courseUri
-          : "";
-      if (uri && courses[uri]) {
+      const isCourseProd = selectedShopProduct.type === "course";
+      if (isCourseProd) {
+        const uri = selectedShopProduct.courseUri || "";
         setAllowedUsers(
-          Array.isArray(courses[uri].allowedUsers)
+          uri && courses[uri] && Array.isArray(courses[uri].allowedUsers)
             ? courses[uri].allowedUsers
             : [],
         );
       } else {
-        setAllowedUsers([]);
+        // Digital product — load access from digital-access store
+        const productSlug = selectedShopProduct.slug || "";
+        if (productSlug) {
+          fetch(`/api/admin/digital-access?productId=${encodeURIComponent(productSlug)}`)
+            .then((r) => r.json())
+            .then((j) => setAllowedUsers(Array.isArray(j?.users) ? j.users : []))
+            .catch(() => setAllowedUsers([]));
+        } else {
+          setAllowedUsers([]);
+        }
       }
       return;
     }
@@ -2273,7 +2279,7 @@ export default function AdminDashboard() {
             typeof p.vatPercent === "number" && Number.isFinite(p.vatPercent)
               ? p.vatPercent
               : null,
-          courseUri: p.courseUri,
+          courseUri: p.type === "course" ? (p.courseUri || "") : "",
           active: p.active !== false,
         }));
 
@@ -2290,9 +2296,47 @@ export default function AdminDashboard() {
         setProducts(
           rows.map((p) => ({ ...emptyProduct(), ...p, slugEdited: true })),
         );
+
+        // Sync digital access for non-course digital products
+        if (selectedProduct?.type !== "course") {
+          const productSlug = selectedProduct?.slug || "";
+          if (productSlug) {
+            const desiredEmails = new Set(
+              (Array.isArray(allowedUsers) ? allowedUsers : [])
+                .map((e) => String(e).trim().toLowerCase())
+                .filter(Boolean),
+            );
+            // Fetch current access, then diff and patch
+            const currentRes = await fetch(
+              `/api/admin/digital-access?productId=${encodeURIComponent(productSlug)}`,
+            );
+            const currentJson = await currentRes.json().catch(() => ({}));
+            const currentEmails = new Set(
+              Array.isArray(currentJson?.users) ? currentJson.users.map((e) => String(e).toLowerCase()) : [],
+            );
+            const grants = [...desiredEmails].filter((e) => !currentEmails.has(e));
+            const revokes = [...currentEmails].filter((e) => !desiredEmails.has(e));
+            await Promise.all([
+              ...grants.map((email) =>
+                fetch("/api/admin/digital-access", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ productId: productSlug, email }),
+                }),
+              ),
+              ...revokes.map((email) =>
+                fetch("/api/admin/digital-access", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ productId: productSlug, email }),
+                }),
+              ),
+            ]);
+          }
+        }
       }
 
-      // Save access config if there's a content URI
+      // Save access config if there's a content URI (WordPress course-access system)
       if (uri) {
         const nextActive = isShopSelection ? undefined : selectedCourseActive;
         const currentConfig = courses[uri];

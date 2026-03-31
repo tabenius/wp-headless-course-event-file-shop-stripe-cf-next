@@ -17,8 +17,11 @@ export async function GET() {
         productMode: product.productMode,
         priceCents: product.priceCents,
         currency: product.currency,
-        fileUrl: product.fileUrl,
-        courseUri: product.courseUri,
+        // fileUrl intentionally omitted — never expose raw storage URLs to clients
+        // courseUri only for manual_uri (course/event) products
+        ...(product.type === "course" || product.productMode === "manual_uri"
+          ? { courseUri: product.courseUri }
+          : {}),
         assetId: product.assetId,
         mimeType: product.mimeType,
         vatPercent: product.vatPercent,

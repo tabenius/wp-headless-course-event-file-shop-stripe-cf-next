@@ -197,6 +197,8 @@ export default async function InventoryPage() {
   for (const [rawUri, config] of Object.entries(courses)) {
     const uri = normalizeUri(rawUri);
     if (!uri) continue;
+    // Skip corrupted entries where a raw external URL ended up as a course URI
+    if (uri.startsWith("/http://") || uri.startsWith("/https://")) continue;
     const allowedUsers = Array.isArray(config?.allowedUsers)
       ? config.allowedUsers
       : [];
