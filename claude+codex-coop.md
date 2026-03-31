@@ -1,5 +1,16 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — product price/free control simplification (partial BUG close)
+
+- Refined `PriceAccessForm` in `AdminProductsTab`:
+  - moved `Free product` checkbox inline with the price row,
+  - switched label to plain `Price`,
+  - removed redundant helper copy (`price saved locally` and free-state explanatory line),
+  - made disabled price state more visually clear when free is checked.
+- Left `VAT override` directly under the price row.
+- Removed duplicate free checkbox from the top metadata row in product editor.
+- Updated BUGS status to partial (`[~]`) for this item because the `Digital file / Course product` type dropdown removal is still pending.
+
 ## 2026-03-31 (Codex) — product editor header polish (title/categories/remove action)
 
 - Updated selected digital-product header styling in `AdminProductsTab`:

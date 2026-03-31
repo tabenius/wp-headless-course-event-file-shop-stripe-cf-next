@@ -340,15 +340,28 @@ function PriceAccessForm({
     <div className="space-y-5">
       {/* Price row */}
       <div className="space-y-2">
-        <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700">
-          <span>
-            {t("admin.courseFee")} <span className="text-red-500">*</span>
-          </span>
-          <AdminFieldHelpLink slug="product-value" />
-        </label>
-        {freeAccessEnabled && (
-          <p className="text-xs text-green-600">{t("admin.productFreeHint")}</p>
-        )}
+        <div className="flex items-center justify-between gap-3">
+          <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+            <span>
+              {t("common.price", "Price")} <span className="text-red-500">*</span>
+            </span>
+            <AdminFieldHelpLink slug="product-value" />
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={freeAccessEnabled}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setFree(next);
+                if (next) setPrice("0");
+              }}
+              className="accent-slate-600"
+            />
+            <span className="text-gray-700">{t("admin.productFree")}</span>
+          </label>
+        </div>
+
         {!freeAccessEnabled && Number.isFinite(parsedPrice) && parsedPrice === 0 && (
           <p className="text-xs text-amber-600">{t("admin.productPriceAmbiguous")}</p>
         )}
@@ -363,7 +376,7 @@ function PriceAccessForm({
             disabled={freeAccessEnabled}
             className={`flex-1 border rounded px-3 py-2 text-sm ${
               freeAccessEnabled
-                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60"
                 : ""
             }`}
           />
@@ -376,7 +389,6 @@ function PriceAccessForm({
             title={t("admin.currencyHint")}
           />
         </div>
-        <p className="text-xs text-gray-400">{t("admin.priceSavedLocally")}</p>
       </div>
 
       {/* VAT override */}
@@ -1700,21 +1712,6 @@ function AccessTab({
                       />
                       <span className="text-gray-700">
                         {t("admin.activeProduct")}
-                      </span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedShopProduct.free === true}
-                        onChange={(e) => {
-                          const val = e.target.checked;
-                          updateProduct(shopIndex, "free", val);
-                          setPrice(val ? "0" : "");
-                        }}
-                        className="accent-slate-600"
-                      />
-                      <span className="text-gray-700">
-                        {t("admin.productFree")}
                       </span>
                     </label>
                   </div>
