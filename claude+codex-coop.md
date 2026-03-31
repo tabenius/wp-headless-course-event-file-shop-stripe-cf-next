@@ -1,5 +1,17 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — product editor header polish (title/categories/remove action)
+
+- Updated selected digital-product header styling in `AdminProductsTab`:
+  - title now uses amber sans-serif emphasis (no gray headline),
+  - removed redundant inline “edit details below” helper copy,
+  - categories now render as compact sans-serif pills.
+- Replaced top-right red text remove link with neutral trash icon button
+  (bordered control, normal color palette, accessible label/title).
+- Marked BUGS entries complete for:
+  - product editor title/hint/categories presentation,
+  - remove-action affordance (trash icon button).
+
 ## 2026-03-31 (Codex) — products list “Needs config” reasons surfaced
 
 - Clarified why an item appears under `Needs config` in Products:

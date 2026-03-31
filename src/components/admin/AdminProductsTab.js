@@ -1592,29 +1592,43 @@ function AccessTab({
                       onError={setError}
                     />
                     <div className="min-w-0">
-                      <p className="admin-product-title text-sm font-bold break-words">
+                      <p className="admin-product-title font-sans text-base font-semibold text-amber-700 break-words">
                         {selectedShopProduct.name || `Product ${shopIndex + 1}`}
                       </p>
-                        <p className="text-xs text-gray-400">
-                          {t(
-                            "admin.shopProductInlineHint",
-                            "Download product — edit details below in this panel.",
-                          )}
-                        </p>
                       {selectedShopCategories.length > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {t("admin.categoryLabel")}:{" "}
-                          {selectedShopCategories.join(", ")}
-                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {selectedShopCategories.map((category) => (
+                            <span
+                              key={`${selectedShopProduct.id || shopIndex}-${category}`}
+                              className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-sans text-slate-700"
+                            >
+                              {category}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeShopProduct(shopIndex)}
-                    className="text-xs text-red-600 hover:underline shrink-0"
+                    className="shrink-0 rounded border border-slate-300 bg-white p-1.5 text-slate-600 transition-colors hover:bg-slate-100"
+                    aria-label={t("common.remove")}
+                    title={t("common.remove")}
                   >
-                    {t("common.remove")}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="h-4 w-4"
+                      aria-hidden
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8.75 2.5a1.75 1.75 0 00-1.75 1.75v.25H4.75a.75.75 0 000 1.5h.37l.69 9.11A2 2 0 007.8 17h4.4a2 2 0 001.99-1.89l.69-9.11h.37a.75.75 0 000-1.5H13v-.25A1.75 1.75 0 0011.25 2.5h-2.5zm3 2v-.25a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25v.25h3zM8 8a.75.75 0 011.5 0v5a.75.75 0 01-1.5 0V8zm3.5-.75a.75.75 0 00-.75.75v5a.75.75 0 001.5 0V8a.75.75 0 00-.75-.75z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
                   </button>
                 </div>
 
