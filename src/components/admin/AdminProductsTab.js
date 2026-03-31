@@ -218,6 +218,30 @@ function ImagePickerButton({
 
 // ── Shared: price + access form ───────────────────────────────────────────────
 
+function CopyEmailsButton({ emails }) {
+  const [copied, setCopied] = useState(false);
+  if (!emails || emails.length === 0) return null;
+
+  function handleCopy() {
+    const text = emails.join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="text-xs px-2 py-0.5 rounded border hover:bg-gray-50 transition-colors"
+      title={`Copy ${emails.length} email address${emails.length === 1 ? "" : "es"}`}
+    >
+      {copied ? "Copied!" : `Copy emails (${emails.length})`}
+    </button>
+  );
+}
+
 function PriceAccessForm({
   price,
   setPrice,
@@ -345,9 +369,12 @@ function PriceAccessForm({
 
       {/* User access */}
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-gray-700">
-          {t("admin.allowedUsers")}
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-sm font-semibold text-gray-700">
+            {t("admin.allowedUsers")}
+          </label>
+          <CopyEmailsButton emails={allowedUsers} />
+        </div>
         <p className="text-xs text-gray-500">{t("admin.allowedUsersHint")}</p>
         <input
           type="text"
