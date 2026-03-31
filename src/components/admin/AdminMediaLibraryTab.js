@@ -972,30 +972,28 @@ export default function AdminMediaLibraryTab({
             ),
         );
       }
-      const baseMessage =
-        json?.created === false
-          ? t(
-              "admin.mediaProductAlreadyExists",
-              "A product for this asset already exists.",
-            )
-          : t(
-              "admin.mediaProductCreated",
-              "Product created from the selected asset.",
-            );
+      const alreadyExisted = json?.created === false;
       const productName = String(json?.product?.name || "").trim();
+      const baseMessage = alreadyExisted
+        ? t(
+            "admin.mediaProductAlreadyExists",
+            "A product for this asset already exists.",
+          )
+        : t(
+            "admin.mediaProductCreated",
+            "Product created!",
+          );
       const toastMessage = productName
-        ? `${baseMessage} ${productName}`
+        ? `${baseMessage} "${productName}" — ${t("admin.mediaProductGoToProducts", "go to Products tab to configure price and availability.")}`
         : baseMessage;
       window.dispatchEvent(
         new CustomEvent("toast", {
           detail: {
             type: json?.created === false ? "info" : "success",
             message: toastMessage,
+            duration: 8000,
           },
         }),
-      );
-      window.dispatchEvent(
-        new CustomEvent("admin:switchTab", { detail: "products" }),
       );
     } catch (createError) {
       const message =
