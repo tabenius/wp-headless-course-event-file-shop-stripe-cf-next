@@ -72,22 +72,47 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
   }, [product.id, checkoutStatus, checkoutSessionId]);
 
   async function claimFreeProduct() {
+    if (!user?.email) {
+      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(buyableUri)}`;
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const response = await fetch("/api/digital/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productSlug: product.slug }),
+        body: JSON.stringify({ productSlug: product.slug || product.id }),
       });
-      const json = await response.json();
+      const raw = await response.text().catch(() => "");
+      let json = {};
+      try {
+        json = raw ? JSON.parse(raw) : {};
+      } catch {
+        json = {};
+      }
+      if (response.status === 401) {
+        window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(buyableUri)}`;
+        return;
+      }
       if (response.ok && json?.ok) {
         window.location.href = json.redirectUrl || `/digital/${encodeURIComponent(product.slug)}`;
       } else {
-        setError(json?.error || t("shop.checkoutFailed"));
+        setError(
+          json?.error ||
+            t(
+              "shop.claimFailed",
+              "Could not claim free access right now. Please try again.",
+            ),
+        );
       }
-    } catch (err) {
-      setError(t("shop.checkoutFailed"));
+    } catch {
+      setError(
+        t(
+          "shop.claimFailed",
+          "Could not claim free access right now. Please try again.",
+        ),
+      );
     } finally {
       setLoading(false);
     }

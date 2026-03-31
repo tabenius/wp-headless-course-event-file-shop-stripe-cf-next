@@ -1,5 +1,24 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — P0 hardening: free-claim flow + site-style fallback + asset-product diagnostics
+
+- Kept and landed improved Admin assets -> Create-product diagnostics:
+  - parse non-JSON responses safely,
+  - surface HTTP fallback error text instead of generic failure toast.
+- Hardened free product claim flow:
+  - `ShopProductDetail` now redirects to login before claim when needed,
+  - robust response parsing for `/api/digital/claim`,
+  - free-claim failures now use dedicated copy (`shop.claimFailed`) instead of payment error text.
+- Hardened `/api/digital/claim` API route:
+  - wrapped full handler in try/catch,
+  - always returns structured JSON on server failures (`500`) instead of raw HTML errors.
+- Hardened `/api/site-style`:
+  - imports `DEFAULT_SITE_STYLE` and returns a safe fallback payload on failure instead of 500.
+- Defensive runtime fix in `shopSettings`:
+  - `createRevisionId` now uses `globalThis.crypto.randomUUID` safely (no optional-chain on potentially undeclared global).
+- Added i18n key `shop.claimFailed` in EN/SV/ES.
+- Validation: targeted ESLint pass and locale JSON parse checks.
+
 ## 2026-03-31 (Claude) — digital download products: free/paid model, /digital/{slug} delivery, R2 auto-assetId
 
 - Auto-assigns deterministic assetIds to R2 objects missing `asset_id` metadata during media library listing (write-back via `replaceBucketObjectMetadata`).

@@ -1129,6 +1129,7 @@
     "freeProduct": "Free",
     "claimFree": "Get for free",
     "claimingFree": "Getting access…",
+    "claimFailed": "Could not claim free access right now. Please try again.",
     "downloadProduct": "Download"
   },
   "darkMode": {

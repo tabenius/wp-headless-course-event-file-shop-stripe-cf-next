@@ -304,8 +304,9 @@ function normalizeRevisionId(value) {
 }
 
 function createRevisionId() {
-  if (typeof crypto?.randomUUID === "function") {
-    return crypto.randomUUID().toLowerCase();
+  const randomUuid = globalThis?.crypto?.randomUUID;
+  if (typeof randomUuid === "function") {
+    return randomUuid.call(globalThis.crypto).toLowerCase();
   }
   return `rev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }

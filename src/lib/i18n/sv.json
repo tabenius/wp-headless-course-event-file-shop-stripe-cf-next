@@ -1129,6 +1129,7 @@
     "freeProduct": "Gratis",
     "claimFree": "Hämta gratis",
     "claimingFree": "Hämtar åtkomst…",
+    "claimFailed": "Det gick inte att hämta gratis åtkomst just nu. Försök igen.",
     "downloadProduct": "Ladda ner"
   },
   "darkMode": {

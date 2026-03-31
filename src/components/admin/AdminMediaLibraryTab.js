@@ -994,10 +994,20 @@ export default function AdminMediaLibraryTab({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const json = await response.json().catch(() => ({}));
+      const raw = await response.text().catch(() => "");
+      let json = {};
+      try {
+        json = raw ? JSON.parse(raw) : {};
+      } catch {
+        json = {};
+      }
       if (!response.ok || !json?.ok) {
+        const fallbackError = !json?.error && !response.ok
+          ? `HTTP ${response.status}${raw ? `: ${raw.slice(0, 160)}` : ""}`
+          : "";
         throw new Error(
           json?.error ||
+            fallbackError ||
             t(
               "admin.mediaCreateProductFailed",
               "Could not create a product from this asset.",

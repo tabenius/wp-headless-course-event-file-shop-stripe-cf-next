@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getShopSettings } from "@/lib/shopSettings";
+import { DEFAULT_SITE_STYLE, getShopSettings } from "@/lib/shopSettings";
 
 export const runtime = "edge";
 
@@ -23,8 +23,17 @@ export async function GET() {
   } catch (error) {
     console.error("Site style API error:", error);
     return NextResponse.json(
-      { ok: false, error: "Failed to load site style." },
-      { status: 500 },
+      {
+        ok: true,
+        fallback: true,
+        warning: "Failed to load site style. Served default style.",
+        siteStyle: { ...DEFAULT_SITE_STYLE },
+      },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=15, stale-while-revalidate=60",
+        },
+      },
     );
   }
 }
