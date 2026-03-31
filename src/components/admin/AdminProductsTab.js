@@ -289,23 +289,6 @@ function PriceAccessForm({
           </span>
           <AdminFieldHelpLink slug="product-value" />
         </label>
-        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={freeAccessEnabled}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setFree?.(checked);
-              if (checked) {
-                setPrice("0");
-              } else {
-                setPrice("");
-              }
-            }}
-            className="accent-slate-600"
-          />
-          <span>{t("admin.productFree")}</span>
-        </label>
         {freeAccessEnabled && (
           <p className="text-xs text-green-600">{t("admin.productFreeHint")}</p>
         )}
@@ -1609,8 +1592,8 @@ function AccessTab({
                       <option value="course">{t("admin.courseProduct")}</option>
                     </select>
                   </div>
-                  <div className="flex items-end">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer pb-2">
+                  <div className="flex items-end gap-5 pb-2">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedShopProduct.active !== false}
@@ -1621,6 +1604,21 @@ function AccessTab({
                       />
                       <span className="text-gray-700">
                         {t("admin.activeProduct")}
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedShopProduct.free === true}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          updateProduct(shopIndex, "free", val);
+                          setPrice(val ? "0" : "");
+                        }}
+                        className="accent-slate-600"
+                      />
+                      <span className="text-gray-700">
+                        {t("admin.productFree")}
                       </span>
                     </label>
                   </div>
@@ -1729,19 +1727,49 @@ function AccessTab({
                         </div>
 
                         {selectedShopProduct.assetId ? (
-                          <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-1">
+                          <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-2">
                             <p>
                               <span className="font-semibold">
                                 {t("admin.productAssetId", "Asset ID")}:
                               </span>{" "}
                               <span className="font-mono">{selectedShopProduct.assetId}</span>
                             </p>
-                            <p className="truncate">
-                              <span className="font-semibold">
-                                {t("admin.fileUrl", "File URL")}:
-                              </span>{" "}
-                              {selectedShopProduct.fileUrl || "—"}
-                            </p>
+                            {selectedShopProduct.fileUrl && (
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold shrink-0">
+                                  {t("admin.fileUrl", "File URL")}:
+                                </span>
+                                <span className="font-mono tracking-widest text-slate-400 select-none">
+                                  {"•".repeat(12)}
+                                </span>
+                                <button
+                                  type="button"
+                                  title={t("common.copy", "Copy")}
+                                  onClick={() =>
+                                    navigator.clipboard?.writeText(selectedShopProduct.fileUrl)
+                                  }
+                                  className="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                  </svg>
+                                </button>
+                                <a
+                                  href={selectedShopProduct.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={t("common.openInNewTab", "Open in new tab")}
+                                  className="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                    <polyline points="15 3 21 3 21 9"/>
+                                    <line x1="10" y1="14" x2="21" y2="3"/>
+                                  </svg>
+                                </a>
+                              </div>
+                            )}
                           </div>
                         ) : selectedShopMode === "asset" ? (
                           <p className="text-[11px] text-amber-700">
