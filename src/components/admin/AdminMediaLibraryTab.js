@@ -2677,12 +2677,12 @@ export default function AdminMediaLibraryTab({
                   key={item.id}
                   ref={(node) => registerMediaRowRef(item.id, node)}
                   onClick={() => setFocusedItemId(item.id)}
-                  className={`border-t align-top ${
+                  className={`border-t align-top cursor-pointer transition-colors ${
                     isFocusedRow
-                      ? "bg-slate-200"
+                      ? "bg-blue-100 ring-1 ring-inset ring-blue-300"
                       : flashFocusedItemId === item.id
                         ? "bg-emerald-50"
-                        : ""
+                        : "hover:bg-gray-50"
                   }`}
                 >
                   <td className="px-3 py-2">
@@ -2718,15 +2718,17 @@ export default function AdminMediaLibraryTab({
                       {sourceLabel(item.source)}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-gray-700">{item.fileType || "—"}</td>
-                  <td className="px-3 py-2 text-gray-700">
+                  <td className="px-3 py-2 text-[11px] text-gray-600 font-medium">{item.fileType || "—"}</td>
+                  <td className="px-3 py-2 text-[11px] text-gray-600 font-medium tabular-nums whitespace-nowrap">
                     {formatBytes(item.sizeBytes)}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">
+                  <td className="px-3 py-2 text-[11px] text-gray-600 font-medium tabular-nums whitespace-nowrap">
                     {formatResolution(item.width, item.height)}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">
-                    {formatUpdatedAt(item.updatedAt)}
+                  <td className="px-3 py-2">
+                    <span className="whitespace-nowrap tabular-nums text-[11px] uppercase font-medium text-gray-600 tracking-wide">
+                      {formatUpdatedAt(item.updatedAt)}
+                    </span>
                   </td>
                   <td className="px-3 py-2">
                     <div className="space-y-1 text-xs">
@@ -2759,7 +2761,7 @@ export default function AdminMediaLibraryTab({
                       {canOpenDataViewer(item) && (
                         <button
                           type="button"
-                          onClick={() => openViewer(item)}
+                          onClick={(e) => { e.stopPropagation(); openViewer(item); }}
                           className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
                         >
                           {t("admin.mediaViewFile", "View")}
@@ -2771,7 +2773,8 @@ export default function AdminMediaLibraryTab({
                           return (
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 const idx = [...productAssetIds.values()].findIndex((p) => p.slug === assetProduct.slug);
                                 if (idx >= 0) {
                                   window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: "products" }));
@@ -2790,7 +2793,7 @@ export default function AdminMediaLibraryTab({
                         return (
                           <button
                             type="button"
-                            onClick={() => createProductFromAsset(item)}
+                            onClick={(e) => { e.stopPropagation(); createProductFromAsset(item); }}
                             disabled={creatingProductFromAsset}
                             className="text-xs px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -2802,7 +2805,7 @@ export default function AdminMediaLibraryTab({
                       })()}
                       <button
                         type="button"
-                        onClick={() => openEditor(item)}
+                        onClick={(e) => { e.stopPropagation(); openEditor(item); }}
                         className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
                       >
                         {t("admin.mediaAnnotate", "Annotate")}
@@ -2810,22 +2813,12 @@ export default function AdminMediaLibraryTab({
                       {rowCanOpenDerivation && (
                         <button
                           type="button"
-                          onClick={() => openDerivationFlow(item)}
+                          onClick={(e) => { e.stopPropagation(); openDerivationFlow(item); }}
                           className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
                         >
                           {t("admin.mediaApplyDerivation", "Apply derivation")}
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setFocusedItemId(item.id)}
-                        className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
-                        aria-pressed={focusedItemId === item.id}
-                      >
-                        {focusedItemId === item.id
-                          ? t("admin.mediaSelected", "Selected")
-                          : t("admin.mediaSelect", "Select")}
-                      </button>
                       {isFocusedRow && focusedAssetLineage.hasLineage && (
                         <div className="rounded border border-slate-200 bg-slate-50 p-2 space-y-1">
                           <p className="text-[11px] font-semibold text-slate-700">
@@ -2882,19 +2875,11 @@ export default function AdminMediaLibraryTab({
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <div className="space-y-1">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-slate-700 hover:underline break-all"
-                      >
-                        {item.url}
-                      </a>
+                    <div className="flex items-start gap-1.5">
                       <button
                         type="button"
-                        onClick={() => copyUrl(item.url)}
-                        className="inline-flex items-center justify-center text-xs px-1.5 py-1 rounded border hover:bg-gray-50"
+                        onClick={(e) => { e.stopPropagation(); copyUrl(item.url); }}
+                        className="inline-flex items-center justify-center shrink-0 text-xs px-1.5 py-1 rounded border hover:bg-gray-50 mt-px"
                         aria-label={
                           copiedUrl === item.url
                             ? t("admin.clientCopied", "Copied")
@@ -2917,6 +2902,15 @@ export default function AdminMediaLibraryTab({
                             : t("admin.bucketCopyUrl", "Copy URL")}
                         </span>
                       </button>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[11px] text-slate-600 hover:underline break-all leading-snug"
+                      >
+                        {item.url}
+                      </a>
                     </div>
                   </td>
                 </tr>

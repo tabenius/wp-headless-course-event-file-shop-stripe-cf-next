@@ -1250,6 +1250,17 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
+    function onSelectProduct(e) {
+      const value = e?.detail;
+      if (typeof value === "string" && value.startsWith("__shop_")) {
+        setSelectedCourse(value);
+      }
+    }
+    window.addEventListener("admin:selectProduct", onSelectProduct);
+    return () => window.removeEventListener("admin:selectProduct", onSelectProduct);
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined" || !ADMIN_TAB_SET.has(activeTab)) return;
     if (
       activeTab === "info" &&

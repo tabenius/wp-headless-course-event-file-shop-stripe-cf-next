@@ -264,7 +264,13 @@ export function formatUpdatedAt(iso) {
   if (!iso) return "—";
   const time = Date.parse(iso);
   if (!Number.isFinite(time)) return "—";
-  return new Date(time).toLocaleString("sv-SE");
+  const d = new Date(time);
+  const yy = String(d.getFullYear()).slice(2);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${yy}${mm}${dd}\u00A0${hh}:${min}`;
 }
 
 export function sourceLabel(source) {
