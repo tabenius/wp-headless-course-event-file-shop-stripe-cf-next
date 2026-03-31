@@ -77,6 +77,28 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
     };
   }, [product.id, checkoutStatus, checkoutSessionId]);
 
+  async function claimFreeProduct() {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/digital/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productSlug: product.slug }),
+      });
+      const json = await response.json();
+      if (response.ok && json?.ok) {
+        window.location.href = json.redirectUrl || `/digital/${encodeURIComponent(product.slug)}`;
+      } else {
+        setError(json?.error || t("shop.checkoutFailed"));
+      }
+    } catch (err) {
+      setError(t("shop.checkoutFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function startCheckout() {
     if (!user?.email) {
       window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(buyableUri)}`;
@@ -139,7 +161,14 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
       <h1 className="text-3xl font-bold">{product.name}</h1>
       <p className="text-[var(--color-foreground)]">{product.description}</p>
       <p className="font-semibold text-[var(--color-foreground)]">
-        {t("common.price")}: {formatPrice(product.priceCents, product.currency)}
+        {t("common.price")}:{" "}
+        {product.free ? (
+          <span className="text-lg font-bold text-green-700">{t("shop.freeProduct")}</span>
+        ) : (
+          <span className="text-lg font-bold">
+            {(product.priceCents / 100).toFixed(2)} {product.currency}
+          </span>
+        )}
       </p>
 
       {checkoutStatus === "success" ? (
@@ -206,17 +235,31 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
           </div>
         )
       ) : (
-        <button
-          type="button"
-          onClick={startCheckout}
-          disabled={loading}
-          className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
-        >
-          {loading && (
-            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          )}
-          {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
-        </button>
+        product.free ? (
+          <button
+            type="button"
+            onClick={claimFreeProduct}
+            disabled={loading}
+            className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
+          >
+            {loading && (
+              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            )}
+            {loading ? t("shop.claimingFree") : t("shop.claimFree")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={startCheckout}
+            disabled={loading}
+            className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
+          >
+            {loading && (
+              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            )}
+            {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
+          </button>
+        )
       )}
     </section>
   );

@@ -1121,7 +1121,11 @@
     "courseAccessDescSimple": "Du har nu åtkomst till kursen. Klicka på knappen nedan för att börja.",
     "viewCart": "Visa varukorg",
     "emptyShop": "Lägg till produkter från admin.",
-    "shopHint": "Använd WordPress/WooCommerce för att skapa produkter."
+    "shopHint": "Använd WordPress/WooCommerce för att skapa produkter.",
+    "freeProduct": "Gratis",
+    "claimFree": "Hämta gratis",
+    "claimingFree": "Hämtar åtkomst…",
+    "downloadProduct": "Ladda ner"
   },
   "darkMode": {
     "lightMode": "Ljust läge",

@@ -1121,7 +1121,11 @@
     "paymentVerifyHint": "No te preocupes — tu acceso debería aparecer en unos minutos. Si no, contacta al soporte.",
     "paymentCancelledRetry": "Puedes intentarlo de nuevo cuando estés listo.",
     "checkoutRetryHint": "Por favor, inténtalo de nuevo. Si el problema persiste, contacta al soporte.",
-    "courseAccessDescSimple": "Ahora tienes acceso a este curso. Haz clic en el botón de abajo para comenzar."
+    "courseAccessDescSimple": "Ahora tienes acceso a este curso. Haz clic en el botón de abajo para comenzar.",
+    "freeProduct": "Gratis",
+    "claimFree": "Obtener gratis",
+    "claimingFree": "Obteniendo acceso…",
+    "downloadProduct": "Descargar"
   },
   "darkMode": {
     "lightMode": "Modo claro",

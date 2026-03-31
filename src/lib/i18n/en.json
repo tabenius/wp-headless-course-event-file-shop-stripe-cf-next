@@ -1121,7 +1121,11 @@
     "courseAccessDescSimple": "You now have access to this course. Click the button below to start.",
     "viewCart": "View cart",
     "emptyShop": "Add products from the admin.",
-    "shopHint": "Use WordPress/WooCommerce to create products."
+    "shopHint": "Use WordPress/WooCommerce to create products.",
+    "freeProduct": "Free",
+    "claimFree": "Get for free",
+    "claimingFree": "Getting access…",
+    "downloadProduct": "Download"
   },
   "darkMode": {
     "lightMode": "Light mode",
