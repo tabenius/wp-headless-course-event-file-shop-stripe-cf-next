@@ -6,7 +6,7 @@ import {
   saveDigitalProducts,
 } from "@/lib/digitalProducts";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 function sanitizeText(value, max = 200) {
   return String(value ?? "")

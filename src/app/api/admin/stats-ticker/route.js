@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { getStripeSecretKey } from "@/lib/stripe";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const CF_GRAPHQL = "https://api.cloudflare.com/client/v4/graphql";
 
