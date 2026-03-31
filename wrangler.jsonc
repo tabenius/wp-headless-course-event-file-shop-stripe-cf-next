@@ -1,22 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "articulate-learnpress-stripe",
+  "name": "articulate",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-01-15",
   "compatibility_flags": ["nodejs_compat"],
   "upload_source_maps": true,
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS",
+    "binding": "ASSETS"
   },
   "vars": {
-    "CLOUDFLARE_IMAGE_RESIZING": "1",
+    "CLOUDFLARE_IMAGE_RESIZING": "0",
     "COURSE_ACCESS_BACKEND": "cloudflare-kv",
     "COURSE_ACCESS_STORE": "cloudflare",
     "USER_STORE_BACKEND": "cloudflare",
     "DIGITAL_ACCESS_STORE": "cloudflare",
     "PRODUCT_STORE_BACKEND": "cloudflare",
-    "DEFAULT_COURSE_FEE_CURRENCY": "SEK",
+    "DEFAULT_CURRENCY": "SEK",
+    "CF_DB_ID": "64f99034-504d-4389-ab45-fd85cf63ae3f",
     "CF_KV_NAMESPACE_ID": "0ac8a81b4e404ebbbc23172b59154191",
     "CF_KV_KEY": "course-access",
     "CF_USERS_KV_KEY": "course-users",
@@ -25,24 +26,31 @@
     "S3_BUCKET_NAME": "sofiacerne",
     "S3_REGION": "auto",
     "S3_PUBLIC_URL": "https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev",
-    "AUTH_MICROSOFT_ENTRA_ID_TENANT": "common",
     "GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
-    "GITHUB_DEPLOY_WORKFLOW": "deploy.yml",
+    "GITHUB_DEPLOY_WORKFLOW": "deploy.yml"
   },
   "ai": {
     "binding": "AI",
+    "remote": true
   },
   "r2_buckets": [
     {
       "binding": "R2_BUCKET",
-      "bucket_name": "sofiacerne",
-    },
+      "bucket_name": "sofiacerne"
+    }
   ],
   "kv_namespaces": [
     {
       "binding": "COURSE_ACCESS",
       "id": "0ac8a81b4e404ebbbc23172b59154191",
-      "remote": true,
-    },
+      "remote": true
+    }
   ],
+  "d1_databases": [
+    {
+      "binding": "D1_DIGITAL_ACCESS",
+      "database_name": "sofiacerne",
+      "database_id": "64f99034-504d-4389-ab45-fd85cf63ae3f"
+    }
+  ]
 }
