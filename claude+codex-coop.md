@@ -1,5 +1,19 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — products list “Needs config” reasons surfaced
+
+- Clarified why an item appears under `Needs config` in Products:
+  - added per-item configuration reason evaluation for WP and digital products,
+  - list status-dot tooltip now includes the first concrete missing requirement,
+  - selected editor panel now shows a warning box with the full reason list.
+- Digital reason checks now include:
+  - missing price/free configuration,
+  - missing file URL (digital file),
+  - missing content URI (manual URI mode),
+  - missing asset ID (asset mode).
+- WP/content reason check now surfaces when neither local config price nor upstream price exists.
+- Marked BUGS entry complete for products-list `Needs config` clarity.
+
 ## 2026-03-31 (Codex) — shop/products UX fix pack (cards + free claim + detail text)
 
 - Shop detail (`ShopProductDetail`) now preserves manual line breaks/spacing in descriptions via pre-wrap serif rendering.

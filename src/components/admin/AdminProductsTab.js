@@ -30,6 +30,63 @@ function parseVatPercent(value) {
   return Math.max(0, Math.min(100, Math.round(numeric * 100) / 100));
 }
 
+function normalizeMode(product = {}) {
+  const explicit = String(product?.productMode || "")
+    .trim()
+    .toLowerCase();
+  if (explicit === "asset" || explicit === "manual_uri" || explicit === "digital_file") {
+    return explicit;
+  }
+  if (product?.type === "course") return "manual_uri";
+  if (String(product?.assetId || "").trim()) return "asset";
+  return "digital_file";
+}
+
+function digitalConfigReasons(product = {}) {
+  const reasons = [];
+  const mode = normalizeMode(product);
+  const isFree = product?.free === true;
+  const priceCents = Number(product?.priceCents || 0);
+
+  if (!isFree && !(Number.isFinite(priceCents) && priceCents > 0)) {
+    reasons.push(
+      t(
+        "admin.needsConfigReasonMissingPrice",
+        "Set a price or mark this product as free.",
+      ),
+    );
+  }
+
+  if (mode === "digital_file" && !String(product?.fileUrl || "").trim()) {
+    reasons.push(
+      t(
+        "admin.needsConfigReasonMissingFileUrl",
+        "Add a downloadable file URL for delivery.",
+      ),
+    );
+  }
+
+  if (mode === "manual_uri" && !String(product?.contentUri || "").trim()) {
+    reasons.push(
+      t(
+        "admin.needsConfigReasonMissingContentUri",
+        "Set a protected content URI for this product.",
+      ),
+    );
+  }
+
+  if (mode === "asset" && !String(product?.assetId || "").trim()) {
+    reasons.push(
+      t(
+        "admin.needsConfigReasonMissingAssetId",
+        "Select an asset ID for this asset-based product.",
+      ),
+    );
+  }
+
+  return reasons;
+}
+
 function normalizeAssetId(value) {
   const safe = String(value || "")
     .trim()
@@ -770,19 +827,27 @@ function AccessTab({
     return parsePriceCents(raw || "");
   }
 
-  // "Needs config" = no local config and no usable WordPress/shop price
-  const isConfigured = (uri) => {
+  const configReasonsForUri = (uri) => {
     if (uri.startsWith("__shop_")) {
       const idx = Number.parseInt(uri.replace("__shop_", ""), 10);
       const p = Number.isFinite(idx) ? products[idx] : null;
-      return Boolean(p && Number(p.priceCents) > 0);
+      if (!p) {
+        return [t("admin.needsConfigReasonMissingProduct", "Product entry is missing.")];
+      }
+      return digitalConfigReasons(p);
     }
     const cfg = courses[uri];
-    if (cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0) {
-      return true;
-    }
-    return wpPriceForUri(uri) > 0;
+    const hasConfiguredPrice =
+      cfg && typeof cfg.priceCents === "number" && cfg.priceCents > 0;
+    if (hasConfiguredPrice || wpPriceForUri(uri) > 0) return [];
+    return [
+      t(
+        "admin.needsConfigReasonNoWpPrice",
+        "No local or upstream price is configured for this item.",
+      ),
+    ];
   };
+  const isConfigured = (uri) => configReasonsForUri(uri).length === 0;
   const needsConfigCount = [
     ...wcProducts.map((p) => p.uri),
     ...wpCourses.map((c) => c.uri),
@@ -823,6 +888,9 @@ function AccessTab({
     selectedWpItem?.categories,
     selectedShopCategories,
   );
+  const selectedConfigReasons = selectedContent
+    ? configReasonsForUri(selectedContent)
+    : [];
 
   useEffect(() => {
     if (!isShopSelection) {
@@ -1217,6 +1285,7 @@ function AccessTab({
             return sorted.map((item) => {
               const isActive = selectedContent === item.uri;
               const configured = isConfigured(item.uri);
+              const configReasons = configured ? [] : configReasonsForUri(item.uri);
               const categoriesPreview = extractCategoryNames(item.categories)
                 .slice(0, 2)
                 .join(", ");
@@ -1298,7 +1367,7 @@ function AccessTab({
                     title={
                       configured
                         ? t("admin.configuredBadge")
-                        : t("admin.filterNeedsConfig", "Needs config")
+                        : `${t("admin.filterNeedsConfig", "Needs config")}: ${configReasons[0] || ""}`
                     }
                   />
                 </button>
@@ -1350,6 +1419,19 @@ function AccessTab({
       <div ref={editFormRef} className="border rounded overflow-auto min-w-0">
         {showDetail ? (
           <div className="p-5 space-y-5">
+            {selectedConfigReasons.length > 0 && (
+              <div className="rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                <p className="font-semibold">
+                  {t("admin.filterNeedsConfig", "Needs config")}
+                </p>
+                <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                  {selectedConfigReasons.map((reason, idx) => (
+                    <li key={`${selectedContent}-config-${idx}`}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* WP item info card */}
             {isWpSelection &&
               (() => {
