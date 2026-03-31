@@ -167,7 +167,7 @@ export async function handleWhoBought(message, lower, request, origin) {
 
   // Try course access first
   try {
-    const json = await fetchAdminJson("/api/admin/course-access");
+    const json = await fetchAdminJson("/api/admin/content-access");
     const cfg = (json.courses || {})[uri];
     if (cfg) {
       const users =
@@ -248,7 +248,7 @@ export async function handleGrantAccess(message, lower, request, origin) {
 
   // Course / event / product URI path
   try {
-    const state = await fetchAdminJson("/api/admin/course-access");
+    const state = await fetchAdminJson("/api/admin/content-access");
     const cfg = (state.courses || {})[uri] || {
       allowedUsers: [],
       priceCents: 0,
@@ -259,7 +259,7 @@ export async function handleGrantAccess(message, lower, request, origin) {
       : [];
     if (!allowedUsers.includes(email)) allowedUsers.push(email);
 
-    await fetchAdminJson("/api/admin/course-access", {
+    await fetchAdminJson("/api/admin/content-access", {
       method: "PUT",
       body: JSON.stringify({
         courseUri: uri,
@@ -321,7 +321,7 @@ export async function handleRevokeAccess(message, lower, request, origin) {
   }
 
   try {
-    const state = await fetchAdminJson("/api/admin/course-access");
+    const state = await fetchAdminJson("/api/admin/content-access");
     const cfg = (state.courses || {})[uri];
     if (!cfg) {
       return NextResponse.json({
@@ -334,7 +334,7 @@ export async function handleRevokeAccess(message, lower, request, origin) {
       Array.isArray(cfg.allowedUsers) ? cfg.allowedUsers : []
     ).filter((u) => u !== email);
 
-    await fetchAdminJson("/api/admin/course-access", {
+    await fetchAdminJson("/api/admin/content-access", {
       method: "PUT",
       body: JSON.stringify({
         courseUri: uri,
@@ -510,7 +510,7 @@ export async function handleAccess(message, lower, request, origin) {
   if (RE_GRANT.test(message) || RE_REVOKE.test(message)) return null;
   const fetchAdminJson = makeFetch(request, origin);
   const uri = extractUri(message);
-  const json = await fetchAdminJson("/api/admin/course-access");
+  const json = await fetchAdminJson("/api/admin/content-access");
   const courses = json.courses || {};
   if (uri && courses[uri]) {
     const cfg = courses[uri];

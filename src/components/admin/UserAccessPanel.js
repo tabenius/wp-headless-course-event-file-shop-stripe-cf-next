@@ -58,7 +58,7 @@ export default function UserAccessPanel({
       const nextUsers = grant
         ? [...new Set([...currentUsers, selectedUser.email])]
         : currentUsers.filter((e) => e !== selectedUser.email);
-      const res = await fetch("/api/admin/course-access", {
+      const res = await fetch("/api/admin/content-access", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -643,7 +643,7 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
       const nextUsers = grant
         ? [...new Set([...currentUsers, selectedUser.email])]
         : currentUsers.filter((e) => e !== selectedUser.email);
-      const res = await fetch("/api/admin/course-access", {
+      const res = await fetch("/api/admin/content-access", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1310,7 +1310,7 @@ export default function AdminDashboard() {
   const loadCourseAccess = useCallback(async () => {
     if (loaded.courseAccess) return;
     try {
-      const { res, json } = await adminFetch("/api/admin/course-access");
+      const { res, json } = await adminFetch("/api/admin/content-access");
       if (!res.ok || !json?.ok)
         throw new Error(json?.error || t("admin.fetchAdminDataFailed"));
       setCourses(json.courses || {});
@@ -1327,7 +1327,7 @@ export default function AdminDashboard() {
       setLoaded((s) => ({ ...s, courseAccess: true, uploadInfo: true }));
     } catch (fetchError) {
       console.error(
-        "AdminDashboard: failed to load course-access data",
+        "AdminDashboard: failed to load content-access data",
         fetchError,
       );
       setError(fetchError.message || t("admin.fetchAdminDataFailed"));
@@ -2336,7 +2336,7 @@ export default function AdminDashboard() {
         }
       }
 
-      // Save access config if there's a content URI (WordPress course-access system)
+      // Save access config if there's a content URI (WordPress content-access system)
       if (uri) {
         const nextActive = isShopSelection ? undefined : selectedCourseActive;
         const currentConfig = courses[uri];
@@ -2361,7 +2361,7 @@ export default function AdminDashboard() {
           needsManualPrice;
 
         if (shouldPersistAccess) {
-          const res = await fetch("/api/admin/course-access", {
+          const res = await fetch("/api/admin/content-access", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
