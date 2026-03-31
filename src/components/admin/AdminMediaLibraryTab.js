@@ -2617,7 +2617,7 @@ export default function AdminMediaLibraryTab({
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600">
               <tr>
-                <th className="text-left px-3 py-2">{t("admin.preview", "Preview")}</th>
+                <th className="text-left px-3 py-2"><span className="sr-only">{t("admin.preview", "Preview")}</span></th>
                 <th className="text-left px-3 py-2">{t("common.name", "Name")}</th>
                 <th className="text-left px-3 py-2">{t("admin.source", "Source")}</th>
                 <th className="text-left px-3 py-2">{t("admin.fileType", "File type")}</th>
