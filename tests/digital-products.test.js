@@ -92,3 +92,72 @@ test("isProductListable returns false for inactive product", () => {
     false,
   );
 });
+
+// --- Task 2: product type mutual exclusivity ---
+
+test("sanitizeProduct clears courseUri and fileUrl when mode is asset", () => {
+  const product = sanitizeProductForTest({
+    name: "Asset Product",
+    slug: "asset-product",
+    productMode: "asset",
+    assetId: "asset-123",
+    fileUrl: "https://example.com/files/guide.pdf",
+    courseUri: "/courses/my-course",
+  });
+  assert.ok(product, "product should not be null");
+  assert.equal(product.assetId, "asset-123");
+  assert.equal(product.fileUrl, "");
+  assert.equal(product.courseUri, "");
+});
+
+test("sanitizeProduct clears assetId and fileUrl when mode is manual_uri", () => {
+  const product = sanitizeProductForTest({
+    name: "Course Product",
+    slug: "course-product",
+    productMode: "manual_uri",
+    courseUri: "/courses/my-course",
+    assetId: "asset-123",
+    fileUrl: "https://example.com/files/guide.pdf",
+  });
+  assert.ok(product, "product should not be null");
+  assert.equal(product.courseUri, "/courses/my-course");
+  assert.equal(product.fileUrl, "");
+  assert.equal(product.assetId, "");
+});
+
+test("sanitizeProduct clears courseUri and assetId when mode is digital_file", () => {
+  const product = sanitizeProductForTest({
+    name: "File Product",
+    slug: "file-product",
+    productMode: "digital_file",
+    fileUrl: "https://example.com/files/guide.pdf",
+    courseUri: "/courses/my-course",
+    assetId: "asset-123",
+  });
+  assert.ok(product, "product should not be null");
+  assert.equal(product.fileUrl, "https://example.com/files/guide.pdf");
+  assert.equal(product.courseUri, "");
+  assert.equal(product.assetId, "");
+});
+
+test("sanitizeProduct derives type from mode, not from input type field (asset → digital_file, manual_uri → course)", () => {
+  const assetProduct = sanitizeProductForTest({
+    name: "Asset Type Test",
+    slug: "asset-type-test",
+    productMode: "asset",
+    assetId: "asset-abc",
+    type: "course", // should be overridden by productMode
+  });
+  assert.ok(assetProduct, "asset product should not be null");
+  assert.equal(assetProduct.type, "digital_file");
+
+  const courseProduct = sanitizeProductForTest({
+    name: "Course Type Test",
+    slug: "course-type-test",
+    productMode: "manual_uri",
+    courseUri: "/courses/test",
+    type: "digital_file", // should be overridden by productMode
+  });
+  assert.ok(courseProduct, "course product should not be null");
+  assert.equal(courseProduct.type, "course");
+});

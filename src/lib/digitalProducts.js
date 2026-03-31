@@ -149,7 +149,7 @@ function sanitizeProduct(product, seenSlugs) {
     currency: normalizeCurrency(product?.currency),
     fileUrl: productMode === "digital_file" ? fileUrl : "",
     courseUri: productMode === "manual_uri" ? courseUri : "",
-    mimeType: productMode === "digital_file" ? mimeType : "",
+    mimeType: productMode === "digital_file" || productMode === "asset" ? mimeType : "",
     assetId: productMode === "asset" ? assetId : "",
     vatPercent,
     active: product?.active !== false,
