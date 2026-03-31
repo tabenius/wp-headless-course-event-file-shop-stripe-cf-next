@@ -420,6 +420,8 @@
     "mediaAssetVariants": "Varianter",
     "mediaVariant": "Variant",
     "mediaCurrent": "aktuell",
+    "mediaSelected": "Vald",
+    "mediaSelect": "Välj",
     "mediaUploadUploading": "Laddar upp {n} fil(er)…",
     "mediaUploadDone": "Laddade upp {n} fil(er).",
     "mediaUploadPartial": "Laddade upp {ok} av {total} fil(er).",

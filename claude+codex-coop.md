@@ -1,5 +1,16 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — media row selection clarity + localized select labels
+
+- Increased focused media-row contrast (`bg-slate-200`) so selection state is visible by row highlight alone.
+- Added explicit i18n keys for select-state actions in EN/SV/ES:
+  - `admin.mediaSelected`
+  - `admin.mediaSelect`
+- Swedish now uses requested wording:
+  - `Selected` → `Vald`
+  - `Select` → `Välj`
+- Validation: targeted ESLint for `AdminMediaLibraryTab` and JSON parse checks for `en/sv/es`.
+
 ## 2026-03-31 (Codex) — media lineage semantics + copy-icon micro UX
 
 - Tightened Media library lineage classification semantics:

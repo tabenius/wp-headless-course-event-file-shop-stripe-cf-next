@@ -420,6 +420,8 @@
     "mediaAssetVariants": "Variants",
     "mediaVariant": "Variant",
     "mediaCurrent": "current",
+    "mediaSelected": "Selected",
+    "mediaSelect": "Select",
     "mediaUploadUploading": "Uploading {n} file(s)…",
     "mediaUploadDone": "Uploaded {n} file(s).",
     "mediaUploadPartial": "Uploaded {ok} of {total} file(s).",

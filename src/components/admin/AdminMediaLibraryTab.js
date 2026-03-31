@@ -2646,7 +2646,7 @@ export default function AdminMediaLibraryTab({
                   onClick={() => setFocusedItemId(item.id)}
                   className={`border-t align-top ${
                     isFocusedRow
-                      ? "bg-slate-50"
+                      ? "bg-slate-200"
                       : flashFocusedItemId === item.id
                         ? "bg-emerald-50"
                         : ""
