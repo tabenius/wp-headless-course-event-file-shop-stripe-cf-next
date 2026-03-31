@@ -2079,9 +2079,49 @@ export default function AdminDashboard() {
     );
   }
 
-  function removeShopProduct(index) {
+  async function removeShopProduct(index) {
+    const product = products[index];
+    if (!product) return;
+    const mode = product.productMode || "";
+    if (mode === "manual_uri") {
+      window.dispatchEvent(
+        new CustomEvent("toast", {
+          detail: {
+            type: "error",
+            message: t(
+              "admin.cannotDeleteCourseProduct",
+              "Course products cannot be deleted here. Remove the course assignment instead.",
+            ),
+          },
+        }),
+      );
+      return;
+    }
     if (!window.confirm(t("admin.confirmRemoveProduct"))) return;
-    setProducts((prev) => prev.filter((_, idx) => idx !== index));
+    const slug = product.slug;
+    if (slug) {
+      try {
+        const res = await fetch(`/api/admin/products?slug=${encodeURIComponent(slug)}`, { method: "DELETE" });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || "Delete failed");
+        }
+        if (Array.isArray(json.products)) {
+          setProducts(json.products.map((p) => ({ ...emptyProduct(), ...p, slugEdited: true })));
+        } else {
+          setProducts((prev) => prev.filter((_, idx) => idx !== index));
+        }
+      } catch (err) {
+        window.dispatchEvent(
+          new CustomEvent("toast", {
+            detail: { type: "error", message: err?.message || "Could not delete product." },
+          }),
+        );
+        return;
+      }
+    } else {
+      setProducts((prev) => prev.filter((_, idx) => idx !== index));
+    }
     setSelectedCourse("");
   }
 
@@ -2228,6 +2268,7 @@ export default function AdminDashboard() {
           priceCents: Number.isFinite(p.priceCents)
             ? p.priceCents
             : Number.parseInt(String(p.priceCents || "0"), 10) || 0,
+          free: p.free === true,
           currency: (p.currency || "SEK").toUpperCase(),
           fileUrl: p.fileUrl,
           mimeType: p.mimeType || "",

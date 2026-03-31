@@ -36,9 +36,10 @@ function BuildTimestamp() {
   if (!stamp) return null;
   return (
     <span
-      className="whitespace-nowrap tabular-nums"
+      className="hidden md:inline whitespace-nowrap tabular-nums shrink-0"
       style={{
-        marginLeft: "0.75rem",
+        marginLeft: "0.5rem",
+        marginRight: "0.5rem",
         color: "var(--admin-brand-subtitle)",
         fontSize: "8.5px",
         opacity: 0.6,
@@ -554,7 +555,7 @@ export default function AdminHeader({ logoUrl }) {
                 <RagbazLogo
                   wordmarkOnly
                   noLetterSpacing
-                  scale={1.75}
+                  scale={1.55}
                   color="#c59052"
                   outlineColor="#2b1a0e"
                   outlineWidth={1}
@@ -574,9 +575,10 @@ export default function AdminHeader({ logoUrl }) {
               >
                 ARTICULATE STOREFRONT
               </span>
-              <BuildTimestamp />
             </Link>
           </div>
+
+          <BuildTimestamp />
 
           <div className="hidden md:flex min-w-0 flex-1 items-center justify-center">
             <div

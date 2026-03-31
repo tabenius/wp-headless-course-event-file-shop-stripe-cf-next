@@ -153,7 +153,20 @@ export async function POST(request) {
       active: false,
     };
 
-    const saved = await saveDigitalProducts([...products, nextProduct]);
+    let saved;
+    try {
+      saved = await saveDigitalProducts([...products, nextProduct]);
+    } catch (saveError) {
+      console.error("Admin create product from asset — save failed:", saveError);
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Could not save product list: ${saveError?.message || "unknown write error"}.`,
+          debug: { assetId, slug: nextProduct.slug, name: nextProduct.name },
+        },
+        { status: 500 },
+      );
+    }
 
     const created =
       saved.find(
@@ -166,7 +179,8 @@ export async function POST(request) {
       return NextResponse.json(
         {
           ok: false,
-          error: `Product was rejected during validation. Check that the asset has a valid name and assetId (got: "${assetId}").`,
+          error: `Product was rejected during validation (name: "${nextProduct.name}", slug: "${nextProduct.slug}", assetId: "${assetId}", productMode: "${nextProduct.productMode}").`,
+          debug: { assetId, slug: nextProduct.slug, name: nextProduct.name, productMode: nextProduct.productMode },
         },
         { status: 400 },
       );
@@ -181,7 +195,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Admin create product from asset failed:", error);
     return NextResponse.json(
-      { ok: false, error: "Could not create product from asset." },
+      { ok: false, error: `Could not create product from asset: ${error?.message || "unknown error"}.` },
       { status: 400 },
     );
   }
