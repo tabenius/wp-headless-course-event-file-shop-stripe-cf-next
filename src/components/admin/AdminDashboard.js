@@ -647,7 +647,7 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          courseUri: uri,
+          contentUri: uri,
           allowedUsers: nextUsers,
           priceCents: config.priceCents || 0,
           currency: config.currency || "SEK",
@@ -1099,7 +1099,7 @@ export default function AdminDashboard() {
   const [chatLoading, setChatLoading] = useState(false);
   const chatAbortRef = useRef(null);
   const [loaded, setLoaded] = useState({
-    courseAccess: false,
+    contentAccess: false,
     products: false,
     analytics: false,
     deploy: false,
@@ -1308,7 +1308,7 @@ export default function AdminDashboard() {
   }, [selectedCourse, isShopSelection, selectedShopProduct]);
 
   const loadCourseAccess = useCallback(async () => {
-    if (loaded.courseAccess) return;
+    if (loaded.contentAccess) return;
     try {
       const { res, json } = await adminFetch("/api/admin/content-access");
       if (!res.ok || !json?.ok)
@@ -1324,7 +1324,7 @@ export default function AdminDashboard() {
         setUploadInfo(json.upload);
         setUploadBackend(json.upload.backend || "wordpress");
       }
-      setLoaded((s) => ({ ...s, courseAccess: true, uploadInfo: true }));
+      setLoaded((s) => ({ ...s, contentAccess: true, uploadInfo: true }));
     } catch (fetchError) {
       console.error(
         "AdminDashboard: failed to load content-access data",
@@ -1332,7 +1332,7 @@ export default function AdminDashboard() {
       );
       setError(fetchError.message || t("admin.fetchAdminDataFailed"));
     }
-  }, [loaded.courseAccess, setError]);
+  }, [loaded.contentAccess, setError]);
 
   const loadProducts = useCallback(async () => {
     if (loaded.products) return;
@@ -2365,7 +2365,7 @@ export default function AdminDashboard() {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              courseUri: uri,
+              contentUri: uri,
               allowedUsers,
               priceCents: nextPriceCents,
               currency: normalizedCurrency,

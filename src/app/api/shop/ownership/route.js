@@ -4,7 +4,7 @@ import {
   listAccessibleDigitalProductIds,
   grantDigitalAccess,
 } from "@/lib/digitalAccessStore";
-import { grantCourseAccess, listAccessibleCourseUris } from "@/lib/courseAccess";
+import { grantContentAccess, listAccessibleContentUris } from "@/lib/contentAccess";
 import { fetchStripeCheckoutSession } from "@/lib/stripe";
 import { appendServerLog } from "@/lib/serverLog";
 
@@ -72,7 +72,7 @@ export async function POST(request) {
           await grantDigitalAccess(paidProductId, userEmail);
         }
         if (purchaseKind === "course_product" && paidCourseUri) {
-          await grantCourseAccess(paidCourseUri, userEmail);
+          await grantContentAccess(paidCourseUri, userEmail);
         }
       }
     } catch (error) {
@@ -109,11 +109,11 @@ export async function POST(request) {
   let ownedUris = [];
   let accessBatchFailed = false;
   if (wpUris.length > 0) {
-    ownedUris = await listAccessibleCourseUris(wpUris, userEmail).catch((err) => {
+    ownedUris = await listAccessibleContentUris(wpUris, userEmail).catch((err) => {
       accessBatchFailed = true;
       appendServerLog({
         level: "error",
-        msg: `listAccessibleCourseUris failed for ${userEmail}: ${err?.message || err}`,
+        msg: `listAccessibleContentUris failed for ${userEmail}: ${err?.message || err}`,
       }).catch(() => {});
       return [];
     });

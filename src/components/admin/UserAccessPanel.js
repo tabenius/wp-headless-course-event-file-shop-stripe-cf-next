@@ -62,7 +62,7 @@ export default function UserAccessPanel({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          courseUri: uri,
+          contentUri: uri,
           allowedUsers: nextUsers,
           priceCents: config.priceCents || 0,
           currency: config.currency || "SEK",

@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminRoute";
 import { t } from "@/lib/i18n";
 import {
-  getCourseAccessState,
-  getCourseStorageInfo,
+  getContentAccessState,
+  getContentStorageInfo,
   listAccessUsers,
   setCourseAccess,
-} from "@/lib/courseAccess";
+} from "@/lib/contentAccess";
 import { fetchGraphQL } from "@/lib/client";
 import { deriveCategories } from "@/lib/contentCategories";
 import {
@@ -205,7 +205,7 @@ export async function GET(request) {
 
   try {
     const [state, users, wpCourses, wcProducts, wpEvents] = await Promise.all([
-      getCourseAccessState(),
+      getContentAccessState(),
       listAccessUsers(),
       fetchLearnPressCourses(),
       fetchWooCommerceProducts(),
@@ -222,7 +222,7 @@ export async function GET(request) {
       wpCourses,
       wcProducts,
       wpEvents,
-      storage: getCourseStorageInfo(),
+      storage: getContentStorageInfo(),
       resendConfigured: isResendConfigured(),
       upload: {
         backend: uploadBackend,
@@ -247,7 +247,7 @@ export async function PUT(request) {
 
   try {
     const body = await request.json();
-    const courseUri = typeof body?.courseUri === "string" ? body.courseUri : "";
+    const courseUri = typeof body?.contentUri === "string" ? body.contentUri : "";
     const allowedUsers = Array.isArray(body?.allowedUsers)
       ? body.allowedUsers
       : [];
@@ -268,7 +268,7 @@ export async function PUT(request) {
         : Number.parseFloat(String(vatPercentRaw).replace(",", "."));
     const active =
       typeof body?.active === "boolean" ? body.active : undefined;
-    const state = await setCourseAccess({
+    const state = await setContentAccess({
       courseUri,
       allowedUsers,
       priceCents: Number.isFinite(priceCents) ? priceCents : 0,

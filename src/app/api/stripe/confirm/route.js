@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { grantCourseAccess } from "@/lib/courseAccess";
+import { grantContentAccess } from "@/lib/contentAccess";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { t } from "@/lib/i18n";
 
@@ -75,7 +75,7 @@ export async function POST(request) {
       );
     }
 
-    await grantCourseAccess(courseUri, session.user.email);
+    await grantContentAccess(courseUri, session.user.email);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Stripe confirmation failed:", error);

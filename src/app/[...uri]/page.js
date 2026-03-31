@@ -13,10 +13,10 @@ import { fetchGraphQL, RateLimitError } from "@/lib/client";
 import RateLimitPage from "@/components/common/RateLimitPage";
 import { auth } from "@/auth";
 import {
-  getCourseAccessConfig,
-  grantCourseAccess,
+  getContentAccessConfig,
+  grantContentAccess,
   hasCourseAccess,
-} from "@/lib/courseAccess";
+} from "@/lib/contentAccess";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { stripHtml } from "@/lib/slugify";
 import site from "@/lib/site";
@@ -653,7 +653,7 @@ async function ContentPageInner({
     let accessCheckFailed = false;
     if (userEmail) {
       try {
-        canAccess = await hasCourseAccess(uri, userEmail);
+        canAccess = await hasContentAccess(uri, userEmail);
       } catch (err) {
         accessCheckFailed = true;
         appendServerLog({
@@ -687,7 +687,7 @@ async function ContentPageInner({
           paidEmail === userEmail.toLowerCase() &&
           paidCourse === uri
         ) {
-          await grantCourseAccess(uri, userEmail);
+          await grantContentAccess(uri, userEmail);
           canAccess = true;
         }
       } catch (error) {
@@ -715,7 +715,7 @@ async function ContentPageInner({
     }
 
     if (!canAccess) {
-      const accessConfig = await getCourseAccessConfig(uri).catch(() => null);
+      const accessConfig = await getContentAccessConfig(uri).catch(() => null);
       if (accessConfig?.active === false) {
         notFound();
       }

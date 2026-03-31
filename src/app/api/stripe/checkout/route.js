@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { auth, createSessionToken, createSessionCookie } from "@/auth";
-import { getCourseAccessConfig } from "@/lib/courseAccess";
+import { getContentAccessConfig } from "@/lib/contentAccess";
 import { createStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { findUserByEmail, createUser } from "@/lib/userStore";
 import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
@@ -290,7 +290,7 @@ export async function POST(request) {
       );
     }
 
-    const config = await getCourseAccessConfig(courseUri);
+    const config = await getContentAccessConfig(courseUri);
     if (config?.active === false) {
       return NextResponse.json(
         { ok: false, error: t("apiErrors.contentNotReady") },

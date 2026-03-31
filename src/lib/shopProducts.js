@@ -1,6 +1,6 @@
 import { fetchGraphQL } from "@/lib/client";
 import { appendServerLog } from "@/lib/serverLog";
-import { getCourseAccessState } from "@/lib/courseAccess";
+import { getContentAccessState } from "@/lib/contentAccess";
 import { listDigitalProducts } from "@/lib/digitalProducts";
 import { getAssetRecord } from "@/lib/avatarFeedStore";
 import { ALL_TYPES, getShopSettings } from "@/lib/shopSettings";
@@ -390,7 +390,7 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
     shopSettings,
   ] = await Promise.all([
     listDigitalProducts(),
-    getCourseAccessState(),
+    getContentAccessState(),
     getShopSettings(),
   ]);
 

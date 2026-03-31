@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { getCourseAccessState } from "@/lib/courseAccess";
+import { getContentAccessState } from "@/lib/contentAccess";
 import { listAccessibleDigitalProductIds } from "@/lib/digitalAccessStore";
 import { listDigitalProducts } from "@/lib/digitalProducts";
 import { appendServerLog } from "@/lib/serverLog";
@@ -50,7 +50,7 @@ export default async function InventoryPage() {
 
   const safeEmail = normalizeEmail(userEmail);
 
-  const [ownedProductIds, digitalProducts, courseAccessState] =
+  const [ownedProductIds, digitalProducts, contentAccessState] =
     await Promise.all([
       listAccessibleDigitalProductIds(safeEmail).catch((err) => {
         appendServerLog({ level: "error", msg: `inventory: digitalAccess failed for ${safeEmail}: ${err?.message}` }).catch(() => {});
@@ -60,8 +60,8 @@ export default async function InventoryPage() {
         appendServerLog({ level: "error", msg: `inventory: listDigitalProducts failed: ${err?.message}` }).catch(() => {});
         return [];
       }),
-      getCourseAccessState().catch((err) => {
-        appendServerLog({ level: "error", msg: `inventory: courseAccess failed: ${err?.message}` }).catch(() => {});
+      getContentAccessState().catch((err) => {
+        appendServerLog({ level: "error", msg: `inventory: contentAccess failed: ${err?.message}` }).catch(() => {});
         return { courses: {} };
       }),
     ]);
@@ -93,7 +93,7 @@ export default async function InventoryPage() {
 
   // Admin-granted WordPress content access
   const grantedItems = [];
-  const courses = courseAccessState?.courses || {};
+  const courses = contentAccessState?.courses || {};
   for (const [rawUri, config] of Object.entries(courses)) {
     const uri = normalizeUri(rawUri);
     if (!uri) continue;

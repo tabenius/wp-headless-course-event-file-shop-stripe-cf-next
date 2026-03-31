@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { grantCourseAccess } from "@/lib/courseAccess";
+import { grantContentAccess } from "@/lib/contentAccess";
 import { grantDigitalAccess } from "@/lib/digitalAccessStore";
 import { sendEmail } from "@/lib/email";
 import { tenantConfig } from "@/lib/tenantConfig";
@@ -140,10 +140,10 @@ export async function POST(request) {
         ) {
           await grantDigitalAccess(digitalProductId, email);
           if (purchaseKind === "course_product" && courseUri) {
-            await grantCourseAccess(courseUri, email);
+            await grantContentAccess(courseUri, email);
           }
         } else if (courseUri) {
-          await grantCourseAccess(courseUri, email);
+          await grantContentAccess(courseUri, email);
         }
 
         // Send purchase confirmation email

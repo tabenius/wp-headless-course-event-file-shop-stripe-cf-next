@@ -23,7 +23,7 @@ function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
 
-function normalizeCourseUri(courseUri) {
+function normalizeContentUri(courseUri) {
   if (typeof courseUri !== "string") return "";
   const trimmed = courseUri.trim();
   if (!trimmed) return "";
@@ -54,7 +54,7 @@ function sanitizeState(state) {
   const courses = {};
   const inputCourses = state && typeof state === "object" ? state.courses : {};
   for (const [rawUri, rawValue] of Object.entries(inputCourses || {})) {
-    const uri = normalizeCourseUri(rawUri);
+    const uri = normalizeContentUri(rawUri);
     if (!uri) continue;
     const allowedUsers = Array.isArray(rawValue?.allowedUsers)
       ? rawValue.allowedUsers.map(normalizeEmail).filter(Boolean)
@@ -167,7 +167,7 @@ async function writeToLocal(state) {
   }
 }
 
-export async function getCourseAccessState() {
+export async function getContentAccessState() {
   if (shouldUseCloudflareBackend()) {
     try {
       const cloudflareState = await readFromCloudflare();
@@ -182,7 +182,7 @@ export async function getCourseAccessState() {
   return readFromLocal();
 }
 
-export async function saveCourseAccessState(nextState) {
+export async function saveContentAccessState(nextState) {
   const state = sanitizeState(nextState);
   if (shouldUseCloudflareBackend()) {
     try {
@@ -199,7 +199,7 @@ export async function saveCourseAccessState(nextState) {
   return state;
 }
 
-export async function setCourseAccess({
+export async function setContentAccess({
   courseUri,
   allowedUsers,
   priceCents,
@@ -207,9 +207,9 @@ export async function setCourseAccess({
   active,
   vatPercent,
 }) {
-  const uri = normalizeCourseUri(courseUri);
+  const uri = normalizeContentUri(courseUri);
   if (!uri) throw new Error("Invalid course URI");
-  const state = await getCourseAccessState();
+  const state = await getContentAccessState();
   const previous = state.courses[uri];
   const normalizedUsers = Array.isArray(allowedUsers)
     ? [...new Set(allowedUsers.map(normalizeEmail).filter(Boolean))]
@@ -231,14 +231,14 @@ export async function setCourseAccess({
     active: typeof active === "boolean" ? active : previous?.active !== false,
     updatedAt: new Date().toISOString(),
   };
-  return saveCourseAccessState(state);
+  return saveContentAccessState(state);
 }
 
-export async function grantCourseAccess(courseUri, email) {
-  const uri = normalizeCourseUri(courseUri);
+export async function grantContentAccess(courseUri, email) {
+  const uri = normalizeContentUri(courseUri);
   const normalizedEmail = normalizeEmail(email);
   if (!uri || !normalizedEmail) return;
-  const state = await getCourseAccessState();
+  const state = await getContentAccessState();
   const course = state.courses[uri] || {
     allowedUsers: [],
     priceCents:
@@ -254,14 +254,14 @@ export async function grantCourseAccess(courseUri, email) {
     ...course,
     updatedAt: new Date().toISOString(),
   };
-  await saveCourseAccessState(state);
+  await saveContentAccessState(state);
 }
 
-export async function hasCourseAccess(courseUri, email) {
-  const uri = normalizeCourseUri(courseUri);
+export async function hasContentAccess(courseUri, email) {
+  const uri = normalizeContentUri(courseUri);
   const normalizedEmail = normalizeEmail(email);
   if (!uri || !normalizedEmail) return false;
-  const state = await getCourseAccessState();
+  const state = await getContentAccessState();
   const course = state.courses[uri];
   if (!course) return false;
   return Array.isArray(course.allowedUsers)
@@ -269,14 +269,14 @@ export async function hasCourseAccess(courseUri, email) {
     : false;
 }
 
-export async function getCourseAccessConfig(courseUri) {
-  const uri = normalizeCourseUri(courseUri);
+export async function getContentAccessConfig(courseUri) {
+  const uri = normalizeContentUri(courseUri);
   if (!uri) return null;
-  const state = await getCourseAccessState();
+  const state = await getContentAccessState();
   return state.courses[uri] || null;
 }
 
-export function getCourseStorageInfo() {
+export function getContentStorageInfo() {
   return shouldUseCloudflareBackend()
     ? { provider: "cloudflare-kv", key: getKvKey(), replicas: [] }
     : { provider: "local-file", path: LOCAL_ACCESS_FILE, replicas: [] };
