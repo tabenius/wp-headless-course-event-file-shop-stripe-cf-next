@@ -51,14 +51,14 @@ function shopTypeLabel(type) {
 
 function buildDigitalOwnedItem(product) {
   const mode = inferMode(product);
-  if (mode === "asset" && product.assetId) {
+  if (mode === "asset") {
     return {
       key: `digital:${product.id}`,
       name: product.name || product.id,
       description: product.description || "",
       label: digitalTypeLabel(product),
-      href: `/inventory/${encodeURIComponent(product.assetId)}`,
-      action: "Open purchased asset",
+      href: `/digital/${encodeURIComponent(product.slug || product.id)}`,
+      action: "Download",
       isDownload: false,
     };
   }
@@ -79,9 +79,9 @@ function buildDigitalOwnedItem(product) {
       name: product.name || product.id,
       description: product.description || "",
       label: digitalTypeLabel(product),
-      href: `/api/digital/download?productId=${encodeURIComponent(product.id)}`,
-      action: "Download file",
-      isDownload: true,
+      href: `/digital/${encodeURIComponent(product.slug || product.id)}`,
+      action: "Download",
+      isDownload: false,
     };
   }
   return {

@@ -168,10 +168,9 @@ export async function POST(request) {
           let productUrl = origin;
           if (courseUri) {
             productUrl = `${origin}${courseUri}`;
-          } else if (assetId) {
-            productUrl = `${origin}/inventory/${encodeURIComponent(assetId)}`;
           } else if (digitalProductId) {
-            productUrl = `${origin}/shop`;
+            const slug = session?.metadata?.product_slug || digitalProductId;
+            productUrl = `${origin}/digital/${encodeURIComponent(slug)}`;
           }
 
           await sendEmail({

@@ -64,6 +64,7 @@ export async function POST(request) {
         purchase_kind: purchaseKind,
         digital_product_id: product.id,
         product_name: product.name || "",
+        product_slug: product.slug || "",
         ...(product.assetId ? { asset_id: product.assetId } : {}),
         ...(typeof product.vatPercent === "number" &&
         Number.isFinite(product.vatPercent)
