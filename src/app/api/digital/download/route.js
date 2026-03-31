@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { hasDigitalAccess } from "@/lib/digitalAccessStore";
 import { getDigitalProductById } from "@/lib/digitalProducts";
+import { createSignedDownloadUrl } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
 export const runtime = "nodejs";
@@ -15,6 +16,15 @@ function getFileName(fileUrl, fallbackId) {
   } catch {
     return `${fallbackId}.bin`;
   }
+}
+
+function getSignedUrlTtlSeconds() {
+  const raw = process.env.DIGITAL_DOWNLOAD_SIGNED_URL_TTL_SECONDS;
+  const parsed = Number.parseInt(String(raw || ""), 10);
+  if (!Number.isFinite(parsed)) return 300;
+  if (parsed < 30) return 30;
+  if (parsed > 3600) return 3600;
+  return parsed;
 }
 
 export async function GET(request) {
@@ -58,6 +68,20 @@ export async function GET(request) {
   }
 
   try {
+    const signedUrl = await createSignedDownloadUrl({
+      fileUrl: product.fileUrl,
+      expiresIn: getSignedUrlTtlSeconds(),
+      downloadFileName: getFileName(product.fileUrl, product.id),
+    });
+    if (signedUrl) {
+      return NextResponse.redirect(signedUrl, {
+        status: 302,
+        headers: {
+          "Cache-Control": "private, no-store",
+        },
+      });
+    }
+
     const upstream = await fetch(product.fileUrl, { cache: "no-store" });
     if (!upstream.ok || !upstream.body) {
       return NextResponse.json(

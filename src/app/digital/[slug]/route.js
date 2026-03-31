@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { hasDigitalAccess } from "@/lib/digitalAccessStore";
 import { getDigitalProductBySlug, isProductListable } from "@/lib/digitalProducts";
+import { createSignedDownloadUrl } from "@/lib/s3upload";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,15 @@ function resolveFileUrl(product) {
   return "";
 }
 
+function getSignedUrlTtlSeconds() {
+  const raw = process.env.DIGITAL_DOWNLOAD_SIGNED_URL_TTL_SECONDS;
+  const parsed = Number.parseInt(String(raw || ""), 10);
+  if (!Number.isFinite(parsed)) return 300;
+  if (parsed < 30) return 30;
+  if (parsed > 3600) return 3600;
+  return parsed;
+}
+
 export async function GET(request, { params }) {
   const { slug } = await params;
   const product = await getDigitalProductBySlug(slug);
@@ -76,6 +86,20 @@ export async function GET(request, { params }) {
   }
 
   try {
+    const signedUrl = await createSignedDownloadUrl({
+      fileUrl,
+      expiresIn: getSignedUrlTtlSeconds(),
+      downloadFileName: getFileName(product),
+    });
+    if (signedUrl) {
+      return NextResponse.redirect(signedUrl, {
+        status: 302,
+        headers: {
+          "Cache-Control": "private, no-store",
+        },
+      });
+    }
+
     const upstream = await fetch(fileUrl, { cache: "no-store" });
     if (!upstream.ok || !upstream.body) {
       return new NextResponse("File not available", { status: 502 });

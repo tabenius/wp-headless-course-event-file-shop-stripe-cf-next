@@ -1,5 +1,17 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — signed download handoff after entitlement
+
+- Implemented short-lived signed URL handoff for owned digital downloads in both routes:
+  - `GET /digital/{slug}`
+  - `GET /api/digital/download?productId=...`
+- Added storage-aware signer in `src/lib/s3upload.js`:
+  - resolves object key from configured R2/S3 public URL,
+  - issues short-lived signed `GET` URLs (default `300s`, env override `DIGITAL_DOWNLOAD_SIGNED_URL_TTL_SECONDS`),
+  - falls back to existing proxy stream when URL is outside managed storage or signing fails.
+- Added pure helper `src/lib/storageObjectKey.js` and targeted test `tests/storage-object-key.test.js`.
+- Marked BUGS entry complete: signed URL handoff feature.
+
 ## 2026-03-31 (Codex) — P1 fix: robust OG metadata for /shop/{slug}
 
 - Hardened product-page metadata generation in `src/app/shop/[slug]/page.js`:

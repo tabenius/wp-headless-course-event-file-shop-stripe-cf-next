@@ -1,4 +1,5 @@
 import { t } from "@/lib/i18n";
+import { deriveObjectKeyFromPublicUrl } from "@/lib/storageObjectKey";
 import {
   signR2Put,
   signR2Request,
@@ -106,19 +107,21 @@ async function getS3Client(backend = resolveBackend()) {
   return client;
 }
 
-function getBucket() {
+function getBucket(backend = resolveBackend()) {
   const bucket =
-    process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
+    backend === "r2"
+      ? process.env.CF_R2_BUCKET_NAME || process.env.S3_BUCKET_NAME || ""
+      : process.env.S3_BUCKET_NAME || process.env.CF_R2_BUCKET_NAME || "";
   if (!bucket) throw new Error(t("s3.bucketMissing"));
   return bucket;
 }
 
-function getPublicUrl() {
-  const url = (
-    process.env.S3_PUBLIC_URL ||
-    process.env.CF_R2_PUBLIC_URL ||
-    ""
-  ).replace(/\/+$/, "");
+function getPublicUrl(backend = resolveBackend()) {
+  const rawUrl =
+    backend === "r2"
+      ? process.env.CF_R2_PUBLIC_URL || process.env.S3_PUBLIC_URL || ""
+      : process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "";
+  const url = String(rawUrl).replace(/\/+$/, "");
   if (!url) {
     throw new Error(t("s3.publicUrlMissing"));
   }
@@ -237,6 +240,126 @@ function getEdgeR2Creds() {
       ""
     ).replace(/\/+$/, ""),
   };
+}
+
+function clampSignedUrlExpiresIn(rawValue) {
+  const parsed = Number.parseInt(String(rawValue || ""), 10);
+  if (!Number.isFinite(parsed)) return 300;
+  if (parsed < 30) return 30;
+  if (parsed > 3600) return 3600;
+  return parsed;
+}
+
+function buildDownloadDisposition(fileName) {
+  const safe = String(fileName || "")
+    .replace(/[\r\n"]/g, " ")
+    .trim()
+    .slice(0, 180);
+  if (!safe) return "";
+  return `attachment; filename="${safe}"`;
+}
+
+export function resolveStorageObjectKey(fileUrl, { backend } = {}) {
+  const backendToUse = backend || resolveBackend();
+  if (backendToUse !== "r2" && backendToUse !== "s3") return "";
+  let publicUrl = "";
+  try {
+    publicUrl = getPublicUrl(backendToUse);
+  } catch {
+    publicUrl = "";
+  }
+  return deriveObjectKeyFromPublicUrl(fileUrl, publicUrl);
+}
+
+async function createR2SignedDownloadUrl({
+  objectKey,
+  expiresIn,
+  downloadFileName,
+}) {
+  const { accessKeyId, secretAccessKey, accountId, bucket } = getEdgeR2Creds();
+  if (!accessKeyId || !secretAccessKey || !accountId || !bucket) return null;
+
+  const baseUrl = buildR2Url({ accountId, bucket, key: objectKey });
+  const requestUrl = new URL(baseUrl);
+  const disposition = buildDownloadDisposition(downloadFileName);
+  if (disposition) {
+    requestUrl.searchParams.set("response-content-disposition", disposition);
+  }
+  return presignR2Url({
+    method: "GET",
+    url: requestUrl.toString(),
+    expiresIn,
+    accessKeyId,
+    secretAccessKey,
+    region: "auto",
+  });
+}
+
+async function createS3SignedDownloadUrl({
+  objectKey,
+  expiresIn,
+  downloadFileName,
+}) {
+  if (!isNodeRuntime || !isS3Enabled()) return null;
+
+  const { GetObjectCommand, getSignedUrl } = await loadAwsSdk();
+  const client = await getS3Client("s3");
+  const bucketName = getBucket("s3");
+  const disposition = buildDownloadDisposition(downloadFileName);
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+    ...(disposition ? { ResponseContentDisposition: disposition } : {}),
+  });
+  return getSignedUrl(client, command, { expiresIn });
+}
+
+/**
+ * Returns a short-lived signed GET URL for objects under configured storage public URLs.
+ * Returns null when the file URL does not map to our configured bucket.
+ */
+export async function createSignedDownloadUrl({
+  fileUrl,
+  backend,
+  expiresIn = 300,
+  downloadFileName = "",
+} = {}) {
+  const safeUrl = String(fileUrl || "").trim();
+  if (!safeUrl) return null;
+
+  const ttl = clampSignedUrlExpiresIn(expiresIn);
+  const requested = String(backend || "").trim().toLowerCase();
+  const candidates = [];
+  if (requested === "r2" || requested === "s3") candidates.push(requested);
+  if (!candidates.includes("r2")) candidates.push("r2");
+  if (!candidates.includes("s3")) candidates.push("s3");
+
+  for (const candidate of candidates) {
+    const objectKey = resolveStorageObjectKey(safeUrl, { backend: candidate });
+    if (!objectKey) continue;
+    try {
+      if (candidate === "r2") {
+        return await createR2SignedDownloadUrl({
+          objectKey,
+          expiresIn: ttl,
+          downloadFileName,
+        });
+      }
+      if (candidate === "s3") {
+        return await createS3SignedDownloadUrl({
+          objectKey,
+          expiresIn: ttl,
+          downloadFileName,
+        });
+      }
+    } catch (error) {
+      console.error(
+        `[s3upload] failed to create ${candidate.toUpperCase()} signed download URL:`,
+        error,
+      );
+    }
+  }
+  return null;
 }
 
 async function uploadToR2Edge(buffer, fileName, contentType, metadata = {}) {
