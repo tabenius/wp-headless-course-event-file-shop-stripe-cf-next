@@ -143,22 +143,34 @@ export async function POST(request) {
       description: "",
       imageUrl,
       priceCents: 0,
+      free: false,
       currency: "SEK",
       fileUrl,
       mimeType,
       assetId,
       vatPercent: null,
       courseUri: "",
-      active: true,
+      active: false,
     };
 
     const saved = await saveDigitalProducts([...products, nextProduct]);
+
     const created =
       saved.find(
         (entry) =>
           entry?.productMode === "asset" &&
           normalizeAssetId(entry?.assetId || "") === assetId,
       ) || null;
+
+    if (!created) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Product was rejected during validation. Check that the asset has a valid name and assetId (got: "${assetId}").`,
+        },
+        { status: 400 },
+      );
+    }
 
     return NextResponse.json({
       ok: true,
