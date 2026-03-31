@@ -223,6 +223,15 @@ function parseTabFromHash(hashValue) {
   return normalizeAdminTab(normalized);
 }
 
+function parseProductSlugFromHash(hashValue) {
+  const parts = extractHashPath(hashValue).split("/").filter(Boolean);
+  // hash is like /products/dl-some-slug → parts = ["products", "dl-some-slug"]
+  if (parts.length >= 2 && normalizeAdminTab(parts[0]) === "products") {
+    return parts[1].toLowerCase() || null;
+  }
+  return null;
+}
+
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
 }
@@ -1108,6 +1117,10 @@ export default function AdminDashboard() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatAbortRef = useRef(null);
+  // Slug of a product to auto-select once the products list reloads (e.g. after create-from-asset)
+  const pendingProductSlugRef = useRef(null);
+  // Prevent re-applying the initial hash slug after the first products load
+  const initialHashSlugAppliedRef = useRef(false);
   const [loaded, setLoaded] = useState({
     contentAccess: false,
     products: false,
@@ -1277,11 +1290,14 @@ export default function AdminDashboard() {
     ) {
       return;
     }
-    const nextHash = `#/${activeTab}`;
+    const productSlug = activeTab === "products" && selectedShopProduct?.slug
+      ? `/${selectedShopProduct.slug}`
+      : "";
+    const nextHash = `#/${activeTab}${productSlug}`;
     if (window.location.hash === nextHash) return;
     const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
     window.history.replaceState(null, "", nextUrl);
-  }, [activeTab]);
+  }, [activeTab, selectedShopProduct]);
 
   const handleWelcomeSeen = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -1364,6 +1380,20 @@ export default function AdminDashboard() {
       setError(fetchError.message || t("admin.fetchProductListFailed"));
     }
   }, [loaded.products, setError]);
+
+  // Auto-select a product by slug after the products list reloads (e.g. after create-from-asset or initial hash URL)
+  useEffect(() => {
+    if (!loaded.products) return;
+    let slug = pendingProductSlugRef.current;
+    if (!slug && !initialHashSlugAppliedRef.current && typeof window !== "undefined") {
+      slug = parseProductSlugFromHash(window.location.hash);
+      initialHashSlugAppliedRef.current = true;
+    }
+    if (!slug) return;
+    pendingProductSlugRef.current = null;
+    const idx = products.findIndex((p) => p.slug === slug);
+    if (idx >= 0) setSelectedCourse(`__shop_${idx}`);
+  }, [loaded.products, products]);
 
   const loadAnalytics = useCallback(async () => {
     if (loaded.analytics) return;
@@ -2682,7 +2712,13 @@ export default function AdminDashboard() {
             uploadBackend={uploadBackend}
             uploadInfo={uploadInfo}
             uploadInfoDetails={uploadInfoDetails}
-            onProductCreated={() => setLoaded((s) => ({ ...s, products: false }))}
+            onProductCreated={(slug) => {
+              // Preload the AdminProductsTab chunk so lazy import resolves fast
+              import("./AdminProductsTab").catch(() => {});
+              if (slug) pendingProductSlugRef.current = slug;
+              setLoaded((s) => ({ ...s, products: false }));
+              setActiveTab("products");
+            }}
           />
         </Suspense>
       )}

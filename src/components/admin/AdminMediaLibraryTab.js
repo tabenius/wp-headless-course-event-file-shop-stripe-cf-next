@@ -1031,7 +1031,7 @@ export default function AdminMediaLibraryTab({
           return next;
         });
         // Invalidate products cache so Products tab re-fetches on next visit
-        if (onProductCreated) onProductCreated();
+        if (onProductCreated) onProductCreated(json.product.slug);
       }
       window.dispatchEvent(
         new CustomEvent("toast", {
