@@ -157,6 +157,7 @@ export default function AdminMediaLibraryTab({
   const [saveSuccess, setSaveSuccess] = useState("");
   const [uploading, setUploading] = useState(false);
   const [creatingProductFromAsset, setCreatingProductFromAsset] = useState(false);
+  const [productAssetIds, setProductAssetIds] = useState(new Map());
   const [uploadCount, setUploadCount] = useState(0);
   const [uploadError, setUploadError] = useState("");
   const [uploadStatus, setUploadStatus] = useState("");
@@ -302,6 +303,27 @@ export default function AdminMediaLibraryTab({
       })).filter((entry) => entry.schema),
     [],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProductMap() {
+      try {
+        const res = await fetch("/api/admin/products");
+        if (!res.ok) return;
+        const json = await res.json().catch(() => null);
+        if (cancelled || !json?.products) return;
+        const map = new Map();
+        for (const p of json.products) {
+          if (p?.productMode === "asset" && p?.assetId) {
+            map.set(p.assetId, { slug: p.slug, name: p.name, free: p.free, active: p.active });
+          }
+        }
+        setProductAssetIds(map);
+      } catch { /* best-effort */ }
+    }
+    loadProductMap();
+    return () => { cancelled = true; };
+  }, [refreshToken]);
 
   useEffect(() => {
     const backendExists = enabledUploadOptions.some(
@@ -986,6 +1008,19 @@ export default function AdminMediaLibraryTab({
       const toastMessage = productName
         ? `${baseMessage} "${productName}" — ${t("admin.mediaProductGoToProducts", "go to Products tab to configure price and availability.")}`
         : baseMessage;
+      // Update the product→asset map so the "Product ↗" badge appears immediately
+      if (json?.created && json?.product?.assetId && json?.product?.slug) {
+        setProductAssetIds((prev) => {
+          const next = new Map(prev);
+          next.set(json.product.assetId, {
+            slug: json.product.slug,
+            name: json.product.name,
+            free: json.product.free,
+            active: json.product.active,
+          });
+          return next;
+        });
+      }
       window.dispatchEvent(
         new CustomEvent("toast", {
           detail: {
@@ -2730,16 +2765,41 @@ export default function AdminMediaLibraryTab({
                           {t("admin.mediaViewFile", "View")}
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => createProductFromAsset(item)}
-                        disabled={creatingProductFromAsset}
-                        className="text-xs px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {creatingProductFromAsset
-                          ? t("common.loading", "Loading…")
-                          : t("admin.mediaCreateProductFromAsset", "Create product")}
-                      </button>
+                      {(() => {
+                        const assetProduct = productAssetIds.get(item.asset?.assetId);
+                        if (assetProduct) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const idx = [...productAssetIds.values()].findIndex((p) => p.slug === assetProduct.slug);
+                                if (idx >= 0) {
+                                  window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: "products" }));
+                                  setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent("admin:selectProduct", { detail: `__shop_${idx}` }));
+                                  }, 200);
+                                }
+                              }}
+                              className="text-xs px-2 py-1 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 font-medium"
+                              title={`${assetProduct.name || assetProduct.slug}${assetProduct.active ? "" : ` (${t("common.inactive", "inactive")})`}`}
+                            >
+                              {t("admin.mediaGoToProduct", "Product")} ↗
+                            </button>
+                          );
+                        }
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => createProductFromAsset(item)}
+                            disabled={creatingProductFromAsset}
+                            className="text-xs px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {creatingProductFromAsset
+                              ? t("common.loading", "Loading…")
+                              : t("admin.mediaCreateProductFromAsset", "Create product")}
+                          </button>
+                        );
+                      })()}
                       <button
                         type="button"
                         onClick={() => openEditor(item)}
