@@ -1,5 +1,19 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Claude) — digital download products: free/paid model, /digital/{slug} delivery, R2 auto-assetId
+
+- Auto-assigns deterministic assetIds to R2 objects missing `asset_id` metadata during media library listing (write-back via `replaceBucketObjectMetadata`).
+- Fixed "Create product from asset" flow: new products default to `active: false` until pricing is set; explicit error messages on validation failure.
+- Added `free` boolean to product schema: `free: true` forces `priceCents: 0`, skips Stripe; `free: false` with `priceCents: 0` is ambiguous and hidden from shop.
+- Added `isProductListable()` — products need `active: true` AND either `free: true` or `priceCents > 0`.
+- Enforced product type mutual exclusivity: mode switch clears stale fields in both `sanitizeProduct` and admin UI.
+- New route `/digital/{slug}`: auth + ownership check → proxy file download → redirect to shop if not owned.
+- New endpoint `POST /api/digital/claim`: grants access to free products without Stripe.
+- Updated `ShopProductDetail` for free vs paid display (claim button vs Stripe checkout).
+- Updated inventory page and purchase confirmation emails to use `/digital/{slug}` links.
+- Added i18n keys for EN/SV/ES: free product labels, pricing warnings, claim flow copy.
+- Validation: ESLint pass, unit tests for sanitizeProduct + isProductListable, full test suite (290 pass).
+
 ## 2026-03-31 (Codex) — media row selection clarity + localized select labels
 
 - Increased focused media-row contrast (`bg-slate-200`) so selection state is visible by row highlight alone.
