@@ -710,7 +710,21 @@ async function fetchBucketMedia({ backend, limit, prefix, search }) {
       const metaHeight = normalizeInt(meta.asset_height);
       if (!row.width && metaWidth) row.width = metaWidth;
       if (!row.height && metaHeight) row.height = metaHeight;
-      const assetId = sanitizeAssetId(meta.asset_id, 96);
+      let assetId = sanitizeAssetId(meta.asset_id, 96);
+      if (!assetId && row.key) {
+        assetId = sanitizeAssetId(`r2:${row.key}`, 96);
+        if (assetId) {
+          try {
+            await replaceBucketObjectMetadata({
+              key: row.key,
+              metadata: { asset_id: assetId },
+              backend,
+            });
+          } catch {
+            // Non-fatal: assetId is still usable this request even if write-back fails
+          }
+        }
+      }
       const ownerUri = normalizeOwnerUri(meta.asset_owner_uri || "/");
       const assetUri = sanitizeText(meta.asset_uri, 400) || buildAssetIdUri(assetId);
       const assetSlug = sanitizeAssetSlug(meta.asset_slug, 120);
