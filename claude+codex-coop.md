@@ -1,5 +1,14 @@
 # Claude + Codex Co-Working Log
 
+## 2026-03-31 (Codex) — delivery/source panel readability pass (partial)
+
+- Improved digital-file delivery panel in `AdminProductsTab`:
+  - added an uppercase sans-serif `FILE` title band with bottom divider,
+  - changed `Asset ID` label to plain `ID`,
+  - kept copy/open URL actions intact within the same section.
+- Updated BUGS status to partial (`[~]`) for this item, since the broader layout refactor
+  (removing subpanel and moving everything inline to the right) is still pending.
+
 ## 2026-03-31 (Codex) — product price/free control simplification (partial BUG close)
 
 - Refined `PriceAccessForm` in `AdminProductsTab`:

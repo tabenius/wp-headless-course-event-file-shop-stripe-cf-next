@@ -1753,14 +1753,15 @@ function AccessTab({
                 </div>
 
                 <div className="space-y-1.5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    {selectedShopProduct.type === "digital_file"
-                      ? "File"
-                      : "Course URI"}
-                  </p>
                   {selectedShopProduct.type === "digital_file" ? (
                     <>
-                      <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+                      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                        <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5">
+                          <p className="text-[11px] font-sans font-semibold uppercase tracking-wide text-slate-700">
+                            FILE
+                          </p>
+                        </div>
+                        <div className="space-y-3 p-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-medium text-slate-700">
                             {t("admin.productSourceLabel", "Delivery source")}
@@ -1823,7 +1824,7 @@ function AccessTab({
                           <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-2">
                             <p>
                               <span className="font-semibold">
-                                {t("admin.productAssetId", "Asset ID")}:
+                                {t("admin.productSourceId", "ID")}:
                               </span>{" "}
                               <span className="font-mono">{selectedShopProduct.assetId}</span>
                             </p>
@@ -1892,6 +1893,7 @@ function AccessTab({
                             </p>
                           </>
                         )}
+                        </div>
                       </div>
                       {!selectedShopProduct.assetId && (
                         <>
