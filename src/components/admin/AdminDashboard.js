@@ -12,6 +12,7 @@ import {
 import { t } from "@/lib/i18n";
 import { parsePriceCents } from "@/lib/parsePrice";
 import { slugify } from "@/lib/slugify";
+import { resolveSlugPrefix } from "@/lib/productRoutes";
 import { multipartUpload } from "@/lib/multipartUploadClient";
 import AdminUiFeedbackBar from "./AdminUiFeedbackBar";
 import { adminFetch } from "@/lib/adminFetch";
@@ -2081,15 +2082,49 @@ export default function AdminDashboard() {
     setProducts((prev) =>
       prev.map((product, idx) => {
         if (idx !== index) return product;
+
+        function getPrefix(mode, contentUri) {
+          const wpType = allWpContent.find((item) => item.uri === contentUri)?._type ?? null;
+          return resolveSlugPrefix(mode, wpType);
+        }
+
+        // Build a full slug: strip any leading known prefix from base, then prepend correct one.
+        function applyPrefix(base, mode, contentUri) {
+          const prefix = getPrefix(mode, contentUri);
+          const stripped = base.startsWith(prefix) ? base.slice(prefix.length) : base;
+          return stripped ? `${prefix}${stripped}` : "";
+        }
+
+        // Extract the base portion of a stored slug by stripping its current prefix.
+        function extractBase(slug, mode, contentUri) {
+          const prefix = getPrefix(mode, contentUri);
+          return slug.startsWith(prefix) ? slug.slice(prefix.length) : slug;
+        }
+
         if (key === "name") {
           const nextName = value;
+          // Auto-derive slug from name when not manually set; prefix always applied.
           const nextSlug = product.slugEdited
             ? product.slug
-            : slugify(nextName);
+            : applyPrefix(slugify(nextName), product.productMode, product.contentUri);
           return { ...product, name: nextName, slug: nextSlug };
         }
         if (key === "slug") {
-          return { ...product, slug: slugify(value), slugEdited: true };
+          // Manual edit: enforce prefix regardless (strip then re-add to avoid double-prefix).
+          const nextSlug = applyPrefix(slugify(value), product.productMode, product.contentUri);
+          return { ...product, slug: nextSlug, slugEdited: true };
+        }
+        if (key === "productMode") {
+          // Re-prefix using the new mode; preserve the base the user set.
+          const base = extractBase(product.slug, product.productMode, product.contentUri);
+          const nextSlug = applyPrefix(base || slugify(product.name), value, product.contentUri);
+          return { ...product, productMode: value, slug: nextSlug };
+        }
+        if (key === "contentUri") {
+          // Re-prefix when WP post type may change (course ↔ event ↔ content).
+          const base = extractBase(product.slug, product.productMode, product.contentUri);
+          const nextSlug = applyPrefix(base || slugify(product.name), product.productMode, value);
+          return { ...product, contentUri: value, slug: nextSlug };
         }
         return { ...product, [key]: value };
       }),

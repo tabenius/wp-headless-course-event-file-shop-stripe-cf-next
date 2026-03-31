@@ -89,9 +89,9 @@ function resolveProductName(body = {}, assetId = "") {
 
 function resolveProductSlug(name, assetId) {
   const fromName = buildProductSlug(name);
-  if (fromName) return fromName;
-  const fromAsset = buildProductSlug(`asset-${assetId.replace(/[:._]+/g, "-")}`);
-  if (fromAsset) return fromAsset;
+  if (fromName) return `asset-${fromName}`;
+  const fromAsset = buildProductSlug(assetId.replace(/[:._]+/g, "-"));
+  if (fromAsset) return `asset-${fromAsset}`;
   return `asset-${Date.now().toString(36)}`;
 }
 

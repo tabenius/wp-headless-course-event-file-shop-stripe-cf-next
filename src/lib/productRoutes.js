@@ -4,6 +4,23 @@
  */
 
 /**
+ * Slug prefix for a new product based on its mode and (for manual_uri) WP post type.
+ * Only applied at creation time — never retroactively to existing slugs.
+ *
+ * wpType comes from allWpContent[n]._type: "course" | "event" | "product" | …
+ */
+export function resolveSlugPrefix(productMode, wpType) {
+  if (productMode === "asset") return "asset-";
+  if (productMode === "digital_file") return "dl-";
+  if (productMode === "manual_uri") {
+    if (wpType === "course") return "course-";
+    if (wpType === "event") return "event-";
+    return "content-";
+  }
+  return "";
+}
+
+/**
  * Resolve the URL a logged-in owner navigates to in order to access a product.
  * - asset / digital_file  → /digital/{slug}  (proxied access check)
  * - manual_uri            → product.contentUri  (WordPress content path)

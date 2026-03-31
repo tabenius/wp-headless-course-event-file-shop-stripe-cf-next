@@ -14,6 +14,7 @@ import UserAccessPanel from "./UserAccessPanel";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
 import CyberduckBookmarkPanel from "./CyberduckBookmarkPanel";
+import { resolveSlugPrefix } from "@/lib/productRoutes";
 
 function toCurrencyUnits(cents) {
   return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
@@ -1570,14 +1571,28 @@ function AccessTab({
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Slug
                     </label>
-                    <input
-                      type="text"
-                      value={selectedShopProduct.slug}
-                      onChange={(e) =>
-                        updateProduct(shopIndex, "slug", e.target.value)
-                      }
-                      className="w-full border rounded px-3 py-2 text-sm"
-                    />
+                    {(() => {
+                      const wpType = allWpContent.find((item) => item.uri === selectedShopProduct.contentUri)?._type ?? null;
+                      const prefix = resolveSlugPrefix(selectedShopMode, wpType);
+                      const base = prefix && selectedShopProduct.slug.startsWith(prefix)
+                        ? selectedShopProduct.slug.slice(prefix.length)
+                        : selectedShopProduct.slug;
+                      return (
+                        <div className="flex items-center border rounded overflow-hidden text-sm">
+                          {prefix && (
+                            <span className="px-2 py-2 bg-gray-100 text-gray-500 border-r shrink-0 select-none font-mono text-xs">
+                              {prefix}
+                            </span>
+                          )}
+                          <input
+                            type="text"
+                            value={base}
+                            onChange={(e) => updateProduct(shopIndex, "slug", e.target.value)}
+                            className="flex-1 px-3 py-2 min-w-0"
+                          />
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
