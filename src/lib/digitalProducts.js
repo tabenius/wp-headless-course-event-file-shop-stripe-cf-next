@@ -6,7 +6,6 @@ import {
 import { deriveDigitalProductCategories } from "@/lib/contentCategories";
 import { slugify } from "@/lib/slugify";
 
-export const PRODUCT_FILE = "config/digital-products.json";
 export const PRODUCT_EXAMPLE_FILE = "config/digital-products.example.json";
 
 function getProductsKvKey() {
@@ -168,13 +167,6 @@ function sanitizeProducts(input) {
   return output;
 }
 
-function shouldUseCloudflareBackend() {
-  return (
-    process.env.PRODUCT_STORE_BACKEND === "cloudflare" ||
-    isCloudflareKvConfigured()
-  );
-}
-
 async function readFromCloudflare() {
   const data = await readCloudflareKvJson(getProductsKvKey());
   if (!data) return null;
@@ -185,76 +177,42 @@ async function writeToCloudflare(products) {
   return writeCloudflareKvJson(getProductsKvKey(), products);
 }
 
-async function readFromLocal() {
-  // Try dynamic fs.readFile first (works in Node.js dev, not on Cloudflare Workers)
+async function readFromBundled() {
+  // Build-time bundled JSON — seed source for KV when no products exist yet
   try {
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const fullPath = path.join(process.cwd(), PRODUCT_FILE);
-    const raw = await fs.readFile(fullPath, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const data = (await import("../../config/digital-products.json")).default;
+    return Array.isArray(data) ? data : [];
   } catch {
-    // fs.readFile unavailable (e.g. Cloudflare Workers) — use build-time bundled JSON
-    try {
-      const data = (await import("../../config/digital-products.json")).default;
-      return Array.isArray(data) ? data : [];
-    } catch {
-      return inMemoryProducts || [];
-    }
-  }
-}
-
-async function writeToLocal(products) {
-  try {
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const fullPath = path.join(process.cwd(), PRODUCT_FILE);
-    await fs.writeFile(fullPath, JSON.stringify(products, null, 2), "utf8");
-  } catch (error) {
-    console.error(
-      "Local product file write unavailable. Updating in-memory product store fallback:",
-      error,
-    );
-    inMemoryProducts = products;
+    return inMemoryProducts || [];
   }
 }
 
 async function readProducts() {
-  if (shouldUseCloudflareBackend()) {
-    try {
-      const cloudflareProducts = await readFromCloudflare();
-      if (cloudflareProducts !== null) return cloudflareProducts;
-      // KV key doesn't exist yet — seed from local/bundled defaults
-      const seed = await readFromLocal();
-      if (seed.length > 0) {
-        await writeToCloudflare(seed).catch(() => {});
-      }
-      return seed;
-    } catch (error) {
-      console.error("Cloudflare KV products read failed, falling back:", error);
+  try {
+    const cloudflareProducts = await readFromCloudflare();
+    if (cloudflareProducts !== null) return cloudflareProducts;
+    // KV key doesn't exist yet — seed from bundled defaults
+    const seed = await readFromBundled();
+    if (seed.length > 0) {
+      await writeToCloudflare(seed).catch(() => {});
     }
+    return seed;
+  } catch (error) {
+    console.error("Cloudflare KV products read failed, falling back to bundled:", error);
+    return readFromBundled();
   }
-  return readFromLocal();
 }
 
 async function writeProducts(products) {
-  if (shouldUseCloudflareBackend()) {
-    try {
-      const wrote = await writeToCloudflare(products);
-      if (wrote) return;
-    } catch (error) {
-      console.error(
-        "Cloudflare KV products write failed, falling back:",
-        error,
-      );
-    }
+  try {
+    const wrote = await writeToCloudflare(products);
+    if (wrote) return;
+    throw new Error("writeToCloudflare returned falsy");
+  } catch (error) {
+    console.error("Cloudflare KV products write failed:", error);
+    // In-memory fallback so the current request cycle sees the update
+    inMemoryProducts = products;
   }
-  await writeToLocal(products);
 }
 
 export async function listDigitalProducts({ includeInactive = false } = {}) {

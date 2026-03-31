@@ -1490,7 +1490,7 @@ function AccessTab({
 
             {/* Shop product full details (merged from Digital Downloads tab) */}
             {isShopSelection && selectedShopProduct && (
-              <div className="mb-4 space-y-4 rounded-lg border border-gray-200 bg-gray-50/70 p-3">
+              <div className="mb-4 space-y-4 rounded-lg border p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <ImagePickerButton
@@ -1733,32 +1733,36 @@ function AccessTab({
                           </>
                         )}
                       </div>
-                      <p className="text-[11px] text-gray-500">
-                        Backend:{" "}
-                        <strong className="text-gray-700">
-                          {uploadBackend === "wordpress"
-                            ? "WordPress Media"
-                            : uploadBackend === "r2"
-                              ? "Cloudflare R2"
-                              : "S3/Spaces"}
-                        </strong>
-                        .{" "}
-                        {runtime === "edge"
-                          ? t(
-                              "admin.uploadEdgeLimit",
-                              "Single PUT ≤100 MB, multipart for larger.",
-                            )
-                          : t(
-                              "admin.uploadNodeLimit",
-                              "Multipart upload for large files.",
-                          )}
-                      </p>
-                      <CyberduckBookmarkPanel
-                        uploadBackend={uploadBackend}
-                        uploadInfo={uploadInfo}
-                        uploadInfoDetails={uploadInfoDetails}
-                        className="mt-2"
-                      />
+                      {!selectedShopProduct.assetId && (
+                        <>
+                          <p className="text-[11px] text-gray-500">
+                            Backend:{" "}
+                            <strong className="text-gray-700">
+                              {uploadBackend === "wordpress"
+                                ? "WordPress Media"
+                                : uploadBackend === "r2"
+                                  ? "Cloudflare R2"
+                                  : "S3/Spaces"}
+                            </strong>
+                            .{" "}
+                            {runtime === "edge"
+                              ? t(
+                                  "admin.uploadEdgeLimit",
+                                  "Single PUT ≤100 MB, multipart for larger.",
+                                )
+                              : t(
+                                  "admin.uploadNodeLimit",
+                                  "Multipart upload for large files.",
+                              )}
+                          </p>
+                          <CyberduckBookmarkPanel
+                            uploadBackend={uploadBackend}
+                            uploadInfo={uploadInfo}
+                            uploadInfoDetails={uploadInfoDetails}
+                            className="mt-2"
+                          />
+                        </>
+                      )}
                     </>
                   ) : (
                     <input
