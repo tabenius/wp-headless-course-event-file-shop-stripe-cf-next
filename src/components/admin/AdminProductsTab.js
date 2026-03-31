@@ -1250,7 +1250,7 @@ function AccessTab({
                   title={titleText}
                   className={`w-full text-left px-2 py-2.5 flex min-h-[78px] items-center gap-2 border-b last:border-b-0 transition-colors ${
                     isActive
-                      ? "bg-slate-900 text-white border-l-2 border-l-slate-300"
+                      ? "bg-blue-700 text-white border-l-2 border-l-blue-300"
                       : "hover:bg-gray-50 border-l-2 border-l-transparent"
                   }`}
                 >

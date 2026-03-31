@@ -387,12 +387,6 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
       desc: t("admin.storageProviderWpDesc"),
       active: storage?.provider === "wordpress-graphql-user-meta",
     },
-    {
-      id: "local-file",
-      name: t("admin.storageProviderLocalName"),
-      desc: t("admin.storageProviderLocalDesc"),
-      active: storage?.provider === "local-file",
-    },
   ];
 
   const uploadTargets = [

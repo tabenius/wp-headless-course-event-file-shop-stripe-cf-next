@@ -523,6 +523,7 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       imageUrl: d.imageUrl || "",
       price: "",
       priceCents: d.priceCents || 0,
+      free: d.free === true,
       currency: d.currency || defaultCurrency,
       type: normalizedType,
       source: "digital",
@@ -546,7 +547,7 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       if (!safeVisibleTypes.includes(item.type)) return false;
       if (item.active === false) return false;
       const hasPrice = item.priceCents > 0 || (item.price && item.price !== "0");
-      if (item.source === "digital") return hasPrice;
+      if (item.source === "digital") return hasPrice || item.free === true;
       return true;
     },
   );

@@ -119,10 +119,12 @@ function sanitizeProduct(product, seenSlugs) {
   const contentUri = normalizeContentUri(product?.contentUri);
   const mimeType = normalizeMimeType(product?.mimeType || product?.contentType);
   const vatPercent = normalizeVatPercent(product?.vatPercent);
+  const active = product?.active !== false;
 
   if (imageUrl && !isValidHttpUrl(imageUrl)) return null;
-  if (productMode === "digital_file" && !isValidHttpUrl(fileUrl)) return null;
-  if (productMode === "manual_uri" && !contentUri) return null;
+  // Incomplete delivery fields are only hard errors for active products (drafts may be saved without them)
+  if (active && productMode === "digital_file" && !isValidHttpUrl(fileUrl)) return null;
+  if (active && productMode === "manual_uri" && !contentUri) return null;
   if (productMode === "asset" && !assetId) return null;
 
   const normalizedType =
@@ -151,7 +153,7 @@ function sanitizeProduct(product, seenSlugs) {
     mimeType: productMode === "digital_file" || productMode === "asset" ? mimeType : "",
     assetId: productMode === "asset" ? assetId : "",
     vatPercent,
-    active: product?.active !== false,
+    active,
     updatedAt: new Date().toISOString(),
     ...categories,
   };

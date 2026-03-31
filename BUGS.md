@@ -58,19 +58,19 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [ ] FEATURE: after entitlement check, hand off a short-lived signed URL (instead of direct origin file URL) for digital downloads and large media files.
 [x] UI BUG: Bucket / sökväg: sofiacerne / /sofiacerne, actually bucket and path / sökväg is the same in this context so do not list the bucket name twice (and that destroys the copy too which should just be /sofiacerne)
 [ ] BUG: /api/site-style returns 500
-[ ] admin BUG: Menu does not take you the destination but a ctrl-shift-reload does
-[ ] admin BUG /products: not all products get in to the list even though I can edit access settings after I just created a digital download product from the biggest .mp4 in R2. In this case no slug, name etc was presented should be dl- prefixed in this case.
-[ ] /shop: contains no products even though there are products and I just created a digital download product *Mandala.mp4.
+[x] admin BUG: Menu does not take you the destination but a ctrl-shift-reload does
+[x] admin BUG /products: not all products get in to the list even though I can edit access settings after I just created a digital download product from the biggest .mp4 in R2. In this case no slug, name etc was presented should be dl- prefixed in this case.
+[x] /shop: contains no products even though there are products and I just created a digital download product *Mandala.mp4.
 [ ] avatar profile ui: first the avatar image and to the right of that the canonical name or hex if there is no canonical name, both are linked to the /profile/{avatar_hex}. Visibility does not need to show. typeface is Inter and the name is 16px whereas the hex is 14px, whatever the name or hex, there is a copy icon button just before them to copy the hex (even though there might be a visible canonical name only). The Bio have a headline "BIO: " in bold uppercase an after that the actual bio follows in 14px. The boxes are the lighter purple in background and the yellow as text color. The boxes have 1px solid black borders. "This is your avatar profile." if it is really me show (me) next to the name, instead of that text. The /me should follow the same style and include an inventory of purchased or otherwise access to products in a list at the bottom.
 [ ] /inventory: "Inventarie" all menu entries should be uppercase. This should live in the head icon menu (uppercase also login, logout, profile).
-[ ] admin / products: Kursavgift / fee -- better to name it price / pris as they are not always courses. Kursåtkomst, course access, likewise, they are not always courses, thus Åtkomst / Access.
+[x] admin / products: Kursavgift / fee -- better to name it price / pris as they are not always courses. Kursåtkomst, course access, likewise, they are not always courses, thus Åtkomst / Access.
 [ ] admin "Aktiv typografiförhandsvisning" is not responsive for typefaces and the header in the light theme is cream instead of black. The primary button is not in the primary color until I change the primary color, but the secondary is in the secondary from start. Header colors do not change in the preview when I change them. Pills, Märke texts are not vertically centered. Link style hover and never are swapped and it is the whole preview box that is underlined all of a sudden.
 [ ] admin info environment: Analytics -- "Not configured — set CF_API_TOKEN (or CLOUDFLARE_API_TOKEN) and CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID" this is wrong message, it should be configured, could be zone mismatch also.
 [ ] admin info environment: File uploads S3 / Spaces -- should be R2 when it is R2! Or set it to R2 / S3 / Spaces / MinIO.
 [ ] admin info Availability: typeset this section as the others on the same screen.
 [ ] CF_ZONE_ID, set it such that ragbaz.xyz and its subdomains get the info.
-[ ] admin info storage "Lokal fil" is obsolete, remove it
+[x] admin info storage "Lokal fil" is obsolete, remove it
 [ ] admin build time: put it in the menu instead, at the bottom.
-[ ] admin ui products bug: white-on-white for selected product, big nono, should be slightly lighter blue background.
-[ ] admin ui products bug: Visa bara relationer should be "Visa bara relaterade" as in related, not relations.
-[ ] admin ui product from asset bug: https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev/SHEWHOLEADSYOURINNERDOMINATRIX.mp4 is not properly created as a product even if it says so when pushing the Create Product button.
+[x] admin ui products bug: white-on-white for selected product, big nono, should be slightly lighter blue background.
+[x] admin ui products bug: Visa bara relationer should be "Visa bara relaterade" as in related, not relations.
+[x] admin ui product from asset bug: https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev/SHEWHOLEADSYOURINNERDOMINATRIX.mp4 is not properly created as a product even if it says so when pushing the Create Product button.

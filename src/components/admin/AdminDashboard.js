@@ -945,6 +945,15 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window === "undefined") return "welcome";
+    // Check for a pending tab set by header cross-page navigation (sessionStorage)
+    try {
+      const pending = sessionStorage.getItem("admin:pendingTab");
+      if (pending) {
+        sessionStorage.removeItem("admin:pendingTab");
+        const normalizedPending = normalizeAdminTab(pending);
+        if (normalizedPending) return normalizedPending;
+      }
+    } catch {}
     return parseTabFromHash(window.location.hash) || "welcome";
   });
   const activeTabRef = useRef(activeTab);
@@ -2673,6 +2682,7 @@ export default function AdminDashboard() {
             uploadBackend={uploadBackend}
             uploadInfo={uploadInfo}
             uploadInfoDetails={uploadInfoDetails}
+            onProductCreated={() => setLoaded((s) => ({ ...s, products: false }))}
           />
         </Suspense>
       )}

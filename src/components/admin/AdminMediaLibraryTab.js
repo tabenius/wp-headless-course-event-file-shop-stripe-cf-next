@@ -136,6 +136,7 @@ export default function AdminMediaLibraryTab({
   uploadBackend = "wordpress",
   uploadInfo = null,
   uploadInfoDetails = null,
+  onProductCreated = null,
 }) {
   const [items, setItems] = useState([]);
   const [sources, setSources] = useState(null);
@@ -1029,6 +1030,8 @@ export default function AdminMediaLibraryTab({
           });
           return next;
         });
+        // Invalidate products cache so Products tab re-fetches on next visit
+        if (onProductCreated) onProductCreated();
       }
       window.dispatchEvent(
         new CustomEvent("toast", {

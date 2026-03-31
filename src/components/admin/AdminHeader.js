@@ -496,6 +496,7 @@ export default function AdminHeader({ logoUrl }) {
     if (!safeTab) return;
     const nextHash = hashForTabRoute(tab) || `#/${safeTab}`;
     if (pathname !== "/admin") {
+      try { sessionStorage.setItem("admin:pendingTab", safeTab); } catch {}
       router.push(`/admin${nextHash}`);
       setMenuOpen(false);
       return;
