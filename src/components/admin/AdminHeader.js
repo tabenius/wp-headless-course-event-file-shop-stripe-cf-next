@@ -14,6 +14,43 @@ import RagbazLogo from "./ragbaz-logo";
 
 const CHAT_BETA_STORAGE_KEY = "ragbaz_chat_beta_enabled";
 
+function formatBuildTimestamp() {
+  const raw = process.env.NEXT_PUBLIC_BUILD_TIME;
+  if (!raw) return null;
+  try {
+    const d = new Date(raw);
+    if (!Number.isFinite(d.getTime())) return null;
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${yy}${mm}${dd} ${hh}:${min}`;
+  } catch {
+    return null;
+  }
+}
+
+function BuildTimestamp() {
+  const stamp = formatBuildTimestamp();
+  if (!stamp) return null;
+  return (
+    <span
+      className="whitespace-nowrap tabular-nums"
+      style={{
+        marginLeft: "0.75rem",
+        color: "var(--admin-brand-subtitle)",
+        fontSize: "8.5px",
+        opacity: 0.6,
+        letterSpacing: "0.04em",
+      }}
+      title={`Build: ${process.env.NEXT_PUBLIC_BUILD_TIME || ""}`}
+    >
+      {stamp}
+    </span>
+  );
+}
+
 const ADMIN_TAB_SET = new Set([
   "welcome",
   "sales",
@@ -537,6 +574,7 @@ export default function AdminHeader({ logoUrl }) {
               >
                 ARTICULATE STOREFRONT
               </span>
+              <BuildTimestamp />
             </Link>
           </div>
 
