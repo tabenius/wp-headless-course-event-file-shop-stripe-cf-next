@@ -612,7 +612,7 @@ function AccessTab({
   wpEvents,
   products,
   otherCourseUris,
-  selectedCourse,
+  selectedContent,
   handleSelection,
   setSelectedCourse,
   courses,
@@ -645,7 +645,7 @@ function AccessTab({
   userSearch,
   setUserSearch,
   users,
-  selectedCourseActive,
+  selectedContentActive,
   setSelectedCourseActive,
   allowedUsers,
   filteredUsers,
@@ -810,7 +810,7 @@ function AccessTab({
   }
 
   const selectedWpItem = isWpSelection
-    ? allWpContent.find((item) => item.uri === selectedCourse)
+    ? allWpContent.find((item) => item.uri === selectedContent)
     : null;
   const selectedShopCategories =
     isShopSelection && selectedShopProduct
@@ -905,7 +905,7 @@ function AccessTab({
     const timers = delays.map((delay) =>
       window.setTimeout(() => {
         if (didInitialListFocusRef.current) return;
-        focusProductList(selectedCourse);
+        focusProductList(selectedContent);
 
         const container = listContainerRef.current;
         const active = document.activeElement;
@@ -920,13 +920,13 @@ function AccessTab({
     );
 
     return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [focusProductList, selectedCourse]);
+  }, [focusProductList, selectedContent]);
 
   useEffect(() => {
     function handleEscapeToCloseEditor(event) {
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
-      if (!showDetail || !selectedCourse) return;
+      if (!showDetail || !selectedContent) return;
       if (
         typeof document !== "undefined" &&
         document.querySelector("[data-admin-modal='true']")
@@ -934,14 +934,14 @@ function AccessTab({
         return;
       }
       event.preventDefault();
-      const closedUri = selectedCourse;
+      const closedUri = selectedContent;
       setSelectedCourse("");
       focusProductList(closedUri);
     }
 
     window.addEventListener("keydown", handleEscapeToCloseEditor);
     return () => window.removeEventListener("keydown", handleEscapeToCloseEditor);
-  }, [focusProductList, selectedCourse, setSelectedCourse, showDetail]);
+  }, [focusProductList, selectedContent, setSelectedCourse, showDetail]);
 
   const handleListKeyDown = useCallback(
     (event) => {
@@ -960,9 +960,9 @@ function AccessTab({
         (button) => button.dataset.productUri === activeUri,
       );
 
-      if (currentIndex < 0 && selectedCourse) {
+      if (currentIndex < 0 && selectedContent) {
         currentIndex = buttons.findIndex(
-          (button) => button.dataset.productUri === selectedCourse,
+          (button) => button.dataset.productUri === selectedContent,
         );
       }
 
@@ -985,7 +985,7 @@ function AccessTab({
         nextButton.scrollIntoView({ block: "nearest" });
       });
     },
-    [handleSelection, selectedCourse],
+    [handleSelection, selectedContent],
   );
 
   function openAssetPicker(index) {
@@ -1215,7 +1215,7 @@ function AccessTab({
               );
 
             return sorted.map((item) => {
-              const isActive = selectedCourse === item.uri;
+              const isActive = selectedContent === item.uri;
               const configured = isConfigured(item.uri);
               const categoriesPreview = extractCategoryNames(item.categories)
                 .slice(0, 2)
@@ -1319,7 +1319,7 @@ function AccessTab({
           >
             + Enter URI manually
           </button>
-          {selectedCourse === "__custom__" && (
+          {selectedContent === "__custom__" && (
             <div className="mt-1 flex gap-1.5">
               <input
                 type="text"
@@ -1354,7 +1354,7 @@ function AccessTab({
             {isWpSelection &&
               (() => {
                 const wpItem = allWpContent.find(
-                  (item) => item.uri === selectedCourse,
+                  (item) => item.uri === selectedContent,
                 );
                 if (!wpItem) return null;
                 const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
@@ -1390,7 +1390,7 @@ function AccessTab({
                           const upd = (setter) =>
                             setter((prev) =>
                               prev.map((x) =>
-                                x.uri === selectedCourse
+                                x.uri === selectedContent
                                   ? {
                                       ...x,
                                       featuredImage: {
@@ -1408,7 +1408,7 @@ function AccessTab({
                       />
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <h3 className="admin-product-title text-base font-bold break-words">
-                          {wpItem?.title || wpItem?.name || selectedCourse}
+                          {wpItem?.title || wpItem?.name || selectedContent}
                         </h3>
                         <div className="flex flex-wrap gap-1.5 text-xs">
                           <span
@@ -1421,14 +1421,14 @@ function AccessTab({
                               WP: {wpPrice}
                             </span>
                           )}
-                          {(courses[selectedCourse] || wpParsedCents > 0) && (
+                          {(courses[selectedContent] || wpParsedCents > 0) && (
                             <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
                               {t("admin.configuredBadge")}
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-gray-400 truncate">
-                          {selectedCourse}
+                          {selectedContent}
                         </p>
                         {wpCategories.length > 0 && (
                           <p className="text-xs text-gray-500 truncate">
@@ -1440,7 +1440,7 @@ function AccessTab({
 
                     {/* "Not buyable" warning */}
                     {(() => {
-                      const cfg = courses[selectedCourse];
+                      const cfg = courses[selectedContent];
                       const hasPriceCents =
                         cfg &&
                         typeof cfg.priceCents === "number" &&
@@ -1849,7 +1849,7 @@ function AccessTab({
               <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                 <input
                   type="checkbox"
-                  checked={selectedCourseActive !== false}
+                  checked={selectedContentActive !== false}
                   onChange={(e) => setSelectedCourseActive(e.target.checked)}
                   className="accent-slate-600"
                 />
@@ -2118,7 +2118,7 @@ export default function AdminProductsTab(props) {
     courses,
     otherCourseUris,
     allWpContent,
-    selectedCourse,
+    selectedContent,
     setSelectedCourse,
     handleSelection,
     isWpSelection,
@@ -2150,7 +2150,7 @@ export default function AdminProductsTab(props) {
     userSearch,
     setUserSearch,
     users,
-    selectedCourseActive,
+    selectedContentActive,
     setSelectedCourseActive,
     allowedUsers,
     filteredUsers,
@@ -2189,7 +2189,7 @@ export default function AdminProductsTab(props) {
             wpEvents={wpEvents}
             products={products}
             otherCourseUris={otherCourseUris}
-            selectedCourse={selectedCourse}
+            selectedContent={selectedContent}
             handleSelection={handleSelection}
             setSelectedCourse={setSelectedCourse}
             courses={courses}
@@ -2222,7 +2222,7 @@ export default function AdminProductsTab(props) {
             userSearch={userSearch}
             setUserSearch={setUserSearch}
             users={users}
-            selectedCourseActive={selectedCourseActive}
+            selectedContentActive={selectedContentActive}
             setSelectedCourseActive={setSelectedCourseActive}
             allowedUsers={allowedUsers}
             filteredUsers={filteredUsers}

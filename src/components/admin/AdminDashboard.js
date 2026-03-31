@@ -923,8 +923,8 @@ export default function AdminDashboard() {
   const [wcProducts, setWcProducts] = useState([]);
   const [wpEvents, setWpEvents] = useState([]);
   const [storage, setStorage] = useState(null);
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [selectedCourseActive, setSelectedCourseActive] = useState(true);
+  const [selectedContent, setSelectedCourse] = useState("");
+  const [selectedContentActive, setSelectedCourseActive] = useState(true);
   const [price, setPrice] = useState("0.00");
   const [currency, setCurrency] = useState("SEK");
   const [vatPercent, setVatPercent] = useState("");
@@ -1306,23 +1306,23 @@ export default function AdminDashboard() {
   }, []);
 
   // Derived values for shop product selection
-  const isShopSelection = selectedCourse.startsWith("__shop_");
+  const isShopSelection = selectedContent.startsWith("__shop_");
   const shopIndex = isShopSelection
-    ? Number.parseInt(selectedCourse.replace("__shop_", ""), 10)
+    ? Number.parseInt(selectedContent.replace("__shop_", ""), 10)
     : -1;
   const selectedShopProduct =
     isShopSelection && shopIndex >= 0 && shopIndex < products.length
       ? products[shopIndex]
       : null;
   const isWpSelection =
-    selectedCourse && !selectedCourse.startsWith("__") && selectedCourse !== "";
+    selectedContent && !selectedContent.startsWith("__") && selectedContent !== "";
 
   // The URI used for access config (empty if not applicable)
   const accessUri = useMemo(() => {
     if (
-      !selectedCourse ||
-      selectedCourse === "__custom__" ||
-      selectedCourse === "__new__"
+      !selectedContent ||
+      selectedContent === "__custom__" ||
+      selectedContent === "__new__"
     )
       return "";
     if (isShopSelection) {
@@ -1330,8 +1330,8 @@ export default function AdminDashboard() {
         ? selectedShopProduct.contentUri
         : "";
     }
-    return selectedCourse;
-  }, [selectedCourse, isShopSelection, selectedShopProduct]);
+    return selectedContent;
+  }, [selectedContent, isShopSelection, selectedShopProduct]);
 
   const loadCourseAccess = useCallback(async () => {
     if (loaded.contentAccess) return;
@@ -2014,7 +2014,7 @@ export default function AdminDashboard() {
 
   // Load price + access when selection changes
   useEffect(() => {
-    if (!selectedCourse || selectedCourse === "__new__") return;
+    if (!selectedContent || selectedContent === "__new__") return;
 
     // Shop product: load price from product data
     if (isShopSelection && selectedShopProduct) {
@@ -2046,7 +2046,7 @@ export default function AdminDashboard() {
     }
 
     // WP item or manual URI
-    const config = courses[selectedCourse];
+    const config = courses[selectedContent];
     if (config) {
       setPrice(toCurrencyUnits(config.priceCents ?? 0));
       setCurrency((config.currency || "SEK").toUpperCase());
@@ -2058,7 +2058,7 @@ export default function AdminDashboard() {
       return;
     }
     // Auto-fill price from WordPress content
-    const match = allWpContent.find((item) => item.uri === selectedCourse);
+    const match = allWpContent.find((item) => item.uri === selectedContent);
     const rawPrice =
       match?.price || match?.priceRendered || match?.regularPrice || "";
     const wpPriceCents = parsePriceCents(rawPrice);
@@ -2068,7 +2068,7 @@ export default function AdminDashboard() {
     setVatPercent("");
     setAllowedUsers([]);
   }, [
-    selectedCourse,
+    selectedContent,
     courses,
     allWpContent,
     isShopSelection,
@@ -2221,11 +2221,11 @@ export default function AdminDashboard() {
 
   // Whether to show the detail panel
   const showDetail =
-    (isWpSelection || isShopSelection) && selectedCourse !== "__custom__";
+    (isWpSelection || isShopSelection) && selectedContent !== "__custom__";
 
   // Scroll to edit section when a product/content is selected
   useEffect(() => {
-    if (!selectedCourse) return;
+    if (!selectedContent) return;
     if (!showDetail) return;
     const id = setTimeout(() => {
       editFormRef.current?.scrollIntoView({
@@ -2234,7 +2234,7 @@ export default function AdminDashboard() {
       });
     }, 50);
     return () => clearTimeout(id);
-  }, [selectedCourse, showDetail]);
+  }, [selectedContent, showDetail]);
 
   // Unified save: handles both shop products and content access
   async function saveUnified() {
@@ -2412,7 +2412,7 @@ export default function AdminDashboard() {
 
       // Save access config if there's a content URI (WordPress content-access system)
       if (uri) {
-        const nextActive = isShopSelection ? undefined : selectedCourseActive;
+        const nextActive = isShopSelection ? undefined : selectedContentActive;
         const currentConfig = courses[uri];
         const hasManualUsers =
           Array.isArray(allowedUsers) && allowedUsers.length > 0;
@@ -2746,7 +2746,7 @@ export default function AdminDashboard() {
             courses={courses}
             otherCourseUris={otherCourseUris}
             allWpContent={allWpContent}
-            selectedCourse={selectedCourse}
+            selectedContent={selectedContent}
             setSelectedCourse={setSelectedCourse}
             handleSelection={handleSelection}
             isWpSelection={isWpSelection}
@@ -2778,7 +2778,7 @@ export default function AdminDashboard() {
             userSearch={userSearch}
             setUserSearch={setUserSearch}
             users={users}
-            selectedCourseActive={selectedCourseActive}
+            selectedContentActive={selectedContentActive}
             setSelectedCourseActive={setSelectedCourseActive}
             allowedUsers={allowedUsers}
             filteredUsers={filteredUsers}
