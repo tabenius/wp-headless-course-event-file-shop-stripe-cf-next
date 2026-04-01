@@ -40,6 +40,7 @@ const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
 const AdminInfoHubTab = lazy(() => import("./AdminInfoHubTab"));
 const AdminStyleTab = lazy(() => import("./AdminStyleTab"));
 const ChatPanel = lazy(() => import("./ChatPanel"));
+const AdminVatTab = lazy(() => import("./AdminVatTab"));
 
 const ADMIN_TABS_BASE = [
   "sales",
@@ -1057,6 +1058,7 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsMode, setAnalyticsMode] = useState("none"); // "zone" | "workers" | "none"
   const [analyticsConfigured, setAnalyticsConfigured] = useState(false);
+  const [analyticsDiagnostics, setAnalyticsDiagnostics] = useState(null);
   const [commits, setCommits] = useState(null);
   const [commitsError, setCommitsError] = useState("");
   const [commitsExpanded, setCommitsExpanded] = useState(false);
@@ -1403,6 +1405,7 @@ export default function AdminDashboard() {
         setAnalytics(json.analytics);
         setAnalyticsMode(json.mode || "none");
         setAnalyticsConfigured(json.configured);
+        setAnalyticsDiagnostics(json.diagnostics || null);
       }
       setLoaded((s) => ({ ...s, analytics: true }));
     } catch (err) {
@@ -2927,6 +2930,7 @@ export default function AdminDashboard() {
             analytics={analytics}
             analyticsMode={analyticsMode}
             analyticsConfigured={analyticsConfigured}
+            analyticsDiagnostics={analyticsDiagnostics}
             healthChecks={healthChecks}
             healthLoading={healthLoading}
             webhookUrl={webhookUrl}

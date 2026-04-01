@@ -13,6 +13,7 @@ export default function AdminSandboxTab({
   resendConfigured,
   analyticsMode,
   analyticsConfigured,
+  analyticsDiagnostics,
   purging,
   deploying,
   lastDeployAt,
@@ -141,9 +142,21 @@ export default function AdminSandboxTab({
                     &mdash; verify token scopes and CF GraphQL access
                   </span>
                 ) : (
-                  <span>
-                    Not configured &mdash; set CF_API_TOKEN (or
-                    CLOUDFLARE_API_TOKEN) and CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID
+                  <span className="text-amber-700">
+                    {analyticsDiagnostics ? (
+                      <>
+                        Not configured &mdash;{" "}
+                        {!analyticsDiagnostics.tokenPresent
+                          ? "missing CF_API_TOKEN (or CLOUDFLARE_API_TOKEN)"
+                          : !analyticsDiagnostics.zonePresent && !analyticsDiagnostics.accountPresent
+                            ? "token present but missing CF_ZONE_ID and CLOUDFLARE_ACCOUNT_ID"
+                            : !analyticsDiagnostics.zonePresent
+                              ? "token and account present but missing CF_ZONE_ID for full analytics"
+                              : "configuration present but analytics query returned no data"}
+                      </>
+                    ) : (
+                      <>Analytics status loading&hellip;</>
+                    )}
                   </span>
                 )}
               </div>
