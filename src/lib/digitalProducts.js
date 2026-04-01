@@ -5,6 +5,64 @@ import {
 } from "@/lib/cloudflareKv";
 import { deriveDigitalProductCategories } from "@/lib/contentCategories";
 import { slugify } from "@/lib/slugify";
+import { getD1Database } from "@/lib/d1Bindings";
+
+async function tryGetD1() {
+  try {
+    return await getD1Database();
+  } catch {
+    return null;
+  }
+}
+
+function productRowToObject(row) {
+  if (!row) return null;
+  let categories = {};
+  try { categories = JSON.parse(row.categories || "{}"); } catch { /* ignore */ }
+  return {
+    id: row.slug,
+    slug: row.slug,
+    name: row.name,
+    title: row.title || row.name,
+    description: row.description,
+    imageUrl: row.image_url,
+    type: row.type,
+    productMode: row.product_mode,
+    priceCents: row.price_cents,
+    free: row.free === 1,
+    currency: row.currency,
+    fileUrl: row.file_url,
+    contentUri: row.content_uri,
+    mimeType: row.mime_type,
+    assetId: row.asset_id,
+    vatPercent: row.vat_percent,
+    active: row.active === 1,
+    updatedAt: row.updated_at,
+    ...categories,
+  };
+}
+
+function productObjectToRow(p) {
+  const { id, slug, name, title, description, imageUrl, type, productMode,
+    priceCents, free, currency, fileUrl, contentUri, mimeType, assetId,
+    vatPercent, active, updatedAt, ...rest } = p;
+  const cats = {};
+  for (const [k, v] of Object.entries(rest)) {
+    if (v !== undefined) cats[k] = v;
+  }
+  return {
+    slug, name, title: title || name, description: description || "",
+    image_url: imageUrl || "", type: type || "digital_file",
+    product_mode: productMode || "digital_file",
+    price_cents: priceCents || 0, currency: currency || "SEK",
+    free: free ? 1 : 0, active: active !== false ? 1 : 0,
+    file_url: fileUrl || "", content_uri: contentUri || "",
+    mime_type: mimeType || "", asset_id: assetId || "",
+    vat_percent: vatPercent ?? null,
+    categories: JSON.stringify(cats),
+    updated_at: updatedAt || new Date().toISOString(),
+  };
+}
 
 export const PRODUCT_EXAMPLE_FILE = "config/digital-products.example.json";
 
@@ -219,6 +277,16 @@ async function writeProducts(products) {
 
 export async function listDigitalProducts({ includeInactive = false } = {}) {
   try {
+    const db = await tryGetD1();
+    if (db) {
+      const query = includeInactive
+        ? "SELECT * FROM products ORDER BY updated_at DESC"
+        : "SELECT * FROM products WHERE active = 1 ORDER BY updated_at DESC";
+      const { results } = await db.prepare(query).all();
+      return (results || []).map(productRowToObject).filter(Boolean);
+    }
+
+    // existing KV path below (unchanged)
     const rawProducts = await readProducts();
     const products = sanitizeProducts(rawProducts);
     return includeInactive
@@ -243,6 +311,19 @@ export async function getDigitalProductBySlug(slug) {
   const safeSlug = slugify(decodedSlug);
   const safeAssetId = normalizeAssetId(decodedSlug);
   if (!safeSlug && !safeAssetId) return null;
+
+  const db = await tryGetD1();
+  if (db) {
+    let row = null;
+    if (safeSlug) {
+      row = await db.prepare("SELECT * FROM products WHERE slug = ? LIMIT 1").bind(safeSlug).first();
+    }
+    if (!row && safeAssetId) {
+      row = await db.prepare("SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1").bind(safeAssetId).first();
+    }
+    return row ? productRowToObject(row) : null;
+  }
+
   const products = await listDigitalProducts({ includeInactive: true });
   return (
     products.find(
@@ -260,6 +341,16 @@ export async function getDigitalProductById(productId) {
 export async function getDigitalProductByAssetId(assetId) {
   const safeAssetId = normalizeAssetId(assetId);
   if (!safeAssetId) return null;
+
+  const db = await tryGetD1();
+  if (db) {
+    const row = await db
+      .prepare("SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1")
+      .bind(safeAssetId)
+      .first();
+    return row ? productRowToObject(row) : null;
+  }
+
   const products = await listDigitalProducts({ includeInactive: true });
   return (
     products.find(
@@ -275,6 +366,30 @@ export function buildProductSlug(name) {
 
 export async function saveDigitalProducts(products) {
   const safeProducts = sanitizeProducts(products);
+
+  const db = await tryGetD1();
+  if (db) {
+    for (const p of safeProducts) {
+      const r = productObjectToRow(p);
+      await db
+        .prepare(
+          `INSERT INTO products (slug, name, title, description, image_url, type, product_mode, price_cents, currency, free, active, file_url, content_uri, mime_type, asset_id, vat_percent, categories, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(slug) DO UPDATE SET
+             name=excluded.name, title=excluded.title, description=excluded.description,
+             image_url=excluded.image_url, type=excluded.type, product_mode=excluded.product_mode,
+             price_cents=excluded.price_cents, currency=excluded.currency, free=excluded.free,
+             active=excluded.active, file_url=excluded.file_url, content_uri=excluded.content_uri,
+             mime_type=excluded.mime_type, asset_id=excluded.asset_id, vat_percent=excluded.vat_percent,
+             categories=excluded.categories, updated_at=excluded.updated_at`,
+        )
+        .bind(r.slug, r.name, r.title, r.description, r.image_url, r.type, r.product_mode, r.price_cents, r.currency, r.free, r.active, r.file_url, r.content_uri, r.mime_type, r.asset_id, r.vat_percent, r.categories, r.updated_at)
+        .run();
+    }
+    return safeProducts;
+  }
+
+  // existing KV path below (unchanged)
   await writeProducts(safeProducts);
   return safeProducts;
 }
