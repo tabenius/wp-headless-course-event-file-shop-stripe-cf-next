@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminFetch } from "@/lib/adminFetch";
 
 const API = "/api/admin/page-performance";
@@ -86,6 +86,374 @@ function formatRelayReason(reason, status) {
 function shortSession(sid) {
   if (!sid) return "—";
   return sid.slice(0, 8);
+}
+
+const CHART_COLORS = {
+  ttfb: "#6366f1",       // indigo
+  domComplete: "#0ea5e9", // sky
+  lcp: "#f59e0b",        // amber
+  fcp: "#10b981",        // emerald
+  inp: "#ef4444",        // red
+  cls: "#a855f7",        // purple
+};
+
+const CHART_W = 720;
+const CHART_H = 260;
+const PAD = { top: 16, right: 16, bottom: 32, left: 52 };
+
+function VitalsChart({ log }) {
+  const svgRef = useRef(null);
+  const [tooltip, setTooltip] = useState(null);
+
+  // Chronological order, only entries with a timestamp
+  const points = useMemo(() => {
+    const sorted = log.filter((d) => d.ts).sort((a, b) => a.ts - b.ts);
+    return sorted;
+  }, [log]);
+
+  // CLS lives on a different scale — chart ms-based metrics on left axis, skip CLS from lines
+  const msMetrics = METRICS.filter((m) => m.key !== "cls");
+
+  // Detect special markers: login points and buy-page visits
+  const markers = useMemo(() => {
+    const loginIndices = new Set();
+    const buyIndices = new Set();
+
+    // Group points by session and find first authenticated hit per session
+    const sessionFirstAuth = {};
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      if (p.userEmail && p.sessionId && !(p.sessionId in sessionFirstAuth)) {
+        sessionFirstAuth[p.sessionId] = i;
+      }
+    }
+    for (const idx of Object.values(sessionFirstAuth)) {
+      loginIndices.add(idx);
+    }
+
+    // Pages with buy buttons: /shop, /events, /courses and everything below them
+    const buyPatterns = [/^\/shop(\/|$)/, /^\/events(\/|$)/, /^\/courses(\/|$)/, /^\/butik(\/|$)/, /^\/checkout(\/|$)/];
+    for (let i = 0; i < points.length; i++) {
+      const url = (points[i].url || "").split("?")[0];
+      if (buyPatterns.some((rx) => rx.test(url))) {
+        buyIndices.add(i);
+      }
+    }
+
+    return { loginIndices, buyIndices };
+  }, [points]);
+
+  const { xScale, yScale, ticks } = useMemo(() => {
+    if (points.length < 2) return { xScale: null, yScale: null, ticks: [] };
+
+    const times = points.map((d) => d.ts);
+    const tMin = Math.min(...times);
+    const tMax = Math.max(...times);
+    const tRange = tMax - tMin || 1;
+
+    // Collect all ms-metric values for y range
+    let allVals = [];
+    for (const m of msMetrics) {
+      for (const p of points) {
+        const v = p[m.key];
+        if (v != null && !isNaN(v)) allVals.push(v);
+      }
+    }
+    if (!allVals.length) allVals = [0, 1000];
+    const vMin = 0;
+    const vMax = Math.max(...allVals) * 1.1 || 1000;
+
+    const plotW = CHART_W - PAD.left - PAD.right;
+    const plotH = CHART_H - PAD.top - PAD.bottom;
+
+    const xs = (t) => PAD.left + ((t - tMin) / tRange) * plotW;
+    const ys = (v) => PAD.top + plotH - ((v - vMin) / (vMax - vMin)) * plotH;
+
+    // Y-axis ticks (4-5 nice round values)
+    const step = Math.pow(10, Math.floor(Math.log10(vMax / 4)));
+    const niceStep = vMax / 4 < step * 2 ? step : step * 2;
+    const yTicks = [];
+    for (let v = 0; v <= vMax; v += niceStep) {
+      yTicks.push(v);
+    }
+
+    return { xScale: xs, yScale: ys, ticks: yTicks };
+  }, [points, msMetrics]);
+
+  if (points.length < 2) {
+    return (
+      <div className="text-xs text-gray-400 py-2">
+        Need at least 2 data points for chart.
+      </div>
+    );
+  }
+
+  const plotW = CHART_W - PAD.left - PAD.right;
+  const plotH = CHART_H - PAD.top - PAD.bottom;
+
+  function buildLine(metricKey) {
+    const segs = [];
+    for (const p of points) {
+      const v = p[metricKey];
+      if (v == null || isNaN(v)) continue;
+      segs.push({ x: xScale(p.ts), y: yScale(v) });
+    }
+    if (segs.length < 2) return null;
+    return segs.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(" ");
+  }
+
+  function handleMouseMove(e) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const scaleX = CHART_W / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+
+    // Find closest point by x
+    let closest = null;
+    let closestDist = Infinity;
+    for (const p of points) {
+      const px = xScale(p.ts);
+      const dist = Math.abs(px - mx);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = p;
+      }
+    }
+    if (closest && closestDist < plotW / points.length + 20) {
+      const px = xScale(closest.ts);
+      setTooltip({ point: closest, x: px, y: PAD.top });
+    } else {
+      setTooltip(null);
+    }
+  }
+
+  // Format x-axis date labels
+  const timeRange = points[points.length - 1].ts - points[0].ts;
+  const showDate = timeRange > 24 * 60 * 60 * 1000;
+
+  function formatTick(ts) {
+    const d = new Date(ts);
+    if (showDate) return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
+  // X-axis ticks (5-6 evenly spaced)
+  const xTicks = [];
+  const xStep = (points[points.length - 1].ts - points[0].ts) / 5;
+  for (let i = 0; i <= 5; i++) {
+    xTicks.push(points[0].ts + xStep * i);
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white px-3 py-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          Web vitals over time
+        </span>
+        <div className="flex flex-wrap gap-3">
+          {msMetrics.map((m) => (
+            <span key={m.key} className="flex items-center gap-1 text-[11px] text-gray-600">
+              <span
+                className="inline-block w-3 h-0.5 rounded"
+                style={{ backgroundColor: CHART_COLORS[m.key] }}
+              />
+              {m.label}
+            </span>
+          ))}
+          <span className="flex items-center gap-1 text-[11px] text-gray-600">
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-blue-500" />
+            Login
+          </span>
+          <span className="flex items-center gap-1 text-[11px] text-gray-600">
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-cyan-400" />
+            Buy page
+          </span>
+        </div>
+      </div>
+      <div className="relative overflow-x-auto">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+          className="w-full h-auto"
+          style={{ minWidth: 400 }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setTooltip(null)}
+        >
+          {/* Grid lines */}
+          {ticks.map((v) => (
+            <g key={`grid-${v}`}>
+              <line
+                x1={PAD.left}
+                y1={yScale(v)}
+                x2={CHART_W - PAD.right}
+                y2={yScale(v)}
+                stroke="#e5e7eb"
+                strokeWidth="0.5"
+              />
+              <text
+                x={PAD.left - 6}
+                y={yScale(v) + 3}
+                textAnchor="end"
+                className="text-[9px]"
+                fill="#9ca3af"
+              >
+                {v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`}
+              </text>
+            </g>
+          ))}
+
+          {/* X-axis labels */}
+          {xTicks.map((t, i) => (
+            <text
+              key={`xt-${i}`}
+              x={xScale(t)}
+              y={CHART_H - 4}
+              textAnchor="middle"
+              className="text-[9px]"
+              fill="#9ca3af"
+            >
+              {formatTick(t)}
+            </text>
+          ))}
+
+          {/* Metric lines */}
+          {msMetrics.map((m) => {
+            const d = buildLine(m.key);
+            if (!d) return null;
+            return (
+              <path
+                key={m.key}
+                d={d}
+                fill="none"
+                stroke={CHART_COLORS[m.key]}
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            );
+          })}
+
+          {/* Data point dots */}
+          {msMetrics.map((m) =>
+            points.map((p, i) => {
+              const v = p[m.key];
+              if (v == null || isNaN(v)) return null;
+              return (
+                <circle
+                  key={`${m.key}-${i}`}
+                  cx={xScale(p.ts)}
+                  cy={yScale(v)}
+                  r="2.5"
+                  fill={CHART_COLORS[m.key]}
+                  fillOpacity="0.6"
+                />
+              );
+            }),
+          )}
+
+          {/* Login marker rings (blue) */}
+          {points.map((p, i) => {
+            if (!markers.loginIndices.has(i)) return null;
+            const v = p.domComplete ?? p.ttfb;
+            if (v == null || isNaN(v)) return null;
+            return (
+              <circle
+                key={`login-${i}`}
+                cx={xScale(p.ts)}
+                cy={yScale(v)}
+                r="6"
+                fill="none"
+                stroke="#3b82f6"
+                strokeWidth="2"
+              />
+            );
+          })}
+
+          {/* Buy page marker rings (cyan) */}
+          {points.map((p, i) => {
+            if (!markers.buyIndices.has(i)) return null;
+            const v = p.domComplete ?? p.ttfb;
+            if (v == null || isNaN(v)) return null;
+            return (
+              <circle
+                key={`buy-${i}`}
+                cx={xScale(p.ts)}
+                cy={yScale(v)}
+                r="8"
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth="1.5"
+              />
+            );
+          })}
+
+          {/* Tooltip crosshair */}
+          {tooltip && (
+            <line
+              x1={tooltip.x}
+              y1={PAD.top}
+              x2={tooltip.x}
+              y2={CHART_H - PAD.bottom}
+              stroke="#6b7280"
+              strokeWidth="0.5"
+              strokeDasharray="3,3"
+            />
+          )}
+        </svg>
+
+        {/* HTML tooltip overlay */}
+        {tooltip && (
+          <div
+            className="absolute pointer-events-none bg-gray-900 text-white text-[11px] rounded-lg px-3 py-2 shadow-lg z-10 whitespace-nowrap"
+            style={{
+              left: `${(tooltip.x / CHART_W) * 100}%`,
+              top: 8,
+              transform: tooltip.x > CHART_W * 0.65 ? "translateX(-100%)" : "translateX(0)",
+            }}
+          >
+            <div className="font-semibold mb-1">
+              {new Date(tooltip.point.ts).toLocaleString()}
+            </div>
+            <div className="font-mono text-gray-300 mb-1 truncate max-w-[240px]">
+              {tooltip.point.url || "/"}
+            </div>
+            {METRICS.map((m) => {
+              const v = tooltip.point[m.key];
+              return (
+                <div key={m.key} className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full"
+                    style={{ backgroundColor: CHART_COLORS[m.key] || "#9ca3af" }}
+                  />
+                  <span className="text-gray-400">{m.label}:</span>
+                  <span className="font-medium">
+                    {v != null && !isNaN(v) ? formatMetricValue(v, m) : "—"}
+                  </span>
+                </div>
+              );
+            })}
+            {tooltip.point.userEmail && (
+              <div className="mt-1 pt-1 border-t border-gray-700 text-gray-300">
+                {tooltip.point.userEmail}
+              </div>
+            )}
+            {(() => {
+              const idx = points.indexOf(tooltip.point);
+              const isLogin = idx >= 0 && markers.loginIndices.has(idx);
+              const isBuy = idx >= 0 && markers.buyIndices.has(idx);
+              if (!isLogin && !isBuy) return null;
+              return (
+                <div className="mt-1 pt-1 border-t border-gray-700 flex gap-2">
+                  {isLogin && <span className="text-blue-400">&#9679; Login</span>}
+                  {isBuy && <span className="text-cyan-400">&#9679; Buy page</span>}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function PagePerformancePanel() {
@@ -227,6 +595,9 @@ export default function PagePerformancePanel() {
               </div>
             ))}
           </div>
+
+          {/* Time series chart */}
+          <VitalsChart log={log} />
 
           {/* Summary: min / avg / median / max per metric */}
           <div>
