@@ -13,6 +13,7 @@ import ImageGenerationPanel from "./ImageGenerationPanel";
 import UserAccessPanel from "./UserAccessPanel";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
+import AdminVatTab from "./AdminVatTab";
 import CyberduckBookmarkPanel from "./CyberduckBookmarkPanel";
 import { resolveSlugPrefix } from "@/lib/productRoutes";
 
@@ -173,6 +174,7 @@ function SafeProductImage({ src, alt = "", className, fallbackClassName }) {
 function InnerTabs({ active, onChange }) {
   const tabs = [
     { key: "access", label: t("admin.productsTabAll", "Products") },
+    { key: "vat", label: t("admin.navVat", "VAT") },
     { key: "settings", label: t("admin.visibleTypesTab", "Types") },
   ];
   return (
@@ -182,9 +184,9 @@ function InnerTabs({ active, onChange }) {
           key={key}
           type="button"
           onClick={() => onChange(key)}
-          className={`min-w-[8.5rem] flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+          className={`min-w-[8.5rem] flex-1 px-3 py-1.5 rounded text-sm font-bold transition-colors ${
             active === key
-              ? "bg-white text-slate-800 shadow-sm"
+              ? "bg-slate-700 text-white shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
@@ -1975,122 +1977,6 @@ function AccessTab({
               autoSaveTrigger={autoSaveTrigger}
             />
 
-            <div className="admin-vat-panel rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50 p-4 space-y-3">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="admin-product-title text-sm font-semibold text-slate-900">
-                    {t("admin.vatMapTitle")}
-                  </p>
-                  <p className="admin-soft-yellow text-xs text-slate-700/90 mt-1">
-                    {t("admin.vatMapHint")}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => updateShopVatByCategory(vatDraft)}
-                  disabled={shopSettingsSaving}
-                  className="px-3 py-1.5 rounded-md bg-slate-700 text-white text-xs font-medium hover:bg-slate-800 disabled:opacity-50"
-                >
-                  {shopSettingsSaving
-                    ? t("common.saving", "Saving…")
-                    : t("admin.vatMapSave")}
-                </button>
-              </div>
-              {selectedCategories.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedCategories.map((category) => {
-                    const slug = slugFromCategoryName(category);
-                    const mappedVat = slug ? vatDraft?.[slug] : undefined;
-                    return (
-                      <span
-                        key={`${category}-${slug}`}
-                        className="admin-vat-surface inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-800"
-                        title={slug ? `${category} (${slug})` : category}
-                      >
-                        <span className="font-medium">{category}</span>
-                        <span className="text-slate-500">
-                          {Number.isFinite(mappedVat)
-                            ? `${mappedVat}%`
-                            : t("admin.vatNotSet")}
-                        </span>
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <div className="grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 px-1">
-                  <span>{t("admin.categoryLabel")}</span>
-                  <span>{t("admin.vatPercent")}</span>
-                  <span>{t("admin.actionsLabel")}</span>
-                </div>
-                <div className="space-y-1 max-h-44 overflow-auto pr-1">
-                  {vatRows.length === 0 ? (
-                    <p className="text-xs text-gray-500 px-1 py-2">
-                      {t("admin.vatMapEmpty")}
-                    </p>
-                  ) : (
-                    vatRows.map((row) => (
-                      <div
-                        key={row.slug}
-                        className="admin-vat-surface grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 items-center rounded-lg border border-slate-100 bg-white px-2 py-1.5"
-                      >
-                        <span className="text-sm text-gray-700 truncate" title={row.slug}>
-                          {row.name}
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={vatDraft?.[row.slug] ?? ""}
-                          onChange={(e) =>
-                            setVatRateForSlug(row.slug, e.target.value)
-                          }
-                          className="w-full border rounded px-2 py-1 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeVatCategory(row.slug)}
-                          className="text-xs text-red-600 hover:underline"
-                          title={t("admin.vatRemoveCategory")}
-                        >
-                          {t("common.remove")}
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-[minmax(0,1fr)_90px_auto] gap-2">
-                <input
-                  type="text"
-                  value={vatCategoryDraft}
-                  onChange={(e) => setVatCategoryDraft(e.target.value)}
-                  placeholder={t("admin.vatNewCategoryPlaceholder")}
-                  className="border rounded px-3 py-2 text-sm"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={vatRateDraft}
-                  onChange={(e) => setVatRateDraft(e.target.value)}
-                  placeholder="25"
-                  className="border rounded px-3 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={addVatCategoryRow}
-                  className="px-3 py-2 rounded border border-slate-300 text-slate-700 text-sm hover:bg-slate-50"
-                >
-                  {t("common.add")}
-                </button>
-              </div>
-            </div>
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300 p-8">
@@ -2350,6 +2236,18 @@ export default function AdminProductsTab(props) {
             />
           </div>
         </>
+      )}
+
+      {innerTab === "vat" && (
+        <AdminVatTab
+          shopVatByCategory={shopVatByCategory}
+          updateShopVatByCategory={updateShopVatByCategory}
+          shopSettingsSaving={shopSettingsSaving}
+          wcProducts={wcProducts}
+          wpCourses={wpCourses}
+          wpEvents={wpEvents}
+          products={products}
+        />
       )}
 
       {innerTab === "settings" && (

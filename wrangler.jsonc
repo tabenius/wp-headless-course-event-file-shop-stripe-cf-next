@@ -27,7 +27,8 @@
     "S3_REGION": "auto",
     "S3_PUBLIC_URL": "https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev",
     "GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
-    "GITHUB_DEPLOY_WORKFLOW": "deploy.yml"
+    "GITHUB_DEPLOY_WORKFLOW": "deploy.yml",
+    "CF_ZONE_ID": "da8ddd68aabe75784a69da9a189d4673"
   },
   "ai": {
     "binding": "AI",

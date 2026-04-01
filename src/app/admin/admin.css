@@ -289,7 +289,9 @@ body:has(.admin-layout)::before {
   background: rgba(255, 255, 255, 0.08) !important;
 }
 .admin-header-drawer-item.is-active {
-  background: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.38) !important;
+  font-weight: 700 !important;
 }
 .admin-header-drawer-meta {
   color: var(--admin-header-text);
