@@ -228,6 +228,7 @@ export default function AdminStyleTab({
         focusRing: siteStyleTokens.focusRing || siteStyleTokens.primary || "#22c55e",
         invertedText: siteStyleTokens.background || "#ffffff",
         lightForeground: siteStyleTokens.foreground || "#111827",
+        linkColor: siteStyleTokens.secondary || "#d1d5db",
       },
     },
   ];
@@ -1191,8 +1192,7 @@ export default function AdminStyleTab({
                       className="rounded border p-2"
                       style={{
                         borderColor: previewTokens.muted,
-                        background:
-                          "color-mix(in srgb, var(--color-background) 92%, transparent)",
+                        background: previewTokens.background,
                       }}
                     >
                       <div
@@ -1251,7 +1251,7 @@ export default function AdminStyleTab({
                       className="text-sm"
                       style={{
                         fontFamily: "var(--font-body, system-ui, sans-serif)",
-                        color: previewTokens.primary,
+                        color: previewTokens.linkColor || previewTokens.primary,
                         textDecoration: previewLinkUnderline,
                       }}
                     >
