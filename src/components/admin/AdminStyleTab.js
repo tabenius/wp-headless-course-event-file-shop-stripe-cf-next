@@ -199,13 +199,6 @@ export default function AdminStyleTab({
   const typographyColor1 = typographyPalette[0] || siteStyleTokens.foreground || "#111827";
   const typographyColor2 = typographyPalette[1] || typographyColor1;
 
-  function resolveRoleColor(roleKey, fallback) {
-    const slot = fontRoles?.[roleKey]?.colorSlot;
-    if (slot === 2) return typographyColor2;
-    if (slot === 1) return typographyColor1;
-    return fallback || siteStyleTokens.foreground || "#111827";
-  }
-
   const previewLinkUnderline =
     linkStyle?.underlineDefault === "always" ? "underline" : "none";
   const previewSurfaces = [
@@ -1098,7 +1091,7 @@ export default function AdminStyleTab({
                       margin: 0,
                       fontFamily:
                         "var(--font-display, var(--font-heading, system-ui, sans-serif))",
-                      color: resolveRoleColor("fontDisplay", previewTokens.foreground),
+                      color: previewTokens.foreground,
                       fontSize: "clamp(1.35rem, 2.4vw, 1.9rem)",
                     }}
                   >
@@ -1110,7 +1103,7 @@ export default function AdminStyleTab({
                     style={{
                       margin: 0,
                       fontFamily: "var(--font-heading, system-ui, sans-serif)",
-                      color: resolveRoleColor("fontHeading", previewTokens.foreground),
+                      color: previewTokens.foreground,
                     }}
                   >
                     {t(
