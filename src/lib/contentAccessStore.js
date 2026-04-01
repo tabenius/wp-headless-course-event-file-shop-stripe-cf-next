@@ -3,6 +3,29 @@ import {
   readCloudflareKvJson,
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
+import { getD1Database } from "@/lib/d1Bindings";
+
+async function tryGetD1() {
+  try {
+    return await getD1Database();
+  } catch {
+    return null;
+  }
+}
+
+function accessRowToObject(row) {
+  if (!row) return null;
+  let allowedUsers = [];
+  try { allowedUsers = JSON.parse(row.allowed_users || "[]"); } catch { /* ignore */ }
+  return {
+    allowedUsers: Array.isArray(allowedUsers) ? allowedUsers : [],
+    priceCents: row.price_cents,
+    currency: row.currency,
+    vatPercent: row.vat_percent,
+    active: row.active === 1,
+    updatedAt: row.updated_at,
+  };
+}
 
 function canUseFs() {
   return (
@@ -168,6 +191,21 @@ async function writeToLocal(state) {
 }
 
 export async function getContentAccessState() {
+  const db = await tryGetD1();
+  if (db) {
+    try {
+      const { results } = await db.prepare("SELECT * FROM content_access").all();
+      const courses = {};
+      for (const row of results || []) {
+        courses[row.course_uri] = accessRowToObject(row);
+      }
+      return { courses };
+    } catch (error) {
+      console.error("D1 content access read failed, falling back:", error);
+    }
+  }
+
+  // existing KV/local path below (unchanged)
   if (shouldUseCloudflareBackend()) {
     try {
       const cloudflareState = await readFromCloudflare();
@@ -184,6 +222,34 @@ export async function getContentAccessState() {
 
 export async function saveContentAccessState(nextState) {
   const state = sanitizeState(nextState);
+
+  const db = await tryGetD1();
+  if (db) {
+    try {
+      for (const [uri, course] of Object.entries(state.courses)) {
+        await db
+          .prepare(
+            `INSERT INTO content_access (course_uri, allowed_users, price_cents, currency, vat_percent, active, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(course_uri) DO UPDATE SET
+               allowed_users=excluded.allowed_users, price_cents=excluded.price_cents,
+               currency=excluded.currency, vat_percent=excluded.vat_percent,
+               active=excluded.active, updated_at=excluded.updated_at`,
+          )
+          .bind(
+            uri, JSON.stringify(course.allowedUsers), course.priceCents,
+            course.currency, course.vatPercent ?? null, course.active ? 1 : 0,
+            course.updatedAt || new Date().toISOString(),
+          )
+          .run();
+      }
+      return state;
+    } catch (error) {
+      console.error("D1 content access write failed, falling back:", error);
+    }
+  }
+
+  // existing KV/local path below (unchanged)
   if (shouldUseCloudflareBackend()) {
     try {
       const wroteCloudflare = await writeToCloudflare(state);
@@ -261,6 +327,20 @@ export async function hasContentAccess(courseUri, email) {
   const uri = normalizeContentUri(courseUri);
   const normalizedEmail = normalizeEmail(email);
   if (!uri || !normalizedEmail) return false;
+
+  const db = await tryGetD1();
+  if (db) {
+    const row = await db
+      .prepare("SELECT allowed_users FROM content_access WHERE course_uri = ? AND active = 1")
+      .bind(uri)
+      .first();
+    if (!row) return false;
+    let users = [];
+    try { users = JSON.parse(row.allowed_users || "[]"); } catch { /* ignore */ }
+    return Array.isArray(users) && users.includes(normalizedEmail);
+  }
+
+  // existing KV/local path below (unchanged)
   const state = await getContentAccessState();
   const course = state.courses[uri];
   if (!course) return false;
