@@ -83,12 +83,18 @@ function formatRelayReason(reason, status) {
   return "Relay status unavailable.";
 }
 
+function shortSession(sid) {
+  if (!sid) return "—";
+  return sid.slice(0, 8);
+}
+
 export default function PagePerformancePanel() {
   const [loading, setLoading] = useState(true);
   const [log, setLog] = useState([]);
   const [relayStatus, setRelayStatus] = useState(null);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
+  const [selectedSession, setSelectedSession] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -267,6 +273,53 @@ export default function PagePerformancePanel() {
             </div>
           </div>
 
+          {/* Session breadcrumb drill-down */}
+          {selectedSession && (() => {
+            const sessionLog = log
+              .filter((d) => d.sessionId === selectedSession)
+              .sort((a, b) => a.ts - b.ts);
+            return (
+              <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-indigo-800 uppercase tracking-wide">
+                    Session {shortSession(selectedSession)}
+                    {sessionLog.find((d) => d.userEmail) && (
+                      <span className="ml-2 font-normal text-indigo-600">
+                        {sessionLog.find((d) => d.userEmail).userEmail}
+                      </span>
+                    )}
+                    {" — "}{sessionLog.length} page{sessionLog.length !== 1 ? "s" : ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSession(null)}
+                    className="text-xs text-indigo-600 hover:text-indigo-800"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-1 text-xs">
+                  {sessionLog.map((d, i) => (
+                    <span key={i} className="flex items-center gap-1">
+                      {i > 0 && <span className="text-indigo-400">&rarr;</span>}
+                      <span className="inline-flex items-center gap-1 bg-white border border-indigo-200 rounded px-2 py-0.5">
+                        <span className="font-mono text-indigo-900">{d.url || "/"}</span>
+                        <span className="text-gray-400">
+                          {new Date(d.ts).toLocaleTimeString()}
+                        </span>
+                      </span>
+                    </span>
+                  ))}
+                </div>
+                {sessionLog[0]?.referrer && (
+                  <div className="text-xs text-indigo-600 mt-1.5">
+                    Entry referrer: <span className="font-mono">{sessionLog[0].referrer}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Recent page loads */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -279,6 +332,7 @@ export default function PagePerformancePanel() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="px-3 py-2 text-left font-medium text-gray-500">Date &amp; time</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">Session</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500">URL</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500">Type</th>
                     <th className="px-3 py-2 text-right font-medium text-gray-500">TTFB</th>
@@ -293,9 +347,23 @@ export default function PagePerformancePanel() {
                   {recent.map((d, i) => {
                     const date = new Date(d.ts);
                     return (
-                      <tr key={i} className="hover:bg-gray-50">
+                      <tr key={i} className={`hover:bg-gray-50 ${selectedSession && d.sessionId === selectedSession ? "bg-indigo-50" : ""}`}>
                         <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
                           {date.toLocaleDateString()} {date.toLocaleTimeString()}
+                        </td>
+                        <td className="px-3 py-2">
+                          {d.sessionId ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSession(d.sessionId === selectedSession ? null : d.sessionId)}
+                              className="font-mono text-indigo-600 hover:text-indigo-800 hover:underline"
+                              title={d.sessionId}
+                            >
+                              {shortSession(d.sessionId)}
+                            </button>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-gray-700 font-mono truncate max-w-[180px]">
                           {d.url || "—"}

@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import {
   recordPagePerformance,
+  associateSessionWithUser,
   getPagePerformanceLog,
   clearPagePerformanceLog,
   setRagbazRelayStatus,
@@ -29,9 +30,11 @@ export async function POST(request) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  // Fire-and-forget — we don't want to block the client waiting for KV
+  // Fire-and-forget — we don't want to block the client waiting for D1/KV
   recordPagePerformance({
     url: String(body.url || "").slice(0, 500),
+    referrer: typeof body.referrer === "string" ? body.referrer.slice(0, 500) : "",
+    sessionId: typeof body.sessionId === "string" ? body.sessionId.slice(0, 64) : "",
     ttfb: Number(body.ttfb) || 0,
     domComplete: Number(body.domComplete) || 0,
     lcp: body.lcp != null ? Number(body.lcp) : undefined,
@@ -41,6 +44,17 @@ export async function POST(request) {
     navigationType:
       typeof body.navigationType === "string" ? body.navigationType.slice(0, 32) : undefined,
   }).catch(() => {});
+
+  // If user is authenticated, tie this browsing session to their identity
+  if (body.sessionId) {
+    auth()
+      .then((session) => {
+        if (session?.user?.email) {
+          return associateSessionWithUser(body.sessionId, session.user.email);
+        }
+      })
+      .catch(() => {});
+  }
 
   relayStorefrontVitalsToRagbazHome(body, request)
     .then((relayStatus) => setRagbazRelayStatus(relayStatus))

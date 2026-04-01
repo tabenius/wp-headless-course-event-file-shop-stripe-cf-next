@@ -306,8 +306,10 @@ const MAX_PERF_DATAPOINTS = 300;
  *
  * @param {{ url: string, ttfb: number, domComplete: number, lcp?: number, fcp?: number, inp?: number, cls?: number, navigationType?: string }} param
  */
-export async function recordPagePerformance({ url, ttfb, domComplete, lcp, fcp, inp, cls, navigationType }) {
+export async function recordPagePerformance({ url, referrer, sessionId, ttfb, domComplete, lcp, fcp, inp, cls, navigationType }) {
   const safeUrl = String(url || "").slice(0, 500);
+  const safeReferrer = typeof referrer === "string" ? referrer.slice(0, 500) : "";
+  const safeSessionId = typeof sessionId === "string" ? sessionId.slice(0, 64) : "";
   const safeTtfb = Math.round(ttfb ?? 0);
   const safeDomComplete = Math.round(domComplete ?? 0);
   const safeLcp = lcp != null ? Math.round(lcp) : null;
@@ -322,10 +324,10 @@ export async function recordPagePerformance({ url, ttfb, domComplete, lcp, fcp, 
     if (db) {
       await db
         .prepare(
-          `INSERT INTO page_vitals (url, ttfb, dom_complete, lcp, fcp, inp, cls, navigation_type)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO page_vitals (url, referrer, session_id, ttfb, dom_complete, lcp, fcp, inp, cls, navigation_type)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(safeUrl, safeTtfb, safeDomComplete, safeLcp, safeFcp, safeInp, safeCls, safeNavType)
+        .bind(safeUrl, safeReferrer, safeSessionId, safeTtfb, safeDomComplete, safeLcp, safeFcp, safeInp, safeCls, safeNavType)
         .run();
       return;
     }
@@ -364,7 +366,7 @@ export async function getPagePerformanceLog({ limit = 300 } = {}) {
     if (db) {
       const { results } = await db
         .prepare(
-          "SELECT url, ttfb, dom_complete, lcp, fcp, inp, cls, navigation_type, created_at FROM page_vitals ORDER BY id DESC LIMIT ?",
+          "SELECT url, referrer, session_id, user_email, ttfb, dom_complete, lcp, fcp, inp, cls, navigation_type, created_at FROM page_vitals ORDER BY id DESC LIMIT ?",
         )
         .bind(limit)
         .all();
@@ -378,6 +380,9 @@ export async function getPagePerformanceLog({ limit = 300 } = {}) {
         ...(r.inp != null ? { inp: r.inp } : {}),
         ...(r.cls != null ? { cls: r.cls } : {}),
         ...(r.navigation_type && r.navigation_type !== "navigate" ? { navigationType: r.navigation_type } : {}),
+        ...(r.session_id ? { sessionId: r.session_id } : {}),
+        ...(r.referrer ? { referrer: r.referrer } : {}),
+        ...(r.user_email ? { userEmail: r.user_email } : {}),
       }));
     }
   } catch (e) {
@@ -390,6 +395,25 @@ export async function getPagePerformanceLog({ limit = 300 } = {}) {
     return (await readCloudflareKvJson(PERF_LOG_KEY)) ?? [];
   } catch {
     return [];
+  }
+}
+
+/**
+ * Backfill user_email on all page_vitals rows for a given session.
+ * Called when a user logs in or completes a purchase — ties the anonymous
+ * session breadcrumbs to a known identity.
+ */
+export async function associateSessionWithUser(sessionId, email) {
+  if (!sessionId || !email) return;
+  try {
+    const db = await tryGetD1();
+    if (!db) return;
+    await db
+      .prepare("UPDATE page_vitals SET user_email = ? WHERE session_id = ? AND user_email = ''")
+      .bind(String(email).trim().toLowerCase(), String(sessionId).slice(0, 64))
+      .run();
+  } catch (e) {
+    console.error("[graphqlAvailability] Failed to associate session with user:", e.message);
   }
 }
 

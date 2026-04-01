@@ -27,6 +27,19 @@ export function usePagePerformanceLogger() {
     let inpObserver = null;
     let clsObserver = null;
 
+    function getSessionId() {
+      try {
+        let sid = sessionStorage.getItem("_vsid");
+        if (!sid) {
+          sid = crypto.randomUUID();
+          sessionStorage.setItem("_vsid", sid);
+        }
+        return sid;
+      } catch {
+        return "";
+      }
+    }
+
     function send() {
       if (sent) return;
       const nav = performance.getEntriesByType("navigation")[0];
@@ -35,6 +48,8 @@ export function usePagePerformanceLogger() {
 
       const payload = {
         url: `${window.location.pathname}${window.location.search || ""}`,
+        referrer: document.referrer || "",
+        sessionId: getSessionId(),
         ttfb: nav.responseStart - nav.requestStart,
         domComplete: nav.domComplete,
         navigationType: nav.type || "navigate",
