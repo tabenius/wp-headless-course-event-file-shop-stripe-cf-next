@@ -3,6 +3,36 @@ import {
   readCloudflareKvJson,
   writeCloudflareKvJson,
 } from "@/lib/cloudflareKv";
+import { getD1Database } from "@/lib/d1Bindings";
+
+async function tryGetD1() {
+  try {
+    return await getD1Database();
+  } catch {
+    return null;
+  }
+}
+
+function ticketRowToObject(row, comments = []) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    priority: row.priority,
+    status: row.status,
+    comments: comments.map((c) => ({
+      id: c.id,
+      text: c.text,
+      author: c.author,
+      createdAt: c.created_at,
+    })),
+    buildTime: row.build_time,
+    gitSha: row.git_sha,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 const KV_KEY = process.env.CF_TICKETS_KV_KEY || "support-tickets";
 const R2_KEY = process.env.CF_TICKETS_R2_KEY || "support-tickets.json";
@@ -116,6 +146,23 @@ async function saveState(state) {
 }
 
 export async function listTickets() {
+  const db = await tryGetD1();
+  if (db) {
+    const { results: tickets } = await db
+      .prepare("SELECT * FROM support_tickets ORDER BY created_at DESC")
+      .all();
+    const output = [];
+    for (const row of tickets || []) {
+      const { results: comments } = await db
+        .prepare("SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at")
+        .bind(row.id)
+        .all();
+      output.push(ticketRowToObject(row, comments || []));
+    }
+    return output;
+  }
+
+  // existing KV path (unchanged)
   const state = await getState();
   return state.tickets;
 }
@@ -128,6 +175,25 @@ export async function createTicket({
   buildTime = "",
   gitSha = "",
 }) {
+  const db = await tryGetD1();
+  if (db) {
+    const id = crypto.randomUUID?.() || `${Date.now()}`;
+    const now = new Date().toISOString();
+    const safeTitle = String(title || "Untitled").slice(0, 200);
+    const safeDesc = String(description || "").slice(0, 5000);
+    const safePriority = ["critical", "moderate", "low"].includes(priority) ? priority : "moderate";
+    const safeBuild = typeof buildTime === "string" ? buildTime.slice(0, 40) : "";
+    const safeSha = typeof gitSha === "string" ? gitSha.slice(0, 40) : "";
+    await db
+      .prepare(
+        "INSERT INTO support_tickets (id, title, description, priority, status, build_time, git_sha, created_at, updated_at) VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?)",
+      )
+      .bind(id, safeTitle, safeDesc, safePriority, safeBuild, safeSha, now, now)
+      .run();
+    return { id, title: safeTitle, description: safeDesc, priority: safePriority, status: "open", comments: [], buildTime: safeBuild, gitSha: safeSha, createdAt: now, updatedAt: now };
+  }
+
+  // existing KV path (unchanged)
   const state = await getState();
   const ticket = sanitizeTicket({
     title,
@@ -147,6 +213,33 @@ export async function createTicket({
 }
 
 export async function updateTicket(id, { status, comment, author = "admin" }) {
+  const db = await tryGetD1();
+  if (db) {
+    const row = await db.prepare("SELECT * FROM support_tickets WHERE id = ?").bind(id).first();
+    if (!row) throw new Error("Ticket not found");
+
+    const now = new Date().toISOString();
+    if (status && ["open", "will-fix", "resolved"].includes(status)) {
+      await db.prepare("UPDATE support_tickets SET status = ?, updated_at = ? WHERE id = ?").bind(status, now, id).run();
+    } else {
+      await db.prepare("UPDATE support_tickets SET updated_at = ? WHERE id = ?").bind(now, id).run();
+    }
+    if (comment && comment.trim()) {
+      const commentId = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+      await db
+        .prepare("INSERT INTO ticket_comments (id, ticket_id, text, author, created_at) VALUES (?, ?, ?, ?, ?)")
+        .bind(commentId, id, comment.trim().slice(0, 2000), author, now)
+        .run();
+    }
+    const { results: comments } = await db
+      .prepare("SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at")
+      .bind(id)
+      .all();
+    const updated = await db.prepare("SELECT * FROM support_tickets WHERE id = ?").bind(id).first();
+    return ticketRowToObject(updated, comments || []);
+  }
+
+  // existing KV path (unchanged)
   const state = await getState();
   const idx = state.tickets.findIndex((t) => t.id === id);
   if (idx === -1) throw new Error("Ticket not found");
