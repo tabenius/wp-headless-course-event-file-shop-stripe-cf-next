@@ -28,7 +28,7 @@ export async function POST(request) {
     { embedTexts, chatWithContext },
     { buildIndex, cosine, getIndexedItems },
     { detectLanguage },
-    { saveChatHistory, getChatHistory, deleteCloudflareKv: _del },
+    { saveChatHistory, getChatHistory },
     {
       IMAGE_SYSTEM_PROMPT,
       handleSales,
@@ -48,7 +48,7 @@ export async function POST(request) {
     import("@/lib/ai"),
     import("@/lib/chat/rag"),
     import("@/lib/chat/detect"),
-    import("@/lib/cloudflareKv"),
+    import("@/lib/chatHistoryStore"),
     import("@/lib/chat/intents"),
   ]);
 
@@ -204,9 +204,9 @@ export async function DELETE(request) {
   const auth = await requireAdmin(request);
   if (auth?.error) return auth.error;
 
-  const { deleteCloudflareKv } = await import("@/lib/cloudflareKv");
+  const { clearChatHistory } = await import("@/lib/chatHistoryStore");
   try {
-    await deleteCloudflareKv("chat_history:admin");
+    await clearChatHistory("admin");
   } catch (err) {
     console.error("clear chat history error", err);
   }

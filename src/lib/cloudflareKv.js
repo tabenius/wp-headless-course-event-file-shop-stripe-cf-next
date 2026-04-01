@@ -122,25 +122,3 @@ export async function deleteCloudflareKv(key) {
   }
   return true;
 }
-
-// ── Chat history ─────────────────────────────────────────────────────────────
-
-export async function saveChatHistory(historyKey, chatHistory) {
-  try {
-    await writeCloudflareKvJson(`chat_history:${historyKey}`, chatHistory);
-    return true;
-  } catch (error) {
-    console.error("Failed to save chat history:", error);
-    return false;
-  }
-}
-
-export async function getChatHistory(historyKey) {
-  try {
-    const history = await readCloudflareKvJson(`chat_history:${historyKey}`);
-    return Array.isArray(history) ? history : [];
-  } catch (error) {
-    console.error("Failed to retrieve chat history:", error);
-    return [];
-  }
-}
