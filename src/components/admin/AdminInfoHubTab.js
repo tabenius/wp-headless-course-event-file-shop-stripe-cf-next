@@ -82,7 +82,6 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
   const runtimeCheck = healthChecks?.ragbazWpRuntime || null;
   const details = runtimeCheck?.details || ragbaz?.details || null;
   const runtime = details?.runtime || null;
-  const availability = details?.availability || null;
   const pluginVersion =
     details?.pluginVersion || details?.version || runtime?.pluginVersion || "—";
 
@@ -318,23 +317,6 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
         </>
       )}
 
-      <div className="rounded border bg-gray-50 p-3 text-xs text-gray-700">
-        <p className="font-semibold text-gray-900">Availability</p>
-        <div className="mt-1 grid gap-1 sm:grid-cols-2">
-          <p>
-            `ragbazInfo`: {availability?.ragbazInfo ? "yes" : "no"}
-          </p>
-          <p>
-            `ragbazPluginVersion`: {availability?.ragbazPluginVersion ? "yes" : "no"}
-          </p>
-          <p>
-            `ragbazWpRuntime`: {availability?.ragbazWpRuntime ? "yes" : "no"}
-          </p>
-          <p>
-            `ragbazInfo.wpRuntime`: {availability?.ragbazInfoWpRuntime ? "yes" : "no"}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
