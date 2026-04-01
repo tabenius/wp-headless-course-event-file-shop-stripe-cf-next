@@ -226,6 +226,8 @@ export default function AdminStyleTab({
         tertiary: siteStyleTokens.tertiary || "#818cf8",
         muted: "#52525b",
         focusRing: siteStyleTokens.focusRing || siteStyleTokens.primary || "#22c55e",
+        invertedText: siteStyleTokens.background || "#ffffff",
+        lightForeground: siteStyleTokens.foreground || "#111827",
       },
     },
   ];
@@ -1062,7 +1064,7 @@ export default function AdminStyleTab({
                 siteStyleTokens.ctaStyle?.type === "upstream"
                   ? {
                       backgroundColor: previewTokens.primary,
-                      color: previewTokens.background,
+                      color: previewTokens.invertedText || previewTokens.background,
                       borderRadius: "8px",
                       border: "0",
                       fontWeight: 600,
@@ -1144,7 +1146,7 @@ export default function AdminStyleTab({
                           fontFamily:
                             "var(--font-button, var(--font-body, system-ui, sans-serif))",
                           background: previewTokens.secondary,
-                          color: previewTokens.foreground,
+                          color: previewTokens.lightForeground || previewTokens.foreground,
                           border: `1px solid ${previewTokens.muted}`,
                         }}
                       >
@@ -1156,7 +1158,7 @@ export default function AdminStyleTab({
                         style={{
                           fontFamily:
                             "var(--font-button, var(--font-body, system-ui, sans-serif))",
-                          color: previewTokens.primary,
+                          color: previewTokens.invertedText || previewTokens.primary,
                           border: `1px solid ${previewTokens.primary}`,
                           background: "transparent",
                         }}
