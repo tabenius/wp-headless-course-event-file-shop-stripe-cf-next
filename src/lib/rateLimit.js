@@ -1,14 +1,17 @@
+import { getD1Database } from "@/lib/d1Bindings";
 import { readCloudflareKvJson, writeCloudflareKvJson } from "./cloudflareKv";
 
+async function tryGetD1() {
+  try {
+    return await getD1Database();
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Fixed-window rate limiter backed by Cloudflare KV.
- * Fails open — if KV is unavailable the request is allowed through.
- *
- * @param {string} endpoint  Short label, e.g. "contact"
- * @param {string} identifier  Client IP or user identifier
- * @param {number} limit  Max requests per window
- * @param {number} windowSecs  Window size in seconds (default 1 hour)
- * @returns {{ limited: boolean, remaining: number }}
+ * Fixed-window rate limiter backed by D1 (atomic) with KV fallback.
+ * Fails open — if neither backend is available the request is allowed through.
  */
 export async function checkRateLimit(
   endpoint,
@@ -19,6 +22,28 @@ export async function checkRateLimit(
   try {
     const window = Math.floor(Date.now() / (windowSecs * 1000));
     const key = `rl:${endpoint}:${identifier}:${window}`;
+    const expiresAt = new Date(
+      (window + 2) * windowSecs * 1000,
+    ).toISOString();
+
+    const db = await tryGetD1();
+    if (db) {
+      // Opportunistic cleanup of expired rows (~1% of requests)
+      if (Math.random() < 0.01) {
+        db.prepare("DELETE FROM rate_limits WHERE expires_at < datetime('now')").run().catch(() => {});
+      }
+      const row = await db
+        .prepare(
+          "INSERT INTO rate_limits (key, count, expires_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = count + 1 RETURNING count",
+        )
+        .bind(key, expiresAt)
+        .first();
+      const count = row?.count ?? 0;
+      if (count > limit) return { limited: true, remaining: 0 };
+      return { limited: false, remaining: limit - count };
+    }
+
+    // KV fallback (non-atomic, best effort)
     const current = (await readCloudflareKvJson(key)) ?? { count: 0 };
     const count = (current.count ?? 0) + 1;
     if (count > limit) return { limited: true, remaining: 0 };
@@ -29,15 +54,12 @@ export async function checkRateLimit(
     );
     return { limited: false, remaining: limit - count };
   } catch {
-    // Fail open — do not block requests when KV is unavailable.
     return { limited: false, remaining: -1 };
   }
 }
 
 /**
  * Extract the best available client IP from a Next.js / Cloudflare request.
- * @param {Request} request
- * @returns {string}
  */
 export function getClientIp(request) {
   return (
