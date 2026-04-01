@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "@/lib/adminFetch";
 
 const API = "/api/admin/page-performance";
-const GRAPHQL_AVAILABILITY_API = "/api/admin/graphql-availability";
 
 function getVals(log, key) {
   return log.map((d) => d[key]).filter((v) => v != null && !isNaN(v));
@@ -84,48 +83,10 @@ function formatRelayReason(reason, status) {
   return "Relay status unavailable.";
 }
 
-function collectCurrentNavigationVitals() {
-  const nav =
-    typeof performance !== "undefined"
-      ? performance.getEntriesByType("navigation")[0]
-      : null;
-  const pathname =
-    typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search || ""}`
-      : "/admin";
-  const lcpEntries =
-    typeof performance !== "undefined"
-      ? performance.getEntriesByType("largest-contentful-paint")
-      : [];
-  const fcpEntries =
-    typeof performance !== "undefined" ? performance.getEntriesByType("paint") : [];
-  const latestLcp = Array.isArray(lcpEntries) && lcpEntries.length
-    ? Number(lcpEntries[lcpEntries.length - 1]?.startTime)
-    : undefined;
-  const firstFcp =
-    Array.isArray(fcpEntries) && fcpEntries.length
-      ? fcpEntries.find((entry) => entry?.name === "first-contentful-paint")
-      : null;
-  return {
-    url: pathname || "/admin",
-    ttfb: nav ? Math.max(0, Number(nav.responseStart || 0) - Number(nav.requestStart || 0)) : 0,
-    domComplete: nav ? Number(nav.domComplete || 0) : 0,
-    navigationType: nav?.type || "navigate",
-    ...(Number.isFinite(latestLcp) ? { lcp: latestLcp } : {}),
-    ...(firstFcp && Number.isFinite(Number(firstFcp.startTime))
-      ? { fcp: Number(firstFcp.startTime) }
-      : {}),
-  };
-}
-
 export default function PagePerformancePanel() {
   const [loading, setLoading] = useState(true);
-  const [kvConfigured, setKvConfigured] = useState(false);
-  const [kvConfigStatus, setKvConfigStatus] = useState(null);
   const [log, setLog] = useState([]);
   const [relayStatus, setRelayStatus] = useState(null);
-  const [recordingNow, setRecordingNow] = useState(false);
-  const [recordNowMessage, setRecordNowMessage] = useState("");
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
 
@@ -134,12 +95,6 @@ export default function PagePerformancePanel() {
     setError("");
     try {
       const { json: data } = await adminFetch(API);
-      setKvConfigured(data.kvConfigured ?? false);
-      setKvConfigStatus(
-        data.kvConfigStatus && typeof data.kvConfigStatus === "object"
-          ? data.kvConfigStatus
-          : null,
-      );
       setLog(Array.isArray(data.log) ? data.log : []);
       setRelayStatus(data.relayStatus && typeof data.relayStatus === "object" ? data.relayStatus : null);
     } catch (e) {
@@ -167,33 +122,6 @@ export default function PagePerformancePanel() {
     }
   }
 
-  async function handleRecordNow() {
-    setRecordingNow(true);
-    setError("");
-    setRecordNowMessage("");
-    try {
-      await adminFetch(GRAPHQL_AVAILABILITY_API, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enableForSeconds: 3600 }),
-      });
-      const payload = collectCurrentNavigationVitals();
-      await fetch(API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        keepalive: true,
-      });
-      setRecordNowMessage(
-        "Vitals sample queued. Logging stays enabled for 1 hour, then expires automatically.",
-      );
-      await load();
-    } catch (e) {
-      setError(`Failed to record now: ${e.message}`);
-    } finally {
-      setRecordingNow(false);
-    }
-  }
 
   if (loading) {
     return <div className="text-sm text-gray-400 py-4">Loading performance data…</div>;
@@ -214,30 +142,8 @@ export default function PagePerformancePanel() {
         <div>
           <h3 className="font-semibold text-gray-800">Page load performance</h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Recorded from browser after each page load (TTFB, DOM, LCP, FCP).
-            {!kvConfigured && (
-              <span className="ml-1 text-orange-600">
-                Requires Cloudflare KV (
-                <code className="font-mono text-xs">
-                  CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID, CF_API_TOKEN/CLOUDFLARE_API_TOKEN, CF_KV_NAMESPACE_ID
-                </code>{" "}
-                not fully configured).
-              </span>
-            )}
+            Recorded automatically from browser after each page load (TTFB, DOM, LCP, FCP, INP, CLS).
           </p>
-          {!kvConfigured && kvConfigStatus && (
-            <p className="text-xs text-orange-700 mt-1">
-              Missing runtime keys:{" "}
-              <code className="font-mono">
-                {(Array.isArray(kvConfigStatus.missingKeys) && kvConfigStatus.missingKeys.length > 0
-                  ? kvConfigStatus.missingKeys
-                  : ["unknown"]).join(", ")}
-              </code>
-              {kvConfigStatus.bypassedDuringBuild
-                ? " (KV bypassed during build phase)"
-                : ""}
-            </p>
-          )}
         </div>
         <div className="flex gap-2">
           <button
@@ -246,15 +152,6 @@ export default function PagePerformancePanel() {
             className="px-3 py-1.5 text-sm border border-gray-200 rounded hover:bg-gray-50 transition-colors"
           >
             Refresh
-          </button>
-          <button
-            type="button"
-            onClick={handleRecordNow}
-            disabled={recordingNow || !kvConfigured}
-            className="px-3 py-1.5 text-sm border border-amber-200 text-amber-700 rounded hover:bg-amber-50 transition-colors disabled:opacity-40"
-            title="Enable logging for 1 hour and submit one vitals sample immediately"
-          >
-            {recordingNow ? "Recording…" : "Record vitals now (1h)"}
           </button>
           {log.length > 0 && (
             <button
@@ -272,12 +169,6 @@ export default function PagePerformancePanel() {
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
           {error}
-        </p>
-      )}
-
-      {recordNowMessage && (
-        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
-          {recordNowMessage}
         </p>
       )}
 
@@ -311,8 +202,7 @@ export default function PagePerformancePanel() {
 
       {log.length === 0 && !error && (
         <p className="text-sm text-gray-400">
-          No page performance data recorded yet. Data is collected automatically on page loads
-          when Cloudflare KV logging is configured.
+          No page performance data recorded yet. Vitals are captured automatically on every page load.
         </p>
       )}
 

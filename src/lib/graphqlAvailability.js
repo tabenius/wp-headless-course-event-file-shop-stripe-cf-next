@@ -16,6 +16,15 @@ import {
   writeCloudflareKvJson,
   deleteCloudflareKv,
 } from "./cloudflareKv.js";
+import { getD1Database } from "@/lib/d1Bindings";
+
+async function tryGetD1() {
+  try {
+    return await getD1Database();
+  } catch {
+    return null;
+  }
+}
 
 const SETTINGS_KEY = "graphql-availability-settings";
 const LOG_KEY = "graphql-availability-log";
@@ -298,19 +307,46 @@ const MAX_PERF_DATAPOINTS = 300;
  * @param {{ url: string, ttfb: number, domComplete: number, lcp?: number, fcp?: number, inp?: number, cls?: number, navigationType?: string }} param
  */
 export async function recordPagePerformance({ url, ttfb, domComplete, lcp, fcp, inp, cls, navigationType }) {
+  const safeUrl = String(url || "").slice(0, 500);
+  const safeTtfb = Math.round(ttfb ?? 0);
+  const safeDomComplete = Math.round(domComplete ?? 0);
+  const safeLcp = lcp != null ? Math.round(lcp) : null;
+  const safeFcp = fcp != null ? Math.round(fcp) : null;
+  const safeInp = inp != null ? Math.round(inp) : null;
+  const safeCls = cls != null ? Number(cls) : null;
+  const safeNavType = navigationType ? String(navigationType).slice(0, 32) : "navigate";
+
+  // D1 path — always-on, no opt-in gate required
+  try {
+    const db = await tryGetD1();
+    if (db) {
+      await db
+        .prepare(
+          `INSERT INTO page_vitals (url, ttfb, dom_complete, lcp, fcp, inp, cls, navigation_type)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(safeUrl, safeTtfb, safeDomComplete, safeLcp, safeFcp, safeInp, safeCls, safeNavType)
+        .run();
+      return;
+    }
+  } catch (e) {
+    console.error("[graphqlAvailability] D1 page vitals write failed, trying KV:", e.message);
+  }
+
+  // KV fallback — still gated by availability logging opt-in
   if (!(await isAvailabilityLoggingEnabled())) return;
   try {
     const current = (await readCloudflareKvJson(PERF_LOG_KEY)) ?? [];
     const entry = {
       ts: Date.now(),
-      url,
-      ttfb: Math.round(ttfb ?? 0),
-      domComplete: Math.round(domComplete ?? 0),
-      ...(lcp != null ? { lcp: Math.round(lcp) } : {}),
-      ...(fcp != null ? { fcp: Math.round(fcp) } : {}),
-      ...(inp != null ? { inp: Math.round(inp) } : {}),
-      ...(cls != null ? { cls: Number(cls) } : {}),
-      ...(navigationType ? { navigationType: String(navigationType).slice(0, 32) } : {}),
+      url: safeUrl,
+      ttfb: safeTtfb,
+      domComplete: safeDomComplete,
+      ...(safeLcp != null ? { lcp: safeLcp } : {}),
+      ...(safeFcp != null ? { fcp: safeFcp } : {}),
+      ...(safeInp != null ? { inp: safeInp } : {}),
+      ...(safeCls != null ? { cls: safeCls } : {}),
+      ...(safeNavType !== "navigate" ? { navigationType: safeNavType } : {}),
     };
     const next = [entry, ...current].slice(0, MAX_PERF_DATAPOINTS);
     await writeCloudflareKvJson(PERF_LOG_KEY, next, {
@@ -321,7 +357,34 @@ export async function recordPagePerformance({ url, ttfb, domComplete, lcp, fcp, 
   }
 }
 
-export async function getPagePerformanceLog() {
+export async function getPagePerformanceLog({ limit = 300 } = {}) {
+  // D1 path — returns rows in the same shape the admin panel expects
+  try {
+    const db = await tryGetD1();
+    if (db) {
+      const { results } = await db
+        .prepare(
+          "SELECT url, ttfb, dom_complete, lcp, fcp, inp, cls, navigation_type, created_at FROM page_vitals ORDER BY id DESC LIMIT ?",
+        )
+        .bind(limit)
+        .all();
+      return (results || []).map((r) => ({
+        ts: new Date(r.created_at + "Z").getTime(),
+        url: r.url,
+        ttfb: r.ttfb,
+        domComplete: r.dom_complete,
+        ...(r.lcp != null ? { lcp: r.lcp } : {}),
+        ...(r.fcp != null ? { fcp: r.fcp } : {}),
+        ...(r.inp != null ? { inp: r.inp } : {}),
+        ...(r.cls != null ? { cls: r.cls } : {}),
+        ...(r.navigation_type && r.navigation_type !== "navigate" ? { navigationType: r.navigation_type } : {}),
+      }));
+    }
+  } catch (e) {
+    console.error("[graphqlAvailability] D1 page vitals read failed, trying KV:", e.message);
+  }
+
+  // KV fallback
   if (!isCloudflareKvConfigured()) return [];
   try {
     return (await readCloudflareKvJson(PERF_LOG_KEY)) ?? [];
@@ -331,6 +394,18 @@ export async function getPagePerformanceLog() {
 }
 
 export async function clearPagePerformanceLog() {
+  // D1 path
+  try {
+    const db = await tryGetD1();
+    if (db) {
+      await db.prepare("DELETE FROM page_vitals").run();
+      return;
+    }
+  } catch (e) {
+    console.error("[graphqlAvailability] D1 page vitals clear failed, trying KV:", e.message);
+  }
+
+  // KV fallback
   if (!isCloudflareKvConfigured()) return;
   try {
     await writeCloudflareKvJson(PERF_LOG_KEY, [], {
