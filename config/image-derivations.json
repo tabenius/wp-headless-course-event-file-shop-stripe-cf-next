@@ -53,7 +53,10 @@
     "operations": [
       { "type": "source", "params": { "assetId": "" } },
       { "type": "resize", "params": { "width": 400, "height": 400 } },
-      { "type": "cropCircle", "params": { "diameter": 400, "centerX": 50, "centerY": 50 } }
+      {
+        "type": "cropCircle",
+        "params": { "diameter": 400, "centerX": 50, "centerY": 50 }
+      }
     ]
   },
   {

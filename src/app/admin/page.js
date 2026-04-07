@@ -4,9 +4,12 @@ import { adminAuth } from "@/auth";
 import AdminLoadingShell from "@/components/admin/AdminLoadingShell";
 import { t } from "@/lib/i18n";
 
-const AdminDashboard = nextDynamic(() => import("@/components/admin/AdminDashboard"), {
-  loading: () => <AdminLoadingShell />,
-});
+const AdminDashboard = nextDynamic(
+  () => import("@/components/admin/AdminDashboard"),
+  {
+    loading: () => <AdminLoadingShell />,
+  },
+);
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

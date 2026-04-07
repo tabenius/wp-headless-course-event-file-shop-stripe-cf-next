@@ -1,7 +1,11 @@
 import { fetchGraphQL } from "@/lib/client";
 import EventListItem from "@/components/cpt/EventListItem";
 import { StorefrontListSkeleton } from "@/components/common/StorefrontSkeletons";
-import { getEventEndIso, getEventStartIso, isEventPassed } from "@/lib/eventDates";
+import {
+  getEventEndIso,
+  getEventStartIso,
+  isEventPassed,
+} from "@/lib/eventDates";
 import { Suspense } from "react";
 
 export const metadata = {

@@ -27,7 +27,8 @@ const defaultCurrency = site.defaultCurrency || "SEK";
 const SHOP_CORE_MODE_TTL_MS =
   Number.parseInt(process.env.SHOP_CORE_MODE_TTL_MS || "900000", 10) || 900000;
 const SHOP_CATALOG_CACHE_TTL_MS =
-  Number.parseInt(process.env.SHOP_CATALOG_CACHE_TTL_MS || "300000", 10) || 300000;
+  Number.parseInt(process.env.SHOP_CATALOG_CACHE_TTL_MS || "300000", 10) ||
+  300000;
 let shopCoreMode = {
   mode: "unknown",
   expiresAt: 0,
@@ -49,7 +50,9 @@ export function resetShopProductsCaches() {
 }
 
 function extractNodes(data, rootField) {
-  return data?.[rootField]?.edges?.map((edge) => edge?.node).filter(Boolean) || [];
+  return (
+    data?.[rootField]?.edges?.map((edge) => edge?.node).filter(Boolean) || []
+  );
 }
 
 function normalizeAssetVariant(entry) {
@@ -86,7 +89,8 @@ function normalizeAssetVariants(record) {
 }
 
 function pickPreferredVariant(variants, fallbackUrl) {
-  if (!Array.isArray(variants) || variants.length === 0) return fallbackUrl || "";
+  if (!Array.isArray(variants) || variants.length === 0)
+    return fallbackUrl || "";
   const rank = {
     "responsive-md": 0,
     compressed: 1,
@@ -138,7 +142,9 @@ function cloneItems(items) {
   return (Array.isArray(items) ? items : []).map((item) => ({
     ...item,
     categories: Array.isArray(item.categories) ? [...item.categories] : [],
-    categorySlugs: Array.isArray(item.categorySlugs) ? [...item.categorySlugs] : [],
+    categorySlugs: Array.isArray(item.categorySlugs)
+      ? [...item.categorySlugs]
+      : [],
     imageSources: item.imageSources
       ? {
           ...item.imageSources,
@@ -324,7 +330,9 @@ async function fetchShopCoreGraphDataLegacy() {
     ),
   ]);
   return {
-    wcProducts: extractNodes(productsData, "products").filter((node) => node?.name),
+    wcProducts: extractNodes(productsData, "products").filter(
+      (node) => node?.name,
+    ),
     lpCourses: extractNodes(coursesData, "lpCourses"),
     events: extractNodes(eventsData, "events"),
   };
@@ -384,11 +392,7 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
   }
 
   const { wcProducts, lpCourses, events } = await fetchShopCoreGraphData();
-  const [
-    digitalProducts,
-    accessState,
-    shopSettings,
-  ] = await Promise.all([
+  const [digitalProducts, accessState, shopSettings] = await Promise.all([
     listDigitalProducts(),
     getContentAccessState(),
     getShopSettings(),
@@ -429,7 +433,8 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       source: "woocommerce",
       uri,
       vatPercent:
-        typeof config?.vatPercent === "number" && Number.isFinite(config.vatPercent)
+        typeof config?.vatPercent === "number" &&
+        Number.isFinite(config.vatPercent)
           ? config.vatPercent
           : null,
       active: config?.active !== false,
@@ -460,7 +465,8 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       source: "learnpress",
       uri,
       vatPercent:
-        typeof config?.vatPercent === "number" && Number.isFinite(config.vatPercent)
+        typeof config?.vatPercent === "number" &&
+        Number.isFinite(config.vatPercent)
           ? config.vatPercent
           : null,
       active: config?.active !== false,
@@ -492,7 +498,8 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       source: "wordpress",
       uri,
       vatPercent:
-        typeof config?.vatPercent === "number" && Number.isFinite(config.vatPercent)
+        typeof config?.vatPercent === "number" &&
+        Number.isFinite(config.vatPercent)
           ? config.vatPercent
           : null,
       active: config?.active !== false,
@@ -503,14 +510,19 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
   // Digital products (from admin / KV)
   for (const d of digitalProducts) {
     const mode =
-      d.productMode ||
-      (d.type === "course" ? "manual_uri" : "digital_file");
+      d.productMode || (d.type === "course" ? "manual_uri" : "digital_file");
     const normalizedType =
       mode === "manual_uri" ? "digital_course" : "digital_file";
+    // FIXME: kludge as /shop does 404 on the assetId /xyzzy
+    /*
     const buyableUri =
       mode === "asset" && d.assetId
         ? `/shop/${encodeURIComponent(d.assetId)}`
         : `/shop/${d.slug}`;
+    */
+    const buyableUri = d.slug;
+    // /FIXME
+    //
     const digitalCategories = deriveDigitalProductCategories({
       ...d,
       type: normalizedType,
@@ -542,15 +554,13 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
   // Core WordPress-backed items (WooCommerce/LearnPress/Events) should still
   // be listable even if their parsed price is missing, otherwise the storefront
   // looks empty except for digital products.
-  const filtered = items.filter(
-    (item) => {
-      if (!safeVisibleTypes.includes(item.type)) return false;
-      if (item.active === false) return false;
-      const hasPrice = item.priceCents > 0 || (item.price && item.price !== "0");
-      if (item.source === "digital") return hasPrice || item.free === true;
-      return true;
-    },
-  );
+  const filtered = items.filter((item) => {
+    if (!safeVisibleTypes.includes(item.type)) return false;
+    if (item.active === false) return false;
+    const hasPrice = item.priceCents > 0 || (item.price && item.price !== "0");
+    if (item.source === "digital") return hasPrice || item.free === true;
+    return true;
+  });
 
   const assetIds = [
     ...new Set(
@@ -574,10 +584,15 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
   }
 
   const enriched = filtered.map((item) => {
-    if (item.source !== "digital" || item.productMode !== "asset" || !item.assetId) {
+    if (
+      item.source !== "digital" ||
+      item.productMode !== "asset" ||
+      !item.assetId
+    ) {
       return item;
     }
-    const record = assetRecordsById.get(String(item.assetId).toLowerCase()) || null;
+    const record =
+      assetRecordsById.get(String(item.assetId).toLowerCase()) || null;
     const imageSources = buildImageSourcesFromAsset(record, item.imageUrl);
     const imageUrl = imageSources?.src || item.imageUrl || "";
     return {

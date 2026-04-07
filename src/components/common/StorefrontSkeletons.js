@@ -1,10 +1,15 @@
 function SkeletonBlock({ className = "" }) {
-  return <div aria-hidden="true" className={`storefront-skeleton ${className}`} />;
+  return (
+    <div aria-hidden="true" className={`storefront-skeleton ${className}`} />
+  );
 }
 
 export function StorefrontArticleSkeleton({ paragraphs = 8 }) {
   return (
-    <article className="max-w-2xl px-6 py-24 mx-auto space-y-8" aria-busy="true">
+    <article
+      className="max-w-2xl px-6 py-24 mx-auto space-y-8"
+      aria-busy="true"
+    >
       <header className="space-y-4">
         <SkeletonBlock className="h-4 w-40 rounded-full" />
         <SkeletonBlock className="h-12 w-3/4 rounded-lg" />
@@ -64,7 +69,10 @@ export function StorefrontGridSkeleton({
       </div>
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: items }).map((_, index) => (
-          <section key={`grid-item-${index}`} className="border rounded-lg p-4 space-y-3">
+          <section
+            key={`grid-item-${index}`}
+            className="border rounded-lg p-4 space-y-3"
+          >
             <SkeletonBlock className="h-44 w-full rounded-lg" />
             <SkeletonBlock className="h-7 w-3/4 rounded-md" />
             <SkeletonBlock className="h-4 w-full rounded" />
@@ -105,7 +113,10 @@ export function StorefrontHomeSkeleton() {
       <section className="max-w-5xl mx-auto px-6 pt-24">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={`home-event-${index}`} className="border rounded-lg p-3 space-y-2">
+            <div
+              key={`home-event-${index}`}
+              className="border rounded-lg p-3 space-y-2"
+            >
               <SkeletonBlock className="h-20 w-full rounded-lg" />
               <SkeletonBlock className="h-4 w-4/5 rounded" />
               <SkeletonBlock className="h-4 w-3/5 rounded" />
@@ -117,4 +128,3 @@ export function StorefrontHomeSkeleton() {
     </div>
   );
 }
-

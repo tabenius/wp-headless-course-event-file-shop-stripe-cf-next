@@ -16,7 +16,9 @@ function sanitizeText(value, max = 200) {
 }
 
 function normalizeAssetId(value) {
-  return sanitizeText(value, 96).toLowerCase().replace(/[^a-z0-9._:-]/g, "");
+  return sanitizeText(value, 96)
+    .toLowerCase()
+    .replace(/[^a-z0-9._:-]/g, "");
 }
 
 function normalizeMimeType(value) {
@@ -49,7 +51,9 @@ function inferNameFromUrl(value) {
 }
 
 function toAssetToken(value) {
-  const safe = sanitizeText(value, 140).toLowerCase().replace(/[^a-z0-9._:]/g, "");
+  const safe = sanitizeText(value, 140)
+    .toLowerCase()
+    .replace(/[^a-z0-9._:]/g, "");
   return safe.slice(0, 72);
 }
 
@@ -157,7 +161,10 @@ export async function POST(request) {
     try {
       saved = await saveDigitalProducts([...products, nextProduct]);
     } catch (saveError) {
-      console.error("Admin create product from asset — save failed:", saveError);
+      console.error(
+        "Admin create product from asset — save failed:",
+        saveError,
+      );
       return NextResponse.json(
         {
           ok: false,
@@ -180,7 +187,12 @@ export async function POST(request) {
         {
           ok: false,
           error: `Product was rejected during validation (name: "${nextProduct.name}", slug: "${nextProduct.slug}", assetId: "${assetId}", productMode: "${nextProduct.productMode}").`,
-          debug: { assetId, slug: nextProduct.slug, name: nextProduct.name, productMode: nextProduct.productMode },
+          debug: {
+            assetId,
+            slug: nextProduct.slug,
+            name: nextProduct.name,
+            productMode: nextProduct.productMode,
+          },
         },
         { status: 400 },
       );
@@ -195,7 +207,10 @@ export async function POST(request) {
   } catch (error) {
     console.error("Admin create product from asset failed:", error);
     return NextResponse.json(
-      { ok: false, error: `Could not create product from asset: ${error?.message || "unknown error"}.` },
+      {
+        ok: false,
+        error: `Could not create product from asset: ${error?.message || "unknown error"}.`,
+      },
       { status: 400 },
     );
   }

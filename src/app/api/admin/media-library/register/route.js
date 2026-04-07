@@ -126,7 +126,14 @@ function asIsoDate(value) {
  * Build the normalized asset record that the media library understands.
  * `meta` comes from headBucketObject() — already normalized (lowercased keys).
  */
-function buildAssetRecord({ key, url, contentType, contentLength, meta, title }) {
+function buildAssetRecord({
+  key,
+  url,
+  contentType,
+  contentLength,
+  meta,
+  title,
+}) {
   const mimeType = contentType || mimeFromName(key);
   const displayTitle = title || meta?.asset_title || meta?.title || key || url;
 
@@ -150,23 +157,33 @@ function buildAssetRecord({ key, url, contentType, contentLength, meta, title })
       altText: sanitizeText(meta?.alt_text || meta?.alttext || ""),
       tooltip: sanitizeText(meta?.tooltip),
       usageNotes: sanitizeText(meta?.usage_notes || meta?.usagenotes || ""),
-      structuredMeta: sanitizeText(meta?.structured_meta || meta?.structuredmeta || ""),
+      structuredMeta: sanitizeText(
+        meta?.structured_meta || meta?.structuredmeta || "",
+      ),
       schemaRef: sanitizeText(meta?.schema_ref || meta?.schemaref || ""),
     },
     rights: {
-      copyrightHolder: sanitizeText(meta?.copyright_holder || meta?.copyrightholder || ""),
+      copyrightHolder: sanitizeText(
+        meta?.copyright_holder || meta?.copyrightholder || "",
+      ),
       license: sanitizeText(meta?.license),
     },
     asset: {
       assetId: sanitizeText(meta?.asset_id || meta?.assetid || "", 96) || null,
-      ownerUri: sanitizeText(meta?.asset_owner_uri || meta?.owneruri || "/", 320) || "/",
+      ownerUri:
+        sanitizeText(meta?.asset_owner_uri || meta?.owneruri || "/", 320) ||
+        "/",
       uri: sanitizeText(meta?.asset_uri || meta?.asseturi || "", 320) || null,
       slug: sanitizeText(meta?.asset_slug || meta?.slug || "", 120) || null,
-      accessInheritance: sanitizeText(meta?.access_inheritance || "owner", 24) || "owner",
+      accessInheritance:
+        sanitizeText(meta?.access_inheritance || "owner", 24) || "owner",
       role: sanitizeText(meta?.asset_role || meta?.role || "", 64) || null,
-      format: sanitizeText(meta?.asset_format || meta?.format || "", 64) || null,
-      variantKind: sanitizeText(meta?.variant_kind || meta?.variantkind || "", 64) || null,
-      sourceHash: sanitizeText(meta?.source_hash || meta?.sourcehash || "", 128) || null,
+      format:
+        sanitizeText(meta?.asset_format || meta?.format || "", 64) || null,
+      variantKind:
+        sanitizeText(meta?.variant_kind || meta?.variantkind || "", 64) || null,
+      sourceHash:
+        sanitizeText(meta?.source_hash || meta?.sourcehash || "", 128) || null,
       originalUrl: null,
       originalId: null,
       author: {
@@ -187,12 +204,18 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON body." },
+      { status: 400 },
+    );
   }
 
   const rawUrl = String(body?.url || "").trim();
   if (!rawUrl) {
-    return NextResponse.json({ ok: false, error: "url is required." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "url is required." },
+      { status: 400 },
+    );
   }
 
   const urlError = validateR2Url(rawUrl);

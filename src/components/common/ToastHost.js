@@ -42,7 +42,9 @@ export default function ToastHost() {
           <span>{toast.message}</span>
           <button
             type="button"
-            onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+            onClick={() =>
+              setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+            }
             className="shrink-0 opacity-70 hover:opacity-100 text-base leading-none"
             aria-label="Dismiss"
           >

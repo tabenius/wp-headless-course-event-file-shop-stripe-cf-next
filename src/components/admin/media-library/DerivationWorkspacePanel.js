@@ -85,7 +85,9 @@ export default function DerivationWorkspacePanel({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800">
-            <span>{t("admin.mediaDerivationsTitle", "Derivation templates")}</span>
+            <span>
+              {t("admin.mediaDerivationsTitle", "Derivation templates")}
+            </span>
             <AdminFieldHelpLink slug="technical-manual" />
           </p>
           <p className="text-[11px] text-slate-700">
@@ -164,7 +166,9 @@ export default function DerivationWorkspacePanel({
           </label>
           <label className="space-y-1 text-[11px] text-gray-700 lg:col-span-3">
             <span className="inline-flex items-center gap-1">
-              <span>{t("admin.mediaDerivationDescription", "Description")}</span>
+              <span>
+                {t("admin.mediaDerivationDescription", "Description")}
+              </span>
               <AdminFieldHelpLink slug="technical-manual" />
             </span>
             <input
@@ -177,7 +181,9 @@ export default function DerivationWorkspacePanel({
         </div>
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-700">
           <span className="inline-flex items-center gap-1">
-            <span>{t("admin.mediaDerivationAssetTypes", "Applicable asset types")}</span>
+            <span>
+              {t("admin.mediaDerivationAssetTypes", "Applicable asset types")}
+            </span>
             <AdminFieldHelpLink slug="technical-manual" />
           </span>
           {[
@@ -185,7 +191,10 @@ export default function DerivationWorkspacePanel({
             { key: "data", label: t("admin.mediaTypeData", "Data files") },
             { key: "other", label: t("admin.mediaTypeOther", "Other") },
           ].map((option) => (
-            <label key={option.key} className="flex items-center gap-1 text-gray-600">
+            <label
+              key={option.key}
+              className="flex items-center gap-1 text-gray-600"
+            >
               <input
                 type="checkbox"
                 checked={editorAssetTypes.includes(option.key)}
@@ -221,8 +230,14 @@ export default function DerivationWorkspacePanel({
               }`}
             >
               {derivationIsConcrete
-                ? t("admin.mediaDerivationStatusConcrete", "Concrete derivation")
-                : t("admin.mediaDerivationStatusAbstract", "Abstract derivation")}
+                ? t(
+                    "admin.mediaDerivationStatusConcrete",
+                    "Concrete derivation",
+                  )
+                : t(
+                    "admin.mediaDerivationStatusAbstract",
+                    "Abstract derivation",
+                  )}
             </span>
           </div>
           <div>
@@ -231,7 +246,10 @@ export default function DerivationWorkspacePanel({
             </p>
             {derivationUnboundParameters.length === 0 ? (
               <p className="text-[11px] text-slate-600">
-                {t("admin.mediaDerivationAllBound", "All operation parameters are bound.")}
+                {t(
+                  "admin.mediaDerivationAllBound",
+                  "All operation parameters are bound.",
+                )}
               </p>
             ) : (
               <div className="flex flex-wrap gap-1">
@@ -287,10 +305,16 @@ export default function DerivationWorkspacePanel({
                       {t("admin.mediaDerivationMatrixStepHeader", "Step")}
                     </th>
                     <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
-                      {t("admin.mediaDerivationMatrixOperatorHeader", "Operator")}
+                      {t(
+                        "admin.mediaDerivationMatrixOperatorHeader",
+                        "Operator",
+                      )}
                     </th>
                     <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-gray-500">
-                      {t("admin.mediaDerivationMatrixParametersHeader", "Parameters")}
+                      {t(
+                        "admin.mediaDerivationMatrixParametersHeader",
+                        "Parameters",
+                      )}
                     </th>
                   </tr>
                 </thead>
@@ -308,7 +332,10 @@ export default function DerivationWorkspacePanel({
                           <p className="text-[10px] text-gray-500">
                             {row.operation.params?.assetId
                               ? row.operation.params.assetId
-                              : t("admin.mediaDerivationSourceUnbound", "Source is unbound")}
+                              : t(
+                                  "admin.mediaDerivationSourceUnbound",
+                                  "Source is unbound",
+                                )}
                           </p>
                         )}
                       </td>
@@ -344,7 +371,10 @@ export default function DerivationWorkspacePanel({
       )}
       {customOperations.length === 0 && (
         <p className="text-[11px] text-slate-700">
-          {t("admin.mediaDerivationNoOperations", "Select a derivation to edit its operations.")}
+          {t(
+            "admin.mediaDerivationNoOperations",
+            "Select a derivation to edit its operations.",
+          )}
         </p>
       )}
       {customOperations.length > 0 && (
@@ -404,9 +434,11 @@ export default function DerivationWorkspacePanel({
                   type="button"
                   onClick={() => toggleOperationCollapsed(index)}
                   className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                  title={isCollapsed
-                    ? t("admin.mediaDerivationExpandStep", "Expand step")
-                    : t("admin.mediaDerivationCollapseStep", "Collapse step")}
+                  title={
+                    isCollapsed
+                      ? t("admin.mediaDerivationExpandStep", "Expand step")
+                      : t("admin.mediaDerivationCollapseStep", "Collapse step")
+                  }
                 >
                   {isCollapsed
                     ? t("admin.mediaDerivationExpandStepShort", "Open")
@@ -426,7 +458,10 @@ export default function DerivationWorkspacePanel({
                   onClick={() => handleMoveOperation(index, 1)}
                   disabled={isLast}
                   className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                  title={t("admin.mediaDerivationMoveStepDown", "Move step down")}
+                  title={t(
+                    "admin.mediaDerivationMoveStepDown",
+                    "Move step down",
+                  )}
                 >
                   ↓
                 </button>
@@ -434,7 +469,10 @@ export default function DerivationWorkspacePanel({
                   type="button"
                   onClick={() => handleDuplicateOperation(index)}
                   className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                  title={t("admin.mediaDerivationDuplicateStep", "Duplicate step")}
+                  title={t(
+                    "admin.mediaDerivationDuplicateStep",
+                    "Duplicate step",
+                  )}
                 >
                   {t("admin.mediaDerivationDuplicateStepShort", "Dup")}
                 </button>
@@ -442,7 +480,10 @@ export default function DerivationWorkspacePanel({
                   type="button"
                   onClick={() => handleBindMissingOperationParams(index)}
                   className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                  title={t("admin.mediaDerivationBindMissingParams", "Bind missing params")}
+                  title={t(
+                    "admin.mediaDerivationBindMissingParams",
+                    "Bind missing params",
+                  )}
                 >
                   {t("admin.mediaDerivationBindMissingShort", "Bind")}
                 </button>
@@ -450,7 +491,10 @@ export default function DerivationWorkspacePanel({
                   type="button"
                   onClick={() => handleResetOperationDefaults(index)}
                   className="rounded border border-slate-200 px-1 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
-                  title={t("admin.mediaDerivationResetStepDefaults", "Reset to defaults")}
+                  title={t(
+                    "admin.mediaDerivationResetStepDefaults",
+                    "Reset to defaults",
+                  )}
                 >
                   {t("admin.mediaDerivationResetStepDefaultsShort", "Reset")}
                 </button>
@@ -528,19 +572,26 @@ export default function DerivationWorkspacePanel({
           ))}
         </div>
         <label className="flex items-center gap-2 text-[11px] text-gray-700">
-          <span>{t("admin.mediaDerivationFindOperation", "Find operation")}</span>
+          <span>
+            {t("admin.mediaDerivationFindOperation", "Find operation")}
+          </span>
           <input
             ref={operationSearchInputRef}
             type="search"
             value={operationSearchTerm}
             onChange={(event) => setOperationSearchTerm(event.target.value)}
-            placeholder={t("admin.mediaDerivationFindOperationPlaceholder", "Search by name or effect")}
+            placeholder={t(
+              "admin.mediaDerivationFindOperationPlaceholder",
+              "Search by name or effect",
+            )}
             className="w-56 border rounded px-2 py-1 text-xs"
           />
         </label>
         <label className="flex items-center gap-2 text-[11px] text-gray-700">
           <span className="inline-flex items-center gap-1">
-            <span>{t("admin.mediaDerivationAddOperationLabel", "Add operation")}</span>
+            <span>
+              {t("admin.mediaDerivationAddOperationLabel", "Add operation")}
+            </span>
             <AdminFieldHelpLink slug="technical-manual" />
           </span>
           <select
@@ -550,7 +601,10 @@ export default function DerivationWorkspacePanel({
           >
             {filteredOperationPickerGroups.length === 0 && (
               <option value="" disabled>
-                {t("admin.mediaDerivationNoMatchingOperations", "No matching operations")}
+                {t(
+                  "admin.mediaDerivationNoMatchingOperations",
+                  "No matching operations",
+                )}
               </option>
             )}
             {filteredOperationPickerGroups.map((group) => (
@@ -568,7 +622,10 @@ export default function DerivationWorkspacePanel({
         <button
           type="button"
           onClick={handleAddOperation}
-          disabled={!selectedVisibleOperationType || filteredOperationPickerGroups.length === 0}
+          disabled={
+            !selectedVisibleOperationType ||
+            filteredOperationPickerGroups.length === 0
+          }
           className="px-3 py-1 rounded border text-[11px] bg-white"
         >
           {t("admin.mediaDerivationAddOperation", "Add operation")}
@@ -582,7 +639,9 @@ export default function DerivationWorkspacePanel({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <label className="inline-flex items-center gap-2 text-[11px] text-slate-700">
-          <span>{t("admin.mediaDerivationPreviewQuality", "Preview quality")}</span>
+          <span>
+            {t("admin.mediaDerivationPreviewQuality", "Preview quality")}
+          </span>
           <select
             className="border rounded px-2 py-1 text-xs bg-white"
             value={previewQuality}
@@ -627,12 +686,17 @@ export default function DerivationWorkspacePanel({
         >
           {applyingDerivation || savingPreview
             ? t("admin.mediaSavingDerivedAsset", "Saving…")
-            : t("admin.mediaApplyDerivationAndSave", "Apply full-quality and save")}
+            : t(
+                "admin.mediaApplyDerivationAndSave",
+                "Apply full-quality and save",
+              )}
         </button>
         <button
           type="button"
           onClick={savePreviewToLibrary}
-          disabled={!previewBlob || savingPreview || lastPreviewQuality === "fast"}
+          disabled={
+            !previewBlob || savingPreview || lastPreviewQuality === "fast"
+          }
           className="admin-pill px-3 py-1.5 rounded border text-[11px] disabled:opacity-50"
         >
           {savingPreview

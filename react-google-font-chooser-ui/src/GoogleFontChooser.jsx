@@ -57,7 +57,8 @@ export default function GoogleFontChooser({
   storageKey = "rgfc-state",
   similarLimit = 5,
 }) {
-  const safeFonts = asArray(fonts).length > 0 ? asArray(fonts) : DEFAULT_FONT_CATALOG;
+  const safeFonts =
+    asArray(fonts).length > 0 ? asArray(fonts) : DEFAULT_FONT_CATALOG;
   const fallbackFont = safeFonts[0] || null;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -122,7 +123,9 @@ export default function GoogleFontChooser({
   useEffect(() => {
     if (typeof window === "undefined" || !storageKey) return;
     try {
-      const parsed = JSON.parse(window.localStorage.getItem(storageKey) || "{}");
+      const parsed = JSON.parse(
+        window.localStorage.getItem(storageKey) || "{}",
+      );
       setFavorites(asArray(parsed.favorites));
       setRecent(asArray(parsed.recent));
     } catch {
@@ -150,7 +153,8 @@ export default function GoogleFontChooser({
   );
 
   const variationSettings = useMemo(
-    () => buildVariationSettings(normalizedAxisValues, selectedFont?.axes || []),
+    () =>
+      buildVariationSettings(normalizedAxisValues, selectedFont?.axes || []),
     [normalizedAxisValues, selectedFont],
   );
 
@@ -359,7 +363,7 @@ export default function GoogleFontChooser({
                     fontFamily: `'${font.family}', system-ui, sans-serif`,
                   }}
                 >
-                Aa
+                  Aa
                 </span>
               </span>
             </button>
@@ -375,7 +379,11 @@ export default function GoogleFontChooser({
       <div className="rgfc-card rgfc-right">
         <div className="rgfc-bar">
           {allowAdvancedToggle ? (
-            <div className="rgfc-mode-toggle" role="tablist" aria-label="Control mode">
+            <div
+              className="rgfc-mode-toggle"
+              role="tablist"
+              aria-label="Control mode"
+            >
               <button
                 type="button"
                 className={`rgfc-mode ${controlMode === "slider" ? "active" : ""}`}
@@ -469,17 +477,17 @@ export default function GoogleFontChooser({
           <div className="rgfc-section">
             <div className="rgfc-section-title">Similar fonts</div>
             <div className="rgfc-similar">
-            {similarFonts.map((font) => (
-              <button
-                key={font.family}
-                type="button"
-                className="rgfc-chip"
-                onClick={() => chooseFamily(font.family)}
-              >
-                {font.family}
-              </button>
-            ))}
-          </div>
+              {similarFonts.map((font) => (
+                <button
+                  key={font.family}
+                  type="button"
+                  className="rgfc-chip"
+                  onClick={() => chooseFamily(font.family)}
+                >
+                  {font.family}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
 
@@ -493,7 +501,11 @@ export default function GoogleFontChooser({
                 ? "Copy failed"
                 : "Copy CSS"}
           </button>
-          <button type="button" className="rgfc-button primary" onClick={applySelection}>
+          <button
+            type="button"
+            className="rgfc-button primary"
+            onClick={applySelection}
+          >
             Apply selection
           </button>
         </div>

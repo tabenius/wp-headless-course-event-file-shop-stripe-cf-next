@@ -17,8 +17,10 @@ query StorefrontRagbazProbe {
 `;
 
 const STOREFRONT_GRAPHQL_PROBE_TTL_MS =
-  Number.parseInt(process.env.STOREFRONT_GRAPHQL_PROBE_TTL_MS || "900000", 10) ||
-  900000;
+  Number.parseInt(
+    process.env.STOREFRONT_GRAPHQL_PROBE_TTL_MS || "900000",
+    10,
+  ) || 900000;
 
 let lastProbeAt = 0;
 let pendingProbe = null;
@@ -46,7 +48,7 @@ export async function probeStorefrontRagbazGraphql(intendedUri) {
   const uri = normalizeIntendedUri(intendedUri);
   pendingProbe = (async () => {
     try {
-      const data = await fetchGraphQL(STOREFRONT_RAGBAZ_PROBE_QUERY, {}, 0);
+      const data = await fetchGraphQL(STOREFRONT_RAGBAZ_PROBE_QUERY, {}, 900);
       const rootFields = Array.isArray(data?.rootQuery?.fields)
         ? data.rootQuery.fields
         : [];

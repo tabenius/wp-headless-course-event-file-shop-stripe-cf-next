@@ -118,14 +118,22 @@ const ADMIN_THEME_OVERRIDES = `
 function ExampleApp() {
   const [applied, setApplied] = useState(null);
   const appliedJson = useMemo(
-    () => (applied ? JSON.stringify(applied, null, 2) : "No selection applied yet."),
+    () =>
+      applied ? JSON.stringify(applied, null, 2) : "No selection applied yet.",
     [applied],
   );
 
   return (
     <main className="rgfc-host">
       <style>{ADMIN_THEME_OVERRIDES}</style>
-      <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gap: "12px" }}>
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          display: "grid",
+          gap: "12px",
+        }}
+      >
         <h1>Google Font Chooser (Admin Theme)</h1>
         <p>Single-file bundled demo aligned to the admin water palette.</p>
         <GoogleFontChooser
@@ -134,7 +142,9 @@ function ExampleApp() {
           onApply={(selection) => setApplied(selection)}
         />
         <section className="rgfc-result">
-          <h2 style={{ fontSize: "16px", marginBottom: "10px" }}>Applied selection</h2>
+          <h2 style={{ fontSize: "16px", marginBottom: "10px" }}>
+            Applied selection
+          </h2>
           <pre>{appliedJson}</pre>
         </section>
       </div>

@@ -25,7 +25,10 @@ function readEnv(name) {
 }
 
 function normalizeHost(hostname) {
-  return String(hostname || "").trim().toLowerCase().replace(/^www\./, "");
+  return String(hostname || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
 }
 
 function hostFromUrl(url) {
@@ -49,7 +52,9 @@ function mergeUniqueStrings(...inputs) {
   const set = new Set();
   for (const input of inputs) {
     for (const item of Array.isArray(input) ? input : []) {
-      const normalized = String(item || "").trim().toLowerCase();
+      const normalized = String(item || "")
+        .trim()
+        .toLowerCase();
       if (normalized) set.add(normalized);
     }
   }
@@ -90,10 +95,11 @@ const override =
   TENANT_OVERRIDES[normalizeHost(resolvedTenantKey)];
 
 const runtimePseudoHosts = parseCsvList(
-  readEnv("NEXT_PUBLIC_PSEUDO_EXTERNAL_HOSTS") || readEnv("PSEUDO_EXTERNAL_HOSTS")
+  readEnv("NEXT_PUBLIC_PSEUDO_EXTERNAL_HOSTS") ||
+    readEnv("PSEUDO_EXTERNAL_HOSTS"),
 );
 const runtimeNotificationBcc = parseCsvList(
-  readEnv("NEXT_PUBLIC_NOTIFICATION_BCC") || readEnv("NOTIFICATION_BCC")
+  readEnv("NEXT_PUBLIC_NOTIFICATION_BCC") || readEnv("NOTIFICATION_BCC"),
 );
 
 const resolvedSiteUrl =
@@ -117,17 +123,17 @@ export const tenantConfig = Object.freeze({
   notificationBcc: mergeUniqueStrings(
     DEFAULT_TENANT_CONFIG.notificationBcc,
     override?.notificationBcc,
-    runtimeNotificationBcc
+    runtimeNotificationBcc,
   ),
   pseudoExternalHosts: mergeUniqueHosts(
     DEFAULT_TENANT_CONFIG.pseudoExternalHosts,
     override?.pseudoExternalHosts,
-    runtimePseudoHosts
+    runtimePseudoHosts,
   ),
 });
 
 export function getPseudoExternalHosts(extraHosts = []) {
   return new Set(
-    mergeUniqueHosts(tenantConfig.pseudoExternalHosts, extraHosts)
+    mergeUniqueHosts(tenantConfig.pseudoExternalHosts, extraHosts),
   );
 }

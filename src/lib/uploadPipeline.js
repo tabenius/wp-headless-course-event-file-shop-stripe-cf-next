@@ -87,7 +87,9 @@ export async function runUploadPipeline({
 }) {
   // Dynamic imports — keeps pure helpers testable without WASM/Next.js resolver
   const { getPhoton } = await import("@/lib/photonLoader");
-  const { executeOperations, serializeImage } = await import("@/lib/photonPipeline");
+  const { executeOperations, serializeImage } = await import(
+    "@/lib/photonPipeline"
+  );
   const { registerUploadedAsset } = await import("@/lib/avatarFeedStore");
 
   const photon = await getPhoton();
@@ -124,7 +126,10 @@ export async function runUploadPipeline({
       processed.free();
 
       // Upload the variant
-      const variantFilename = buildVariantFilename(originalUrl, def.variantKind);
+      const variantFilename = buildVariantFilename(
+        originalUrl,
+        def.variantKind,
+      );
       const uploadResult = await uploadVariant(
         webpBytes,
         variantFilename,

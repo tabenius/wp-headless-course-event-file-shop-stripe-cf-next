@@ -20,7 +20,9 @@ function userRowToObject(row) {
   let oauthAccounts = [];
   try {
     oauthAccounts = JSON.parse(row.oauth_accounts || "[]");
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.id,
     email: row.email,
@@ -49,7 +51,11 @@ function normalizeAvatarPublic(value) {
 }
 
 function getUsernameSecret() {
-  return process.env.USERNAME_SECRET || process.env.AUTH_SECRET || "dev-only-change-me";
+  return (
+    process.env.USERNAME_SECRET ||
+    process.env.AUTH_SECRET ||
+    "dev-only-change-me"
+  );
 }
 
 function buildOpaqueEmailDerivedUsername(email) {
@@ -206,10 +212,20 @@ export async function findUserByEmail(email) {
     const user = userRowToObject(row);
     const expectedUsername = resolveImmutableUsername(user);
     const expectedAvatarPublic = normalizeAvatarPublic(user.avatarPublic);
-    if (user.username !== expectedUsername || user.avatarPublic !== expectedAvatarPublic) {
+    if (
+      user.username !== expectedUsername ||
+      user.avatarPublic !== expectedAvatarPublic
+    ) {
       await db
-        .prepare("UPDATE users SET username = ?, avatar_public = ?, updated_at = ? WHERE id = ?")
-        .bind(expectedUsername, expectedAvatarPublic ? 1 : 0, new Date().toISOString(), user.id)
+        .prepare(
+          "UPDATE users SET username = ?, avatar_public = ?, updated_at = ? WHERE id = ?",
+        )
+        .bind(
+          expectedUsername,
+          expectedAvatarPublic ? 1 : 0,
+          new Date().toISOString(),
+          user.id,
+        )
         .run();
       user.username = expectedUsername;
       user.avatarPublic = expectedAvatarPublic;
@@ -219,7 +235,8 @@ export async function findUserByEmail(email) {
   const users = await readUsers();
   const index = users.findIndex(
     (user) =>
-      typeof user?.email === "string" && normalizeEmail(user.email) === normalized,
+      typeof user?.email === "string" &&
+      normalizeEmail(user.email) === normalized,
   );
   if (index < 0) return null;
 
@@ -268,7 +285,15 @@ export async function createUser({ name, email, password }) {
         .prepare(
           "INSERT INTO users (id, email, name, username, avatar_public, password_hash, oauth_accounts, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, '[]', ?, ?)",
         )
-        .bind(userId, normalizedEmail, trimmedName, username, passwordHash, now, now)
+        .bind(
+          userId,
+          normalizedEmail,
+          trimmedName,
+          username,
+          passwordHash,
+          now,
+          now,
+        )
         .run();
     } catch (err) {
       if (String(err).includes("UNIQUE constraint failed")) {
@@ -276,7 +301,13 @@ export async function createUser({ name, email, password }) {
       }
       throw err;
     }
-    return toPublicUser({ id: userId, name: trimmedName, email: normalizedEmail, username, avatarPublic: false });
+    return toPublicUser({
+      id: userId,
+      name: trimmedName,
+      email: normalizedEmail,
+      username,
+      avatarPublic: false,
+    });
   }
 
   const users = await readUsers();
@@ -330,10 +361,14 @@ export async function updateUserPassword(email, newPassword) {
     const newHash = hashPassword(newPassword);
     const now = new Date().toISOString();
     await db
-      .prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?")
+      .prepare(
+        "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
+      )
       .bind(newHash, now, row.id)
       .run();
-    return toPublicUser(userRowToObject({ ...row, password_hash: newHash, updated_at: now }));
+    return toPublicUser(
+      userRowToObject({ ...row, password_hash: newHash, updated_at: now }),
+    );
   }
   const users = await readUsers();
   const index = users.findIndex(
@@ -413,18 +448,38 @@ export async function upsertOAuthUser({
 
     if (existing) {
       let oauthAccounts = [];
-      try { oauthAccounts = JSON.parse(existing.oauth_accounts || "[]"); } catch { /* ignore */ }
+      try {
+        oauthAccounts = JSON.parse(existing.oauth_accounts || "[]");
+      } catch {
+        /* ignore */
+      }
       if (!Array.isArray(oauthAccounts)) oauthAccounts = [];
       const exists = oauthAccounts.some(
-        (a) => a?.provider === nextOAuthAccount.provider && a?.providerAccountId === nextOAuthAccount.providerAccountId,
+        (a) =>
+          a?.provider === nextOAuthAccount.provider &&
+          a?.providerAccountId === nextOAuthAccount.providerAccountId,
       );
       if (!exists) oauthAccounts.push(nextOAuthAccount);
       const now = new Date().toISOString();
       await db
-        .prepare("UPDATE users SET name = ?, oauth_accounts = ?, updated_at = ? WHERE id = ?")
-        .bind(trimmedName || existing.name, JSON.stringify(oauthAccounts), now, existing.id)
+        .prepare(
+          "UPDATE users SET name = ?, oauth_accounts = ?, updated_at = ? WHERE id = ?",
+        )
+        .bind(
+          trimmedName || existing.name,
+          JSON.stringify(oauthAccounts),
+          now,
+          existing.id,
+        )
         .run();
-      return toPublicUser(userRowToObject({ ...existing, name: trimmedName || existing.name, oauth_accounts: JSON.stringify(oauthAccounts), updated_at: now }));
+      return toPublicUser(
+        userRowToObject({
+          ...existing,
+          name: trimmedName || existing.name,
+          oauth_accounts: JSON.stringify(oauthAccounts),
+          updated_at: now,
+        }),
+      );
     }
 
     const newUserId = crypto.randomUUID();
@@ -434,9 +489,23 @@ export async function upsertOAuthUser({
       .prepare(
         "INSERT INTO users (id, email, name, username, avatar_public, password_hash, oauth_accounts, created_at, updated_at) VALUES (?, ?, ?, ?, 0, '', ?, ?, ?)",
       )
-      .bind(newUserId, normalizedEmail, trimmedName || normalizedEmail.split("@")[0], username, JSON.stringify([nextOAuthAccount]), now, now)
+      .bind(
+        newUserId,
+        normalizedEmail,
+        trimmedName || normalizedEmail.split("@")[0],
+        username,
+        JSON.stringify([nextOAuthAccount]),
+        now,
+        now,
+      )
       .run();
-    return toPublicUser({ id: newUserId, name: trimmedName || normalizedEmail.split("@")[0], email: normalizedEmail, username, avatarPublic: false });
+    return toPublicUser({
+      id: newUserId,
+      name: trimmedName || normalizedEmail.split("@")[0],
+      email: normalizedEmail,
+      username,
+      avatarPublic: false,
+    });
   }
 
   const users = await readUsers();

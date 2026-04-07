@@ -109,10 +109,7 @@ describe("computeSMA", () => {
 
 describe("computeRSI", () => {
   it("returns values between 0 and 100", () => {
-    const values = Array.from(
-      { length: 30 },
-      (_, i) => 100 + Math.sin(i) * 20,
-    );
+    const values = Array.from({ length: 30 }, (_, i) => 100 + Math.sin(i) * 20);
     const rsi = computeRSI(values, 14);
     const valid = rsi.filter((v) => v !== null);
     assert.ok(valid.length > 0);
@@ -145,10 +142,7 @@ describe("computeRSI", () => {
   });
 
   it("first valid RSI is at index equal to period", () => {
-    const values = Array.from(
-      { length: 30 },
-      (_, i) => 100 + Math.sin(i) * 20,
-    );
+    const values = Array.from({ length: 30 }, (_, i) => 100 + Math.sin(i) * 20);
     const rsi = computeRSI(values, 14);
     for (let i = 0; i < 14; i++) {
       assert.equal(rsi[i], null);

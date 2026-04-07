@@ -94,7 +94,8 @@ export async function getWcTaxRates(config) {
 }
 
 export async function createWcOrder(sessionData, config) {
-  const data = sessionData && typeof sessionData === "object" ? sessionData : {};
+  const data =
+    sessionData && typeof sessionData === "object" ? sessionData : {};
   const totalAmount = Number(data.amountTotal || 0);
   const currency = String(data.currency || "sek").toUpperCase();
   const total = Number.isFinite(totalAmount)
@@ -108,7 +109,9 @@ export async function createWcOrder(sessionData, config) {
     set_paid: true,
     customer_note: `RAGBAZ checkout session ${String(data.sessionId || "").trim()}`,
     billing: {
-      email: String(data.email || "").trim().toLowerCase(),
+      email: String(data.email || "")
+        .trim()
+        .toLowerCase(),
       first_name: "",
       last_name: "",
     },
@@ -121,7 +124,10 @@ export async function createWcOrder(sessionData, config) {
       },
     ],
     meta_data: Object.entries(data.metadata || {})
-      .filter(([key, value]) => String(key).trim() && value !== undefined && value !== null)
+      .filter(
+        ([key, value]) =>
+          String(key).trim() && value !== undefined && value !== null,
+      )
       .map(([key, value]) => ({ key: String(key), value: String(value) })),
   };
   return wcRequest("/wp-json/wc/v3/orders", {

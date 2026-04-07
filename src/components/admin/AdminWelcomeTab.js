@@ -227,7 +227,9 @@ export default function AdminWelcomeTab({
               className="flex items-center justify-between rounded-lg border px-3 py-2"
             >
               <dt className="text-sm text-slate-600">{row.label}</dt>
-              <dd className="text-sm font-semibold text-slate-900">{row.value}</dd>
+              <dd className="text-sm font-semibold text-slate-900">
+                {row.value}
+              </dd>
             </div>
           ))}
         </dl>

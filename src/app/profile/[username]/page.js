@@ -78,7 +78,9 @@ export default async function AvatarProfilePage({ params: paramsPromise }) {
           </div>
         ) : null}
         {avatar.bio ? (
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{avatar.bio}</p>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+            {avatar.bio}
+          </p>
         ) : null}
       </div>
 

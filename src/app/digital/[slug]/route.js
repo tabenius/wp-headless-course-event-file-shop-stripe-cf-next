@@ -1,10 +1,26 @@
+// XXX: beware, be sure to use named imports
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { hasDigitalAccessUncached, grantDigitalAccess } from "@/lib/digitalAccessStore";
-import { getDigitalProductBySlug, isProductListable } from "@/lib/digitalProducts";
+import {
+  hasDigitalAccessUncached,
+  grantDigitalAccess,
+} from "@/lib/digitalAccessStore";
+import {
+  getDigitalProductBySlug,
+  isProductListable,
+  resolveFileUrl,
+} from "@/lib/digitalProducts";
 import { createSignedDownloadUrl } from "@/lib/s3upload";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
-export const runtime = "edge";
+// XXX: OpenNext CF Adapter already handles this
+//
+//export const runtime = "edge";
+
+const log = (...args) => {
+  // Console output is streamed by wrangler tail in production.
+  console.error("[/digital/]", ...args);
+};
 
 function getFileName(product) {
   const candidates = [product.name, product.assetId, product.slug, product.id];
@@ -35,12 +51,6 @@ function mimeToExtension(mimeType) {
   return map[mime] || "";
 }
 
-function resolveFileUrl(product) {
-  if (product.fileUrl) return product.fileUrl;
-  if (product.imageUrl && product.productMode === "asset") return product.imageUrl;
-  return "";
-}
-
 function getSignedUrlTtlSeconds() {
   const raw = process.env.DIGITAL_DOWNLOAD_SIGNED_URL_TTL_SECONDS;
   const parsed = Number.parseInt(String(raw || ""), 10);
@@ -51,8 +61,13 @@ function getSignedUrlTtlSeconds() {
 }
 
 export async function GET(request, { params }) {
+  log("GET");
   const { slug } = await params;
+  log(slug);
   const product = await getDigitalProductBySlug(slug);
+  log(product);
+  log(product.slug);
+  log(product.assetId);
 
   if (!product || !isProductListable(product)) {
     return new NextResponse("Not found", { status: 404 });
@@ -69,11 +84,31 @@ export async function GET(request, { params }) {
   }
 
   // Use uncached read — user may have just claimed moments ago
-  let canDownload = await hasDigitalAccessUncached(product.id, session.user.email);
+  let canDownload = await hasDigitalAccessUncached(
+    product.id,
+    session.user.email,
+  );
   const isFreeProduct =
     product.free === true || Number(product.priceCents || 0) <= 0;
   if (!canDownload && isFreeProduct) {
-    // Auto-grant for free products on first visit
+    // Rate-limit free product claims: 20 per hour per IP
+    const ip = getClientIp(request);
+    const rl = await checkRateLimit("free-claim", ip, 20);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Rate limit exceeded for free product claims",
+          limit: rl.limit,
+          remaining: rl.remaining,
+          retryAfterSeconds: 3600,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": "3600" },
+        },
+      );
+    }
     await grantDigitalAccess(product.id, session.user.email);
     canDownload = true;
   }

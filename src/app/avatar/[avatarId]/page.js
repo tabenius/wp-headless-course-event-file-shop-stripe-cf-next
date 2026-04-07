@@ -42,7 +42,8 @@ export default async function AvatarPage({ params: paramsPromise }) {
           {avatar.canonicalName || avatar.uriId || "Avatar"}
         </h1>
         <p className="text-sm text-gray-600">
-          Avatar URI: <span className="font-mono">{`/avatar/${avatar.uriId}`}</span>
+          Avatar URI:{" "}
+          <span className="font-mono">{`/avatar/${avatar.uriId}`}</span>
         </p>
       </div>
 
@@ -65,7 +66,9 @@ export default async function AvatarPage({ params: paramsPromise }) {
           </div>
         ) : null}
         {avatar.bio ? (
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{avatar.bio}</p>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+            {avatar.bio}
+          </p>
         ) : null}
       </div>
 

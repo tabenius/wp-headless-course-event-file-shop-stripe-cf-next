@@ -158,7 +158,10 @@ async function fetchWooCommerceProducts() {
 
 async function fetchEvents() {
   try {
-    const hasEventCategories = await hasGraphQLField("Event", "eventCategories");
+    const hasEventCategories = await hasGraphQLField(
+      "Event",
+      "eventCategories",
+    );
     const categoryFragment = hasEventCategories
       ? "eventCategories { nodes { name slug } }"
       : "";
@@ -247,7 +250,8 @@ export async function PUT(request) {
 
   try {
     const body = await request.json();
-    const courseUri = typeof body?.contentUri === "string" ? body.contentUri : "";
+    const courseUri =
+      typeof body?.contentUri === "string" ? body.contentUri : "";
     const allowedUsers = Array.isArray(body?.allowedUsers)
       ? body.allowedUsers
       : [];
@@ -263,11 +267,12 @@ export async function PUT(request) {
     );
     const vatPercentRaw = hasVatPercent ? body?.vatPercent : undefined;
     const parsedVatPercent =
-      vatPercentRaw === "" || vatPercentRaw === null || vatPercentRaw === undefined
+      vatPercentRaw === "" ||
+      vatPercentRaw === null ||
+      vatPercentRaw === undefined
         ? null
         : Number.parseFloat(String(vatPercentRaw).replace(",", "."));
-    const active =
-      typeof body?.active === "boolean" ? body.active : undefined;
+    const active = typeof body?.active === "boolean" ? body.active : undefined;
     const state = await setContentAccess({
       courseUri,
       allowedUsers,

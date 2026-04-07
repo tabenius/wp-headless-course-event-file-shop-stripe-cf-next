@@ -24,8 +24,13 @@ query GetNodeByUri($uri: String!) {
   }
 }
 `;
+const log = (...args) => {
+  // Console output is streamed by wrangler tail in production.
+  console.error("[app/page]", ...args);
+};
 
 export default async function HomePage() {
+  log("before WordPressSetupPage");
   if (shouldSkipUpstreamDuringBuild()) {
     return <WordPressSetupPage />;
   }
@@ -36,10 +41,13 @@ export default async function HomePage() {
   if (!wpUrl) {
     return <WordPressSetupPage />;
   }
+  log("past WordPressSetupPage");
 
   return (
     <>
-      <Suspense fallback={<StorefrontListSkeleton items={4} withImage={false} />}>
+      <Suspense
+        fallback={<StorefrontListSkeleton items={2} withImage={true} />}
+      >
         <HomeEventsSection />
       </Suspense>
       <Suspense fallback={<StorefrontArticleSkeleton paragraphs={9} />}>
@@ -81,9 +89,12 @@ async function HomeContentSection() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] px-6 text-center space-y-4">
         <p className="text-5xl">⚠️</p>
-        <h1 className="text-2xl font-semibold text-gray-800">This site is temporarily unavailable</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">
+          This site is temporarily unavailable
+        </h1>
         <p className="text-gray-500 max-w-md">
-          The content server could not be reached. This is usually a temporary issue — please try again in a moment.
+          The content server could not be reached. This is usually a temporary
+          issue — please try again in a moment.
         </p>
         <p className="text-xs text-gray-400 font-mono">{reason}</p>
       </div>

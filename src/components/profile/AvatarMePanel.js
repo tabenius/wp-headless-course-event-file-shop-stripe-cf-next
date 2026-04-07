@@ -12,7 +12,9 @@ function prettyJson(value) {
 }
 
 function normalizeRelationshipId(raw) {
-  const safe = String(raw || "").trim().toLowerCase();
+  const safe = String(raw || "")
+    .trim()
+    .toLowerCase();
   if (!safe) return "";
   return safe;
 }
@@ -33,7 +35,9 @@ export default function AvatarMePanel({
     initialAvatar?.profileImageUrl || "",
   );
   const [bio, setBio] = useState(initialAvatar?.bio || "");
-  const [detailsJson, setDetailsJson] = useState(prettyJson(initialAvatar?.details));
+  const [detailsJson, setDetailsJson] = useState(
+    prettyJson(initialAvatar?.details),
+  );
 
   const [targetAvatarId, setTargetAvatarId] = useState("");
   const [relationshipKind, setRelationshipKind] = useState("follow");
@@ -203,20 +207,26 @@ export default function AvatarMePanel({
         ) : null}
         {hasAvatar ? (
           <p className="text-sm text-gray-700">
-            <span className="font-semibold">Avatar ID:</span> {avatar?.uriId || "—"}
+            <span className="font-semibold">Avatar ID:</span>{" "}
+            {avatar?.uriId || "—"}
           </p>
         ) : null}
         {canonicalProfileHref ? (
           <p className="text-sm text-gray-700">
             <span className="font-semibold">Profile URL:</span>{" "}
-            <Link href={canonicalProfileHref} className="text-teal-700 hover:underline">
+            <Link
+              href={canonicalProfileHref}
+              className="text-teal-700 hover:underline"
+            >
               {canonicalProfileHref}
             </Link>
           </p>
         ) : null}
 
         <label className="block space-y-1">
-          <span className="text-sm font-medium text-gray-700">Canonical name</span>
+          <span className="text-sm font-medium text-gray-700">
+            Canonical name
+          </span>
           <input
             type="text"
             value={canonicalName}
@@ -236,7 +246,9 @@ export default function AvatarMePanel({
         </label>
 
         <label className="block space-y-1">
-          <span className="text-sm font-medium text-gray-700">Profile image URL</span>
+          <span className="text-sm font-medium text-gray-700">
+            Profile image URL
+          </span>
           <input
             type="url"
             value={profileImageUrl}
@@ -296,7 +308,9 @@ export default function AvatarMePanel({
 
           <div className="grid gap-3 md:grid-cols-3">
             <label className="block space-y-1">
-              <span className="text-sm font-medium text-gray-700">Target avatar ID</span>
+              <span className="text-sm font-medium text-gray-700">
+                Target avatar ID
+              </span>
               <input
                 type="text"
                 value={targetAvatarId}

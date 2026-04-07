@@ -5,11 +5,11 @@ const OAUTH_STATE_COOKIE = "oauth_state";
 const ADMIN_COOKIE_NAME = "admin_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 function getSecureCookie() {
-  return process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return process?.env?.NODE_ENV === "production" ? "; Secure" : "";
 }
 
 function getSecret() {
-  return process.env.AUTH_SECRET || "dev-only-change-me";
+  return process?.env?.AUTH_SECRET || "dev-only-change-me";
 }
 
 function encodeBase64Url(value) {
@@ -124,12 +124,25 @@ async function safeEqualStrings(a, b) {
 }
 
 export async function auth() {
+  console.error("[auth]");
   const cookieStore = await cookies();
+  console.error("[auth] cookieStore got");
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  console.error("[auth] got token");
+  const session = await decodeSession(token);
+  console.error("[auth] got session");
+  if (!session?.user) return null;
+  console.error("[auth] got user ", session?.user);
+  return { user: session.user };
+}
+/*
+export async function createSessionToken(user) {
   const token = cookieStore.get(COOKIE_NAME)?.value;
   const session = await decodeSession(token);
   if (!session?.user) return null;
   return { user: session.user };
 }
+*/
 
 export async function createSessionToken(user) {
   const safeUser = {
@@ -237,7 +250,9 @@ export async function validateAdminCredentials(email, password) {
 }
 
 export async function createAdminSessionToken(email = "") {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
   return encodeSession({
     role: "admin",
     email: normalizedEmail,
@@ -260,7 +275,9 @@ export async function adminAuth() {
   if (!session || session.role !== "admin") return null;
   return {
     role: "admin",
-    email: String(session.email || "").trim().toLowerCase(),
+    email: String(session.email || "")
+      .trim()
+      .toLowerCase(),
   };
 }
 
@@ -275,7 +292,9 @@ export async function getAdminSessionFromCookieHeader(cookieHeader) {
   return session?.role === "admin"
     ? {
         role: "admin",
-        email: String(session.email || "").trim().toLowerCase(),
+        email: String(session.email || "")
+          .trim()
+          .toLowerCase(),
       }
     : null;
 }

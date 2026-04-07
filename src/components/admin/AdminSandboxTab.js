@@ -148,7 +148,8 @@ export default function AdminSandboxTab({
                         Not configured &mdash;{" "}
                         {!analyticsDiagnostics.tokenPresent
                           ? "missing CF_API_TOKEN (or CLOUDFLARE_API_TOKEN)"
-                          : !analyticsDiagnostics.zonePresent && !analyticsDiagnostics.accountPresent
+                          : !analyticsDiagnostics.zonePresent &&
+                              !analyticsDiagnostics.accountPresent
                             ? "token present but missing CF_ZONE_ID and CLOUDFLARE_ACCOUNT_ID"
                             : !analyticsDiagnostics.zonePresent
                               ? "token and account present but missing CF_ZONE_ID for full analytics"
@@ -162,9 +163,10 @@ export default function AdminSandboxTab({
               </div>
               {analyticsMode === "workers" && (
                 <p className="text-[10px] text-gray-400 mt-1">
-                  Add a custom domain (e.g. {tenantConfig.customDomainExample}) to Cloudflare, route your
-                  Worker through it, and set CF_ZONE_ID to unlock referrers,
-                  page views, unique visitors, and bandwidth.
+                  Add a custom domain (e.g. {tenantConfig.customDomainExample})
+                  to Cloudflare, route your Worker through it, and set
+                  CF_ZONE_ID to unlock referrers, page views, unique visitors,
+                  and bandwidth.
                 </p>
               )}
             </div>

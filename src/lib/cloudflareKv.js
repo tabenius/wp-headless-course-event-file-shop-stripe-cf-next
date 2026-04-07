@@ -1,9 +1,7 @@
 import { shouldSkipUpstreamDuringBuild } from "./buildUpstreamGuard.js";
 
 function getCloudflareAccountId() {
-  return (
-    process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || ""
-  );
+  return process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || "";
 }
 
 function getCloudflareApiToken() {

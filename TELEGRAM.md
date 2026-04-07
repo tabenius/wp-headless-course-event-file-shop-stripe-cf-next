@@ -54,13 +54,13 @@ Replace `<TOKEN>` with the BotFather token and `<WEBHOOK_SECRET>` with the secre
 
 ## Bot Commands
 
-| Command | Description |
-|---------|-------------|
-| `/sites` | List connected WordPress sites |
-| `/history` | Last 10 heartbeat connections |
-| `/slow` | Recent bad web vitals events |
+| Command        | Description                               |
+| -------------- | ----------------------------------------- |
+| `/sites`       | List connected WordPress sites            |
+| `/history`     | Last 10 heartbeat connections             |
+| `/slow`        | Recent bad web vitals events              |
 | `/performance` | Average TTFB, LCP, INP, CLS over last 24h |
-| `/help` | Show available commands |
+| `/help`        | Show available commands                   |
 
 ## Push Notifications
 
@@ -75,10 +75,12 @@ Notifications are fire-and-forget and never block API responses.
 ## Troubleshooting
 
 **Bot not responding to commands:**
+
 - Verify the webhook is registered: `curl https://api.telegram.org/bot<TOKEN>/getWebhookInfo`
 - Check that `TELEGRAM_ADMIN_ID` matches your actual Telegram user ID
 - Check that `TELEGRAM_WEBHOOK_SECRET` matches what you passed to `setWebhook`
 
 **Not receiving push notifications:**
+
 - Confirm `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ADMIN_ID` are both set (notifications are silently skipped if either is missing)
 - Check Cloudflare Workers logs for `[telegram]` error messages

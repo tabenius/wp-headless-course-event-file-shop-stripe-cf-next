@@ -1,7 +1,4 @@
-import {
-  readCloudflareKvJson,
-  writeCloudflareKvJson,
-} from "./cloudflareKv.js";
+import { readCloudflareKvJson, writeCloudflareKvJson } from "./cloudflareKv.js";
 
 const KV_KEY = "fonts:downloaded";
 
@@ -28,7 +25,13 @@ export async function upsertDownloadedFont(record) {
 
 export function parseFontWeightList(value) {
   if (Array.isArray(value)) {
-    return [...new Set(value.map((item) => Number.parseInt(String(item), 10)).filter((item) => Number.isFinite(item) && item > 0))];
+    return [
+      ...new Set(
+        value
+          .map((item) => Number.parseInt(String(item), 10))
+          .filter((item) => Number.isFinite(item) && item > 0),
+      ),
+    ];
   }
   return String(value || "")
     .split(",")
@@ -38,7 +41,8 @@ export function parseFontWeightList(value) {
 }
 
 function cssHasAllowedWeight(block, allowedWeights) {
-  if (!Array.isArray(allowedWeights) || allowedWeights.length === 0) return true;
+  if (!Array.isArray(allowedWeights) || allowedWeights.length === 0)
+    return true;
   const match = String(block || "").match(/font-weight\s*:\s*([^;]+);/i);
   if (!match) return true;
   const raw = match[1].trim();
@@ -57,12 +61,15 @@ function cssHasAllowedWeight(block, allowedWeights) {
 function trimFontCssByWeights(css, allowedWeights) {
   const safeCss = String(css || "");
   if (!safeCss.trim()) return "";
-  if (!Array.isArray(allowedWeights) || allowedWeights.length === 0) return safeCss;
+  if (!Array.isArray(allowedWeights) || allowedWeights.length === 0)
+    return safeCss;
 
   const blocks = safeCss.match(/@font-face\s*{[\s\S]*?}/g);
   if (!Array.isArray(blocks) || blocks.length === 0) return safeCss;
 
-  const kept = blocks.filter((block) => cssHasAllowedWeight(block, allowedWeights));
+  const kept = blocks.filter((block) =>
+    cssHasAllowedWeight(block, allowedWeights),
+  );
   if (kept.length === 0) return safeCss;
   return kept.join("\n");
 }

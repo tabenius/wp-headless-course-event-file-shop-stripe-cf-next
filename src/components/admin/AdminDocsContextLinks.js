@@ -41,7 +41,10 @@ export default function AdminDocsContextLinks({
     <div className={`${rootClass} ${className}`.trim()}>
       <span
         className="admin-docs-context-pill inline-flex items-center rounded-full border px-2 py-0.5 font-semibold"
-        title={t("admin.docsContextHint", "Context-aware docs links for this section.")}
+        title={t(
+          "admin.docsContextHint",
+          "Context-aware docs links for this section.",
+        )}
       >
         {t("admin.docsContextPrefix", "Need help?")}
       </span>

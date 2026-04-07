@@ -7,7 +7,11 @@ const root = path.resolve(__dirname, "..");
 export function resolve(specifier, context, nextResolve) {
   if (specifier.startsWith("@/")) {
     const relative = specifier.slice(2);
-    const resolved = path.join(root, "src", relative.endsWith(".js") ? relative : relative + ".js");
+    const resolved = path.join(
+      root,
+      "src",
+      relative.endsWith(".js") ? relative : relative + ".js",
+    );
     return nextResolve(pathToFileURL(resolved).href, context);
   }
   return nextResolve(specifier, context);

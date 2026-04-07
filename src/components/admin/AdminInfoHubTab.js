@@ -17,15 +17,19 @@ import CyberduckBookmarkPanel from "./CyberduckBookmarkPanel";
 import TorusBanner from "./TorusBanner";
 
 function normalizeSection(value) {
-  const safe = String(value || "").trim().toLowerCase();
+  const safe = String(value || "")
+    .trim()
+    .toLowerCase();
   if (safe === "settings" || safe === "setting") return "settings";
   if (safe === "health") return "health";
   if (safe === "stats" || safe === "statistics") return "stats";
-  if (safe === "links" || safe === "dead-links" || safe === "deadlinks") return "beta";
+  if (safe === "links" || safe === "dead-links" || safe === "deadlinks")
+    return "beta";
   if (safe === "storage" || safe === "infrastructure") return "storage";
   if (safe === "secret" || safe === "secrets") return "secret";
   if (safe === "docs" || safe === "documentation") return "docs";
-  if (safe === "beta" || safe === "beta-features" || safe === "monitoring") return "beta";
+  if (safe === "beta" || safe === "beta-features" || safe === "monitoring")
+    return "beta";
   return "overview";
 }
 
@@ -34,7 +38,9 @@ function extractHashPath(value) {
   const lower = raw.toLowerCase();
   const lastHashRoute = lower.lastIndexOf("#/");
   const candidate =
-    lastHashRoute >= 0 ? lower.slice(lastHashRoute + 2) : lower.replace(/^#\/?/, "");
+    lastHashRoute >= 0
+      ? lower.slice(lastHashRoute + 2)
+      : lower.replace(/^#\/?/, "");
   return candidate.replace(/^\/+/, "");
 }
 
@@ -87,7 +93,11 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
 
   const criticalItems = runtime
     ? [
-        { label: "WP_DEBUG", ok: runtime.wpDebug === false, value: runtime.wpDebug },
+        {
+          label: "WP_DEBUG",
+          ok: runtime.wpDebug === false,
+          value: runtime.wpDebug,
+        },
         {
           label: "WP_DEBUG_LOG",
           ok: runtime.wpDebugLog === false,
@@ -186,7 +196,11 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
         "Object-cache drop-in is present but not active. Verify cache backend configuration.",
       );
     }
-    if (runtime.debugFlagsOk && runtime.debugToolsOk && runtime.cacheReadinessOk) {
+    if (
+      runtime.debugFlagsOk &&
+      runtime.debugToolsOk &&
+      runtime.cacheReadinessOk
+    ) {
       measures.push(
         "Current posture is healthy. Keep monitoring TTFB and GraphQL response time in the Info/Stats views.",
       );
@@ -208,7 +222,9 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
           className="px-3 py-1.5 rounded border hover:bg-gray-50 disabled:opacity-50 text-sm"
           disabled={healthLoading}
         >
-          {healthLoading ? t("admin.running", "Running…") : t("admin.runCheck", "Run check")}
+          {healthLoading
+            ? t("admin.running", "Running…")
+            : t("admin.runCheck", "Run check")}
         </button>
       </div>
 
@@ -316,12 +332,17 @@ function RagbazRuntimePanel({ healthChecks, healthLoading, runHealthCheck }) {
           </div>
         </>
       )}
-
     </div>
   );
 }
 
-function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBackend, uploadInfoDetails }) {
+function StorageConfigPanel({
+  storage,
+  uploadInfo,
+  uploadBackend,
+  setUploadBackend,
+  uploadInfoDetails,
+}) {
   const [envGroups, setEnvGroups] = useState(null);
   const [envLoading, setEnvLoading] = useState(false);
   const [envError, setEnvError] = useState("");
@@ -346,15 +367,24 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
   }, [loadEnvStatus]);
 
   async function copyEnvValue(key, value) {
-    if (!value || typeof navigator === "undefined" || !navigator.clipboard?.writeText) return;
+    if (
+      !value ||
+      typeof navigator === "undefined" ||
+      !navigator.clipboard?.writeText
+    )
+      return;
     try {
       await navigator.clipboard.writeText(value);
       setCopiedEnv(key);
       setTimeout(() => setCopiedEnv(""), 1200);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
-  const s3Enabled = Boolean(uploadInfo?.s3Enabled || uploadInfoDetails?.s3Enabled);
+  const s3Enabled = Boolean(
+    uploadInfo?.s3Enabled || uploadInfoDetails?.s3Enabled,
+  );
 
   const storageOptions = [
     {
@@ -374,7 +404,15 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
   const uploadTargets = [
     { id: "wordpress", label: t("admin.uploadTargetWordpress"), enabled: true },
     { id: "r2", label: t("admin.uploadTargetR2"), enabled: uploadInfo?.r2 },
-    ...(s3Enabled ? [{ id: "s3", label: t("admin.uploadTargetS3"), enabled: uploadInfo?.s3 }] : []),
+    ...(s3Enabled
+      ? [
+          {
+            id: "s3",
+            label: t("admin.uploadTargetS3"),
+            enabled: uploadInfo?.s3,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -389,18 +427,25 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
         </div>
         <p className="text-sm text-gray-500">
           {t("admin.storageBackendHelp")}{" "}
-          <code className="bg-gray-100 px-1 rounded">COURSE_ACCESS_BACKEND</code>.
+          <code className="bg-gray-100 px-1 rounded">
+            CONTENT_ACCESS_BACKEND
+          </code>
+          .
         </p>
         <div className="grid gap-3 md:grid-cols-3">
           {storageOptions.map((opt) => (
             <div
               key={opt.id}
               className={`border-2 rounded p-4 space-y-2 ${
-                opt.active ? "border-green-400 bg-green-50" : "border-gray-200 bg-white opacity-70"
+                opt.active
+                  ? "border-green-400 bg-green-50"
+                  : "border-gray-200 bg-white opacity-70"
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${opt.active ? "bg-green-600" : "bg-gray-300"}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${opt.active ? "bg-green-600" : "bg-gray-300"}`}
+                />
                 <span className="font-medium text-sm">{opt.name}</span>
               </div>
               <p className="text-xs text-gray-500">{opt.desc}</p>
@@ -422,7 +467,9 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
           </h3>
           <AdminFieldHelpLink slug="quick-start" />
         </div>
-        <p className="text-xs text-gray-500">{t("admin.uploadDestinationHint")}</p>
+        <p className="text-xs text-gray-500">
+          {t("admin.uploadDestinationHint")}
+        </p>
         <div className="flex flex-wrap gap-2">
           {uploadTargets.map((opt) => (
             <button
@@ -441,7 +488,9 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
           ))}
         </div>
         {!uploadInfo?.s3 && !uploadInfo?.r2 && (
-          <p className="text-[11px] text-gray-500">{t("admin.uploadCredentialsHint")}</p>
+          <p className="text-[11px] text-gray-500">
+            {t("admin.uploadCredentialsHint")}
+          </p>
         )}
         <CyberduckBookmarkPanel
           uploadBackend={uploadBackend}
@@ -460,96 +509,123 @@ function StorageConfigPanel({ storage, uploadInfo, uploadBackend, setUploadBacke
           <AdminFieldHelpLink slug="technical-manual" />
         </div>
         <p className="text-xs text-gray-500">
-          {t("admin.envVarsHint", "All env vars the app reads, grouped by service. Secret values are masked.")}
+          {t(
+            "admin.envVarsHint",
+            "All env vars the app reads, grouped by service. Secret values are masked.",
+          )}
         </p>
-        {envLoading && <p className="text-xs text-gray-400">{t("common.loading", "Loading…")}</p>}
+        {envLoading && (
+          <p className="text-xs text-gray-400">
+            {t("common.loading", "Loading…")}
+          </p>
+        )}
         {envError && (
           <div className="flex items-center gap-2">
             <p className="text-xs text-red-600">{envError}</p>
-            <button type="button" onClick={loadEnvStatus} className="text-xs text-slate-600 hover:underline">
+            <button
+              type="button"
+              onClick={loadEnvStatus}
+              className="text-xs text-slate-600 hover:underline"
+            >
               {t("common.retry", "Retry")}
             </button>
           </div>
         )}
-        {envGroups && envGroups.map((group) => (
-          <details
-            key={group.id}
-            className="rounded-xl border border-gray-200 bg-white p-3 open:border-slate-300 open:bg-gray-50"
-          >
-            <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
-              <span className="font-medium text-sm text-gray-800">{group.label}</span>
-              <span className="text-[11px] text-gray-400">
-                {group.vars.filter((v) => v.set).length}/{group.vars.length} set
-              </span>
-            </summary>
-            <div className="mt-3 space-y-1">
-              {group.vars.map((v) => {
-                const key = `${group.id}:${v.names[0]}`;
-                const isRevealed = revealedValues.has(key);
-                const hasValue = Boolean(v.set);
-                const displayValue = !hasValue
-                  ? t("admin.envVarNotSet", "not set")
-                  : isRevealed
-                    ? (v.value || "")
-                    : "••••••••";
-                return (
-                  <div
-                    key={key}
-                    className="grid grid-cols-[minmax(0,180px)_minmax(0,1fr)_auto] gap-2 items-center bg-white border rounded px-2 py-1.5 text-[11px]"
-                  >
-                    <div className="min-w-0">
-                      <span className={`font-mono ${v.set ? "text-gray-700" : "text-gray-400"}`}>
-                        {v.names[0]}
-                      </span>
-                      {v.names.length > 1 && (
-                        <span className="block text-[10px] text-gray-400">
-                          or {v.names.slice(1).join(", ")}
-                        </span>
-                      )}
-                      {v.hint && <span className="block text-[10px] text-gray-400">{v.hint}</span>}
-                    </div>
-                    <span
-                      className={`font-mono break-all ${
-                        !v.set ? "text-red-400 italic"
-                        : !isRevealed ? "text-gray-300 tracking-widest"
-                        : "text-gray-700"
-                      }`}
+        {envGroups &&
+          envGroups.map((group) => (
+            <details
+              key={group.id}
+              className="rounded-xl border border-gray-200 bg-white p-3 open:border-slate-300 open:bg-gray-50"
+            >
+              <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
+                <span className="font-medium text-sm text-gray-800">
+                  {group.label}
+                </span>
+                <span className="text-[11px] text-gray-400">
+                  {group.vars.filter((v) => v.set).length}/{group.vars.length}{" "}
+                  set
+                </span>
+              </summary>
+              <div className="mt-3 space-y-1">
+                {group.vars.map((v) => {
+                  const key = `${group.id}:${v.names[0]}`;
+                  const isRevealed = revealedValues.has(key);
+                  const hasValue = Boolean(v.set);
+                  const displayValue = !hasValue
+                    ? t("admin.envVarNotSet", "not set")
+                    : isRevealed
+                      ? v.value || ""
+                      : "••••••••";
+                  return (
+                    <div
+                      key={key}
+                      className="grid grid-cols-[minmax(0,180px)_minmax(0,1fr)_auto] gap-2 items-center bg-white border rounded px-2 py-1.5 text-[11px]"
                     >
-                      {displayValue}
-                    </span>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {hasValue && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setRevealedValues((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(key)) next.delete(key);
-                              else next.add(key);
-                              return next;
-                            })
-                          }
-                          className="text-[10px] text-slate-700 hover:underline"
+                      <div className="min-w-0">
+                        <span
+                          className={`font-mono ${v.set ? "text-gray-700" : "text-gray-400"}`}
                         >
-                          {isRevealed ? t("admin.hideSecret", "Hide") : t("admin.showSecret", "Show")}
-                        </button>
-                      )}
-                      {hasValue && v.value && isRevealed && (
-                        <button
-                          type="button"
-                          onClick={() => copyEnvValue(key, v.value)}
-                          className="text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50"
-                        >
-                          {copiedEnv === key ? t("admin.clientCopied", "Copied") : t("common.copy", "Copy")}
-                        </button>
-                      )}
+                          {v.names[0]}
+                        </span>
+                        {v.names.length > 1 && (
+                          <span className="block text-[10px] text-gray-400">
+                            or {v.names.slice(1).join(", ")}
+                          </span>
+                        )}
+                        {v.hint && (
+                          <span className="block text-[10px] text-gray-400">
+                            {v.hint}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={`font-mono break-all ${
+                          !v.set
+                            ? "text-red-400 italic"
+                            : !isRevealed
+                              ? "text-gray-300 tracking-widest"
+                              : "text-gray-700"
+                        }`}
+                      >
+                        {displayValue}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {hasValue && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRevealedValues((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(key)) next.delete(key);
+                                else next.add(key);
+                                return next;
+                              })
+                            }
+                            className="text-[10px] text-slate-700 hover:underline"
+                          >
+                            {isRevealed
+                              ? t("admin.hideSecret", "Hide")
+                              : t("admin.showSecret", "Show")}
+                          </button>
+                        )}
+                        {hasValue && v.value && isRevealed && (
+                          <button
+                            type="button"
+                            onClick={() => copyEnvValue(key, v.value)}
+                            className="text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50"
+                          >
+                            {copiedEnv === key
+                              ? t("admin.clientCopied", "Copied")
+                              : t("common.copy", "Copy")}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </details>
-        ))}
+                  );
+                })}
+              </div>
+            </details>
+          ))}
       </div>
     </div>
   );
@@ -579,7 +655,8 @@ function DeadLinksPanel() {
       setDeadLinksHasScanned(true);
     } catch (error) {
       setDeadLinksError(
-        error?.message || t("admin.deadLinksScanFailed", "Failed to scan links."),
+        error?.message ||
+          t("admin.deadLinksScanFailed", "Failed to scan links."),
       );
     } finally {
       setDeadLinksLoading(false);
@@ -595,11 +672,15 @@ function DeadLinksPanel() {
   }, [deadLinks, deadLinksFilter]);
 
   function kindLabel(kind) {
-    if (kind === "internal") return t("admin.deadLinksKindInternal", "Internal");
-    if (kind === "pseudo-external") return t("admin.deadLinksKindPseudo", "Pseudo external");
-    if (kind === "external") return t("admin.deadLinksKindExternal", "External");
+    if (kind === "internal")
+      return t("admin.deadLinksKindInternal", "Internal");
+    if (kind === "pseudo-external")
+      return t("admin.deadLinksKindPseudo", "Pseudo external");
+    if (kind === "external")
+      return t("admin.deadLinksKindExternal", "External");
     if (kind === "invalid") return t("admin.deadLinksKindInvalid", "Invalid");
-    if (kind === "unsupported") return t("admin.deadLinksKindUnsupported", "Unsupported");
+    if (kind === "unsupported")
+      return t("admin.deadLinksKindUnsupported", "Unsupported");
     return kind || "—";
   }
 
@@ -627,12 +708,18 @@ function DeadLinksPanel() {
             className="border rounded px-2 py-1 text-sm"
           >
             <option value="all">{t("admin.deadLinksFilterAll", "All")}</option>
-            <option value="broken">{t("admin.deadLinksFilterBroken", "Broken")}</option>
-            <option value="internal">{t("admin.deadLinksFilterInternal", "Internal")}</option>
+            <option value="broken">
+              {t("admin.deadLinksFilterBroken", "Broken")}
+            </option>
+            <option value="internal">
+              {t("admin.deadLinksFilterInternal", "Internal")}
+            </option>
             <option value="pseudo-external">
               {t("admin.deadLinksFilterPseudo", "Pseudo external")}
             </option>
-            <option value="external">{t("admin.deadLinksFilterExternal", "External")}</option>
+            <option value="external">
+              {t("admin.deadLinksFilterExternal", "External")}
+            </option>
           </select>
           <button
             type="button"
@@ -657,15 +744,21 @@ function DeadLinksPanel() {
           </div>
           <div className="rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
             {t("admin.deadLinksKindInternal", "Internal")}:{" "}
-            <span className="font-semibold">{deadLinksTotals.internal ?? 0}</span>
+            <span className="font-semibold">
+              {deadLinksTotals.internal ?? 0}
+            </span>
           </div>
           <div className="rounded border border-cyan-200 bg-cyan-50 px-2 py-1.5">
             {t("admin.deadLinksKindPseudo", "Pseudo external")}:{" "}
-            <span className="font-semibold">{deadLinksTotals.pseudoExternal ?? 0}</span>
+            <span className="font-semibold">
+              {deadLinksTotals.pseudoExternal ?? 0}
+            </span>
           </div>
           <div className="rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
             {t("admin.deadLinksKindExternal", "External")}:{" "}
-            <span className="font-semibold">{deadLinksTotals.external ?? 0}</span>
+            <span className="font-semibold">
+              {deadLinksTotals.external ?? 0}
+            </span>
           </div>
           <div className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1.5">
             {t("admin.deadLinksReachable", "Reachable")}:{" "}
@@ -685,7 +778,9 @@ function DeadLinksPanel() {
         </p>
       )}
 
-      {deadLinksError && <p className="text-sm text-red-600">{deadLinksError}</p>}
+      {deadLinksError && (
+        <p className="text-sm text-red-600">{deadLinksError}</p>
+      )}
 
       {!deadLinksError && !deadLinksHasScanned ? (
         <p className="text-sm text-gray-500">
@@ -719,7 +814,10 @@ function DeadLinksPanel() {
             </thead>
             <tbody className="divide-y">
               {filteredDeadLinks.map((link) => (
-                <tr key={`${link.kind}:${link.href}`} className="hover:bg-gray-50">
+                <tr
+                  key={`${link.kind}:${link.href}`}
+                  className="hover:bg-gray-50"
+                >
                   <td className="px-3 py-2">
                     <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
                       {kindLabel(link.kind)}
@@ -769,7 +867,9 @@ function DeadLinksPanel() {
                     <div className="space-y-1 text-xs text-gray-700">
                       <div>
                         {t("admin.deadLinksOccurrences", "Occurrences")}:{" "}
-                        <span className="font-semibold">{link.occurrences || 0}</span>
+                        <span className="font-semibold">
+                          {link.occurrences || 0}
+                        </span>
                       </div>
                       {(link.sources || []).slice(0, 3).map((source) => (
                         <a
@@ -938,7 +1038,9 @@ export default function AdminInfoHubTab({
         if (!cancelled && json?.ok) setCacheInfo(json);
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -996,19 +1098,29 @@ export default function AdminInfoHubTab({
                 <tbody>
                   <tr className="border-b">
                     <td className="py-1.5 text-gray-600">ISR Revalidation</td>
-                    <td className="py-1.5 font-mono text-right">{cacheInfo.isrRevalidation}s</td>
+                    <td className="py-1.5 font-mono text-right">
+                      {cacheInfo.isrRevalidation}s
+                    </td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-1.5 text-gray-600">Catalog Cache TTL</td>
-                    <td className="py-1.5 font-mono text-right">{cacheInfo.catalogCacheTtl}s</td>
+                    <td className="py-1.5 font-mono text-right">
+                      {cacheInfo.catalogCacheTtl}s
+                    </td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-1.5 text-gray-600">GraphQL Edge Cache</td>
-                    <td className="py-1.5 font-mono text-right">{cacheInfo.graphqlEdgeCache}s</td>
+                    <td className="py-1.5 font-mono text-right">
+                      {cacheInfo.graphqlEdgeCache}s
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 text-gray-600">GraphQL Stale-While-Revalidate</td>
-                    <td className="py-1.5 font-mono text-right">{cacheInfo.graphqlStaleWhileRevalidate}s</td>
+                    <td className="py-1.5 text-gray-600">
+                      GraphQL Stale-While-Revalidate
+                    </td>
+                    <td className="py-1.5 font-mono text-right">
+                      {cacheInfo.graphqlStaleWhileRevalidate}s
+                    </td>
                   </tr>
                 </tbody>
               </table>

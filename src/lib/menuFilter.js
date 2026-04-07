@@ -1,6 +1,7 @@
 export async function filterNavigationByExistence(items, resolver) {
   if (!Array.isArray(items) || items.length === 0) return [];
-  const canResolve = typeof resolver === "function" ? resolver : async () => true;
+  const canResolve =
+    typeof resolver === "function" ? resolver : async () => true;
 
   const resolved = await Promise.all(
     items.map(async (item) => {
@@ -34,7 +35,9 @@ export async function filterNavigationByExistence(items, resolver) {
         };
       }
 
-      console.warn(`[menu] Filtered stale internal link from nav: ${item.href}`);
+      console.warn(
+        `[menu] Filtered stale internal link from nav: ${item.href}`,
+      );
       return null;
     }),
   );
@@ -46,7 +49,9 @@ function normalizePath(value) {
   const raw = typeof value === "string" ? value.trim() : "";
   if (!raw || raw === "/") return "/";
   const withoutQuery = raw.split("?")[0].split("#")[0];
-  const withLeading = withoutQuery.startsWith("/") ? withoutQuery : `/${withoutQuery}`;
+  const withLeading = withoutQuery.startsWith("/")
+    ? withoutQuery
+    : `/${withoutQuery}`;
   const collapsed = withLeading.replace(/\/{2,}/g, "/");
   if (collapsed === "/") return "/";
   return collapsed.replace(/\/+$/, "");
@@ -74,7 +79,8 @@ export function ensureCoreMenuEntries(items) {
 
 export async function ensureCoreMenuEntriesByExistence(items, resolver) {
   const list = Array.isArray(items) ? items.filter(Boolean) : [];
-  const canResolve = typeof resolver === "function" ? resolver : async () => true;
+  const canResolve =
+    typeof resolver === "function" ? resolver : async () => true;
   const seen = new Set(
     list
       .filter((item) => item && typeof item === "object")

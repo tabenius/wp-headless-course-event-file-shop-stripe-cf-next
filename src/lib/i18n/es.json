@@ -760,7 +760,7 @@
     "storageProviderKvName": "Cloudflare KV",
     "storageProviderKvDesc": "Almacenamiento clave-valor rápido y distribuido en edge. Recomendado en Cloudflare Workers. Requiere CLOUDFLARE_ACCOUNT_ID, CF_API_TOKEN y CF_KV_NAMESPACE_ID.",
     "storageProviderWpName": "WordPress GraphQL",
-    "storageProviderWpDesc": "Guarda el acceso en metadatos de usuario de WordPress mediante mutaciones WPGraphQL. Requiere COURSE_ACCESS_BACKEND=wordpress y el plugin complementario.",
+    "storageProviderWpDesc": "Guarda el acceso en metadatos de usuario de WordPress mediante mutaciones WPGraphQL. Requiere CONTENT_ACCESS_BACKEND=wordpress y el plugin complementario.",
     "storageProviderLocalName": "Archivo local",
     "storageProviderLocalDesc": "Guarda datos en .data/course-access.json en el servidor. Adecuado solo para desarrollo local.",
     "storageActive": "Activo",
@@ -826,6 +826,7 @@
     "userAccessOverview": "Resumen de acceso",
     "userAccessOverviewDesc": "Encuentra usuarios y revisa su contenido.",
     "confirmRemoveProduct": "¿Seguro que quieres eliminar este producto?",
+    "confirmRemovePurchasedProduct": "ADVERTENCIA: {count} usuario(s) han comprado o tienen acceso a este producto. Eliminarlo lo quitará de su inventario. ¿Estás completamente seguro?",
     "shopVisibilitySaved": "Visibilidad guardada.",
     "configuredBadgeTooltip": "Este item tiene precio y reglas configuradas.",
     "requiredField": "Obligatorio",
@@ -1131,6 +1132,18 @@
     "claimingFree": "Obteniendo acceso…",
     "claimFailed": "No se pudo obtener acceso gratuito ahora mismo. Inténtalo de nuevo.",
     "downloadProduct": "Descargar"
+  },
+  "inventory": {
+    "title": "Inventario",
+    "subtitle": "Todos los productos y contenidos a los que tienes acceso.",
+    "backToShop": "Volver a la tienda",
+    "openShop": "Abrir tienda",
+    "empty": "No se encontraron productos comprados aún.",
+    "unavailable": "Esta compra existe pero el producto ya no está disponible.",
+    "noAction": "No hay acción disponible.",
+    "grantedAccess": "Acceso concedido",
+    "openContent": "Abrir contenido",
+    "grantedDescription": "Se te ha concedido acceso a este contenido."
   },
   "darkMode": {
     "lightMode": "Modo claro",

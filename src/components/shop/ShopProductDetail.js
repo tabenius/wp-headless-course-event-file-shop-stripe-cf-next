@@ -187,12 +187,19 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
 
       <h1 className="text-3xl font-bold">{product.name}</h1>
       <p className="whitespace-pre-wrap font-serif leading-relaxed text-[var(--color-foreground)]">
-        {product.description}
+        <pre
+          className="text-[11px]"
+          style={{ "white-space": "pre-wrap", "word-wrap": "break-word" }}
+        >
+          {item.description}
+        </pre>
       </p>
       <p className="font-semibold text-[var(--color-foreground)]">
         {t("common.price")}:{" "}
         {isFreeProduct ? (
-          <span className="text-lg font-bold text-green-700">{t("shop.freeProduct")}</span>
+          <span className="text-lg font-bold text-green-700">
+            {t("shop.freeProduct")}
+          </span>
         ) : (
           <span className="text-lg font-bold">
             {(product.priceCents / 100).toFixed(2)} {product.currency}
@@ -247,32 +254,30 @@ export default function ShopProductDetail({ product, stripeEnabled }) {
             <p className="text-teal-800">{t("shop.courseAccessDescSimple")}</p>
           </div>
         )
+      ) : isFreeProduct ? (
+        <button
+          type="button"
+          onClick={claimFreeProduct}
+          disabled={loading}
+          className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
+        >
+          {loading && (
+            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          )}
+          {loading ? t("shop.claimingFree") : t("shop.claimFree")}
+        </button>
       ) : (
-        isFreeProduct ? (
-          <button
-            type="button"
-            onClick={claimFreeProduct}
-            disabled={loading}
-            className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
-          >
-            {loading && (
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            )}
-            {loading ? t("shop.claimingFree") : t("shop.claimFree")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={startCheckout}
-            disabled={loading}
-            className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
-          >
-            {loading && (
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            )}
-            {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
-          </button>
-        )
+        <button
+          type="button"
+          onClick={startCheckout}
+          disabled={loading}
+          className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
+        >
+          {loading && (
+            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          )}
+          {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
+        </button>
       )}
     </section>
   );

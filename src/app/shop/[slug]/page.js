@@ -20,10 +20,7 @@ async function ShopProductPageContent({ params: paramsPromise }) {
   if (!product || !product.active) notFound();
 
   return (
-    <ShopProductDetail
-      product={product}
-      stripeEnabled={isStripeEnabled()}
-    />
+    <ShopProductDetail product={product} stripeEnabled={isStripeEnabled()} />
   );
 }
 
@@ -38,7 +35,8 @@ export default function ShopProductPage(props) {
 function inferOgDescription(product) {
   const explicit = String(product?.description || "").trim();
   if (explicit) return explicit;
-  const isFree = product?.free === true || Number(product?.priceCents || 0) <= 0;
+  const isFree =
+    product?.free === true || Number(product?.priceCents || 0) <= 0;
   const kind = product?.type === "course" ? "course" : "digital file";
   if (isFree) return `${product?.name || "Product"} is a free ${kind}.`;
   const amount = Number.isFinite(Number(product?.priceCents))
@@ -54,10 +52,20 @@ function inferOgImages(product) {
     return [{ url: imageUrl, alt: product?.name || "Product image" }];
   }
   const fileUrl = String(product?.fileUrl || "").trim();
-  if (fileUrl && String(product?.mimeType || "").toLowerCase().startsWith("image/")) {
+  if (
+    fileUrl &&
+    String(product?.mimeType || "")
+      .toLowerCase()
+      .startsWith("image/")
+  ) {
     return [{ url: fileUrl, alt: product?.name || "Product image" }];
   }
-  return [{ url: site.logoUrl, alt: site.logo?.alt || site.name || "Storefront logo" }];
+  return [
+    {
+      url: site.logoUrl,
+      alt: site.logo?.alt || site.name || "Storefront logo",
+    },
+  ];
 }
 
 export async function generateMetadata({ params: paramsPromise }) {

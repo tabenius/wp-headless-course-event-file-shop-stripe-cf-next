@@ -82,7 +82,9 @@ export default function WordPressSetupPage() {
       <div className="max-w-xl w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="text-4xl mb-3" aria-hidden>🔗</div>
+          <div className="text-4xl mb-3" aria-hidden>
+            🔗
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">
             Connect to WordPress
           </h1>
@@ -214,9 +216,8 @@ export default function WordPressSetupPage() {
                   Get the headless secret key
                 </p>
                 <p className="mt-0.5">
-                  Go to{" "}
-                  <strong>WP Admin → Settings → Headless</strong> (installed by
-                  the RAGBAZ Bridge plugin or FaustWP). Copy the{" "}
+                  Go to <strong>WP Admin → Settings → Headless</strong>{" "}
+                  (installed by the RAGBAZ Bridge plugin or FaustWP). Copy the{" "}
                   <strong>Secret Key</strong> and paste it above.
                 </p>
               </div>

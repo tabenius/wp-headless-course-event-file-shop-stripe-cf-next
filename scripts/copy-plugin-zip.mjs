@@ -11,7 +11,7 @@ const sourceZip = path.join(
   "packages",
   "ragbaz-bridge-plugin",
   "dist",
-  "ragbaz-bridge.zip"
+  "ragbaz-bridge.zip",
 );
 
 const sharedRagbazRoot = path.resolve(repoRoot, "..", "ragbaz.xyz");

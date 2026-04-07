@@ -124,7 +124,8 @@ export const TYPOGRAPHY_THEMES = [
   {
     id: "warm",
     name: "Warm",
-    description: "Approachable and human. Optical-size serif display + rounded sans.",
+    description:
+      "Approachable and human. Optical-size serif display + rounded sans.",
     typographyPalette: ["#1a0f0a", "#4a3728"],
     fontDisplay: {
       type: "google",
@@ -203,7 +204,8 @@ export const TYPOGRAPHY_THEMES = [
   {
     id: "vintage",
     name: "Vintage",
-    description: "Old-style serifs with warm character. Evokes print tradition.",
+    description:
+      "Old-style serifs with warm character. Evokes print tradition.",
     typographyPalette: ["#2c1810", "#5c3a2e"],
     fontDisplay: {
       type: "google",

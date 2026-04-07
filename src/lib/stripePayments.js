@@ -53,8 +53,7 @@ async function stripeRequest(path, params = {}) {
   if (response.ok) return json;
 
   const message =
-    json?.error?.message ||
-    `Stripe API request failed (${response.status})`;
+    json?.error?.message || `Stripe API request failed (${response.status})`;
   if (response.status === 401) {
     throw stripeError("StripeAuthenticationError", message, response.status);
   }
@@ -69,7 +68,9 @@ async function stripeRequest(path, params = {}) {
 
 function normaliseCharge(charge, fallbackEmail) {
   const configuredCurrency = String(
-    process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+    process.env.DEFAULT_CURRENCY ||
+      process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+      "SEK",
   ).toLowerCase();
   const rawMetadata =
     charge && typeof charge.metadata === "object" && charge.metadata
@@ -121,7 +122,9 @@ export async function compilePayments(email, limit, fromTs) {
     typeof email === "string" && email.trim()
       ? email.trim().toLowerCase()
       : undefined;
-  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(limit, 100)) : 20;
+  const safeLimit = Number.isFinite(limit)
+    ? Math.max(1, Math.min(limit, 100))
+    : 20;
   const pageSize = normalizedEmail ? 100 : safeLimit;
 
   const charges = [];
@@ -135,8 +138,12 @@ export async function compilePayments(email, limit, fromTs) {
     const rows = Array.isArray(payload?.data) ? payload.data : [];
     const filtered = normalizedEmail
       ? rows.filter((charge) => {
-          const receiptEmail = String(charge?.receipt_email || "").toLowerCase();
-          const billingEmail = String(charge?.billing_details?.email || "").toLowerCase();
+          const receiptEmail = String(
+            charge?.receipt_email || "",
+          ).toLowerCase();
+          const billingEmail = String(
+            charge?.billing_details?.email || "",
+          ).toLowerCase();
           return (
             receiptEmail === normalizedEmail || billingEmail === normalizedEmail
           );
@@ -150,9 +157,9 @@ export async function compilePayments(email, limit, fromTs) {
   }
 
   charges.sort((a, b) => b.created - a.created);
-  return charges.slice(0, safeLimit).map((charge) =>
-    normaliseCharge(charge, normalizedEmail),
-  );
+  return charges
+    .slice(0, safeLimit)
+    .map((charge) => normaliseCharge(charge, normalizedEmail));
 }
 
 export async function fetchStripeCharge(chargeId) {

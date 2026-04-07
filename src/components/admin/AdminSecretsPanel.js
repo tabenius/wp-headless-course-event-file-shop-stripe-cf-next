@@ -78,7 +78,9 @@ export default function AdminSecretsPanel() {
         throw new Error(secJson?.error || "Failed to load secret overrides.");
       }
       setEnvGroups(Array.isArray(envJson.groups) ? envJson.groups : []);
-      const nextOverrides = Array.isArray(secJson.overrides) ? secJson.overrides : [];
+      const nextOverrides = Array.isArray(secJson.overrides)
+        ? secJson.overrides
+        : [];
       setOverrides(nextOverrides);
       setDrafts((prev) => {
         const next = { ...prev };
@@ -158,7 +160,10 @@ export default function AdminSecretsPanel() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder={t("admin.confirmPasswordPlaceholder", "Required to save changes")}
+            placeholder={t(
+              "admin.confirmPasswordPlaceholder",
+              "Required to save changes",
+            )}
             className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
@@ -168,16 +173,26 @@ export default function AdminSecretsPanel() {
         <h3 className="text-base font-semibold text-gray-900">
           {t("admin.secretKnownVars", "Known variables")}
         </h3>
-        {loading && <p className="text-xs text-gray-400">{t("common.loading", "Loading…")}</p>}
+        {loading && (
+          <p className="text-xs text-gray-400">
+            {t("common.loading", "Loading…")}
+          </p>
+        )}
         {error && <p className="text-xs text-red-600">{error}</p>}
         {!loading &&
           !error &&
           envGroups.map((group) => (
-            <details key={group.id} className="rounded border border-gray-200 bg-gray-50 p-3">
+            <details
+              key={group.id}
+              className="rounded border border-gray-200 bg-gray-50 p-3"
+            >
               <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-gray-800">{group.label}</span>
+                <span className="text-sm font-semibold text-gray-800">
+                  {group.label}
+                </span>
                 <span className="text-xs text-gray-500">
-                  {(group.vars || []).filter((v) => v.set).length}/{(group.vars || []).length} set
+                  {(group.vars || []).filter((v) => v.set).length}/
+                  {(group.vars || []).length} set
                 </span>
               </summary>
               <div className="mt-3 space-y-2">
@@ -194,12 +209,17 @@ export default function AdminSecretsPanel() {
                     ? t("admin.envVarNotSet", "not set")
                     : isSecret
                       ? "••••••••"
-                      : (v.value || "");
+                      : v.value || "";
                   return (
-                    <div key={`${group.id}:${name}`} className="rounded border bg-white p-2 space-y-2">
+                    <div
+                      key={`${group.id}:${name}`}
+                      className="rounded border bg-white p-2 space-y-2"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-mono text-[11px] text-gray-700 break-all">{name}</p>
+                          <p className="font-mono text-[11px] text-gray-700 break-all">
+                            {name}
+                          </p>
                           <p className="text-[11px] text-gray-500">{v.label}</p>
                         </div>
                         <div className="text-[11px] text-gray-500">
@@ -212,7 +232,9 @@ export default function AdminSecretsPanel() {
                               {v.source === "override" ? " (override)" : ""}
                             </span>
                           ) : (
-                            <span className="text-red-500 italic">{t("admin.envVarNotSet", "not set")}</span>
+                            <span className="text-red-500 italic">
+                              {t("admin.envVarNotSet", "not set")}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -221,25 +243,42 @@ export default function AdminSecretsPanel() {
                           type={isSecret && !showValue ? "password" : "text"}
                           value={isSecret ? (drafts[name] ?? "") : draftValue}
                           onChange={(event) =>
-                            setDrafts((prev) => ({ ...prev, [name]: event.target.value }))
+                            setDrafts((prev) => ({
+                              ...prev,
+                              [name]: event.target.value,
+                            }))
                           }
                           placeholder={
                             isSecret
                               ? hasOverride
-                                ? t("admin.secretStoredPlaceholder", "Stored. Type to replace.")
-                                : t("admin.secretSetPlaceholder", "Set secret override")
-                              : t("admin.envOverridePlaceholder", "Override value (leave blank to clear)")
+                                ? t(
+                                    "admin.secretStoredPlaceholder",
+                                    "Stored. Type to replace.",
+                                  )
+                                : t(
+                                    "admin.secretSetPlaceholder",
+                                    "Set secret override",
+                                  )
+                              : t(
+                                  "admin.envOverridePlaceholder",
+                                  "Override value (leave blank to clear)",
+                                )
                           }
                           className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
                         />
                         <button
                           type="button"
                           onClick={() =>
-                            setShowByName((prev) => ({ ...prev, [name]: !prev[name] }))
+                            setShowByName((prev) => ({
+                              ...prev,
+                              [name]: !prev[name],
+                            }))
                           }
                           className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
                         >
-                          {showValue ? t("admin.hideSecret", "Hide") : t("admin.showSecret", "Show")}
+                          {showValue
+                            ? t("admin.hideSecret", "Hide")
+                            : t("admin.showSecret", "Show")}
                         </button>
                         <button
                           type="button"
@@ -247,7 +286,9 @@ export default function AdminSecretsPanel() {
                           disabled={pending || !password}
                           className="rounded border border-slate-700 bg-slate-700 px-3 py-1 text-xs text-white hover:bg-slate-600 disabled:opacity-50"
                         >
-                          {pending ? t("admin.saving", "Saving…") : t("common.save", "Save")}
+                          {pending
+                            ? t("admin.saving", "Saving…")
+                            : t("common.save", "Save")}
                         </button>
                         <button
                           type="button"
@@ -262,7 +303,9 @@ export default function AdminSecretsPanel() {
                         </button>
                       </div>
                       {statusByName[name] && (
-                        <p className="text-[11px] text-gray-500">{statusByName[name]}</p>
+                        <p className="text-[11px] text-gray-500">
+                          {statusByName[name]}
+                        </p>
                       )}
                     </div>
                   );
@@ -286,12 +329,18 @@ export default function AdminSecretsPanel() {
           <input
             type="text"
             value={customName}
-            onChange={(event) => setCustomName(event.target.value.toUpperCase())}
+            onChange={(event) =>
+              setCustomName(event.target.value.toUpperCase())
+            }
             placeholder="MY_CUSTOM_ENV"
             className="rounded border border-gray-300 px-3 py-2 text-sm font-mono"
           />
           <input
-            type={looksSecret(customName) && !showByName.__custom ? "password" : "text"}
+            type={
+              looksSecret(customName) && !showByName.__custom
+                ? "password"
+                : "text"
+            }
             value={customValue}
             onChange={(event) => setCustomValue(event.target.value)}
             placeholder={t("admin.envOverridePlaceholder", "Override value")}
@@ -315,7 +364,9 @@ export default function AdminSecretsPanel() {
               onClick={async () => {
                 const name = normalizeName(customName);
                 if (!name) {
-                  setError("Invalid variable name. Use A-Z, 0-9 and underscore.");
+                  setError(
+                    "Invalid variable name. Use A-Z, 0-9 and underscore.",
+                  );
                   return;
                 }
                 await saveOverride(name, customValue);
@@ -331,7 +382,10 @@ export default function AdminSecretsPanel() {
         {customOverrides.length > 0 && (
           <div className="rounded border border-gray-200 bg-gray-50 p-3 space-y-1.5">
             {customOverrides.map((item) => (
-              <div key={item.name} className="flex items-center justify-between gap-2 text-xs">
+              <div
+                key={item.name}
+                className="flex items-center justify-between gap-2 text-xs"
+              >
                 <span className="font-mono text-gray-700">{item.name}</span>
                 <span className="text-gray-500">
                   {item.secret ? item.masked || "••••••••" : item.value || ""}

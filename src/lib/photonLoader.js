@@ -34,7 +34,9 @@ async function _init() {
   // "others" re-exports every photon function + initPhoton, but does NOT embed
   // the WASM binary inline.  webpackIgnore prevents Turbopack from tracing into
   // the package and bundling the 1.7 MB WASM file into the CF Workers handler.
-  const photon = await import(/* webpackIgnore: true */ "@cf-wasm/photon/others");
+  const photon = await import(
+    /* webpackIgnore: true */ "@cf-wasm/photon/others"
+  );
 
   const isNode =
     typeof process !== "undefined" && Boolean(process.versions?.node);

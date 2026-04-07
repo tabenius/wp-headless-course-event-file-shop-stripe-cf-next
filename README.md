@@ -168,18 +168,18 @@ For most stores, this order gives the fastest route to “ready to sell”:
 
 **Current admin sections (up to date):**
 
-| Section       | What it does                                                                                                              |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Welcome**   | Intro story + quick navigation cards to the most-used workflows.                                                         |
-| **Sales**     | Stripe charges, receipt downloads, and revenue status.                                                                   |
-| **Stats**     | Traffic and performance analytics.                                                                                        |
-| **Storage**   | Upload backend setup (WordPress / R2 / S3), client guidance, and object visibility.                                     |
-| **Products**  | Unified product list (WooCommerce, LearnPress, events, digital), pricing, VAT, access, images/files.                   |
-| **Support**   | Tickets, payment troubleshooting, and dead-link finder with internal/pseudo-external/external classification.           |
-| **Chat**      | AI assistant for payments, access, docs, debug context, and operations Q&A (EN/SV/ES).                                 |
-| **Health**    | Environment and integration checks.                                                                                       |
-| **Style**     | Visual style reference for UI consistency.                                                                                |
-| **Info**      | Build/runtime/environment diagnostics and operational metadata.                                                           |
+| Section      | What it does                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------- |
+| **Welcome**  | Intro story + quick navigation cards to the most-used workflows.                                              |
+| **Sales**    | Stripe charges, receipt downloads, and revenue status.                                                        |
+| **Stats**    | Traffic and performance analytics.                                                                            |
+| **Storage**  | Upload backend setup (WordPress / R2 / S3), client guidance, and object visibility.                           |
+| **Products** | Unified product list (WooCommerce, LearnPress, events, digital), pricing, VAT, access, images/files.          |
+| **Support**  | Tickets, payment troubleshooting, and dead-link finder with internal/pseudo-external/external classification. |
+| **Chat**     | AI assistant for payments, access, docs, debug context, and operations Q&A (EN/SV/ES).                        |
+| **Health**   | Environment and integration checks.                                                                           |
+| **Style**    | Visual style reference for UI consistency.                                                                    |
+| **Info**     | Build/runtime/environment diagnostics and operational metadata.                                               |
 
 ![Products and storage workflow](/docs/admin/products-storage.svg)
 ![Support, payments and chat workflow](/docs/admin/support-chat.svg)
@@ -306,7 +306,7 @@ All settings are managed through environment variables. The most important ones 
 | Variable                                 | What it does                                                                                                                                        |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_WORDPRESS_URL`              | Your WordPress site URL (e.g., `https://mysite.com`)                                                                                                |
-| `RAGBAZ_GRAPHQL_RELAY_SECRET`            | Dedicated GraphQL relay secret from the `ragbaz-bridge` plugin (simple single-secret auth path)                                                   |
+| `RAGBAZ_GRAPHQL_RELAY_SECRET`            | Dedicated GraphQL relay secret from the `ragbaz-bridge` plugin (simple single-secret auth path)                                                     |
 | `WORDPRESS_GRAPHQL_USERNAME`             | WordPress admin username for API access                                                                                                             |
 | `WORDPRESS_GRAPHQL_APPLICATION_PASSWORD` | WordPress Application Password (see [how to create one](docs/wordpress-learnpress-course-access.md#how-to-create-a-wordpress-application-password)) |
 | `AUTH_SECRET`                            | A random secret for encrypting sessions. Generate with: `openssl rand -base64 32`                                                                   |
@@ -340,16 +340,16 @@ graph TB
 
 When deployed to Cloudflare, all app data (user accounts, purchases, access rules) is stored in Cloudflare KV — a fast, globally distributed database included in the free plan. During local development, data is stored as JSON files in the `.data/` folder.
 
-| Variable               | Set to                     | What it controls                     |
-| ---------------------- | -------------------------- | ------------------------------------ |
-| `COURSE_ACCESS_STORE`  | `cloudflare`               | Where course access rules are stored |
-| `USER_STORE_BACKEND`   | `cloudflare`               | Where user accounts are stored       |
-| `DIGITAL_ACCESS_STORE` | `cloudflare`               | Where purchase records are stored    |
-| `UPLOAD_BACKEND`       | `r2`, `s3`, or `wordpress` | Where uploaded files are stored      |
-| `MAX_UPLOAD_BYTES`     | bytes (e.g. `104857600`)   | Global hard cap for all uploads      |
-| `MAX_IMAGE_UPLOAD_BYTES` | bytes (e.g. `20971520`)  | Image-only upload cap                |
-| `GRAPHQL_EDGE_CACHE_TTL_SECONDS` | seconds (e.g. `60`) | Edge cache TTL for public GraphQL reads |
-| `SKIP_UPSTREAM_DURING_BUILD` | `1` (default) or `0` | Skip WordPress upstream calls during build (GraphQL + menu URI probes) |
+| Variable                         | Set to                     | What it controls                                                       |
+| -------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| `COURSE_ACCESS_STORE`            | `cloudflare`               | Where course access rules are stored                                   |
+| `USER_STORE_BACKEND`             | `cloudflare`               | Where user accounts are stored                                         |
+| `DIGITAL_ACCESS_STORE`           | `cloudflare`               | Where purchase records are stored                                      |
+| `UPLOAD_BACKEND`                 | `r2`, `s3`, or `wordpress` | Where uploaded files are stored                                        |
+| `MAX_UPLOAD_BYTES`               | bytes (e.g. `104857600`)   | Global hard cap for all uploads                                        |
+| `MAX_IMAGE_UPLOAD_BYTES`         | bytes (e.g. `20971520`)    | Image-only upload cap                                                  |
+| `GRAPHQL_EDGE_CACHE_TTL_SECONDS` | seconds (e.g. `60`)        | Edge cache TTL for public GraphQL reads                                |
+| `SKIP_UPSTREAM_DURING_BUILD`     | `1` (default) or `0`       | Skip WordPress upstream calls during build (GraphQL + menu URI probes) |
 
 ### Secrets vs. public settings
 
@@ -383,13 +383,13 @@ See the [Cloudflare deployment guide](docs/cloudflare-workers-deploy.md) for the
 
 All optional. The app detects them automatically — no configuration flags needed.
 
-| Plugin                                                                                                                                 | What it adds                                                                                                                  | How to tell it's working                                                                                                    |
-| -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| [LearnPress](https://wordpress.org/plugins/learnpress/)                                                                                | Course management (lessons, quizzes, curriculum)                                                                              | Courses appear at `/courses`                                                                                                |
-| **RAGBAZ Bridge** (included)                                                                                                       | WPGraphQL glue for LearnPress courses and events; exposes a `ragbazInfo` probe so the storefront can auto-detect capabilities | Download from Admin → Info, install via Plugins → Add New → Upload. Health check shows green for LearnPress and events. |
-| [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks)                                                      | Better page rendering from the block editor                                                                                   | Pages look polished instead of plain HTML. Set `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`.                                     |
-| An Event plugin                                                                                                                        | Event pages with dates/locations                                                                                              | Events appear at `/events`                                                                                                  |
-| [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Smaller, faster images                                                                                                        | Faster page loads                                                                                                           |
+| Plugin                                                                                                                                 | What it adds                                                                                                                  | How to tell it's working                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [LearnPress](https://wordpress.org/plugins/learnpress/)                                                                                | Course management (lessons, quizzes, curriculum)                                                                              | Courses appear at `/courses`                                                                                            |
+| **RAGBAZ Bridge** (included)                                                                                                           | WPGraphQL glue for LearnPress courses and events; exposes a `ragbazInfo` probe so the storefront can auto-detect capabilities | Download from Admin → Info, install via Plugins → Add New → Upload. Health check shows green for LearnPress and events. |
+| [WPGraphQL Content Blocks](https://github.com/wpengine/wp-graphql-content-blocks)                                                      | Better page rendering from the block editor                                                                                   | Pages look polished instead of plain HTML. Set `NEXT_PUBLIC_WORDPRESS_EDITOR_BLOCKS=1`.                                 |
+| An Event plugin                                                                                                                        | Event pages with dates/locations                                                                                              | Events appear at `/events`                                                                                              |
+| [WebP Express](https://wordpress.org/plugins/webp-express/) or [ShortPixel](https://wordpress.org/plugins/shortpixel-image-optimiser/) | Smaller, faster images                                                                                                        | Faster page loads                                                                                                       |
 
 ### How WordPress connects to the app
 
@@ -540,17 +540,17 @@ wrangler.jsonc              # Cloudflare Workers configuration
 
 ### Scripts
 
-| Command              | What it does                                             |
-| -------------------- | -------------------------------------------------------- |
-| `npm run dev`        | Start local development server with Turbopack (fast HMR) |
-| `npm run build`      | Build for production (webpack)                           |
-| `npm run start`      | Run the production build locally                         |
-| `npm run lint`       | Check code for errors and style issues                   |
-| `npm run perf:budget`| Verify bundle/perf budgets used by CI deploy gate        |
-| `npm run config`     | Interactive configuration wizard                         |
-| `npm run cf:build`   | Build for Cloudflare Workers                             |
-| `npm run cf:preview` | Build and preview locally with Wrangler                  |
-| `npm run cf:deploy`  | Build and deploy to Cloudflare Workers                   |
+| Command               | What it does                                             |
+| --------------------- | -------------------------------------------------------- |
+| `npm run dev`         | Start local development server with Turbopack (fast HMR) |
+| `npm run build`       | Build for production (webpack)                           |
+| `npm run start`       | Run the production build locally                         |
+| `npm run lint`        | Check code for errors and style issues                   |
+| `npm run perf:budget` | Verify bundle/perf budgets used by CI deploy gate        |
+| `npm run config`      | Interactive configuration wizard                         |
+| `npm run cf:build`    | Build for Cloudflare Workers                             |
+| `npm run cf:preview`  | Build and preview locally with Wrangler                  |
+| `npm run cf:deploy`   | Build and deploy to Cloudflare Workers                   |
 
 ### Debugging in production
 
@@ -564,13 +564,13 @@ Production client-side source maps are served at `/__maps/*` (admin session requ
 
 ### Detailed documentation
 
-| Document                                                                   | Language | Contents                                            |
-| -------------------------------------------------------------------------- | -------- | --------------------------------------------------- |
-| [English technical reference](docs/README.en.md)                           | English  | Architecture, storage backends, GraphQL details     |
-| [Svensk teknisk referens](docs/README.sv.md)                               | Svenska  | Arkitektur, lagringsbackends, GraphQL-detaljer      |
+| Document                                                                   | Language | Contents                                             |
+| -------------------------------------------------------------------------- | -------- | ---------------------------------------------------- |
+| [English technical reference](docs/README.en.md)                           | English  | Architecture, storage backends, GraphQL details      |
+| [Svensk teknisk referens](docs/README.sv.md)                               | Svenska  | Arkitektur, lagringsbackends, GraphQL-detaljer       |
 | [Performance & SEO playbook](docs/performance-and-seo.md)                  | English  | Web Vitals, bottlenecks, payload impact, SEO roadmap |
-| [Cloudflare deployment](docs/cloudflare-workers-deploy.md)                 | Svenska  | Step-by-step Cloudflare Workers deployment          |
-| [WordPress + LearnPress setup](docs/wordpress-learnpress-course-access.md) | English  | Plugin installation and course access configuration |
+| [Cloudflare deployment](docs/cloudflare-workers-deploy.md)                 | Svenska  | Step-by-step Cloudflare Workers deployment           |
+| [WordPress + LearnPress setup](docs/wordpress-learnpress-course-access.md) | English  | Plugin installation and course access configuration  |
 
 ## License
 

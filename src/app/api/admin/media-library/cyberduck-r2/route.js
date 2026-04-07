@@ -73,9 +73,7 @@ function sanitizeAssetSlug(value, max = 120) {
 function normalizeOwnerUri(value, max = 320) {
   const raw = String(value ?? "").trim();
   if (!raw || raw === "/") return "/";
-  let safe = raw
-    .replace(/\s+/g, "")
-    .replace(/\/{2,}/g, "/");
+  let safe = raw.replace(/\s+/g, "").replace(/\/{2,}/g, "/");
   if (!safe.startsWith("/")) safe = `/${safe}`;
   if (safe.length > 1) safe = safe.replace(/\/+$/, "");
   return safe.slice(0, max) || "/";
@@ -165,11 +163,14 @@ async function resolveR2Object(key) {
     throw new Error("No R2 object found for this key.");
   }
   const head = await headBucketObject({ key: safeKey, backend: "r2" });
-  const metadata = head?.metadata && typeof head.metadata === "object" ? head.metadata : {};
+  const metadata =
+    head?.metadata && typeof head.metadata === "object" ? head.metadata : {};
   const width = normalizeInteger(metadata.asset_width);
   const height = normalizeInteger(metadata.asset_height);
-  const sizeBytes = normalizeInteger(exact.size) || normalizeInteger(metadata.asset_size);
-  const contentType = safeText(head?.contentType, 160) || safeText(metadata.asset_mime, 160);
+  const sizeBytes =
+    normalizeInteger(exact.size) || normalizeInteger(metadata.asset_size);
+  const contentType =
+    safeText(head?.contentType, 160) || safeText(metadata.asset_mime, 160);
   const url = safeText(exact.url, 1200) || buildPublicUrlFromKey(safeKey);
   return {
     key: safeKey,
@@ -236,25 +237,35 @@ export async function POST(request) {
     const persist = body?.persist !== false;
     const object = await resolveR2Object(key);
     const objectMeta = object.metadata || {};
-    const suggestedTitle = safeText(objectMeta.asset_title, 200) || fileNameFromKey(key);
+    const suggestedTitle =
+      safeText(objectMeta.asset_title, 200) || fileNameFromKey(key);
 
     const assetId =
       sanitizeAssetId(body?.assetId || objectMeta.asset_id, 96) ||
       sanitizeAssetId(`asset-${key.replace(/[^a-z0-9._:-]+/gi, "-")}`, 96);
-    const ownerUri = normalizeOwnerUri(body?.ownerUri || objectMeta.asset_owner_uri || "/");
+    const ownerUri = normalizeOwnerUri(
+      body?.ownerUri || objectMeta.asset_owner_uri || "/",
+    );
     const assetUri =
-      safeText(body?.assetUri || objectMeta.asset_uri, 400) || defaultAssetUri(assetId);
-    const assetSlug = sanitizeAssetSlug(body?.assetSlug || objectMeta.asset_slug, 120);
+      safeText(body?.assetUri || objectMeta.asset_uri, 400) ||
+      defaultAssetUri(assetId);
+    const assetSlug = sanitizeAssetSlug(
+      body?.assetSlug || objectMeta.asset_slug,
+      120,
+    );
     const title = safeText(body?.title, 200) || suggestedTitle;
     const copyrightHolder = safeText(
-      body?.rights?.copyrightHolder || body?.copyrightHolder || objectMeta.asset_copyright_holder,
+      body?.rights?.copyrightHolder ||
+        body?.copyrightHolder ||
+        objectMeta.asset_copyright_holder,
       180,
     );
     const license = safeText(
       body?.rights?.license || body?.license || objectMeta.asset_license,
       180,
     );
-    const format = safeText(objectMeta.asset_format, 40) || extensionFromKey(key);
+    const format =
+      safeText(objectMeta.asset_format, 40) || extensionFromKey(key);
     const mimeType = safeText(object.contentType, 160) || mimeFromKey(key);
     const preview = {
       key,

@@ -100,9 +100,7 @@ export default function MobileNav({ items, authLinks }) {
           ))}
           <div className="flex items-center gap-2 py-2">
             <DarkModeToggle />
-            <span className="font-menu">
-              {t("darkMode.label")}
-            </span>
+            <span className="font-menu">{t("darkMode.label")}</span>
           </div>
           {authLinks}
         </div>

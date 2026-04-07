@@ -37,7 +37,9 @@ function sanitizeText(value, max = 512) {
 }
 
 function sanitizeLongText(value, max = 4096) {
-  return String(value ?? "").trim().slice(0, max);
+  return String(value ?? "")
+    .trim()
+    .slice(0, max);
 }
 
 function normalizeIsoDate(value, fallback) {
@@ -57,9 +59,9 @@ function createHexId(length = 24) {
       bytes[i] = Math.floor(Math.random() * 256);
     }
   }
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
+  const hex = Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
   return hex.slice(0, length);
 }
 
@@ -85,9 +87,7 @@ function normalizeOwnerUri(value, max = 320) {
       path = raw;
     }
   }
-  let safe = path
-    .replace(/\s+/g, "")
-    .replace(/\/{2,}/g, "/");
+  let safe = path.replace(/\s+/g, "").replace(/\/{2,}/g, "/");
   if (!safe.startsWith("/")) safe = `/${safe}`;
   if (safe.length > 1) safe = safe.replace(/\/+$/, "");
   return safe.slice(0, max) || "/";
@@ -149,9 +149,11 @@ function normalizeSource(raw) {
     key: sanitizeText(source.key, 512),
     url: sanitizeText(source.url, 1200),
     mimeType: sanitizeText(source.mimeType, 120).toLowerCase(),
-    sizeBytes: Number.isFinite(sizeParsed) && sizeParsed >= 0 ? sizeParsed : null,
+    sizeBytes:
+      Number.isFinite(sizeParsed) && sizeParsed >= 0 ? sizeParsed : null,
     width: Number.isFinite(widthParsed) && widthParsed > 0 ? widthParsed : null,
-    height: Number.isFinite(heightParsed) && heightParsed > 0 ? heightParsed : null,
+    height:
+      Number.isFinite(heightParsed) && heightParsed > 0 ? heightParsed : null,
     role: sanitizeText(source.role, 40).toLowerCase(),
     format: sanitizeText(source.format, 40).toLowerCase(),
     variantKind: sanitizeText(source.variantKind, 80).toLowerCase(),
@@ -180,7 +182,9 @@ function mergeVariantSources(existingVariants = [], incomingSource = null) {
     merged.push(safe);
   };
 
-  for (const variant of Array.isArray(existingVariants) ? existingVariants : []) {
+  for (const variant of Array.isArray(existingVariants)
+    ? existingVariants
+    : []) {
     push(variant);
   }
   if (incomingSource) push(incomingSource);
@@ -229,7 +233,10 @@ function normalizeAssetRecord(raw) {
   const uri =
     sanitizeText(raw?.uri, 400) || `/assets/${encodeURIComponent(assetId)}`;
   const normalizedSource = normalizeSource(raw?.source);
-  const normalizedVariants = mergeVariantSources(raw?.variants, normalizedSource);
+  const normalizedVariants = mergeVariantSources(
+    raw?.variants,
+    normalizedSource,
+  );
   return {
     assetId,
     ownerUri: normalizeOwnerUri(raw?.ownerUri || "/"),
@@ -259,7 +266,8 @@ function normalizeCollectionFeed(raw) {
   const slug = normalizeFeedSlug(raw?.slug);
   if (!avatarId || !slug || RESERVED_FEED_SLUGS.has(slug)) return null;
   const feedIdRaw = sanitizeText(raw?.feedId || raw?.id, 64).toLowerCase();
-  const feedId = feedIdRaw && HEX_RE.test(feedIdRaw) ? feedIdRaw : createHexId(24);
+  const feedId =
+    feedIdRaw && HEX_RE.test(feedIdRaw) ? feedIdRaw : createHexId(24);
   const referencesRaw = Array.isArray(raw?.references) ? raw.references : [];
   const references = [];
   const seen = new Set();
@@ -515,7 +523,9 @@ function sortNewestFirst(rows) {
     const leftTs = Date.parse(left?.createdAt || "") || 0;
     const rightTs = Date.parse(right?.createdAt || "") || 0;
     if (rightTs !== leftTs) return rightTs - leftTs;
-    return String(left?.itemId || "").localeCompare(String(right?.itemId || ""));
+    return String(left?.itemId || "").localeCompare(
+      String(right?.itemId || ""),
+    );
   });
 }
 
@@ -644,7 +654,13 @@ function assertItemId(itemId) {
   return normalized;
 }
 
-function resolveFeedReferences(state, avatarId, feedSlug, seen = new Set(), depth = 0) {
+function resolveFeedReferences(
+  state,
+  avatarId,
+  feedSlug,
+  seen = new Set(),
+  depth = 0,
+) {
   const key = `${avatarId}:${feedSlug}`;
   if (seen.has(key) || depth > 8) return [];
   seen.add(key);
@@ -806,7 +822,8 @@ export async function registerUploadedAsset({
   creatorId = "admins",
 } = {}) {
   const sourceAsset = asset && typeof asset === "object" ? asset : {};
-  const sourceResult = uploadResult && typeof uploadResult === "object" ? uploadResult : {};
+  const sourceResult =
+    uploadResult && typeof uploadResult === "object" ? uploadResult : {};
   const assetId = normalizeAssetId(sourceAsset.assetId);
   if (!assetId) return null;
 
@@ -820,10 +837,7 @@ export async function registerUploadedAsset({
     creatorType,
     creatorId,
     rights: {
-      copyrightHolder: sanitizeText(
-        sourceAsset?.rights?.copyrightHolder,
-        180,
-      ),
+      copyrightHolder: sanitizeText(sourceAsset?.rights?.copyrightHolder, 180),
       license: sanitizeText(sourceAsset?.rights?.license, 180),
     },
     source: {
@@ -963,7 +977,10 @@ export async function followAvatarFeed({
     followerAvatarId,
     "Invalid follower avatar id.",
   );
-  const safeTarget = assertAvatarId(targetAvatarId, "Invalid target avatar id.");
+  const safeTarget = assertAvatarId(
+    targetAvatarId,
+    "Invalid target avatar id.",
+  );
   const safeSlugRaw = sanitizeText(feedSlug, 64).toLowerCase();
   const safeSlug = safeSlugRaw === "*" ? "*" : assertFeedSlug(safeSlugRaw);
 
@@ -1018,7 +1035,10 @@ export async function unfollowAvatarFeed({
     followerAvatarId,
     "Invalid follower avatar id.",
   );
-  const safeTarget = assertAvatarId(targetAvatarId, "Invalid target avatar id.");
+  const safeTarget = assertAvatarId(
+    targetAvatarId,
+    "Invalid target avatar id.",
+  );
   const safeSlugRaw = sanitizeText(feedSlug, 64).toLowerCase();
   const safeSlug = safeSlugRaw === "*" ? "*" : assertFeedSlug(safeSlugRaw);
 
@@ -1060,7 +1080,10 @@ export async function publishAvatarFeedItem({
   note = "",
 } = {}) {
   const safeActor = assertAvatarId(actorAvatarId, "Invalid avatar id.");
-  const safeOwner = assertAvatarId(avatarId || actorAvatarId, "Invalid avatar id.");
+  const safeOwner = assertAvatarId(
+    avatarId || actorAvatarId,
+    "Invalid avatar id.",
+  );
   const safeFeed = assertFeedSlug(feedSlug);
   const safeAssetId = assertAssetId(assetId);
 
@@ -1070,7 +1093,9 @@ export async function publishAvatarFeedItem({
     throw error;
   }
   if (safeFeed === COMPOSITE_FEED_SLUG) {
-    const error = new Error("Composite feed is virtual and cannot accept items.");
+    const error = new Error(
+      "Composite feed is virtual and cannot accept items.",
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -1083,7 +1108,9 @@ export async function publishAvatarFeedItem({
   }
   const feed = getCollectionFeed(state, safeOwner, safeFeed);
   if (feed?.kind === "collection") {
-    const error = new Error("Collection feeds are virtual and cannot accept items.");
+    const error = new Error(
+      "Collection feeds are virtual and cannot accept items.",
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -1112,7 +1139,8 @@ export async function publishAvatarFeedItem({
   }
   state.items.push(item);
   const saved = await saveState(state);
-  const savedItem = saved.items.find((row) => row.itemId === item.itemId) || item;
+  const savedItem =
+    saved.items.find((row) => row.itemId === item.itemId) || item;
   const assetsById = new Map(saved.assets.map((row) => [row.assetId, row]));
   return serializeItem(savedItem, assetsById);
 }
@@ -1154,7 +1182,9 @@ export async function getFeedItem(itemId) {
   const state = await getState();
   const row = state.items.find((item) => item.itemId === safeItemId);
   if (!row) return null;
-  const assetsById = new Map(state.assets.map((asset) => [asset.assetId, asset]));
+  const assetsById = new Map(
+    state.assets.map((asset) => [asset.assetId, asset]),
+  );
   return serializeItem(row, assetsById);
 }
 

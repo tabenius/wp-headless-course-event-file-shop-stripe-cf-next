@@ -67,11 +67,9 @@ async function cfRun(model, body) {
   // REST API fallback for local dev.
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   if (!accountId) {
-    throw aiError(
-      "cf_account_missing",
-      "CLOUDFLARE_ACCOUNT_ID missing",
-      { model },
-    );
+    throw aiError("cf_account_missing", "CLOUDFLARE_ACCOUNT_ID missing", {
+      model,
+    });
   }
   const token = process.env.CF_API_TOKEN;
   if (!token) {
@@ -171,11 +169,9 @@ export async function generateImage(prompt, width = 512, height = 512) {
   // REST API fallback.
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   if (!accountId) {
-    throw aiError(
-      "cf_account_missing",
-      "CLOUDFLARE_ACCOUNT_ID missing",
-      { model },
-    );
+    throw aiError("cf_account_missing", "CLOUDFLARE_ACCOUNT_ID missing", {
+      model,
+    });
   }
   const token = process.env.CF_API_TOKEN;
   if (!token) {

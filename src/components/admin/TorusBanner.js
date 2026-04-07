@@ -298,7 +298,10 @@ export default function TorusBanner() {
       const dx = v2.x - v1.x;
       const dy = v2.y - v1.y;
       const dz = v2.z - v1.z;
-      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))));
+      const steps = Math.max(
+        1,
+        Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))),
+      );
       for (let s = 0; s <= steps; s += 1) {
         const t = s / steps;
         const x = Math.round(v1.x + dx * t);
@@ -331,7 +334,10 @@ export default function TorusBanner() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
-      ensureRasterBuffers(Math.max(2, Math.round(width)), Math.max(2, Math.round(height)));
+      ensureRasterBuffers(
+        Math.max(2, Math.round(width)),
+        Math.max(2, Math.round(height)),
+      );
       clearRasterBuffers();
 
       const rotationY = time * 0.00052;
@@ -391,7 +397,10 @@ export default function TorusBanner() {
           const faceDepth = (a.z + b.z + c.z + d.z) / 4;
           const normalized = Math.max(
             0,
-            Math.min(1, (faceDepth + TORUS_DEPTH_RANGE / 2) / TORUS_DEPTH_RANGE),
+            Math.min(
+              1,
+              (faceDepth + TORUS_DEPTH_RANGE / 2) / TORUS_DEPTH_RANGE,
+            ),
           );
           const depthBoost = 1 - normalized;
           const brightness =
@@ -482,7 +491,9 @@ export default function TorusBanner() {
           position: absolute;
           inset: -18%;
           transform-origin: 50% 100%;
-          animation-name: ${ENABLE_PENDULUM_MOVEMENT ? "pendulum-sway" : "none"};
+          animation-name: ${ENABLE_PENDULUM_MOVEMENT
+            ? "pendulum-sway"
+            : "none"};
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
         }
@@ -528,9 +539,7 @@ export default function TorusBanner() {
           background-position:
             center bottom,
             center bottom;
-          background-repeat:
-            no-repeat,
-            no-repeat;
+          background-repeat: no-repeat, no-repeat;
           -webkit-mask-image: linear-gradient(
             90deg,
             transparent 0%,
@@ -569,9 +578,7 @@ export default function TorusBanner() {
           background-position:
             center bottom,
             center bottom;
-          background-repeat:
-            no-repeat,
-            no-repeat;
+          background-repeat: no-repeat, no-repeat;
           -webkit-mask-image: linear-gradient(
             90deg,
             transparent 0%,
@@ -611,9 +618,7 @@ export default function TorusBanner() {
           background-position:
             center bottom,
             center bottom;
-          background-repeat:
-            no-repeat,
-            no-repeat;
+          background-repeat: no-repeat, no-repeat;
           -webkit-mask-image: linear-gradient(
             90deg,
             transparent 0%,

@@ -28,13 +28,15 @@ export default function HeaderNavClient({ navigation = [] }) {
   const isLoggedIn = Boolean(user?.email);
   const navItems = useMemo(() => {
     if (!isLoggedIn) return navBase;
+    return navBase;
+    /*
     return [
       ...navBase,
       {
         href: "/inventory",
-        label: t("common.inventory", "Inventory"),
+        label: t("common.inventory", "INVENTORY").toUpperCase(),
       },
-    ];
+    ]; */
   }, [isLoggedIn, navBase]);
 
   useEffect(() => {

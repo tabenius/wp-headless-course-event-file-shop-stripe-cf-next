@@ -14,7 +14,11 @@ export async function GET(request) {
 
   try {
     const presets = await getStylePresets();
-    return NextResponse.json({ ok: true, cta: presets.cta, typography: presets.typography });
+    return NextResponse.json({
+      ok: true,
+      cta: presets.cta,
+      typography: presets.typography,
+    });
   } catch (error) {
     console.error("style-presets GET failed:", error);
     return NextResponse.json(
@@ -32,19 +36,28 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON body" },
+      { status: 400 },
+    );
   }
 
   const { type, name, style } = body || {};
   try {
     const result = await addStylePreset(type, name, style);
     if (!result.ok) {
-      return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: result.error },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ ok: true, preset: result.preset });
   } catch (error) {
     console.error("style-presets POST failed:", error);
-    return NextResponse.json({ ok: false, error: "Failed to save preset" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Failed to save preset" },
+      { status: 500 },
+    );
   }
 }
 
@@ -56,7 +69,10 @@ export async function DELETE(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON body" },
+      { status: 400 },
+    );
   }
 
   const rawId = String(body?.id || "").trim();
@@ -72,11 +88,17 @@ export async function DELETE(request) {
   try {
     const result = await removeStylePreset(type, rawId);
     if (!result.ok) {
-      return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: result.error },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("style-presets DELETE failed:", error);
-    return NextResponse.json({ ok: false, error: "Failed to delete preset" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Failed to delete preset" },
+      { status: 500 },
+    );
   }
 }

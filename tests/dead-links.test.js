@@ -12,7 +12,10 @@ test("extractAnchorsFromHtml returns unique href values", () => {
     <a class="x" href='https://legacy.example/docs'>B</a>
     <a href="/alpha">dup</a>
   `;
-  assert.deepEqual(extractAnchorsFromHtml(html), ["/alpha", "https://legacy.example/docs"]);
+  assert.deepEqual(extractAnchorsFromHtml(html), [
+    "/alpha",
+    "https://legacy.example/docs",
+  ]);
 });
 
 test("classifyHref handles internal, pseudo-external and external urls", () => {
@@ -35,8 +38,14 @@ test("classifyHref handles internal, pseudo-external and external urls", () => {
 });
 
 test("classifyHref marks unsupported and invalid links", () => {
-  const context = { siteHost: "store.example", origin: "https://store.example" };
-  assert.equal(classifyHref("mailto:test@example.com", context).kind, "unsupported");
+  const context = {
+    siteHost: "store.example",
+    origin: "https://store.example",
+  };
+  assert.equal(
+    classifyHref("mailto:test@example.com", context).kind,
+    "unsupported",
+  );
   assert.equal(classifyHref("javascript:alert(1)", context).kind, "invalid");
   assert.equal(classifyHref("not a url", context).kind, "invalid");
 });

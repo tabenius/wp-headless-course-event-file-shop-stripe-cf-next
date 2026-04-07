@@ -17,11 +17,13 @@
 ## File Map
 
 **New files:**
+
 - `src/lib/stylePresetsStore.js` — KV CRUD + validation for the `style-presets` key
 - `src/app/api/admin/style-presets/route.js` — GET/POST/DELETE HTTP handler
 - `tests/stylePresets.test.js` — unit tests for store validation helpers
 
 **Modified files:**
+
 - `src/lib/shopSettings.js` — add `normalizeCtaStyle()`, extend `normalizeSiteStyle()` and `areSiteStylesEqual()`
 - `src/app/globals.css` — add `:where()` button rule with ten `--btn-*` fallback bindings
 - `src/app/layout.js` — extend inline runtime script to apply `--btn-*` CSS vars from ctaStyle and skip upstream color fields
@@ -32,6 +34,7 @@
 ## Task 1: `normalizeCtaStyle()` in shopSettings.js
 
 **Files:**
+
 - Modify: `src/lib/shopSettings.js`
 - Create: `tests/shopSettingsCtaStyle.test.js`
 
@@ -56,15 +59,21 @@ describe("normalizeCtaStyle", () => {
   });
 
   it("returns upstream for explicit upstream type", () => {
-    assert.deepEqual(normalizeCtaStyle({ type: "upstream" }), { type: "upstream" });
+    assert.deepEqual(normalizeCtaStyle({ type: "upstream" }), {
+      type: "upstream",
+    });
   });
 
   it("returns upstream for missing bgColor", () => {
-    assert.deepEqual(normalizeCtaStyle({ textColor: "background" }), { type: "upstream" });
+    assert.deepEqual(normalizeCtaStyle({ textColor: "background" }), {
+      type: "upstream",
+    });
   });
 
   it("returns upstream for invalid bgColor", () => {
-    assert.deepEqual(normalizeCtaStyle({ bgColor: "hotpink" }), { type: "upstream" });
+    assert.deepEqual(normalizeCtaStyle({ bgColor: "hotpink" }), {
+      type: "upstream",
+    });
   });
 
   it("normalizes a minimal valid ctaStyle", () => {
@@ -96,7 +105,11 @@ describe("normalizeCtaStyle", () => {
   });
 
   it("clamps invalid borderRadius to md", () => {
-    const result = normalizeCtaStyle({ bgColor: "primary", textColor: "background", borderRadius: "xxl" });
+    const result = normalizeCtaStyle({
+      bgColor: "primary",
+      textColor: "background",
+      borderRadius: "xxl",
+    });
     assert.equal(result.borderRadius, "md");
   });
 
@@ -107,13 +120,18 @@ describe("normalizeCtaStyle", () => {
       textColor: "background",
     });
     assert.equal(result.bgCustom, "#ff0000");
-    const noCustom = normalizeCtaStyle({ bgColor: "primary", bgCustom: "#ff0000", textColor: "background" });
+    const noCustom = normalizeCtaStyle({
+      bgColor: "primary",
+      bgCustom: "#ff0000",
+      textColor: "background",
+    });
     assert.equal(noCustom.bgCustom, undefined);
   });
 
   it("includes borderColor when border is solid, defaults to primary", () => {
     const result = normalizeCtaStyle({
-      bgColor: "primary", textColor: "background",
+      bgColor: "primary",
+      textColor: "background",
       border: "solid",
     });
     assert.equal(result.borderColor, "primary");
@@ -121,15 +139,27 @@ describe("normalizeCtaStyle", () => {
 
   it("does not include borderColor when border is none", () => {
     const result = normalizeCtaStyle({
-      bgColor: "primary", textColor: "background",
-      border: "none", borderColor: "secondary",
+      bgColor: "primary",
+      textColor: "background",
+      border: "none",
+      borderColor: "secondary",
     });
     assert.equal(result.borderColor, undefined);
   });
 
   it("produces identical JSON.stringify for same logical input", () => {
-    const a = normalizeCtaStyle({ bgColor: "secondary", textColor: "foreground", border: "solid", borderColor: "secondary" });
-    const b = normalizeCtaStyle({ bgColor: "secondary", textColor: "foreground", border: "solid", borderColor: "secondary" });
+    const a = normalizeCtaStyle({
+      bgColor: "secondary",
+      textColor: "foreground",
+      border: "solid",
+      borderColor: "secondary",
+    });
+    const b = normalizeCtaStyle({
+      bgColor: "secondary",
+      textColor: "foreground",
+      border: "solid",
+      borderColor: "secondary",
+    });
     assert.equal(JSON.stringify(a), JSON.stringify(b));
   });
 });
@@ -148,11 +178,28 @@ Expected: FAIL — `normalizeCtaStyle is not exported`
 In `src/lib/shopSettings.js`, add these **before** the existing `normalizeSiteStyle` function (around line 90, after the `normalizeSiteFont` function):
 
 ```js
-const CTA_BG_COLORS = new Set(["primary", "secondary", "foreground", "background", "custom"]);
-const CTA_TEXT_COLORS = new Set(["background", "foreground", "primary", "secondary", "custom"]);
+const CTA_BG_COLORS = new Set([
+  "primary",
+  "secondary",
+  "foreground",
+  "background",
+  "custom",
+]);
+const CTA_TEXT_COLORS = new Set([
+  "background",
+  "foreground",
+  "primary",
+  "secondary",
+  "custom",
+]);
 const CTA_BORDER_RADII = new Set(["none", "sm", "md", "lg", "full"]);
 const CTA_BORDERS = new Set(["none", "solid"]);
-const CTA_BORDER_COLORS = new Set(["primary", "secondary", "foreground", "custom"]);
+const CTA_BORDER_COLORS = new Set([
+  "primary",
+  "secondary",
+  "foreground",
+  "custom",
+]);
 const CTA_SHADOWS = new Set(["none", "sm", "md"]);
 const CTA_FONT_WEIGHTS = new Set(["normal", "medium", "semibold", "bold"]);
 const CTA_TEXT_TRANSFORMS = new Set(["none", "uppercase", "capitalize"]);
@@ -164,16 +211,35 @@ export function normalizeCtaStyle(source) {
   if (!CTA_BG_COLORS.has(source.bgColor)) return { type: "upstream" };
 
   const bgColor = source.bgColor;
-  const textColor = CTA_TEXT_COLORS.has(source.textColor) ? source.textColor : "background";
-  const borderRadius = CTA_BORDER_RADII.has(source.borderRadius) ? source.borderRadius : "md";
+  const textColor = CTA_TEXT_COLORS.has(source.textColor)
+    ? source.textColor
+    : "background";
+  const borderRadius = CTA_BORDER_RADII.has(source.borderRadius)
+    ? source.borderRadius
+    : "md";
   const border = CTA_BORDERS.has(source.border) ? source.border : "none";
   const shadow = CTA_SHADOWS.has(source.shadow) ? source.shadow : "none";
-  const fontWeight = CTA_FONT_WEIGHTS.has(source.fontWeight) ? source.fontWeight : "semibold";
-  const textTransform = CTA_TEXT_TRANSFORMS.has(source.textTransform) ? source.textTransform : "none";
-  const paddingSize = CTA_PADDING_SIZES.has(source.paddingSize) ? source.paddingSize : "md";
+  const fontWeight = CTA_FONT_WEIGHTS.has(source.fontWeight)
+    ? source.fontWeight
+    : "semibold";
+  const textTransform = CTA_TEXT_TRANSFORMS.has(source.textTransform)
+    ? source.textTransform
+    : "none";
+  const paddingSize = CTA_PADDING_SIZES.has(source.paddingSize)
+    ? source.paddingSize
+    : "md";
 
   // Fixed key order for stable JSON.stringify in areSiteStylesEqual
-  const result = { bgColor, textColor, borderRadius, border, shadow, fontWeight, textTransform, paddingSize };
+  const result = {
+    bgColor,
+    textColor,
+    borderRadius,
+    border,
+    shadow,
+    fontWeight,
+    textTransform,
+    paddingSize,
+  };
 
   if (bgColor === "custom") {
     result.bgCustom = normalizeHexColor(source.bgCustom, "#000000");
@@ -182,7 +248,9 @@ export function normalizeCtaStyle(source) {
     result.textCustom = normalizeHexColor(source.textCustom, "#ffffff");
   }
   if (border === "solid") {
-    result.borderColor = CTA_BORDER_COLORS.has(source.borderColor) ? source.borderColor : "primary";
+    result.borderColor = CTA_BORDER_COLORS.has(source.borderColor)
+      ? source.borderColor
+      : "primary";
     if (result.borderColor === "custom") {
       result.borderCustom = normalizeHexColor(source.borderCustom, "#000000");
     }
@@ -202,11 +270,12 @@ ctaStyle: normalizeCtaStyle(source.ctaStyle),
 ```
 
 The function return should end with:
+
 ```js
-  return {
-    // ... all existing fields (colors, font roles, typographyPalette, linkStyle) ...
-    ctaStyle: normalizeCtaStyle(source.ctaStyle),
-  };
+return {
+  // ... all existing fields (colors, font roles, typographyPalette, linkStyle) ...
+  ctaStyle: normalizeCtaStyle(source.ctaStyle),
+};
 ```
 
 - [ ] **Step 5: Update `areSiteStylesEqual` to compare ctaStyle**
@@ -215,12 +284,13 @@ Find the `areSiteStylesEqual` function. After the font browser plan it already h
 
 ```js
 // Add at the end of the && chain in areSiteStylesEqual:
-JSON.stringify(a.ctaStyle) === JSON.stringify(b.ctaStyle)
+JSON.stringify(a.ctaStyle) === JSON.stringify(b.ctaStyle);
 ```
 
 - [ ] **Step 6: Update the export list at the bottom of shopSettings.js**
 
 Find the existing export:
+
 ```js
 export { ALL_TYPES, DEFAULT_SITE_STYLE, SITE_FONT_STACKS };
 ```
@@ -255,6 +325,7 @@ git commit -m "feat: add normalizeCtaStyle() and extend normalizeSiteStyle/areSi
 ## Task 2: stylePresetsStore — KV CRUD + validation helpers
 
 **Files:**
+
 - Create: `src/lib/stylePresetsStore.js`
 - Create: `tests/stylePresets.test.js`
 
@@ -284,7 +355,10 @@ describe("normalizePresets", () => {
   });
 
   it("filters non-array cta to empty", () => {
-    assert.deepEqual(normalizePresets({ cta: "bad", typography: [] }), { cta: [], typography: [] });
+    assert.deepEqual(normalizePresets({ cta: "bad", typography: [] }), {
+      cta: [],
+      typography: [],
+    });
   });
 
   it("filters preset entries without id or name", () => {
@@ -334,7 +408,9 @@ describe("validatePresetInput", () => {
   });
 
   it("accepts valid typography input", () => {
-    const err = validatePresetInput("typography", "Elegant Sofia", { fontDisplay: {} });
+    const err = validatePresetInput("typography", "Elegant Sofia", {
+      fontDisplay: {},
+    });
     assert.equal(err, null);
   });
 });
@@ -342,7 +418,11 @@ describe("validatePresetInput", () => {
 describe("applyAddPreset", () => {
   it("appends to the correct array", () => {
     const presets = { cta: [], typography: [] };
-    const result = applyAddPreset(presets, "cta", { id: "x1", name: "Dark", style: {} });
+    const result = applyAddPreset(presets, "cta", {
+      id: "x1",
+      name: "Dark",
+      style: {},
+    });
     assert.equal(result.cta.length, 1);
     assert.equal(result.cta[0].id, "x1");
     assert.equal(result.typography.length, 0);
@@ -350,7 +430,11 @@ describe("applyAddPreset", () => {
 
   it("appends to typography array", () => {
     const presets = { cta: [], typography: [] };
-    const result = applyAddPreset(presets, "typography", { id: "y1", name: "Elegant", style: {} });
+    const result = applyAddPreset(presets, "typography", {
+      id: "y1",
+      name: "Elegant",
+      style: {},
+    });
     assert.equal(result.typography.length, 1);
     assert.equal(result.cta.length, 0);
   });
@@ -430,7 +514,8 @@ export function normalizePresets(raw) {
  */
 export function validatePresetInput(type, name, style) {
   if (!VALID_TYPES.has(type)) return "type must be 'cta' or 'typography'";
-  if (!name || typeof name !== "string" || !name.trim()) return "name is required";
+  if (!name || typeof name !== "string" || !name.trim())
+    return "name is required";
   if (name.trim().length > 80) return "name must be 80 characters or fewer";
   if (!style || typeof style !== "object") return "style is required";
   return null;
@@ -526,6 +611,7 @@ git commit -m "feat: add stylePresetsStore with KV CRUD and validation helpers"
 ## Task 3: `/api/admin/style-presets` Route Handler
 
 **Files:**
+
 - Create: `src/app/api/admin/style-presets/route.js`
 
 Thin HTTP handler — all logic lives in `stylePresetsStore.js`.
@@ -569,13 +655,19 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON body" },
+      { status: 400 },
+    );
   }
 
   const { type, name, style } = body || {};
   const result = await addStylePreset(type, name, style);
   if (!result.ok) {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 400 },
+    );
   }
 
   return NextResponse.json({ ok: true, preset: result.preset });
@@ -589,7 +681,10 @@ export async function DELETE(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON body" },
+      { status: 400 },
+    );
   }
 
   const rawId = String(body?.id || "").trim();
@@ -604,7 +699,10 @@ export async function DELETE(request) {
 
   const result = await removeStylePreset(type, rawId);
   if (!result.ok) {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 400 },
+    );
   }
 
   return NextResponse.json({ ok: true });
@@ -631,6 +729,7 @@ git commit -m "feat: add /api/admin/style-presets GET/POST/DELETE route"
 ## Task 4: CSS — `:where()` button rule in globals.css
 
 **Files:**
+
 - Modify: `src/app/globals.css`
 
 Adds zero-specificity CSS bindings for `--btn-*` variables so any WordPress theme rule (even a plain `button {}`) overrides them. When all `--btn-*` variables are unset (upstream ctaStyle) and the color fallbacks are also unset (upstream colors), the declarations drop silently and WP theme styles win.
@@ -643,13 +742,14 @@ Open `src/app/globals.css` and append at the very end:
 /* CTA button style — zero specificity so WP theme rules always win */
 :where(button, .btn, [role="button"], input[type="submit"]) {
   background-color: var(--btn-bg, var(--color-primary));
-  color:            var(--btn-color, var(--color-background));
-  border-radius:    var(--btn-radius, 8px);
-  border:           var(--btn-border-width, 0px) solid var(--btn-border-color, transparent);
-  box-shadow:       var(--btn-shadow, none);
-  font-weight:      var(--btn-font-weight, 600);
-  text-transform:   var(--btn-text-transform, none);
-  padding:          var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
+  color: var(--btn-color, var(--color-background));
+  border-radius: var(--btn-radius, 8px);
+  border: var(--btn-border-width, 0px) solid
+    var(--btn-border-color, transparent);
+  box-shadow: var(--btn-shadow, none);
+  font-weight: var(--btn-font-weight, 600);
+  text-transform: var(--btn-text-transform, none);
+  padding: var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
 }
 ```
 
@@ -669,9 +769,11 @@ git commit -m "feat: add zero-specificity :where() CTA button CSS var bindings"
 ## Task 5: Extend layout.js inline script for ctaStyle
 
 **Files:**
+
 - Modify: `src/app/layout.js`
 
 The inline script (line ~111) after the font browser plan applies colors, font roles, palette colors, and link style data-attributes. We extend it to:
+
 1. Skip setting CSS vars when a color field value is `"upstream"`
 2. Apply ten `--btn-*` CSS variables from `ctaStyle`
 
@@ -686,6 +788,7 @@ The `apply()` function inside the inline script needs two changes:
 **Change A — skip upstream color values:**
 
 Find the color loop (iterates `colorMap`):
+
 ```js
 var v = style[k];
 if (typeof v === "string" && v.trim())
@@ -693,13 +796,14 @@ if (typeof v === "string" && v.trim())
 ```
 
 Change to:
+
 ```js
 var v = style[k];
 if (typeof v === "string" && v.trim() && v !== "upstream")
   root.style.setProperty(colorMap[k], v.trim());
 ```
 
-**Change B — add ctaStyle → --btn-* resolution:**
+**Change B — add ctaStyle → --btn-\* resolution:**
 
 Add this block at the end of the `apply()` function, after the link-style block:
 
@@ -714,19 +818,44 @@ if (cta && typeof cta === "object" && cta.type !== "upstream" && cta.bgColor) {
     background: "var(--color-background)",
   };
   var rc = function (slot, custom) {
-    return slot === "custom" ? (custom || "") : (clr[slot] || "");
+    return slot === "custom" ? custom || "" : clr[slot] || "";
   };
-  var radMap = { none: "0px", sm: "4px", md: "8px", lg: "16px", full: "9999px" };
-  var padMap = { sm: ["0.375rem", "0.875rem"], md: ["0.625rem", "1.25rem"], lg: ["0.875rem", "1.75rem"] };
-  var shdMap = { none: "none", sm: "0 1px 2px rgba(0,0,0,.08)", md: "0 4px 6px rgba(0,0,0,.10)" };
+  var radMap = {
+    none: "0px",
+    sm: "4px",
+    md: "8px",
+    lg: "16px",
+    full: "9999px",
+  };
+  var padMap = {
+    sm: ["0.375rem", "0.875rem"],
+    md: ["0.625rem", "1.25rem"],
+    lg: ["0.875rem", "1.75rem"],
+  };
+  var shdMap = {
+    none: "none",
+    sm: "0 1px 2px rgba(0,0,0,.08)",
+    md: "0 4px 6px rgba(0,0,0,.10)",
+  };
   var fwMap = { normal: 400, medium: 500, semibold: 600, bold: 700 };
   root.style.setProperty("--btn-bg", rc(cta.bgColor, cta.bgCustom));
   root.style.setProperty("--btn-color", rc(cta.textColor, cta.textCustom));
   root.style.setProperty("--btn-radius", radMap[cta.borderRadius] || "8px");
-  root.style.setProperty("--btn-border-width", cta.border === "solid" ? "1px" : "0px");
-  root.style.setProperty("--btn-border-color", cta.border === "solid" ? rc(cta.borderColor, cta.borderCustom) : "transparent");
+  root.style.setProperty(
+    "--btn-border-width",
+    cta.border === "solid" ? "1px" : "0px",
+  );
+  root.style.setProperty(
+    "--btn-border-color",
+    cta.border === "solid"
+      ? rc(cta.borderColor, cta.borderCustom)
+      : "transparent",
+  );
   root.style.setProperty("--btn-shadow", shdMap[cta.shadow] || "none");
-  root.style.setProperty("--btn-font-weight", String(fwMap[cta.fontWeight] || 600));
+  root.style.setProperty(
+    "--btn-font-weight",
+    String(fwMap[cta.fontWeight] || 600),
+  );
   root.style.setProperty("--btn-text-transform", cta.textTransform || "none");
   var pad = padMap[cta.paddingSize] || padMap.md;
   root.style.setProperty("--btn-padding-x", pad[1]);
@@ -746,6 +875,7 @@ console.log(s.replace(/\\/\\/.*/g,'').replace(/\\s+/g,' ').trim());
 ```
 
 Or use:
+
 ```bash
 npx terser --compress --mangle -- /tmp/inline-script.js
 ```
@@ -772,9 +902,11 @@ git commit -m "feat: extend runtime script to apply --btn-* CSS vars and skip up
 ## Task 6: AdminDashboard — ctaStyle state + Button Style section
 
 **Files:**
+
 - Modify: `src/components/admin/AdminDashboard.js`
 
 This is the largest task. It adds:
+
 1. Client-side `normalizeCtaStyle` (mirrors server version, avoids server import)
 2. CTA style constants (built-in presets)
 3. `ctaStyle` state in `siteStyleTokens`
@@ -789,8 +921,20 @@ Near the top of `AdminDashboard.js`, after the existing `SITE_STYLE_DEFAULTS` bl
 ```js
 // ── CTA button style ──────────────────────────────────────────────────────────
 
-const CTA_BG_COLORS = ["primary", "secondary", "foreground", "background", "custom"];
-const CTA_TEXT_COLORS = ["background", "foreground", "primary", "secondary", "custom"];
+const CTA_BG_COLORS = [
+  "primary",
+  "secondary",
+  "foreground",
+  "background",
+  "custom",
+];
+const CTA_TEXT_COLORS = [
+  "background",
+  "foreground",
+  "primary",
+  "secondary",
+  "custom",
+];
 const CTA_BORDER_RADII = ["none", "sm", "md", "lg", "full"];
 const CTA_BORDERS = ["none", "solid"];
 const CTA_BORDER_COLORS = ["primary", "secondary", "foreground", "custom"];
@@ -799,7 +943,13 @@ const CTA_FONT_WEIGHTS = ["normal", "medium", "semibold", "bold"];
 const CTA_TEXT_TRANSFORMS = ["none", "uppercase", "capitalize"];
 const CTA_PADDING_SIZES = ["sm", "md", "lg"];
 
-const CTA_RADIUS_MAP = { none: "0px", sm: "4px", md: "8px", lg: "16px", full: "9999px" };
+const CTA_RADIUS_MAP = {
+  none: "0px",
+  sm: "4px",
+  md: "8px",
+  lg: "16px",
+  full: "9999px",
+};
 const CTA_PADDING_MAP = {
   sm: { x: "0.875rem", y: "0.375rem" },
   md: { x: "1.25rem", y: "0.625rem" },
@@ -810,21 +960,71 @@ const CTA_SHADOW_MAP = {
   sm: "0 1px 2px rgba(0,0,0,.08)",
   md: "0 4px 6px rgba(0,0,0,.10)",
 };
-const CTA_FONT_WEIGHT_MAP = { normal: 400, medium: 500, semibold: 600, bold: 700 };
+const CTA_FONT_WEIGHT_MAP = {
+  normal: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+};
 
 const CTA_UPSTREAM = { type: "upstream" };
 const CTA_DEFAULT_STYLE = {
-  bgColor: "primary", textColor: "background", borderRadius: "md",
-  border: "none", shadow: "none", fontWeight: "semibold",
-  textTransform: "none", paddingSize: "md",
+  bgColor: "primary",
+  textColor: "background",
+  borderRadius: "md",
+  border: "none",
+  shadow: "none",
+  fontWeight: "semibold",
+  textTransform: "none",
+  paddingSize: "md",
 };
 
 const CTA_BUILTIN_PRESETS = [
   { id: "upstream", name: "Upstream", style: CTA_UPSTREAM },
-  { id: "filled",   name: "Filled",   style: { ...CTA_DEFAULT_STYLE } },
-  { id: "outline",  name: "Outline",  style: { bgColor: "background", textColor: "primary", borderRadius: "md", border: "solid", borderColor: "primary", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
-  { id: "pill",     name: "Pill",     style: { bgColor: "primary", textColor: "background", borderRadius: "full", border: "none", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
-  { id: "secondary",name: "Secondary",style: { bgColor: "secondary", textColor: "foreground", borderRadius: "md", border: "none", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
+  { id: "filled", name: "Filled", style: { ...CTA_DEFAULT_STYLE } },
+  {
+    id: "outline",
+    name: "Outline",
+    style: {
+      bgColor: "background",
+      textColor: "primary",
+      borderRadius: "md",
+      border: "solid",
+      borderColor: "primary",
+      shadow: "none",
+      fontWeight: "semibold",
+      textTransform: "none",
+      paddingSize: "md",
+    },
+  },
+  {
+    id: "pill",
+    name: "Pill",
+    style: {
+      bgColor: "primary",
+      textColor: "background",
+      borderRadius: "full",
+      border: "none",
+      shadow: "none",
+      fontWeight: "semibold",
+      textTransform: "none",
+      paddingSize: "md",
+    },
+  },
+  {
+    id: "secondary",
+    name: "Secondary",
+    style: {
+      bgColor: "secondary",
+      textColor: "foreground",
+      borderRadius: "md",
+      border: "none",
+      shadow: "none",
+      fontWeight: "semibold",
+      textTransform: "none",
+      paddingSize: "md",
+    },
+  },
 ];
 
 /** Client-side mirror of normalizeCtaStyle from shopSettings.js */
@@ -842,19 +1042,42 @@ function normalizeCtaStyleClient(source) {
   const validPadding = new Set(CTA_PADDING_SIZES);
   if (!validBg.has(source.bgColor)) return { type: "upstream" };
   const bgColor = source.bgColor;
-  const textColor = validText.has(source.textColor) ? source.textColor : "background";
-  const borderRadius = validRadius.has(source.borderRadius) ? source.borderRadius : "md";
+  const textColor = validText.has(source.textColor)
+    ? source.textColor
+    : "background";
+  const borderRadius = validRadius.has(source.borderRadius)
+    ? source.borderRadius
+    : "md";
   const border = validBorder.has(source.border) ? source.border : "none";
   const shadow = validShadow.has(source.shadow) ? source.shadow : "none";
-  const fontWeight = validWeight.has(source.fontWeight) ? source.fontWeight : "semibold";
-  const textTransform = validTransform.has(source.textTransform) ? source.textTransform : "none";
-  const paddingSize = validPadding.has(source.paddingSize) ? source.paddingSize : "md";
-  const result = { bgColor, textColor, borderRadius, border, shadow, fontWeight, textTransform, paddingSize };
+  const fontWeight = validWeight.has(source.fontWeight)
+    ? source.fontWeight
+    : "semibold";
+  const textTransform = validTransform.has(source.textTransform)
+    ? source.textTransform
+    : "none";
+  const paddingSize = validPadding.has(source.paddingSize)
+    ? source.paddingSize
+    : "md";
+  const result = {
+    bgColor,
+    textColor,
+    borderRadius,
+    border,
+    shadow,
+    fontWeight,
+    textTransform,
+    paddingSize,
+  };
   if (bgColor === "custom") result.bgCustom = source.bgCustom || "#000000";
-  if (textColor === "custom") result.textCustom = source.textCustom || "#ffffff";
+  if (textColor === "custom")
+    result.textCustom = source.textCustom || "#ffffff";
   if (border === "solid") {
-    result.borderColor = validBorderColor.has(source.borderColor) ? source.borderColor : "primary";
-    if (result.borderColor === "custom") result.borderCustom = source.borderCustom || "#000000";
+    result.borderColor = validBorderColor.has(source.borderColor)
+      ? source.borderColor
+      : "primary";
+    if (result.borderColor === "custom")
+      result.borderCustom = source.borderCustom || "#000000";
   }
   return result;
 }
@@ -870,7 +1093,10 @@ function ctaPreviewStyle(cta, tokens) {
   if (!cta || cta.type === "upstream") return {};
   const bg = resolveCtaColor(cta.bgColor, cta.bgCustom, tokens);
   const color = resolveCtaColor(cta.textColor, cta.textCustom, tokens);
-  const borderColor = cta.border === "solid" ? resolveCtaColor(cta.borderColor, cta.borderCustom, tokens) : "transparent";
+  const borderColor =
+    cta.border === "solid"
+      ? resolveCtaColor(cta.borderColor, cta.borderCustom, tokens)
+      : "transparent";
   const pad = CTA_PADDING_MAP[cta.paddingSize] || CTA_PADDING_MAP.md;
   return {
     backgroundColor: bg,
@@ -902,7 +1128,7 @@ function sanitizeSiteStyleTokens(input, fallback = SITE_STYLE_DEFAULTS) {
 }
 ```
 
-- [ ] **Step 3: Extend applySiteStyleTokensToDom to set --btn-* vars**
+- [ ] **Step 3: Extend applySiteStyleTokensToDom to set --btn-\* vars**
 
 Find `applySiteStyleTokensToDom`. After the existing `root.style.setProperty` calls, add:
 
@@ -912,23 +1138,53 @@ const cta = safe.ctaStyle;
 if (cta && cta.type !== "upstream" && cta.bgColor) {
   const resolve = (slot, custom) => {
     if (slot === "custom") return custom || "";
-    const varMap = { primary: "var(--color-primary)", secondary: "var(--color-secondary)", foreground: "var(--color-foreground)", background: "var(--color-background)" };
+    const varMap = {
+      primary: "var(--color-primary)",
+      secondary: "var(--color-secondary)",
+      foreground: "var(--color-foreground)",
+      background: "var(--color-background)",
+    };
     return varMap[slot] || "";
   };
   root.style.setProperty("--btn-bg", resolve(cta.bgColor, cta.bgCustom));
   root.style.setProperty("--btn-color", resolve(cta.textColor, cta.textCustom));
-  root.style.setProperty("--btn-radius", CTA_RADIUS_MAP[cta.borderRadius] || "8px");
-  root.style.setProperty("--btn-border-width", cta.border === "solid" ? "1px" : "0px");
-  root.style.setProperty("--btn-border-color", cta.border === "solid" ? resolve(cta.borderColor, cta.borderCustom) : "transparent");
+  root.style.setProperty(
+    "--btn-radius",
+    CTA_RADIUS_MAP[cta.borderRadius] || "8px",
+  );
+  root.style.setProperty(
+    "--btn-border-width",
+    cta.border === "solid" ? "1px" : "0px",
+  );
+  root.style.setProperty(
+    "--btn-border-color",
+    cta.border === "solid"
+      ? resolve(cta.borderColor, cta.borderCustom)
+      : "transparent",
+  );
   root.style.setProperty("--btn-shadow", CTA_SHADOW_MAP[cta.shadow] || "none");
-  root.style.setProperty("--btn-font-weight", String(CTA_FONT_WEIGHT_MAP[cta.fontWeight] || 600));
+  root.style.setProperty(
+    "--btn-font-weight",
+    String(CTA_FONT_WEIGHT_MAP[cta.fontWeight] || 600),
+  );
   root.style.setProperty("--btn-text-transform", cta.textTransform || "none");
   const pad = CTA_PADDING_MAP[cta.paddingSize] || CTA_PADDING_MAP.md;
   root.style.setProperty("--btn-padding-x", pad.x);
   root.style.setProperty("--btn-padding-y", pad.y);
 } else {
   // Upstream — remove overrides so WP theme styles apply
-  ["--btn-bg","--btn-color","--btn-radius","--btn-border-width","--btn-border-color","--btn-shadow","--btn-font-weight","--btn-text-transform","--btn-padding-x","--btn-padding-y"].forEach(v => root.style.removeProperty(v));
+  [
+    "--btn-bg",
+    "--btn-color",
+    "--btn-radius",
+    "--btn-border-width",
+    "--btn-border-color",
+    "--btn-shadow",
+    "--btn-font-weight",
+    "--btn-text-transform",
+    "--btn-padding-x",
+    "--btn-padding-y",
+  ].forEach((v) => root.style.removeProperty(v));
 }
 ```
 
@@ -947,7 +1203,7 @@ In the `useEffect` that loads settings (the one calling `adminFetch` for the set
 ```js
 // Load style presets
 adminFetch("/api/admin/style-presets")
-  .then((res) => res.ok ? res.json() : null)
+  .then((res) => (res.ok ? res.json() : null))
   .then((data) => {
     if (data?.ok && Array.isArray(data.cta)) {
       setUserCtaPresets(data.cta);
@@ -961,16 +1217,21 @@ adminFetch("/api/admin/style-presets")
 Find the style tab section in AdminDashboard (look for `activeTab === "style"` check). The font browser plan added font role cards and a themes strip. Below the themes strip, add the Button Style section:
 
 ```jsx
-{/* ── Button Style ─────────────────────────────────────────────── */}
+{
+  /* ── Button Style ─────────────────────────────────────────────── */
+}
 <div className="space-y-4">
   <div className="text-sm font-semibold text-gray-800">Button Style</div>
 
   {/* Preset strip */}
   <div className="flex flex-wrap gap-2 items-center">
     {CTA_BUILTIN_PRESETS.map((preset) => {
-      const isActive = preset.id === "upstream"
-        ? siteStyleTokens.ctaStyle?.type === "upstream"
-        : JSON.stringify(normalizeCtaStyleClient(siteStyleTokens.ctaStyle)) === JSON.stringify(preset.style);
+      const isActive =
+        preset.id === "upstream"
+          ? siteStyleTokens.ctaStyle?.type === "upstream"
+          : JSON.stringify(
+              normalizeCtaStyleClient(siteStyleTokens.ctaStyle),
+            ) === JSON.stringify(preset.style);
       return (
         <button
           key={preset.id}
@@ -981,7 +1242,8 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
           }}
           className={`px-3 py-1 text-xs rounded border ${isActive ? "bg-purple-100 border-purple-400 text-purple-700 font-semibold" : "border-gray-300 text-gray-600 hover:border-gray-400"}`}
         >
-          {preset.name}{preset.id === "upstream" && isActive ? " ●" : ""}
+          {preset.name}
+          {preset.id === "upstream" && isActive ? " ●" : ""}
         </button>
       );
     })}
@@ -1055,7 +1317,10 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
           Save
         </button>
         <button
-          onClick={() => { setCtaSaveExpanded(false); setCtaSaveName(""); }}
+          onClick={() => {
+            setCtaSaveExpanded(false);
+            setCtaSaveName("");
+          }}
           className="text-xs text-gray-400 hover:text-gray-600"
         >
           Cancel
@@ -1066,7 +1331,9 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
 
   {/* Live preview */}
   {siteStyleTokens.ctaStyle?.type === "upstream" ? (
-    <div className="text-xs text-gray-400 italic">Using WordPress default button styles</div>
+    <div className="text-xs text-gray-400 italic">
+      Using WordPress default button styles
+    </div>
   ) : (
     <div>
       <button
@@ -1086,8 +1353,16 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
         { label: "Border", field: "border", options: CTA_BORDERS },
         { label: "Shadow", field: "shadow", options: CTA_SHADOWS },
         { label: "Radius", field: "borderRadius", options: CTA_BORDER_RADII },
-        { label: "Font Weight", field: "fontWeight", options: CTA_FONT_WEIGHTS },
-        { label: "Text Case", field: "textTransform", options: CTA_TEXT_TRANSFORMS },
+        {
+          label: "Font Weight",
+          field: "fontWeight",
+          options: CTA_FONT_WEIGHTS,
+        },
+        {
+          label: "Text Case",
+          field: "textTransform",
+          options: CTA_TEXT_TRANSFORMS,
+        },
         { label: "Padding", field: "paddingSize", options: CTA_PADDING_SIZES },
       ].map(({ label, field, options }) => (
         <div key={field} className="flex items-center justify-between gap-2">
@@ -1097,7 +1372,10 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
             onChange={(e) => {
               const next = {
                 ...siteStyleTokens,
-                ctaStyle: normalizeCtaStyleClient({ ...siteStyleTokens.ctaStyle, [field]: e.target.value }),
+                ctaStyle: normalizeCtaStyleClient({
+                  ...siteStyleTokens.ctaStyle,
+                  [field]: e.target.value,
+                }),
               };
               setSiteStyleTokens(next);
               applySiteStyleTokensToDom(next);
@@ -1105,7 +1383,9 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
             className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
           >
             {options.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
             ))}
           </select>
         </div>
@@ -1114,13 +1394,18 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
       {/* Border color — only when border === solid */}
       {siteStyleTokens.ctaStyle?.border === "solid" && (
         <div className="flex items-center justify-between gap-2">
-          <label className="text-xs text-gray-600 w-24 shrink-0">Border Color</label>
+          <label className="text-xs text-gray-600 w-24 shrink-0">
+            Border Color
+          </label>
           <select
             value={siteStyleTokens.ctaStyle?.borderColor || "primary"}
             onChange={(e) => {
               const next = {
                 ...siteStyleTokens,
-                ctaStyle: normalizeCtaStyleClient({ ...siteStyleTokens.ctaStyle, borderColor: e.target.value }),
+                ctaStyle: normalizeCtaStyleClient({
+                  ...siteStyleTokens.ctaStyle,
+                  borderColor: e.target.value,
+                }),
               };
               setSiteStyleTokens(next);
               applySiteStyleTokensToDom(next);
@@ -1128,7 +1413,9 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
             className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
           >
             {CTA_BORDER_COLORS.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
             ))}
           </select>
         </div>
@@ -1142,7 +1429,13 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
             type="color"
             value={siteStyleTokens.ctaStyle?.bgCustom || "#000000"}
             onChange={(e) => {
-              const next = { ...siteStyleTokens, ctaStyle: { ...siteStyleTokens.ctaStyle, bgCustom: e.target.value } };
+              const next = {
+                ...siteStyleTokens,
+                ctaStyle: {
+                  ...siteStyleTokens.ctaStyle,
+                  bgCustom: e.target.value,
+                },
+              };
               setSiteStyleTokens(next);
               applySiteStyleTokensToDom(next);
             }}
@@ -1154,12 +1447,20 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
       {/* textColor custom hex input */}
       {siteStyleTokens.ctaStyle?.textColor === "custom" && (
         <div className="flex items-center justify-between gap-2">
-          <label className="text-xs text-gray-600 w-24 shrink-0">Text Hex</label>
+          <label className="text-xs text-gray-600 w-24 shrink-0">
+            Text Hex
+          </label>
           <input
             type="color"
             value={siteStyleTokens.ctaStyle?.textCustom || "#ffffff"}
             onChange={(e) => {
-              const next = { ...siteStyleTokens, ctaStyle: { ...siteStyleTokens.ctaStyle, textCustom: e.target.value } };
+              const next = {
+                ...siteStyleTokens,
+                ctaStyle: {
+                  ...siteStyleTokens.ctaStyle,
+                  textCustom: e.target.value,
+                },
+              };
               setSiteStyleTokens(next);
               applySiteStyleTokensToDom(next);
             }}
@@ -1169,7 +1470,7 @@ Find the style tab section in AdminDashboard (look for `activeTab === "style"` c
       )}
     </div>
   )}
-</div>
+</div>;
 ```
 
 - [ ] **Step 6: Verify the UI renders without errors**
@@ -1179,6 +1480,7 @@ npm run dev
 ```
 
 Open the admin style tab. Verify:
+
 - Preset strip shows Upstream, Filled, Outline, Pill, Secondary
 - Clicking a preset updates the preview
 - Upstream selection disables controls and shows the "Using WordPress default" message
@@ -1196,6 +1498,7 @@ git commit -m "feat: add ctaStyle state and Button Style section to admin style 
 ## Task 7: AdminDashboard — Typography preset saving
 
 **Files:**
+
 - Modify: `src/components/admin/AdminDashboard.js`
 
 Adds `Save current…` inline input to the existing themes strip (added by the font browser plan) and lets users delete user-created typography presets.
@@ -1227,103 +1530,117 @@ if (data?.ok) {
 Find the themes strip in the style tab (added by the font browser plan). It currently shows five built-in theme buttons: Clean, Editorial, Technical, Warm, Haute. After the last built-in theme button, add:
 
 ```jsx
-{/* User typography presets */}
-{userTypographyPresets.map((preset) => (
-  <div key={preset.id} className="flex items-center gap-1">
-    <button
-      onClick={() => {
-        // Apply all fields from the preset — mirrors how built-in themes are applied
-        const s = preset.style;
-        const next = {
-          ...siteStyleTokens,
-          fontDisplay: s.fontDisplay || siteStyleTokens.fontDisplay,
-          fontHeading: s.fontHeading || siteStyleTokens.fontHeading,
-          fontSubheading: s.fontSubheading || siteStyleTokens.fontSubheading,
-          fontBody: s.fontBody || siteStyleTokens.fontBody,
-          fontButton: s.fontButton || siteStyleTokens.fontButton,
-          typographyPalette: s.typographyPalette || siteStyleTokens.typographyPalette,
-          linkStyle: s.linkStyle || siteStyleTokens.linkStyle,
-        };
-        setSiteStyleTokens(next);
-        applySiteStyleTokensToDom(next);
-      }}
-      className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
-    >
-      {preset.name}
-    </button>
-    <button
-      onClick={async () => {
-        await adminFetch("/api/admin/style-presets", {
-          method: "DELETE",
-          body: JSON.stringify({ id: preset.id, type: "typography" }),
-        });
-        setUserTypographyPresets((prev) => prev.filter((p) => p.id !== preset.id));
-      }}
-      className="text-gray-400 hover:text-red-500 text-xs leading-none"
-      title="Delete preset"
-    >
-      ×
-    </button>
-  </div>
-))}
+{
+  /* User typography presets */
+}
+{
+  userTypographyPresets.map((preset) => (
+    <div key={preset.id} className="flex items-center gap-1">
+      <button
+        onClick={() => {
+          // Apply all fields from the preset — mirrors how built-in themes are applied
+          const s = preset.style;
+          const next = {
+            ...siteStyleTokens,
+            fontDisplay: s.fontDisplay || siteStyleTokens.fontDisplay,
+            fontHeading: s.fontHeading || siteStyleTokens.fontHeading,
+            fontSubheading: s.fontSubheading || siteStyleTokens.fontSubheading,
+            fontBody: s.fontBody || siteStyleTokens.fontBody,
+            fontButton: s.fontButton || siteStyleTokens.fontButton,
+            typographyPalette:
+              s.typographyPalette || siteStyleTokens.typographyPalette,
+            linkStyle: s.linkStyle || siteStyleTokens.linkStyle,
+          };
+          setSiteStyleTokens(next);
+          applySiteStyleTokensToDom(next);
+        }}
+        className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:border-gray-400"
+      >
+        {preset.name}
+      </button>
+      <button
+        onClick={async () => {
+          await adminFetch("/api/admin/style-presets", {
+            method: "DELETE",
+            body: JSON.stringify({ id: preset.id, type: "typography" }),
+          });
+          setUserTypographyPresets((prev) =>
+            prev.filter((p) => p.id !== preset.id),
+          );
+        }}
+        className="text-gray-400 hover:text-red-500 text-xs leading-none"
+        title="Delete preset"
+      >
+        ×
+      </button>
+    </div>
+  ));
+}
 
-{/* Save current typography preset */}
-{!typographySaveExpanded ? (
-  <button
-    onClick={() => setTypographySaveExpanded(true)}
-    className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
-  >
-    Save current…
-  </button>
-) : (
-  <div className="flex items-center gap-2">
-    <input
-      type="text"
-      value={typographySaveName}
-      onChange={(e) => setTypographySaveName(e.target.value)}
-      placeholder="Preset name"
-      className="text-xs border border-gray-300 rounded px-2 py-1 w-44"
-      autoFocus
-    />
+{
+  /* Save current typography preset */
+}
+{
+  !typographySaveExpanded ? (
     <button
-      onClick={async () => {
-        if (!typographySaveName.trim()) return;
-        const style = {
-          fontDisplay: siteStyleTokens.fontDisplay,
-          fontHeading: siteStyleTokens.fontHeading,
-          fontSubheading: siteStyleTokens.fontSubheading,
-          fontBody: siteStyleTokens.fontBody,
-          fontButton: siteStyleTokens.fontButton,
-          typographyPalette: siteStyleTokens.typographyPalette,
-          linkStyle: siteStyleTokens.linkStyle,
-        };
-        const res = await adminFetch("/api/admin/style-presets", {
-          method: "POST",
-          body: JSON.stringify({
-            type: "typography",
-            name: typographySaveName.trim(),
-            style,
-          }),
-        });
-        const data = await res.json();
-        if (data?.ok && data.preset) {
-          setUserTypographyPresets((prev) => [data.preset, ...prev]);
-          setTypographySaveName("");
+      onClick={() => setTypographySaveExpanded(true)}
+      className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
+    >
+      Save current…
+    </button>
+  ) : (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={typographySaveName}
+        onChange={(e) => setTypographySaveName(e.target.value)}
+        placeholder="Preset name"
+        className="text-xs border border-gray-300 rounded px-2 py-1 w-44"
+        autoFocus
+      />
+      <button
+        onClick={async () => {
+          if (!typographySaveName.trim()) return;
+          const style = {
+            fontDisplay: siteStyleTokens.fontDisplay,
+            fontHeading: siteStyleTokens.fontHeading,
+            fontSubheading: siteStyleTokens.fontSubheading,
+            fontBody: siteStyleTokens.fontBody,
+            fontButton: siteStyleTokens.fontButton,
+            typographyPalette: siteStyleTokens.typographyPalette,
+            linkStyle: siteStyleTokens.linkStyle,
+          };
+          const res = await adminFetch("/api/admin/style-presets", {
+            method: "POST",
+            body: JSON.stringify({
+              type: "typography",
+              name: typographySaveName.trim(),
+              style,
+            }),
+          });
+          const data = await res.json();
+          if (data?.ok && data.preset) {
+            setUserTypographyPresets((prev) => [data.preset, ...prev]);
+            setTypographySaveName("");
+            setTypographySaveExpanded(false);
+          }
+        }}
+        className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => {
           setTypographySaveExpanded(false);
-        }
-      }}
-      className="text-xs px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
-    >
-      Save
-    </button>
-    <button
-      onClick={() => { setTypographySaveExpanded(false); setTypographySaveName(""); }}
-      className="text-xs text-gray-400 hover:text-gray-600"
-    >
-      Cancel
-    </button>
-  </div>
-)}
+          setTypographySaveName("");
+        }}
+        className="text-xs text-gray-400 hover:text-gray-600"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
 ```
 
 - [ ] **Step 4: Verify typography preset saving works end-to-end**
@@ -1333,6 +1650,7 @@ npm run dev
 ```
 
 Open the admin style tab:
+
 1. Apply any theme (e.g., Clean)
 2. Click "Save current…" in the themes strip
 3. Type "my-clean-test" and click Save

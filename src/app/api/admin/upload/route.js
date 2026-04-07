@@ -46,9 +46,7 @@ function resolveUploadBackend(requested) {
 
 function maxImageUploadBytes() {
   const raw = Number.parseInt(process.env.MAX_IMAGE_UPLOAD_BYTES || "", 10);
-  return Number.isFinite(raw) && raw > 0
-    ? raw
-    : DEFAULT_MAX_IMAGE_UPLOAD_BYTES;
+  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MAX_IMAGE_UPLOAD_BYTES;
 }
 
 function maxUploadBytes() {
@@ -88,7 +86,9 @@ function sanitizeAssetId(value) {
 }
 
 function normalizeAvatarId(value) {
-  const raw = String(value ?? "").trim().toLowerCase();
+  const raw = String(value ?? "")
+    .trim()
+    .toLowerCase();
   if (!raw) return "";
   const withoutPrefix = raw.startsWith("0x") ? raw.slice(2) : raw;
   if (!withoutPrefix || !/^[0-9a-f]+$/.test(withoutPrefix)) return "";
@@ -121,9 +121,7 @@ function normalizeOwnerUri(value, max = 320) {
       path = raw;
     }
   }
-  let safe = path
-    .replace(/\s+/g, "")
-    .replace(/\/{2,}/g, "/");
+  let safe = path.replace(/\s+/g, "").replace(/\/{2,}/g, "/");
   if (!safe.startsWith("/")) safe = `/${safe}`;
   if (safe.length > 1) safe = safe.replace(/\/+$/, "");
   return safe.slice(0, max) || "/";
@@ -298,12 +296,7 @@ function buildAssetResponse(asset, uploadResult, backend) {
   };
 }
 
-async function maybeUpdateWordPressMediaMeta({
-  wpUrl,
-  auth,
-  mediaId,
-  meta,
-}) {
+async function maybeUpdateWordPressMediaMeta({ wpUrl, auth, mediaId, meta }) {
   if (!mediaId || !meta || typeof meta !== "object") return;
   try {
     const response = await fetch(`${wpUrl}/wp-json/wp/v2/media/${mediaId}`, {
@@ -384,10 +377,12 @@ async function uploadToWordPress(arrayBuffer, file, assetContext) {
       ragbaz_asset_author_id: assetContext.authorId || "admins",
       ragbaz_asset_copyright_holder: assetContext.copyrightHolder || "",
       ragbaz_asset_license: assetContext.license || "",
-      ragbaz_asset_width:
-        Number.isFinite(assetContext.width) ? assetContext.width : "",
-      ragbaz_asset_height:
-        Number.isFinite(assetContext.height) ? assetContext.height : "",
+      ragbaz_asset_width: Number.isFinite(assetContext.width)
+        ? assetContext.width
+        : "",
+      ragbaz_asset_height: Number.isFinite(assetContext.height)
+        ? assetContext.height
+        : "",
     };
     await maybeUpdateWordPressMediaMeta({
       wpUrl,
@@ -455,13 +450,8 @@ async function uploadToR2(arrayBuffer, file, metadata = {}) {
     );
   }
 
-  const {
-    accountId,
-    accessKeyId,
-    secretAccessKey,
-    bucket,
-    publicUrl,
-  } = getR2Config();
+  const { accountId, accessKeyId, secretAccessKey, bucket, publicUrl } =
+    getR2Config();
   const safeName = sanitizeFileName(file.name);
   const key = `uploads/${Date.now()}-${safeName}`;
   const url = buildR2Url({ accountId, bucket, key });
@@ -486,7 +476,9 @@ async function uploadToR2(arrayBuffer, file, metadata = {}) {
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(`R2 upload failed (${response.status}): ${text.slice(0, 200)}`);
+    throw new Error(
+      `R2 upload failed (${response.status}): ${text.slice(0, 200)}`,
+    );
   }
 
   return {
@@ -498,7 +490,10 @@ async function uploadToR2(arrayBuffer, file, metadata = {}) {
 
 function uploadDisabled() {
   return NextResponse.json(
-    { ok: false, error: "Upload is not enabled in this environment. Set UPLOAD_ENABLED=1." },
+    {
+      ok: false,
+      error: "Upload is not enabled in this environment. Set UPLOAD_ENABLED=1.",
+    },
     { status: 503 },
   );
 }
@@ -596,7 +591,11 @@ export async function POST(request) {
       }
     }
 
-    const assetContext = parseAssetContext(formData, file, arrayBuffer.byteLength);
+    const assetContext = parseAssetContext(
+      formData,
+      file,
+      arrayBuffer.byteLength,
+    );
     const storageMetadata = toStorageMetadata(assetContext);
 
     if (backend === "r2") {

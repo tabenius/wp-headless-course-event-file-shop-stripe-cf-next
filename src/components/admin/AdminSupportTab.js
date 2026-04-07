@@ -230,7 +230,9 @@ export default function AdminSupportTab({
                   >
                     <option value="open">{t("admin.statusOpen")}</option>
                     <option value="will-fix">{t("admin.statusWillFix")}</option>
-                    <option value="resolved">{t("admin.statusResolved")}</option>
+                    <option value="resolved">
+                      {t("admin.statusResolved")}
+                    </option>
                   </select>
                   <AdminFieldHelpLink slug="technical-manual" />
                 </div>

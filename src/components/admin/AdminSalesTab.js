@@ -178,7 +178,8 @@ export default function AdminSalesTab({
   const isLoading = paymentsLoading;
   const paymentErrorDisplay = paymentsErrorCode
     ? resolvePaymentsErrorMessage(paymentsErrorCode)
-    : paymentsError || t("admin.paymentsLoadFailed", "Could not load payments.");
+    : paymentsError ||
+      t("admin.paymentsLoadFailed", "Could not load payments.");
   const paymentErrorDetail =
     paymentsError && paymentsError !== paymentErrorDisplay ? paymentsError : "";
 
@@ -240,7 +241,9 @@ export default function AdminSalesTab({
               type="email"
               value={paymentsEmail}
               onChange={(e) => setPaymentsEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && loadPayments(paymentsEmail)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && loadPayments(paymentsEmail)
+              }
               placeholder={t("admin.paymentsFilter", "Filter by email")}
               className="text-sm outline-none bg-transparent w-48 max-w-[70vw] placeholder-gray-400"
             />
@@ -252,10 +255,23 @@ export default function AdminSalesTab({
           onClick={() => loadPayments(paymentsEmail)}
           disabled={isLoading}
           className="self-end p-2 rounded-lg bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm"
-          title={isLoading ? t("admin.running", "Loading…") : t("admin.paymentsReload", "Reload")}
+          title={
+            isLoading
+              ? t("admin.running", "Loading…")
+              : t("admin.paymentsReload", "Reload")
+          }
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4${isLoading ? " animate-spin" : ""}`}>
-            <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.378 2.495l-1.06 1.06a7 7 0 0012.21-3.555H15.31zm-1.06-4.848A5.5 5.5 0 004.688 8.576H6.69a7 7 0 0112.21 3.555l1.06-1.06a7 7 0 00-5.698-4.499z" clipRule="evenodd" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className={`w-4 h-4${isLoading ? " animate-spin" : ""}`}
+          >
+            <path
+              fillRule="evenodd"
+              d="M15.312 11.424a5.5 5.5 0 01-9.378 2.495l-1.06 1.06a7 7 0 0012.21-3.555H15.31zm-1.06-4.848A5.5 5.5 0 004.688 8.576H6.69a7 7 0 0112.21 3.555l1.06-1.06a7 7 0 00-5.698-4.499z"
+              clipRule="evenodd"
+            />
           </svg>
         </button>
 

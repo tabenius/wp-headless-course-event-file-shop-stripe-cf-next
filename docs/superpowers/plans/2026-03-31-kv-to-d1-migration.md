@@ -15,6 +15,7 @@
 ## File Structure
 
 ### Modified files
+
 - `src/lib/d1Bindings.js` — change binding from `D1_DIGITAL_ACCESS` to `DB`
 - `wrangler.jsonc` — rename binding from `D1_DIGITAL_ACCESS` to `DB`
 - `src/lib/digitalAccessStore.js` — no code changes (uses `getD1Database()` which changes internally)
@@ -28,6 +29,7 @@
 - `src/lib/supportTickets.js` — add D1 path for ticket + comment CRUD
 
 ### New files
+
 - `migrations/0002_rate_limits.sql`
 - `migrations/0003_users.sql`
 - `migrations/0004_products.sql`
@@ -43,6 +45,7 @@
 ### Task 0: Rename D1 binding from `D1_DIGITAL_ACCESS` to `DB`
 
 **Files:**
+
 - Modify: `src/lib/d1Bindings.js:38`
 - Modify: `wrangler.jsonc:49-53`
 
@@ -52,9 +55,9 @@ In `src/lib/d1Bindings.js`, change line 38:
 
 ```javascript
 // Before:
-    return ctx?.env?.D1_DIGITAL_ACCESS ?? null;
+return ctx?.env?.D1_DIGITAL_ACCESS ?? null;
 // After:
-    return ctx?.env?.DB ?? null;
+return ctx?.env?.DB ?? null;
 ```
 
 - [ ] **Step 2: Update wrangler.jsonc**
@@ -102,6 +105,7 @@ git commit -m "refactor: rename D1 binding from D1_DIGITAL_ACCESS to DB"
 ### Task 1: Migrate rate limiting to D1
 
 **Files:**
+
 - Create: `migrations/0002_rate_limits.sql`
 - Modify: `src/lib/rateLimit.js`
 
@@ -157,9 +161,7 @@ export async function checkRateLimit(
   try {
     const window = Math.floor(Date.now() / (windowSecs * 1000));
     const key = `rl:${endpoint}:${identifier}:${window}`;
-    const expiresAt = new Date(
-      (window + 2) * windowSecs * 1000,
-    ).toISOString();
+    const expiresAt = new Date((window + 2) * windowSecs * 1000).toISOString();
 
     const db = await tryGetD1();
     if (db) {
@@ -229,6 +231,7 @@ git commit -m "feat: migrate rate limiting to D1 with atomic increment"
 ### Task 2: Migrate user store to D1
 
 **Files:**
+
 - Create: `migrations/0003_users.sql`
 - Modify: `src/lib/userStore.js`
 
@@ -278,7 +281,9 @@ function userRowToObject(row) {
   let oauthAccounts = [];
   try {
     oauthAccounts = JSON.parse(row.oauth_accounts || "[]");
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.id,
     email: row.email,
@@ -525,6 +530,7 @@ git commit -m "feat: migrate user store to D1 with unique email constraint"
 ### Task 3: Migrate products catalog to D1
 
 **Files:**
+
 - Create: `migrations/0004_products.sql`
 - Modify: `src/lib/digitalProducts.js`
 
@@ -582,7 +588,11 @@ async function tryGetD1() {
 function productRowToObject(row) {
   if (!row) return null;
   let categories = {};
-  try { categories = JSON.parse(row.categories || "{}"); } catch { /* ignore */ }
+  try {
+    categories = JSON.parse(row.categories || "{}");
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.slug,
     slug: row.slug,
@@ -607,22 +617,48 @@ function productRowToObject(row) {
 }
 
 function productObjectToRow(p) {
-  const { id, slug, name, title, description, imageUrl, type, productMode,
-    priceCents, free, currency, fileUrl, contentUri, mimeType, assetId,
-    vatPercent, active, updatedAt, ...rest } = p;
+  const {
+    id,
+    slug,
+    name,
+    title,
+    description,
+    imageUrl,
+    type,
+    productMode,
+    priceCents,
+    free,
+    currency,
+    fileUrl,
+    contentUri,
+    mimeType,
+    assetId,
+    vatPercent,
+    active,
+    updatedAt,
+    ...rest
+  } = p;
   // Everything that isn't a column goes into categories JSON
   const cats = {};
   for (const [k, v] of Object.entries(rest)) {
     if (v !== undefined) cats[k] = v;
   }
   return {
-    slug, name, title: title || name, description: description || "",
-    image_url: imageUrl || "", type: type || "digital_file",
+    slug,
+    name,
+    title: title || name,
+    description: description || "",
+    image_url: imageUrl || "",
+    type: type || "digital_file",
     product_mode: productMode || "digital_file",
-    price_cents: priceCents || 0, currency: currency || "SEK",
-    free: free ? 1 : 0, active: active !== false ? 1 : 0,
-    file_url: fileUrl || "", content_uri: contentUri || "",
-    mime_type: mimeType || "", asset_id: assetId || "",
+    price_cents: priceCents || 0,
+    currency: currency || "SEK",
+    free: free ? 1 : 0,
+    active: active !== false ? 1 : 0,
+    file_url: fileUrl || "",
+    content_uri: contentUri || "",
+    mime_type: mimeType || "",
+    asset_id: assetId || "",
     vat_percent: vatPercent ?? null,
     categories: JSON.stringify(cats),
     updated_at: updatedAt || new Date().toISOString(),
@@ -665,10 +701,16 @@ Add D1 path:
 
 ```javascript
 export async function getDigitalProductBySlug(slug) {
-  const rawSlug = String(slug || "").trim().replace(/^\/+|\/+$/g, "");
+  const rawSlug = String(slug || "")
+    .trim()
+    .replace(/^\/+|\/+$/g, "");
   const decodedSlug = (() => {
     if (!rawSlug) return "";
-    try { return decodeURIComponent(rawSlug); } catch { return rawSlug; }
+    try {
+      return decodeURIComponent(rawSlug);
+    } catch {
+      return rawSlug;
+    }
   })();
   const safeSlug = slugify(decodedSlug);
   const safeAssetId = normalizeAssetId(decodedSlug);
@@ -678,10 +720,18 @@ export async function getDigitalProductBySlug(slug) {
   if (db) {
     let row = null;
     if (safeSlug) {
-      row = await db.prepare("SELECT * FROM products WHERE slug = ? LIMIT 1").bind(safeSlug).first();
+      row = await db
+        .prepare("SELECT * FROM products WHERE slug = ? LIMIT 1")
+        .bind(safeSlug)
+        .first();
     }
     if (!row && safeAssetId) {
-      row = await db.prepare("SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1").bind(safeAssetId).first();
+      row = await db
+        .prepare(
+          "SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1",
+        )
+        .bind(safeAssetId)
+        .first();
     }
     return row ? productRowToObject(row) : null;
   }
@@ -708,7 +758,9 @@ export async function getDigitalProductByAssetId(assetId) {
   const db = await tryGetD1();
   if (db) {
     const row = await db
-      .prepare("SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1")
+      .prepare(
+        "SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1",
+      )
       .bind(safeAssetId)
       .first();
     return row ? productRowToObject(row) : null;
@@ -748,7 +800,26 @@ export async function saveDigitalProducts(products) {
              mime_type=excluded.mime_type, asset_id=excluded.asset_id, vat_percent=excluded.vat_percent,
              categories=excluded.categories, updated_at=excluded.updated_at`,
         )
-        .bind(r.slug, r.name, r.title, r.description, r.image_url, r.type, r.product_mode, r.price_cents, r.currency, r.free, r.active, r.file_url, r.content_uri, r.mime_type, r.asset_id, r.vat_percent, r.categories, r.updated_at)
+        .bind(
+          r.slug,
+          r.name,
+          r.title,
+          r.description,
+          r.image_url,
+          r.type,
+          r.product_mode,
+          r.price_cents,
+          r.currency,
+          r.free,
+          r.active,
+          r.file_url,
+          r.content_uri,
+          r.mime_type,
+          r.asset_id,
+          r.vat_percent,
+          r.categories,
+          r.updated_at,
+        )
         .run();
     }
     return safeProducts;
@@ -782,6 +853,7 @@ git commit -m "feat: migrate products catalog to D1 with per-product queries"
 ### Task 4: Migrate media asset registry to D1
 
 **Files:**
+
 - Create: `migrations/0005_media_assets.sql`
 - Modify: `src/lib/mediaAssetRegistry.js`
 
@@ -834,10 +906,24 @@ async function tryGetD1() {
 
 function assetRowToObject(row) {
   if (!row) return null;
-  let metadata = {}, rights = {}, assetInfo = {};
-  try { metadata = JSON.parse(row.metadata || "{}"); } catch { /* ignore */ }
-  try { rights = JSON.parse(row.rights || "{}"); } catch { /* ignore */ }
-  try { assetInfo = JSON.parse(row.asset_info || "{}"); } catch { /* ignore */ }
+  let metadata = {},
+    rights = {},
+    assetInfo = {};
+  try {
+    metadata = JSON.parse(row.metadata || "{}");
+  } catch {
+    /* ignore */
+  }
+  try {
+    rights = JSON.parse(row.rights || "{}");
+  } catch {
+    /* ignore */
+  }
+  try {
+    assetInfo = JSON.parse(row.asset_info || "{}");
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.id,
     source: row.source,
@@ -881,11 +967,16 @@ export async function listMediaAssetRegistry() {
 
 ```javascript
 export async function upsertMediaAssetRegistry(entry) {
-  const id = safeText(entry?.id, 180) || `r2:${safeText(entry?.key, 512).replace(/^\/+/, "")}`;
+  const id =
+    safeText(entry?.id, 180) ||
+    `r2:${safeText(entry?.key, 512).replace(/^\/+/, "")}`;
 
   const db = await tryGetD1();
   if (db) {
-    const existingRow = await db.prepare("SELECT * FROM media_assets WHERE id = ?").bind(id).first();
+    const existingRow = await db
+      .prepare("SELECT * FROM media_assets WHERE id = ?")
+      .bind(id)
+      .first();
     const existing = existingRow ? assetRowToObject(existingRow) : null;
     const next = sanitizeAssetEntry({ ...existing, ...entry, id }, existing);
     if (!next) throw new Error("Invalid media asset registry entry.");
@@ -902,11 +993,21 @@ export async function upsertMediaAssetRegistry(entry) {
            saved_at=excluded.saved_at`,
       )
       .bind(
-        next.id, next.source || "r2", next.sourceId || "", next.key, next.title,
-        next.url, next.mimeType || "", next.sizeBytes ?? null, next.width ?? null,
-        next.height ?? null, JSON.stringify(next.metadata || {}),
-        JSON.stringify(next.rights || {}), JSON.stringify(next.asset || {}),
-        next.createdAt || now, now,
+        next.id,
+        next.source || "r2",
+        next.sourceId || "",
+        next.key,
+        next.title,
+        next.url,
+        next.mimeType || "",
+        next.sizeBytes ?? null,
+        next.width ?? null,
+        next.height ?? null,
+        JSON.stringify(next.metadata || {}),
+        JSON.stringify(next.rights || {}),
+        JSON.stringify(next.asset || {}),
+        next.createdAt || now,
+        now,
       )
       .run();
     return next;
@@ -953,6 +1054,7 @@ git commit -m "feat: migrate media asset registry to D1"
 ### Task 5: Migrate avatar store to D1
 
 **Files:**
+
 - Create: `migrations/0006_avatars.sql`
 - Modify: `src/lib/avatarStore.js`
 
@@ -1010,7 +1112,11 @@ async function tryGetD1() {
 function avatarRowToObject(row, relationships = []) {
   if (!row) return null;
   let details = {};
-  try { details = JSON.parse(row.details || "{}"); } catch { /* ignore */ }
+  try {
+    details = JSON.parse(row.details || "{}");
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.id,
     ownerUserId: row.owner_user_id,
@@ -1032,7 +1138,10 @@ function avatarRowToObject(row, relationships = []) {
 }
 
 async function d1GetAvatarWithRels(db, whereClause, bindValues) {
-  const row = await db.prepare(`SELECT * FROM avatars WHERE ${whereClause} LIMIT 1`).bind(...bindValues).first();
+  const row = await db
+    .prepare(`SELECT * FROM avatars WHERE ${whereClause} LIMIT 1`)
+    .bind(...bindValues)
+    .first();
   if (!row) return null;
   const { results: rels } = await db
     .prepare("SELECT * FROM avatar_relationships WHERE from_avatar_id = ?")
@@ -1051,7 +1160,9 @@ export async function getOwnAvatar(user) {
 
   const db = await tryGetD1();
   if (db) {
-    const avatar = await d1GetAvatarWithRels(db, "owner_user_id = ?", [ownerUserId]);
+    const avatar = await d1GetAvatarWithRels(db, "owner_user_id = ?", [
+      ownerUserId,
+    ]);
     return avatar ? serializeAvatarForOwner(avatar) : null;
   }
 
@@ -1301,6 +1412,7 @@ git commit -m "feat: migrate avatar store to D1 with unique canonical name const
 ### Task 6: Migrate content access store to D1
 
 **Files:**
+
 - Create: `migrations/0007_content_access.sql`
 - Modify: `src/lib/contentAccessStore.js`
 
@@ -1344,7 +1456,11 @@ async function tryGetD1() {
 function accessRowToObject(row) {
   if (!row) return null;
   let allowedUsers = [];
-  try { allowedUsers = JSON.parse(row.allowed_users || "[]"); } catch { /* ignore */ }
+  try {
+    allowedUsers = JSON.parse(row.allowed_users || "[]");
+  } catch {
+    /* ignore */
+  }
   return {
     allowedUsers: Array.isArray(allowedUsers) ? allowedUsers : [],
     priceCents: row.price_cents,
@@ -1363,7 +1479,9 @@ export async function getContentAccessState() {
   const db = await tryGetD1();
   if (db) {
     try {
-      const { results } = await db.prepare("SELECT * FROM content_access").all();
+      const { results } = await db
+        .prepare("SELECT * FROM content_access")
+        .all();
       const courses = {};
       for (const row of results || []) {
         courses[row.course_uri] = accessRowToObject(row);
@@ -1380,7 +1498,10 @@ export async function getContentAccessState() {
       const cloudflareState = await readFromCloudflare();
       if (cloudflareState) return cloudflareState;
     } catch (error) {
-      console.error("Cloudflare KV unavailable, using local course access store:", error);
+      console.error(
+        "Cloudflare KV unavailable, using local course access store:",
+        error,
+      );
     }
   }
   return readFromLocal();
@@ -1407,8 +1528,12 @@ export async function saveContentAccessState(nextState) {
                active=excluded.active, updated_at=excluded.updated_at`,
           )
           .bind(
-            uri, JSON.stringify(course.allowedUsers), course.priceCents,
-            course.currency, course.vatPercent ?? null, course.active ? 1 : 0,
+            uri,
+            JSON.stringify(course.allowedUsers),
+            course.priceCents,
+            course.currency,
+            course.vatPercent ?? null,
+            course.active ? 1 : 0,
             course.updatedAt || new Date().toISOString(),
           )
           .run();
@@ -1425,7 +1550,10 @@ export async function saveContentAccessState(nextState) {
       const wroteCloudflare = await writeToCloudflare(state);
       if (wroteCloudflare) return state;
     } catch (error) {
-      console.error("Cloudflare KV write failed, falling back to local file:", error);
+      console.error(
+        "Cloudflare KV write failed, falling back to local file:",
+        error,
+      );
     }
   }
   await writeToLocal(state);
@@ -1444,12 +1572,18 @@ export async function hasContentAccess(courseUri, email) {
   const db = await tryGetD1();
   if (db) {
     const row = await db
-      .prepare("SELECT allowed_users FROM content_access WHERE course_uri = ? AND active = 1")
+      .prepare(
+        "SELECT allowed_users FROM content_access WHERE course_uri = ? AND active = 1",
+      )
       .bind(uri)
       .first();
     if (!row) return false;
     let users = [];
-    try { users = JSON.parse(row.allowed_users || "[]"); } catch { /* ignore */ }
+    try {
+      users = JSON.parse(row.allowed_users || "[]");
+    } catch {
+      /* ignore */
+    }
     return Array.isArray(users) && users.includes(normalizedEmail);
   }
 
@@ -1477,6 +1611,7 @@ git commit -m "feat: migrate content access store to D1"
 ### Task 7: Migrate chat history to D1
 
 **Files:**
+
 - Create: `migrations/0008_chat_messages.sql`
 - Create: `src/lib/chatHistoryStore.js`
 - Modify: `src/lib/cloudflareKv.js` — remove chat history functions
@@ -1610,10 +1745,13 @@ Find all files importing `saveChatHistory` or `getChatHistory` from `cloudflareK
 Run: `grep -rn "saveChatHistory\|getChatHistory" src/app/api/chat/`
 
 Then update the imports in those files from:
+
 ```javascript
 import { saveChatHistory, getChatHistory } from "@/lib/cloudflareKv";
 ```
+
 to:
+
 ```javascript
 import { saveChatHistory, getChatHistory } from "@/lib/chatHistoryStore";
 ```
@@ -1634,6 +1772,7 @@ git commit -m "feat: migrate chat history to D1 with atomic message append"
 ### Task 8: Migrate support tickets to D1
 
 **Files:**
+
 - Create: `migrations/0009_support_tickets.sql`
 - Modify: `src/lib/supportTickets.js`
 
@@ -1719,7 +1858,9 @@ export async function listTickets() {
     const output = [];
     for (const row of tickets || []) {
       const { results: comments } = await db
-        .prepare("SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at")
+        .prepare(
+          "SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at",
+        )
         .bind(row.id)
         .all();
       output.push(ticketRowToObject(row, comments || []));

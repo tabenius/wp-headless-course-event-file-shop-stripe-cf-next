@@ -17,4 +17,3 @@ export function getResendFromAddress() {
 export function isResendConfigured() {
   return Boolean(getResendApiKey() && getResendFromAddress());
 }
-

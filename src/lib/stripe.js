@@ -103,9 +103,7 @@ export async function createStripePaymentSession({
     "line_items[0][price_data][product_data][name]",
     itemName || "Digital item",
   );
-  const paymentDescription = String(
-    description || itemName || "Digital item",
-  )
+  const paymentDescription = String(description || itemName || "Digital item")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 500);

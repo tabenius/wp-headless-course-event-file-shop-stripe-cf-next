@@ -3,4 +3,3 @@ import { StorefrontDetailSkeleton } from "@/components/common/StorefrontSkeleton
 export default function Loading() {
   return <StorefrontDetailSkeleton />;
 }
-

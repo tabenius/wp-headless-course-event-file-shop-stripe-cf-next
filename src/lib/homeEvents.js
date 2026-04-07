@@ -1,5 +1,9 @@
 import { fetchGraphQL } from "@/lib/client";
-import { getEventEndIso, getEventStartIso, isEventUpcoming } from "@/lib/eventDates";
+import {
+  getEventEndIso,
+  getEventStartIso,
+  isEventUpcoming,
+} from "@/lib/eventDates";
 
 /**
  * Compatibility-first event loading:
@@ -123,7 +127,9 @@ export async function fetchHomeEvents() {
         { edgeCache: true },
       );
       const fallbackRaw = toRenderableEvents(extractEventNodes(fallbackData));
-      const fallbackUpcoming = sortByStartDateAsc(filterUpcomingEvents(fallbackRaw));
+      const fallbackUpcoming = sortByStartDateAsc(
+        filterUpcomingEvents(fallbackRaw),
+      );
       return { events: fallbackUpcoming, hasDates: false };
     }
 

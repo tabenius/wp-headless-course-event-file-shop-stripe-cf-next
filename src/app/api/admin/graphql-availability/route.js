@@ -46,7 +46,10 @@ export async function GET(request) {
     }),
     {
       status: 200,
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      },
     },
   );
 }

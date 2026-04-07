@@ -1,6 +1,8 @@
 export function deriveObjectKeyFromPublicUrl(fileUrl, publicBaseUrl) {
   const safeFileUrl = String(fileUrl || "").trim();
-  const safeBase = String(publicBaseUrl || "").trim().replace(/\/+$/, "");
+  const safeBase = String(publicBaseUrl || "")
+    .trim()
+    .replace(/\/+$/, "");
   if (!safeFileUrl || !safeBase) return "";
 
   try {

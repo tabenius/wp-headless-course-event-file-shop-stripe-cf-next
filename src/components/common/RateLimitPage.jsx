@@ -4,7 +4,11 @@
  * Displayed when the GraphQL host returns HTTP 429 (Too Many Requests).
  * Shows the raw Varnish/proxy response body and a history of recent attempts.
  */
-export default function RateLimitPage({ responseBody = "", history = [], status = 429 }) {
+export default function RateLimitPage({
+  responseBody = "",
+  history = [],
+  status = 429,
+}) {
   const grouped = {};
   for (const entry of history) {
     const key = entry.endpoint || "unknown";
@@ -17,7 +21,9 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
       <div className="max-w-2xl w-full space-y-6">
         {/* Header */}
         <div className="flex items-start gap-3">
-          <span className="text-3xl" aria-hidden>⏳</span>
+          <span className="text-3xl" aria-hidden>
+            ⏳
+          </span>
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
               Too Many Requests ({status})
@@ -61,7 +67,9 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
                   <tr>
                     <th className="px-3 py-2 font-medium">Date / Time</th>
                     <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium hidden sm:table-cell">Endpoint</th>
+                    <th className="px-3 py-2 font-medium hidden sm:table-cell">
+                      Endpoint
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -80,10 +88,17 @@ export default function RateLimitPage({ responseBody = "", history = [], status 
                       entry.status === 429 || entry.status === 503;
                     const isOk = entry.ok === true;
                     return (
-                      <tr key={i} className={isRateLimit ? "bg-red-50/70 dark:bg-red-900/25" : ""}>
+                      <tr
+                        key={i}
+                        className={
+                          isRateLimit ? "bg-red-50/70 dark:bg-red-900/25" : ""
+                        }
+                      >
                         <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-foreground)]">
                           {dateStr}{" "}
-                          <span className="text-[var(--color-foreground)]">{timeStr}</span>
+                          <span className="text-[var(--color-foreground)]">
+                            {timeStr}
+                          </span>
                         </td>
                         <td className="px-3 py-1.5 whitespace-nowrap">
                           <span

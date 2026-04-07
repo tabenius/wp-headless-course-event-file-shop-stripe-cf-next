@@ -1,7 +1,4 @@
-import {
-  readCloudflareKvJson,
-  writeCloudflareKvJson,
-} from "./cloudflareKv.js";
+import { readCloudflareKvJson, writeCloudflareKvJson } from "./cloudflareKv.js";
 
 const CATALOG_KV_KEY = "fonts:catalog";
 const CATALOG_TTL = 86400; // 24 hours

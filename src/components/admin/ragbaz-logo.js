@@ -42,7 +42,9 @@ export default function RagbazLogo({
   const storefrontSize = `${Number.parseFloat(fontSize.storefront) * sizeScale}rem`;
   const hasOutline = Boolean(outlineColor) && Number(outlineWidth) > 0;
   const strokeWidth =
-    typeof outlineWidth === "number" ? `${outlineWidth}px` : String(outlineWidth);
+    typeof outlineWidth === "number"
+      ? `${outlineWidth}px`
+      : String(outlineWidth);
   const outlineShadow = hasOutline
     ? [
         "0 1px 0",
@@ -67,7 +69,7 @@ export default function RagbazLogo({
       <div className={`inline-flex items-center leading-[0.92] ${className}`}>
         <span
           className="block uppercase font-black"
-        style={{
+          style={{
             fontSize: ragbazSize,
             textAlign: "center",
             letterSpacing: ragbazLetterSpacing,
@@ -90,7 +92,9 @@ export default function RagbazLogo({
   }
 
   return (
-    <div className={`inline-flex flex-col items-center leading-[0.92] ${className}`}>
+    <div
+      className={`inline-flex flex-col items-center leading-[0.92] ${className}`}
+    >
       <span
         className="block uppercase font-black"
         style={{

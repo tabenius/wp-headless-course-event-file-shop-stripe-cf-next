@@ -16,20 +16,32 @@ const FAST_PREVIEW_MAX_DIM = 1600;
 function buildAllowedHosts(request) {
   const hosts = new Set();
   const toHost = (value) => {
-    try { return new URL(value).hostname.toLowerCase(); } catch { return ""; }
+    try {
+      return new URL(value).hostname.toLowerCase();
+    } catch {
+      return "";
+    }
   };
   const originHost = toHost(request?.nextUrl?.origin || "");
   if (originHost) hosts.add(originHost);
-  const wpHost = toHost(process.env.NEXT_PUBLIC_WORDPRESS_URL || process.env.WORDPRESS_API_URL || "");
+  const wpHost = toHost(
+    process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+      process.env.WORDPRESS_API_URL ||
+      "",
+  );
   if (wpHost) hosts.add(wpHost);
-  const r2Host = toHost(process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "");
+  const r2Host = toHost(
+    process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "",
+  );
   if (r2Host) hosts.add(r2Host);
   return hosts;
 }
 
 function validateAssetUrl(rawUrl, request) {
   let parsed;
-  try { parsed = new URL(rawUrl); } catch {
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
     return "Invalid asset URL.";
   }
   if (parsed.protocol !== "https:") {
@@ -70,7 +82,13 @@ export async function POST(request) {
     return jsonError("Invalid JSON body.");
   }
 
-  const { derivationId, asset, operations, format: requestedFormat, previewQuality } = payload || {};
+  const {
+    derivationId,
+    asset,
+    operations,
+    format: requestedFormat,
+    previewQuality,
+  } = payload || {};
   if (!derivationId || !asset?.url) {
     return jsonError("derivationId and asset (with url) are required.");
   }
@@ -89,7 +107,8 @@ export async function POST(request) {
   const finalOperations = bindOperationsToAsset(baseOperations, asset.id);
 
   const format = resolveOutputFormat(finalOperations, requestedFormat);
-  const qualityMode = String(previewQuality || "full").toLowerCase() === "fast" ? "fast" : "full";
+  const qualityMode =
+    String(previewQuality || "full").toLowerCase() === "fast" ? "fast" : "full";
   const contentType =
     format === "avif"
       ? "image/avif"
@@ -109,14 +128,19 @@ export async function POST(request) {
 
   const stream = new ReadableStream({
     async start(ctrl) {
-      const send = (obj) => ctrl.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
+      const send = (obj) =>
+        ctrl.enqueue(enc.encode(JSON.stringify(obj) + "\n"));
 
       try {
         // ── Fetch source ────────────────────────────────────────────────────
         send({ type: "progress", pct: 5, label: "fetch" });
         const sourceResponse = await fetch(asset.url);
-        if (!sourceResponse.ok) throw new Error(`Could not fetch source image (HTTP ${sourceResponse.status}).`);
-        const sourceContentType = sourceResponse.headers.get("content-type") || "";
+        if (!sourceResponse.ok)
+          throw new Error(
+            `Could not fetch source image (HTTP ${sourceResponse.status}).`,
+          );
+        const sourceContentType =
+          sourceResponse.headers.get("content-type") || "";
         const sourceIsAvif = isAvifSource(sourceContentType);
         const buffer = await sourceResponse.arrayBuffer();
         guardSourceSize(buffer.byteLength);
@@ -134,7 +158,11 @@ export async function POST(request) {
         let img;
         if (sourceIsAvif) {
           const imageData = await decodeAvif(sourceBytes);
-          const raw = new Uint8Array(imageData.data.buffer, imageData.data.byteOffset, imageData.data.byteLength);
+          const raw = new Uint8Array(
+            imageData.data.buffer,
+            imageData.data.byteOffset,
+            imageData.data.byteLength,
+          );
           img = new photon.PhotonImage(raw, imageData.width, imageData.height);
         } else {
           img = photon.PhotonImage.new_from_byteslice(sourceBytes);
@@ -160,7 +188,9 @@ export async function POST(request) {
         // ── Pipeline ────────────────────────────────────────────────────────
         // WASM ops are synchronous — per-op events arrive in a burst after
         // all ops complete, but still animate smoothly via CSS transitions.
-        const nonSourceOps = finalOperations.filter((op) => op.type !== "source");
+        const nonSourceOps = finalOperations.filter(
+          (op) => op.type !== "source",
+        );
         const opCount = nonSourceOps.length;
         // Operations occupy 12 %→80 % of the bar (68 ppts).
         const PCT_OPS_START = 12;
@@ -170,12 +200,21 @@ export async function POST(request) {
 
         let processed = img;
         try {
-          processed = executeOperations(photon, img, finalOperations, (done, total, opType) => {
-            const pct = opCount > 0
-              ? Math.round(PCT_OPS_START + (done / total) * (PCT_OPS_END - PCT_OPS_START))
-              : PCT_OPS_END;
-            send({ type: "progress", pct, label: opType });
-          });
+          processed = executeOperations(
+            photon,
+            img,
+            finalOperations,
+            (done, total, opType) => {
+              const pct =
+                opCount > 0
+                  ? Math.round(
+                      PCT_OPS_START +
+                        (done / total) * (PCT_OPS_END - PCT_OPS_START),
+                    )
+                  : PCT_OPS_END;
+              send({ type: "progress", pct, label: opType });
+            },
+          );
 
           // ── Encode output ───────────────────────────────────────────────
           let outputBytes;
@@ -204,7 +243,10 @@ export async function POST(request) {
           img.free();
         }
       } catch (err) {
-        send({ type: "error", message: err?.message || "Image processing failed." });
+        send({
+          type: "error",
+          message: err?.message || "Image processing failed.",
+        });
       }
 
       ctrl.close();

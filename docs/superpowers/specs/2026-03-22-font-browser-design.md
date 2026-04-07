@@ -42,6 +42,7 @@ siteStyle: {
 ```
 
 **Role field semantics:**
+
 - `type: "preset"` — system font stack (no download); `stack` is the raw CSS value e.g. `"system-ui, sans-serif"`
 - `type: "google"` — Google Font hosted on R2; `family` is the display name e.g. `"Inter"`
 - `type: "inherit"` — role defers to another role's variable (used by Subheading when unset; see Section 3)
@@ -81,15 +82,15 @@ All downloaded font records are stored in a **single KV key** `fonts:downloaded`
 
 On style load, coerce missing fields as follows (one-time, no DB migration):
 
-| Field | Default value |
-|---|---|
-| `fontDisplay` | `{ type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 }` |
-| `fontHeading` | `{ type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 }` |
-| `fontSubheading` | `{ type: "inherit" }` |
-| `fontBody` | `{ type: "preset", stack: "Georgia, serif" }` |
-| `fontButton` | `{ type: "preset", stack: "system-ui, sans-serif" }` |
-| `typographyPalette` | `["#111111"]` |
-| `linkStyle` | `{ hoverVariant: "underline", underlineDefault: "hover" }` |
+| Field               | Default value                                                      |
+| ------------------- | ------------------------------------------------------------------ |
+| `fontDisplay`       | `{ type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 }` |
+| `fontHeading`       | `{ type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 }` |
+| `fontSubheading`    | `{ type: "inherit" }`                                              |
+| `fontBody`          | `{ type: "preset", stack: "Georgia, serif" }`                      |
+| `fontButton`        | `{ type: "preset", stack: "system-ui, sans-serif" }`               |
+| `typographyPalette` | `["#111111"]`                                                      |
+| `linkStyle`         | `{ hoverVariant: "underline", underlineDefault: "hover" }`         |
 
 When `colorSlot` is absent on an existing role that previously had an implicit color, default `colorSlot: 1`.
 
@@ -134,21 +135,23 @@ When `colorSlot` is absent on an existing role that previously had an implicit c
 
 ### Font variables
 
-| Variable | Default Elements | CSS fallback when absent |
-|---|---|---|
-| `--font-display` | `h1` | `system-ui, sans-serif` |
-| `--font-heading` | `h2, h3, h4` | `system-ui, sans-serif` |
-| `--font-subheading` | `h5, h6` | falls through to `--font-heading` (see below) |
-| `--font-body` | `body, p, li, span` | `Georgia, serif` |
-| `--font-button` | `button, .btn, [role="button"], input[type="submit"]` | `system-ui, sans-serif` |
+| Variable            | Default Elements                                      | CSS fallback when absent                      |
+| ------------------- | ----------------------------------------------------- | --------------------------------------------- |
+| `--font-display`    | `h1`                                                  | `system-ui, sans-serif`                       |
+| `--font-heading`    | `h2, h3, h4`                                          | `system-ui, sans-serif`                       |
+| `--font-subheading` | `h5, h6`                                              | falls through to `--font-heading` (see below) |
+| `--font-body`       | `body, p, li, span`                                   | `Georgia, serif`                              |
+| `--font-button`     | `button, .btn, [role="button"], input[type="submit"]` | `system-ui, sans-serif`                       |
 
 ### Subheading inheritance
 
 When `fontSubheading.type === "inherit"`, `theme.generated.css` writes:
+
 ```css
 --font-subheading: var(--font-heading);
 --font-color-subheading: var(--font-color-heading);
 ```
+
 This means `h5, h6` automatically follow whatever heading font and color are active, with no extra CSS rules needed in `globals.css`. The `globals.css` static binding for `h5, h6` simply uses `font-family: var(--font-subheading)` and `color: var(--font-color-subheading)` as normal.
 
 If `fontSubheading.type === "inherit"` but a `colorSlot` is explicitly set, the `colorSlot` takes precedence for the color variable only (the font family still inherits from `--font-heading`). This allows a user to have Subheading track Heading's font while using a different color.
@@ -157,11 +160,11 @@ If `fontSubheading.type === "inherit"` but a `colorSlot` is explicitly set, the 
 
 Three color CSS variables cover heading roles:
 
-| Variable | Used by |
-|---|---|
-| `--font-color-display` | `h1` |
-| `--font-color-heading` | `h2, h3, h4` |
-| `--font-color-subheading` | `h5, h6` |
+| Variable                  | Used by      |
+| ------------------------- | ------------ |
+| `--font-color-display`    | `h1`         |
+| `--font-color-heading`    | `h2, h3, h4` |
+| `--font-color-subheading` | `h5, h6`     |
 
 Each is written to `theme.generated.css` by reading `typographyPalette[role.colorSlot - 1]`. When a role has no `colorSlot`, the variable is omitted and the element inherits `color` from the cascade (i.e., the site's existing default text color).
 
@@ -179,17 +182,18 @@ Body and Button have no color variables — they always inherit.
 
 A small block in `theme.generated.css` drives the selected hover variant via a `data-link-style` attribute on `<body>` (set by `layout.js` from siteStyle at render time):
 
-| Variant | Behavior |
-|---|---|
-| `none` | Color only, no decoration change |
-| `underline` | `text-decoration: underline` on `:hover` |
-| `highlight` | `background: var(--color-link); color: #fff` on `:hover` |
-| `inverse` | `background: var(--color-link); color: var(--color-bg)` on `:hover` |
-| `pill` | Highlight + `border-radius: 9999px; padding: 0 0.35em` on `:hover` |
-| `slide` | CSS `::after` pseudo-element, `scaleX(0→1)` transition left-to-right |
-| `box` | `outline: 2px solid var(--color-link); border-radius: 2px` on `:hover` |
+| Variant     | Behavior                                                               |
+| ----------- | ---------------------------------------------------------------------- |
+| `none`      | Color only, no decoration change                                       |
+| `underline` | `text-decoration: underline` on `:hover`                               |
+| `highlight` | `background: var(--color-link); color: #fff` on `:hover`               |
+| `inverse`   | `background: var(--color-link); color: var(--color-bg)` on `:hover`    |
+| `pill`      | Highlight + `border-radius: 9999px; padding: 0 0.35em` on `:hover`     |
+| `slide`     | CSS `::after` pseudo-element, `scaleX(0→1)` transition left-to-right   |
+| `box`       | `outline: 2px solid var(--color-link); border-radius: 2px` on `:hover` |
 
 `underlineDefault` controls base state (not hover):
+
 - `"always"` → `a { text-decoration: underline }`
 - `"hover"` → `a { text-decoration: none }` (decoration only appears from hover variant)
 - `"never"` → `a { text-decoration: none }` and suppresses `text-decoration: underline` from the `underline` hover variant specifically. Variants that do not use text-decoration (`highlight`, `inverse`, `pill`, `box`, `slide`) are unaffected by this flag — they are inherently non-underline.
@@ -206,6 +210,7 @@ Typography Colors
 ```
 
 After "+ second color" is clicked:
+
 ```
 Typography Colors
   [● #111111]  [◉ #4682B4]  [− remove]
@@ -244,6 +249,7 @@ Typography Colors
 ### Select-before-Download behavior
 
 When the user clicks **Select** in the font browser modal for a font that is not yet downloaded:
+
 1. The font is immediately assigned to the role (stored in local editor state); the modal closes
 2. The role card shows a "Downloading…" spinner
 3. `POST /api/admin/fonts/download` runs in the background
@@ -306,20 +312,24 @@ Opens full-screen (or large sheet) when Browse is clicked on any role card. Head
 4. `theme.generated.css` (static file, written on style save) sets `--font-*` variables and per-role color variables
 
 Variable font `@font-face`:
+
 ```css
 @font-face {
-  font-family: 'Inter';
-  src: url('https://r2.example.com/fonts/inter/inter-variable.woff2') format('woff2');
+  font-family: "Inter";
+  src: url("https://r2.example.com/fonts/inter/inter-variable.woff2")
+    format("woff2");
   font-weight: 100 900;
   font-display: swap;
 }
 ```
 
 Non-variable (one block per weight):
+
 ```css
 @font-face {
-  font-family: 'Playfair Display';
-  src: url('https://r2.example.com/fonts/playfair-display/400.woff2') format('woff2');
+  font-family: "Playfair Display";
+  src: url("https://r2.example.com/fonts/playfair-display/400.woff2")
+    format("woff2");
   font-weight: 400;
   font-display: swap;
 }
@@ -339,9 +349,10 @@ Admin preview in the modal uses Google CDN directly — no R2 round-trip during 
 
 Five named presets shipped as a static JS object. Applying a theme sets all five font roles and `typographyPalette` — no downloads are triggered.
 
-Themes express roles in the `siteStyle` data model shape. `type: "google"` roles require a download before they take effect on the live site; the role card shows a Download prompt if not yet available. `weightRange` is set to the font's full axis range (e.g. `[100, 900]`); the weight expressed in the theme description is the *rendered weight used in that theme* (set separately via CSS specificity on that role's element).
+Themes express roles in the `siteStyle` data model shape. `type: "google"` roles require a download before they take effect on the live site; the role card shows a Download prompt if not yet available. `weightRange` is set to the font's full axis range (e.g. `[100, 900]`); the weight expressed in the theme description is the _rendered weight used in that theme_ (set separately via CSS specificity on that role's element).
 
-### ① Clean *(default)*
+### ① Clean _(default)_
+
 ```js
 typographyPalette: ["#0f0f0f", "#1a1a1a"],
 fontDisplay:    { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900], colorSlot: 1 },
@@ -352,6 +363,7 @@ fontButton:     { type: "google", family: "Inter", isVariable: true, weightRange
 ```
 
 ### ② Editorial
+
 ```js
 typographyPalette: ["#0a0a0a", "#1c3d5a"],
 fontDisplay:    { type: "google", family: "Playfair Display", isVariable: false, weights: [700], colorSlot: 1 },
@@ -362,6 +374,7 @@ fontButton:     { type: "google", family: "DM Sans",          isVariable: true, 
 ```
 
 ### ③ Technical
+
 ```js
 typographyPalette: ["#09090b", "#3b3b4f"],
 fontDisplay:    { type: "google", family: "Space Grotesk", isVariable: true,  weightRange: [300, 700], colorSlot: 1 },
@@ -372,6 +385,7 @@ fontButton:     { type: "google", family: "Space Grotesk", isVariable: true,  we
 ```
 
 ### ④ Warm
+
 ```js
 typographyPalette: ["#1a0f0a", "#4a3728"],
 fontDisplay:    { type: "google", family: "Fraunces", isVariable: true, weightRange: [100, 900], colorSlot: 1 },
@@ -382,6 +396,7 @@ fontButton:     { type: "google", family: "Nunito",   isVariable: true, weightRa
 ```
 
 ### ⑤ Haute
+
 ```js
 typographyPalette: ["#0d0d0d", "#8b6f47"],
 fontDisplay:    { type: "google", family: "Cormorant Garamond", isVariable: false, weights: [300, 600], colorSlot: 1 },

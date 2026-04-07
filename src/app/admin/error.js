@@ -49,7 +49,9 @@ export default function AdminError({ error, reset }) {
             <summary className="cursor-pointer font-semibold">
               Debug stack (use with source maps)
             </summary>
-            <pre className="mt-2 whitespace-pre-wrap break-all">{error.stack}</pre>
+            <pre className="mt-2 whitespace-pre-wrap break-all">
+              {error.stack}
+            </pre>
           </details>
         )}
         <div className="flex gap-3 justify-center">

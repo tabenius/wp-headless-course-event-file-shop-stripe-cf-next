@@ -205,11 +205,28 @@ function normalizeSiteFont(value, fallback) {
   return text;
 }
 
-const CTA_BG_COLORS = new Set(["primary", "secondary", "foreground", "background", "custom"]);
-const CTA_TEXT_COLORS = new Set(["background", "foreground", "primary", "secondary", "custom"]);
+const CTA_BG_COLORS = new Set([
+  "primary",
+  "secondary",
+  "foreground",
+  "background",
+  "custom",
+]);
+const CTA_TEXT_COLORS = new Set([
+  "background",
+  "foreground",
+  "primary",
+  "secondary",
+  "custom",
+]);
 const CTA_BORDER_RADII = new Set(["none", "sm", "md", "lg", "full"]);
 const CTA_BORDERS = new Set(["none", "solid"]);
-const CTA_BORDER_COLORS = new Set(["primary", "secondary", "foreground", "custom"]);
+const CTA_BORDER_COLORS = new Set([
+  "primary",
+  "secondary",
+  "foreground",
+  "custom",
+]);
 const CTA_SHADOWS = new Set(["none", "sm", "md"]);
 const CTA_FONT_WEIGHTS = new Set(["normal", "medium", "semibold", "bold"]);
 const CTA_TEXT_TRANSFORMS = new Set(["none", "uppercase", "capitalize"]);
@@ -221,16 +238,35 @@ export function normalizeCtaStyle(source) {
   if (!CTA_BG_COLORS.has(source.bgColor)) return { type: "upstream" };
 
   const bgColor = source.bgColor;
-  const textColor = CTA_TEXT_COLORS.has(source.textColor) ? source.textColor : "background";
-  const borderRadius = CTA_BORDER_RADII.has(source.borderRadius) ? source.borderRadius : "md";
+  const textColor = CTA_TEXT_COLORS.has(source.textColor)
+    ? source.textColor
+    : "background";
+  const borderRadius = CTA_BORDER_RADII.has(source.borderRadius)
+    ? source.borderRadius
+    : "md";
   const border = CTA_BORDERS.has(source.border) ? source.border : "none";
   const shadow = CTA_SHADOWS.has(source.shadow) ? source.shadow : "none";
-  const fontWeight = CTA_FONT_WEIGHTS.has(source.fontWeight) ? source.fontWeight : "semibold";
-  const textTransform = CTA_TEXT_TRANSFORMS.has(source.textTransform) ? source.textTransform : "none";
-  const paddingSize = CTA_PADDING_SIZES.has(source.paddingSize) ? source.paddingSize : "md";
+  const fontWeight = CTA_FONT_WEIGHTS.has(source.fontWeight)
+    ? source.fontWeight
+    : "semibold";
+  const textTransform = CTA_TEXT_TRANSFORMS.has(source.textTransform)
+    ? source.textTransform
+    : "none";
+  const paddingSize = CTA_PADDING_SIZES.has(source.paddingSize)
+    ? source.paddingSize
+    : "md";
 
   // Fixed key order for stable JSON.stringify in areSiteStylesEqual
-  const result = { bgColor, textColor, borderRadius, border, shadow, fontWeight, textTransform, paddingSize };
+  const result = {
+    bgColor,
+    textColor,
+    borderRadius,
+    border,
+    shadow,
+    fontWeight,
+    textTransform,
+    paddingSize,
+  };
 
   if (bgColor === "custom") {
     result.bgCustom = normalizeHexColor(source.bgCustom, "#000000");
@@ -239,7 +275,9 @@ export function normalizeCtaStyle(source) {
     result.textCustom = normalizeHexColor(source.textCustom, "#ffffff");
   }
   if (border === "solid") {
-    result.borderColor = CTA_BORDER_COLORS.has(source.borderColor) ? source.borderColor : "primary";
+    result.borderColor = CTA_BORDER_COLORS.has(source.borderColor)
+      ? source.borderColor
+      : "primary";
     if (result.borderColor === "custom") {
       result.borderCustom = normalizeHexColor(source.borderCustom, "#000000");
     }
@@ -328,7 +366,9 @@ function normalizeSiteStyleHistory(input, fallbackStyle = DEFAULT_SITE_STYLE) {
       style: normalizeSiteStyle(source.style, fallbackStyle),
     });
   }
-  rows.sort((left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt));
+  rows.sort(
+    (left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt),
+  );
   return rows.slice(0, MAX_SITE_STYLE_HISTORY);
 }
 
@@ -423,7 +463,8 @@ export async function saveShopSettings(settings) {
       ? settings.visibleTypes.filter((t) => ALL_TYPES.includes(t))
       : current.visibleTypes,
     vatByCategory:
-      settings && Object.prototype.hasOwnProperty.call(settings, "vatByCategory")
+      settings &&
+      Object.prototype.hasOwnProperty.call(settings, "vatByCategory")
         ? normalizeVatByCategory(settings.vatByCategory)
         : current.vatByCategory,
     siteStyle: nextSiteStyle,

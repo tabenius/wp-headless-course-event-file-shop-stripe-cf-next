@@ -38,8 +38,9 @@ function getPropertyName(property) {
 function getObjectProperty(objectNode, propertyName) {
   if (!objectNode || objectNode.type !== "ObjectExpression") return null;
   return (
-    objectNode.properties.find((property) => getPropertyName(property) === propertyName) ||
-    null
+    objectNode.properties.find(
+      (property) => getPropertyName(property) === propertyName,
+    ) || null
   );
 }
 
@@ -51,7 +52,11 @@ function hasNoStoreOption(objectNode, propertyName) {
 
 function hasNoStoreAllowComment(sourceCode, node) {
   const allComments = sourceCode.getAllComments();
-  if (allComments.some((comment) => comment.value.includes("lint-allow-render-no-store"))) {
+  if (
+    allComments.some((comment) =>
+      comment.value.includes("lint-allow-render-no-store"),
+    )
+  ) {
     return true;
   }
   return sourceCode
@@ -284,7 +289,8 @@ function resolveRuntimeValue(programNode) {
     const declaration = statement.declaration;
     if (!declaration || declaration.type !== "VariableDeclaration") continue;
     for (const variable of declaration.declarations || []) {
-      if (variable.id?.type !== "Identifier" || variable.id.name !== "runtime") continue;
+      if (variable.id?.type !== "Identifier" || variable.id.name !== "runtime")
+        continue;
       return getStaticString(variable.init);
     }
   }
@@ -303,7 +309,9 @@ const noNodeImportsInEdgeContext = {
   },
   create(context) {
     const filename = normalizeFilePath(context.filename);
-    const isApiRoute = /\/src\/app\/api\/.+\/route\.[cm]?[jt]sx?$/.test(filename);
+    const isApiRoute = /\/src\/app\/api\/.+\/route\.[cm]?[jt]sx?$/.test(
+      filename,
+    );
     let runtime = null;
 
     function enforceEdgeContext() {

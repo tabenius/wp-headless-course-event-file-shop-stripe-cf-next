@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { hasDigitalAccessUncached } from "@/lib/digitalAccessStore";
-import { getDigitalProductById, isProductListable } from "@/lib/digitalProducts";
+import {
+  getDigitalProductById,
+  isProductListable,
+  resolveFileUrl,
+} from "@/lib/digitalProducts";
 import { createSignedDownloadUrl } from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
@@ -67,7 +71,10 @@ export async function GET(request) {
   }
 
   // Use uncached read — user may have just claimed access moments ago
-  const canDownload = await hasDigitalAccessUncached(product.id, session.user.email);
+  const canDownload = await hasDigitalAccessUncached(
+    product.id,
+    session.user.email,
+  );
   if (!canDownload) {
     return NextResponse.json(
       { ok: false, error: t("apiErrors.noFileAccess") },
@@ -76,9 +83,16 @@ export async function GET(request) {
   }
 
   try {
-    const rawName = getFileName(product.fileUrl, product.id);
+    const fileUrl = resolveFileUrl(product);
+    if (!fileUrl) {
+      return NextResponse.json(
+        { ok: false, error: t("apiErrors.downloadFailed") },
+        { status: 404 },
+      );
+    }
+    const rawName = getFileName(fileUrl, product.id);
     const signedUrl = await createSignedDownloadUrl({
-      fileUrl: product.fileUrl,
+      fileUrl,
       expiresIn: getSignedUrlTtlSeconds(),
       downloadFileName: rawName,
     });
@@ -92,7 +106,7 @@ export async function GET(request) {
     }
 
     // Fallback: redirect to raw URL (avoid proxying large files through the worker)
-    return NextResponse.redirect(product.fileUrl, {
+    return NextResponse.redirect(fileUrl, {
       status: 302,
       headers: {
         "Cache-Control": "private, no-store",

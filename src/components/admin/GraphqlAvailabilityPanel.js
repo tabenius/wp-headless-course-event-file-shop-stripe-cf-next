@@ -16,7 +16,9 @@ const GRAPHQL_KEYWORDS = new Set([
 ]);
 
 function formatFailureKind(kind) {
-  const safe = String(kind || "").trim().toLowerCase();
+  const safe = String(kind || "")
+    .trim()
+    .toLowerCase();
   if (safe === "graphql-syntax") return "GraphQL syntax error";
   if (safe === "graphql-validation") return "GraphQL validation error";
   if (safe === "graphql-auth") return "GraphQL auth error";
@@ -53,8 +55,7 @@ function classifyGraphqlIssue(message) {
       label: "Missing field",
       shouldBe: `Type ${type} should expose field ${field} in WPGraphQL.`,
       was: text,
-      recommendation:
-        `Verify WPGraphQL schema support for ${type}.${field}. Update the query to existing fields or register the field in the plugin schema.`,
+      recommendation: `Verify WPGraphQL schema support for ${type}.${field}. Update the query to existing fields or register the field in the plugin schema.`,
     };
   }
 
@@ -81,8 +82,12 @@ function classifyGraphqlIssue(message) {
   }
 
   match =
-    text.match(/Unknown argument \"([^\"]+)\" on field \"([^\"]+)\" of type \"([^\"]+)\"/i) ||
-    text.match(/Unknown argument '([^']+)' on field '([^']+)' of type '([^']+)'/i);
+    text.match(
+      /Unknown argument \"([^\"]+)\" on field \"([^\"]+)\" of type \"([^\"]+)\"/i,
+    ) ||
+    text.match(
+      /Unknown argument '([^']+)' on field '([^']+)' of type '([^']+)'/i,
+    );
   if (match) {
     return {
       label: "Unknown argument",
@@ -93,7 +98,9 @@ function classifyGraphqlIssue(message) {
     };
   }
 
-  match = text.match(/Variable \"(\$[^\"]+)\" of required type \"([^\"]+)\" was not provided/i);
+  match = text.match(
+    /Variable \"(\$[^\"]+)\" of required type \"([^\"]+)\" was not provided/i,
+  );
   if (match) {
     return {
       label: "Missing variable",
@@ -107,7 +114,8 @@ function classifyGraphqlIssue(message) {
   if (/syntax error|expected name|unexpected/i.test(text)) {
     return {
       label: "Syntax error",
-      shouldBe: "The GraphQL document should be syntactically valid and parse cleanly.",
+      shouldBe:
+        "The GraphQL document should be syntactically valid and parse cleanly.",
       was: text,
       recommendation:
         "Fix malformed braces, fragment syntax, commas, or argument punctuation in the operation shown below.",
@@ -146,7 +154,8 @@ function tokenizeGraphql(query) {
 
   while ((match = pattern.exec(text)) !== null) {
     const index = match.index;
-    if (index > lastIndex) tokens.push({ text: text.slice(lastIndex, index), type: "plain" });
+    if (index > lastIndex)
+      tokens.push({ text: text.slice(lastIndex, index), type: "plain" });
     const token = match[0];
     let type = "identifier";
     if (token.startsWith("#")) type = "comment";
@@ -154,11 +163,13 @@ function tokenizeGraphql(query) {
     else if (GRAPHQL_KEYWORDS.has(token)) type = "keyword";
     else if (token.startsWith("$")) type = "variable";
     else if (token.startsWith("@")) type = "directive";
-    else if (/^[{}()[\]:!,=]$/.test(token) || token === "...") type = "punctuation";
+    else if (/^[{}()[\]:!,=]$/.test(token) || token === "...")
+      type = "punctuation";
     tokens.push({ text: token, type });
     lastIndex = index + token.length;
   }
-  if (lastIndex < text.length) tokens.push({ text: text.slice(lastIndex), type: "plain" });
+  if (lastIndex < text.length)
+    tokens.push({ text: text.slice(lastIndex), type: "plain" });
   return tokens;
 }
 
@@ -179,7 +190,10 @@ function GraphqlHighlightedCode({ query }) {
     <pre className="overflow-auto rounded-md border border-[#3c3836] bg-[#282828] p-3 text-xs leading-relaxed shadow-inner">
       <code className="font-mono">
         {tokens.map((token, index) => (
-          <span key={`${index}:${token.text.slice(0, 20)}`} className={tokenClass(token.type)}>
+          <span
+            key={`${index}:${token.text.slice(0, 20)}`}
+            className={tokenClass(token.type)}
+          >
             {token.text}
           </span>
         ))}
@@ -325,7 +339,9 @@ export default function GraphqlAvailabilityPanel() {
 
   if (loading) {
     return (
-      <div className="text-sm text-gray-400 py-4">Loading availability data…</div>
+      <div className="text-sm text-gray-400 py-4">
+        Loading availability data…
+      </div>
     );
   }
 
@@ -342,7 +358,8 @@ export default function GraphqlAvailabilityPanel() {
               <span className="ml-1 text-orange-600">
                 Requires Cloudflare KV (
                 <code className="font-mono text-xs">
-                  CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID, CF_API_TOKEN/CLOUDFLARE_API_TOKEN, CF_KV_NAMESPACE_ID
+                  CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID,
+                  CF_API_TOKEN/CLOUDFLARE_API_TOKEN, CF_KV_NAMESPACE_ID
                 </code>{" "}
                 not fully configured).
               </span>
@@ -407,13 +424,20 @@ export default function GraphqlAvailabilityPanel() {
           {[
             {
               label: "Availability",
-              value:
-                stats.pct !== null ? `${stats.pct}%` : "—",
+              value: stats.pct !== null ? `${stats.pct}%` : "—",
               cls: pctColor(stats.pct),
             },
-            { label: "Total requests", value: stats.total, cls: "text-gray-800" },
+            {
+              label: "Total requests",
+              value: stats.total,
+              cls: "text-gray-800",
+            },
             { label: "Successful", value: stats.ok, cls: "text-emerald-700" },
-            { label: "Failed", value: stats.fail, cls: stats.fail ? "text-red-600" : "text-gray-400" },
+            {
+              label: "Failed",
+              value: stats.fail,
+              cls: stats.fail ? "text-red-600" : "text-gray-400",
+            },
           ].map(({ label, value, cls }) => (
             <div
               key={label}
@@ -433,7 +457,9 @@ export default function GraphqlAvailabilityPanel() {
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Timeseries (oldest → newest)
             </span>
-            <span className="text-xs text-gray-400">{log.length} datapoints</span>
+            <span className="text-xs text-gray-400">
+              {log.length} datapoints
+            </span>
           </div>
           <div
             className="flex flex-wrap gap-0.5 rounded-lg border border-gray-200 bg-gray-50 p-3"
@@ -515,7 +541,9 @@ export default function GraphqlAvailabilityPanel() {
                   const entryId = `${entry.ts}:${entry.status}:${i}`;
                   const isExpanded = expandedEntry === entryId;
                   const issues = Array.isArray(entry.errors)
-                    ? entry.errors.map((item) => classifyGraphqlIssue(item?.message))
+                    ? entry.errors.map((item) =>
+                        classifyGraphqlIssue(item?.message),
+                      )
                     : [];
                   return (
                     <Fragment key={entryId}>
@@ -530,7 +558,9 @@ export default function GraphqlAvailabilityPanel() {
                           </span>
                         </td>
                         <td className="px-3 py-1.5 text-gray-500 hidden sm:table-cell">
-                          {entry.latencyMs != null ? `${entry.latencyMs} ms` : "—"}
+                          {entry.latencyMs != null
+                            ? `${entry.latencyMs} ms`
+                            : "—"}
                         </td>
                         <td className="px-3 py-1.5 text-gray-400 truncate max-w-xs hidden lg:table-cell">
                           {entry.endpoint}
@@ -539,7 +569,9 @@ export default function GraphqlAvailabilityPanel() {
                           <button
                             type="button"
                             onClick={() =>
-                              setExpandedEntry((prev) => (prev === entryId ? null : entryId))
+                              setExpandedEntry((prev) =>
+                                prev === entryId ? null : entryId,
+                              )
                             }
                             className={`rounded border bg-white px-2 py-0.5 text-[11px] font-medium ${
                               is200
@@ -563,7 +595,9 @@ export default function GraphqlAvailabilityPanel() {
                                       : "border-[#fb4934] bg-[#3c1f1f] text-[#fb4934]"
                                   }`}
                                 >
-                                  {is200 ? "HTTP 200 OK" : formatFailureKind(entry.failureKind)}
+                                  {is200
+                                    ? "HTTP 200 OK"
+                                    : formatFailureKind(entry.failureKind)}
                                 </span>
                                 {entry.operationName && (
                                   <span className="rounded border border-[#504945] bg-[#282828] px-2 py-0.5 text-[#83a598]">
@@ -577,14 +611,18 @@ export default function GraphqlAvailabilityPanel() {
 
                               {entry.query && (
                                 <div className="space-y-1">
-                                  <div className="font-semibold text-[#d5c4a1]">GraphQL document</div>
+                                  <div className="font-semibold text-[#d5c4a1]">
+                                    GraphQL document
+                                  </div>
                                   <GraphqlHighlightedCode query={entry.query} />
                                 </div>
                               )}
 
                               {entry.variables && (
                                 <div className="space-y-1">
-                                  <div className="font-semibold text-[#d5c4a1]">Variables payload</div>
+                                  <div className="font-semibold text-[#d5c4a1]">
+                                    Variables payload
+                                  </div>
                                   <pre className="overflow-auto rounded-md border border-[#3c3836] bg-[#282828] p-3 text-xs text-[#ebdbb2]">
                                     <code>{entry.variables}</code>
                                   </pre>
@@ -593,7 +631,9 @@ export default function GraphqlAvailabilityPanel() {
 
                               {entry.responsePreview && (
                                 <div className="space-y-1">
-                                  <div className="font-semibold text-[#d5c4a1]">Upstream response preview</div>
+                                  <div className="font-semibold text-[#d5c4a1]">
+                                    Upstream response preview
+                                  </div>
                                   <pre className="overflow-auto rounded-md border border-[#3c3836] bg-[#282828] p-3 text-xs text-[#fb4934]">
                                     <code>{entry.responsePreview}</code>
                                   </pre>
@@ -602,7 +642,9 @@ export default function GraphqlAvailabilityPanel() {
 
                               {issues.length > 0 ? (
                                 <div className="space-y-2">
-                                  <div className="font-semibold text-[#d5c4a1]">Diagnostic guidance</div>
+                                  <div className="font-semibold text-[#d5c4a1]">
+                                    Diagnostic guidance
+                                  </div>
                                   {issues.map((issue, issueIndex) => (
                                     <div
                                       key={`${entryId}:issue:${issueIndex}`}
@@ -613,15 +655,21 @@ export default function GraphqlAvailabilityPanel() {
                                       </div>
                                       <div className="space-y-1 text-[#ebdbb2]">
                                         <p>
-                                          <span className="font-semibold text-[#8ec07c]">Should be:</span>{" "}
+                                          <span className="font-semibold text-[#8ec07c]">
+                                            Should be:
+                                          </span>{" "}
                                           {issue.shouldBe}
                                         </p>
                                         <p>
-                                          <span className="font-semibold text-[#fb4934]">Was:</span>{" "}
+                                          <span className="font-semibold text-[#fb4934]">
+                                            Was:
+                                          </span>{" "}
                                           {issue.was}
                                         </p>
                                         <p>
-                                          <span className="font-semibold text-[#83a598]">Recommended:</span>{" "}
+                                          <span className="font-semibold text-[#83a598]">
+                                            Recommended:
+                                          </span>{" "}
                                           {issue.recommendation}
                                         </p>
                                       </div>
@@ -632,9 +680,12 @@ export default function GraphqlAvailabilityPanel() {
                                 <div className="rounded border border-[#504945] bg-[#282828] p-3">
                                   {is200 ? (
                                     <>
-                                      <p className="font-semibold text-[#8ec07c]">Request summary</p>
+                                      <p className="font-semibold text-[#8ec07c]">
+                                        Request summary
+                                      </p>
                                       <p className="mt-1 text-[#ebdbb2]">
-                                        Should be: HTTP 200 with valid GraphQL JSON response.
+                                        Should be: HTTP 200 with valid GraphQL
+                                        JSON response.
                                       </p>
                                       <p className="text-[#ebdbb2]">
                                         Was: HTTP 200.
@@ -649,13 +700,17 @@ export default function GraphqlAvailabilityPanel() {
                                         Diagnostic guidance
                                       </p>
                                       <p className="mt-1 text-[#ebdbb2]">
-                                        Should be: request should return valid JSON GraphQL payload without errors.
+                                        Should be: request should return valid
+                                        JSON GraphQL payload without errors.
                                       </p>
                                       <p className="text-[#ebdbb2]">
-                                        Was: {String(entry.status)} ({formatFailureKind(entry.failureKind)}).
+                                        Was: {String(entry.status)} (
+                                        {formatFailureKind(entry.failureKind)}).
                                       </p>
                                       <p className="text-[#ebdbb2]">
-                                        Recommended: inspect endpoint health, auth credentials, and query structure, then retry.
+                                        Recommended: inspect endpoint health,
+                                        auth credentials, and query structure,
+                                        then retry.
                                       </p>
                                     </>
                                   )}

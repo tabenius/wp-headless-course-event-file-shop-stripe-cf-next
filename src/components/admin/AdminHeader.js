@@ -77,7 +77,9 @@ function extractHashPath(value) {
   const lower = raw.toLowerCase();
   const lastHashRoute = lower.lastIndexOf("#/");
   const candidate =
-    lastHashRoute >= 0 ? lower.slice(lastHashRoute + 2) : lower.replace(/^#\/?/, "");
+    lastHashRoute >= 0
+      ? lower.slice(lastHashRoute + 2)
+      : lower.replace(/^#\/?/, "");
   return candidate.replace(/^\/+/, "");
 }
 
@@ -204,7 +206,9 @@ function getFocusableElements(container) {
 }
 
 function formatAdminIdentity(email) {
-  const normalized = String(email || "").trim().toLowerCase();
+  const normalized = String(email || "")
+    .trim()
+    .toLowerCase();
   if (!normalized) return "";
   return normalized;
 }
@@ -268,7 +272,8 @@ export default function AdminHeader({ logoUrl }) {
       setHealthState(e.detail?.status || "unknown");
     }
     window.addEventListener("admin:healthStatus", onHealthStatus);
-    return () => window.removeEventListener("admin:healthStatus", onHealthStatus);
+    return () =>
+      window.removeEventListener("admin:healthStatus", onHealthStatus);
   }, []);
 
   useEffect(() => {
@@ -285,7 +290,9 @@ export default function AdminHeader({ logoUrl }) {
     let cancelled = false;
     async function loadAdminSession() {
       try {
-        const response = await fetch("/api/admin/session", { cache: "no-store" });
+        const response = await fetch("/api/admin/session", {
+          cache: "no-store",
+        });
         const json = await response.json().catch(() => null);
         if (cancelled) return;
         const nextEmail = formatAdminIdentity(json?.session?.email);
@@ -345,7 +352,9 @@ export default function AdminHeader({ logoUrl }) {
   useEffect(() => {
     if (!menuOpen) return undefined;
     lastFocusedBeforeMenuRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     const fallbackFocus = menuToggleButtonRef.current;
     const drawer = menuDrawerRef.current;
     const focusable = getFocusableElements(drawer);
@@ -382,8 +391,7 @@ export default function AdminHeader({ logoUrl }) {
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
-      const restoreTarget =
-        lastFocusedBeforeMenuRef.current || fallbackFocus;
+      const restoreTarget = lastFocusedBeforeMenuRef.current || fallbackFocus;
       restoreTarget?.focus?.();
     };
   }, [menuOpen]);
@@ -433,11 +441,12 @@ export default function AdminHeader({ logoUrl }) {
         const response = await fetch("/api/admin/stats-ticker");
         if (!response.ok) return;
         const json = await response.json().catch(() => null);
-        if (!cancelled && json?.ok) setTickerStats({
-          ...json.stats,
-          _availableStripe: json.availableStripe === true,
-          _availableAnalytics: json.availableAnalytics === true,
-        });
+        if (!cancelled && json?.ok)
+          setTickerStats({
+            ...json.stats,
+            _availableStripe: json.availableStripe === true,
+            _availableAnalytics: json.availableAnalytics === true,
+          });
       } catch {
         // Silently ignore — ticker is best-effort
       }
@@ -461,20 +470,30 @@ export default function AdminHeader({ logoUrl }) {
       const revEntry = stats.revenue[currency];
       if (revEntry != null) {
         const amount = Math.round(revEntry / 100);
-        parts.push(`${t("admin.statsTickerRevenue", "Revenue")}: ${amount.toLocaleString()} ${currency}`);
+        parts.push(
+          `${t("admin.statsTickerRevenue", "Revenue")}: ${amount.toLocaleString()} ${currency}`,
+        );
       }
     }
     if (stats.transactions != null) {
-      parts.push(`${t("admin.statsTickerTransactions", "Sales")}: ${stats.transactions}`);
+      parts.push(
+        `${t("admin.statsTickerTransactions", "Sales")}: ${stats.transactions}`,
+      );
     }
     if (stats.customers != null) {
-      parts.push(`${t("admin.statsTickerCustomers", "Customers")}: ${stats.customers}`);
+      parts.push(
+        `${t("admin.statsTickerCustomers", "Customers")}: ${stats.customers}`,
+      );
     }
     if (stats.salesPerUser != null) {
-      parts.push(`${t("admin.statsTickerSalesPerUser", "Sales/user")}: ${stats.salesPerUser.toFixed(1)}×`);
+      parts.push(
+        `${t("admin.statsTickerSalesPerUser", "Sales/user")}: ${stats.salesPerUser.toFixed(1)}×`,
+      );
     }
     if (stats.weeklyAvgHitsPerDay != null) {
-      parts.push(`${t("admin.statsTickerHitsPerDay", "Avg hits/day")}: ${stats.weeklyAvgHitsPerDay.toLocaleString()}`);
+      parts.push(
+        `${t("admin.statsTickerHitsPerDay", "Avg hits/day")}: ${stats.weeklyAvgHitsPerDay.toLocaleString()}`,
+      );
     }
     if (parts.length > 0) return parts.join("  ·  ");
     const missing = [];
@@ -496,7 +515,9 @@ export default function AdminHeader({ logoUrl }) {
     if (!safeTab) return;
     const nextHash = hashForTabRoute(tab) || `#/${safeTab}`;
     if (pathname !== "/admin") {
-      try { sessionStorage.setItem("admin:pendingTab", safeTab); } catch {}
+      try {
+        sessionStorage.setItem("admin:pendingTab", safeTab);
+      } catch {}
       router.push(`/admin${nextHash}`);
       setMenuOpen(false);
       return;
@@ -529,8 +550,7 @@ export default function AdminHeader({ logoUrl }) {
     .toUpperCase();
   const tickerText = buildTickerText(tickerStats);
   const showHealthTooltip = isHealthTooltipHovered || isHealthTooltipPinned;
-  const adminIdentityLabel =
-    adminEmail || t("admin.accountUnknown", "Admin");
+  const adminIdentityLabel = adminEmail || t("admin.accountUnknown", "Admin");
 
   return (
     <header className="admin-header-shell relative overflow-visible w-full sticky top-0 z-40 border-b">
@@ -603,8 +623,12 @@ export default function AdminHeader({ logoUrl }) {
                 }}
               >
                 <span className="px-8">{tickerText}</span>
-                <span className="px-8" aria-hidden="true">{tickerText}</span>
-                <span className="px-8" aria-hidden="true">{tickerText}</span>
+                <span className="px-8" aria-hidden="true">
+                  {tickerText}
+                </span>
+                <span className="px-8" aria-hidden="true">
+                  {tickerText}
+                </span>
               </div>
             </div>
           </div>
@@ -626,9 +650,7 @@ export default function AdminHeader({ logoUrl }) {
                   : t("common.loading", "Loading…")
               }
             >
-              <span className="truncate">
-                {adminIdentityLabel}
-              </span>
+              <span className="truncate">{adminIdentityLabel}</span>
               <span aria-hidden="true">·</span>
               <span className="font-semibold">
                 {t("admin.logout", "Logout")}
@@ -654,9 +676,7 @@ export default function AdminHeader({ logoUrl }) {
             </button>
             {showHealthTooltip && (
               <div className="admin-header-popover absolute right-0 top-full z-[80] mt-2 w-64 rounded-lg border p-3 text-xs shadow-xl">
-                <p className="font-semibold">
-                  {healthLabelMap[healthState]}
-                </p>
+                <p className="font-semibold">{healthLabelMap[healthState]}</p>
                 <p className="mt-1">
                   {healthState === "unknown"
                     ? t(
@@ -739,7 +759,9 @@ export default function AdminHeader({ logoUrl }) {
                 </div>
                 <div className="admin-header-drawer-meta mt-4 space-y-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <label className="font-semibold">{t("admin.languageLabel")}</label>
+                    <label className="font-semibold">
+                      {t("admin.languageLabel")}
+                    </label>
                     <select
                       value={localeState}
                       onChange={(e) => {

@@ -161,7 +161,11 @@ export default function ImageGenerationPanel({
             ? t("admin.imageErrorRef", { id: json.requestId.slice(0, 8) })
             : "";
           const hint = json?.hint || "";
-          const msgParts = [json?.error || t("admin.imageGenFailed"), hint, requestRef]
+          const msgParts = [
+            json?.error || t("admin.imageGenFailed"),
+            hint,
+            requestRef,
+          ]
             .filter(Boolean)
             .join(" ");
           showToast(msgParts);

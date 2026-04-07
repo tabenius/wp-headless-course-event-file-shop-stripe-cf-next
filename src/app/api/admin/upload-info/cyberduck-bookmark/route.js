@@ -58,7 +58,14 @@ function resolveBackend(request) {
   return allowed.has(envBackend) ? envBackend : "wordpress";
 }
 
-function buildBookmarkXml({ server, bucket, region, accessKeyId, secretKey, backend }) {
+function buildBookmarkXml({
+  server,
+  bucket,
+  region,
+  accessKeyId,
+  secretKey,
+  backend,
+}) {
   const safeServer = normalizeEndpointHost(server);
   const safeBucket = String(bucket || "").trim();
   const safeRegion = String(region || "auto");
@@ -107,7 +114,10 @@ export async function GET(request) {
   const backend = resolveBackend(request);
   if (backend === "wordpress") {
     return Response.json(
-      { ok: false, error: "Cyberduck bookmark is available only for R2/S3 backends." },
+      {
+        ok: false,
+        error: "Cyberduck bookmark is available only for R2/S3 backends.",
+      },
       { status: 400 },
     );
   }
@@ -117,14 +127,17 @@ export async function GET(request) {
   const accessKeyId =
     process.env.S3_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY_ID || "";
   const secretKey =
-    process.env.S3_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_ACCESS_KEY || "";
+    process.env.S3_SECRET_ACCESS_KEY ||
+    process.env.CF_R2_SECRET_ACCESS_KEY ||
+    "";
   const server =
     backend === "r2"
       ? buildR2ServerHost(
           process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || "",
         )
       : normalizeEndpointHost(process.env.S3_ENDPOINT || "");
-  const region = backend === "r2" ? "auto" : process.env.S3_REGION || "us-east-1";
+  const region =
+    backend === "r2" ? "auto" : process.env.S3_REGION || "us-east-1";
 
   const missing = [];
   if (!server) missing.push("server");

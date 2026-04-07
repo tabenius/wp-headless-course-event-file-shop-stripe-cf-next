@@ -15,10 +15,24 @@ async function tryGetD1() {
 
 function assetRowToObject(row) {
   if (!row) return null;
-  let metadata = {}, rights = {}, assetInfo = {};
-  try { metadata = JSON.parse(row.metadata || "{}"); } catch { /* ignore */ }
-  try { rights = JSON.parse(row.rights || "{}"); } catch { /* ignore */ }
-  try { assetInfo = JSON.parse(row.asset_info || "{}"); } catch { /* ignore */ }
+  let metadata = {},
+    rights = {},
+    assetInfo = {};
+  try {
+    metadata = JSON.parse(row.metadata || "{}");
+  } catch {
+    /* ignore */
+  }
+  try {
+    rights = JSON.parse(row.rights || "{}");
+  } catch {
+    /* ignore */
+  }
+  try {
+    assetInfo = JSON.parse(row.asset_info || "{}");
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.id,
     source: row.source,
@@ -52,9 +66,7 @@ function safeText(value, max = 600) {
 function normalizeOwnerUri(value, max = 320) {
   const raw = String(value ?? "").trim();
   if (!raw || raw === "/") return "/";
-  let safe = raw
-    .replace(/\s+/g, "")
-    .replace(/\/{2,}/g, "/");
+  let safe = raw.replace(/\s+/g, "").replace(/\/{2,}/g, "/");
   if (!safe.startsWith("/")) safe = `/${safe}`;
   if (safe.length > 1) safe = safe.replace(/\/+$/, "");
   return safe.slice(0, max) || "/";
@@ -99,12 +111,18 @@ function sanitizeAssetEntry(entry, existing = null) {
   const key = safeText(entry.key, 512).replace(/^\/+/, "");
   if (!key) return null;
 
-  const title = safeText(entry.title, 200) || safeText(key.split("/").pop(), 200);
+  const title =
+    safeText(entry.title, 200) || safeText(key.split("/").pop(), 200);
   const assetId = sanitizeAssetId(entry.asset?.assetId || entry.assetId, 96);
-  const ownerUri = normalizeOwnerUri(entry.asset?.ownerUri || entry.ownerUri || "/");
+  const ownerUri = normalizeOwnerUri(
+    entry.asset?.ownerUri || entry.ownerUri || "/",
+  );
   const assetUriRaw = safeText(entry.asset?.uri || entry.assetUri, 400);
   const assetUri = assetUriRaw || defaultAssetUri(assetId);
-  const assetSlug = sanitizeAssetSlug(entry.asset?.slug || entry.assetSlug, 120);
+  const assetSlug = sanitizeAssetSlug(
+    entry.asset?.slug || entry.assetSlug,
+    120,
+  );
   const sourceId = safeText(entry.sourceId || key, 160);
   const format =
     safeText(entry.asset?.format || entry.format, 40) ||
@@ -148,10 +166,16 @@ function sanitizeAssetEntry(entry, existing = null) {
       role: safeText(entry.asset?.role, 40) || "original",
       format: format || null,
       variantKind: safeText(entry.asset?.variantKind, 80) || "original",
-      sourceHash: safeText(entry.asset?.sourceHash || entry.sourceHash, 180) || null,
-      originalUrl: safeText(entry.asset?.originalUrl, 1200) || safeText(entry.url, 1200) || null,
+      sourceHash:
+        safeText(entry.asset?.sourceHash || entry.sourceHash, 180) || null,
+      originalUrl:
+        safeText(entry.asset?.originalUrl, 1200) ||
+        safeText(entry.url, 1200) ||
+        null,
       originalId: safeText(entry.asset?.originalId || sourceId, 160) || null,
-      variants: Array.isArray(entry.asset?.variants) ? entry.asset.variants : [],
+      variants: Array.isArray(entry.asset?.variants)
+        ? entry.asset.variants
+        : [],
       author: {
         type: "admin",
         id: "admins",
@@ -169,7 +193,9 @@ function sanitizeState(state) {
         .map((entry) => sanitizeAssetEntry(entry))
         .filter(Boolean)
         .sort((left, right) =>
-          String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")),
+          String(right.updatedAt || "").localeCompare(
+            String(left.updatedAt || ""),
+          ),
         )
     : [];
   return { assets };
@@ -216,11 +242,16 @@ export async function listMediaAssetRegistry() {
 }
 
 export async function upsertMediaAssetRegistry(entry) {
-  const id = safeText(entry?.id, 180) || `r2:${safeText(entry?.key, 512).replace(/^\/+/, "")}`;
+  const id =
+    safeText(entry?.id, 180) ||
+    `r2:${safeText(entry?.key, 512).replace(/^\/+/, "")}`;
 
   const db = await tryGetD1();
   if (db) {
-    const existingRow = await db.prepare("SELECT * FROM media_assets WHERE id = ?").bind(id).first();
+    const existingRow = await db
+      .prepare("SELECT * FROM media_assets WHERE id = ?")
+      .bind(id)
+      .first();
     const existing = existingRow ? assetRowToObject(existingRow) : null;
     const next = sanitizeAssetEntry({ ...existing, ...entry, id }, existing);
     if (!next) throw new Error("Invalid media asset registry entry.");
@@ -237,11 +268,21 @@ export async function upsertMediaAssetRegistry(entry) {
            saved_at=excluded.saved_at`,
       )
       .bind(
-        next.id, next.source || "r2", next.sourceId || "", next.key, next.title,
-        next.url, next.mimeType || "", next.sizeBytes ?? null, next.width ?? null,
-        next.height ?? null, JSON.stringify(next.metadata || {}),
-        JSON.stringify(next.rights || {}), JSON.stringify(next.asset || {}),
-        next.createdAt || now, now,
+        next.id,
+        next.source || "r2",
+        next.sourceId || "",
+        next.key,
+        next.title,
+        next.url,
+        next.mimeType || "",
+        next.sizeBytes ?? null,
+        next.width ?? null,
+        next.height ?? null,
+        JSON.stringify(next.metadata || {}),
+        JSON.stringify(next.rights || {}),
+        JSON.stringify(next.asset || {}),
+        next.createdAt || now,
+        now,
       )
       .run();
     return next;

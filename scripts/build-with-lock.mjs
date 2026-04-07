@@ -19,7 +19,12 @@ if (cmd.length === 0) {
 
 function hydrateBuildEnvFromDotenv() {
   const shellProvided = new Set(Object.keys(process.env));
-  const files = [".env", ".env.production", ".env.local", ".env.production.local"];
+  const files = [
+    ".env",
+    ".env.production",
+    ".env.local",
+    ".env.production.local",
+  ];
   const keyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
   for (const file of files) {
@@ -35,9 +40,9 @@ function hydrateBuildEnvFromDotenv() {
       if (!keyPattern.test(key) || shellProvided.has(key)) continue;
 
       let value = line.slice(eqIndex + 1).trim();
-      const startsDouble = value.startsWith("\"");
+      const startsDouble = value.startsWith('"');
       const startsSingle = value.startsWith("'");
-      if (startsDouble && value.endsWith("\"") && value.length >= 2) {
+      if (startsDouble && value.endsWith('"') && value.length >= 2) {
         value = value.slice(1, -1).replace(/\\n/g, "\n").replace(/\\r/g, "\r");
       } else if (startsSingle && value.endsWith("'") && value.length >= 2) {
         value = value.slice(1, -1);

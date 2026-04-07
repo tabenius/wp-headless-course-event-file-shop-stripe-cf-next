@@ -15,6 +15,7 @@
 ## File Map
 
 **New files:**
+
 - `src/lib/downloadedFonts.js` — KV CRUD for the `fonts:downloaded` array
 - `src/lib/googleFontsCatalog.js` — catalog fetch (API key or snapshot) + 24h KV cache
 - `src/lib/fontDownload.js` — download font from Google → R2 + generate @font-face CSS
@@ -30,6 +31,7 @@
 - `tests/shopSettings-fonts.test.js`
 
 **Modified files:**
+
 - `src/lib/shopSettings.js` — add new font role fields + normalization + migration
 - `src/app/globals.css` — add 5 font variable bindings, 3 color variables, 7 link hover variants
 - `src/app/theme.generated.css` — add 5 new font variables + 3 color variable defaults
@@ -42,6 +44,7 @@
 ## Task 1: downloadedFonts KV helper
 
 **Files:**
+
 - Create: `src/lib/downloadedFonts.js`
 - Create: `tests/downloadedFonts.test.js`
 
@@ -67,7 +70,10 @@ const { getDownloadedFonts, upsertDownloadedFont, getAllFontFaceCss } =
   await import("../src/lib/downloadedFonts.js");
 
 describe("getDownloadedFonts", () => {
-  beforeEach(() => { mockRead.mock.resetCalls(); mockWrite.mock.resetCalls(); });
+  beforeEach(() => {
+    mockRead.mock.resetCalls();
+    mockWrite.mock.resetCalls();
+  });
 
   it("returns [] when KV is empty", async () => {
     mockRead.mock.implementation = async () => null;
@@ -75,7 +81,15 @@ describe("getDownloadedFonts", () => {
   });
 
   it("returns stored array", async () => {
-    const stored = [{ family: "Inter", slug: "inter", isVariable: true, weightRange: [100, 900], fontFaceCss: "@font-face{}" }];
+    const stored = [
+      {
+        family: "Inter",
+        slug: "inter",
+        isVariable: true,
+        weightRange: [100, 900],
+        fontFaceCss: "@font-face{}",
+      },
+    ];
     mockRead.mock.implementation = async () => stored;
     assert.deepEqual(await getDownloadedFonts(), stored);
   });
@@ -84,7 +98,13 @@ describe("getDownloadedFonts", () => {
 describe("upsertDownloadedFont", () => {
   it("inserts a new font record", async () => {
     mockRead.mock.implementation = async () => [];
-    const record = { family: "Inter", slug: "inter", isVariable: true, weightRange: [100, 900], fontFaceCss: "@font-face{}" };
+    const record = {
+      family: "Inter",
+      slug: "inter",
+      isVariable: true,
+      weightRange: [100, 900],
+      fontFaceCss: "@font-face{}",
+    };
     await upsertDownloadedFont(record);
     const writtenData = mockWrite.mock.calls[0].arguments[1];
     assert.equal(writtenData.length, 1);
@@ -92,9 +112,23 @@ describe("upsertDownloadedFont", () => {
   });
 
   it("replaces existing record by family", async () => {
-    const existing = [{ family: "Inter", slug: "inter", isVariable: false, weights: [400], fontFaceCss: "old" }];
+    const existing = [
+      {
+        family: "Inter",
+        slug: "inter",
+        isVariable: false,
+        weights: [400],
+        fontFaceCss: "old",
+      },
+    ];
     mockRead.mock.implementation = async () => existing;
-    const updated = { family: "Inter", slug: "inter", isVariable: true, weightRange: [100, 900], fontFaceCss: "new" };
+    const updated = {
+      family: "Inter",
+      slug: "inter",
+      isVariable: true,
+      weightRange: [100, 900],
+      fontFaceCss: "new",
+    };
     await upsertDownloadedFont(updated);
     const writtenData = mockWrite.mock.calls[0].arguments[1];
     assert.equal(writtenData.length, 1);
@@ -125,6 +159,7 @@ describe("getAllFontFaceCss", () => {
 cd /home/xyzzy/articulate-universe/main
 node --experimental-test-module-mocks --test tests/downloadedFonts.test.js
 ```
+
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement downloadedFonts.js**
@@ -166,7 +201,10 @@ export async function upsertDownloadedFont(record) {
  */
 export function getAllFontFaceCss(fonts) {
   if (!Array.isArray(fonts) || fonts.length === 0) return "";
-  return fonts.map((f) => f.fontFaceCss || "").filter(Boolean).join("\n");
+  return fonts
+    .map((f) => f.fontFaceCss || "")
+    .filter(Boolean)
+    .join("\n");
 }
 ```
 
@@ -175,6 +213,7 @@ export function getAllFontFaceCss(fonts) {
 ```bash
 node --experimental-test-module-mocks --test tests/downloadedFonts.test.js
 ```
+
 Expected: all tests PASS.
 
 - [ ] **Step 5: Commit**
@@ -189,6 +228,7 @@ git commit -m "feat: add downloadedFonts KV helper"
 ## Task 2: Google Fonts catalog helper
 
 **Files:**
+
 - Create: `src/lib/googleFontsCatalog.js`
 - Create: `src/lib/googleFontsSnapshot.json`
 - Create: `scripts/fetch-fonts-snapshot.mjs`
@@ -236,11 +276,13 @@ console.log(`Wrote ${fonts.length} fonts to googleFontsSnapshot.json`);
 - [ ] **Step 2: Run the script to populate snapshot**
 
 If you have a Google Fonts API key:
+
 ```bash
 GOOGLE_FONTS_API_KEY=your_key node scripts/fetch-fonts-snapshot.mjs
 ```
 
 If not, create a minimal snapshot with the most common fonts:
+
 ```bash
 cat > src/lib/googleFontsSnapshot.json << 'EOF'
 {
@@ -267,6 +309,7 @@ cat > src/lib/googleFontsSnapshot.json << 'EOF'
 }
 EOF
 ```
+
 _(Run the fetch script when an API key is available to get the full 1500-font catalog.)_
 
 ### 2b: Implement the catalog helper
@@ -287,14 +330,26 @@ mock.module("../src/lib/cloudflareKv.js", {
   },
 });
 
-const { normalizeCatalog, isVariableFont } = await import("../src/lib/googleFontsCatalog.js");
+const { normalizeCatalog, isVariableFont } = await import(
+  "../src/lib/googleFontsCatalog.js"
+);
 
 describe("normalizeCatalog", () => {
   it("normalizes Google Fonts API response", () => {
     const raw = {
       items: [
-        { family: "Inter", category: "sans-serif", axes: [{ tag: "wght" }], variants: ["regular"] },
-        { family: "Lora", category: "serif", axes: [], variants: ["regular", "700"] },
+        {
+          family: "Inter",
+          category: "sans-serif",
+          axes: [{ tag: "wght" }],
+          variants: ["regular"],
+        },
+        {
+          family: "Lora",
+          category: "serif",
+          axes: [],
+          variants: ["regular", "700"],
+        },
       ],
     };
     const result = normalizeCatalog(raw);
@@ -303,7 +358,11 @@ describe("normalizeCatalog", () => {
   });
 
   it("normalizes snapshot format (already normalized)", () => {
-    const snapshot = { fonts: [{ family: "Inter", category: "sans-serif", axes: [], variants: [] }] };
+    const snapshot = {
+      fonts: [
+        { family: "Inter", category: "sans-serif", axes: [], variants: [] },
+      ],
+    };
     const result = normalizeCatalog(snapshot);
     assert.equal(result.fonts[0].family, "Inter");
   });
@@ -429,6 +488,7 @@ git commit -m "feat: add Google Fonts catalog helper with KV cache and snapshot 
 ## Task 3: Font download helper
 
 **Files:**
+
 - Create: `src/lib/fontDownload.js`
 - Create: `tests/fontDownload.test.js`
 
@@ -454,9 +514,18 @@ describe("familyToSlug", () => {
 
 describe("buildFontFaceCss", () => {
   it("builds variable @font-face block", () => {
-    const css = buildFontFaceCss("Inter", "inter", true, [100, 900], [
-      { r2Url: "https://r2.example.com/fonts/inter/inter-variable.woff2", unicodeRange: null },
-    ]);
+    const css = buildFontFaceCss(
+      "Inter",
+      "inter",
+      true,
+      [100, 900],
+      [
+        {
+          r2Url: "https://r2.example.com/fonts/inter/inter-variable.woff2",
+          unicodeRange: null,
+        },
+      ],
+    );
     assert.ok(css.includes("font-family: 'Inter'"));
     assert.ok(css.includes("font-weight: 100 900"));
     assert.ok(css.includes("inter-variable.woff2"));
@@ -465,8 +534,16 @@ describe("buildFontFaceCss", () => {
 
   it("builds non-variable @font-face block per weight", () => {
     const css = buildFontFaceCss("Lora", "lora", false, null, [
-      { r2Url: "https://r2.example.com/fonts/lora/400.woff2", weight: 400, unicodeRange: null },
-      { r2Url: "https://r2.example.com/fonts/lora/700.woff2", weight: 700, unicodeRange: null },
+      {
+        r2Url: "https://r2.example.com/fonts/lora/400.woff2",
+        weight: 400,
+        unicodeRange: null,
+      },
+      {
+        r2Url: "https://r2.example.com/fonts/lora/700.woff2",
+        weight: 700,
+        unicodeRange: null,
+      },
     ]);
     assert.ok(css.includes("font-weight: 400"));
     assert.ok(css.includes("font-weight: 700"));
@@ -519,7 +596,9 @@ export function buildFontFaceCss(family, slug, isVariable, weightRange, files) {
       const weightDecl = isVariable
         ? `${weightRange[0]} ${weightRange[1]}`
         : String(weight || 400);
-      const rangeDecl = unicodeRange ? `\n  unicode-range: ${unicodeRange};` : "";
+      const rangeDecl = unicodeRange
+        ? `\n  unicode-range: ${unicodeRange};`
+        : "";
       return `@font-face {\n  font-family: '${family}';\n  src: url('${r2Url}') format('woff2');\n  font-weight: ${weightDecl};\n  font-style: normal;\n  font-display: swap;${rangeDecl}\n}`;
     })
     .join("\n");
@@ -541,7 +620,8 @@ async function parseGoogleFontsCss(family, isVariable, weights) {
   const res = await fetch(url, {
     headers: { "User-Agent": FETCH_UA },
   });
-  if (!res.ok) throw new Error(`Google Fonts CSS fetch failed (${res.status}): ${family}`);
+  if (!res.ok)
+    throw new Error(`Google Fonts CSS fetch failed (${res.status}): ${family}`);
   const css = await res.text();
 
   // Parse @font-face blocks
@@ -567,7 +647,9 @@ async function parseGoogleFontsCss(family, isVariable, weights) {
   }
 
   if (entries.length === 0) {
-    throw new Error(`No woff2 entries found in Google Fonts CSS for: ${family}`);
+    throw new Error(
+      `No woff2 entries found in Google Fonts CSS for: ${family}`,
+    );
   }
   return entries;
 }
@@ -581,9 +663,14 @@ async function parseGoogleFontsCss(family, isVariable, weights) {
  * @param {number[]} weights      used only when !isVariable
  * @returns {Promise<{ fontFaceCss: string, slug: string, isVariable: boolean, weights?: number[], weightRange?: number[] }>}
  */
-export async function downloadFontToR2(family, isVariable, weights = [400, 700]) {
+export async function downloadFontToR2(
+  family,
+  isVariable,
+  weights = [400, 700],
+) {
   const slug = familyToSlug(family);
-  const r2BaseUrl = process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "";
+  const r2BaseUrl =
+    process.env.S3_PUBLIC_URL || process.env.CF_R2_PUBLIC_URL || "";
 
   const entries = await parseGoogleFontsCss(family, isVariable, weights);
 
@@ -616,7 +703,8 @@ export async function downloadFontToR2(family, isVariable, weights = [400, 700])
 
       if (!exists) {
         const fontRes = await fetch(woff2Url);
-        if (!fontRes.ok) throw new Error(`Failed to download font file: ${woff2Url}`);
+        if (!fontRes.ok)
+          throw new Error(`Failed to download font file: ${woff2Url}`);
         const fontBytes = Buffer.from(await fontRes.arrayBuffer());
         await putBucketObject({
           key: r2Key,
@@ -638,7 +726,13 @@ export async function downloadFontToR2(family, isVariable, weights = [400, 700])
 
   // Build @font-face CSS
   const weightRange = isVariable ? [100, 900] : null;
-  const fontFaceCss = buildFontFaceCss(family, slug, isVariable, weightRange, r2Files);
+  const fontFaceCss = buildFontFaceCss(
+    family,
+    slug,
+    isVariable,
+    weightRange,
+    r2Files,
+  );
 
   // Extract unique weights for non-variable
   const uniqueWeights = isVariable
@@ -673,6 +767,7 @@ git commit -m "feat: add font download helper with R2 upload and @font-face gene
 ## Task 4: Extend siteStyle data model
 
 **Files:**
+
 - Modify: `src/lib/shopSettings.js`
 - Create: `tests/shopSettings-fonts.test.js`
 
@@ -703,27 +798,41 @@ import {
 describe("normalizeFontRole", () => {
   it("accepts a valid preset role", () => {
     const input = { type: "preset", stack: "system-ui, sans-serif" };
-    const result = normalizeFontRole(input, { type: "preset", stack: "system-ui" });
+    const result = normalizeFontRole(input, {
+      type: "preset",
+      stack: "system-ui",
+    });
     assert.equal(result.type, "preset");
     assert.equal(result.stack, "system-ui, sans-serif");
   });
 
   it("accepts a google role", () => {
-    const input = { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900] };
-    const result = normalizeFontRole(input, { type: "preset", stack: "system-ui" });
+    const input = {
+      type: "google",
+      family: "Inter",
+      isVariable: true,
+      weightRange: [100, 900],
+    };
+    const result = normalizeFontRole(input, {
+      type: "preset",
+      stack: "system-ui",
+    });
     assert.equal(result.type, "google");
     assert.equal(result.family, "Inter");
   });
 
   it("accepts inherit type", () => {
-    const result = normalizeFontRole({ type: "inherit" }, { type: "preset", stack: "system-ui" });
+    const result = normalizeFontRole(
+      { type: "inherit" },
+      { type: "preset", stack: "system-ui" },
+    );
     assert.equal(result.type, "inherit");
   });
 
   it("coerces old string fontHeading to preset object", () => {
     const result = normalizeFontRole(
       "var(--font-montserrat), 'Helvetica Neue', sans-serif",
-      { type: "preset", stack: "system-ui" }
+      { type: "preset", stack: "system-ui" },
     );
     assert.equal(result.type, "preset");
     assert.ok(result.stack.includes("montserrat"));
@@ -737,8 +846,15 @@ describe("normalizeFontRole", () => {
 
   it("strips unknown fields from google role", () => {
     const result = normalizeFontRole(
-      { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900], colorSlot: 1, evil: "hack" },
-      { type: "preset", stack: "system-ui" }
+      {
+        type: "google",
+        family: "Inter",
+        isVariable: true,
+        weightRange: [100, 900],
+        colorSlot: 1,
+        evil: "hack",
+      },
+      { type: "preset", stack: "system-ui" },
     );
     assert.equal(result.evil, undefined);
     assert.equal(result.colorSlot, 1);
@@ -753,7 +869,10 @@ describe("normalizeTypographyPalette", () => {
     assert.deepEqual(normalizeTypographyPalette(["#0a0a0a"]), ["#0a0a0a"]);
   });
   it("accepts two-entry palette", () => {
-    assert.deepEqual(normalizeTypographyPalette(["#0a0a0a", "#1c3d5a"]), ["#0a0a0a", "#1c3d5a"]);
+    assert.deepEqual(normalizeTypographyPalette(["#0a0a0a", "#1c3d5a"]), [
+      "#0a0a0a",
+      "#1c3d5a",
+    ]);
   });
   it("rejects non-hex entries", () => {
     assert.deepEqual(normalizeTypographyPalette(["notacolor"]), ["#111111"]);
@@ -771,7 +890,10 @@ describe("normalizeLinkStyle", () => {
     assert.equal(result.underlineDefault, "hover");
   });
   it("accepts valid values", () => {
-    const result = normalizeLinkStyle({ hoverVariant: "highlight", underlineDefault: "always" });
+    const result = normalizeLinkStyle({
+      hoverVariant: "highlight",
+      underlineDefault: "always",
+    });
     assert.equal(result.hoverVariant, "highlight");
   });
   it("rejects unknown hoverVariant", () => {
@@ -795,7 +917,13 @@ Add these constants and functions **before** `normalizeSiteStyle`. Also export t
 // After existing HEX_COLOR_RE constant, add:
 
 const VALID_HOVER_VARIANTS = new Set([
-  "none", "underline", "highlight", "inverse", "pill", "slide", "box",
+  "none",
+  "underline",
+  "highlight",
+  "inverse",
+  "pill",
+  "slide",
+  "box",
 ]);
 const VALID_UNDERLINE_DEFAULTS = new Set(["always", "hover", "never"]);
 
@@ -805,11 +933,22 @@ const DEFAULT_LINK_STYLE = {
 };
 
 const DEFAULT_FONT_ROLES = {
-  fontDisplay: { type: "preset", stack: "system-ui, -apple-system, 'Segoe UI', sans-serif", colorSlot: 1 },
-  fontHeading: { type: "preset", stack: "system-ui, -apple-system, 'Segoe UI', sans-serif", colorSlot: 1 },
+  fontDisplay: {
+    type: "preset",
+    stack: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+    colorSlot: 1,
+  },
+  fontHeading: {
+    type: "preset",
+    stack: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+    colorSlot: 1,
+  },
   fontSubheading: { type: "inherit" },
   fontBody: { type: "preset", stack: "Georgia, 'Times New Roman', serif" },
-  fontButton: { type: "preset", stack: "system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  fontButton: {
+    type: "preset",
+    stack: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+  },
 };
 
 export function normalizeFontRole(input, fallback) {
@@ -830,7 +969,8 @@ export function normalizeFontRole(input, fallback) {
     const stack = String(input.stack || "").trim();
     if (!stack) return { ...fallback };
     const result = { type: "preset", stack };
-    if (input.colorSlot === 1 || input.colorSlot === 2) result.colorSlot = input.colorSlot;
+    if (input.colorSlot === 1 || input.colorSlot === 2)
+      result.colorSlot = input.colorSlot;
     return result;
   }
 
@@ -840,14 +980,17 @@ export function normalizeFontRole(input, fallback) {
   const result = { type: "google", family };
   result.isVariable = Boolean(input.isVariable);
   if (result.isVariable) {
-    const [min, max] = Array.isArray(input.weightRange) ? input.weightRange : [100, 900];
+    const [min, max] = Array.isArray(input.weightRange)
+      ? input.weightRange
+      : [100, 900];
     result.weightRange = [Number(min) || 100, Number(max) || 900];
   } else {
     result.weights = Array.isArray(input.weights)
       ? input.weights.map(Number).filter((w) => w > 0)
       : [400];
   }
-  if (input.colorSlot === 1 || input.colorSlot === 2) result.colorSlot = input.colorSlot;
+  if (input.colorSlot === 1 || input.colorSlot === 2)
+    result.colorSlot = input.colorSlot;
   return result;
 }
 
@@ -856,7 +999,11 @@ export function normalizeTypographyPalette(input) {
   if (!Array.isArray(input) || input.length === 0) return DEFAULT;
   const validated = input
     .slice(0, 2)
-    .map((c) => (HEX_COLOR_RE.test(String(c || "").trim()) ? String(c).trim().toLowerCase() : null))
+    .map((c) =>
+      HEX_COLOR_RE.test(String(c || "").trim())
+        ? String(c).trim().toLowerCase()
+        : null,
+    )
     .filter(Boolean);
   return validated.length > 0 ? validated : DEFAULT;
 }
@@ -890,11 +1037,23 @@ function normalizeSiteStyle(input, fallback = DEFAULT_SITE_STYLE) {
     tertiary: normalizeHexColor(source.tertiary, fallback.tertiary),
     muted: normalizeHexColor(source.muted, fallback.muted),
     // Font role objects — normalizeFontRole coerces legacy strings to preset objects for backward compat
-    fontDisplay: normalizeFontRole(source.fontDisplay, DEFAULT_FONT_ROLES.fontDisplay),
-    fontHeading: normalizeFontRole(source.fontHeading, DEFAULT_FONT_ROLES.fontHeading),
-    fontSubheading: normalizeFontRole(source.fontSubheading, DEFAULT_FONT_ROLES.fontSubheading),
+    fontDisplay: normalizeFontRole(
+      source.fontDisplay,
+      DEFAULT_FONT_ROLES.fontDisplay,
+    ),
+    fontHeading: normalizeFontRole(
+      source.fontHeading,
+      DEFAULT_FONT_ROLES.fontHeading,
+    ),
+    fontSubheading: normalizeFontRole(
+      source.fontSubheading,
+      DEFAULT_FONT_ROLES.fontSubheading,
+    ),
     fontBody: normalizeFontRole(source.fontBody, DEFAULT_FONT_ROLES.fontBody),
-    fontButton: normalizeFontRole(source.fontButton, DEFAULT_FONT_ROLES.fontButton),
+    fontButton: normalizeFontRole(
+      source.fontButton,
+      DEFAULT_FONT_ROLES.fontButton,
+    ),
     // Palette and link style
     typographyPalette: normalizeTypographyPalette(source.typographyPalette),
     linkStyle: normalizeLinkStyle(source.linkStyle),
@@ -924,7 +1083,8 @@ function areSiteStylesEqual(left, right) {
     JSON.stringify(a.fontSubheading) === JSON.stringify(b.fontSubheading) &&
     JSON.stringify(a.fontBody) === JSON.stringify(b.fontBody) &&
     JSON.stringify(a.fontButton) === JSON.stringify(b.fontButton) &&
-    JSON.stringify(a.typographyPalette) === JSON.stringify(b.typographyPalette) &&
+    JSON.stringify(a.typographyPalette) ===
+      JSON.stringify(b.typographyPalette) &&
     JSON.stringify(a.linkStyle) === JSON.stringify(b.linkStyle)
   );
 }
@@ -948,6 +1108,7 @@ git commit -m "feat: extend siteStyle data model with font roles, palette, and l
 ## Task 5: Admin API routes — catalog and download
 
 **Files:**
+
 - Create: `src/app/api/admin/fonts/catalog/route.js`
 - Create: `src/app/api/admin/fonts/download/route.js`
 
@@ -1042,7 +1203,10 @@ export async function POST(request) {
   } catch (err) {
     // KV write failed — R2 files are orphaned but not harmful; log and surface error
     console.error("upsertDownloadedFont failed after R2 upload:", err);
-    return jsonError("Font was downloaded to R2 but could not be saved to KV. Try again.", 500);
+    return jsonError(
+      "Font was downloaded to R2 but could not be saved to KV. Try again.",
+      500,
+    );
   }
 
   return new Response(
@@ -1083,6 +1247,7 @@ git commit -m "feat: add admin fonts catalog and download API routes"
 ## Task 6: Public site-fonts route
 
 **Files:**
+
 - Create: `src/app/api/site-fonts/route.js`
 
 - [ ] **Step 1: Implement the route**
@@ -1132,6 +1297,7 @@ git commit -m "feat: add public /api/site-fonts @font-face CSS endpoint"
 ## Task 7: CSS variable expansion
 
 **Files:**
+
 - Modify: `src/app/globals.css`
 - Modify: `src/app/theme.generated.css`
 
@@ -1140,6 +1306,7 @@ git commit -m "feat: add public /api/site-fonts @font-face CSS endpoint"
 - [ ] **Step 1: Replace the heading block and add new font variable bindings**
 
 Find the existing heading block in `globals.css` (around line 32–43):
+
 ```css
 h1,
 h2,
@@ -1156,6 +1323,7 @@ h6 {
 ```
 
 Replace with:
+
 ```css
 h1,
 h2,
@@ -1184,7 +1352,10 @@ h4 {
 h5,
 h6 {
   font-family: var(--font-subheading, var(--font-heading));
-  color: var(--font-color-subheading, var(--font-color-heading, var(--foreground)));
+  color: var(
+    --font-color-subheading,
+    var(--font-color-heading, var(--foreground))
+  );
 }
 ```
 
@@ -1295,19 +1466,26 @@ Append to `globals.css`:
 Add to the `:root` block (after the existing `--font-body` and `--font-heading` lines):
 
 ```css
-  --font-display: var(--font-heading);
-  --font-subheading: var(--font-heading);
-  --font-button: var(--font-heading);
-  --font-color-display: var(--color-foreground);
-  --font-color-heading: var(--color-foreground);
-  --font-color-subheading: var(--color-foreground);
+--font-display: var(--font-heading);
+--font-subheading: var(--font-heading);
+--font-button: var(--font-heading);
+--font-color-display: var(--color-foreground);
+--font-color-heading: var(--color-foreground);
+--font-color-subheading: var(--color-foreground);
 ```
 
 Also add utility classes at the bottom:
+
 ```css
-.font-display { font-family: var(--font-display); }
-.font-subheading { font-family: var(--font-subheading); }
-.font-button { font-family: var(--font-button); }
+.font-display {
+  font-family: var(--font-display);
+}
+.font-subheading {
+  font-family: var(--font-subheading);
+}
+.font-button {
+  font-family: var(--font-button);
+}
 ```
 
 - [ ] **Step 5: Verify the site still renders correctly**
@@ -1330,9 +1508,11 @@ git commit -m "feat: expand CSS font variables and add link hover variant rules"
 ## Task 8: Update layout.js
 
 **Files:**
+
 - Modify: `src/app/layout.js`
 
 The existing inline script (line 111 in layout.js) applies CSS variables from `/api/site-style`. We need to:
+
 1. Extend it to handle the 5 new font role objects → CSS variables
 2. Apply 3 color variables from `typographyPalette`
 3. Set `data-link-style` and `data-link-underline` attributes on `<body>`
@@ -1369,7 +1549,8 @@ The current script is the long one-liner on line 111. Replace the `dangerouslySe
   function fontFamilyValue(role) {
     if (!role || typeof role !== "object") return null;
     if (role.type === "preset") return role.stack || null;
-    if (role.type === "google") return "'" + role.family + "', system-ui, sans-serif";
+    if (role.type === "google")
+      return "'" + role.family + "', system-ui, sans-serif";
     return null; // inherit — handled by CSS var()
   }
 
@@ -1411,7 +1592,9 @@ The current script is the long one-liner on line 111. Replace the `dangerouslySe
     }
 
     // Apply typography color variables from palette
-    var palette = Array.isArray(style.typographyPalette) ? style.typographyPalette : ["#111111"];
+    var palette = Array.isArray(style.typographyPalette)
+      ? style.typographyPalette
+      : ["#111111"];
     var colorRoles = {
       fontDisplay: "--font-color-display",
       fontHeading: "--font-color-heading",
@@ -1420,13 +1603,17 @@ The current script is the long one-liner on line 111. Replace the `dangerouslySe
     for (var cr in colorRoles) {
       if (!Object.prototype.hasOwnProperty.call(colorRoles, cr)) continue;
       var roleObj = style[cr];
-      var slot = roleObj && typeof roleObj === "object" ? roleObj.colorSlot : null;
+      var slot =
+        roleObj && typeof roleObj === "object" ? roleObj.colorSlot : null;
       var hex = slot && palette[slot - 1] ? palette[slot - 1] : null;
       if (hex) root.style.setProperty(colorRoles[cr], hex);
     }
 
     // Set link hover data attributes on body
-    var linkStyle = style.linkStyle && typeof style.linkStyle === "object" ? style.linkStyle : {};
+    var linkStyle =
+      style.linkStyle && typeof style.linkStyle === "object"
+        ? style.linkStyle
+        : {};
     var hoverVariant = linkStyle.hoverVariant || "underline";
     var underlineDefault = linkStyle.underlineDefault || "hover";
     document.body.setAttribute("data-link-style", hoverVariant);
@@ -1439,20 +1626,26 @@ The current script is the long one-liner on line 111. Replace the `dangerouslySe
   } catch (_) {}
 
   fetch("/api/site-style")
-    .then(function (res) { return res.ok ? res.json() : null; })
+    .then(function (res) {
+      return res.ok ? res.json() : null;
+    })
     .then(function (payload) {
       if (!payload || payload.ok !== true || !payload.siteStyle) return;
       apply(payload.siteStyle);
-      try { localStorage.setItem(KEY, JSON.stringify(payload.siteStyle)); } catch (_) {}
+      try {
+        localStorage.setItem(KEY, JSON.stringify(payload.siteStyle));
+      } catch (_) {}
     })
     .catch(function () {});
 })();
 ```
 
 **Important:** Minify this script before placing it as a string in the JSX. Use any online minifier or:
+
 ```bash
 npx terser --compress --mangle -- /tmp/inline-script.js
 ```
+
 Then put the minified output as the `__html` value in `dangerouslySetInnerHTML`.
 
 - [ ] **Step 3: Verify the site still loads correctly**
@@ -1476,6 +1669,7 @@ git commit -m "feat: add site-fonts link and extend inline style script for new 
 ## Task 9: Built-in typography themes
 
 **Files:**
+
 - Create: `src/lib/typographyThemes.js`
 
 - [ ] **Step 1: Implement the themes file**
@@ -1492,55 +1686,198 @@ export const TYPOGRAPHY_THEMES = [
     name: "Clean",
     description: "Sharp, neutral. Works everywhere.",
     typographyPalette: ["#0f0f0f", "#1a1a1a"],
-    fontDisplay:    { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900], colorSlot: 1 },
-    fontHeading:    { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900], colorSlot: 2 },
-    fontSubheading: { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900], colorSlot: 2 },
-    fontBody:       { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900] },
-    fontButton:     { type: "google", family: "Inter", isVariable: true, weightRange: [100, 900] },
+    fontDisplay: {
+      type: "google",
+      family: "Inter",
+      isVariable: true,
+      weightRange: [100, 900],
+      colorSlot: 1,
+    },
+    fontHeading: {
+      type: "google",
+      family: "Inter",
+      isVariable: true,
+      weightRange: [100, 900],
+      colorSlot: 2,
+    },
+    fontSubheading: {
+      type: "google",
+      family: "Inter",
+      isVariable: true,
+      weightRange: [100, 900],
+      colorSlot: 2,
+    },
+    fontBody: {
+      type: "google",
+      family: "Inter",
+      isVariable: true,
+      weightRange: [100, 900],
+    },
+    fontButton: {
+      type: "google",
+      family: "Inter",
+      isVariable: true,
+      weightRange: [100, 900],
+    },
   },
   {
     id: "editorial",
     name: "Editorial",
-    description: "Magazine tension: high-contrast serif display + clean sans body.",
+    description:
+      "Magazine tension: high-contrast serif display + clean sans body.",
     typographyPalette: ["#0a0a0a", "#1c3d5a"],
-    fontDisplay:    { type: "google", family: "Playfair Display", isVariable: false, weights: [700], colorSlot: 1 },
-    fontHeading:    { type: "google", family: "DM Sans",          isVariable: true,  weightRange: [100, 700], colorSlot: 2 },
-    fontSubheading: { type: "google", family: "DM Sans",          isVariable: true,  weightRange: [100, 700], colorSlot: 2 },
-    fontBody:       { type: "google", family: "Lora",             isVariable: false, weights: [400, 600] },
-    fontButton:     { type: "google", family: "DM Sans",          isVariable: true,  weightRange: [100, 700] },
+    fontDisplay: {
+      type: "google",
+      family: "Playfair Display",
+      isVariable: false,
+      weights: [700],
+      colorSlot: 1,
+    },
+    fontHeading: {
+      type: "google",
+      family: "DM Sans",
+      isVariable: true,
+      weightRange: [100, 700],
+      colorSlot: 2,
+    },
+    fontSubheading: {
+      type: "google",
+      family: "DM Sans",
+      isVariable: true,
+      weightRange: [100, 700],
+      colorSlot: 2,
+    },
+    fontBody: {
+      type: "google",
+      family: "Lora",
+      isVariable: false,
+      weights: [400, 600],
+    },
+    fontButton: {
+      type: "google",
+      family: "DM Sans",
+      isVariable: true,
+      weightRange: [100, 700],
+    },
   },
   {
     id: "technical",
     name: "Technical",
     description: "Startup energy. Geometric with personality.",
     typographyPalette: ["#09090b", "#3b3b4f"],
-    fontDisplay:    { type: "google", family: "Space Grotesk", isVariable: true,  weightRange: [300, 700], colorSlot: 1 },
-    fontHeading:    { type: "google", family: "Space Grotesk", isVariable: true,  weightRange: [300, 700], colorSlot: 2 },
-    fontSubheading: { type: "google", family: "IBM Plex Sans", isVariable: false, weights: [400, 500],     colorSlot: 2 },
-    fontBody:       { type: "google", family: "IBM Plex Sans", isVariable: false, weights: [400] },
-    fontButton:     { type: "google", family: "Space Grotesk", isVariable: true,  weightRange: [300, 700] },
+    fontDisplay: {
+      type: "google",
+      family: "Space Grotesk",
+      isVariable: true,
+      weightRange: [300, 700],
+      colorSlot: 1,
+    },
+    fontHeading: {
+      type: "google",
+      family: "Space Grotesk",
+      isVariable: true,
+      weightRange: [300, 700],
+      colorSlot: 2,
+    },
+    fontSubheading: {
+      type: "google",
+      family: "IBM Plex Sans",
+      isVariable: false,
+      weights: [400, 500],
+      colorSlot: 2,
+    },
+    fontBody: {
+      type: "google",
+      family: "IBM Plex Sans",
+      isVariable: false,
+      weights: [400],
+    },
+    fontButton: {
+      type: "google",
+      family: "Space Grotesk",
+      isVariable: true,
+      weightRange: [300, 700],
+    },
   },
   {
     id: "warm",
     name: "Warm",
-    description: "Approachable and human. Optical-size serif display + rounded sans.",
+    description:
+      "Approachable and human. Optical-size serif display + rounded sans.",
     typographyPalette: ["#1a0f0a", "#4a3728"],
-    fontDisplay:    { type: "google", family: "Fraunces", isVariable: true, weightRange: [100, 900], colorSlot: 1 },
-    fontHeading:    { type: "google", family: "Nunito",   isVariable: true, weightRange: [200, 900], colorSlot: 2 },
-    fontSubheading: { type: "google", family: "Nunito",   isVariable: true, weightRange: [200, 900], colorSlot: 2 },
-    fontBody:       { type: "google", family: "Nunito",   isVariable: true, weightRange: [200, 900] },
-    fontButton:     { type: "google", family: "Nunito",   isVariable: true, weightRange: [200, 900] },
+    fontDisplay: {
+      type: "google",
+      family: "Fraunces",
+      isVariable: true,
+      weightRange: [100, 900],
+      colorSlot: 1,
+    },
+    fontHeading: {
+      type: "google",
+      family: "Nunito",
+      isVariable: true,
+      weightRange: [200, 900],
+      colorSlot: 2,
+    },
+    fontSubheading: {
+      type: "google",
+      family: "Nunito",
+      isVariable: true,
+      weightRange: [200, 900],
+      colorSlot: 2,
+    },
+    fontBody: {
+      type: "google",
+      family: "Nunito",
+      isVariable: true,
+      weightRange: [200, 900],
+    },
+    fontButton: {
+      type: "google",
+      family: "Nunito",
+      isVariable: true,
+      weightRange: [200, 900],
+    },
   },
   {
     id: "haute",
     name: "Haute",
-    description: "Fashion/luxury. Ultra-light display, geometric sans, classical body serif.",
+    description:
+      "Fashion/luxury. Ultra-light display, geometric sans, classical body serif.",
     typographyPalette: ["#0d0d0d", "#8b6f47"],
-    fontDisplay:    { type: "google", family: "Cormorant Garamond", isVariable: false, weights: [300, 600], colorSlot: 1 },
-    fontHeading:    { type: "google", family: "Raleway",            isVariable: true,  weightRange: [100, 900], colorSlot: 2 },
-    fontSubheading: { type: "google", family: "Raleway",            isVariable: true,  weightRange: [100, 900], colorSlot: 2 },
-    fontBody:       { type: "google", family: "Crimson Pro",        isVariable: true,  weightRange: [200, 900] },
-    fontButton:     { type: "google", family: "Raleway",            isVariable: true,  weightRange: [100, 900] },
+    fontDisplay: {
+      type: "google",
+      family: "Cormorant Garamond",
+      isVariable: false,
+      weights: [300, 600],
+      colorSlot: 1,
+    },
+    fontHeading: {
+      type: "google",
+      family: "Raleway",
+      isVariable: true,
+      weightRange: [100, 900],
+      colorSlot: 2,
+    },
+    fontSubheading: {
+      type: "google",
+      family: "Raleway",
+      isVariable: true,
+      weightRange: [100, 900],
+      colorSlot: 2,
+    },
+    fontBody: {
+      type: "google",
+      family: "Crimson Pro",
+      isVariable: true,
+      weightRange: [200, 900],
+    },
+    fontButton: {
+      type: "google",
+      family: "Raleway",
+      isVariable: true,
+      weightRange: [100, 900],
+    },
   },
 ];
 ```
@@ -1557,9 +1894,11 @@ git commit -m "feat: add five built-in typography theme presets"
 ## Task 10: AdminFontBrowserModal component
 
 **Files:**
+
 - Create: `src/components/admin/AdminFontBrowserModal.js`
 
 This is a large React component. It:
+
 - Accepts `{ role, currentFamily, onSelect, onClose }` props
 - Fetches catalog from `/api/admin/fonts/catalog` on mount
 - Shows search input, category filter, variable-only toggle
@@ -1575,7 +1914,14 @@ This is a large React component. It:
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 
-const CATEGORIES = ["All", "sans-serif", "serif", "display", "handwriting", "monospace"];
+const CATEGORIES = [
+  "All",
+  "sans-serif",
+  "serif",
+  "display",
+  "handwriting",
+  "monospace",
+];
 const PREVIEW_TEXT_KEY = "ragbaz-font-preview-text";
 const DEFAULT_PREVIEW = "The quick brown fox jumps over the lazy dog";
 const PAGE_SIZE = 20;
@@ -1614,18 +1960,31 @@ function useGoogleFontsPreview() {
   return { previewFont, cleanup };
 }
 
-export default function AdminFontBrowserModal({ role, currentFamily, downloadedFamilies, onSelect, onClose, onDownloadStart, onDownloadEnd }) {
+export default function AdminFontBrowserModal({
+  role,
+  currentFamily,
+  downloadedFamilies,
+  onSelect,
+  onClose,
+  onDownloadStart,
+  onDownloadEnd,
+}) {
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [variableOnly, setVariableOnly] = useState(false);
   const [previewText, setPreviewText] = useState(
-    () => (typeof localStorage !== "undefined" && localStorage.getItem(PREVIEW_TEXT_KEY)) || DEFAULT_PREVIEW
+    () =>
+      (typeof localStorage !== "undefined" &&
+        localStorage.getItem(PREVIEW_TEXT_KEY)) ||
+      DEFAULT_PREVIEW,
   );
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [downloading, setDownloading] = useState(new Set()); // families currently downloading
-  const [downloaded, setDownloaded] = useState(new Set(downloadedFamilies || []));
+  const [downloaded, setDownloaded] = useState(
+    new Set(downloadedFamilies || []),
+  );
   const [weightPickerFamily, setWeightPickerFamily] = useState(null); // for non-variable download
   const [selectedWeights, setSelectedWeights] = useState([400, 700]);
   const sentinelRef = useRef(null);
@@ -1648,8 +2007,10 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) setVisibleCount((c) => c + PAGE_SIZE); },
-      { rootMargin: "200px" }
+      (entries) => {
+        if (entries[0].isIntersecting) setVisibleCount((c) => c + PAGE_SIZE);
+      },
+      { rootMargin: "200px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -1657,12 +2018,15 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
 
   // Persist preview text
   useEffect(() => {
-    try { localStorage.setItem(PREVIEW_TEXT_KEY, previewText); } catch (_) {}
+    try {
+      localStorage.setItem(PREVIEW_TEXT_KEY, previewText);
+    } catch (_) {}
   }, [previewText]);
 
   // Filtered + sliced list
   const filtered = catalog.filter((f) => {
-    if (search && !f.family.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !f.family.toLowerCase().includes(search.toLowerCase()))
+      return false;
     if (category !== "All" && f.category !== category) return false;
     if (variableOnly && !f.axes?.some((a) => a.tag === "wght")) return false;
     return true;
@@ -1680,7 +2044,11 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
       });
       if (res.ok) setDownloaded((d) => new Set([...d, family]));
     } finally {
-      setDownloading((d) => { const s = new Set(d); s.delete(family); return s; });
+      setDownloading((d) => {
+        const s = new Set(d);
+        s.delete(family);
+        return s;
+      });
       setWeightPickerFamily(null);
       if (onDownloadEnd) onDownloadEnd();
     }
@@ -1701,18 +2069,29 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
     }
   }
 
-  const roleLabel = {
-    fontDisplay: "Display", fontHeading: "Heading",
-    fontSubheading: "Subheading", fontBody: "Body", fontButton: "Button",
-  }[role] || role;
+  const roleLabel =
+    {
+      fontDisplay: "Display",
+      fontHeading: "Heading",
+      fontSubheading: "Subheading",
+      fontBody: "Body",
+      fontButton: "Button",
+    }[role] || role;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 pt-12 overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[80vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Choose {roleLabel} Font</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-2xl leading-none">&times;</button>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Choose {roleLabel} Font
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-900 text-2xl leading-none"
+          >
+            &times;
+          </button>
         </div>
 
         {/* Controls */}
@@ -1721,21 +2100,32 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
             type="text"
             placeholder="Search fonts…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setVisibleCount(PAGE_SIZE);
+            }}
             className="flex-1 min-w-48 px-3 py-1.5 border rounded-lg text-sm"
           />
           <select
             value={category}
-            onChange={(e) => { setCategory(e.target.value); setVisibleCount(PAGE_SIZE); }}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setVisibleCount(PAGE_SIZE);
+            }}
             className="px-3 py-1.5 border rounded-lg text-sm bg-white"
           >
-            {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            {CATEGORIES.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
           </select>
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
             <input
               type="checkbox"
               checked={variableOnly}
-              onChange={(e) => { setVariableOnly(e.target.checked); setVisibleCount(PAGE_SIZE); }}
+              onChange={(e) => {
+                setVariableOnly(e.target.checked);
+                setVisibleCount(PAGE_SIZE);
+              }}
               className="rounded"
             />
             Variable only
@@ -1754,7 +2144,9 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
 
         {/* Font list */}
         <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-          {loading && <div className="p-8 text-center text-gray-400">Loading fonts…</div>}
+          {loading && (
+            <div className="p-8 text-center text-gray-400">Loading fonts…</div>
+          )}
           {!loading && visible.length === 0 && (
             <div className="p-8 text-center text-gray-400">No fonts found.</div>
           )}
@@ -1776,7 +2168,11 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-gray-800 mb-1">
                     {font.family}
-                    {isVar && <span className="ml-2 text-xs text-indigo-500">Variable</span>}
+                    {isVar && (
+                      <span className="ml-2 text-xs text-indigo-500">
+                        Variable
+                      </span>
+                    )}
                   </div>
                   <div
                     className="text-base text-gray-700 truncate"
@@ -1787,7 +2183,9 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {isDl ? (
-                    <span className="text-xs text-green-600 font-medium">◉ Downloaded</span>
+                    <span className="text-xs text-green-600 font-medium">
+                      ◉ Downloaded
+                    </span>
                   ) : isVar ? (
                     <button
                       onClick={() => downloadFont(font.family)}
@@ -1798,7 +2196,10 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
                     </button>
                   ) : (
                     <button
-                      onClick={() => { setWeightPickerFamily(font.family); setSelectedWeights([400, 700]); }}
+                      onClick={() => {
+                        setWeightPickerFamily(font.family);
+                        setSelectedWeights([400, 700]);
+                      }}
                       disabled={isDling}
                       className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-100 disabled:opacity-50"
                     >
@@ -1820,52 +2221,60 @@ export default function AdminFontBrowserModal({ role, currentFamily, downloadedF
         </div>
 
         {/* Weight picker popover (non-variable fonts) */}
-        {weightPickerFamily && (() => {
-          const wf = catalog.find((f) => f.family === weightPickerFamily);
-          const availableWeights = wf
-            ? wf.variants
-                .map((v) => (v === "regular" ? 400 : parseInt(v, 10)))
-                .filter((n) => !isNaN(n))
-            : [400, 700];
-          return (
-            <div className="border-t p-6">
-              <div className="font-medium text-sm text-gray-800 mb-3">
-                Select weights for {weightPickerFamily}
+        {weightPickerFamily &&
+          (() => {
+            const wf = catalog.find((f) => f.family === weightPickerFamily);
+            const availableWeights = wf
+              ? wf.variants
+                  .map((v) => (v === "regular" ? 400 : parseInt(v, 10)))
+                  .filter((n) => !isNaN(n))
+              : [400, 700];
+            return (
+              <div className="border-t p-6">
+                <div className="font-medium text-sm text-gray-800 mb-3">
+                  Select weights for {weightPickerFamily}
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {availableWeights.map((w) => (
+                    <label
+                      key={w}
+                      className="flex items-center gap-1.5 text-sm cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedWeights.includes(w)}
+                        onChange={(e) =>
+                          setSelectedWeights((ws) =>
+                            e.target.checked
+                              ? [...ws, w]
+                              : ws.filter((x) => x !== w),
+                          )
+                        }
+                      />
+                      {w}
+                    </label>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      downloadFont(weightPickerFamily, selectedWeights)
+                    }
+                    disabled={selectedWeights.length === 0}
+                    className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    Download
+                  </button>
+                  <button
+                    onClick={() => setWeightPickerFamily(null)}
+                    className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {availableWeights.map((w) => (
-                  <label key={w} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedWeights.includes(w)}
-                      onChange={(e) =>
-                        setSelectedWeights((ws) =>
-                          e.target.checked ? [...ws, w] : ws.filter((x) => x !== w)
-                        )
-                      }
-                    />
-                    {w}
-                  </label>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => downloadFont(weightPickerFamily, selectedWeights)}
-                  disabled={selectedWeights.length === 0}
-                  className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  Download
-                </button>
-                <button
-                  onClick={() => setWeightPickerFamily(null)}
-                  className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
       </div>
     </div>
   );
@@ -1884,6 +2293,7 @@ git commit -m "feat: add AdminFontBrowserModal component"
 ## Task 11: Update AdminDashboard.js typography UI
 
 **Files:**
+
 - Modify: `src/components/admin/AdminDashboard.js`
 
 This is the largest change. The AdminDashboard.js file is ~2600 lines. The typography section lives around lines 2132–2320. We're replacing the 2-dropdown font UI with the 5-role card system.
@@ -1906,17 +2316,34 @@ Find where `siteStyleTokens` state is declared (around line 300 in the component
 ```js
 // Font role state (new system)
 const [fontRoles, setFontRoles] = useState({
-  fontDisplay: siteStyleTokens.fontDisplay || { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
-  fontHeading: siteStyleTokens.fontHeading || { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+  fontDisplay: siteStyleTokens.fontDisplay || {
+    type: "preset",
+    stack: "system-ui, sans-serif",
+    colorSlot: 1,
+  },
+  fontHeading: siteStyleTokens.fontHeading || {
+    type: "preset",
+    stack: "system-ui, sans-serif",
+    colorSlot: 1,
+  },
   fontSubheading: siteStyleTokens.fontSubheading || { type: "inherit" },
-  fontBody: siteStyleTokens.fontBody || { type: "preset", stack: "Georgia, serif" },
-  fontButton: siteStyleTokens.fontButton || { type: "preset", stack: "system-ui, sans-serif" },
+  fontBody: siteStyleTokens.fontBody || {
+    type: "preset",
+    stack: "Georgia, serif",
+  },
+  fontButton: siteStyleTokens.fontButton || {
+    type: "preset",
+    stack: "system-ui, sans-serif",
+  },
 });
 const [typographyPalette, setTypographyPalette] = useState(
-  siteStyleTokens.typographyPalette || ["#111111"]
+  siteStyleTokens.typographyPalette || ["#111111"],
 );
 const [linkStyle, setLinkStyle] = useState(
-  siteStyleTokens.linkStyle || { hoverVariant: "underline", underlineDefault: "hover" }
+  siteStyleTokens.linkStyle || {
+    hoverVariant: "underline",
+    underlineDefault: "hover",
+  },
 );
 const [fontBrowserRole, setFontBrowserRole] = useState(null); // null = closed
 const [downloadedFamilies, setDownloadedFamilies] = useState([]);
@@ -1952,7 +2379,8 @@ function applyFontRolesToDom(roles, palette, ls) {
   function fontFamilyValue(role) {
     if (!role || typeof role !== "object") return null;
     if (role.type === "preset") return role.stack || null;
-    if (role.type === "google") return `'${role.family}', system-ui, sans-serif`;
+    if (role.type === "google")
+      return `'${role.family}', system-ui, sans-serif`;
     return null;
   }
 
@@ -2013,14 +2441,16 @@ async function saveSiteStyleSettings() {
 ```
 
 Note: The save payload must include all five font role objects plus `typographyPalette` and `linkStyle`. In the `handleSave` function (or equivalent), spread fontRoles into the siteStyle update:
+
 ```js
 const updatedStyle = {
   ...currentSiteStyle,
-  ...fontRoles,          // fontDisplay, fontHeading, fontSubheading, fontBody, fontButton
+  ...fontRoles, // fontDisplay, fontHeading, fontSubheading, fontBody, fontButton
   typographyPalette,
   linkStyle,
 };
 ```
+
 All five keys are object-shaped after normalization — no legacy string fields need to be kept separately.
 
 ### 11b: Replace the typography UI section
@@ -2030,9 +2460,13 @@ All five keys are object-shaped after normalization — no legacy string fields 
 Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("admin.styleHeadingFontLabel")`). Replace the two font dropdown selects and their preview boxes with the new role-card UI:
 
 ```jsx
-{/* Typography section — replace existing font dropdowns with this */}
+{
+  /* Typography section — replace existing font dropdowns with this */
+}
 <div className="space-y-4">
-  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Typography</h3>
+  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+    Typography
+  </h3>
 
   {/* Themes strip */}
   <div>
@@ -2051,10 +2485,15 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
             });
             setTypographyPalette(theme.typographyPalette);
             applyFontRolesToDom(
-              { fontDisplay: theme.fontDisplay, fontHeading: theme.fontHeading,
-                fontSubheading: theme.fontSubheading, fontBody: theme.fontBody,
-                fontButton: theme.fontButton },
-              theme.typographyPalette, linkStyle
+              {
+                fontDisplay: theme.fontDisplay,
+                fontHeading: theme.fontHeading,
+                fontSubheading: theme.fontSubheading,
+                fontBody: theme.fontBody,
+                fontButton: theme.fontButton,
+              },
+              theme.typographyPalette,
+              linkStyle,
             );
           }}
           className="px-3 py-1.5 text-xs border rounded-full hover:bg-gray-100 hover:border-gray-400"
@@ -2088,7 +2527,9 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
       ))}
       {typographyPalette.length < 2 ? (
         <button
-          onClick={() => setTypographyPalette([...typographyPalette, "#4682b4"])}
+          onClick={() =>
+            setTypographyPalette([...typographyPalette, "#4682b4"])
+          }
           className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
         >
           + Second color
@@ -2100,8 +2541,13 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
             setTypographyPalette(next);
             // Reset slot-2 roles to slot 1
             const updated = { ...fontRoles };
-            for (const key of ["fontDisplay", "fontHeading", "fontSubheading"]) {
-              if (updated[key]?.colorSlot === 2) updated[key] = { ...updated[key], colorSlot: 1 };
+            for (const key of [
+              "fontDisplay",
+              "fontHeading",
+              "fontSubheading",
+            ]) {
+              if (updated[key]?.colorSlot === 2)
+                updated[key] = { ...updated[key], colorSlot: 1 };
             }
             setFontRoles(updated);
             applyFontRolesToDom(updated, next, linkStyle);
@@ -2117,19 +2563,35 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
   {/* Font role cards */}
   {[
     { key: "fontDisplay", label: "Display", elements: "h1", hasColor: true },
-    { key: "fontHeading", label: "Heading", elements: "h2, h3, h4", hasColor: true },
-    { key: "fontSubheading", label: "Subheading", elements: "h5, h6", hasColor: true },
+    {
+      key: "fontHeading",
+      label: "Heading",
+      elements: "h2, h3, h4",
+      hasColor: true,
+    },
+    {
+      key: "fontSubheading",
+      label: "Subheading",
+      elements: "h5, h6",
+      hasColor: true,
+    },
     { key: "fontBody", label: "Body", elements: "body, p", hasColor: false },
     { key: "fontButton", label: "Button", elements: "button", hasColor: false },
   ].map(({ key, label, elements, hasColor }) => {
     const role = fontRoles[key];
     const fontLabel =
-      role?.type === "google" ? `${role.family}${role.isVariable ? " Variable" : ""}` :
-      role?.type === "inherit" ? "(inherits Heading)" :
-      role?.type === "preset" ? "Preset" : "—";
-    const weightLabel =
-      role?.isVariable ? `${role.weightRange?.[0]}–${role.weightRange?.[1]}` :
-      role?.weights ? role.weights.join(", ") : "";
+      role?.type === "google"
+        ? `${role.family}${role.isVariable ? " Variable" : ""}`
+        : role?.type === "inherit"
+          ? "(inherits Heading)"
+          : role?.type === "preset"
+            ? "Preset"
+            : "—";
+    const weightLabel = role?.isVariable
+      ? `${role.weightRange?.[0]}–${role.weightRange?.[1]}`
+      : role?.weights
+        ? role.weights.join(", ")
+        : "";
     const slot = role?.colorSlot;
 
     return (
@@ -2140,13 +2602,22 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
             onClick={() => {
               if (typographyPalette.length < 2) return;
               const nextSlot = slot === 2 ? 1 : 2;
-              const updated = { ...fontRoles, [key]: { ...role, colorSlot: nextSlot } };
+              const updated = {
+                ...fontRoles,
+                [key]: { ...role, colorSlot: nextSlot },
+              };
               setFontRoles(updated);
               applyFontRolesToDom(updated, typographyPalette, linkStyle);
             }}
             className="w-5 h-5 rounded-full border-2 border-white ring-1 ring-gray-300 shrink-0 cursor-pointer"
-            style={{ backgroundColor: typographyPalette[(slot || 1) - 1] || "#111" }}
-            title={typographyPalette.length < 2 ? "Add second color to enable slot switching" : `Color slot ${slot || 1}`}
+            style={{
+              backgroundColor: typographyPalette[(slot || 1) - 1] || "#111",
+            }}
+            title={
+              typographyPalette.length < 2
+                ? "Add second color to enable slot switching"
+                : `Color slot ${slot || 1}`
+            }
           />
         )}
         {!hasColor && <div className="w-5 h-5 shrink-0" />}
@@ -2157,7 +2628,9 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
           <div className="text-xs text-gray-500">{elements}</div>
           <div className="text-xs text-gray-700 mt-0.5">
             {fontLabel}
-            {weightLabel && <span className="ml-2 text-gray-400">{weightLabel}</span>}
+            {weightLabel && (
+              <span className="ml-2 text-gray-400">{weightLabel}</span>
+            )}
           </div>
         </div>
 
@@ -2167,11 +2640,22 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
             <button
               onClick={() => {
                 const defaults = {
-                  fontDisplay: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
-                  fontHeading: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+                  fontDisplay: {
+                    type: "preset",
+                    stack: "system-ui, sans-serif",
+                    colorSlot: 1,
+                  },
+                  fontHeading: {
+                    type: "preset",
+                    stack: "system-ui, sans-serif",
+                    colorSlot: 1,
+                  },
                   fontSubheading: { type: "inherit" },
                   fontBody: { type: "preset", stack: "Georgia, serif" },
-                  fontButton: { type: "preset", stack: "system-ui, sans-serif" },
+                  fontButton: {
+                    type: "preset",
+                    stack: "system-ui, sans-serif",
+                  },
                 };
                 const updated = { ...fontRoles, [key]: defaults[key] };
                 setFontRoles(updated);
@@ -2179,7 +2663,9 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
               }}
               className="text-gray-400 hover:text-gray-700 text-lg leading-none"
               title="Reset to preset"
-            >×</button>
+            >
+              ×
+            </button>
           )}
           <button
             onClick={() => setFontBrowserRole(key)}
@@ -2199,7 +2685,10 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
     <div className="flex items-center gap-3 flex-wrap">
       <span className="text-xs text-gray-600">Underline:</span>
       {["always", "hover", "never"].map((v) => (
-        <label key={v} className="flex items-center gap-1.5 text-xs cursor-pointer">
+        <label
+          key={v}
+          className="flex items-center gap-1.5 text-xs cursor-pointer"
+        >
           <input
             type="radio"
             name="underlineDefault"
@@ -2216,7 +2705,15 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
       ))}
     </div>
     <div className="flex flex-wrap gap-2">
-      {["none", "underline", "highlight", "inverse", "pill", "slide", "box"].map((variant) => (
+      {[
+        "none",
+        "underline",
+        "highlight",
+        "inverse",
+        "pill",
+        "slide",
+        "box",
+      ].map((variant) => (
         <button
           key={variant}
           onClick={() => {
@@ -2231,25 +2728,29 @@ Find the section starting around line 2175 (`{/* Typography / Fonts */}` or `t("
       ))}
     </div>
   </div>
-</div>
+</div>;
 
-{/* Font browser modal */}
-{fontBrowserRole && (
-  <AdminFontBrowserModal
-    role={fontBrowserRole}
-    currentFamily={fontRoles[fontBrowserRole]?.family}
-    downloadedFamilies={downloadedFamilies}
-    onSelect={(roleObj) => {
-      const updated = { ...fontRoles, [fontBrowserRole]: roleObj };
-      setFontRoles(updated);
-      applyFontRolesToDom(updated, typographyPalette, linkStyle);
-      setFontBrowserRole(null);
-    }}
-    onClose={() => setFontBrowserRole(null)}
-    onDownloadStart={() => setDownloadingRole(fontBrowserRole)}
-    onDownloadEnd={() => setDownloadingRole(null)}
-  />
-)}
+{
+  /* Font browser modal */
+}
+{
+  fontBrowserRole && (
+    <AdminFontBrowserModal
+      role={fontBrowserRole}
+      currentFamily={fontRoles[fontBrowserRole]?.family}
+      downloadedFamilies={downloadedFamilies}
+      onSelect={(roleObj) => {
+        const updated = { ...fontRoles, [fontBrowserRole]: roleObj };
+        setFontRoles(updated);
+        applyFontRolesToDom(updated, typographyPalette, linkStyle);
+        setFontBrowserRole(null);
+      }}
+      onClose={() => setFontBrowserRole(null)}
+      onDownloadStart={() => setDownloadingRole(fontBrowserRole)}
+      onDownloadEnd={() => setDownloadingRole(null)}
+    />
+  );
+}
 ```
 
 - [ ] **Step 7: Load initial font role state from settings API**
@@ -2260,9 +2761,12 @@ Find where `siteStyleTokens` is initialized from the API response (in the `useEf
 // Inside the shop-settings GET useEffect, after setSiteStyleTokens(...)
 if (settings.siteStyle) {
   const s = settings.siteStyle;
-  if (s.fontDisplay) setFontRoles((prev) => ({ ...prev, fontDisplay: s.fontDisplay }));
-  if (s.fontSubheading) setFontRoles((prev) => ({ ...prev, fontSubheading: s.fontSubheading }));
-  if (s.fontButton) setFontRoles((prev) => ({ ...prev, fontButton: s.fontButton }));
+  if (s.fontDisplay)
+    setFontRoles((prev) => ({ ...prev, fontDisplay: s.fontDisplay }));
+  if (s.fontSubheading)
+    setFontRoles((prev) => ({ ...prev, fontSubheading: s.fontSubheading }));
+  if (s.fontButton)
+    setFontRoles((prev) => ({ ...prev, fontButton: s.fontButton }));
   if (s.typographyPalette) setTypographyPalette(s.typographyPalette);
   if (s.linkStyle) setLinkStyle(s.linkStyle);
   // fontHeading and fontBody: the new UI stores them as fontDisplay / fontHeading
@@ -2295,6 +2799,7 @@ git commit -m "feat: replace font dropdowns with typography role cards, palette 
 ## Task 12: i18n keys
 
 **Files:**
+
 - Modify: `src/lib/i18n/en.json`
 - Modify: `src/lib/i18n/sv.json`
 - Modify: `src/lib/i18n/es.json`

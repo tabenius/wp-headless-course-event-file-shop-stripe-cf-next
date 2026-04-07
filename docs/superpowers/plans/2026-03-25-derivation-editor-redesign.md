@@ -15,6 +15,7 @@
 ### Task 1: Create operationRegistry.js — all 22 operation schemas + categories
 
 **Files:**
+
 - Create: `src/components/admin/DerivationEditor/operationRegistry.js`
 - Modify: `src/lib/derivationEngine.js` (re-export from registry)
 
@@ -64,8 +65,22 @@ export const OPERATION_REGISTRY = {
     tip: "Cut away the edges to keep only the part you want",
     techTip: "Center-crop to exact pixel dimensions",
     parameters: [
-      { key: "width", label: "Width", type: "number", min: 32, max: 4000, step: 1 },
-      { key: "height", label: "Height", type: "number", min: 32, max: 4000, step: 1 },
+      {
+        key: "width",
+        label: "Width",
+        type: "number",
+        min: 32,
+        max: 4000,
+        step: 1,
+      },
+      {
+        key: "height",
+        label: "Height",
+        type: "number",
+        min: 32,
+        max: 4000,
+        step: 1,
+      },
     ],
   },
   resize: {
@@ -75,8 +90,22 @@ export const OPERATION_REGISTRY = {
     tip: "Make the image bigger or smaller",
     techTip: "Scale to target dimensions using Lanczos3 resampling",
     parameters: [
-      { key: "width", label: "Width", type: "number", min: 64, max: 4000, step: 1 },
-      { key: "height", label: "Height", type: "number", min: 64, max: 4000, step: 1 },
+      {
+        key: "width",
+        label: "Width",
+        type: "number",
+        min: 64,
+        max: 4000,
+        step: 1,
+      },
+      {
+        key: "height",
+        label: "Height",
+        type: "number",
+        min: 64,
+        max: 4000,
+        step: 1,
+      },
     ],
   },
   presetCrop: {
@@ -86,8 +115,20 @@ export const OPERATION_REGISTRY = {
     tip: "Crop to a standard shape like square, banner, or portrait",
     techTip: "Crop to aspect ratio preset with optional scale factor",
     parameters: [
-      { key: "preset", label: "Aspect", type: "select", options: PRESET_CROP_PRESETS },
-      { key: "scale", label: "Scale", type: "number", min: 0.5, max: 1, step: 0.05 },
+      {
+        key: "preset",
+        label: "Aspect",
+        type: "select",
+        options: PRESET_CROP_PRESETS,
+      },
+      {
+        key: "scale",
+        label: "Scale",
+        type: "number",
+        min: 0.5,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   flip: {
@@ -97,10 +138,15 @@ export const OPERATION_REGISTRY = {
     tip: "Flip the image like a mirror — left-to-right or top-to-bottom",
     techTip: "Mirror along horizontal or vertical axis",
     parameters: [
-      { key: "direction", label: "Direction", type: "select", options: [
-        { value: "h", label: "Horizontal" },
-        { value: "v", label: "Vertical" },
-      ]},
+      {
+        key: "direction",
+        label: "Direction",
+        type: "select",
+        options: [
+          { value: "h", label: "Horizontal" },
+          { value: "v", label: "Vertical" },
+        ],
+      },
     ],
   },
   rotate: {
@@ -110,8 +156,15 @@ export const OPERATION_REGISTRY = {
     tip: "Turn the image — quarter turn, half turn, or any angle",
     techTip: "Rotate by arbitrary degrees (90/180/270 shortcuts available)",
     parameters: [
-      { key: "degrees", label: "Degrees", type: "number", min: 0, max: 360, step: 1,
-        shortcuts: [90, 180, 270] },
+      {
+        key: "degrees",
+        label: "Degrees",
+        type: "number",
+        min: 0,
+        max: 360,
+        step: 1,
+        shortcuts: [90, 180, 270],
+      },
     ],
   },
   padding: {
@@ -121,7 +174,14 @@ export const OPERATION_REGISTRY = {
     tip: "Add a colored border around the whole image — like a picture frame",
     techTip: "Add uniform pixel padding with RGBA fill color",
     parameters: [
-      { key: "padding", label: "Size (px)", type: "number", min: 0, max: 500, step: 1 },
+      {
+        key: "padding",
+        label: "Size (px)",
+        type: "number",
+        min: 0,
+        max: 500,
+        step: 1,
+      },
       { key: "r", label: "Red", type: "number", min: 0, max: 255, step: 1 },
       { key: "g", label: "Green", type: "number", min: 0, max: 255, step: 1 },
       { key: "b", label: "Blue", type: "number", min: 0, max: 255, step: 1 },
@@ -135,9 +195,17 @@ export const OPERATION_REGISTRY = {
     category: "colorTone",
     icon: "\u2600",
     tip: "Make the image lighter or darker",
-    techTip: "Adjust brightness (normalized -1..1, scaled to 0-255 in pipeline)",
+    techTip:
+      "Adjust brightness (normalized -1..1, scaled to 0-255 in pipeline)",
     parameters: [
-      { key: "amount", label: "Amount", type: "number", min: -1, max: 1, step: 0.05 },
+      {
+        key: "amount",
+        label: "Amount",
+        type: "number",
+        min: -1,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   saturation: {
@@ -145,9 +213,17 @@ export const OPERATION_REGISTRY = {
     category: "colorTone",
     icon: "\uD83C\uDF08",
     tip: "Make colors more vivid or more muted",
-    techTip: "Adjust color saturation (-1 = fully desaturated, +1 = maximum saturation)",
+    techTip:
+      "Adjust color saturation (-1 = fully desaturated, +1 = maximum saturation)",
     parameters: [
-      { key: "amount", label: "Amount", type: "number", min: -1, max: 1, step: 0.05 },
+      {
+        key: "amount",
+        label: "Amount",
+        type: "number",
+        min: -1,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   colorBoost: {
@@ -157,8 +233,22 @@ export const OPERATION_REGISTRY = {
     tip: "Make colors pop — boosts color richness and contrast together",
     techTip: "Combined vibrance (selective saturation) + contrast adjustment",
     parameters: [
-      { key: "vibrance", label: "Vibrance", type: "number", min: -1, max: 1, step: 0.05 },
-      { key: "contrast", label: "Contrast", type: "number", min: -1, max: 1, step: 0.05 },
+      {
+        key: "vibrance",
+        label: "Vibrance",
+        type: "number",
+        min: -1,
+        max: 1,
+        step: 0.05,
+      },
+      {
+        key: "contrast",
+        label: "Contrast",
+        type: "number",
+        min: -1,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   hueRotate: {
@@ -168,7 +258,14 @@ export const OPERATION_REGISTRY = {
     tip: "Shift all colors around the color wheel — red becomes blue, blue becomes green, etc.",
     techTip: "Rotate hue in HSL color space (0-360 degrees)",
     parameters: [
-      { key: "degrees", label: "Degrees", type: "number", min: 0, max: 360, step: 1 },
+      {
+        key: "degrees",
+        label: "Degrees",
+        type: "number",
+        min: 0,
+        max: 360,
+        step: 1,
+      },
     ],
   },
   tint: {
@@ -179,7 +276,14 @@ export const OPERATION_REGISTRY = {
     techTip: "Apply per-channel RGB tint offset (-255..+255 per channel)",
     parameters: [
       { key: "r", label: "Red", type: "number", min: -255, max: 255, step: 1 },
-      { key: "g", label: "Green", type: "number", min: -255, max: 255, step: 1 },
+      {
+        key: "g",
+        label: "Green",
+        type: "number",
+        min: -255,
+        max: 255,
+        step: 1,
+      },
       { key: "b", label: "Blue", type: "number", min: -255, max: 255, step: 1 },
     ],
   },
@@ -188,9 +292,17 @@ export const OPERATION_REGISTRY = {
     category: "colorTone",
     icon: "\u25D1",
     tip: "Turn the image black and white — slide to control how much color remains",
-    techTip: "Human-corrected grayscale conversion with variable intensity blend",
+    techTip:
+      "Human-corrected grayscale conversion with variable intensity blend",
     parameters: [
-      { key: "amount", label: "Intensity", type: "number", min: 0, max: 1, step: 0.05 },
+      {
+        key: "amount",
+        label: "Intensity",
+        type: "number",
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   invert: {
@@ -200,7 +312,14 @@ export const OPERATION_REGISTRY = {
     tip: "Swap all colors to their opposite — like a photo negative",
     techTip: "Invert RGB channels with variable intensity blend",
     parameters: [
-      { key: "amount", label: "Intensity", type: "number", min: 0, max: 1, step: 0.05 },
+      {
+        key: "amount",
+        label: "Intensity",
+        type: "number",
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
 
@@ -220,7 +339,14 @@ export const OPERATION_REGISTRY = {
     tip: "Soften the image — great for backgrounds or dreamy effects",
     techTip: "Gaussian blur with configurable pixel radius",
     parameters: [
-      { key: "radius", label: "Radius", type: "number", min: 1, max: 20, step: 1 },
+      {
+        key: "radius",
+        label: "Radius",
+        type: "number",
+        min: 1,
+        max: 20,
+        step: 1,
+      },
     ],
   },
   sepia: {
@@ -230,7 +356,14 @@ export const OPERATION_REGISTRY = {
     tip: "Give the image a warm, old-fashioned brownish look — like an antique photo",
     techTip: "Sepia tone filter with variable intensity blend (0-1)",
     parameters: [
-      { key: "amount", label: "Intensity", type: "number", min: 0, max: 1, step: 0.05 },
+      {
+        key: "amount",
+        label: "Intensity",
+        type: "number",
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   solarize: {
@@ -248,7 +381,14 @@ export const OPERATION_REGISTRY = {
     tip: "Turn the image into chunky blocks — like a retro video game",
     techTip: "Pixelation: average color per NxN block (block size 2-50px)",
     parameters: [
-      { key: "size", label: "Block size", type: "number", min: 2, max: 50, step: 1 },
+      {
+        key: "size",
+        label: "Block size",
+        type: "number",
+        min: 2,
+        max: 50,
+        step: 1,
+      },
     ],
   },
 
@@ -258,10 +398,21 @@ export const OPERATION_REGISTRY = {
     category: "artistic",
     icon: "\u25D3",
     tip: "Recolor the image using just two colors — pick a highlight and a shadow color",
-    techTip: "Duotone: map luminance to two RGB endpoints via linear interpolation",
+    techTip:
+      "Duotone: map luminance to two RGB endpoints via linear interpolation",
     parameters: [
-      { key: "color1", label: "Highlight", type: "color", defaultValue: { r: 255, g: 255, b: 255 } },
-      { key: "color2", label: "Shadow", type: "color", defaultValue: { r: 0, g: 0, b: 0 } },
+      {
+        key: "color1",
+        label: "Highlight",
+        type: "color",
+        defaultValue: { r: 255, g: 255, b: 255 },
+      },
+      {
+        key: "color2",
+        label: "Shadow",
+        type: "color",
+        defaultValue: { r: 0, g: 0, b: 0 },
+      },
     ],
   },
   oil: {
@@ -269,10 +420,25 @@ export const OPERATION_REGISTRY = {
     category: "artistic",
     icon: "\uD83D\uDD8C",
     tip: "Make the photo look like a painting with thick, swirly brush strokes",
-    techTip: "Oil painting simulation: radius (1-5) and intensity (10-60) control brush size and smoothing",
+    techTip:
+      "Oil painting simulation: radius (1-5) and intensity (10-60) control brush size and smoothing",
     parameters: [
-      { key: "radius", label: "Radius", type: "number", min: 1, max: 5, step: 1 },
-      { key: "intensity", label: "Intensity", type: "number", min: 10, max: 60, step: 1 },
+      {
+        key: "radius",
+        label: "Radius",
+        type: "number",
+        min: 1,
+        max: 5,
+        step: 1,
+      },
+      {
+        key: "intensity",
+        label: "Intensity",
+        type: "number",
+        min: 10,
+        max: 60,
+        step: 1,
+      },
     ],
   },
   cropCircle: {
@@ -280,11 +446,33 @@ export const OPERATION_REGISTRY = {
     category: "artistic",
     icon: "\u25EF",
     tip: "Cut the image into a circle — perfect for profile pictures",
-    techTip: "Circular mask crop with configurable diameter and center offset, outputs PNG with alpha",
+    techTip:
+      "Circular mask crop with configurable diameter and center offset, outputs PNG with alpha",
     parameters: [
-      { key: "diameter", label: "Diameter", type: "number", min: 32, max: 4000, step: 1 },
-      { key: "centerX", label: "Center X (%)", type: "number", min: 0, max: 100, step: 1 },
-      { key: "centerY", label: "Center Y (%)", type: "number", min: 0, max: 100, step: 1 },
+      {
+        key: "diameter",
+        label: "Diameter",
+        type: "number",
+        min: 32,
+        max: 4000,
+        step: 1,
+      },
+      {
+        key: "centerX",
+        label: "Center X (%)",
+        type: "number",
+        min: 0,
+        max: 100,
+        step: 1,
+      },
+      {
+        key: "centerY",
+        label: "Center Y (%)",
+        type: "number",
+        min: 0,
+        max: 100,
+        step: 1,
+      },
     ],
   },
   textOverlay: {
@@ -292,13 +480,35 @@ export const OPERATION_REGISTRY = {
     category: "artistic",
     icon: "\uD83D\uDD24",
     tip: "Write text on the image — add a caption, watermark, or title",
-    techTip: "Rasterize text at (x,y) normalized coordinates, configurable size in pt",
+    techTip:
+      "Rasterize text at (x,y) normalized coordinates, configurable size in pt",
     parameters: [
       { key: "text", label: "Text", type: "text" },
-      { key: "x", label: "X (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
-      { key: "y", label: "Y (0-1)", type: "number", min: 0, max: 1, step: 0.01 },
+      {
+        key: "x",
+        label: "X (0-1)",
+        type: "number",
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        key: "y",
+        label: "Y (0-1)",
+        type: "number",
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
       { key: "typeface", label: "Typeface", type: "text" },
-      { key: "size", label: "Size (pt)", type: "number", min: 6, max: 200, step: 1 },
+      {
+        key: "size",
+        label: "Size (pt)",
+        type: "number",
+        min: 6,
+        max: 200,
+        step: 1,
+      },
     ],
   },
 };
@@ -328,9 +538,12 @@ export function buildDefaultParams(type) {
     if (p.type === "number") {
       // Sensible defaults: midpoint for sliders, or specific overrides
       if (p.key === "x" || p.key === "y") params[p.key] = 0.5;
-      else if (p.key === "size" && p.min === 6) params[p.key] = 24; // text size
-      else if (p.key === "amount" && p.min === 0) params[p.key] = 1; // intensity defaults to full
-      else if (p.key === "amount" && p.min < 0) params[p.key] = 0; // brightness default neutral
+      else if (p.key === "size" && p.min === 6)
+        params[p.key] = 24; // text size
+      else if (p.key === "amount" && p.min === 0)
+        params[p.key] = 1; // intensity defaults to full
+      else if (p.key === "amount" && p.min < 0)
+        params[p.key] = 0; // brightness default neutral
       else if (p.key === "degrees" && p.max === 360) params[p.key] = 90;
       else params[p.key] = p.min ?? 0;
     } else if (p.type === "select") {
@@ -361,8 +574,9 @@ import { OPERATION_REGISTRY } from "@/components/admin/DerivationEditor/operatio
 // code branches on param.type for this field (verified via grep).
 export const OPERATION_SCHEMAS = Object.fromEntries(
   Object.entries(OPERATION_REGISTRY).map(([type, { label, parameters }]) => [
-    type, { label, parameters },
-  ])
+    type,
+    { label, parameters },
+  ]),
 );
 // Also include source (internal, not in registry)
 OPERATION_SCHEMAS.source = {
@@ -390,9 +604,10 @@ git commit -m "feat: add operationRegistry with all 22 operations + categories"
 ### Task 2: Update photonPipeline.js — brightness scaling + intensity blending
 
 **Files:**
+
 - Modify: `src/lib/photonPipeline.js`
 
-Three pipeline changes: (1) brightness amount * 255 scaling with backward compat, (2) sepia intensity blending, (3) grayscale + invert intensity blending.
+Three pipeline changes: (1) brightness amount \* 255 scaling with backward compat, (2) sepia intensity blending, (3) grayscale + invert intensity blending.
 
 - [ ] **Step 1: Add brightness scaling**
 
@@ -429,7 +644,10 @@ Add this helper function near the top of `photonPipeline.js` (before the main sw
  * @param {object} photon - photon module reference
  */
 function blendWithOriginal(current, effectFn, amount, photon) {
-  if (amount >= 1) { effectFn(current); return; }
+  if (amount >= 1) {
+    effectFn(current);
+    return;
+  }
   if (amount <= 0) return;
   const origPixels = new Uint8Array(current.get_raw_pixels());
   effectFn(current);
@@ -512,6 +730,7 @@ git commit -m "feat: brightness scaling + sepia/grayscale/invert intensity blend
 ### Task 3: Create OperationGridPicker component
 
 **Files:**
+
 - Create: `src/components/admin/DerivationEditor/OperationGridPicker.js`
 
 The categorized icon grid that replaces the flat dropdown. Clicking a tile adds the operation.
@@ -552,7 +771,8 @@ export default function OperationGridPicker({ onAddOperation }) {
                   "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 " +
                   "hover:scale-105 hover:shadow-md active:scale-95 " +
                   "transition-all duration-150 cursor-pointer select-none " +
-                  "border-l-2 " + (borderColors[group.color] || "border-gray-300")
+                  "border-l-2 " +
+                  (borderColors[group.color] || "border-gray-300")
                 }
               >
                 <span className="text-xl leading-none">{op.icon}</span>
@@ -586,6 +806,7 @@ git commit -m "feat: add OperationGridPicker — categorized icon grid for 22 op
 ### Task 4: Create OperationCard component with slider parameters
 
 **Files:**
+
 - Create: `src/components/admin/DerivationEditor/OperationCard.js`
 
 Single pipeline step card: collapsible, drag handle, category accent, slider/select/text/color parameter inputs.
@@ -606,7 +827,10 @@ const borderColors = {
 
 /** Convert {r,g,b} → "#rrggbb" */
 function rgbToHex({ r, g, b }) {
-  const h = (v) => Math.max(0, Math.min(255, v || 0)).toString(16).padStart(2, "0");
+  const h = (v) =>
+    Math.max(0, Math.min(255, v || 0))
+      .toString(16)
+      .padStart(2, "0");
   return `#${h(r)}${h(g)}${h(b)}`;
 }
 
@@ -614,7 +838,11 @@ function rgbToHex({ r, g, b }) {
 function hexToRgb(hex) {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!m) return { r: 0, g: 0, b: 0 };
-  return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) };
+  return {
+    r: parseInt(m[1], 16),
+    g: parseInt(m[2], 16),
+    b: parseInt(m[3], 16),
+  };
 }
 
 function isInvalid(param, value) {
@@ -627,15 +855,20 @@ function isInvalid(param, value) {
 }
 
 function ParamSummary({ schema, params }) {
-  if (!schema?.parameters?.length) return <span className="text-gray-400">—</span>;
+  if (!schema?.parameters?.length)
+    return <span className="text-gray-400">—</span>;
   return (
     <span className="text-xs text-gray-500 truncate">
-      {schema.parameters.slice(0, 3).map((p) => {
-        const v = params[p.key];
-        if (v == null || v === "") return null;
-        const display = typeof v === "object" ? rgbToHex(v) : String(v);
-        return `${p.label}: ${display}`;
-      }).filter(Boolean).join(", ")}
+      {schema.parameters
+        .slice(0, 3)
+        .map((p) => {
+          const v = params[p.key];
+          if (v == null || v === "") return null;
+          const display = typeof v === "object" ? rgbToHex(v) : String(v);
+          return `${p.label}: ${display}`;
+        })
+        .filter(Boolean)
+        .join(", ")}
     </span>
   );
 }
@@ -654,10 +887,13 @@ export default function OperationCard({
   const accent = cat ? borderColors[cat.color] || "" : "";
 
   return (
-    <div className={
-      "border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 " +
-      "border-l-4 " + accent
-    }>
+    <div
+      className={
+        "border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 " +
+        "border-l-4 " +
+        accent
+      }
+    >
       {/* Header — always visible */}
       <div
         className="flex items-center gap-2 px-2 py-1.5 cursor-pointer select-none"
@@ -674,19 +910,26 @@ export default function OperationCard({
         </span>
 
         {/* Step number + name */}
-        <span className="text-xs font-medium text-gray-500 w-5">{index + 1}.</span>
+        <span className="text-xs font-medium text-gray-500 w-5">
+          {index + 1}.
+        </span>
         <span className="text-sm font-medium">
           {schema?.icon} {schema?.label || operation.type}
         </span>
 
         {/* Collapsed param summary */}
-        {!expanded && <ParamSummary schema={schema} params={operation.params} />}
+        {!expanded && (
+          <ParamSummary schema={schema} params={operation.params} />
+        )}
 
         {/* Spacer + remove */}
         <span className="flex-1" />
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
           className="text-gray-400 hover:text-red-500 text-sm px-1"
           title="Remove step"
         >
@@ -715,7 +958,9 @@ function ParamInput({ param, value, onChange }) {
   if (param.type === "select") {
     return (
       <label className="flex items-center gap-2">
-        <span className="text-xs text-gray-500 w-20 shrink-0">{param.label}</span>
+        <span className="text-xs text-gray-500 w-20 shrink-0">
+          {param.label}
+        </span>
         {param.options?.length <= 3 ? (
           // Segmented toggle for small option sets
           <div className="flex gap-1">
@@ -742,7 +987,9 @@ function ParamInput({ param, value, onChange }) {
             className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-white dark:bg-gray-700"
           >
             {param.options?.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
           </select>
         )}
@@ -755,7 +1002,9 @@ function ParamInput({ param, value, onChange }) {
     const hex = typeof value === "object" ? rgbToHex(value) : "#000000";
     return (
       <label className="flex items-center gap-2">
-        <span className="text-xs text-gray-500 w-20 shrink-0">{param.label}</span>
+        <span className="text-xs text-gray-500 w-20 shrink-0">
+          {param.label}
+        </span>
         <div
           className="w-6 h-6 rounded border border-gray-300"
           style={{ backgroundColor: hex }}
@@ -777,7 +1026,9 @@ function ParamInput({ param, value, onChange }) {
   if (param.type === "text") {
     return (
       <label className="flex items-center gap-2">
-        <span className="text-xs text-gray-500 w-20 shrink-0">{param.label}</span>
+        <span className="text-xs text-gray-500 w-20 shrink-0">
+          {param.label}
+        </span>
         <input
           type="text"
           value={value ?? ""}
@@ -830,7 +1081,9 @@ function ParamInput({ param, value, onChange }) {
         max={param.max}
         step={param.step}
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
+        onChange={(e) =>
+          onChange(e.target.value === "" ? "" : Number(e.target.value))
+        }
         className={
           "w-16 text-xs text-right font-mono border rounded px-1 py-0.5 " +
           (invalid
@@ -855,6 +1108,7 @@ git commit -m "feat: add OperationCard — collapsible step card with slider/sel
 ### Task 5: Create OperationPipeline with drag-and-drop
 
 **Files:**
+
 - Create: `src/components/admin/DerivationEditor/OperationPipeline.js`
 
 Ordered list of OperationCards with HTML5 drag-and-drop reordering.
@@ -884,21 +1138,27 @@ export default function OperationPipeline({
     e.dataTransfer.setData("text/plain", String(index));
   }, []);
 
-  const handleDragOver = useCallback((e, index) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (dragIndex == null) return;
-    setDropTarget(index);
-  }, [dragIndex]);
+  const handleDragOver = useCallback(
+    (e, index) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (dragIndex == null) return;
+      setDropTarget(index);
+    },
+    [dragIndex],
+  );
 
-  const handleDrop = useCallback((e, toIndex) => {
-    e.preventDefault();
-    if (dragIndex != null && dragIndex !== toIndex) {
-      onReorder(dragIndex, toIndex);
-    }
-    setDragIndex(null);
-    setDropTarget(null);
-  }, [dragIndex, onReorder]);
+  const handleDrop = useCallback(
+    (e, toIndex) => {
+      e.preventDefault();
+      if (dragIndex != null && dragIndex !== toIndex) {
+        onReorder(dragIndex, toIndex);
+      }
+      setDragIndex(null);
+      setDropTarget(null);
+    },
+    [dragIndex, onReorder],
+  );
 
   const handleDragEnd = useCallback(() => {
     setDragIndex(null);
@@ -959,6 +1219,7 @@ git commit -m "feat: add OperationPipeline — drag-and-drop ordered operation l
 ### Task 6: Create DerivationSelector component
 
 **Files:**
+
 - Create: `src/components/admin/DerivationEditor/DerivationSelector.js`
 
 Derivation dropdown, metadata form, show matching/all toggle. Extracted from AdminMediaLibraryTab lines ~2030-2190.
@@ -995,7 +1256,9 @@ export default function DerivationSelector({
         >
           <option value="">— Select derivation —</option>
           {derivations.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
           ))}
         </select>
         <button
@@ -1079,6 +1342,7 @@ git commit -m "feat: add DerivationSelector — derivation picker + metadata for
 ### Task 7: Create DerivationPreview component
 
 **Files:**
+
 - Create: `src/components/admin/DerivationEditor/DerivationPreview.js`
 
 Preview image, apply/save buttons, progress bar, validation status.
@@ -1120,12 +1384,14 @@ export default function DerivationPreview({
     <div className="space-y-3">
       {/* Validation badges */}
       <div className="flex flex-wrap gap-1.5">
-        <span className={
-          "text-xs px-2 py-0.5 rounded-full " +
-          (isConcrete
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")
-        }>
+        <span
+          className={
+            "text-xs px-2 py-0.5 rounded-full " +
+            (isConcrete
+              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")
+          }
+        >
           {isConcrete ? "Concrete" : "Abstract"}
         </span>
       </div>
@@ -1133,14 +1399,16 @@ export default function DerivationPreview({
       {/* Unbound params */}
       {unboundParams.length > 0 && (
         <div className="text-xs text-amber-600 dark:text-amber-400">
-          Unbound: {unboundParams.map((u) => `${u.operator}: ${u.param}`).join(", ")}
+          Unbound:{" "}
+          {unboundParams.map((u) => `${u.operator}: ${u.param}`).join(", ")}
         </div>
       )}
 
       {/* Invalid params */}
       {invalidParams.length > 0 && (
         <div className="text-xs text-red-600 dark:text-red-400">
-          Invalid: {invalidParams.map((u) => `${u.operator}: ${u.param}`).join(", ")}
+          Invalid:{" "}
+          {invalidParams.map((u) => `${u.operator}: ${u.param}`).join(", ")}
         </div>
       )}
 
@@ -1179,9 +1447,17 @@ export default function DerivationPreview({
       </div>
 
       {/* Status messages */}
-      {!hasAsset && <p className="text-xs text-gray-400">Select an asset to apply derivations.</p>}
-      {derivationSaveStatus && <p className="text-xs text-green-600">{derivationSaveStatus}</p>}
-      {derivationSaveError && <p className="text-xs text-red-500">{derivationSaveError}</p>}
+      {!hasAsset && (
+        <p className="text-xs text-gray-400">
+          Select an asset to apply derivations.
+        </p>
+      )}
+      {derivationSaveStatus && (
+        <p className="text-xs text-green-600">{derivationSaveStatus}</p>
+      )}
+      {derivationSaveError && (
+        <p className="text-xs text-red-500">{derivationSaveError}</p>
+      )}
       {saveError && <p className="text-xs text-red-500">{saveError}</p>}
 
       {/* Progress bar */}
@@ -1223,6 +1499,7 @@ git commit -m "feat: add DerivationPreview — preview, progress, validation bad
 ### Task 8: Create DerivationEditor container + wire into AdminMediaLibraryTab
 
 **Files:**
+
 - Create: `src/components/admin/DerivationEditor/DerivationEditor.js`
 - Create: `src/components/admin/DerivationEditor/index.js`
 - Modify: `src/components/admin/AdminMediaLibraryTab.js`
@@ -1240,6 +1517,7 @@ export { default } from "./DerivationEditor";
 This component takes over all derivation state and handlers from AdminMediaLibraryTab. It receives from the parent only what it can't own: `focusedAsset`, `focusedAssetType`, `derivations`, `onDerivationsChanged`, `onSaveToLibrary` (to trigger a media library refresh after saving a derived asset).
 
 The internal state includes:
+
 - `selectedDerivationId`, `customOperations`, `expandedCardIndex`
 - `editorId`, `editorName`, `editorDescription`, `editorAssetTypes`
 - `applyingDerivation`, `applyProgress`, `applyProgressLabel`
@@ -1248,6 +1526,7 @@ The internal state includes:
 - `showAllDerivations`
 
 Key handlers extracted from AdminMediaLibraryTab:
+
 - `handleSelectDerivation` — loads operations from selected derivation
 - `handleAddOperation` — uses `buildDefaultParams` from operationRegistry
 - `handleRemoveOperation`, `handleParamChange`, `handleReorder`
@@ -1262,6 +1541,7 @@ The complete implementation should follow the exact same API calls and NDJSON st
 - [ ] **Step 3: Replace derivation section in AdminMediaLibraryTab**
 
 In `AdminMediaLibraryTab.js`:
+
 1. Remove all derivation-related state variables (lines ~90-110) EXCEPT `derivations` and `setDerivations` (which remain in the parent for the main useEffect that loads them). Remove: `selectedDerivationId`, `customOperations`, `derivationError`, `applyingDerivation`, `applyProgress`, `applyProgressLabel`, `showAllDerivations`, `editorId`, `editorName`, `editorDescription`, `editorAssetTypes`, `newOperationType`, `derivationSaveStatus`, `derivationSaveError`, `lastDerivedAsset`, `savedDerivedAssets`, `previewBlobUrl`, `previewBlob`, `savingPreview`, `savePreviewError`
 2. Remove derivation-related useMemo values: `filteredDerivations`, `availableDerivations`, `derivationUnboundParameters`, `derivationInvalidParameters`, `derivationPseudoName`, `derivationMatrixRows`
 3. Remove derivation handler functions: `handleSelectDerivation`, `handleAddOperation`, `handleRemoveOperation`, `handleSaveDerivation`, `handleApplyDerivation`, `handleSaveToLibrary` (the derived-asset version)
@@ -1287,6 +1567,7 @@ Expected: Build passes. The derivation editor should look and function identical
 - [ ] **Step 5: Manual smoke test checklist**
 
 Run `npm run dev` and verify in browser:
+
 1. Grid picker shows 4 categories with all 22 operation tiles
 2. Clicking a tile adds the operation with correct defaults
 3. Operation cards collapse/expand on click
@@ -1310,6 +1591,7 @@ git commit -m "feat: integrate DerivationEditor — grid picker, sliders, drag-a
 ### Task 9: i18n sync
 
 **Files:**
+
 - Modify: `src/lib/i18n/en.json`
 - Modify: `src/lib/i18n/sv.json`
 - Modify: `src/lib/i18n/es.json`

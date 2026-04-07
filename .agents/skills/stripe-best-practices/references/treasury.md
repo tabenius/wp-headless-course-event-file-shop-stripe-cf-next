@@ -1,6 +1,7 @@
 # Treasury / Financial Accounts
 
 ## Table of contents
+
 - v2 Financial Accounts API
 - Legacy v1 Treasury
 

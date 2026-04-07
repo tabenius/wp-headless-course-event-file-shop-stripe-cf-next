@@ -79,24 +79,21 @@ function typeLabel(item) {
 function typeBadgeColor(item) {
   switch (item.type) {
     case "product":
-      return "bg-blue-100 text-blue-800";
+      return "bg-blue-300 text-blue-800 badge";
     case "course":
-      return "bg-green-100 text-green-800";
+      return "bg-green-300 text-green-800 badge";
     case "event":
-      return "bg-amber-100 text-amber-800";
+      return "bg-amber-300 text-amber-800 badge";
     case "digital_file":
-      return "bg-purple-100 text-purple-800";
+      return "bg-purple-300 text-purple-800 badge";
     case "digital_course":
-      return "bg-green-100 text-green-800";
+      return "bg-green-300 text-green-800 badge";
     default:
       return "bg-gray-100 text-gray-800";
   }
 }
 
-
-function ShopIndexContent({
-  items,
-}) {
+function ShopIndexContent({ items }) {
   const searchParams = useSearchParams();
   const checkoutStatus =
     typeof searchParams?.get("checkout") === "string"
@@ -122,7 +119,9 @@ function ShopIndexContent({
   const wpUris = useMemo(
     () =>
       items
-        .filter((item) => item.source !== "digital" && typeof item.uri === "string")
+        .filter(
+          (item) => item.source !== "digital" && typeof item.uri === "string",
+        )
         .map((item) => item.uri),
     [items],
   );
@@ -285,7 +284,7 @@ function ShopIndexContent({
         <p className="text-[var(--color-foreground)]">{t("shop.noProducts")}</p>
       )}
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
         {items.map((item) => {
           const imageSources =
             item.imageSources && typeof item.imageSources === "object"
@@ -296,12 +295,12 @@ function ShopIndexContent({
             Number.isFinite(Number(imageSources?.width)) &&
             Number(imageSources?.width) > 0
               ? Number(imageSources.width)
-              : 1200;
+              : 600;
           const imageHeight =
             Number.isFinite(Number(imageSources?.height)) &&
             Number(imageSources?.height) > 0
               ? Number(imageSources.height)
-              : 600;
+              : 800;
           const imageLoader = buildImageLoader(imageSources, imageUrl);
           const showImage = imageUrl && !brokenImages[item.id];
           const owned = isOwned(item);
@@ -310,17 +309,21 @@ function ShopIndexContent({
             item.priceCents > 0 ? item.priceCents : parseWpPrice(item.price);
           const priceDisplay = formatPrice(effectiveCents, item.currency) || "";
           const cardHref =
-            !owned && !ownershipPending && typeof item.uri === "string" && item.uri
+            !owned &&
+            !ownershipPending &&
+            typeof item.uri === "string" &&
+            item.uri
               ? item.uri
               : "";
 
+          // .bg-white when in .dark-mode is #2A2A2A !IMPORTANT
           return (
             <article
               key={item.id}
-              className={`relative flex flex-col overflow-hidden rounded-lg border-2 bg-[var(--color-background)] ${
+              className={`relative flex overflow-hidden rounded-lg border-2 bg-white ${
                 cardHref
                   ? "border-[var(--color-muted)] transition-colors hover:border-amber-500"
-                  : "border-[var(--color-muted)]"
+                  : "border-amber-500"
               }`}
             >
               {cardHref ? (
@@ -341,9 +344,10 @@ function ShopIndexContent({
                   unoptimized={Boolean(imageLoader)}
                   sizes={
                     imageSources?.sizes ||
-                    "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    "(max-width: 768px) 100vh, (max-width: 1200px) 50vh, 33vh"
+                    // basis-1/2 since we are in a flex-col s.t. the vertical is the main axis
                   }
-                  className="w-full h-44 object-cover"
+                  className="w-1/2 basis-1/2 object-cover object-top border-r border-black"
                   onError={() =>
                     setBrokenImages((prev) => ({ ...prev, [item.id]: true }))
                   }
@@ -365,34 +369,43 @@ function ShopIndexContent({
                 </div>
               )}
 
-              <div className="p-5 space-y-3 flex-1 flex flex-col">
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
-                    {item.name}
-                  </h2>
-                  <div className="ml-2 flex shrink-0 flex-col items-end gap-1">
-                    <span
-                      className={`text-[11px] font-medium px-2 py-0.5 rounded whitespace-nowrap font-sans ${typeBadgeColor(item)}`}
-                    >
-                      {typeLabel(item)}
-                    </span>
-                    {priceDisplay ? (
-                      <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                        {priceDisplay}
-                      </p>
-                    ) : null}
-                  </div>
+              <div className="p-5 space-y-2 flex-1 flex flex-col">
+                <span
+                  style={{
+                    padding: "0.25rem",
+                    "text-align": "center",
+                    "font-weight": 200,
+                    "font-size": "12pt",
+                    "font-family": "var(--font-heading)",
+                  }}
+                >
+                  {item.name}
+                </span>
+                <br />
+                <div className="flex shrink-0 items-start gap-1 justify-between">
+                  <span
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded whitespace-nowrap border border-black font-sans ${typeBadgeColor(item)}`}
+                  >
+                    {typeLabel(item)}
+                  </span>
+                  {priceDisplay ? (
+                    <p className="text-sm font-semibold">{priceDisplay}</p>
+                  ) : null}
                 </div>
 
                 {item.description && (
-                  <p className="line-clamp-3 text-sm text-[var(--color-foreground)]">
+                  <pre
+                    className="line-clamp-7 text-[11pt]"
+                    style={{
+                      "white-space": "pre-wrap",
+                      "word-wrap": "break-word",
+                    }}
+                  >
                     {item.description}
-                  </p>
+                  </pre>
                 )}
                 {item.duration && !/^0\s/.test(item.duration) && (
-                  <p className="text-xs text-[var(--color-foreground)]">
-                    {item.duration}
-                  </p>
+                  <p className="text-xs">{item.duration}</p>
                 )}
 
                 <div className="mt-auto pt-3">
@@ -410,14 +423,12 @@ function ShopIndexContent({
                           {t("shop.purchased")}
                         </span>
                       )
+                    ) : ownershipPending ? (
+                      <span className="inline-block h-8 w-24 animate-pulse rounded bg-[var(--color-muted)]" />
                     ) : (
-                      ownershipPending ? (
-                        <span className="inline-block h-8 w-24 animate-pulse rounded bg-[var(--color-muted)]" />
-                      ) : (
-                        <span className="text-sm font-medium text-[var(--color-primary)]">
-                          {t("shop.viewAndBuy")}
-                        </span>
-                      )
+                      <span className="text-sm font-medium text-[var(--color-primary)]">
+                        {t("shop.viewAndBuy")}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -427,8 +438,8 @@ function ShopIndexContent({
         })}
       </div>
     </section>
-    );
-  }
+  );
+}
 
 function ShopIndexFallback() {
   return (

@@ -14,7 +14,8 @@ async function stripeRequest(path, params = {}) {
 
   const url = new URL(`https://api.stripe.com${path}`);
   Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
+    if (v !== undefined && v !== null && v !== "")
+      url.searchParams.set(k, String(v));
   });
   const response = await fetch(url, {
     method: "GET",
@@ -47,7 +48,11 @@ async function fetchStripeSummary(maxPages = 5) {
       transactions++;
       const currency = String(charge.currency || "").toUpperCase();
       revenue[currency] = (revenue[currency] || 0) + (charge.amount || 0);
-      const email = String(charge.receipt_email || charge.billing_details?.email || "").toLowerCase().trim();
+      const email = String(
+        charge.receipt_email || charge.billing_details?.email || "",
+      )
+        .toLowerCase()
+        .trim();
       if (email) emails.add(email);
     }
 
@@ -66,7 +71,10 @@ async function fetchStripeSummary(maxPages = 5) {
 async function cfGraphQL(token, query, variables) {
   const response = await fetch(CF_GRAPHQL, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ query, variables }),
   });
   if (!response.ok) return null;
@@ -107,10 +115,13 @@ async function fetchWeeklyHitsZone(token, zoneId) {
 /** Fetch 7-day total from Workers analytics as fallback. */
 async function fetchWeeklyHitsWorkers(token, accountId) {
   const now = new Date();
-  const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    .toISOString().slice(0, 19) + "Z";
+  const since =
+    new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 19) + "Z";
   const until = now.toISOString().slice(0, 19) + "Z";
-  const scriptName = process.env.CF_WORKER_NAME || "articulate-learnpress-stripe";
+  const scriptName =
+    process.env.CF_WORKER_NAME || "articulate-learnpress-stripe";
 
   const query = `
     query WeeklyWorkers($accountTag: string!, $since: Time!, $until: Time!, $scriptName: string!) {
@@ -127,7 +138,12 @@ async function fetchWeeklyHitsWorkers(token, accountId) {
     }
   `;
 
-  const data = await cfGraphQL(token, query, { accountTag: accountId, since, until, scriptName });
+  const data = await cfGraphQL(token, query, {
+    accountTag: accountId,
+    since,
+    until,
+    scriptName,
+  });
   const groups = data?.viewer?.accounts?.[0]?.workersInvocationsAdaptive || [];
   const total = groups.reduce((sum, g) => sum + (g.sum?.requests || 0), 0);
   return Math.round(total / 7);
@@ -149,9 +165,11 @@ export async function GET(request) {
 
       // Weekly hits
       (() => {
-        const token = process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
+        const token =
+          process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
         const zoneId = process.env.CF_ZONE_ID;
-        const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;
+        const accountId =
+          process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;
         if (!token) return Promise.reject(new Error("no cf token"));
         if (zoneId) return fetchWeeklyHitsZone(token, zoneId);
         if (accountId) return fetchWeeklyHitsWorkers(token, accountId);
@@ -162,10 +180,16 @@ export async function GET(request) {
     const stripeResult = results[0];
     const hitsResult = results[1];
 
-    const stripeSummary = stripeResult.status === "fulfilled" ? stripeResult.value : null;
-    const weeklyAvgHitsPerDay = hitsResult.status === "fulfilled" ? hitsResult.value : null;
+    const stripeSummary =
+      stripeResult.status === "fulfilled" ? stripeResult.value : null;
+    const weeklyAvgHitsPerDay =
+      hitsResult.status === "fulfilled" ? hitsResult.value : null;
 
-    const defaultCurrency = (process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK").toUpperCase();
+    const defaultCurrency = (
+      process.env.DEFAULT_CURRENCY ||
+      process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+      "SEK"
+    ).toUpperCase();
 
     return NextResponse.json({
       ok: true,
@@ -184,7 +208,14 @@ export async function GET(request) {
     console.error("Stats ticker error:", error);
     return NextResponse.json({
       ok: true,
-      stats: { revenue: null, currency: "SEK", transactions: null, customers: null, salesPerUser: null, weeklyAvgHitsPerDay: null },
+      stats: {
+        revenue: null,
+        currency: "SEK",
+        transactions: null,
+        customers: null,
+        salesPerUser: null,
+        weeklyAvgHitsPerDay: null,
+      },
       availableStripe: false,
       availableAnalytics: false,
       error: error?.message || "unknown",

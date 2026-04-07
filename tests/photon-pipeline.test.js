@@ -11,12 +11,18 @@ import {
 
 describe("resolveOutputFormat", () => {
   it("returns webp when no cropCircle operation", () => {
-    const ops = [{ type: "source" }, { type: "resize", params: { width: 800, height: 600 } }];
+    const ops = [
+      { type: "source" },
+      { type: "resize", params: { width: 800, height: 600 } },
+    ];
     assert.equal(resolveOutputFormat(ops), "webp");
   });
 
   it("returns png when cropCircle is present", () => {
-    const ops = [{ type: "source" }, { type: "cropCircle", params: { diameter: 200 } }];
+    const ops = [
+      { type: "source" },
+      { type: "cropCircle", params: { diameter: 200 } },
+    ];
     assert.equal(resolveOutputFormat(ops), "png");
   });
 
@@ -99,7 +105,10 @@ describe("clampSaturation", () => {
   });
 
   it("returns desaturate_hsl with positive amount for negative input", () => {
-    assert.deepEqual(clampSaturation(-0.3), { fn: "desaturate_hsl", amount: 0.3 });
+    assert.deepEqual(clampSaturation(-0.3), {
+      fn: "desaturate_hsl",
+      amount: 0.3,
+    });
   });
 
   it("clamps amount above 1 to 1", () => {

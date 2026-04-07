@@ -55,7 +55,10 @@ describe("buildVariantDefs", () => {
   it("skips compressed variant for already-WebP source", () => {
     const defs = buildVariantDefs("image/webp", 1000, 800);
     const kinds = defs.map((d) => d.variantKind);
-    assert.ok(!kinds.includes("compressed"), "should not include compressed for WebP");
+    assert.ok(
+      !kinds.includes("compressed"),
+      "should not include compressed for WebP",
+    );
     assert.ok(kinds.includes("responsive-sm"));
     assert.ok(kinds.includes("responsive-md"));
     assert.ok(kinds.includes("responsive-lg"));
@@ -64,7 +67,10 @@ describe("buildVariantDefs", () => {
   it("skips compressed variant for already-AVIF source", () => {
     const defs = buildVariantDefs("image/avif", 1000, 800);
     const kinds = defs.map((d) => d.variantKind);
-    assert.ok(!kinds.includes("compressed"), "should not include compressed for AVIF");
+    assert.ok(
+      !kinds.includes("compressed"),
+      "should not include compressed for AVIF",
+    );
   });
 
   it("responsive-sm is 50% width, md is 100%, lg is 150%", () => {
@@ -112,7 +118,10 @@ describe("buildVariantFilename", () => {
 
   it("handles URLs with paths", () => {
     assert.equal(
-      buildVariantFilename("https://cdn.example.com/uploads/photo.png", "responsive-sm"),
+      buildVariantFilename(
+        "https://cdn.example.com/uploads/photo.png",
+        "responsive-sm",
+      ),
       "https://cdn.example.com/uploads/photo-sm.webp",
     );
   });

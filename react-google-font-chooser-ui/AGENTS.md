@@ -8,7 +8,7 @@ remember that this project will be hosted on cloudflare workers and thus will us
 remember that for local development I want you to use the port 4555 for the local webserver.
 
 ## TODO
+
 [ ] understand the font and theme configurator used in the subdirectory main and fuse it with the ui in this directory.
 [ ] make an implementation that follows a mix of the two UI that to your taste is the best in each area.
 [ ] add a couple of color themes to the actual ui that you think is a bit far from the norm but still elegant and professional.
-

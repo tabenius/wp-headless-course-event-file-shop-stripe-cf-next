@@ -1,7 +1,9 @@
 const HEX_USERNAME_RE = /^[0-9a-f]+$/;
 
 export function normalizeUsername(value) {
-  const raw = String(value || "").trim().toLowerCase();
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase();
   const withoutPrefix = raw.startsWith("0x") ? raw.slice(2) : raw;
   if (!withoutPrefix) return "";
   if (!HEX_USERNAME_RE.test(withoutPrefix)) return "";

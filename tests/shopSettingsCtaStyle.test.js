@@ -12,15 +12,21 @@ describe("normalizeCtaStyle", () => {
   });
 
   it("returns upstream for explicit upstream type", () => {
-    assert.deepEqual(normalizeCtaStyle({ type: "upstream" }), { type: "upstream" });
+    assert.deepEqual(normalizeCtaStyle({ type: "upstream" }), {
+      type: "upstream",
+    });
   });
 
   it("returns upstream for missing bgColor", () => {
-    assert.deepEqual(normalizeCtaStyle({ textColor: "background" }), { type: "upstream" });
+    assert.deepEqual(normalizeCtaStyle({ textColor: "background" }), {
+      type: "upstream",
+    });
   });
 
   it("returns upstream for invalid bgColor", () => {
-    assert.deepEqual(normalizeCtaStyle({ bgColor: "hotpink" }), { type: "upstream" });
+    assert.deepEqual(normalizeCtaStyle({ bgColor: "hotpink" }), {
+      type: "upstream",
+    });
   });
 
   it("normalizes a minimal valid ctaStyle", () => {
@@ -52,7 +58,11 @@ describe("normalizeCtaStyle", () => {
   });
 
   it("clamps invalid borderRadius to md", () => {
-    const result = normalizeCtaStyle({ bgColor: "primary", textColor: "background", borderRadius: "xxl" });
+    const result = normalizeCtaStyle({
+      bgColor: "primary",
+      textColor: "background",
+      borderRadius: "xxl",
+    });
     assert.equal(result.borderRadius, "md");
   });
 
@@ -63,13 +73,18 @@ describe("normalizeCtaStyle", () => {
       textColor: "background",
     });
     assert.equal(result.bgCustom, "#ff0000");
-    const noCustom = normalizeCtaStyle({ bgColor: "primary", bgCustom: "#ff0000", textColor: "background" });
+    const noCustom = normalizeCtaStyle({
+      bgColor: "primary",
+      bgCustom: "#ff0000",
+      textColor: "background",
+    });
     assert.equal(noCustom.bgCustom, undefined);
   });
 
   it("includes borderColor when border is solid, defaults to primary", () => {
     const result = normalizeCtaStyle({
-      bgColor: "primary", textColor: "background",
+      bgColor: "primary",
+      textColor: "background",
       border: "solid",
     });
     assert.equal(result.borderColor, "primary");
@@ -77,8 +92,10 @@ describe("normalizeCtaStyle", () => {
 
   it("does not include borderColor when border is none", () => {
     const result = normalizeCtaStyle({
-      bgColor: "primary", textColor: "background",
-      border: "none", borderColor: "secondary",
+      bgColor: "primary",
+      textColor: "background",
+      border: "none",
+      borderColor: "secondary",
     });
     assert.equal(result.borderColor, undefined);
   });
@@ -90,7 +107,10 @@ describe("normalizeCtaStyle", () => {
       textCustom: "#123456",
     });
     assert.equal(result.textCustom, "#123456");
-    const noCustom = normalizeCtaStyle({ bgColor: "primary", textColor: "background" });
+    const noCustom = normalizeCtaStyle({
+      bgColor: "primary",
+      textColor: "background",
+    });
     assert.equal(noCustom.textCustom, undefined);
   });
 
@@ -107,8 +127,18 @@ describe("normalizeCtaStyle", () => {
   });
 
   it("produces identical JSON.stringify for same logical input", () => {
-    const a = normalizeCtaStyle({ bgColor: "secondary", textColor: "foreground", border: "solid", borderColor: "secondary" });
-    const b = normalizeCtaStyle({ bgColor: "secondary", textColor: "foreground", border: "solid", borderColor: "secondary" });
+    const a = normalizeCtaStyle({
+      bgColor: "secondary",
+      textColor: "foreground",
+      border: "solid",
+      borderColor: "secondary",
+    });
+    const b = normalizeCtaStyle({
+      bgColor: "secondary",
+      textColor: "foreground",
+      border: "solid",
+      borderColor: "secondary",
+    });
     assert.equal(JSON.stringify(a), JSON.stringify(b));
   });
 });

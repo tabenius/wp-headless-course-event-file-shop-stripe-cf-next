@@ -54,11 +54,14 @@ const MIN_VARIANT_DIMENSION = 320;
 const MAX_VARIANT_DIMENSION = 2000;
 
 function resolveAspectSize(key) {
-  return SIZE_PRESETS[key] || SIZE_PRESETS[DEFAULT_ASPECT_KEY] || SIZE_PRESETS.square;
+  return (
+    SIZE_PRESETS[key] || SIZE_PRESETS[DEFAULT_ASPECT_KEY] || SIZE_PRESETS.square
+  );
 }
 
 function computePreviewFrame(size) {
-  if (!size?.width || !size?.height) return { width: PREVIEW_MAX, height: PREVIEW_MAX };
+  if (!size?.width || !size?.height)
+    return { width: PREVIEW_MAX, height: PREVIEW_MAX };
   if (size.width >= size.height) {
     return {
       width: PREVIEW_MAX,
@@ -104,7 +107,11 @@ function clampVariantDimensions(width, height, sourceWidth, sourceHeight) {
   let nextWidth = Math.max(1, Math.round(Number(width) || 1));
   let nextHeight = Math.max(1, Math.round(Number(height) || 1));
   if (sourceWidth > 0 && sourceHeight > 0) {
-    const sourceScale = Math.min(1, sourceWidth / nextWidth, sourceHeight / nextHeight);
+    const sourceScale = Math.min(
+      1,
+      sourceWidth / nextWidth,
+      sourceHeight / nextHeight,
+    );
     nextWidth = Math.max(1, Math.round(nextWidth * sourceScale));
     nextHeight = Math.max(1, Math.round(nextHeight * sourceScale));
   }
@@ -172,7 +179,11 @@ function buildResponsiveVariantPlan({
 function isTypingTarget(target) {
   if (!target || typeof target !== "object") return false;
   const nodeName = String(target.nodeName || "").toLowerCase();
-  if (nodeName === "input" || nodeName === "textarea" || nodeName === "select") {
+  if (
+    nodeName === "input" ||
+    nodeName === "textarea" ||
+    nodeName === "select"
+  ) {
     return true;
   }
   return Boolean(target.isContentEditable);
@@ -414,12 +425,17 @@ export default function ImageUploader({
     try {
       const params = new URLSearchParams({ limit: "80", source: "all" });
       if (mediaSearchTerm.trim()) params.set("search", mediaSearchTerm.trim());
-      const response = await fetch(`/api/admin/media-library?${params.toString()}`);
+      const response = await fetch(
+        `/api/admin/media-library?${params.toString()}`,
+      );
       const json = await response.json().catch(() => ({}));
       if (!response.ok || !json?.ok) {
         throw new Error(
           json?.error ||
-            t("admin.imageBrowseLibraryLoadFailed", "Failed to load media library."),
+            t(
+              "admin.imageBrowseLibraryLoadFailed",
+              "Failed to load media library.",
+            ),
         );
       }
       const rows = Array.isArray(json.items) ? json.items : [];
@@ -429,7 +445,10 @@ export default function ImageUploader({
       setMediaError(
         error instanceof Error
           ? error.message
-          : t("admin.imageBrowseLibraryLoadFailed", "Failed to load media library."),
+          : t(
+              "admin.imageBrowseLibraryLoadFailed",
+              "Failed to load media library.",
+            ),
       );
     } finally {
       setMediaLoading(false);
@@ -478,7 +497,8 @@ export default function ImageUploader({
   );
 
   useEffect(() => {
-    if (!showEditor && !showMediaBrowser && !showSourceChooser) return undefined;
+    if (!showEditor && !showMediaBrowser && !showSourceChooser)
+      return undefined;
     function handleEscape(event) {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -739,7 +759,11 @@ export default function ImageUploader({
         variants.find((entry) => entry.key === "md") || variants[0];
       if (!primaryVariant) throw new Error("No valid variant size available");
 
-      async function renderVariantBlob(frameWidth, frameHeight, preferredFormat) {
+      async function renderVariantBlob(
+        frameWidth,
+        frameHeight,
+        preferredFormat,
+      ) {
         const exportCanvas = document.createElement("canvas");
         const scaleX = frameWidth / previewFrame.width;
         const scaleY = frameHeight / previewFrame.height;
@@ -772,7 +796,11 @@ export default function ImageUploader({
         if (!blob) {
           format = INTERNAL_FALLBACK_OUTPUT_FORMAT;
           mimeType = OUTPUT_MIME_TYPES[format];
-          blob = await canvasToBlob(exportCanvas, mimeType, OUTPUT_QUALITY[format]);
+          blob = await canvasToBlob(
+            exportCanvas,
+            mimeType,
+            OUTPUT_QUALITY[format],
+          );
         }
         if (!blob) throw new Error("Canvas export failed");
         return { blob, format };
@@ -847,7 +875,9 @@ export default function ImageUploader({
         error,
       });
       const msg = t("admin.uploadFailed");
-      emitError(selectedUploadBackend ? `${msg} (${selectedUploadBackend})` : msg);
+      emitError(
+        selectedUploadBackend ? `${msg} (${selectedUploadBackend})` : msg,
+      );
       resetEditorState();
     } finally {
       setUploading(false);
@@ -1012,7 +1042,9 @@ export default function ImageUploader({
             </form>
 
             {mediaLoading && (
-              <p className="text-xs text-gray-500">{t("common.loading", "Loading…")}</p>
+              <p className="text-xs text-gray-500">
+                {t("common.loading", "Loading…")}
+              </p>
             )}
 
             {mediaError && (
@@ -1052,7 +1084,11 @@ export default function ImageUploader({
                       {item.title || item.key || item.url}
                     </p>
                     <p className="text-[11px] text-gray-500">
-                      {item.source === "wordpress" ? "WordPress" : item.source === "r2" ? "R2" : "—"}
+                      {item.source === "wordpress"
+                        ? "WordPress"
+                        : item.source === "r2"
+                          ? "R2"
+                          : "—"}
                     </p>
                   </button>
                 ))}
@@ -1070,7 +1106,9 @@ export default function ImageUploader({
         >
           <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full p-4 sm:p-5 space-y-4 max-h-[92vh] overflow-y-auto">
             <div>
-              <h3 className="font-semibold text-sm">{t("admin.cropAndScale")}</h3>
+              <h3 className="font-semibold text-sm">
+                {t("admin.cropAndScale")}
+              </h3>
               <p className="text-xs text-gray-500">{t("admin.cropHint")}</p>
             </div>
 
@@ -1112,7 +1150,8 @@ export default function ImageUploader({
                             {t(ASPECT_LABEL_KEYS[key])}
                           </span>
                           <span className="mt-0.5 block text-[10px] text-gray-500">
-                            {size.width}×{size.height} · {formatAspectRatio(size)}
+                            {size.width}×{size.height} ·{" "}
+                            {formatAspectRatio(size)}
                           </span>
                         </button>
                       );
@@ -1175,7 +1214,8 @@ export default function ImageUploader({
               <div className="space-y-3">
                 <div className="rounded border bg-gray-50 px-2 py-1.5 text-xs text-gray-700">
                   <span className="font-semibold">
-                    {t("admin.imageOutputResolutionLabel", "Output resolution")}:
+                    {t("admin.imageOutputResolutionLabel", "Output resolution")}
+                    :
                   </span>{" "}
                   {selectedSize.width} × {selectedSize.height} (
                   {formatAspectRatio(selectedSize)})
@@ -1215,10 +1255,17 @@ export default function ImageUploader({
                       <input
                         type="checkbox"
                         checked={isDerivedWork}
-                        onChange={(event) => setIsDerivedWork(event.target.checked)}
+                        onChange={(event) =>
+                          setIsDerivedWork(event.target.checked)
+                        }
                         className="mt-0.5"
                       />
-                      <span>{t("admin.imageDerivedWorkToggle", "Mark as derived work")}</span>
+                      <span>
+                        {t(
+                          "admin.imageDerivedWorkToggle",
+                          "Mark as derived work",
+                        )}
+                      </span>
                     </label>
                     <p className="text-[11px] text-gray-500">
                       {t("admin.imageVariantCurrent", {
@@ -1238,7 +1285,9 @@ export default function ImageUploader({
                       <input
                         type="text"
                         value={copyrightHolder}
-                        onChange={(event) => setCopyrightHolder(event.target.value)}
+                        onChange={(event) =>
+                          setCopyrightHolder(event.target.value)
+                        }
                         className="w-full border rounded px-2 py-1 text-sm"
                         placeholder={t("admin.imageCopyrightHolderPlaceholder")}
                       />

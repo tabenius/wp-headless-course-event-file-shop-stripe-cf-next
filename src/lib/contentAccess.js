@@ -14,7 +14,10 @@ import {
 } from "@/lib/cloudflareKv";
 
 function isWordPressBackend() {
-  return process.env.COURSE_ACCESS_BACKEND === "wordpress";
+  return (
+    (process.env.CONTENT_ACCESS_BACKEND ||
+      process.env.COURSE_ACCESS_BACKEND) === "wordpress"
+  );
 }
 
 function isWordPressBackendConfigured() {
@@ -44,8 +47,7 @@ async function fetchWordPressGraphQL(query, variables = {}) {
 
   const authOptions = getWordPressGraphqlAuthOptions();
   let lastError = null;
-  const delayMs =
-    Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
+  const delayMs = Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const firstLines = (text, lines = 3) =>
     text ? text.split("\n").slice(0, lines).join("\n") : "";
@@ -444,7 +446,9 @@ async function hasWordPressCourseAccess(courseUri, email) {
 }
 
 async function listWordPressAccessibleCourseUris(courseUris, email) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
   if (!normalizedEmail) return [];
   const uriSet = new Set(
     (Array.isArray(courseUris) ? courseUris : [])
@@ -491,7 +495,9 @@ async function listWordPressAccessibleCourseUris(courseUris, email) {
       : [];
     const hasAccess = allowedUsers.some(
       (userEmail) =>
-        String(userEmail || "").trim().toLowerCase() === normalizedEmail,
+        String(userEmail || "")
+          .trim()
+          .toLowerCase() === normalizedEmail,
     );
     if (hasAccess) out.push(uri);
   }
@@ -499,7 +505,9 @@ async function listWordPressAccessibleCourseUris(courseUris, email) {
 }
 
 async function listLocalAccessibleCourseUris(courseUris, email) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
   if (!normalizedEmail) return [];
   const uriSet = new Set(
     (Array.isArray(courseUris) ? courseUris : [])
@@ -518,7 +526,9 @@ async function listLocalAccessibleCourseUris(courseUris, email) {
       : [];
     const hasAccess = allowedUsers.some(
       (userEmail) =>
-        String(userEmail || "").trim().toLowerCase() === normalizedEmail,
+        String(userEmail || "")
+          .trim()
+          .toLowerCase() === normalizedEmail,
     );
     if (hasAccess) out.push(uri);
   }
@@ -726,7 +736,10 @@ export async function listAccessibleContentUris(courseUris, email) {
         isCloudflareKvConfigured() ||
         process.env.COURSE_ACCESS_STORE === "cloudflare"
       ) {
-        const localUris = await listLocalAccessibleCourseUris(courseUris, email);
+        const localUris = await listLocalAccessibleCourseUris(
+          courseUris,
+          email,
+        );
         return [...new Set([...wordpressUris, ...localUris])];
       }
       return wordpressUris;

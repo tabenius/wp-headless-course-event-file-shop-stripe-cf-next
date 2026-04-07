@@ -15,6 +15,7 @@
 ### Task 1: Add `free` field to product sanitization and listability check
 
 **Files:**
+
 - Modify: `src/lib/digitalProducts.js:77-156` (sanitizeProduct), add `isProductListable` export
 - Test: `tests/digital-products.test.js` (new)
 
@@ -30,7 +31,9 @@ import test from "node:test";
 // We test the public interface: sanitizeProducts shape and isProductListable
 
 test("sanitizeProduct preserves free: true and forces priceCents to 0", async () => {
-  const { sanitizeProductForTest } = await import("../src/lib/digitalProducts.js");
+  const { sanitizeProductForTest } = await import(
+    "../src/lib/digitalProducts.js"
+  );
   const result = sanitizeProductForTest({
     name: "Free Asset",
     slug: "free-asset",
@@ -46,7 +49,9 @@ test("sanitizeProduct preserves free: true and forces priceCents to 0", async ()
 });
 
 test("sanitizeProduct defaults free to false", async () => {
-  const { sanitizeProductForTest } = await import("../src/lib/digitalProducts.js");
+  const { sanitizeProductForTest } = await import(
+    "../src/lib/digitalProducts.js"
+  );
   const result = sanitizeProductForTest({
     name: "Paid Asset",
     slug: "paid-asset",
@@ -62,22 +67,34 @@ test("sanitizeProduct defaults free to false", async () => {
 
 test("isProductListable returns true for free product", async () => {
   const { isProductListable } = await import("../src/lib/digitalProducts.js");
-  assert.equal(isProductListable({ active: true, free: true, priceCents: 0 }), true);
+  assert.equal(
+    isProductListable({ active: true, free: true, priceCents: 0 }),
+    true,
+  );
 });
 
 test("isProductListable returns true for paid product with price", async () => {
   const { isProductListable } = await import("../src/lib/digitalProducts.js");
-  assert.equal(isProductListable({ active: true, free: false, priceCents: 1900 }), true);
+  assert.equal(
+    isProductListable({ active: true, free: false, priceCents: 1900 }),
+    true,
+  );
 });
 
 test("isProductListable returns false for ambiguous pricing", async () => {
   const { isProductListable } = await import("../src/lib/digitalProducts.js");
-  assert.equal(isProductListable({ active: true, free: false, priceCents: 0 }), false);
+  assert.equal(
+    isProductListable({ active: true, free: false, priceCents: 0 }),
+    false,
+  );
 });
 
 test("isProductListable returns false for inactive product", async () => {
   const { isProductListable } = await import("../src/lib/digitalProducts.js");
-  assert.equal(isProductListable({ active: false, free: true, priceCents: 0 }), false);
+  assert.equal(
+    isProductListable({ active: false, free: true, priceCents: 0 }),
+    false,
+  );
 });
 ```
 
@@ -91,8 +108,8 @@ Expected: FAIL — `sanitizeProductForTest` and `isProductListable` not exported
 In `src/lib/digitalProducts.js`, modify `sanitizeProduct` (line 77) to add `free` handling. Add after the `priceCents` calculation (around line 114):
 
 ```javascript
-  const free = product?.free === true;
-  const effectivePriceCents = free ? 0 : priceCents;
+const free = product?.free === true;
+const effectivePriceCents = free ? 0 : priceCents;
 ```
 
 In the return object (line 136), replace `priceCents,` with:
@@ -137,6 +154,7 @@ git commit -m "feat: add free boolean to product schema and listability check"
 ### Task 2: Enforce product type mutual exclusivity
 
 **Files:**
+
 - Modify: `src/lib/digitalProducts.js:77-156` (sanitizeProduct)
 - Test: `tests/digital-products.test.js` (append)
 
@@ -146,7 +164,9 @@ Append to `tests/digital-products.test.js`:
 
 ```javascript
 test("sanitizeProduct clears courseUri when mode is asset", async () => {
-  const { sanitizeProductForTest } = await import("../src/lib/digitalProducts.js");
+  const { sanitizeProductForTest } = await import(
+    "../src/lib/digitalProducts.js"
+  );
   const result = sanitizeProductForTest({
     name: "Asset Product",
     slug: "asset-product",
@@ -162,7 +182,9 @@ test("sanitizeProduct clears courseUri when mode is asset", async () => {
 });
 
 test("sanitizeProduct clears assetId and fileUrl when mode is manual_uri", async () => {
-  const { sanitizeProductForTest } = await import("../src/lib/digitalProducts.js");
+  const { sanitizeProductForTest } = await import(
+    "../src/lib/digitalProducts.js"
+  );
   const result = sanitizeProductForTest({
     name: "Course Product",
     slug: "course-product",
@@ -178,7 +200,9 @@ test("sanitizeProduct clears assetId and fileUrl when mode is manual_uri", async
 });
 
 test("sanitizeProduct clears courseUri and assetId when mode is digital_file", async () => {
-  const { sanitizeProductForTest } = await import("../src/lib/digitalProducts.js");
+  const { sanitizeProductForTest } = await import(
+    "../src/lib/digitalProducts.js"
+  );
   const result = sanitizeProductForTest({
     name: "Direct File",
     slug: "direct-file",
@@ -194,7 +218,9 @@ test("sanitizeProduct clears courseUri and assetId when mode is digital_file", a
 });
 
 test("sanitizeProduct derives type from mode, not from input type field", async () => {
-  const { sanitizeProductForTest } = await import("../src/lib/digitalProducts.js");
+  const { sanitizeProductForTest } = await import(
+    "../src/lib/digitalProducts.js"
+  );
   const asset = sanitizeProductForTest({
     name: "Asset",
     slug: "asset-type",
@@ -250,6 +276,7 @@ git commit -m "fix: enforce product type mutual exclusivity in sanitizeProduct"
 ### Task 3: Auto-assign assetId for R2 items without metadata
 
 **Files:**
+
 - Modify: `src/app/api/admin/media-library/route.js:682-742` (HEAD probe section in fetchBucketMedia)
 - Uses: `replaceBucketObjectMetadata` from `src/lib/s3upload.js` (already exists, lines 776-870)
 
@@ -262,24 +289,24 @@ Verify the code at lines 682-742 of `src/app/api/admin/media-library/route.js`. 
 In `src/app/api/admin/media-library/route.js`, after line 713 (`const assetId = sanitizeAssetId(meta.asset_id, 96);`), add auto-assign logic. Replace the block from line 713 to line 721 with:
 
 ```javascript
-      let assetId = sanitizeAssetId(meta.asset_id, 96);
-      if (!assetId && row.key) {
-        // Auto-assign a deterministic assetId for R2 objects uploaded via external clients
-        assetId = sanitizeAssetId(`r2:${row.key}`, 96);
-        if (assetId) {
-          try {
-            await replaceBucketObjectMetadata({
-              key: row.key,
-              metadata: { asset_id: assetId },
-              backend,
-            });
-          } catch {
-            // Non-fatal: assetId is still usable this request even if write-back fails
-          }
-        }
-      }
-      const ownerUri = normalizeOwnerUri(meta.asset_owner_uri || "/");
-      const assetUri = sanitizeText(meta.asset_uri, 400) || buildAssetIdUri(assetId);
+let assetId = sanitizeAssetId(meta.asset_id, 96);
+if (!assetId && row.key) {
+  // Auto-assign a deterministic assetId for R2 objects uploaded via external clients
+  assetId = sanitizeAssetId(`r2:${row.key}`, 96);
+  if (assetId) {
+    try {
+      await replaceBucketObjectMetadata({
+        key: row.key,
+        metadata: { asset_id: assetId },
+        backend,
+      });
+    } catch {
+      // Non-fatal: assetId is still usable this request even if write-back fails
+    }
+  }
+}
+const ownerUri = normalizeOwnerUri(meta.asset_owner_uri || "/");
+const assetUri = sanitizeText(meta.asset_uri, 400) || buildAssetIdUri(assetId);
 ```
 
 - [ ] **Step 3: Add import for replaceBucketObjectMetadata**
@@ -316,6 +343,7 @@ git commit -m "feat: auto-assign assetId to R2 objects missing metadata"
 ### Task 4: Fix "Create product from asset" defaults and error reporting
 
 **Files:**
+
 - Modify: `src/app/api/admin/products/from-asset/route.js:138-175`
 
 - [ ] **Step 1: Update product defaults in from-asset route**
@@ -323,23 +351,23 @@ git commit -m "feat: auto-assign assetId to R2 objects missing metadata"
 In `src/app/api/admin/products/from-asset/route.js`, replace the `nextProduct` object (lines 138-153) with:
 
 ```javascript
-    const nextProduct = {
-      name,
-      slug: resolveProductSlug(name, assetId),
-      type: "digital_file",
-      productMode: "asset",
-      description: "",
-      imageUrl,
-      priceCents: 0,
-      free: false,
-      currency: "SEK",
-      fileUrl,
-      mimeType,
-      assetId,
-      vatPercent: null,
-      courseUri: "",
-      active: false,
-    };
+const nextProduct = {
+  name,
+  slug: resolveProductSlug(name, assetId),
+  type: "digital_file",
+  productMode: "asset",
+  description: "",
+  imageUrl,
+  priceCents: 0,
+  free: false,
+  currency: "SEK",
+  fileUrl,
+  mimeType,
+  assetId,
+  vatPercent: null,
+  courseUri: "",
+  active: false,
+};
 ```
 
 Changes from current: `free: false` added, `active: false` (was `true`).
@@ -349,32 +377,32 @@ Changes from current: `free: false` added, `active: false` (was `true`).
 Replace the save + find block (lines 155-168) with:
 
 ```javascript
-    const inputCount = products.length + 1;
-    const saved = await saveDigitalProducts([...products, nextProduct]);
+const inputCount = products.length + 1;
+const saved = await saveDigitalProducts([...products, nextProduct]);
 
-    const created =
-      saved.find(
-        (entry) =>
-          entry?.productMode === "asset" &&
-          normalizeAssetId(entry?.assetId || "") === assetId,
-      ) || null;
+const created =
+  saved.find(
+    (entry) =>
+      entry?.productMode === "asset" &&
+      normalizeAssetId(entry?.assetId || "") === assetId,
+  ) || null;
 
-    if (!created) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: `Product was rejected during validation. Check that the asset has a valid name and assetId (got: "${assetId}").`,
-        },
-        { status: 400 },
-      );
-    }
+if (!created) {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: `Product was rejected during validation. Check that the asset has a valid name and assetId (got: "${assetId}").`,
+    },
+    { status: 400 },
+  );
+}
 
-    return NextResponse.json({
-      ok: true,
-      created: true,
-      product: created,
-      total: saved.length,
-    });
+return NextResponse.json({
+  ok: true,
+  created: true,
+  product: created,
+  total: saved.length,
+});
 ```
 
 - [ ] **Step 3: Verify with ESLint**
@@ -394,6 +422,7 @@ git commit -m "fix: create-from-asset defaults to inactive with explicit error o
 ### Task 5: Create `/digital/{slug}` download route
 
 **Files:**
+
 - Create: `src/app/digital/[slug]/route.js`
 
 - [ ] **Step 1: Create the download route handler**
@@ -405,7 +434,10 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { hasDigitalAccess } from "@/lib/digitalAccessStore";
-import { getDigitalProductBySlug, isProductListable } from "@/lib/digitalProducts";
+import {
+  getDigitalProductBySlug,
+  isProductListable,
+} from "@/lib/digitalProducts";
 
 export const runtime = "nodejs";
 
@@ -443,7 +475,8 @@ function mimeToExtension(mimeType) {
 function resolveFileUrl(product) {
   // Asset-mode products: fileUrl may be empty, use the asset's public URL
   if (product.fileUrl) return product.fileUrl;
-  if (product.imageUrl && product.productMode === "asset") return product.imageUrl;
+  if (product.imageUrl && product.productMode === "asset")
+    return product.imageUrl;
   return "";
 }
 
@@ -520,6 +553,7 @@ git commit -m "feat: add /digital/{slug} download route behind paywall"
 ### Task 6: Create `/api/digital/claim` endpoint for free products
 
 **Files:**
+
 - Create: `src/app/api/digital/claim/route.js`
 
 - [ ] **Step 1: Create the claim route**
@@ -604,6 +638,7 @@ git commit -m "feat: add /api/digital/claim endpoint for free product access"
 ### Task 7: Update AdminProductsTab — free toggle, mode-switch cleanup, pricing warnings
 
 **Files:**
+
 - Modify: `src/components/admin/AdminProductsTab.js:221-305` (PriceAccessForm), `1621-1642` (mode buttons)
 - Modify: `src/lib/i18n/en.json`, `src/lib/i18n/sv.json`, `src/lib/i18n/es.json`
 
@@ -657,41 +692,47 @@ function PriceAccessForm({
 Replace the existing free checkbox block (around lines 265-276) with:
 
 ```javascript
-        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={free}
-            onChange={(e) => {
-              setFree(e.target.checked);
-              if (e.target.checked) setPrice("0");
-            }}
-            className="accent-slate-600"
-          />
-          <span>{t("admin.productFree")}</span>
-        </label>
-        {free && (
-          <p className="text-xs text-green-600">{t("admin.productFreeHint")}</p>
-        )}
-        {!free && (Number.parseFloat(String(price || "0")) || 0) === 0 && (
-          <p className="text-xs text-amber-600 font-medium">{t("admin.productPriceAmbiguous")}</p>
-        )}
+<label className="inline-flex items-center gap-2 text-sm text-gray-700">
+  <input
+    type="checkbox"
+    checked={free}
+    onChange={(e) => {
+      setFree(e.target.checked);
+      if (e.target.checked) setPrice("0");
+    }}
+    className="accent-slate-600"
+  />
+  <span>{t("admin.productFree")}</span>
+</label>;
+{
+  free && (
+    <p className="text-xs text-green-600">{t("admin.productFreeHint")}</p>
+  );
+}
+{
+  !free && (Number.parseFloat(String(price || "0")) || 0) === 0 && (
+    <p className="text-xs text-amber-600 font-medium">
+      {t("admin.productPriceAmbiguous")}
+    </p>
+  );
+}
 ```
 
 Disable the price input when free:
 
 ```javascript
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            disabled={free}
-            className={`flex-1 border rounded px-3 py-2 text-sm ${
-              free ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-            }`}
-          />
+<input
+  type="number"
+  value={price}
+  onChange={(e) => setPrice(e.target.value)}
+  min="0"
+  step="0.01"
+  placeholder="0.00"
+  disabled={free}
+  className={`flex-1 border rounded px-3 py-2 text-sm ${
+    free ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+  }`}
+/>
 ```
 
 - [ ] **Step 3: Wire `free` state through the product editing flow**
@@ -740,11 +781,13 @@ Replace the mode-switch buttons (lines 1621-1642) to clear conflicting fields wh
 In the product list rendering section, find where each product card is rendered and add a warning badge for ambiguous products. After the product name display, add:
 
 ```javascript
-{!product.free && product.priceCents === 0 && (
-  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
-    {t("admin.productPriceAmbiguous")}
-  </span>
-)}
+{
+  !product.free && product.priceCents === 0 && (
+    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+      {t("admin.productPriceAmbiguous")}
+    </span>
+  );
+}
 ```
 
 - [ ] **Step 6: Verify with ESLint**
@@ -764,6 +807,7 @@ git commit -m "feat: free product toggle, pricing warnings, and mode-switch clea
 ### Task 8: Update ShopProductDetail for free vs paid display
 
 **Files:**
+
 - Modify: `src/components/shop/ShopProductDetail.js:80-111` (startCheckout), `209-220` (button)
 - Modify: `src/lib/i18n/en.json`, `src/lib/i18n/sv.json`, `src/lib/i18n/es.json`
 
@@ -801,27 +845,28 @@ Add to `es.json`:
 In `src/components/shop/ShopProductDetail.js`, add a `claimFreeProduct` function near `startCheckout`:
 
 ```javascript
-  async function claimFreeProduct() {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/digital/claim", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productSlug: product.slug }),
-      });
-      const json = await response.json();
-      if (response.ok && json?.ok) {
-        window.location.href = json.redirectUrl || `/digital/${encodeURIComponent(product.slug)}`;
-      } else {
-        setError(json?.error || t("shop.checkoutFailed"));
-      }
-    } catch (err) {
-      setError(t("shop.checkoutFailed"));
-    } finally {
-      setLoading(false);
+async function claimFreeProduct() {
+  setLoading(true);
+  setError("");
+  try {
+    const response = await fetch("/api/digital/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productSlug: product.slug }),
+    });
+    const json = await response.json();
+    if (response.ok && json?.ok) {
+      window.location.href =
+        json.redirectUrl || `/digital/${encodeURIComponent(product.slug)}`;
+    } else {
+      setError(json?.error || t("shop.checkoutFailed"));
     }
+  } catch (err) {
+    setError(t("shop.checkoutFailed"));
+  } finally {
+    setLoading(false);
   }
+}
 ```
 
 - [ ] **Step 3: Update button rendering for free vs paid**
@@ -829,31 +874,33 @@ In `src/components/shop/ShopProductDetail.js`, add a `claimFreeProduct` function
 Replace the existing buy button block (lines 209-220) with:
 
 ```javascript
-        {product.free ? (
-          <button
-            type="button"
-            onClick={claimFreeProduct}
-            disabled={loading}
-            className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
-          >
-            {loading && (
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            )}
-            {loading ? t("shop.claimingFree") : t("shop.claimFree")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={startCheckout}
-            disabled={loading}
-            className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
-          >
-            {loading && (
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            )}
-            {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
-          </button>
-        )}
+{
+  product.free ? (
+    <button
+      type="button"
+      onClick={claimFreeProduct}
+      disabled={loading}
+      className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
+    >
+      {loading && (
+        <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      )}
+      {loading ? t("shop.claimingFree") : t("shop.claimFree")}
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={startCheckout}
+      disabled={loading}
+      className="px-5 py-3 rounded bg-gray-800 text-white shop-cta hover:bg-gray-700 disabled:opacity-50 inline-flex items-center gap-2"
+    >
+      {loading && (
+        <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      )}
+      {loading ? t("shop.sendingToStripe") : t("shop.buyProduct")}
+    </button>
+  );
+}
 ```
 
 - [ ] **Step 4: Update price display for free products**
@@ -861,13 +908,17 @@ Replace the existing buy button block (lines 209-220) with:
 Find the price display section and add a free label:
 
 ```javascript
-{product.free ? (
-  <span className="text-lg font-bold text-green-700">{t("shop.freeProduct")}</span>
-) : (
-  <span className="text-lg font-bold">
-    {(product.priceCents / 100).toFixed(2)} {product.currency}
-  </span>
-)}
+{
+  product.free ? (
+    <span className="text-lg font-bold text-green-700">
+      {t("shop.freeProduct")}
+    </span>
+  ) : (
+    <span className="text-lg font-bold">
+      {(product.priceCents / 100).toFixed(2)} {product.currency}
+    </span>
+  );
+}
 ```
 
 - [ ] **Step 5: Verify with ESLint**
@@ -887,6 +938,7 @@ git commit -m "feat: free product claim flow in shop product page"
 ### Task 9: Update inventory page and webhook email links to use `/digital/{slug}`
 
 **Files:**
+
 - Modify: `src/app/inventory/page.js:50-86` (buildDigitalOwnedItem)
 - Modify: `src/app/api/stripe/webhook/route.js:163-175` (email productUrl)
 
@@ -895,33 +947,33 @@ git commit -m "feat: free product claim flow in shop product page"
 In `src/app/inventory/page.js`, replace the `buildDigitalOwnedItem` function (lines 43-96). Change the asset mode block (lines 56-64) to use `/digital/{slug}`:
 
 ```javascript
-  if (mode === "asset") {
-    return {
-      key: `digital:${product.id}`,
-      name: product.name || product.id,
-      description: product.description || "",
-      label: digitalTypeLabel(product),
-      href: `/digital/${encodeURIComponent(product.slug || product.id)}`,
-      action: "Download",
-      isDownload: false,
-    };
-  }
+if (mode === "asset") {
+  return {
+    key: `digital:${product.id}`,
+    name: product.name || product.id,
+    description: product.description || "",
+    label: digitalTypeLabel(product),
+    href: `/digital/${encodeURIComponent(product.slug || product.id)}`,
+    action: "Download",
+    isDownload: false,
+  };
+}
 ```
 
 And change the digital_file block (lines 76-86) similarly:
 
 ```javascript
-  if (product.type === "digital_file") {
-    return {
-      key: `digital:${product.id}`,
-      name: product.name || product.id,
-      description: product.description || "",
-      label: digitalTypeLabel(product),
-      href: `/digital/${encodeURIComponent(product.slug || product.id)}`,
-      action: "Download",
-      isDownload: false,
-    };
-  }
+if (product.type === "digital_file") {
+  return {
+    key: `digital:${product.id}`,
+    name: product.name || product.id,
+    description: product.description || "",
+    label: digitalTypeLabel(product),
+    href: `/digital/${encodeURIComponent(product.slug || product.id)}`,
+    action: "Download",
+    isDownload: false,
+  };
+}
 ```
 
 Note: `isDownload: false` because `/digital/{slug}` handles the redirect/auth flow itself (not a raw file link).
@@ -931,27 +983,27 @@ Note: `isDownload: false` because `/digital/{slug}` handles the redirect/auth fl
 In `src/app/api/stripe/webhook/route.js`, find the `productUrl` resolution (around lines 163-175). Replace:
 
 ```javascript
-          let productUrl = origin;
-          if (courseUri) {
-            productUrl = `${origin}${courseUri}`;
-          } else if (assetId) {
-            productUrl = `${origin}/inventory/${encodeURIComponent(assetId)}`;
-          } else if (digitalProductId) {
-            productUrl = `${origin}/shop`;
-          }
+let productUrl = origin;
+if (courseUri) {
+  productUrl = `${origin}${courseUri}`;
+} else if (assetId) {
+  productUrl = `${origin}/inventory/${encodeURIComponent(assetId)}`;
+} else if (digitalProductId) {
+  productUrl = `${origin}/shop`;
+}
 ```
 
 With:
 
 ```javascript
-          let productUrl = origin;
-          if (courseUri) {
-            productUrl = `${origin}${courseUri}`;
-          } else if (digitalProductId) {
-            // Use slug-based digital download URL; fall back to inventory
-            const slug = session?.metadata?.product_slug || digitalProductId;
-            productUrl = `${origin}/digital/${encodeURIComponent(slug)}`;
-          }
+let productUrl = origin;
+if (courseUri) {
+  productUrl = `${origin}${courseUri}`;
+} else if (digitalProductId) {
+  // Use slug-based digital download URL; fall back to inventory
+  const slug = session?.metadata?.product_slug || digitalProductId;
+  productUrl = `${origin}/digital/${encodeURIComponent(slug)}`;
+}
 ```
 
 - [ ] **Step 3: Pass product slug in Stripe checkout metadata**
@@ -982,6 +1034,7 @@ git commit -m "feat: use /digital/{slug} links in inventory and purchase emails"
 ### Task 10: Deploy, verify, and update coop log
 
 **Files:**
+
 - Modify: `claude+codex-coop.md`
 
 - [ ] **Step 1: Run full lint check**

@@ -69,7 +69,10 @@ async function getTemporaryEnabledUntilMs() {
     return until && until > now ? until : null;
   }
   try {
-    _tempCache = await readAvailabilitySettingsKv(TEMP_ENABLE_KEY, TEMP_CACHE_TTL);
+    _tempCache = await readAvailabilitySettingsKv(
+      TEMP_ENABLE_KEY,
+      TEMP_CACHE_TTL,
+    );
     _tempCacheTs = now;
     const until = normalizeEnabledUntil(_tempCache);
     if (!until || until <= now) return null;
@@ -191,16 +194,14 @@ export async function recordAvailabilityDatapoint({
   try {
     const current = (await readCloudflareKvJson(LOG_KEY)) ?? [];
     const errorList = Array.isArray(errors)
-      ? errors
-          .slice(0, MAX_ERRORS)
-          .map((err) => ({
-            message: String(err?.message || "").slice(0, MAX_RESPONSE_CHARS),
-            path: Array.isArray(err?.path) ? err.path.slice(0, 12) : null,
-            code:
-              typeof err?.extensions?.code === "string"
-                ? err.extensions.code.slice(0, 120)
-                : null,
-          }))
+      ? errors.slice(0, MAX_ERRORS).map((err) => ({
+          message: String(err?.message || "").slice(0, MAX_RESPONSE_CHARS),
+          path: Array.isArray(err?.path) ? err.path.slice(0, 12) : null,
+          code:
+            typeof err?.extensions?.code === "string"
+              ? err.extensions.code.slice(0, 120)
+              : null,
+        }))
       : [];
     const entry = {
       ts: Date.now(),
@@ -230,7 +231,10 @@ export async function recordAvailabilityDatapoint({
       expirationTtl: LOG_TTL_SECONDS,
     });
   } catch (e) {
-    console.error("[graphqlAvailability] Failed to record datapoint:", e.message);
+    console.error(
+      "[graphqlAvailability] Failed to record datapoint:",
+      e.message,
+    );
   }
 }
 
@@ -266,23 +270,23 @@ export async function setRagbazRelayStatus(status) {
     ts: Date.now(),
     ok: Boolean(safe.ok),
     skipped: Boolean(safe.skipped),
-    reason:
-      typeof safe.reason === "string" ? safe.reason.slice(0, 120) : "",
+    reason: typeof safe.reason === "string" ? safe.reason.slice(0, 120) : "",
     status:
       safe.status != null ? Number.parseInt(String(safe.status), 10) || 0 : 0,
     endpoint:
       typeof safe.endpoint === "string" ? safe.endpoint.slice(0, 600) : "",
-    message:
-      typeof safe.message === "string" ? safe.message.slice(0, 600) : "",
-    giftKey:
-      typeof safe.giftKey === "string" ? safe.giftKey.slice(0, 120) : "",
+    message: typeof safe.message === "string" ? safe.message.slice(0, 600) : "",
+    giftKey: typeof safe.giftKey === "string" ? safe.giftKey.slice(0, 120) : "",
   };
   try {
     await writeCloudflareKvJson(RELAY_STATUS_KEY, payload, {
       expirationTtl: LOG_TTL_SECONDS,
     });
   } catch (e) {
-    console.error("[graphqlAvailability] Failed to write relay status:", e.message);
+    console.error(
+      "[graphqlAvailability] Failed to write relay status:",
+      e.message,
+    );
   }
 }
 
@@ -306,17 +310,32 @@ const MAX_PERF_DATAPOINTS = 300;
  *
  * @param {{ url: string, ttfb: number, domComplete: number, lcp?: number, fcp?: number, inp?: number, cls?: number, navigationType?: string }} param
  */
-export async function recordPagePerformance({ url, referrer, sessionId, ttfb, domComplete, lcp, fcp, inp, cls, navigationType }) {
+export async function recordPagePerformance({
+  url,
+  referrer,
+  sessionId,
+  ttfb,
+  domComplete,
+  lcp,
+  fcp,
+  inp,
+  cls,
+  navigationType,
+}) {
   const safeUrl = String(url || "").slice(0, 500);
-  const safeReferrer = typeof referrer === "string" ? referrer.slice(0, 500) : "";
-  const safeSessionId = typeof sessionId === "string" ? sessionId.slice(0, 64) : "";
+  const safeReferrer =
+    typeof referrer === "string" ? referrer.slice(0, 500) : "";
+  const safeSessionId =
+    typeof sessionId === "string" ? sessionId.slice(0, 64) : "";
   const safeTtfb = Math.round(ttfb ?? 0);
   const safeDomComplete = Math.round(domComplete ?? 0);
   const safeLcp = lcp != null ? Math.round(lcp) : null;
   const safeFcp = fcp != null ? Math.round(fcp) : null;
   const safeInp = inp != null ? Math.round(inp) : null;
   const safeCls = cls != null ? Number(cls) : null;
-  const safeNavType = navigationType ? String(navigationType).slice(0, 32) : "navigate";
+  const safeNavType = navigationType
+    ? String(navigationType).slice(0, 32)
+    : "navigate";
 
   // D1 path — always-on, no opt-in gate required
   try {
@@ -327,12 +346,26 @@ export async function recordPagePerformance({ url, referrer, sessionId, ttfb, do
           `INSERT INTO page_vitals (url, referrer, session_id, ttfb, dom_complete, lcp, fcp, inp, cls, navigation_type)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(safeUrl, safeReferrer, safeSessionId, safeTtfb, safeDomComplete, safeLcp, safeFcp, safeInp, safeCls, safeNavType)
+        .bind(
+          safeUrl,
+          safeReferrer,
+          safeSessionId,
+          safeTtfb,
+          safeDomComplete,
+          safeLcp,
+          safeFcp,
+          safeInp,
+          safeCls,
+          safeNavType,
+        )
         .run();
       return;
     }
   } catch (e) {
-    console.error("[graphqlAvailability] D1 page vitals write failed, trying KV:", e.message);
+    console.error(
+      "[graphqlAvailability] D1 page vitals write failed, trying KV:",
+      e.message,
+    );
   }
 
   // KV fallback — still gated by availability logging opt-in
@@ -355,7 +388,10 @@ export async function recordPagePerformance({ url, referrer, sessionId, ttfb, do
       expirationTtl: LOG_TTL_SECONDS,
     });
   } catch (e) {
-    console.error("[graphqlAvailability] Failed to record page performance:", e.message);
+    console.error(
+      "[graphqlAvailability] Failed to record page performance:",
+      e.message,
+    );
   }
 }
 
@@ -379,14 +415,19 @@ export async function getPagePerformanceLog({ limit = 300 } = {}) {
         ...(r.fcp != null ? { fcp: r.fcp } : {}),
         ...(r.inp != null ? { inp: r.inp } : {}),
         ...(r.cls != null ? { cls: r.cls } : {}),
-        ...(r.navigation_type && r.navigation_type !== "navigate" ? { navigationType: r.navigation_type } : {}),
+        ...(r.navigation_type && r.navigation_type !== "navigate"
+          ? { navigationType: r.navigation_type }
+          : {}),
         ...(r.session_id ? { sessionId: r.session_id } : {}),
         ...(r.referrer ? { referrer: r.referrer } : {}),
         ...(r.user_email ? { userEmail: r.user_email } : {}),
       }));
     }
   } catch (e) {
-    console.error("[graphqlAvailability] D1 page vitals read failed, trying KV:", e.message);
+    console.error(
+      "[graphqlAvailability] D1 page vitals read failed, trying KV:",
+      e.message,
+    );
   }
 
   // KV fallback
@@ -409,11 +450,16 @@ export async function associateSessionWithUser(sessionId, email) {
     const db = await tryGetD1();
     if (!db) return;
     await db
-      .prepare("UPDATE page_vitals SET user_email = ? WHERE session_id = ? AND user_email = ''")
+      .prepare(
+        "UPDATE page_vitals SET user_email = ? WHERE session_id = ? AND user_email = ''",
+      )
       .bind(String(email).trim().toLowerCase(), String(sessionId).slice(0, 64))
       .run();
   } catch (e) {
-    console.error("[graphqlAvailability] Failed to associate session with user:", e.message);
+    console.error(
+      "[graphqlAvailability] Failed to associate session with user:",
+      e.message,
+    );
   }
 }
 
@@ -426,7 +472,10 @@ export async function clearPagePerformanceLog() {
       return;
     }
   } catch (e) {
-    console.error("[graphqlAvailability] D1 page vitals clear failed, trying KV:", e.message);
+    console.error(
+      "[graphqlAvailability] D1 page vitals clear failed, trying KV:",
+      e.message,
+    );
   }
 
   // KV fallback

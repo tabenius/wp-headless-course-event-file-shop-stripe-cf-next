@@ -6,7 +6,10 @@ import { appendServerLog } from "@/lib/serverLog";
 import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { getStorefrontCacheEpoch } from "@/lib/storefrontCache";
-import { isBuildPhase, shouldSkipUpstreamDuringBuild } from "@/lib/buildUpstreamGuard";
+import {
+  isBuildPhase,
+  shouldSkipUpstreamDuringBuild,
+} from "@/lib/buildUpstreamGuard";
 import { addServerTiming } from "@/lib/serverTiming";
 
 const DEFAULT_DELAY_MS =
@@ -95,8 +98,9 @@ function stringifyVariablesPreview(value, maxChars = 1200) {
 function extractOperationName(queryText) {
   const query = typeof queryText === "string" ? queryText : "";
   const match =
-    query.match(/\b(query|mutation|subscription)\s+([A-Za-z_][A-Za-z0-9_]*)\b/) ||
-    query.match(/\bfragment\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
+    query.match(
+      /\b(query|mutation|subscription)\s+([A-Za-z_][A-Za-z0-9_]*)\b/,
+    ) || query.match(/\bfragment\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
   if (!match) return "anonymous";
   return match[2] || match[1] || "anonymous";
 }
@@ -199,7 +203,12 @@ async function readGraphqlEdgeCache(cacheRequest) {
   }
 }
 
-async function writeGraphqlEdgeCache(cacheRequest, data, ttlSeconds, staleSeconds) {
+async function writeGraphqlEdgeCache(
+  cacheRequest,
+  data,
+  ttlSeconds,
+  staleSeconds,
+) {
   const edgeCache = getEdgeCache();
   if (!edgeCache || !cacheRequest) return;
   try {
@@ -243,7 +252,7 @@ export async function hasGraphQLType(typeName) {
 export async function fetchGraphQL(
   query,
   variables = {},
-  revalidate = null,
+  revalidate = 60, // null,
   options = {},
 ) {
   if (typeof query !== "string" || query.trim().length === 0) {
@@ -266,9 +275,7 @@ export async function fetchGraphQL(
     process.env.WORDPRESS_GRAPHQL_DEBUG === "1" ||
     process.env.NEXT_PUBLIC_WORDPRESS_GRAPHQL_DEBUG === "1";
   const edgeCacheEnabled =
-    !IS_BUILD_PHASE &&
-    options?.edgeCache === true &&
-    getEdgeCache() !== null;
+    !IS_BUILD_PHASE && options?.edgeCache === true && getEdgeCache() !== null;
   const edgeCacheTtlSeconds =
     Number.parseInt(String(options?.edgeCacheTtlSeconds || ""), 10) ||
     GRAPHQL_EDGE_CACHE_TTL_SECONDS;
@@ -356,7 +363,8 @@ export async function fetchGraphQL(
           endpoint: graphqlEndpoint,
           latencyMs,
           operationName,
-          failureKind: fetchErr.name === "AbortError" ? "timeout" : "network-error",
+          failureKind:
+            fetchErr.name === "AbortError" ? "timeout" : "network-error",
           query: queryPreview,
           variables: variablesPreview,
           responsePreview: trimText(fetchErr?.message || "", 1200),
@@ -364,7 +372,9 @@ export async function fetchGraphQL(
         if (fetchErr.name === "AbortError") {
           const msg = `GraphQL timeout after ${EFFECTIVE_TIMEOUT_MS}ms: ${graphqlEndpoint}`;
           console.error(msg);
-          appendServerLog({ level: "error", msg, persist: false }).catch(() => {});
+          appendServerLog({ level: "error", msg, persist: false }).catch(
+            () => {},
+          );
           return {};
         }
         lastError = `GraphQL fetch error (auth=${auth.mode}): ${fetchErr.message}`;
@@ -415,12 +425,11 @@ export async function fetchGraphQL(
           endpoint: graphqlEndpoint,
           latencyMs,
           operationName,
-          failureKind:
-            !contentType.includes("application/json")
-              ? "invalid-content-type"
-              : response.status >= 500
-                ? "upstream-5xx"
-                : "http-error",
+          failureKind: !contentType.includes("application/json")
+            ? "invalid-content-type"
+            : response.status >= 500
+              ? "upstream-5xx"
+              : "http-error",
           query: queryPreview,
           variables: variablesPreview,
           responsePreview: trimText(firstLines(text, 6), 1200),
@@ -445,7 +454,8 @@ export async function fetchGraphQL(
         );
         lastError = `GraphQL Error (auth=${auth.mode}${isAuthError ? ", auth-rejected" : ""}): ${JSON.stringify(result.errors)}`;
         if (debugGraphQL || isAuthError) console.error(lastError);
-        if (isAuthError && auth.mode === "sitetoken") invalidateSiteTokenCache();
+        if (isAuthError && auth.mode === "sitetoken")
+          invalidateSiteTokenCache();
         const normalizedErrors = normalizeGraphqlErrors(result.errors);
         enqueueAvailabilityDatapoint({
           ok: false,
@@ -483,7 +493,9 @@ export async function fetchGraphQL(
 
     if (lastError) {
       console.error(lastError);
-      appendServerLog({ level: "error", msg: lastError, persist: false }).catch(() => {});
+      appendServerLog({ level: "error", msg: lastError, persist: false }).catch(
+        () => {},
+      );
     }
     return {};
   } catch (error) {

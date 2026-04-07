@@ -52,7 +52,11 @@ function looksLikePlaceholder(value) {
 function hasEnvVars(keys) {
   return keys.every((key) => {
     const value = process.env[key];
-    return typeof value === "string" && value.trim() !== "" && !looksLikePlaceholder(value.trim());
+    return (
+      typeof value === "string" &&
+      value.trim() !== "" &&
+      !looksLikePlaceholder(value.trim())
+    );
   });
 }
 

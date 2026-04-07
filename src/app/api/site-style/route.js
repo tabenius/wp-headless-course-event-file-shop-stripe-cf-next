@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_SITE_STYLE, getShopSettings } from "@/lib/shopSettings";
 
-export const runtime = "edge";
+//export const runtime = "edge";
 
 export async function GET() {
   try {

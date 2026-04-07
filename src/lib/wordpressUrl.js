@@ -7,7 +7,9 @@ function isStaticOrIsrRenderContext() {
   try {
     const store = globalThis?.__openNextAls?.getStore?.();
     if (!store || typeof store !== "object") return false;
-    return store.isStaticGeneration === true || store.isISRRevalidation === true;
+    return (
+      store.isStaticGeneration === true || store.isISRRevalidation === true
+    );
   } catch {
     return false;
   }
@@ -46,7 +48,9 @@ export async function resolveWordPressUrl() {
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
-    const cookieUrl = parseWpConfigCookie(cookieStore.get("ragbaz_wp_config")?.value);
+    const cookieUrl = parseWpConfigCookie(
+      cookieStore.get("ragbaz_wp_config")?.value,
+    );
     if (cookieUrl) return cookieUrl;
   } catch {
     // Not in request context (e.g. build-time generation). Fall back to env.

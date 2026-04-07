@@ -84,7 +84,8 @@ async function resolveWooPriceCentsByUri(courseUri) {
       );
       const rows = (data?.products?.edges || []).map((edge) => edge.node);
       const match = rows.find((product) => uriMatches(product?.uri, courseUri));
-      if (match) return parsePriceCents(match.price || match.regularPrice || "");
+      if (match)
+        return parsePriceCents(match.price || match.regularPrice || "");
 
       const pageInfo = data?.products?.pageInfo;
       if (!pageInfo?.hasNextPage) return 0;
@@ -122,7 +123,8 @@ async function resolveLpPriceCentsByUri(courseUri) {
       );
       const rows = (data?.lpCourses?.edges || []).map((edge) => edge.node);
       const match = rows.find((course) => uriMatches(course?.uri, courseUri));
-      if (match) return parsePriceCents(match.priceRendered || match.price || "");
+      if (match)
+        return parsePriceCents(match.priceRendered || match.price || "");
 
       const pageInfo = data?.lpCourses?.pageInfo;
       if (!pageInfo?.hasNextPage) return 0;
@@ -302,10 +304,14 @@ export async function POST(request) {
       configuredPriceCents > 0
         ? 0
         : await resolveWordPressPriceCents(courseUri, contentKind);
-    const priceCents = Math.max(configuredPriceCents, fallbackWordPressPriceCents);
+    const priceCents = Math.max(
+      configuredPriceCents,
+      fallbackWordPressPriceCents,
+    );
     const vatPercent = normalizeVatPercent(config?.vatPercent);
     const currency = (
       config?.currency ||
+      process.env.DEFAULT_CURRENCY ||
       process.env.DEFAULT_COURSE_FEE_CURRENCY ||
       site.defaultCurrency ||
       "SEK"

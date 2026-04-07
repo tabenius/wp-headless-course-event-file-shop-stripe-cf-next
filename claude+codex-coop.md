@@ -261,6 +261,7 @@
 ### Codex — rewrote Cyberduck setup instructions into numbered action flow
 
 **Delivered:**
+
 - Rephrased Cyberduck setup instructions as a clear 1–4 sequence in all three languages:
   - English
   - Swedish
@@ -270,12 +271,14 @@
   - actual bucket value now fills `{bucket_name}` where available.
 
 **Implementation files:**
+
 - `src/components/admin/R2ConnectionPanel.js`
 - `src/lib/i18n/en.json`
 - `src/lib/i18n/sv.json`
 - `src/lib/i18n/es.json`
 
 **Validation:**
+
 - JSON parse check for all i18n files (pass).
 - `npm run lint -- src/components/admin/R2ConnectionPanel.js` (pass; existing repo warnings unchanged).
 
@@ -284,6 +287,7 @@
 ### Codex — ensured bucket uploads are visible and improved operator-facing Cyberduck guidance
 
 **Delivered:**
+
 - Media library now lists bucket objects from root by default (`prefix=""`), so Cyberduck uploads at bucket root (including `.pdf`) are no longer hidden by an implicit `uploads/` prefix.
 - Added S3 source support in media library API/UI while preserving build-time S3 gating:
   - API source filter now supports `s3` (alongside `wordpress` and `r2`),
@@ -302,6 +306,7 @@
   - non-white standout background with stronger contrast in both checklist locations.
 
 **Implementation files:**
+
 - `src/app/api/admin/media-library/route.js`
 - `src/app/api/admin/upload-info/route.js`
 - `src/app/api/admin/upload-info/cyberduck-bookmark/route.js`
@@ -312,6 +317,7 @@
 - `src/lib/mediaLibraryHelpers.js`
 
 **Validation:**
+
 - `npm run lint -- src/app/api/admin/media-library/route.js src/app/api/admin/upload-info/route.js src/app/api/admin/upload-info/cyberduck-bookmark/route.js src/components/admin/AdminMediaLibraryTab.js src/components/admin/CyberduckBookmarkPanel.js src/components/admin/R2ConnectionPanel.js src/components/admin/R2ManualIngestPanel.js src/lib/mediaLibraryHelpers.js` (pass; existing repo warnings unchanged).
 
 ## 2026-03-30 (Codex) — media upload UX: thumbnail + auto-locate scroll
@@ -319,6 +325,7 @@
 ### Codex — made recent upload entries visual and navigable to the newly uploaded asset row
 
 **Delivered:**
+
 - Recent uploads now show a thumbnail preview for uploaded image assets (and file-type badge fallback for non-images).
 - Added row-linking metadata on upload history entries (`itemId`, `mimeType`) so history can target the exact table row.
 - Added `Locate` action per recent upload entry to focus + scroll to the matching asset row.
@@ -329,6 +336,7 @@
 - Applied same refresh/focus behavior when saving derived preview assets to the library.
 
 **Implementation files:**
+
 - `src/components/admin/AdminMediaLibraryTab.js`
 - `src/lib/mediaLibraryHelpers.js`
 - `src/lib/i18n/en.json`
@@ -336,6 +344,7 @@
 - `src/lib/i18n/es.json`
 
 **Validation:**
+
 - `npm run lint -- src/components/admin/AdminMediaLibraryTab.js src/lib/mediaLibraryHelpers.js` (pass; existing repo warnings unchanged).
 - JSON parse check for i18n files (pass).
 
@@ -344,12 +353,14 @@
 ### Codex — switched source filter chips to slate theme surfaces in Asset Library
 
 **Delivered:**
+
 - Updated source filter button styling in `src/components/admin/AdminMediaLibraryTab.js`:
   - active: `bg-slate-700 text-slate-100`
   - inactive: `bg-slate-100 text-slate-800` with slate hover
 - This removes white-on-white risk for the `Alla källor` label and aligns with normal slate theme contrast.
 
 **Validation:**
+
 - `npm run lint -- src/components/admin/AdminMediaLibraryTab.js` (pass; existing repo warnings unchanged).
 
 ## 2026-03-30 (Codex) — Cyberduck bookmark expander in Products + Info/Storage
@@ -357,6 +368,7 @@
 ### Codex — added expandable Cyberduck info/download flow in requested admin contexts
 
 **Delivered:**
+
 - Added new reusable panel component:
   - `src/components/admin/CyberduckBookmarkPanel.js`
   - compact expandable `<details>` block with endpoint/bucket/region/public URL and a `.duck` bookmark download button.
@@ -370,6 +382,7 @@
   - `src/components/admin/AdminDashboard.js` now forwards this prop to `AdminProductsTab`.
 
 **Validation:**
+
 - `npm run lint -- src/components/admin/CyberduckBookmarkPanel.js src/components/admin/AdminProductsTab.js src/components/admin/AdminInfoHubTab.js src/components/admin/AdminDashboard.js` (pass; existing repo warnings unchanged).
 
 ## 2026-03-30 (Codex) — admin hash-route hardening (prevents concatenated `#/...` paths)
@@ -377,6 +390,7 @@
 ### Codex — normalized malformed/concatenated hash fragments across admin navigation
 
 **Delivered:**
+
 - Added robust hash-path extraction that takes the last canonical `#/...` segment when malformed hashes appear (example: `#/products#/info/stats`).
 - Applied this normalization in all relevant admin route handlers:
   - `src/components/admin/AdminHeader.js`
@@ -385,6 +399,7 @@
 - Route parsing and tab switching now ignore duplicated/concatenated hash fragments instead of drifting into invalid paths.
 
 **Validation:**
+
 - `npm run lint -- src/components/admin/AdminHeader.js src/components/admin/AdminDashboard.js src/components/admin/AdminInfoHubTab.js` (pass; existing repo warnings unchanged).
 
 ## 2026-03-30 (Codex) — KV warning clarity fix for Page Performance / GraphQL panels
@@ -392,6 +407,7 @@
 ### Codex — stopped reporting KV as “not configured” when only build-bypass is active
 
 **Delivered:**
+
 - Updated `src/lib/cloudflareKv.js` so `getCloudflareKvConfigStatus().configured` reflects key presence only:
   - `CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID`
   - `CF_API_TOKEN/CLOUDFLARE_API_TOKEN`
@@ -400,6 +416,7 @@
 - This removes false “not fully configured” warnings in admin panels when runtime env is correctly set.
 
 **Validation:**
+
 - `npm run lint -- src/lib/cloudflareKv.js` (pass; existing repo warnings unchanged).
 
 ## 2026-03-30 (Codex) — KV configuration warning follow-up (runtime build-phase guard + admin diagnostics)
@@ -407,6 +424,7 @@
 ### Codex — fixed false “KV not fully configured” state and exposed explicit missing-key diagnostics
 
 **Delivered:**
+
 - Hardened build-phase detection so deployed Worker runtime is not misclassified as build mode:
   - `src/lib/buildUpstreamGuard.js` now short-circuits build detection when running in edge-like runtime (`globalThis.EdgeRuntime`), then checks explicit `RAGBAZ_BUILD_PHASE=1`.
   - removed `npm_lifecycle_event` from build detection heuristics to avoid build-time lifecycle values bleeding into runtime behavior.
@@ -416,6 +434,7 @@
   - `src/components/admin/GraphqlAvailabilityPanel.js` now reads and shows `kvConfigStatus` details (`Missing runtime keys`, plus build-bypass note when relevant) instead of only generic “not fully configured”.
 
 **Validation:**
+
 - `npm run lint -- src/lib/buildUpstreamGuard.js scripts/build-with-lock.mjs src/components/admin/GraphqlAvailabilityPanel.js` (pass; existing repo warnings unchanged).
 
 ## 2026-03-30 (Codex) — welcome panel rebuilt to reality-first control room (no impress slides)
@@ -423,6 +442,7 @@
 ### Codex — removed onboarding story deck and aligned Welcome with current admin state
 
 **Delivered:**
+
 - Replaced the large `AdminWelcomeTab` story/impress slideshow implementation with a compact reality-based control panel:
   - direct quick links to active tabs,
   - live snapshot rows based on current loaded admin data (WP content counts, catalog count, users, tickets, upload backend, health status),
@@ -439,6 +459,7 @@
 ### Codex — aligned event list behavior with date intent on `/events` and `/`
 
 **Delivered:**
+
 - `/events`: event cards now visibly flag passed events with a high-contrast status pill (`Passed` / `Passerat` / `Finalizado`) and subtle passed-state styling.
 - `/events`: ordering now prioritizes upcoming events first and moves passed events after upcoming ones.
 - Home event list: now strictly filters to upcoming events only (events with ended dates are excluded; undated fallback items are no longer shown as upcoming).
@@ -452,6 +473,7 @@
 ### Codex — kept static pages safe while preserving real GraphQL telemetry from dynamic contexts
 
 **Delivered:**
+
 - Kept `GRAPHQL_AVAILABILITY_AUTO_RECORD` gated off-by-default in `src/lib/client.js`.
 - Hardened request-context gating for GraphQL availability ingestion:
   - logging now fails closed when request context is unknown (no ALS store),
@@ -466,6 +488,7 @@
 ### Codex — made availability settings reads static-safe and isolated logging from static/ISR renders
 
 **Delivered:**
+
 - Added configurable KV read options in `src/lib/cloudflareKv.js` via:
   - `readCloudflareKvJsonWithOptions(key, { cacheMode, revalidateSeconds })`
   - existing `readCloudflareKvJson(key)` now delegates with ISR-safe defaults (`force-cache`, 60s revalidate). WHY: `no-store` was causing "static-to-dynamic at runtime" errors on all ISR pages; every KV read in a render path needs to be cache-safe by default.
@@ -475,6 +498,7 @@
   - prevents telemetry side-effects from turning static page renders dynamic.
 
 **Validation:**
+
 - `npx eslint src/lib/cloudflareKv.js src/lib/graphqlAvailability.js src/lib/client.js` (pass)
 - `npm run cf:build` (pass; `/` remains static in route output, no static-to-dynamic error during build path)
 
@@ -483,6 +507,7 @@
 ### Codex — corrected usability gap in /docs performance page (ragbaz.xyz)
 
 **Delivered (in `ragbaz.xyz` repo):**
+
 - Moved the cache-refresh command card (with copy button) to render outside the collapsible mermaid block so it is visible without opening the diagram.
 - Added an explicit section in EN/SV/ES explaining impact tradeoffs:
   - refresh now vs waiting for TTL,
@@ -493,6 +518,7 @@
   - `Cache refresh command (WP-CLI)` visible above `Mermaid diagram`.
 
 **Release:**
+
 - `ragbaz.xyz` commit: `4751195`
 - Worker version: `ddab87cb-f017-483d-b169-af44b403593e`
 
@@ -501,6 +527,7 @@
 ### Codex — updated multilingual /docs guidance with concrete cache rules and deployed to ragbaz.xyz
 
 **Delivered (in `ragbaz.xyz` repo):**
+
 - Enhanced `performance-explained` docs (EN/SV/ES) with explicit default cache timings and rules:
   - GraphQL edge cache `60s` + `120s` stale,
   - menu snapshot `5m`,
@@ -514,6 +541,7 @@
 - Updated docs rendering to support per-article diagram actions in `renderDocsMermaid`.
 
 **Release:**
+
 - Committed/pushed in `ragbaz.xyz`: `0a4c96d`.
 - Deployed to Cloudflare Workers; version `21b5a3cc-a70f-4f29-8045-b0b121dfff5f`.
 - Verified live at `/docs/en/performance-explained` (new cache section + cache-refresh command present).
@@ -523,6 +551,7 @@
 ### Codex — added lightweight response timing headers for production TTFB diagnosis (commit pending)
 
 **Delivered:**
+
 - Added request-scoped timing accumulator helper:
   - `src/lib/serverTiming.js`
   - stores per-request aggregates in CF request context (`ctx.__ragbazTiming`) when available.
@@ -539,6 +568,7 @@
   - Preserves existing `Server-Timing` values if present by appending.
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only)
 - `npm run cf:build` (pass; patch step logs `added server-timing response headers`)
 
@@ -547,6 +577,7 @@
 ### Codex — removed global forced-dynamic rendering and de-risked header menu fetch path (commit pending)
 
 **Delivered:**
+
 - Changed root layout from forced dynamic (`dynamic = "force-dynamic"`, `revalidate = 0`) back to Next.js default route behavior so ISR/static can work where safe instead of penalizing all routes.
 - Refactored `src/lib/menu.js` to reduce cold-request blocking:
   - menu URI existence checks are now non-blocking by default when sitemap cache is cold (`MENU_NON_BLOCKING_URI_EXISTENCE=1` default fail-open),
@@ -556,6 +587,7 @@
 - Kept a strict fallback path available by env toggle: disabling cold-start background refresh reverts to synchronous fetch path.
 
 **Validation:**
+
 - `node --test tests/menu.test.js` (pass)
 - `npm run lint` (pass; existing warnings only)
 - `npm run cf:build` (pass; `/shop` shows ISR `Revalidate 5m`, middleware deprecation warning unchanged)
@@ -565,6 +597,7 @@
 ### Codex — implemented broad storefront loading skeleton architecture (commit pending)
 
 **Delivered:**
+
 - Added reusable storefront skeleton primitives/components in:
   - `src/components/common/StorefrontSkeletons.js`
   - variants: article, list, grid, detail, home (all with pulsing header/image/body placeholders).
@@ -588,6 +621,7 @@
   - `src/app/shop/[slug]/page.js`
 
 **Validation:**
+
 - Targeted eslint on all changed pages/loading/components (pass)
 - `npm run cf:build` (pass; existing middleware/proxy deprecation warning unchanged)
 
@@ -596,6 +630,7 @@
 ### Codex — made thumbnails visible in product list and enlarged detail thumbnails (commit pending)
 
 **Delivered:**
+
 - Updated Products → list rows to always render a thumbnail preview when available (WooCommerce/LearnPress/Events/shop items), with a robust fallback icon if missing/broken.
 - Increased product-list row visual height (about 2x compared to prior compact rows) to accommodate the thumbnail and improve scanning.
 - Increased title/meta readability in list rows to match the new denser visual layout.
@@ -605,6 +640,7 @@
 - Extended `ImagePickerButton` with a `sizeClass` prop so image picker sizing can be controlled per context.
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminProductsTab.js` (pass; existing `@next/next/no-img-element` warning only)
 
 ## 2026-03-30 (Codex) — BUGS follow-up: admin loading placeholders + status tooltip persistence
@@ -612,6 +648,7 @@
 ### Codex — implemented the latest two BUGS.md items (commit pending)
 
 **Delivered:**
+
 - Replaced generic `Loading…` fallbacks in admin tab Suspense boundaries with tab-shaped skeleton placeholders (`AdminSuspenseFallback`) for:
   - Welcome, Media, Products, Support, Sales, Style, Info, Chat.
 - Added skeleton variants (`split`, `metrics`, `style`, `chat`) so placeholder structure matches expected panel layouts and improves perceived readiness/FCP.
@@ -624,6 +661,7 @@
   - status tooltip persistence bug
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminDashboard.js src/components/admin/AdminHeader.js` (pass)
 - `npm run cf:build` (pass; existing middleware deprecation warning remains)
 
@@ -632,6 +670,7 @@
 ### Codex — moved stats ticker into main header row and made account/logout always visible (commit pending)
 
 **Delivered:**
+
 - Moved the admin stats ticker from a dedicated second header row into the center of the main header bar (`AdminHeader`), preserving the existing rolling ticker feed and cadence.
 - Added a visible actionable account pill in the main header that:
   - fetches current admin session identity from `GET /api/admin/session`,
@@ -642,6 +681,7 @@
 - Added header/feedback strip CSS tokens and classes (`admin-header-ticker-inline`, `admin-header-account-pill`, `admin-feedback-strip`) to keep styling consistent with the current admin theme.
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only)
 - `npm run cf:build` (pass)
 
@@ -650,6 +690,7 @@
 ### Codex — switched pre-check header state to unknown + actionable translated tooltip (commit `d8e9b7d`)
 
 **Delivered:**
+
 - Changed admin header status semantics so it no longer shows red before any health check has run:
   - `deriveHealthStatus(null|empty) -> "unknown"` in `AdminDashboard`
   - header default state now `unknown` with gray dot.
@@ -669,6 +710,7 @@
   - `healthOpenChecks`
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only)
 - `node --experimental-test-module-mocks --test tests/i18n-admin-parity.test.js` (pass)
 - `npm run cf:build` (pass)
@@ -678,6 +720,7 @@
 ### Codex — verified sales trend is live and completed secret/env tab (commit `2ddf156`)
 
 **Verification first (requested):**
+
 - Confirmed sales trend diagram is already implemented and wired:
   - component: `src/components/admin/SalesTrendChart.js`
   - helpers: `src/components/admin/salesTrendHelpers.js`
@@ -686,6 +729,7 @@
 - Marked BUGS entry as done for the sales trend feature.
 
 **Delivered (Secret/Env continuation):**
+
 - Added shared admin env catalog with expanded coverage (including previously missing vars like `CF_KV_NAMESPACE_ID`) in:
   - `src/lib/adminEnvCatalog.js`
 - Extended env-status endpoint to:
@@ -709,6 +753,7 @@
 - Marked BUGS entry as done for the “new secret tab + password confirmation + fill missing env vars” feature.
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only)
 - `node --experimental-test-module-mocks --test tests/i18n-admin-parity.test.js tests/sales-trend-chart.test.js` (pass)
 - `npm run cf:build` (pass)
@@ -718,6 +763,7 @@
 ### Codex — immediate admin loading feedback, hotkey/help cleanup, and compatibility fixes (commit `ecbf5ad`)
 
 **Delivered:**
+
 - Added route-level admin loading shell for immediate visual feedback while admin page/data hydrate:
   - new `src/components/admin/AdminLoadingShell.js`
   - new `src/app/admin/loading.js`
@@ -738,6 +784,7 @@
   - duplicated Sales “Need help?” block.
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only).
 - `node --experimental-test-module-mocks --test tests/admin-hotkeys.test.js tests/stripe-payments.test.js` (pass).
 - `npm run cf:build` (pass; OpenNext + worker patch complete).
@@ -747,6 +794,7 @@
 ### Codex — moved admin styling to route-scoped stylesheet (commit `c05ae2d`)
 
 **Delivered:**
+
 - Created `src/app/admin/admin.css` and moved all admin-only selectors there:
   - admin layout shell/reset (`.admin-layout`, `main:has(.admin-layout)`),
   - admin token and surface mappings,
@@ -756,6 +804,7 @@
 - Removed unused admin font import wiring in `admin/layout.js` while keeping `AdminThemeWrapper` behavior intact.
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only).
 
 ## 2026-03-29 (Codex) — admin UI standardization follow-up
@@ -763,12 +812,14 @@
 ### Codex — simplify header chrome + fix form-state styling leaks (commit `dd9e2e1`)
 
 **Delivered:**
+
 - Removed textured/ornamental admin header surface treatment to keep the top bar visually standard and calmer.
 - Switched admin typography from monospaced display to standard sans-serif defaults for better readability/scannability.
 - Fixed admin form-control selector so only text-like inputs are force-styled; checkboxes/radios now keep proper native semantics and checked-state clarity.
 - Strengthened Products visibility list state differentiation by adding explicit left-border state markers on selected rows.
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only).
 
 ## 2026-03-28 (Codex) — admin UI stabilization (remove purple + stop storefront CSS bleed)
@@ -776,6 +827,7 @@
 ### Codex — neutral admin palette + CSS scope hardening (commit `93f0a39`)
 
 **Delivered:**
+
 - Scoped storefront-only styling away from admin in `src/app/globals.css`:
   - dark-mode storefront rules now gated behind `body:not(:has(.admin-layout))`,
   - global CTA button rule now excluded from admin (`body:not(:has(.admin-layout)) :where(button, ...)`),
@@ -787,6 +839,7 @@
 - Removed remaining purple category metadata in derivation operation registry (`effects` now uses `slate`).
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only: manual stylesheet include in layout + expected `<img>` warnings in admin image-heavy surfaces).
 
 ## 2026-03-28 (Codex) — build mode upstream bypass for rate-limited WordPress/Varnish
@@ -794,6 +847,7 @@
 ### Codex — default build-time upstream skip (`SKIP_UPSTREAM_DURING_BUILD=1`) (commit `4aec6dc`)
 
 **Delivered:**
+
 - Added `src/lib/buildUpstreamGuard.js` with:
   - `isBuildPhase()`
   - `shouldSkipUpstreamDuringBuild()` (default enabled in build phase unless explicitly set to `0`/`false`)
@@ -803,6 +857,7 @@
 - Documented new flag in `.env.example` (`SKIP_UPSTREAM_DURING_BUILD=1`) and README configuration table.
 
 **Validation:**
+
 - `npx eslint src/lib/buildUpstreamGuard.js src/lib/client.js src/lib/menu.js src/app/page.js`
 - `node --check` on the same files
 
@@ -811,12 +866,14 @@
 ### Codex — removed stale-callback/exhaustive-deps suppressions in admin UI (commit `71a8f1d`)
 
 **Delivered:**
+
 - `src/components/admin/ImageGenerationPanel.js`:
   - Replaced mount-only prompt-generation effect suppression with dependency-safe effect (`initialPrompt`, `description`, `generatePrompt`) plus one-shot ref guard (`hasAutogeneratedPromptRef`) to avoid repeated generation loops.
 - `src/components/admin/AdminProductsTab.js` (`PriceAccessForm`):
   - Replaced suppressed auto-save effect with latest-callback ref pattern (`latestSaveUnifiedRef`) so `autoSaveTrigger` executes the freshest `saveUnified` function without stale closure risk or dependency suppression.
 
 **Validation:**
+
 - `npx eslint src/components/admin/ImageGenerationPanel.js src/components/admin/AdminProductsTab.js --rule "react-hooks/exhaustive-deps: 1" --rule "no-use-before-define: [2, {\"functions\": false, \"classes\": true, \"variables\": true}]"`
 - `node --check src/components/admin/ImageGenerationPanel.js src/components/admin/AdminProductsTab.js`
 
@@ -825,6 +882,7 @@
 ### Claude — shop catalog split (commits `bf6b170`..`c712a86`)
 
 **Delivered:**
+
 - Aligned `SHOP_CATALOG_CACHE_TTL_MS` default from 120s to 300s to match ISR revalidation, eliminating unnecessary GraphQL refetches within an ISR cycle.
 - Replaced disabled "Checking…" button with pulsing skeleton pill (`animate-pulse`) in `ShopIndex.js` for lighter ownership loading state.
 - Added `GET /api/admin/cache-info` endpoint returning ISR, catalog, GraphQL edge, and SWR cache TTL values.
@@ -833,6 +891,7 @@
 ### Claude — image pipeline defaults (commits `b0b8c2f`..`a57a1fc`)
 
 **Delivered:**
+
 - Created `src/lib/uploadPipeline.js` with pure helpers (`shouldSkipPipeline`, `buildVariantDefs`, `buildVariantFilename`) and `runUploadPipeline` orchestration function.
 - Auto-generates WebP compressed + responsive variants (sm 50%, md 100%, lg 150%) on admin image upload.
 - Skip conditions: non-image MIME, GIF, <320px either dimension. Already WebP/AVIF sources skip format conversion but still get responsive sizes.
@@ -840,10 +899,12 @@
 - Variants registered via existing `registerUploadedAsset` and returned in `variants` array in upload response.
 
 **Validation:**
+
 - `node --test tests/shop-catalog-split.test.js tests/upload-pipeline.test.js` — 19 tests, all pass
 - Branch: `feat/shop-catalog-image-pipeline` (9 commits, ready for merge)
 
 **Specs and plans:**
+
 - `docs/superpowers/specs/2026-03-28-shop-catalog-split-design.md`
 - `docs/superpowers/specs/2026-03-28-image-pipeline-defaults-design.md`
 - `docs/superpowers/plans/2026-03-28-shop-catalog-split.md`
@@ -854,6 +915,7 @@
 ### Claude — font laboratory review (commit on main)
 
 **Delivered:**
+
 - Added "Vintage" typography theme preset to `typographyThemes.js` (Playfair Display, Cormorant Garamond, Lora — all variable, warm old-style serifs).
 - Added collapsible CSS panel per font role card in `AdminStyleTab.js` showing `@font-face` declaration and Google Fonts CDN URL with copy buttons.
 - Added cross-role font awareness to `AdminFontBrowserModal.js`: accepts `usedFonts` prop, shows role badges (e.g., "Display", "Heading") next to fonts already used by other roles.
@@ -861,16 +923,19 @@
 ### Claude — sales trend chart (commit `5d81dc3`)
 
 **Delivered:**
+
 - Created `salesTrendHelpers.js` with pure data processing helpers: `dominantCurrency`, `aggregateDailyRevenue`, `computeSMA`, `computeRSI`.
 - Created `SalesTrendChart.js` — compact SVG chart rendering daily revenue over last 365 days with MA20 (indigo) and MA200 (gray dashed) moving average overlays, quarter markers (Q1–Q4), and RSI-14 oscillator with 75/25 reference lines.
 - Integrated chart into `AdminSalesTab.js` between metric cards and payment table.
 - No external charting libraries — pure SVG matching existing `StatsChart.js` pattern.
 
 **Validation:**
+
 - `node --test tests/sales-trend-chart.test.js` — 14 tests, all pass
 - `npx next build` — clean build
 
 **Specs and plans:**
+
 - `docs/superpowers/specs/2026-03-28-font-laboratory-review-design.md`
 - `docs/superpowers/specs/2026-03-28-sales-trend-chart-design.md`
 - `docs/superpowers/plans/2026-03-28-sales-trend-chart.md`
@@ -880,18 +945,21 @@
 ### Codex — shop catalog cache + asset-variant storefront rendering (commits `d82f886`, `518ea57`)
 
 **Delivered:**
+
 - Added short-lived aggregated shop cache (`SHOP_CATALOG_CACHE_TTL_MS`) in `src/lib/shopProducts.js` so repeated catalog assembly (WP + KV + settings) reuses server-side results between refresh windows.
 - Extended asset persistence in `src/lib/avatarFeedStore.js` to keep variant history (`variants`) instead of only the last uploaded source, while still exposing a single preferred `source`.
 - Wired asset-mode digital products to resolve stored asset variants and expose `imageSources` to storefront rendering.
 - Updated `src/components/shop/ShopIndex.js` image rendering to use a width-aware loader over responsive variants (`sm/md/lg`) when available, with safe fallback to single-source image URLs.
 
 **Validation:**
+
 - `npx eslint src/lib/avatarFeedStore.js src/lib/shopProducts.js src/components/shop/ShopIndex.js`
 - `node --check` on the same files
 
 ### Codex — font payload trimming + performance budget gate scaffold (commits `518ea57`, `e63a825`)
 
 **Delivered:**
+
 - Added core-weight font CSS mode in `src/app/api/site-fonts/route.js` backed by new helpers in `src/lib/downloadedFonts.js`:
   - `parseFontWeightList`
   - `getAllFontFaceCss(..., { trimToWeights })`
@@ -900,10 +968,12 @@
 - Documented new knobs and status updates in `.env.example`, `README.md`, and `docs/performance-and-seo.md`.
 
 **Important push note:**
+
 - Directly committing workflow-file updates is blocked by current PAT scope (`workflow` permission missing).
 - Budget script and docs are pushed; workflow hook change was intentionally reverted in follow-up commit `e63a825` so branch push could proceed.
 
 **Validation:**
+
 - `npx eslint src/lib/downloadedFonts.js src/app/api/site-fonts/route.js scripts/check-performance-budgets.mjs`
 - `node --experimental-test-module-mocks --test tests/downloadedFonts.test.js`
 - `npm run perf:budget`
@@ -914,6 +984,7 @@
 ### Codex — R2 bindings + CF bundle-size migration (commit `1258caa`)
 
 **Delivered:**
+
 - Added Worker-native R2 binding accessor (`src/lib/r2Bindings.js`) and switched storage operations to prefer `R2_BUCKET` binding first, then edge-signed R2 requests, then AWS SDK fallback.
 - Updated OpenNext/CF patch scripts:
   - externalized AWS SDK packages from Worker bundle path,
@@ -921,36 +992,42 @@
 - Added R2 bucket binding in `wrangler.jsonc`.
 
 **Validation:**
+
 - `npx eslint src/lib/s3upload.js src/lib/r2Bindings.js scripts/patch-opennext.mjs scripts/patch-cf-worker.mjs`
 - `node --check src/lib/s3upload.js src/lib/r2Bindings.js scripts/patch-opennext.mjs scripts/patch-cf-worker.mjs`
 
 ### Codex — media/derivation UX hardening (commit `148ccba`)
 
 **Delivered:**
+
 - Fixed async auth callsites in admin media API to await WordPress GraphQL auth correctly.
 - Added derivation quick-add operator buttons for common operations.
 - Added derivation panel keyboard shortcuts (`Alt+/`, `Alt+N`, `Alt+E`, `Alt+Shift+E`).
 - Added i18n keys for new derivation panel controls in EN/SV/ES.
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js src/app/api/admin/media-library/route.js`
 - i18n JSON validation for EN/SV/ES.
 
 ### Codex — image pipeline defaults + responsive variants (commit `b482c8f`)
 
 **Delivered:**
+
 - Changed derivation default output fallback from JPEG to WebP (`resolveOutputFormat`).
 - Enforced non-original upload variant default to `compressed` (instead of `original`) and expanded accepted responsive variant kinds.
 - Upgraded `ImageUploader` to save responsive variants (`sm`, `md`, `lg`) from one crop flow while keeping original upload lineage.
 - Added UI hint about automatic responsive variants and aligned variant-type messaging.
 
 **Validation:**
+
 - `npx eslint src/components/admin/ImageUploader.js src/lib/photonPipeline.js src/app/api/admin/upload/route.js tests/photon-pipeline.test.js`
 - `node --test tests/photon-pipeline.test.js`
 
 ### Codex — static `/shop` shell + async ownership enrichment API (commit `ae2bf50`)
 
 **Delivered:**
+
 - Converted `/shop` page to a static catalog shell (`revalidate = 300`) without per-request auth/access gating.
 - Added `/api/shop/ownership` POST endpoint that handles:
   - session-aware ownership enrichment,
@@ -959,11 +1036,13 @@
 - Updated `ShopIndex` to load ownership/checkout state asynchronously on client while keeping purchase flow behavior.
 
 **Validation:**
+
 - `npx eslint src/app/shop/page.js src/components/shop/ShopIndex.js src/app/api/shop/ownership/route.js`
 
 ### Codex — tiered settings + WC proxy + Stripe key overrides (commit `80a651d`)
 
 **Delivered:**
+
 - Added KV-backed settings store helper (`src/lib/adminSettingsStore.js`) for:
   - `settings:wc_proxy`
   - `settings:stripe_key_overrides`
@@ -980,6 +1059,7 @@
   - Stripe webhook can forward payloads to WC proxy endpoint when enabled.
 
 **Validation:**
+
 - `npx eslint` over all touched settings/stripe/admin route files
 - `node --check` on new settings component/store/routes
 
@@ -988,6 +1068,7 @@
 ### Codex — enforced product-name capitalization standard (homepage + docs copy)
 
 **Delivered:**
+
 - Applied user-facing naming standard across rendered copy:
   - `RAGBAZ-Bridge`
   - `RAGBAZ-StoreFront`
@@ -995,24 +1076,28 @@
 - Kept technical paths/slugs/download URLs unchanged (`/downloads/ragbaz-bridge/ragbaz-bridge.zip`) to avoid breakage.
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `18b714d` (`ui copy: enforce RAGBAZ-Bridge and RAGBAZ-StoreFront capitalization`)
 - Deployed worker version: `47fb357a-7074-4f36-a538-0dc2ee162445`
 
 ### Codex — continued PRO admin elaboration (boundary + adoption guidance)
 
 **Delivered:**
+
 - Continued the `/articulate` PRO admin documentation with:
   - `OSS vs PRO Admin Boundary (At a Glance)` table (area-by-area OSS scope vs PRO scope),
   - `When Teams Usually Adopt PRO Admin UI` section (practical adoption signals for operators).
 - This keeps the edition split explicit at decision-time, not just as a static feature list.
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `183f1bb` (`articulate: add oss/pro admin boundary and pro adoption signals`)
 - Deployed worker version: `76facda6-50a8-43be-95f6-6392608bd882`
 
 ### Codex — further expansion of PRO storefront admin UI feature detail
 
 **Delivered:**
+
 - Continued elaboration of `/articulate` PRO admin documentation with three additional structured sections:
   - `PRO Admin UI Modules` (module/capabilities/operator-outcome table),
   - `PRO Operator Workflows` (daily ops, campaign/content, incident loops),
@@ -1020,24 +1105,28 @@
 - Kept this data-driven in `renderArticulatePage` so future feature updates remain centralized and fast to maintain.
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `48c68e8` (`articulate: add pro admin modules, workflows, and update discipline`)
 - Deployed worker version: `b1870f0c-6b72-4419-90d9-d0a6ef2a6a8e`
 
 ### Codex — expanded PRO storefront admin UI feature documentation
 
 **Delivered:**
+
 - Extended `/articulate` with a more detailed PRO storefront admin UI section:
   - added explicit `PRO Storefront Admin UI (Detailed)` block,
   - documented control-room navigation scope, diagnostics/remediation flow, media/derivation operations, access/commerce controls, storage governance, keyboard ergonomics, role-aware docs/help, and readability/theme controls.
 - Kept this tied to the storefront matrix model so updates remain centralized and maintainable.
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `42a90ae` (`articulate: expand pro storefront admin ui feature detail`)
 - Deployed worker version: `90e2642b-fc3b-4093-a6ea-0eda4110ee43`
 
 ### Codex — Articulate storefront matrix (OSS vs PRO/FULL) + diacritics fix
 
 **Delivered:**
+
 - Expanded `/articulate` with a dedicated storefront feature matrix:
   - clear split between `OSS storefront` and `PRO/FULL storefront`,
   - shared baseline capabilities section,
@@ -1053,12 +1142,14 @@
   - `/docs/sv/changelog` and `/docs/es/changelog` show proper accented characters.
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `e183fa5` (`articulate: add oss vs pro storefront matrix; fix sv/es diacritics`)
 - Deployed worker version: `009cef6c-0187-41ab-b987-b4348eced883`
 
 ### Codex — Mermaid contrast fix + Ctrl+Alt hotkey restore on ragbaz.xyz docs
 
 **Delivered:**
+
 - Fixed Mermaid readability issue in docs technical manual for darker themes (notably water/fire/aether):
   - added explicit high-contrast Mermaid theme variables at render init based on active CSS theme tokens,
   - added SVG-level Mermaid CSS overrides for text, arrows, arrowheads, node fills, and edge-label backgrounds.
@@ -1067,12 +1158,14 @@
 - Verified live technical-manual HTML includes both the new Mermaid contrast selectors and updated hotkey logic.
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `8dd90dd` (`docs ui: fix mermaid contrast and restore ctrl+alt theme/font hotkeys`)
 - Deployed worker version: `df8669b4-796a-453e-b893-4187a6d6ae05`
 
 ### Codex — changelog expanded + translated (SV/ES) on ragbaz.xyz docs
 
 **Delivered:**
+
 - Expanded weekly changelog narrative to be more descriptive while staying non-technical and user/admin-outcome focused.
 - Added full Swedish and Spanish changelog coverage (metadata + article body), removing English-only fallback behavior for this guide.
 - Updated docs article metadata so changelog title/summary/audience are localized in EN/SV/ES.
@@ -1081,23 +1174,27 @@
   - `/docs/es/changelog` (localized title, lead, weekly sections)
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `1fc8bf6` (`docs changelog: expand weekly narrative and add sv/es translations`)
 - Deployed worker version: `d2ab0666-1f85-433c-a90f-3d6a8c2ff7bb`
 
 ### Codex — docs safety strip guide submenu (direct document jump)
 
 **Delivered:**
+
 - Extended docs article safety strip so `Guide` (active doc slug, e.g. `changelog`) now has a subtle hover/focus submenu.
 - Submenu lists all docs articles and links directly to each guide in the current language.
 - Active guide is highlighted (`aria-current="true"`), matching the language submenu behavior.
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `33deddd` (`docs safety strip: add guide submenu for direct doc navigation`)
 - Deployed worker version: `93def01e-5617-4c44-b825-47ca7d455987`
 
 ### Codex — docs safety strip language submenu (subtle hover)
 
 **Delivered:**
+
 - Updated `ragbaz.xyz/src/lib/pages.js` safety-strip renderer to support optional submenu items per safety cell.
 - Wired docs language safety item to show `en/sv/es` as a subtle hover/focus submenu from the `Language en` value.
 - Kept `/docs` as a separate direct safety-strip link (`Base /docs`) exactly as before.
@@ -1108,12 +1205,14 @@
   - unchanged `/docs` safety link
 
 **Publish:**
+
 - `ragbaz.xyz` commit: `439ee75` (`docs safety strip: add subtle language hover submenu`)
 - Deployed worker version: `bdd73b49-d7d8-49f1-853d-fcc337e91e2f`
 
 ### Codex — published weekly changelog on ragbaz.xyz docs
 
 **Delivered:**
+
 - Added docs article `changelog` to `ragbaz.xyz` docs content (`src/lib/pages.js`) and deployed worker.
 - Verified live pages:
   - `/docs/en/changelog` shows Weekly Changelog timeline content
@@ -1124,6 +1223,7 @@
 ### Codex — protocol update: changelog uses shared docs lock + helper flow
 
 **Delivered:**
+
 - Updated `AGENTS.md` shared-doc protocol scope to include `docs/CHANGELOG.md`.
 - Updated lock example commands to include changelog in acquire/add steps.
 - Updated changelog protocol rules to explicitly require the same lock + pull + commit/push + release helper flow for changelog edits.
@@ -1131,6 +1231,7 @@
 ### Codex — AGENTS protocol update for weekly changelog + ragbaz.xyz publish
 
 **Delivered:**
+
 - Updated `AGENTS.md` protocol with a required changelog workflow:
   - keep `docs/CHANGELOG.md` updated week by week,
   - keep content user/admin-experience focused,
@@ -1141,6 +1242,7 @@
 ### Codex — image operator usability pass + new Instagram-style tilt shift
 
 **Delivered:**
+
 - Added new image operator `tiltShift` (Instagram-style radial focus blur) in derivation registry:
   - `centerX`, `centerY`, `focusRadius`, `variance`, `intensity`, `blurRadius`
   - sensible defaults via `buildDefaultParams`
@@ -1158,12 +1260,14 @@
 - Added/updated photon pipeline tests for tilt-shift blend math in `tests/photon-pipeline.test.js`.
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js src/lib/photonPipeline.js src/components/admin/DerivationEditor/operationRegistry.js src/lib/mediaLibraryHelpers.js tests/photon-pipeline.test.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
 ### Codex — tilt shift linear mode + fast/full preview quality toggle
 
 **Delivered:**
+
 - Extended `tiltShift` operator with mode selector:
   - `mode: radial | linear` (default radial)
   - linear mode preserves a horizontal in-focus band and blurs top/bottom
@@ -1177,12 +1281,14 @@
 - Added UI hint when preview was generated in fast mode, warning that output may be downscaled.
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js src/app/api/admin/derivations/apply/route.js src/lib/photonPipeline.js src/components/admin/DerivationEditor/operationRegistry.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
 ### Codex — one-click full-quality save flow for derivations
 
 **Delivered:**
+
 - Added one-click action in Media → Derivations:
   - `Apply full-quality and save`
 - Refactored apply/save flow in `AdminMediaLibraryTab`:
@@ -1194,12 +1300,14 @@
   - backend upload helper also rejects fast-quality save attempts defensively
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
 ### Codex — derivation operator UI ergonomics pass (collapse/search/reset)
 
 **Delivered:**
+
 - Added operation-card ergonomics for long derivations:
   - per-step `Fold/Open` toggle
   - global `Collapse all` / `Expand all`
@@ -1213,12 +1321,14 @@
   - add button disables when no matching operator is selectable
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
 ### Codex — keyboard shortcuts for focused derivation step actions
 
 **Delivered:**
+
 - Added focused-step keyboard controls in Media derivation editor:
   - `Alt+F` fold/unfold current step
   - `Alt+B` bind missing params from defaults
@@ -1229,12 +1339,14 @@
 - Updated per-step shortcut hint text to include all supported key combos.
 
 **Validation:**
+
 - `npx eslint src/components/admin/AdminMediaLibraryTab.js` (pass, existing `no-img-element` warning only)
 - `node --test tests/photon-pipeline.test.js` (pass)
 
 ### Codex — user/admin experience changelog document (weekly timeline)
 
 **Delivered:**
+
 - Added a new high-level weekly changelog document:
   - `docs/CHANGELOG.md`
 - Content focus is product/admin experience and major feature outcomes (not code details), using a week-by-week timeline.
@@ -1243,21 +1355,26 @@
 ### Codex — aether status-pill contrast fix on ragbaz.xyz
 
 **Delivered:**
+
 - Fixed low-contrast status labels in `aether` theme on ragbaz.xyz (affected `good/warn/bad` pills used by labels such as `GraphQL source`, `SSR draft`, `detected`, `missing`, `Fetched (200)`).
 - Added explicit `:root[data-theme="aether"] .pill.*` overrides with stronger foreground/background/border contrast in `ragbaz.xyz/src/lib/pages.js`.
 
 **Validation:**
+
 - `node --check src/lib/pages.js` (pass)
 
 **Commit:**
+
 - `ragbaz.xyz` `c686561` — `Improve aether pill contrast for status labels`
 
 **Deploy:**
+
 - Deployed ragbaz.xyz worker (`Version ID: 34901f08-f42f-44a4-8807-93ae0ad0f0bc`).
 
 ### Codex — admin in-context docs links/tooltips (EN/SV/ES aware), phase 1
 
 **Delivered:**
+
 - Added locale-aware docs URL helper in main:
   - `src/lib/ragbazDocs.js`
   - language normalization (`en/sv/es`)
@@ -1275,15 +1392,18 @@
   - `src/lib/i18n/es.json`
 
 **Validation:**
+
 - `node --check` pass for all modified JS files
 - i18n JSON parse check pass for EN/SV/ES
 
 **Commit:**
+
 - `main` `bd5e436` — `Add locale-aware admin docs help links with contextual tooltips`
 
 ### Codex — admin in-context docs links/tooltips, phase 2 (broader surface + no legacy docs focus)
 
 **Delivered:**
+
 - Extended docs-link integration to additional high-traffic admin surfaces:
   - `AdminStyleTab`
   - `AdminWelcomeTab` (dashboard mode)
@@ -1293,15 +1413,18 @@
 - Added missing localized i18n labels for external docs cards in EN/SV/ES.
 
 **Validation:**
+
 - `node --check` pass for all modified JS files
 - i18n JSON parse check pass for EN/SV/ES
 
 **Commit:**
+
 - `main` `01f5297` — `Expand admin docs links across info, style, welcome, and chat`
 
 ### Codex — admin field-level docs help links, phase 3
 
 **Delivered:**
+
 - Added reusable field-level `?` helper control for contextual docs:
   - `src/components/admin/AdminFieldHelpLink.js`
 - Wired field-level localized help links into high-edit-density forms:
@@ -1311,6 +1434,7 @@
   - `admin.docsOpenGuideAria`
 
 **Validation:**
+
 - `node --check` pass for:
   - `src/components/admin/AdminFieldHelpLink.js`
   - `src/components/admin/AdminProductsTab.js`
@@ -1318,11 +1442,13 @@
 - i18n JSON parse checks pass for EN/SV/ES
 
 **Commit:**
+
 - `main` `55b75df` — `Add field-level docs help links in products and derivations`
 
 ### Codex — admin field-level docs help links, phase 4 (sales + support)
 
 **Delivered:**
+
 - Extended inline field-level docs `?` helpers into additional operator-heavy admin tabs:
   - `AdminSalesTab`: email filter control and date-filter controls
   - `AdminSupportTab`: new-ticket section, priority selector, status selector, comments section
@@ -1330,16 +1456,19 @@
   - `admin.dateFilter` in EN/SV/ES
 
 **Validation:**
+
 - `node --check src/components/admin/AdminSalesTab.js` (pass)
 - `node --check src/components/admin/AdminSupportTab.js` (pass)
 - i18n JSON parse checks pass for EN/SV/ES
 
 **Commit:**
+
 - `main` `a833eca` — `Add field-level docs helpers in sales and support`
 
 ### Codex — removed legacy `/admin/docs` routes and re-linked manual sources
 
 **Delivered:**
+
 - Deleted obsolete in-admin documentation routes and renderer components:
   - `src/app/admin/docs/page.js`
   - `src/app/admin/docs/[slug]/page.js`
@@ -1350,16 +1479,19 @@
 - Added configurable docs base handling in manuals via `NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL` fallback to `https://ragbaz.xyz/docs`.
 
 **Validation:**
+
 - `node --check src/lib/manuals.js` (pass)
 - `node --check src/lib/chat/rag.js` (pass)
 - `rg -n "/admin/docs" src` now returns no runtime references.
 
 **Commit:**
+
 - `main` `dab5e74` — `Remove legacy admin docs route and link manuals to ragbaz docs`
 
 ### Codex — field-level docs helpers expanded across info/health/stats/style
 
 **Delivered:**
+
 - Added additional field-level `?` docs helpers in System/Info surfaces:
   - `AdminInfoHubTab`: runtime posture, storage backend, upload destination, environment variables, dead-link finder
   - `AdminConnectorsTab`: health-check header + Stripe webhook + plugin install blocks
@@ -1369,6 +1501,7 @@
   - `admin.statsSubtitle`
 
 **Validation:**
+
 - `node --check` pass:
   - `src/components/admin/AdminInfoHubTab.js`
   - `src/components/admin/AdminConnectorsTab.js`
@@ -1377,24 +1510,29 @@
 - i18n JSON parse checks pass for EN/SV/ES
 
 **Commit:**
+
 - `main` `c58459f` — `Expand field-level docs helpers across info, health, stats, and style`
 
 ### Codex — sandbox/system panel docs helper pass
 
 **Delivered:**
+
 - Added contextual docs guidance to `AdminSandboxTab` so advanced operators have in-place help while handling cache/deploy and diagnostics:
   - Added section-level docs chips in the sandbox header
   - Added field-level `?` helpers for sandbox settings, environment block, recent commits, and recent requests
 
 **Validation:**
+
 - `node --check src/components/admin/AdminSandboxTab.js` (pass)
 
 **Commit:**
+
 - `main` `f21de42` — `Add docs helpers in sandbox system panel`
 
 ### Codex — localized helper labels + keyboard docs shortcuts
 
 **Delivered:**
+
 - Localized remaining helper labels in Style/Sandbox surfaces that pair with docs `?` links:
   - `AdminStyleTab`: typography/themes/button-style labels now use i18n keys
   - `AdminSandboxTab`: recent-requests label now uses i18n key
@@ -1410,6 +1548,7 @@
   - `admin.recentRequests`
 
 **Validation:**
+
 - `node --check` pass:
   - `src/components/admin/AdminFieldHelpLink.js`
   - `src/components/admin/AdminStyleTab.js`
@@ -1417,25 +1556,30 @@
 - i18n JSON parse checks pass for EN/SV/ES
 
 **Commit:**
+
 - `main` `3284274` — `Localize style/sandbox helper labels and add docs-link hotkeys`
 
 ### Codex — ragbaz.xyz tenant draft canonicalization + Mermaid rendering fix
 
 **Delivered (nested repo `ragbaz.xyz`):**
+
 - Canonicalized tenant draft URLs so `/tenant/{domain}/...` now redirects to `/tenant/{domain}` (admin routes remain handled by existing `/tenant/{domain}/admin...` proxy branch).
 - Fixed docs diagram rendering by replacing raw Mermaid code blocks with `.mermaid` containers and enabling client-side Mermaid rendering on docs pages.
 - Enabled Mermaid only for docs routes via `shell(..., { enableMermaid: true })`.
 
 **Validation:**
+
 - `node --check src/index.js` (pass)
 - `node --check src/lib/pages.js` (pass)
 
 **Commit:**
+
 - `ragbaz.xyz` `d990944` — `Canonicalize tenant draft URLs and render docs Mermaid diagrams`
 
 ### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
+
 - Added multilingual documentation routes on ragbaz.xyz:
   - `/docs` (default EN index)
   - `/docs/{lang}` where `lang in {en, sv, es}`
@@ -1454,13 +1598,16 @@
 - Added language switchers and mermaid code-block sections in docs pages for flow/hierarchy communication.
 
 **Validation:**
+
 - `node --check src/lib/pages.js` (pass)
 - `node --check src/index.js` (pass)
 
 **Commit:**
+
 - `ragbaz.xyz` `4e2e264` — `Add multilingual /docs scaffold with localized guide routes`
 
 **Deploy + live checks:**
+
 - Deployed ragbaz.xyz worker after merge (`Version ID: ea7b88f2-8a2b-40ef-af94-c068e0edf9e2`).
 - Verified:
   - `GET https://ragbaz.xyz/docs` -> `200` and docs title rendered.
@@ -1469,6 +1616,7 @@
 ### Codex — ragbaz.xyz global font-theme system (Option C, phase 1)
 
 **Delivered:**
+
 - Implemented a site-wide font-theme system in `ragbaz.xyz/src/lib/pages.js` for both render paths (`shell(...)` and `renderHomePage(...)`) so typography is consistent across all pages.
 - Added five named font themes with heading/body pairs and CSS-variable wiring:
   - `elegant`, `formal`, `casual`, `creative`, `contemporary`.
@@ -1477,14 +1625,17 @@
 - Kept typography change purely presentation-level (no API/data path changes).
 
 **Validation:**
+
 - `node --check src/lib/pages.js` (pass)
 
 **Commit:**
+
 - `ragbaz.xyz` `82aefe5` — `Add global font themes with persisted selector and hotkeys`
 
 ### Codex — storefront dark-mode submenu contrast + locale fix + stronger admin cache purge
 
 **Delivered:**
+
 - Fixed unreadable storefront submenus in dark mode by introducing explicit dark-surface classes and overrides for:
   - desktop dropdown panels/links (`storefront-nav-dropdown*`),
   - mobile menu panel/links/hamburger lines (`storefront-mobile-nav-*`).
@@ -1498,12 +1649,14 @@
   - exposed a prominent purge button in the Info section header for faster operator access.
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only)
 - `npm test` (pass, 25/25)
 
 ### Codex — implemented GraphQL roundtrip reduction items (4,3,1,5)
 
 **Delivered:**
+
 - **(4) Sitemap consolidation:** merged sitemap WP content fetches into one primary GraphQL query (`pages + posts + lpCourses`) with a core fallback query (`pages + posts`) when LearnPress types are missing.
   - File: `src/app/sitemap.js`
 - **(3) Removed preflight introspection on `/courses`:** dropped `hasGraphQLType("LpCourse")` precheck and switched to optimistic course fetch with graceful fallback UI on query failure.
@@ -1518,6 +1671,7 @@
   - File: `src/app/api/admin/purge-cache/route.js`
 
 **Validation:**
+
 - `npm run lint` (pass; existing warnings only)
 - `npm test` (pass, 25/25)
 
@@ -1526,6 +1680,7 @@
 ### Codex — home events calendar visibility fixed and re-deployed (version 0.1.1)
 
 **Delivered:**
+
 - Hardened home/events GraphQL compatibility so event rendering no longer depends on stricter schema support:
   - `src/lib/homeEvents.js` now uses compatibility-first querying (`events(first: 50)`), with a minimal fallback query (`id/title/uri`) that still renders widget entries when enriched date fields are unavailable.
   - `src/app/events/page.js` fallback query was reduced to minimal safe fields to avoid empty lists when optional date fields are rejected upstream.
@@ -1533,9 +1688,11 @@
 - Deployed storefront worker after patch.
 
 **Commit:**
+
 - `main` `eba38fe` — `Harden home/events queries for broader WPGraphQL compatibility`
 
 **Deploy verification:**
+
 - `npm run cf:deploy` succeeded.
 - Current worker version: `7c8bdc83-8c84-41fc-b36e-2d60dffe44e0`.
 - Live HTML checks:
@@ -1545,6 +1702,7 @@
 ### Codex — event visibility/date pass + storefront version bump to 0.1.1
 
 **Delivered:**
+
 - Removed `Event` schema-introspection gating on homepage events and `/events` page so event rendering no longer depends on WPGraphQL introspection being enabled.
 - Added robust event-date normalization/display across storefront event surfaces:
   - new shared helper `src/lib/eventDates.js` reads multiple likely date fields (`startDate`, `date`, etc.),
@@ -1556,6 +1714,7 @@
   - `package-lock.json` root/package mirror updated.
 
 **Commits:**
+
 - `45f2204` — `Remove Event introspection gate for home and events pages`
 - `191bf8f` — `Show event dates across home calendar and event pages`
 - `698b425` — `Bump storefront version to 0.1.1`
@@ -1563,6 +1722,7 @@
 ### Codex — homepage event-calendar widget hardened (render only when events exist, links to real event URIs)
 
 **Delivered:**
+
 - Kept the homepage event widget at the top of `/` and tightened data shaping so it only renders with valid event entries (requires non-empty `title` + normalized internal `uri`).
 - Hardened `fetchHomeEvents()` in `src/lib/homeEvents.js`:
   - normalizes event URIs (absolute WP URLs -> internal paths),
@@ -1574,15 +1734,18 @@
   - falls back to `Events` when only undated/past events are available.
 
 **Commit:**
+
 - `main` `e9060b2` — `Add home event calendar gating and real-event link hardening`
 
 **Verification run:**
+
 - `npx eslint src/lib/homeEvents.js src/components/home/EventCalendar.js src/app/page.js` (pass)
 - `npm test -- tests/menu.test.js` (suite invokes full `node --test`; existing unrelated failures remain in `admin-hotkeys`, `downloadedFonts`, `fontDownload`, `googleFontsCatalog` due `mock.module` runtime support in current Node setup)
 
 ### Codex — fixed sitemap-based menu validation to support redirects and multiple generators
 
 **Delivered:**
+
 - Updated sitemap discovery in `src/lib/menu.js` to be provider-agnostic and redirect-tolerant.
 - Validation now probes multiple root candidates:
   - `/sitemap_index.xml`
@@ -1592,9 +1755,11 @@
 - This prevented false-negative filtering that temporarily reduced nav to `/shop` only when one sitemap endpoint was incomplete.
 
 **Commit:**
+
 - `main` `1bc6e7c` — `Make sitemap menu validation provider-agnostic`
 
 **Verification run:**
+
 - live checks after deploy:
   - `/shop` present
   - `/blog` present
@@ -1606,6 +1771,7 @@
 ### Codex — emergency storefront 500 hotfix for WP URI pages
 
 **Delivered:**
+
 - Resolved live `500 Internal Server Error` regressions on WP-URI storefront pages (example: `/kursen-rora-och-berora/`) by ensuring the catch-all route is fully dynamic at runtime.
 - In `src/app/[...uri]/page.js`:
   - enforced runtime rendering (`dynamic = "force-dynamic"`, `revalidate = 0`),
@@ -1617,9 +1783,11 @@
 - Deployed storefront worker after fix and rechecked affected URLs.
 
 **Commit:**
+
 - `main` `3f017e8` — `Fix storefront URI 500 by forcing dynamic route and render-safe server logs`
 
 **Verification run:**
+
 - `npx eslint src/app/[...uri]/page.js src/lib/serverLog.js src/lib/client.js` (pass)
 - `npm run build` (pass; route table shows `ƒ /[...uri]`)
 - `npm run cf:deploy` (pass; current deployed version `3b511d92-bfe1-476f-8841-09dcb3e645a1`)
@@ -1632,6 +1800,7 @@
 ### Codex — validated menu links before render to suppress stale internal URLs
 
 **Delivered:**
+
 - Added pre-render navigation filtering in `src/lib/menu.js` so menu items are validated before render instead of blindly emitted.
 - Added URI-existence probing against WP `nodeByUri` for internal links with:
   - URI normalization + trailing-slash variant checks,
@@ -1642,6 +1811,7 @@
 - Deployed storefront worker and verified stale links were removed from live nav output while valid links remained.
 
 **Verification run:**
+
 - `npx eslint src/lib/menu.js src/lib/menuFilter.js tests/menu.test.js` (pass)
 - `node --test tests/menu.test.js` (pass)
 - `npm run cf:deploy` (pass; current deployed version `3969fb6a-e6e7-4409-afa4-bee1482a3a75`)
@@ -1654,6 +1824,7 @@
 ### Codex — reduced build-time GraphQL pressure + guaranteed `/shop` menu + icon contrast fix
 
 **Delivered:**
+
 - Implemented user-requested mitigation lane:
   - **(1 replacement)** switched menu existence checks from GraphQL `nodeByUri` to **sitemap-based validation** with TTL caching (`MENU_SITEMAP_*` settings) in `src/lib/menu.js`.
   - **(2)** kept hard fallback so top-level nav always contains `/shop` labeled `Shop` when missing (`src/lib/menuFilter.js` + tests).
@@ -1667,9 +1838,11 @@
   - added explicit contrast override styles in `src/app/globals.css`.
 
 **Commit:**
+
 - `main` `f54779c` — `Reduce build-time GraphQL load and harden storefront nav controls`
 
 **Verification run:**
+
 - `npx eslint src/app/layout.js src/lib/client.js src/lib/menu.js src/lib/menuFilter.js src/components/layout/DarkModeToggle.js src/components/layout/UserMenu.js tests/menu.test.js` (pass, 1 existing layout warning)
 - `node --test tests/menu.test.js` (pass)
 - `npm run build` (pass; dynamic routes remain `ƒ`)
@@ -1683,6 +1856,7 @@
 ### Codex — fixed tenant draft route base-pathing for `/tenant/{domain}` pages
 
 **Delivered:**
+
 - Fixed tenant draft route generation in `ragbaz.xyz` so draft navigation no longer escapes to root when opened from `/tenant/{domain}`.
 - Draft links now stay under domain route namespace:
   - `/tenant/{domain}/`
@@ -1698,15 +1872,18 @@
   - `/tenant/xtas.nu/shop` returns `200`.
 
 **Commit:**
+
 - `ragbaz.xyz` `b6396fd` — `Fix tenant draft routes to stay under /tenant/{domain}`
 
 **Verification run:**
+
 - `ragbaz.xyz`: `npm test` (pass, 13/13)
 - live check: `curl https://ragbaz.xyz/tenant/xtas.nu` link assertions + `curl -w "%{http_code}" https://ragbaz.xyz/tenant/xtas.nu/shop` = `200`
 
 ### Codex — bridge plugin 1.2.1 released, connect-first tab order, explicit slug-claim step
 
 **Delivered:**
+
 - Bumped `ragbaz-bridge` plugin version to `1.2.1` across plugin header/constant, package metadata, and readme stable tag/changelog.
 - Reordered admin tabs so **Connect to RAGBAZ** renders first.
 - Promoted tenant slug claiming into the main recommended Connect flow (no longer hidden behind advanced settings):
@@ -1721,9 +1898,11 @@
   - re-verified live route now serves `1.2.1` with Connect-first tab order and slug-claim UI marker.
 
 **Commits:**
+
 - `main` `25f729a` — `Bump bridge to 1.2.1 and surface slug claim in Connect flow`
 
 **Verification run:**
+
 - `main`: `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass)
 - `main`: `npm run plugin:copy` (pass)
 - remote check: downloaded live zip and confirmed `Version: 1.2.1` + `connect` tab before `overview` (pass)
@@ -1731,6 +1910,7 @@
 ### Codex — claimed/reserved tenant slug aliases (gift-key interchangeable) in plugin + ragbaz.xyz
 
 **Delivered:**
+
 - Added authenticated slug-claim endpoint in `ragbaz.xyz`:
   - `POST /api/v1/home/slug-claim`
   - validates slug format (`a-z`, `0-9`, `-`; no dots),
@@ -1750,10 +1930,12 @@
 - Plugin now emits preferred slug in home payload and exposes `tenantSlug` in `ragbazHomeConnection` GraphQL type.
 
 **Commits:**
+
 - `ragbaz.xyz` `9d209f9` — `Add unique tenant slug claim API and alias reservation flow`
 - `main` `5f08037` — `Add bridge UI/action for claiming reserved tenant slug aliases`
 
 **Verification run:**
+
 - `main`: `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass)
 - `main`: `npm run plugin:copy` (pass; plugin zip refreshed/copied)
 - `ragbaz.xyz`: `npm test` (pass, 2/2)
@@ -1761,6 +1943,7 @@
 ### Codex — relay-secret onboarding/auth lane landed in `main` (commit `b33ad91`)
 
 **Delivered:**
+
 - Expanded `ragbaz-bridge` Connect flow to support a dedicated GraphQL relay lane:
   - auto-generated relay secret,
   - explicit relay enable/disable toggle,
@@ -1775,6 +1958,7 @@
 - Rebuilt/published plugin zips from the updated plugin source (`dist` + public download copy).
 
 **Verification run:**
+
 - `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass)
 - `npx eslint src/lib/wordpressGraphqlAuth.js src/lib/ragbazHomeRelay.js` (pass)
 - `npm test` in `main` currently has pre-existing failures unrelated to this slice (`mock.module` unsupported in current Node runtime + existing `admin-hotkeys` failure); relay-auth touched files validated via php/lint.
@@ -1782,6 +1966,7 @@
 ### Codex — tenant draft link hardening + relay status visibility in `ragbaz.xyz` (commit `901e2a3`)
 
 **Delivered:**
+
 - Added relay metadata normalization and safe display in diagnostics:
   - `graphqlRelay.enabled/mode/headerName/graphqlUrl`,
   - secret presence + preview only (no raw secret echo in UI).
@@ -1797,11 +1982,13 @@
   - external-link marker + new-tab attributes.
 
 **Verification run:**
+
 - `ragbaz.xyz`: `npm test` (pass, 2/2).
 
 ### Codex — path-based tenant admin proxy (no subdomain required) in `ragbaz.xyz` (commit `935a9d3`)
 
 **Delivered:**
+
 - Added path-based admin proxy routes on `ragbaz.xyz` so storefront admin is reachable without tenant subdomain:
   - `/tenant/{domain}/admin`
   - `/tenant/{domain}/admin/*`
@@ -1823,6 +2010,7 @@
   - `/tenant/{domain}/api/admin/*` path/query forwarding behavior.
 
 **Verification run:**
+
 - `ragbaz.xyz`: `npm test` (pass, 2/2).
 
 ## 2026-03-26 (Codex)
@@ -1830,13 +2018,14 @@
 ### Codex — connected-sites tenant jump + collapsible draft advanced panels (commit `cf055fb` in `ragbaz.xyz`)
 
 **Delivered:**
+
 - Added a domain-based tenant jump form on `/articulate/sites`:
   - searchable domain input with datalist suggestions from connected sites,
   - keyboard-friendly submit behavior that normalizes domain/URL input and navigates to `/tenant/{domain}`.
 - Added collapsible advanced sections on tenant draft pages:
   - `Advanced: Priority actions`
   - `Advanced: Draft frontend manifest`
-  These are collapsed by default to improve first-screen scan speed.
+    These are collapsed by default to improve first-screen scan speed.
 - Added shared styling in shell CSS for jump-form controls and disclosure panels.
 - Updated tests (`ragbaz.xyz/tests/home-api.test.js`) to assert:
   - tenant jump UI presence and navigation script,
@@ -1847,6 +2036,7 @@
 ### Codex — tenant draft UI flow polish for domain routes (commit `c44cbf6` in `ragbaz.xyz`)
 
 **Delivered:**
+
 - Updated `ragbaz.xyz` tenant UI routing so domain pages now render the draft storefront view:
   - `GET /tenant/{domain}` now resolves the tenant and renders `renderGiftDraftPage` (instead of connected-site info page).
   - Added domain candidate fallback in tenant lookup (`domain`, `www.domain`, and stripped `www`) to reduce “not found” friction.
@@ -1867,6 +2057,7 @@
 ### Codex — peer recommendations wording clarity (commit `aad43d0` in `ragbaz.xyz`)
 
 **Delivered:**
+
 - Reworked failed-check recommendation titles in `ragbaz.xyz/src/lib/payload.js` so they state the actual failure condition instead of the expected-good phrasing.
   - Example: `Persistent object cache is not enabled` (instead of ambiguous positive-title wording).
 - Added `observed` telemetry passthrough for failed runtime/cache checks into recommendation objects.
@@ -1878,6 +2069,7 @@
 ### Codex — peer page now recomputes insights from payload at render time (commit `5fa2d85` in `ragbaz.xyz`)
 
 **Delivered:**
+
 - Updated `ragbaz.xyz/src/lib/pages.js` (`renderPeerPage`) to recompute insights from `latestReport.payload` on each request instead of trusting stored `latestReport.insights` only.
 - This makes recommendation phrasing and scoring logic update immediately for older peer rows, without requiring a new plugin heartbeat.
 - Verification run:
@@ -1886,6 +2078,7 @@
 ### Codex — GraphQL history strict 200/non-200 coloring + expandable rows
 
 **Delivered:**
+
 - Updated `GraphqlAvailabilityPanel` status rendering to use strict HTTP status handling:
   - `200` rows/dots render green,
   - any non-`200` rows/dots render red.
@@ -1900,6 +2093,7 @@
 ### Codex — dead-link scan opt-in + throttled checks + GraphQL failure diagnostics UI
 
 **Delivered:**
+
 - Dead-link finder no longer auto-runs on panel load (`AdminInfoHubTab`); scan now starts only from explicit button action (`Scan now`), then switches to `Rescan`.
 - Added idle-state copy and localized strings in EN/SV/ES for first-run dead-link behavior.
 - Added backend link-check pacing in `GET /api/admin/dead-links`:
@@ -1924,6 +2118,7 @@
 ### Codex — storefront Web Vitals relay to ragbaz.xyz + event-to-report ingestion (commits `be2d2bb` in `main`, `f977604` in `ragbaz.xyz`)
 
 **Delivered:**
+
 - Added privileged GraphQL home-connection exposure in bridge plugin (`RootQuery.ragbazHomeConnection`) so server-side storefront code can read `baseUrl/accountId/passkey/giftKey` when authenticated as `manage_options`.
 - Added storefront relay path from `POST /api/admin/page-performance` to ragbaz home events:
   - new helper `src/lib/ragbazHomeRelay.js`,
@@ -1942,6 +2137,7 @@
 ### Codex — ragbaz-bridge plugin auto onboarding flow for ragbaz.xyz (commit e5af4da)
 
 **Delivered:**
+
 - Added first-time auto onboarding in `packages/ragbaz-bridge-plugin/ragbaz-bridge.php`:
   - new GET/POST JSON request helper (`ragbaz_home_request_json`),
   - canonical JSON signer (`ragbaz_canonical_json`) matching worker payload-signature expectations,
@@ -1955,6 +2151,7 @@
 ### Codex — ragbaz.xyz D1-centric control-plane foundation (commit 9e080f7, repo: `../ragbaz.xyz`)
 
 **Delivered:**
+
 - Implemented D1-first control-plane storage in `ragbaz.xyz`:
   - added `src/lib/controlPlaneD1.js` and `migrations/0001_control_plane.sql`,
   - wired register/heartbeat/events/tenant-claim to dual-write KV + D1,
@@ -1971,6 +2168,7 @@
 ### Codex — storefront-first GraphQL ragbaz probe + Wrangler-tail URI logging (commit 3984ab8)
 
 **Delivered:**
+
 - Added `src/lib/storefrontGraphqlProbe.js` with a dedicated first-query probe:
   - Runs an introspection query focused on ragbaz plugin surface (`RootQuery` ragbaz-prefixed fields + `RagbazInfo` type fields).
   - Emits structured log lines to `console.log` (visible in `wrangler tail`) under `[StorefrontGraphQLProbe]`.
@@ -1984,6 +2182,7 @@
 ### Codex — BUGS.md items complete: welcome story fullscreen flow + high-contrast flow diagram (commit 9a3cbbc)
 
 **Delivered:**
+
 - Completed Welcome story fullscreen behavior in `src/components/admin/AdminWelcomeTab.js`:
   - added best-effort auto fullscreen attempt when story mode opens,
   - added fullscreen state tracking via `fullscreenchange`,
@@ -2007,6 +2206,7 @@
 ### Codex — BUGS.md item complete: shared-hosting WP URL migration guidance in plugin Connect UI (commit aed6eda)
 
 **Delivered:**
+
 - Added an instructional guidance block to `packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (Connect tab) covering:
   - moving from apex host to `wp.<domain>` in shared hosting,
   - DNS + docroot setup,
@@ -2021,6 +2221,7 @@
 ### Codex — BUGS.md item complete: KV-backed admin UI feedback controls with Sofia/Tobias role behavior (commit 2c83588)
 
 **Delivered:**
+
 - Added a new admin feedback capability for major tab surfaces:
   - UI component: `src/components/admin/AdminUiFeedbackBar.js` (three actions: 👍 adequate, ❤ good, 👎 needs improvement).
   - Dashboard integration: `src/components/admin/AdminDashboard.js` renders a per-tab feedback bar (`tab:<activeTab>` field id), loads current feedback, and persists updates.
@@ -2044,6 +2245,7 @@
 ### Codex — BUGS.md items complete: earth/lollipop admin themes + 4-step cycle (commit ea355d4)
 
 **Delivered:**
+
 - Extended admin theme state from 2 to 4 steps (`light -> gruvbox -> earth -> lollipop`) in:
   - `src/components/admin/AdminHeader.js` (cycle logic, icon mapping, aria label text),
   - `src/components/admin/AdminThemeWrapper.js` (theme normalization, persistence, wrapper class assignment).
@@ -2053,7 +2255,7 @@
 - Implemented new visual theme classes in `src/app/globals.css`:
   - `admin-earth` (sepia/umbra palette),
   - `admin-lollipop` (pink/purple palette),
-  with dedicated header chrome overrides (`admin-header-shell/control/popover/drawer/ticker/select`) and content surface/border/text tuning.
+    with dedicated header chrome overrides (`admin-header-shell/control/popover/drawer/ticker/select`) and content surface/border/text tuning.
 - Added i18n labels for cycle naming in EN/SV/ES (`themeCycleTo`, `themeNameLight`, `themeNameGruvbox`, `themeNameEarth`, `themeNameLollipop`).
 - Marked both related BUGS lines as done in `BUGS.md` (earth and lollipop theme feature lines).
 - Verification run:
@@ -2064,6 +2266,7 @@
 ### Codex — BUGS.md item complete: advanced WP URL override is now honored (commit ec2cd42)
 
 **Delivered:**
+
 - Added `src/lib/wordpressUrl.js` with shared URL resolution (`ragbaz_wp_config` cookie override first, env fallback to `NEXT_PUBLIC_WORDPRESS_URL`/`WORDPRESS_API_URL`) so local advanced settings can override default tenant URL while preserving default behavior when no override is set.
 - Refactored `src/lib/client.js` and `src/lib/wordpressGraphqlAuth.js` to use shared URL resolution, aligning GraphQL endpoint calls and SiteToken exchange with the same effective WordPress host.
 - Updated route resolution surfaces to use the same effective URL:
@@ -2076,6 +2279,7 @@
 ### Codex — BUGS.md item complete: lighter theme-toggle hover outline (commit 5abbee2)
 
 **Delivered:**
+
 - Reduced admin header theme icon hover outline thickness from `3px` to `2px` in `src/components/admin/AdminHeader.js` (`THEME_ICON_OUTLINE_HOVER`), matching the “1–2px tops” request.
 - Marked the matching BUGS backlog line as done in `BUGS.md` (sun/moon hover outline thickness item).
 - Verification run:
@@ -2084,6 +2288,7 @@
 ### Codex — ragbaz-bridge connect UX polish + sepia branding alignment (commits a4ac1bc / 4c6ffc6 / 06a6772)
 
 **Delivered:**
+
 - Improved `main/packages/ragbaz-bridge-plugin/ragbaz-bridge.php` Connect tab UX with clearer “Connect & Phone Home” framing, a primary `Phone home now (send heartbeat)` CTA, credential readiness indicators, friendlier status notices, and cleaned event severity controls.
 - Applied sepia branding to the plugin settings header logo/title treatment and switched the storefront admin wordmark palette to sepia in `main/src/components/admin/AdminHeader.js` (plus matching change in `wp-cf-front-oss/src/components/admin/AdminHeader.js`).
 - Expanded `ragbaz.xyz` front-page themes in `ragbaz.xyz/src/lib/pages.js` to elemental `air/fire/earth/water/aether`, added keyboard rotation via `Ctrl+Alt+T`, persisted theme migration from legacy `light/dark`, and added sepia wordmark styling.
@@ -2096,6 +2301,7 @@
 ### Codex — GraphQL/REST `nodeByUri` stability hardening for `src/app/[...uri]/page.js` (commit 4e3e078)
 
 **Delivered:**
+
 - Hardened URI lookup normalization in `src/app/[...uri]/page.js` (`normalizeUriForLookup` + `buildUriLookupAttempts`) so `fetchContent` consistently retries both trailing-slash variants from a canonical URI.
 - Improved `fetchContent` failure handling/logging: non-rate-limit lookup exceptions are logged per candidate URI and do not abort fallback resolution, while `RateLimitError` is rethrown immediately.
 - Updated `resolveNodeByUri` to normalize URIs up front and preserve 429 behavior by rethrowing `RateLimitError` instead of swallowing it in GraphQL/fallback catch paths.
@@ -2107,6 +2313,7 @@
 ### Codex — admin header health-state sync fix (commit 069119f)
 
 **Delivered:**
+
 - Fixed a regression where the main menu-bar health badge stayed `amber` even after successful health checks by wiring `healthChecks` updates to `emitHealthStatus(deriveHealthStatus(...))` in `AdminDashboard`.
 - Marked the corresponding BUG entry as done in `BUGS.md` (`main menu bar status showed partial despite green integration checks`).
 - Verification run:
@@ -2116,6 +2323,7 @@
 ### Codex — storefront dark-mode contrast bootstrap + icon visibility (commit d755dc4)
 
 **Delivered:**
+
 - Added an early theme bootstrap script in `src/app/layout.js` to apply `.dark-mode` before hydration when `localStorage.theme === "dark"`, preventing initial dark-text flash in dark mode.
 - Updated dark-mode header button color behavior in `src/app/globals.css` to use `var(--btn-color, #fff7ed)`, restoring visible sun/moon and user-head icons on purple header buttons.
 - Marked the two corresponding `/` BUG entries as done in `BUGS.md`.
@@ -2125,6 +2333,7 @@
 ### Codex — admin docs mermaid rendering fix (commit e766fa3)
 
 **Delivered:**
+
 - Added mermaid-code-block rendering support in `src/app/admin/docs/[slug]/page.js` by detecting `language-mermaid` fences and rendering diagram images via `https://mermaid.ink/img/<base64>`.
 - Kept non-mermaid code blocks unchanged and preserved existing markdown link rewrite behavior.
 - Marked the two docs-related BUG entries as done in `BUGS.md` (`/admin/docs/readme-sv` and broader `/admin/docs` mermaid rendering).
@@ -2136,6 +2345,7 @@
 ### Claude — CF Workers bundle size reduction (commits pending push)
 
 **Delivered:**
+
 - `src/lib/r2Bindings.js` — R2 bucket binding accessor via `getCloudflareContext()`, falls back to null for local dev
 - `src/lib/s3upload.js` — full rewrite: every operation tries R2 binding → edge R2 signing → AWS SDK fallback
 - `scripts/patch-opennext.mjs` — added Patch 2: externalize `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` from esbuild bundle
@@ -2146,6 +2356,7 @@
 ### Claude — Derivation editor redesign (in progress)
 
 **Spec:** `docs/superpowers/specs/2026-03-25-derivation-editor-redesign-design.md` (committed)
+
 - Extract DerivationEditor from AdminMediaLibraryTab into 7 focused components
 - Visual grid picker with 22 categorized operations (Transform, Color & Tone, Effects, Artistic)
 - Slider parameter controls with deferred preview
@@ -2177,6 +2388,7 @@ DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf loggin
 ### Claude — AdminMediaLibraryTab.js modularization (commits 858403d, 3e6722e, f1dc7ba)
 
 **Delivered:**
+
 - `src/lib/mediaLibraryHelpers.js` — all 30+ pure utility functions and constants extracted from AdminMediaLibraryTab (extFromFileName, formatBytes, formatResolution, formatUpdatedAt, sourceLabel, sourceBadgeClass, PRESET_CROP_OPTIONS, buildPseudoDerivationName, getUnboundParameters, describeOperationParameters, formatParameterValue, isInvalidNumericParam, getInvalidOperationParameters, canPreviewImage, isImageFile, detectAssetKind, isSupportedUploadFile, canOpenDataViewer, resolveAssetType, parseTimestamp, parseSize, buildUploadHistoryEntry, defaultR2ObjectKey, normalizeEditorValue, normalizeEditorMultiline, normalizeOwnerUri, normalizeAssetSlug, toEditorState, stampOpenAndGetPrevious, isNewAsset, escXml, generateCyberduckBookmark, downloadCyberduckBookmark, LS_LAST_OPENED_KEY, plus size/history constants).
 - `src/components/admin/R2ConnectionPanel.js` — S3/R2 connection checklist + GUI client guides (WinSCP/CyberDuck accordion); owns `showSecret`/`copiedField` state and all derived connection logic (uploadBackend/clientDetails/backendMode/checklistRows/copyValue).
 - `src/components/admin/MediaViewerPanel.js` — asset data viewer (JSON/YAML/CSV/Markdown/SQLite/text); accepts viewerItem/viewerLoading/viewerError/viewerData/onClose props; owns ReactMarkdown/remarkGfm imports.
@@ -2191,6 +2403,7 @@ DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf loggin
 ### Claude — WP setup page, 429 UX, availability logging, chat beta gate (commit 356a96f)
 
 **Delivered:**
+
 - `WordPressSetupPage` shown at `/` and `/setup` when `NEXT_PUBLIC_WORDPRESS_URL` is not set; saves WP URL + secret to localStorage and sets `ragbaz_wp_config` cookie for SSR via `POST /api/config`.
 - `RateLimitPage` shown on HTTP 429 from GraphQL: raw response body in `<pre>`, color-coded request history table with date/time/status per attempt, reload button.
 - Build resilience: `page.js` + `[...uri]/page.js` guard all GraphQL calls with `RateLimitError` try/catch; `fetchGraphQL` returns `{}` when WP URL is absent; build never requires a live GraphQL server.
@@ -2210,6 +2423,7 @@ DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf loggin
 **Plan:** `docs/superpowers/plans/2026-03-22-font-browser.md`
 
 **Delivered:**
+
 - `src/lib/downloadedFonts.js` + tests — KV CRUD for downloaded font records + `getAllFontFaceCss()`.
 - `src/lib/googleFontsCatalog.js` + `googleFontsSnapshot.json` — catalog fetch with KV cache, API, and 18-font snapshot fallback; `scripts/fetch-fonts-snapshot.mjs` for refresh.
 - `src/lib/fontDownload.js` — Google Fonts CSS fetch → woff2 parse → R2 upload → record return.
@@ -2229,12 +2443,14 @@ DONE [P2 | Medium]: WP setup page + 429 rate-limit UX + availability/perf loggin
 ### Claude — Photon pipeline + full admin audit + top-priority fixes
 
 **Photon image pipeline (landed earlier this session):**
+
 - Implemented `src/lib/photonPipeline.js` — edge-compatible WASM pipeline with pure helpers (`resolveOutputFormat`, `parsePresetCrop`, `guardSourceSize`, `clampSaturation`, `isAvifSource`), pixel mask (`applyCircleMask`), operator executor (`executeOperations`), and serializer (`serializeImage`).
 - Rewrote `src/app/api/admin/derivations/apply/route.js` to fetch source → AVIF guard → size guard → Photon pipeline → return binary image blob.
 - Added 10 predefined derivations to `src/config/image-derivations.json` and `config/image-derivations.json`.
 - Added 25-test suite in `tests/photon-pipeline.test.js` (all pass).
 
 **Full admin UI audit + top-priority fixes (commit 1cb27ff):**
+
 - SECURITY: Added `requireAdmin` to `GET /api/admin/derivations` (was publicly accessible).
 - SECURITY: Added SSRF protection to `/api/admin/derivations/apply` (https-only + origin/WP/R2 host allowlist).
 - RELIABILITY: `executeOperations` now frees intermediate PhotonImage on throw.
@@ -4206,7 +4422,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
     - `/admin`
     - `/admin/*`
     - `/api/admin/*`
-    are now proxied to a shared upstream admin origin.
+      are now proxied to a shared upstream admin origin.
 
 - New configuration:
   - `RAGBAZ_TENANT_ADMIN_ORIGIN` (plus fallback aliases `RAGBAZ_ARTICULATE_ADMIN_ORIGIN` / `RAGBAZ_ADMIN_ORIGIN`)
@@ -4310,8 +4526,8 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Implemented edge cache support for public GraphQL reads in `fetchGraphQL` (`src/lib/client.js`), with TTL/stale knobs.
   - Switched key storefront queries to use edge caching (`/`, `/events`, `/courses`, menu/home-events/shop listing queries, and URI resolver lookups).
   - Refactored `src/app/[...uri]/page.js` to a two-step fetch path:
-    1) resolve node type via lightweight `nodeByUri` query
-    2) fetch type-specific details (Page/Post/Event/LpCourse/product)
+    1. resolve node type via lightweight `nodeByUri` query
+    2. fetch type-specific details (Page/Post/Event/LpCourse/product)
   - Kept REST/course fallbacks and hardened URI-match checks for fallback correctness.
   - Reduced admin entry JS pressure by lazy-loading `ChatPanel` and wrapping chat tab content in `Suspense`.
   - Replaced homepage events `<img>` with `next/image` (`src/components/home/EventCalendar.js`) for better storefront image delivery defaults.
@@ -4447,16 +4663,16 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 The following pages use `auth()` (which calls `cookies()` from `next/headers`) and/or `await searchParams` but have NO explicit `export const dynamic = "force-dynamic"`. They rely on Next.js automatically opting into dynamic rendering when it detects `cookies()` usage at render time:
 
-| Page | Runtime APIs | Risk |
-|------|-------------|------|
-| `src/app/[...uri]/page.js` | `auth()`, `searchParams`, `params`, `unstable_noStore` | **CRITICAL** — catch-all handling most traffic |
-| `src/app/shop/[slug]/page.js` | `auth()`, `searchParams`, `params` | **HIGH** — Stripe checkout flow |
-| `src/app/me/page.js` | `auth()`, `redirect()` | HIGH — user dashboard |
-| `src/app/inventory/page.js` | `auth()`, `redirect()` | HIGH — user inventory |
-| `src/app/inventory/[assetId]/page.js` | `auth()`, `params` | HIGH — asset detail |
-| `src/app/profile/[username]/page.js` | `auth()`, `params` | HIGH — public profiles |
-| `src/app/avatar/[avatarId]/page.js` | `auth()`, `params` | MEDIUM |
-| `src/app/assets/[assetId]/page.js` | `adminAuth()`, `params` | MEDIUM — admin only |
+| Page                                  | Runtime APIs                                           | Risk                                           |
+| ------------------------------------- | ------------------------------------------------------ | ---------------------------------------------- |
+| `src/app/[...uri]/page.js`            | `auth()`, `searchParams`, `params`, `unstable_noStore` | **CRITICAL** — catch-all handling most traffic |
+| `src/app/shop/[slug]/page.js`         | `auth()`, `searchParams`, `params`                     | **HIGH** — Stripe checkout flow                |
+| `src/app/me/page.js`                  | `auth()`, `redirect()`                                 | HIGH — user dashboard                          |
+| `src/app/inventory/page.js`           | `auth()`, `redirect()`                                 | HIGH — user inventory                          |
+| `src/app/inventory/[assetId]/page.js` | `auth()`, `params`                                     | HIGH — asset detail                            |
+| `src/app/profile/[username]/page.js`  | `auth()`, `params`                                     | HIGH — public profiles                         |
+| `src/app/avatar/[avatarId]/page.js`   | `auth()`, `params`                                     | MEDIUM                                         |
+| `src/app/assets/[assetId]/page.js`    | `adminAuth()`, `params`                                | MEDIUM — admin only                            |
 
 **Predicted failure modes:**
 
@@ -4469,6 +4685,7 @@ The following pages use `auth()` (which calls `cookies()` from `next/headers`) a
 4. **`generateMetadata` in `shop/[slug]/page.js`:** Uses `searchParams` and `process.env` reads. If the page is pre-rendered, metadata generation could fail or produce stale results.
 
 **What to watch for:**
+
 - 500 errors on any of the listed pages after deploy
 - Stale or wrong auth state being served (cached ISR pages)
 - Build failures mentioning `cookies()` or `headers()` called outside request context

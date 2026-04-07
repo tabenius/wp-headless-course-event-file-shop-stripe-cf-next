@@ -12,17 +12,18 @@
 
 ## File Structure
 
-| File | Role |
-|------|------|
+| File                                      | Role                                                       |
+| ----------------------------------------- | ---------------------------------------------------------- |
 | `src/components/admin/SalesTrendChart.js` | **New** — SVG chart component with data processing helpers |
-| `src/components/admin/AdminSalesTab.js` | Render SalesTrendChart between metrics and table |
-| `tests/sales-trend-chart.test.js` | **New** — unit tests for data helpers |
+| `src/components/admin/AdminSalesTab.js`   | Render SalesTrendChart between metrics and table           |
+| `tests/sales-trend-chart.test.js`         | **New** — unit tests for data helpers                      |
 
 ---
 
 ### Task 1: Data Processing Helpers + Tests
 
 **Files:**
+
 - Create: `src/components/admin/SalesTrendChart.js` (helpers only first)
 - Create: `tests/sales-trend-chart.test.js`
 
@@ -60,8 +61,18 @@ describe("aggregateDailyRevenue", () => {
     const base = new Date("2025-06-15T12:00:00Z").getTime();
     const payments = [
       { created: base, amount: 1000, currency: "sek", status: "succeeded" },
-      { created: base + 3600000, amount: 500, currency: "sek", status: "succeeded" },
-      { created: base + 86400000, amount: 2000, currency: "sek", status: "succeeded" },
+      {
+        created: base + 3600000,
+        amount: 500,
+        currency: "sek",
+        status: "succeeded",
+      },
+      {
+        created: base + 86400000,
+        amount: 2000,
+        currency: "sek",
+        status: "succeeded",
+      },
     ];
     const result = aggregateDailyRevenue(payments, "SEK", 365);
     const nonZero = result.filter((d) => d.amount > 0);
@@ -74,7 +85,12 @@ describe("aggregateDailyRevenue", () => {
     const base = new Date("2025-06-15T12:00:00Z").getTime();
     const payments = [
       { created: base, amount: 1000, currency: "sek", status: "succeeded" },
-      { created: base + 86400000 * 3, amount: 2000, currency: "sek", status: "succeeded" },
+      {
+        created: base + 86400000 * 3,
+        amount: 2000,
+        currency: "sek",
+        status: "succeeded",
+      },
     ];
     const result = aggregateDailyRevenue(payments, "SEK", 365);
     assert.ok(result.length >= 4);
@@ -145,11 +161,13 @@ git commit -m "feat(admin): add sales trend chart data helpers with tests"
 ### Task 2: SVG Chart Rendering
 
 **Files:**
+
 - Modify: `src/components/admin/SalesTrendChart.js`
 
 - [ ] **Step 1: Add the SVG rendering**
 
 Add the default export `SalesTrendChart` component that:
+
 - Calls `dominantCurrency` to pick currency
 - Calls `aggregateDailyRevenue` to get daily series
 - Computes MA20, MA200, RSI-14
@@ -168,6 +186,7 @@ git commit -m "feat(admin): add SVG sales trend chart with MA20/MA200 and RSI os
 ### Task 3: Integrate into AdminSalesTab
 
 **Files:**
+
 - Modify: `src/components/admin/AdminSalesTab.js`
 
 - [ ] **Step 1: Import and render**

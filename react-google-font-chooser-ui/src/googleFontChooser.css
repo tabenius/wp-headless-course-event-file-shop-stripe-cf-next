@@ -256,7 +256,9 @@
   margin-bottom: 0.35rem;
   font-size: 0.75rem;
   color: #334155;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 .rgfc-axis input[type="range"] {
@@ -317,7 +319,9 @@
 .rgfc-knob-tag {
   font-size: 0.7rem;
   color: #334155;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 .rgfc-knob-reset {

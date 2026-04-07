@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { decodeEntities } from "@/lib/decodeEntities";
-import { formatEventDateRange, getEventEndIso, getEventStartIso } from "@/lib/eventDates";
+import {
+  formatEventDateRange,
+  getEventEndIso,
+  getEventStartIso,
+} from "@/lib/eventDates";
 import { t } from "@/lib/i18n";
 
 function parseDate(value) {
@@ -17,8 +21,12 @@ function formatDateBadge(event) {
   if (!date) return null;
 
   const day = new Intl.DateTimeFormat("sv-SE", { day: "2-digit" }).format(date);
-  const month = new Intl.DateTimeFormat("sv-SE", { month: "short" }).format(date);
-  const year = new Intl.DateTimeFormat("sv-SE", { year: "numeric" }).format(date);
+  const month = new Intl.DateTimeFormat("sv-SE", { month: "short" }).format(
+    date,
+  );
+  const year = new Intl.DateTimeFormat("sv-SE", { year: "numeric" }).format(
+    date,
+  );
   return { day, month: month.toUpperCase(), year };
 }
 
@@ -40,7 +48,9 @@ function EventRow({ event }) {
             </div>
           </div>
         ) : (
-          <div className="text-sm font-bold text-[var(--color-primary)]">UPCOMING</div>
+          <div className="text-sm font-bold text-[var(--color-primary)]">
+            UPCOMING
+          </div>
         )}
       </div>
 
@@ -57,7 +67,10 @@ function EventRow({ event }) {
         )}
       </div>
 
-      <Link href={event.uri} className="block overflow-hidden rounded-lg ring-1 ring-[var(--color-muted)] lg:w-48 lg:flex-none">
+      <Link
+        href={event.uri}
+        className="block overflow-hidden rounded-lg ring-1 ring-[var(--color-muted)] lg:w-48 lg:flex-none"
+      >
         {event.imageUrl ? (
           <Image
             src={event.imageUrl}

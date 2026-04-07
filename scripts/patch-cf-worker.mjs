@@ -73,7 +73,9 @@ cleanBundledAsset(
 //    framework but this app doesn't use ImageResponse.  The stubs are
 //    minimal valid WASM modules (magic + version header only, 8 bytes).
 // ---------------------------------------------------------------------------
-const EMPTY_WASM = Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
+const EMPTY_WASM = Buffer.from([
+  0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+]);
 
 function stubWasm(relPath, label) {
   const abs = resolve(relPath);
@@ -107,9 +109,21 @@ stubWasm(
 {
   let handler = readFileSync(HANDLER, "utf8");
   const localeFingerprints = [
-    { id: "__i18n_sv", prefix: `JSON.parse('{"common":{"admin":"Admin","inventory":"Inventarie"`, delim: "'" },
-    { id: "__i18n_en", prefix: 'JSON.parse(`{"common":{"admin":"Admin","inventory":"Inventory"', delim: "`" },
-    { id: "__i18n_es", prefix: `JSON.parse('{"common":{"admin":"Administraci`, delim: "'" },
+    {
+      id: "__i18n_sv",
+      prefix: `JSON.parse('{"common":{"admin":"Admin","inventory":"Inventarie"`,
+      delim: "'",
+    },
+    {
+      id: "__i18n_en",
+      prefix: 'JSON.parse(`{"common":{"admin":"Admin","inventory":"Inventory"',
+      delim: "`",
+    },
+    {
+      id: "__i18n_es",
+      prefix: `JSON.parse('{"common":{"admin":"Administraci`,
+      delim: "'",
+    },
   ];
   const hoisted = [];
   let totalSaved = 0;
@@ -149,12 +163,18 @@ stubWasm(
     );
   }
 
-if (hoisted.length > 0) {
+  if (hoisted.length > 0) {
     // Inject hoisted variables after the banner import line.
     const bannerEnd = handler.indexOf("\n") + 1;
-    handler = handler.slice(0, bannerEnd) + hoisted.join("") + "\n" + handler.slice(bannerEnd);
+    handler =
+      handler.slice(0, bannerEnd) +
+      hoisted.join("") +
+      "\n" +
+      handler.slice(bannerEnd);
     writeFileSync(HANDLER, handler, "utf8");
-    console.log(`patch-cf-worker: i18n dedup total saved ~${(totalSaved / 1024).toFixed(0)} KB raw`);
+    console.log(
+      `patch-cf-worker: i18n dedup total saved ~${(totalSaved / 1024).toFixed(0)} KB raw`,
+    );
   }
 }
 
@@ -195,7 +215,9 @@ if (hoisted.length > 0) {
       writeFileSync(WORKER, healed, "utf8");
       console.log("patch-cf-worker: healed existing server-timing patch.");
     } else {
-      console.log("patch-cf-worker: server-timing patch already present, skipping.");
+      console.log(
+        "patch-cf-worker: server-timing patch already present, skipping.",
+      );
     }
   } else {
     const fetchNeedle = "async fetch(request, env, ctx) {";
@@ -267,7 +289,9 @@ if (hoisted.length > 0) {
     }
 
     if (!changed) {
-      console.warn("patch-cf-worker: server-timing patch did not match worker template.");
+      console.warn(
+        "patch-cf-worker: server-timing patch did not match worker template.",
+      );
     } else {
       writeFileSync(WORKER, patched, "utf8");
       console.log("patch-cf-worker: added server-timing response headers.");

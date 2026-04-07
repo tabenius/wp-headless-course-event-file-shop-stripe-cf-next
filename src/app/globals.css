@@ -13,7 +13,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-body);
 }
 
 body {
@@ -125,7 +124,10 @@ h4 {
 h5,
 h6 {
   font-family: var(--font-subheading, var(--font-heading));
-  color: var(--font-color-subheading, var(--font-color-heading, var(--foreground)));
+  color: var(
+    --font-color-subheading,
+    var(--font-color-heading, var(--foreground))
+  );
 }
 
 h5 {
@@ -304,8 +306,7 @@ body:not(:has(.admin-layout)) .storefront-icon-button {
     transparent
   ) !important;
   color: var(--color-foreground) !important;
-  border: 1px solid
-    color-mix(in srgb, var(--color-primary) 35%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent) !important;
   padding: 0 !important;
   box-shadow: none !important;
 }
@@ -322,7 +323,10 @@ body:not(:has(.admin-layout)) .storefront-icon-button:hover {
   color: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.45) !important;
 }
-.dark-mode body:not(:has(.admin-layout)) header button.storefront-icon-button:hover {
+.dark-mode
+  body:not(:has(.admin-layout))
+  header
+  button.storefront-icon-button:hover {
   background: rgba(40, 40, 40, 0.94) !important;
   color: #ffffff !important;
 }
@@ -338,6 +342,9 @@ body:not(:has(.admin-layout)) .storefront-icon-button:hover {
   background-color: rgba(22, 22, 22, 0.92);
   color: #fff;
 }
+.dark-mode body:not(:has(.admin-layout)) main {
+  color: #fff;
+}
 .dark-mode body:not(:has(.admin-layout)) header svg,
 .dark-mode body:not(:has(.admin-layout)) header button,
 .dark-mode body:not(:has(.admin-layout)) header a,
@@ -350,18 +357,21 @@ body:not(:has(.admin-layout)) .storefront-icon-button:hover {
   border-color: rgba(255, 255, 255, 0.32) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
-.dark-mode body:not(:has(.admin-layout))
+.dark-mode
+  body:not(:has(.admin-layout))
   .storefront-nav-dropdown
   .storefront-nav-dropdown-link {
   color: #fff !important;
 }
-.dark-mode body:not(:has(.admin-layout))
+.dark-mode
+  body:not(:has(.admin-layout))
   .storefront-nav-dropdown
   .storefront-nav-dropdown-link:hover {
   background: rgba(255, 255, 255, 0.12) !important;
   color: #fff !important;
 }
-.dark-mode body:not(:has(.admin-layout))
+.dark-mode
+  body:not(:has(.admin-layout))
   .storefront-nav-dropdown
   .storefront-nav-dropdown-link-border {
   border-color: rgba(255, 255, 255, 0.2) !important;
@@ -386,11 +396,9 @@ body:not(:has(.admin-layout)) .storefront-icon-button:hover {
 .dark-mode body:not(:has(.admin-layout)) .wp-content,
 .dark-mode body:not(:has(.admin-layout)) main,
 .dark-mode body:not(:has(.admin-layout)) section,
-.dark-mode body:not(:has(.admin-layout)) a,
-.dark-mode body:not(:has(.admin-layout)) p,
-.dark-mode body:not(:has(.admin-layout)) li,
+.dark-mode body:not(:has(.admin-layout)) div,
 .dark-mode body:not(:has(.admin-layout)) span,
-.dark-mode body:not(:has(.admin-layout)) label,
+.dark-mode body:not(:has(.admin-layout)) p,
 .dark-mode body:not(:has(.admin-layout)) h1,
 .dark-mode body:not(:has(.admin-layout)) h2,
 .dark-mode body:not(:has(.admin-layout)) h3,
@@ -406,12 +414,16 @@ body:not(:has(.admin-layout)) .storefront-icon-button:hover {
 .dark-mode body:not(:has(.admin-layout)) .text-slate-800,
 .dark-mode body:not(:has(.admin-layout)) .text-slate-700,
 .dark-mode body:not(:has(.admin-layout)) .text-slate-600 {
-  color: #fff !important;
+  color: #fff;
+}
+.dark-mode body:not(:has(.admin-layout)) .badge {
+  color: #000a;
 }
 
 /* Gray/dark buttons — improve contrast in both modes */
 body:not(:has(.admin-layout)) .wp-block-button__link.has-dark-gray-color,
-body:not(:has(.admin-layout)) .wp-block-button__link.has-light-gray-background-color {
+body:not(:has(.admin-layout))
+  .wp-block-button__link.has-light-gray-background-color {
   background-color: #444;
   color: #fff;
   border-color: #444;
@@ -436,20 +448,25 @@ body:not(:has(.admin-layout))
   background-color: var(--color-primary);
   color: #fff;
 }
-.dark-mode body:not(:has(.admin-layout)) .wp-block-button__link.has-dark-gray-color,
-.dark-mode body:not(:has(.admin-layout))
+.dark-mode
+  body:not(:has(.admin-layout))
+  .wp-block-button__link.has-dark-gray-color,
+.dark-mode
+  body:not(:has(.admin-layout))
   .wp-block-button__link.has-light-gray-background-color {
   background-color: #ccc;
   color: #1a1a1a;
   border-color: #ccc;
 }
-.dark-mode body:not(:has(.admin-layout))
+.dark-mode
+  body:not(:has(.admin-layout))
   .wp-block-button.is-style-outline
   .wp-block-button__link {
   color: #e8e0e0;
   border-color: #e8e0e0;
 }
-.dark-mode body:not(:has(.admin-layout))
+.dark-mode
+  body:not(:has(.admin-layout))
   .wp-block-button.is-style-outline
   .wp-block-button__link:hover {
   background-color: #e8e0e0;
@@ -520,20 +537,23 @@ body:not(:has(.admin-layout)) .shop-cta:focus {
 }
 
 /* Badge backgrounds in dark mode — darken light badges for readability */
-.dark-mode body:not(:has(.admin-layout)) .bg-blue-100 {
+/*
+.dark-mode body:not(:has(.admin-layout)) .bg-blue-300 {
   background-color: rgba(60, 100, 200, 0.25) !important;
 }
-.dark-mode body:not(:has(.admin-layout)) .bg-green-100 {
+.dark-mode body:not(:has(.admin-layout)) .bg-green-300 {
   background-color: rgba(40, 160, 80, 0.25) !important;
 }
-.dark-mode body:not(:has(.admin-layout)) .bg-amber-100 {
+.dark-mode body:not(:has(.admin-layout)) .bg-amber-300 {
   background-color: rgba(200, 140, 40, 0.25) !important;
 }
-.dark-mode body:not(:has(.admin-layout)) .bg-purple-100 {
+.dark-mode body:not(:has(.admin-layout)) .bg-purple-300 {
   background-color: rgba(140, 60, 200, 0.25) !important;
 }
+*/
 
 /* Badge text in dark mode — lighten dark text for contrast */
+/*
 .dark-mode body:not(:has(.admin-layout)) .text-blue-800 {
   color: #93c5fd !important;
 }
@@ -546,6 +566,7 @@ body:not(:has(.admin-layout)) .shop-cta:focus {
 .dark-mode body:not(:has(.admin-layout)) .text-purple-800 {
   color: #d8b4fe !important;
 }
+*/
 
 /* Colored text in dark mode — lighten for readability */
 .dark-mode body:not(:has(.admin-layout)) .text-amber-900 {
@@ -609,15 +630,17 @@ body:not(:has(.admin-layout)) .shop-cta:focus {
 }
 
 /* CTA button style — zero specificity so WP theme rules always win */
-body:not(:has(.admin-layout)) :where(button, .btn, [role="button"], input[type="submit"]) {
+body:not(:has(.admin-layout))
+  :where(button, .btn, [role="button"], input[type="submit"]) {
   background-color: var(--btn-bg, var(--color-primary));
-  color:            var(--btn-color, var(--color-background));
-  border-radius:    var(--btn-radius, 8px);
-  border:           var(--btn-border-width, 0px) solid var(--btn-border-color, transparent);
-  box-shadow:       var(--btn-shadow, none);
-  font-weight:      var(--btn-font-weight, 600);
-  text-transform:   var(--btn-text-transform, none);
-  padding:          var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
+  color: var(--btn-color, var(--color-background));
+  border-radius: var(--btn-radius, 8px);
+  border: var(--btn-border-width, 0px) solid
+    var(--btn-border-color, transparent);
+  box-shadow: var(--btn-shadow, none);
+  font-weight: var(--btn-font-weight, 600);
+  text-transform: var(--btn-text-transform, none);
+  padding: var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
 }
 
 /* ── Link hover variants ─────────────────────────────────────────────────── */

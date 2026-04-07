@@ -1,7 +1,4 @@
-import {
-  readCloudflareKvJson,
-  writeCloudflareKvJson,
-} from "./cloudflareKv.js";
+import { readCloudflareKvJson, writeCloudflareKvJson } from "./cloudflareKv.js";
 import { normalizeCtaStyle } from "./shopSettings.js";
 
 const KV_KEY = "style-presets";
@@ -35,7 +32,8 @@ export function normalizePresets(raw) {
  */
 export function validatePresetInput(type, name, style) {
   if (!VALID_TYPES.has(type)) return "type must be 'cta' or 'typography'";
-  if (!name || typeof name !== "string" || !name.trim()) return "name is required";
+  if (!name || typeof name !== "string" || !name.trim())
+    return "name is required";
   if (name.trim().length > 80) return "name must be 80 characters or fewer";
   if (!style || typeof style !== "object") return "style is required";
   return null;

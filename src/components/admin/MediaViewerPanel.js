@@ -4,7 +4,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { t } from "@/lib/i18n";
 
-export default function MediaViewerPanel({ viewerItem, viewerLoading, viewerError, viewerData, onClose }) {
+export default function MediaViewerPanel({
+  viewerItem,
+  viewerLoading,
+  viewerError,
+  viewerData,
+  onClose,
+}) {
   if (!viewerItem) return null;
 
   return (
@@ -113,7 +119,10 @@ export default function MediaViewerPanel({ viewerItem, viewerLoading, viewerErro
                   </thead>
                   <tbody>
                     {viewerData.csv.columns.map((column) => (
-                      <tr key={`${column.index}-${column.name}`} className="border-t">
+                      <tr
+                        key={`${column.index}-${column.name}`}
+                        className="border-t"
+                      >
                         <td className="px-2 py-1">{column.index}</td>
                         <td className="px-2 py-1">{column.name}</td>
                         <td className="px-2 py-1">
@@ -131,34 +140,39 @@ export default function MediaViewerPanel({ viewerItem, viewerLoading, viewerErro
                 </table>
               </div>
             )}
-          {Array.isArray(viewerData.csv?.rows) && viewerData.csv.rows.length > 0 && (
-            <div className="overflow-auto border rounded">
-              <table className="min-w-full text-xs">
-                <tbody>
-                  {viewerData.csv.rows.map((row, rowIndex) => (
-                    <tr key={`row-${rowIndex}`} className="border-t">
-                      {row.map((cell, cellIndex) => (
-                        <td key={`cell-${rowIndex}-${cellIndex}`} className="px-2 py-1">
-                          {cell || "—"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {Array.isArray(viewerData.csv?.rows) &&
+            viewerData.csv.rows.length > 0 && (
+              <div className="overflow-auto border rounded">
+                <table className="min-w-full text-xs">
+                  <tbody>
+                    {viewerData.csv.rows.map((row, rowIndex) => (
+                      <tr key={`row-${rowIndex}`} className="border-t">
+                        {row.map((cell, cellIndex) => (
+                          <td
+                            key={`cell-${rowIndex}-${cellIndex}`}
+                            className="px-2 py-1"
+                          >
+                            {cell || "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
         </div>
       )}
 
       {viewerData?.viewerType === "markdown" && (
         <div className="space-y-3">
-          {Array.isArray(viewerData.headings) && viewerData.headings.length > 0 && (
-            <div className="text-xs text-gray-600">
-              {t("admin.mediaMarkdownHeadings", "Headings")}:{" "}
-              {viewerData.headings.map((item) => item.text).join(" · ")}
-            </div>
-          )}
+          {Array.isArray(viewerData.headings) &&
+            viewerData.headings.length > 0 && (
+              <div className="text-xs text-gray-600">
+                {t("admin.mediaMarkdownHeadings", "Headings")}:{" "}
+                {viewerData.headings.map((item) => item.text).join(" · ")}
+              </div>
+            )}
           <article className="prose prose-sm max-w-none rounded border bg-white p-3">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {viewerData.text || ""}
@@ -180,13 +194,15 @@ export default function MediaViewerPanel({ viewerItem, viewerLoading, viewerErro
               Page size: <strong>{viewerData.sqlite?.pageSize ?? "—"}</strong>
             </p>
             <p>
-              Encoding: <strong>{viewerData.sqlite?.textEncoding ?? "—"}</strong>
+              Encoding:{" "}
+              <strong>{viewerData.sqlite?.textEncoding ?? "—"}</strong>
             </p>
             <p>
               Page count: <strong>{viewerData.sqlite?.pageCount ?? "—"}</strong>
             </p>
             <p>
-              User version: <strong>{viewerData.sqlite?.userVersion ?? "—"}</strong>
+              User version:{" "}
+              <strong>{viewerData.sqlite?.userVersion ?? "—"}</strong>
             </p>
             <p>
               Schema cookie:{" "}

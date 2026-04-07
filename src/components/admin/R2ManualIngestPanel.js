@@ -12,8 +12,15 @@ import {
   formatResolution,
 } from "@/lib/mediaLibraryHelpers";
 
-export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCopyUrl, onOpenUrl }) {
-  const [r2ManualInfo, setR2ManualInfo] = useState(uploadInfoDetails?.isR2 ? uploadInfoDetails : null);
+export default function R2ManualIngestPanel({
+  uploadInfoDetails,
+  onRefresh,
+  onCopyUrl,
+  onOpenUrl,
+}) {
+  const [r2ManualInfo, setR2ManualInfo] = useState(
+    uploadInfoDetails?.isR2 ? uploadInfoDetails : null,
+  );
   const [showManualTools, setShowManualTools] = useState(false);
   const [r2ManualKey, setR2ManualKey] = useState(defaultR2ObjectKey);
   const [r2ManualTitle, setR2ManualTitle] = useState("");
@@ -42,7 +49,9 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
 
   const r2ManualObjectUrl = useMemo(() => {
     const base = String(r2ManualPublicUrl || "").replace(/\/+$/, "");
-    const key = String(r2ManualKey || "").trim().replace(/^\/+/, "");
+    const key = String(r2ManualKey || "")
+      .trim()
+      .replace(/^\/+/, "");
     if (!base || !key) return "";
     return `${base}/${key
       .split("/")
@@ -60,7 +69,9 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
   }, [r2ManualStorage]);
 
   const r2ManualSuggestedAssetId = useMemo(() => {
-    const safeKey = String(r2ManualKey || "").trim().replace(/^\/+/, "");
+    const safeKey = String(r2ManualKey || "")
+      .trim()
+      .replace(/^\/+/, "");
     if (!safeKey) return "";
     const normalized = safeKey
       .toLowerCase()
@@ -250,250 +261,263 @@ export default function R2ManualIngestPanel({ uploadInfoDetails, onRefresh, onCo
 
       {showManualTools && r2ManualInfo?.ok && (
         <>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <label className="space-y-1 text-[11px] text-gray-700 sm:col-span-2">
-          <span>
-            {t("admin.mediaR2ManualKey", "R2 object key")}
-          </span>
-          <div className="flex flex-wrap gap-2">
-            <input
-              type="text"
-              className="flex-1 min-w-0 border rounded px-2 py-1 text-xs"
-              value={r2ManualKey}
-              onChange={(event) => setR2ManualKey(event.target.value)}
-              placeholder="uploads/manual/your-asset.png"
-              disabled={r2ManualPending}
-            />
-            <button
-              type="button"
-              className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100"
-              onClick={() => setR2ManualKey(defaultR2ObjectKey())}
-              disabled={r2ManualPending}
-            >
-              {t("admin.mediaR2ManualNewKey", "New key")}
-            </button>
-          </div>
-        </label>
-        <label className="space-y-1 text-[11px] text-gray-700">
-          <span>{t("admin.mediaTitle", "Title")}</span>
-          <input
-            type="text"
-            className="w-full border rounded px-2 py-1 text-xs"
-            value={r2ManualTitle}
-            onChange={(event) => setR2ManualTitle(event.target.value)}
-            disabled={r2ManualPending}
-          />
-        </label>
-        <label className="space-y-1 text-[11px] text-gray-700">
-          <span>{t("admin.mediaAssetId", "Asset ID")}</span>
-          <div className="flex gap-1">
-            <input
-              type="text"
-              className="w-full border rounded px-2 py-1 text-xs"
-              value={r2ManualAssetId}
-              onChange={(event) => setR2ManualAssetId(event.target.value)}
-              disabled={r2ManualPending}
-            />
-            <button
-              type="button"
-              className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100"
-              onClick={() => setR2ManualAssetId(r2ManualSuggestedAssetId)}
-              disabled={!r2ManualSuggestedAssetId || r2ManualPending}
-            >
-              {t("admin.mediaR2ManualSuggest", "Suggest")}
-            </button>
-          </div>
-        </label>
-        <label className="space-y-1 text-[11px] text-gray-700">
-          <span>{t("admin.mediaOwnerUri", "Owner URI")}</span>
-          <input
-            type="text"
-            className="w-full border rounded px-2 py-1 text-xs"
-            value={r2ManualOwnerUri}
-            onChange={(event) => setR2ManualOwnerUri(event.target.value)}
-            disabled={r2ManualPending}
-          />
-        </label>
-        <label className="space-y-1 text-[11px] text-gray-700">
-          <span>{t("admin.mediaAssetSlug", "Asset slug (optional)")}</span>
-          <input
-            type="text"
-            className="w-full border rounded px-2 py-1 text-xs"
-            value={r2ManualAssetSlug}
-            onChange={(event) => setR2ManualAssetSlug(event.target.value)}
-            disabled={r2ManualPending}
-          />
-        </label>
-        <label className="space-y-1 text-[11px] text-gray-700">
-          <span>{t("admin.mediaCopyrightHolder", "Copyright holder")}</span>
-          <input
-            type="text"
-            className="w-full border rounded px-2 py-1 text-xs"
-            value={r2ManualRightsHolder}
-            onChange={(event) => setR2ManualRightsHolder(event.target.value)}
-            disabled={r2ManualPending}
-          />
-        </label>
-        <label className="space-y-1 text-[11px] text-gray-700">
-          <span>{t("admin.mediaLicense", "License")}</span>
-          <input
-            type="text"
-            className="w-full border rounded px-2 py-1 text-xs"
-            value={r2ManualLicense}
-            onChange={(event) => setR2ManualLicense(event.target.value)}
-            disabled={r2ManualPending}
-          />
-        </label>
-        <label className="space-y-1 text-[11px] text-gray-700 sm:col-span-2">
-          <span>{t("admin.mediaR2ManualUrl", "Resolved R2 URL")}</span>
-          <div className="flex flex-wrap gap-2">
-            <input
-              type="text"
-              readOnly
-              value={r2ManualObjectUrl}
-              className="flex-1 min-w-0 border rounded px-2 py-1 text-xs bg-gray-50"
-            />
-            <button
-              type="button"
-              onClick={() => onCopyUrl?.(r2ManualObjectUrl)}
-              disabled={!r2ManualObjectUrl}
-              className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100 disabled:opacity-50"
-            >
-              {t("admin.bucketCopyUrl", "Copy URL")}
-            </button>
-          </div>
-        </label>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => runR2ManualAction({ persist: false })}
-          disabled={!r2ManualKey.trim() || r2ManualPending}
-          className="px-3 py-1 rounded border text-xs hover:bg-gray-100 disabled:opacity-50"
-        >
-          {r2ManualPending
-            ? t("common.loading", "Loading…")
-            : t("admin.mediaR2ManualPreview", "Preview object")}
-        </button>
-        <button
-          type="button"
-          onClick={() => runR2ManualAction({ persist: true })}
-          disabled={!r2ManualKey.trim() || r2ManualPending}
-          className="px-3 py-1 rounded border text-xs bg-slate-600 text-white border-slate-700 hover:bg-slate-700 disabled:opacity-50"
-        >
-          {r2ManualPending
-            ? t("common.loading", "Loading…")
-            : t("admin.mediaR2ManualSave", "Save asset to KV")}
-        </button>
-        <span className="text-[11px] text-gray-500">
-          {t("admin.mediaR2ManualStorage", "Registry storage")}:{" "}
-          <code>{r2ManualStorageLabel}</code>
-        </span>
-      </div>
-
-      {r2ManualError && (
-        <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
-          {r2ManualError}
-        </p>
-      )}
-      {r2ManualStatus && (
-        <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5">
-          {r2ManualStatus}
-        </p>
-      )}
-      {r2ManualPreview && (
-        <div className="rounded border border-slate-200 bg-slate-50 p-2 text-xs space-y-2">
-          <p className="font-semibold text-slate-800">
-            {t("admin.mediaR2ManualPreviewTitle", "Preview")}
-          </p>
-          <div className="grid gap-1 sm:grid-cols-2">
-            <p className="text-slate-900 break-all">
-              {t("admin.mediaR2ManualObject", "Object")}: {r2ManualPreview.key}
-            </p>
-            <p className="text-slate-900">
-              {t("admin.mediaTypeLabel", "Type")}: {r2ManualPreview.mimeType || "—"}
-            </p>
-            <p className="text-slate-900">
-              {t("admin.bucketSize", "Size")}: {formatBytes(r2ManualPreview.sizeBytes)}
-            </p>
-            <p className="text-slate-900">
-              {t("admin.resolution", "Resolution")}:{" "}
-              {formatResolution(r2ManualPreview.width, r2ManualPreview.height)}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={r2ManualPreview.url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] text-slate-700 hover:underline break-all"
-            >
-              {r2ManualPreview.url}
-            </a>
-            <button
-              type="button"
-              onClick={() => onCopyUrl?.(r2ManualPreview.url)}
-              disabled={!r2ManualPreview.url}
-              className="px-2 py-0.5 rounded border text-[11px] text-slate-700 hover:bg-slate-100 disabled:opacity-50"
-            >
-              {t("admin.bucketCopyUrl", "Copy URL")}
-            </button>
-          </div>
-          {r2ManualPreview.isImage && r2ManualPreview.url && (
-            <div className="rounded border border-slate-200 bg-white p-2 inline-block max-w-full">
-              <Image
-                src={r2ManualPreview.url}
-                alt={r2ManualPreview.title || r2ManualPreview.key || "R2 preview"}
-                width={Math.max(1, Number(r2ManualPreview.width) || 640)}
-                height={Math.max(1, Number(r2ManualPreview.height) || 360)}
-                unoptimized
-                className="max-h-44 h-auto w-auto rounded"
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="space-y-1 text-[11px] text-gray-700 sm:col-span-2">
+              <span>{t("admin.mediaR2ManualKey", "R2 object key")}</span>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  className="flex-1 min-w-0 border rounded px-2 py-1 text-xs"
+                  value={r2ManualKey}
+                  onChange={(event) => setR2ManualKey(event.target.value)}
+                  placeholder="uploads/manual/your-asset.png"
+                  disabled={r2ManualPending}
+                />
+                <button
+                  type="button"
+                  className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100"
+                  onClick={() => setR2ManualKey(defaultR2ObjectKey())}
+                  disabled={r2ManualPending}
+                >
+                  {t("admin.mediaR2ManualNewKey", "New key")}
+                </button>
+              </div>
+            </label>
+            <label className="space-y-1 text-[11px] text-gray-700">
+              <span>{t("admin.mediaTitle", "Title")}</span>
+              <input
+                type="text"
+                className="w-full border rounded px-2 py-1 text-xs"
+                value={r2ManualTitle}
+                onChange={(event) => setR2ManualTitle(event.target.value)}
+                disabled={r2ManualPending}
               />
+            </label>
+            <label className="space-y-1 text-[11px] text-gray-700">
+              <span>{t("admin.mediaAssetId", "Asset ID")}</span>
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  className="w-full border rounded px-2 py-1 text-xs"
+                  value={r2ManualAssetId}
+                  onChange={(event) => setR2ManualAssetId(event.target.value)}
+                  disabled={r2ManualPending}
+                />
+                <button
+                  type="button"
+                  className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100"
+                  onClick={() => setR2ManualAssetId(r2ManualSuggestedAssetId)}
+                  disabled={!r2ManualSuggestedAssetId || r2ManualPending}
+                >
+                  {t("admin.mediaR2ManualSuggest", "Suggest")}
+                </button>
+              </div>
+            </label>
+            <label className="space-y-1 text-[11px] text-gray-700">
+              <span>{t("admin.mediaOwnerUri", "Owner URI")}</span>
+              <input
+                type="text"
+                className="w-full border rounded px-2 py-1 text-xs"
+                value={r2ManualOwnerUri}
+                onChange={(event) => setR2ManualOwnerUri(event.target.value)}
+                disabled={r2ManualPending}
+              />
+            </label>
+            <label className="space-y-1 text-[11px] text-gray-700">
+              <span>{t("admin.mediaAssetSlug", "Asset slug (optional)")}</span>
+              <input
+                type="text"
+                className="w-full border rounded px-2 py-1 text-xs"
+                value={r2ManualAssetSlug}
+                onChange={(event) => setR2ManualAssetSlug(event.target.value)}
+                disabled={r2ManualPending}
+              />
+            </label>
+            <label className="space-y-1 text-[11px] text-gray-700">
+              <span>{t("admin.mediaCopyrightHolder", "Copyright holder")}</span>
+              <input
+                type="text"
+                className="w-full border rounded px-2 py-1 text-xs"
+                value={r2ManualRightsHolder}
+                onChange={(event) =>
+                  setR2ManualRightsHolder(event.target.value)
+                }
+                disabled={r2ManualPending}
+              />
+            </label>
+            <label className="space-y-1 text-[11px] text-gray-700">
+              <span>{t("admin.mediaLicense", "License")}</span>
+              <input
+                type="text"
+                className="w-full border rounded px-2 py-1 text-xs"
+                value={r2ManualLicense}
+                onChange={(event) => setR2ManualLicense(event.target.value)}
+                disabled={r2ManualPending}
+              />
+            </label>
+            <label className="space-y-1 text-[11px] text-gray-700 sm:col-span-2">
+              <span>{t("admin.mediaR2ManualUrl", "Resolved R2 URL")}</span>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={r2ManualObjectUrl}
+                  className="flex-1 min-w-0 border rounded px-2 py-1 text-xs bg-gray-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => onCopyUrl?.(r2ManualObjectUrl)}
+                  disabled={!r2ManualObjectUrl}
+                  className="px-2 py-1 rounded border text-[11px] hover:bg-gray-100 disabled:opacity-50"
+                >
+                  {t("admin.bucketCopyUrl", "Copy URL")}
+                </button>
+              </div>
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => runR2ManualAction({ persist: false })}
+              disabled={!r2ManualKey.trim() || r2ManualPending}
+              className="px-3 py-1 rounded border text-xs hover:bg-gray-100 disabled:opacity-50"
+            >
+              {r2ManualPending
+                ? t("common.loading", "Loading…")
+                : t("admin.mediaR2ManualPreview", "Preview object")}
+            </button>
+            <button
+              type="button"
+              onClick={() => runR2ManualAction({ persist: true })}
+              disabled={!r2ManualKey.trim() || r2ManualPending}
+              className="px-3 py-1 rounded border text-xs bg-slate-600 text-white border-slate-700 hover:bg-slate-700 disabled:opacity-50"
+            >
+              {r2ManualPending
+                ? t("common.loading", "Loading…")
+                : t("admin.mediaR2ManualSave", "Save asset to KV")}
+            </button>
+            <span className="text-[11px] text-gray-500">
+              {t("admin.mediaR2ManualStorage", "Registry storage")}:{" "}
+              <code>{r2ManualStorageLabel}</code>
+            </span>
+          </div>
+
+          {r2ManualError && (
+            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+              {r2ManualError}
+            </p>
+          )}
+          {r2ManualStatus && (
+            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5">
+              {r2ManualStatus}
+            </p>
+          )}
+          {r2ManualPreview && (
+            <div className="rounded border border-slate-200 bg-slate-50 p-2 text-xs space-y-2">
+              <p className="font-semibold text-slate-800">
+                {t("admin.mediaR2ManualPreviewTitle", "Preview")}
+              </p>
+              <div className="grid gap-1 sm:grid-cols-2">
+                <p className="text-slate-900 break-all">
+                  {t("admin.mediaR2ManualObject", "Object")}:{" "}
+                  {r2ManualPreview.key}
+                </p>
+                <p className="text-slate-900">
+                  {t("admin.mediaTypeLabel", "Type")}:{" "}
+                  {r2ManualPreview.mimeType || "—"}
+                </p>
+                <p className="text-slate-900">
+                  {t("admin.bucketSize", "Size")}:{" "}
+                  {formatBytes(r2ManualPreview.sizeBytes)}
+                </p>
+                <p className="text-slate-900">
+                  {t("admin.resolution", "Resolution")}:{" "}
+                  {formatResolution(
+                    r2ManualPreview.width,
+                    r2ManualPreview.height,
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={r2ManualPreview.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-slate-700 hover:underline break-all"
+                >
+                  {r2ManualPreview.url}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => onCopyUrl?.(r2ManualPreview.url)}
+                  disabled={!r2ManualPreview.url}
+                  className="px-2 py-0.5 rounded border text-[11px] text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                >
+                  {t("admin.bucketCopyUrl", "Copy URL")}
+                </button>
+              </div>
+              {r2ManualPreview.isImage && r2ManualPreview.url && (
+                <div className="rounded border border-slate-200 bg-white p-2 inline-block max-w-full">
+                  <Image
+                    src={r2ManualPreview.url}
+                    alt={
+                      r2ManualPreview.title ||
+                      r2ManualPreview.key ||
+                      "R2 preview"
+                    }
+                    width={Math.max(1, Number(r2ManualPreview.width) || 640)}
+                    height={Math.max(1, Number(r2ManualPreview.height) || 360)}
+                    unoptimized
+                    className="max-h-44 h-auto w-auto rounded"
+                  />
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {r2ManualRegistry.length > 0 && (
-        <div className="rounded border border-gray-200 bg-gray-50 p-2 text-xs space-y-1">
-          <p className="font-semibold text-gray-700">
-            {t("admin.mediaR2ManualSavedList", "Recently saved KV records")}
-          </p>
-          {r2ManualRegistry.slice(0, 6).map((item) => (
-            <div key={item.id} className="flex flex-wrap items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[11px] text-gray-800 break-all">
-                  {item.title || item.key}
-                </p>
-                <p className="text-[10px] text-gray-500 break-all">
-                  {item.key}
-                </p>
-              </div>
-              <div className="flex gap-1">
-                {item.url && (
-                  <button
-                    type="button"
-                    onClick={() => onCopyUrl?.(item.url)}
-                    className="px-2 py-0.5 rounded border text-[10px] hover:bg-gray-100"
-                  >
-                    {t("admin.bucketCopyUrl", "Copy URL")}
-                  </button>
-                )}
-                {item.url && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenUrl?.(item.url)}
-                    className="px-2 py-0.5 rounded border text-[10px] hover:bg-gray-100"
-                  >
-                    {t("admin.mediaHistoryView", "Open")}
-                  </button>
-                )}
-              </div>
+          {r2ManualRegistry.length > 0 && (
+            <div className="rounded border border-gray-200 bg-gray-50 p-2 text-xs space-y-1">
+              <p className="font-semibold text-gray-700">
+                {t("admin.mediaR2ManualSavedList", "Recently saved KV records")}
+              </p>
+              {r2ManualRegistry.slice(0, 6).map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-800 break-all">
+                      {item.title || item.key}
+                    </p>
+                    <p className="text-[10px] text-gray-500 break-all">
+                      {item.key}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    {item.url && (
+                      <button
+                        type="button"
+                        onClick={() => onCopyUrl?.(item.url)}
+                        className="px-2 py-0.5 rounded border text-[10px] hover:bg-gray-100"
+                      >
+                        {t("admin.bucketCopyUrl", "Copy URL")}
+                      </button>
+                    )}
+                    {item.url && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenUrl?.(item.url)}
+                        className="px-2 py-0.5 rounded border text-[10px] hover:bg-gray-100"
+                      >
+                        {t("admin.mediaHistoryView", "Open")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
         </>
       )}
     </div>

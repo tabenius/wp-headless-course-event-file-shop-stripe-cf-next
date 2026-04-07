@@ -16,7 +16,11 @@ async function tryGetD1() {
 function accessRowToObject(row) {
   if (!row) return null;
   let allowedUsers = [];
-  try { allowedUsers = JSON.parse(row.allowed_users || "[]"); } catch { /* ignore */ }
+  try {
+    allowedUsers = JSON.parse(row.allowed_users || "[]");
+  } catch {
+    /* ignore */
+  }
   return {
     allowedUsers: Array.isArray(allowedUsers) ? allowedUsers : [],
     priceCents: row.price_cents,
@@ -194,7 +198,9 @@ export async function getContentAccessState() {
   const db = await tryGetD1();
   if (db) {
     try {
-      const { results } = await db.prepare("SELECT * FROM content_access").all();
+      const { results } = await db
+        .prepare("SELECT * FROM content_access")
+        .all();
       const courses = {};
       for (const row of results || []) {
         courses[row.course_uri] = accessRowToObject(row);
@@ -237,8 +243,12 @@ export async function saveContentAccessState(nextState) {
                active=excluded.active, updated_at=excluded.updated_at`,
           )
           .bind(
-            uri, JSON.stringify(course.allowedUsers), course.priceCents,
-            course.currency, course.vatPercent ?? null, course.active ? 1 : 0,
+            uri,
+            JSON.stringify(course.allowedUsers),
+            course.priceCents,
+            course.currency,
+            course.vatPercent ?? null,
+            course.active ? 1 : 0,
             course.updatedAt || new Date().toISOString(),
           )
           .run();
@@ -309,7 +319,9 @@ export async function grantContentAccess(courseUri, email) {
     allowedUsers: [],
     priceCents:
       Number.parseInt(process.env.DEFAULT_COURSE_FEE_CENTS || "0", 10) || 0,
-    currency: normalizeCurrency(process.env.DEFAULT_COURSE_FEE_CURRENCY),
+    currency: normalizeCurrency(
+      process.env.DEFAULT_CURRENCY || process.env.DEFAULT_COURSE_FEE_CURRENCY,
+    ),
     vatPercent: null,
     active: true,
   };
@@ -331,12 +343,18 @@ export async function hasContentAccess(courseUri, email) {
   const db = await tryGetD1();
   if (db) {
     const row = await db
-      .prepare("SELECT allowed_users FROM content_access WHERE course_uri = ? AND active = 1")
+      .prepare(
+        "SELECT allowed_users FROM content_access WHERE course_uri = ? AND active = 1",
+      )
       .bind(uri)
       .first();
     if (!row) return false;
     let users = [];
-    try { users = JSON.parse(row.allowed_users || "[]"); } catch { /* ignore */ }
+    try {
+      users = JSON.parse(row.allowed_users || "[]");
+    } catch {
+      /* ignore */
+    }
     return Array.isArray(users) && users.includes(normalizedEmail);
   }
 

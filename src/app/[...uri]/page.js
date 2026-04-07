@@ -202,7 +202,9 @@ async function fetchNodeType(uri) {
   }
 
   if (!lastData?.nodeByUri?.__typename) {
-    const detail = lastError ? ` (last error: ${lastError.message || lastError})` : "";
+    const detail = lastError
+      ? ` (last error: ${lastError.message || lastError})`
+      : "";
     appendServerLog({
       level: "info",
       msg: `WPGraphQL nodeByUri type resolution returned null for: ${normalizeUriForLookup(uri)}${detail}`,
@@ -243,7 +245,7 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
   if (DEBUG_WP_RESOLVE) {
     console.log(`[WP-Resolve] Attempting to resolve: ${normalizedUri}`);
   }
-  
+
   try {
     await probeStorefrontRagbazGraphql(normalizedUri);
     const typeData = await fetchNodeType(normalizedUri);
@@ -286,16 +288,16 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
     );
   }
   const wordpressUrl = await resolveWordPressUrl();
-  
+
   const [restNode, courseNode] = await Promise.all([
-    fetchRestFallback(normalizedUri, wordpressUrl).catch(e => {
+    fetchRestFallback(normalizedUri, wordpressUrl).catch((e) => {
       if (e instanceof RateLimitError) throw e;
       if (DEBUG_WP_RESOLVE) {
         console.error("[WP-Resolve] REST Fallback error:", e?.message || e);
       }
       return null;
     }),
-    fetchCourseFallback(normalizedUri, wordpressUrl).catch(e => {
+    fetchCourseFallback(normalizedUri, wordpressUrl).catch((e) => {
       if (e instanceof RateLimitError) throw e;
       if (DEBUG_WP_RESOLVE) {
         console.error("[WP-Resolve] Course Fallback error:", e?.message || e);
@@ -306,7 +308,9 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
 
   const finalResult = restNode || courseNode;
   if (!finalResult && DEBUG_WP_RESOLVE) {
-    console.warn(`[WP-Resolve] 404: No data found for ${normalizedUri} in GraphQL or REST.`);
+    console.warn(
+      `[WP-Resolve] 404: No data found for ${normalizedUri} in GraphQL or REST.`,
+    );
   }
 
   return finalResult;
@@ -464,7 +468,9 @@ export async function generateMetadata({ params: paramsPromise }) {
     const params = await paramsPromise;
     const uriSegments = Array.isArray(params?.uri) ? params.uri : [];
     const uri =
-      uriSegments.length > 0 ? `/${uriSegments.filter(Boolean).join("/")}` : "/";
+      uriSegments.length > 0
+        ? `/${uriSegments.filter(Boolean).join("/")}`
+        : "/";
     const node = await resolveNodeByUri(uri);
     if (!node) return {};
 
@@ -752,6 +758,7 @@ async function ContentPageInner({
           }
           currency={
             accessConfig?.currency ||
+            process.env.DEFAULT_CURRENCY ||
             process.env.DEFAULT_COURSE_FEE_CURRENCY ||
             site.defaultCurrency ||
             "SEK"

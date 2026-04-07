@@ -27,12 +27,18 @@ describe("familyToSlug", () => {
 
 describe("buildFontFaceCss", () => {
   it("builds variable @font-face block", () => {
-    const css = buildFontFaceCss("Inter", "inter", true, [100, 900], [
-      {
-        r2Url: "https://r2.example.com/fonts/inter/inter-variable.woff2",
-        unicodeRange: null,
-      },
-    ]);
+    const css = buildFontFaceCss(
+      "Inter",
+      "inter",
+      true,
+      [100, 900],
+      [
+        {
+          r2Url: "https://r2.example.com/fonts/inter/inter-variable.woff2",
+          unicodeRange: null,
+        },
+      ],
+    );
     assert.ok(css.includes("font-family: 'Inter'"));
     assert.ok(css.includes("font-weight: 100 900"));
     assert.ok(css.includes("inter-variable.woff2"));

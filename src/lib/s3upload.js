@@ -12,12 +12,18 @@ import { getR2Bucket } from "@/lib/r2Bindings";
 const _clients = new Map();
 let _awsSdkPromise = null;
 const S3_ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
+// FIXME: error due to detection of process
+/*
 const isNodeRuntime =
   typeof process !== "undefined" &&
-  process.versions?.node &&
-  process.env.NEXT_RUNTIME !== "edge";
+  process?.versions?.node &&
+  process?.env?.NEXT_RUNTIME !== "edge";
 const isEdgeRuntime =
-  typeof EdgeRuntime !== "undefined" || process.env.NEXT_RUNTIME === "edge";
+  typeof EdgeRuntime !== "undefined" || process?.env?.NEXT_RUNTIME === "edge";
+  */
+const isNodeRuntime = false;
+const isEdgeRuntime = true;
+// /FIXME
 export const EDGE_R2_MAX_BYTES = 100 * 1024 * 1024; // 100 MB cap for edge uploads
 
 function isS3Enabled() {
@@ -172,7 +178,9 @@ function normalizeStorageMetadata(metadata) {
       .replace(/[^a-z0-9_-]/g, "")
       .slice(0, 64);
     if (!safeKey) continue;
-    const safeValue = String(value ?? "").trim().slice(0, 1024);
+    const safeValue = String(value ?? "")
+      .trim()
+      .slice(0, 1024);
     if (!safeValue) continue;
     normalized[safeKey] = safeValue;
   }
@@ -320,22 +328,36 @@ async function createS3SignedDownloadUrl({
  */
 export async function createSignedDownloadUrl({
   fileUrl,
-  backend,
+  backend = "r2",
   expiresIn = 300,
   downloadFileName = "",
 } = {}) {
-  const safeUrl = String(fileUrl || "").trim();
-  if (!safeUrl) return null;
+  let resolvedUrl = String(fileUrl || "").trim();
+  if (!resolvedUrl) return null;
+
+  const candidates = [];
 
   const ttl = clampSignedUrlExpiresIn(expiresIn);
-  const requested = String(backend || "").trim().toLowerCase();
-  const candidates = [];
-  if (requested === "r2" || requested === "s3") candidates.push(requested);
-  if (!candidates.includes("r2")) candidates.push("r2");
-  if (!candidates.includes("s3")) candidates.push("s3");
+  if (
+    resolvedUrl.substring(0, 3) === "r2:" ||
+    resolvedUrl.substring(0, 3) === "s3:"
+  ) {
+    backend = resolvedUrl.substring(0, 2);
+    resolvedUrl = resolvedUrl.substring(3);
+    candidates.push(backend);
+  } else {
+    const requested = String(backend || "")
+      .trim()
+      .toLowerCase();
+    if (requested === "r2" || requested === "s3") candidates.push(requested);
+    if (!candidates.includes("r2")) candidates.push("r2");
+    if (!candidates.includes("s3")) candidates.push("s3");
+  }
 
   for (const candidate of candidates) {
-    const objectKey = resolveStorageObjectKey(safeUrl, { backend: candidate });
+    const objectKey = resolveStorageObjectKey(resolvedUrl, {
+      backend: candidate,
+    });
     if (!objectKey) continue;
     try {
       if (candidate === "r2") {
@@ -429,7 +451,8 @@ export async function uploadToS3(
       });
       return `${publicBaseUrl}/${key}`;
     }
-    if (isEdgeRuntime) return uploadToR2Edge(buffer, fileName, contentType, metadata);
+    if (isEdgeRuntime)
+      return uploadToR2Edge(buffer, fileName, contentType, metadata);
   }
 
   assertNodeS3Support(backend);
@@ -511,14 +534,24 @@ export async function createMultipartUpload(
       const mpu = await bucket.createMultipartUpload(key, {
         httpMetadata: r2HttpMetadata(contentType),
       });
-      return { uploadId: mpu.uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
+      return {
+        uploadId: mpu.uploadId,
+        key,
+        publicUrl: `${publicBaseUrl}/${key}`,
+      };
     }
     if (isEdgeRuntime) {
       assertEdgeR2Support();
-      const { accessKeyId, secretAccessKey, accountId, bucket: bucketName, publicBaseUrl } =
-        getEdgeR2Creds();
+      const {
+        accessKeyId,
+        secretAccessKey,
+        accountId,
+        bucket: bucketName,
+        publicBaseUrl,
+      } = getEdgeR2Creds();
       const key = `uploads/${Date.now()}-${fileName}`;
-      const url = buildR2Url({ accountId, bucket: bucketName, key }) + "?uploads";
+      const url =
+        buildR2Url({ accountId, bucket: bucketName, key }) + "?uploads";
       const signedHeaders = await signR2Request({
         method: "POST",
         url,
@@ -538,7 +571,8 @@ export async function createMultipartUpload(
       const xml = await res.text();
       const uploadIdMatch = xml.match(/<UploadId>([^<]+)<\/UploadId>/i);
       const uploadId = uploadIdMatch ? uploadIdMatch[1] : null;
-      if (!uploadId) throw new Error("R2 multipart create failed (no uploadId)");
+      if (!uploadId)
+        throw new Error("R2 multipart create failed (no uploadId)");
       return { uploadId, key, publicUrl: `${publicBaseUrl}/${key}` };
     }
   }
@@ -637,8 +671,13 @@ export async function completeMultipartUpload(
     }
     if (isEdgeRuntime) {
       assertEdgeR2Support();
-      const { accessKeyId, secretAccessKey, accountId, bucket: bucketName, publicBaseUrl } =
-        getEdgeR2Creds();
+      const {
+        accessKeyId,
+        secretAccessKey,
+        accountId,
+        bucket: bucketName,
+        publicBaseUrl,
+      } = getEdgeR2Creds();
       const sortedParts = parts
         .slice()
         .sort((a, b) => a.partNumber - b.partNumber);
@@ -717,8 +756,12 @@ export async function abortMultipartUpload(
     }
     if (isEdgeRuntime) {
       assertEdgeR2Support();
-      const { accessKeyId, secretAccessKey, accountId, bucket: bucketName } =
-        getEdgeR2Creds();
+      const {
+        accessKeyId,
+        secretAccessKey,
+        accountId,
+        bucket: bucketName,
+      } = getEdgeR2Creds();
       const url =
         buildR2Url({ accountId, bucket: bucketName, key }) +
         `?uploadId=${encodeURIComponent(uploadId)}`;
@@ -796,7 +839,9 @@ export async function listBucketObjects({
 } = {}) {
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
-    throw new Error("Bucket listing is not available for the WordPress backend.");
+    throw new Error(
+      "Bucket listing is not available for the WordPress backend.",
+    );
   }
 
   // R2 binding path
@@ -814,9 +859,7 @@ export async function listBucketObjects({
           key: item.key,
           url: item.key ? `${publicBaseUrl}/${item.key}` : null,
           size: item.size ?? 0,
-          lastModified: item.uploaded
-            ? item.uploaded.toISOString()
-            : null,
+          lastModified: item.uploaded ? item.uploaded.toISOString() : null,
         }))
         .sort((a, b) => {
           if (!a.lastModified) return 1;
@@ -844,9 +887,7 @@ export async function listBucketObjects({
       key: item.Key,
       url: item.Key ? `${publicBaseUrl}/${item.Key}` : null,
       size: item.Size ?? 0,
-      lastModified: item.LastModified
-        ? item.LastModified.toISOString()
-        : null,
+      lastModified: item.LastModified ? item.LastModified.toISOString() : null,
     }))
     .sort((a, b) => {
       if (!a.lastModified) return 1;
@@ -860,7 +901,9 @@ export async function headBucketObject({ key, backend } = {}) {
   if (!safeKey) throw new Error("Object key is required.");
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
-    throw new Error("Object metadata is not available for the WordPress backend.");
+    throw new Error(
+      "Object metadata is not available for the WordPress backend.",
+    );
   }
 
   // R2 binding path
@@ -906,7 +949,9 @@ export async function replaceBucketObjectMetadata({
   if (!safeKey) throw new Error("Object key is required.");
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
-    throw new Error("Object metadata replacement is not available for WordPress.");
+    throw new Error(
+      "Object metadata replacement is not available for WordPress.",
+    );
   }
 
   // R2 binding path — get object and re-put with updated metadata.
@@ -951,7 +996,10 @@ export async function replaceBucketObjectMetadata({
   assertNodeS3Support(backendToUse);
   const bucketName = getBucket();
   const client = await getS3Client(backendToUse);
-  const current = await headBucketObject({ key: safeKey, backend: backendToUse });
+  const current = await headBucketObject({
+    key: safeKey,
+    backend: backendToUse,
+  });
   const incoming = normalizeStorageMetadata(metadata);
   const replaced = { ...current.metadata };
   for (const rawKey of Array.isArray(replaceKeys) ? replaceKeys : []) {
@@ -980,8 +1028,12 @@ export async function replaceBucketObjectMetadata({
       ...(current.contentDisposition
         ? { ContentDisposition: current.contentDisposition }
         : {}),
-      ...(current.contentEncoding ? { ContentEncoding: current.contentEncoding } : {}),
-      ...(current.contentLanguage ? { ContentLanguage: current.contentLanguage } : {}),
+      ...(current.contentEncoding
+        ? { ContentEncoding: current.contentEncoding }
+        : {}),
+      ...(current.contentLanguage
+        ? { ContentLanguage: current.contentLanguage }
+        : {}),
     }),
   );
 
@@ -999,7 +1051,9 @@ export async function replaceBucketObjectMetadata({
 export async function listBucketDirectory({ prefix = "", backend } = {}) {
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
-    throw new Error("Directory listing is not available for the WordPress backend.");
+    throw new Error(
+      "Directory listing is not available for the WordPress backend.",
+    );
   }
 
   // R2 binding path
@@ -1079,7 +1133,9 @@ export async function putBucketObject({
   if (!safeKey) throw new Error("Object key is required.");
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
-    throw new Error("Direct object put is not available for the WordPress backend.");
+    throw new Error(
+      "Direct object put is not available for the WordPress backend.",
+    );
   }
 
   // R2 binding path
@@ -1108,7 +1164,9 @@ export async function putBucketObject({
       Key: safeKey,
       Body: body,
       ContentType: contentType || "application/octet-stream",
-      ...(Object.keys(safeMetadata).length > 0 ? { Metadata: safeMetadata } : {}),
+      ...(Object.keys(safeMetadata).length > 0
+        ? { Metadata: safeMetadata }
+        : {}),
     }),
   );
   return `${publicBaseUrl}/${safeKey}`;
@@ -1120,7 +1178,9 @@ export async function deleteBucketObject({ key, backend } = {}) {
   if (!safeKey) throw new Error("Object key is required.");
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
-    throw new Error("Object deletion is not available for the WordPress backend.");
+    throw new Error(
+      "Object deletion is not available for the WordPress backend.",
+    );
   }
 
   // R2 binding path
@@ -1136,7 +1196,9 @@ export async function deleteBucketObject({ key, backend } = {}) {
   const { DeleteObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
   const bucketName = getBucket();
-  await client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: safeKey }));
+  await client.send(
+    new DeleteObjectCommand({ Bucket: bucketName, Key: safeKey }),
+  );
 }
 
 /**
@@ -1148,7 +1210,9 @@ export async function getBucketObjectStream({ key, backend } = {}) {
   if (!safeKey) throw new Error("Object key is required.");
   const backendToUse = backend || resolveBackend();
   if (backendToUse === "wordpress") {
-    throw new Error("Object streaming is not available for the WordPress backend.");
+    throw new Error(
+      "Object streaming is not available for the WordPress backend.",
+    );
   }
 
   // R2 binding path
@@ -1159,7 +1223,8 @@ export async function getBucketObjectStream({ key, backend } = {}) {
       if (!obj) throw new Error(`Object not found: ${safeKey}`);
       return {
         body: obj.body,
-        contentType: obj.httpMetadata?.contentType || "application/octet-stream",
+        contentType:
+          obj.httpMetadata?.contentType || "application/octet-stream",
         contentLength: obj.size ?? null,
         lastModified: obj.uploaded ? obj.uploaded.toISOString() : null,
       };
@@ -1170,11 +1235,15 @@ export async function getBucketObjectStream({ key, backend } = {}) {
   const { GetObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
   const bucketName = getBucket();
-  const result = await client.send(new GetObjectCommand({ Bucket: bucketName, Key: safeKey }));
+  const result = await client.send(
+    new GetObjectCommand({ Bucket: bucketName, Key: safeKey }),
+  );
   return {
     body: result.Body.transformToWebStream(),
     contentType: result.ContentType || "application/octet-stream",
     contentLength: result.ContentLength ?? null,
-    lastModified: result.LastModified ? result.LastModified.toISOString() : null,
+    lastModified: result.LastModified
+      ? result.LastModified.toISOString()
+      : null,
   };
 }

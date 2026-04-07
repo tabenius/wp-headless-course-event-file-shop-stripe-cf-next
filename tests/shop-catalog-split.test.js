@@ -13,10 +13,7 @@ describe("SHOP_CATALOG_CACHE_TTL_MS default", () => {
       src.includes('"300000"'),
       "SHOP_CATALOG_CACHE_TTL_MS default should be 300000",
     );
-    assert.ok(
-      !src.includes('"120000"'),
-      "Old 120000 default should be gone",
-    );
+    assert.ok(!src.includes('"120000"'), "Old 120000 default should be gone");
   });
 });
 

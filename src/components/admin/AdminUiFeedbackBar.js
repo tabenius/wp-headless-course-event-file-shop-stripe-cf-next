@@ -3,9 +3,19 @@
 import { t } from "@/lib/i18n";
 
 const FEEDBACK_OPTIONS = [
-  { value: "up", icon: "👍", labelKey: "uiFeedbackThumbUp", fallback: "Adequate" },
+  {
+    value: "up",
+    icon: "👍",
+    labelKey: "uiFeedbackThumbUp",
+    fallback: "Adequate",
+  },
   { value: "heart", icon: "❤", labelKey: "uiFeedbackHeart", fallback: "Good" },
-  { value: "down", icon: "👎", labelKey: "uiFeedbackThumbDown", fallback: "Needs improvement" },
+  {
+    value: "down",
+    icon: "👎",
+    labelKey: "uiFeedbackThumbDown",
+    fallback: "Needs improvement",
+  },
 ];
 
 function formatWhen(value) {
@@ -25,7 +35,9 @@ export default function AdminUiFeedbackBar({
   onSet,
 }) {
   if (!fieldId) return null;
-  const selected = String(entry?.value || "").trim().toLowerCase();
+  const selected = String(entry?.value || "")
+    .trim()
+    .toLowerCase();
   const by = String(entry?.by || "").trim();
   const updatedAt = formatWhen(entry?.updatedAt);
 

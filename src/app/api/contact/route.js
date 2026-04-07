@@ -4,7 +4,11 @@ import site from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { tenantConfig } from "@/lib/tenantConfig";
-import { getResendApiKey, getResendFromAddress, isResendConfigured } from "@/lib/resendConfig";
+import {
+  getResendApiKey,
+  getResendFromAddress,
+  isResendConfigured,
+} from "@/lib/resendConfig";
 
 const ContactSchema = z.object({
   name: z.string().trim().min(2, t("authErrors.nameTooShort")),

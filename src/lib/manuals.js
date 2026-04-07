@@ -1,10 +1,9 @@
 import enRaw from "@/../docs/README.en.md?raw";
 import svRaw from "@/../docs/README.sv.md?raw";
 
-const DOCS_BASE = String(process.env.NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL || "https://ragbaz.xyz/docs").replace(
-  /\/+$/,
-  "",
-);
+const DOCS_BASE = String(
+  process.env.NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL || "https://ragbaz.xyz/docs",
+).replace(/\/+$/, "");
 const DOCS_URLS = {
   en: `${DOCS_BASE}/en/technical-manual`,
   sv: `${DOCS_BASE}/sv/technical-manual`,

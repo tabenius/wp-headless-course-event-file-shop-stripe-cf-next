@@ -28,7 +28,10 @@ describe("resolveSize", () => {
   });
 
   it("returns 16:9 landscape preset", () => {
-    assert.deepEqual(resolveSize("landscape-16-9"), { width: 1024, height: 576 });
+    assert.deepEqual(resolveSize("landscape-16-9"), {
+      width: 1024,
+      height: 576,
+    });
   });
 
   it("returns 9:16 story preset", () => {

@@ -10,4 +10,3 @@ const xtasTenantOverride = Object.freeze({
 });
 
 export default xtasTenantOverride;
-

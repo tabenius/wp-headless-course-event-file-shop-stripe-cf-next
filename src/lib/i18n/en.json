@@ -760,7 +760,7 @@
     "storageProviderKvName": "Cloudflare KV",
     "storageProviderKvDesc": "Fast, edge-distributed key-value store. Recommended on Cloudflare Workers. Requires CLOUDFLARE_ACCOUNT_ID, CF_API_TOKEN, and CF_KV_NAMESPACE_ID.",
     "storageProviderWpName": "WordPress GraphQL",
-    "storageProviderWpDesc": "Stores access data in WordPress user meta via WPGraphQL mutations. Requires COURSE_ACCESS_BACKEND=wordpress and the companion plugin.",
+    "storageProviderWpDesc": "Stores access data in WordPress user meta via WPGraphQL mutations. Requires CONTENT_ACCESS_BACKEND=wordpress and the companion plugin.",
     "storageProviderLocalName": "Local file",
     "storageProviderLocalDesc": "Stores data in .data/course-access.json on the server filesystem. Suitable for local development only.",
     "storageActive": "Active",
@@ -826,6 +826,7 @@
     "userAccessOverview": "User access overview",
     "userAccessOverviewDesc": "Find a user and see which content they can access. Check or uncheck items to grant or revoke access.",
     "confirmRemoveProduct": "Are you sure you want to remove this product? This cannot be undone.",
+    "confirmRemovePurchasedProduct": "WARNING: {count} user(s) have purchased or been granted access to this product. Deleting it will remove it from their inventory. Are you absolutely sure?",
     "shopVisibilitySaved": "Shop visibility saved.",
     "configuredBadgeTooltip": "This item has a price and access rules configured.",
     "requiredField": "Required",
@@ -1131,6 +1132,18 @@
     "claimingFree": "Getting access…",
     "claimFailed": "Could not claim free access right now. Please try again.",
     "downloadProduct": "Download"
+  },
+  "inventory": {
+    "title": "Inventory",
+    "subtitle": "All products and content you have access to.",
+    "backToShop": "Back to shop",
+    "openShop": "Open shop",
+    "empty": "No purchased products found yet.",
+    "unavailable": "This purchase exists but the product record is no longer available.",
+    "noAction": "No action available.",
+    "grantedAccess": "Granted access",
+    "openContent": "Open content",
+    "grantedDescription": "You have been granted access to this content."
   },
   "darkMode": {
     "lightMode": "Light mode",

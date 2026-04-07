@@ -31,7 +31,9 @@ export function contextDocSlugsForTab(tab) {
 }
 
 export function ragbazDocsBaseUrl() {
-  const configured = String(process.env.NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL || "").trim();
+  const configured = String(
+    process.env.NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL || "",
+  ).trim();
   if (!configured) return DEFAULT_DOCS_BASE;
   return configured.replace(/\/+$/, "");
 }

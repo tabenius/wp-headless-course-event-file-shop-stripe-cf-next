@@ -17,6 +17,7 @@ This document summarizes the current uncommitted workspace state on `main`, iden
 ## 1) High Value: Asset/Product Data Model and Purchase Flow
 
 Files:
+
 - `src/lib/digitalProducts.js`
 - `src/lib/shopProducts.js`
 - `src/app/api/digital/checkout/route.js`
@@ -28,6 +29,7 @@ Files:
 - `src/app/assets/[assetId]/page.js`
 
 Why this is valuable:
+
 - Introduces `productMode` (`asset`, `manual_uri`, `digital_file`) and `assetId`.
 - Moves buyable/owned mounts to derived paths (`/shop/{assetId}`, `/inventory/{assetId}`) instead of persisted product URIs.
 - Adds checkout/webhook metadata support for `asset_product`.
@@ -36,10 +38,12 @@ Why this is valuable:
 ## 2) High Value: Upload + Asset Metadata Authoring
 
 Files:
+
 - `src/app/api/admin/upload/route.js`
 - `src/app/api/admin/media-library/route.js`
 
 Why this is valuable:
+
 - Adds author metadata (`authorType`, `authorId`) and persists it for WP/R2 metadata.
 - Persists uploaded assets into the asset store bridge (`registerUploadedAsset`).
 - Keeps compatibility with existing upload backends.
@@ -47,6 +51,7 @@ Why this is valuable:
 ## 3) Medium/High Value: Identity and Profile Foundation
 
 Files:
+
 - `src/lib/userStore.js`
 - `src/lib/username.js`
 - `src/auth.js`
@@ -61,23 +66,27 @@ Files:
 - `src/lib/avatarStore.js`
 
 Why this is valuable:
+
 - Adds immutable opaque hex usernames derived from email+secret.
 - Adds `/me` and avatar profile management flow.
 - Adds profile menu entry and session propagation of username/public-avatar state.
 
 Risk to address before landing:
+
 - `src/lib/avatarStore.js` uses `node:crypto`; all routes that import it must run in Node runtime or the implementation must be moved to Web Crypto.
 - Several new profile/avatar UIs are currently hardcoded English and not integrated with `i18n`.
 
 ## 4) Medium Value: Admin UX Improvements
 
 Files:
+
 - `src/components/admin/AdminProductsTab.js`
 - `src/components/admin/ImageUploader.js` (mixed staged+unstaged)
 - `src/components/admin/AdminMediaLibraryTab.js` (unstaged)
 - `src/components/admin/AdminHeader.js`
 
 Why this is valuable:
+
 - Keyboard-first list focus/navigation and Escape-close behavior in product editor.
 - Product tab label cleanup (`Products`, `Types`, `Downloads`).
 - Stripe test-payments link removal in Products header.
@@ -89,34 +98,40 @@ Why this is valuable:
 ## A) Feed-Specific Avatar Work (likely postpone/remove)
 
 Files:
+
 - `src/lib/avatarFeedStore.js` (large, includes feeds/follows/items/composite logic)
 - `src/app/api/avatar/assets/route.js` (imports `avatarFeedStore`)
 - staged + unstaged versions of `src/app/avatar/[avatarId]/page.js` (feed section already removed in unstaged)
 
 Recommendation:
+
 - Keep asset record functions from `avatarFeedStore` if needed.
 - Split feed/follow/item protocol into a future branch/module if feed scope is still postponed.
 
 ## B) Tenant-Generalization Layer (valuable, but keep cohesive)
 
 Files:
+
 - `src/lib/tenantConfig.js` (untracked)
 - `tenantoverride/xtas.nu/config.js` (untracked)
 - `tenantoverride/xtas.nu/README.md` (untracked)
 - plus unstaged integrations in `email.js`, `site.js`, `transformContent.js`, support/welcome/admin docs, and tests.
 
 Recommendation:
+
 - Save as one unit or drop as one unit to avoid partial tenant behavior.
 
 ## Low Value / Regenerable / Local Noise
 
 Probably do not preserve:
+
 - `packages/ragbaz-bridge-plugin/dist/ragbaz-bridge.zip` (binary artifact)
 - `public/downloads/ragbaz-bridge/ragbaz-bridge.zip` (binary artifact)
 - tool-skill mirror folders (`.adal`, `.agent`, `.augment`, `.codebuddy`, etc.)
 - symlink skill entries (`skills/stripe-best-practices`, `skills/upgrade-stripe`) unless intentionally tracked
 
 Keep separate from this repo cleanup:
+
 - `ragbaz.xyz/` (own git repo)
 - `wp-cf-front/` (own git repo)
 - `wp-cf-front-oss/` (own git repo)
@@ -146,6 +161,7 @@ git switch -c salvage/uncommitted-2026-03-20
 ```
 
 Recommended commit order on that branch:
+
 1. Asset/product model + checkout/webhook/inventory
 2. Upload/media metadata authoring
 3. Identity/profile foundation (without feed protocol)
@@ -176,6 +192,7 @@ git status --short --branch
 ```
 
 Expected result:
+
 - No staged/unstaged/untracked changes in this repo.
 - Nested repos remain on disk for independent handling.
 

@@ -61,7 +61,8 @@ const MENU_SITEMAP_MAX_FILES =
   Number.parseInt(process.env.MENU_SITEMAP_MAX_FILES || "24", 10) || 24;
 const MENU_SITEMAP_TIMEOUT_MS =
   Number.parseInt(process.env.MENU_SITEMAP_TIMEOUT_MS || "8000", 10) || 8000;
-const MENU_SNAPSHOT_KV_KEY = process.env.MENU_SNAPSHOT_KV_KEY || "menu:primary:v1";
+const MENU_SNAPSHOT_KV_KEY =
+  process.env.MENU_SNAPSHOT_KV_KEY || "menu:primary:v1";
 const MENU_SNAPSHOT_TTL_MS =
   Number.parseInt(process.env.MENU_SNAPSHOT_TTL_MS || "300000", 10) || 300000;
 const MENU_REFRESH_MIN_INTERVAL_MS =
@@ -486,7 +487,10 @@ async function fetchNavigationFromUpstreamOrFallback() {
         ...(children.length > 0 ? { children } : {}),
       };
     });
-    const filtered = await filterNavigationByExistence(mapped, canRenderMenuHref);
+    const filtered = await filterNavigationByExistence(
+      mapped,
+      canRenderMenuHref,
+    );
     return await ensureCoreMenuEntriesByExistence(filtered, canRenderMenuHref);
   } catch {
     return await buildFallbackNavigation();
@@ -527,7 +531,10 @@ export const getNavigation = cache(async function getNavigation() {
   try {
     if (shouldSkipUpstreamDuringBuild()) {
       const alwaysRenderHref = async () => true;
-      return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
+      return ensureCoreMenuEntriesByExistence(
+        site.navigation,
+        alwaysRenderHref,
+      );
     }
 
     const snapshot = await getMenuSnapshot();
@@ -541,7 +548,10 @@ export const getNavigation = cache(async function getNavigation() {
     if (MENU_COLD_START_BG_REFRESH) {
       refreshMenuSnapshotInBackground();
       const alwaysRenderHref = async () => true;
-      return ensureCoreMenuEntriesByExistence(site.navigation, alwaysRenderHref);
+      return ensureCoreMenuEntriesByExistence(
+        site.navigation,
+        alwaysRenderHref,
+      );
     }
 
     const navigation = await fetchNavigationFromUpstreamOrFallback();

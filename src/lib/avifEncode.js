@@ -62,7 +62,12 @@ async function ensureEncInit() {
  * @param {number}     [quality]  0–100, default 60
  * @returns {Promise<Uint8Array>}
  */
-export async function encodeAvif(rawPixels, width, height, quality = AVIF_QUALITY) {
+export async function encodeAvif(
+  rawPixels,
+  width,
+  height,
+  quality = AVIF_QUALITY,
+) {
   let avif;
   try {
     avif = await ensureEncInit();

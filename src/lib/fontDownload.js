@@ -31,7 +31,9 @@ export function buildFontFaceCss(family, slug, isVariable, weightRange, files) {
       const weightDecl = isVariable
         ? `${weightRange[0]} ${weightRange[1]}`
         : String(weight || 400);
-      const rangeDecl = unicodeRange ? `\n  unicode-range: ${unicodeRange};` : "";
+      const rangeDecl = unicodeRange
+        ? `\n  unicode-range: ${unicodeRange};`
+        : "";
       return `@font-face {\n  font-family: '${family}';\n  src: url('${r2Url}') format('woff2');\n  font-weight: ${weightDecl};\n  font-style: normal;\n  font-display: swap;${rangeDecl}\n}`;
     })
     .join("\n");

@@ -182,7 +182,10 @@ async function handlePropfind(request, key) {
 
   // Directory listing
   const prefix = key; // already ends with "/" or is ""
-  const { dirs, files } = await listBucketDirectory({ prefix, backend: BACKEND });
+  const { dirs, files } = await listBucketDirectory({
+    prefix,
+    backend: BACKEND,
+  });
 
   // Self entry
   const selfHref = keyToHref(key);
@@ -215,8 +218,14 @@ async function handleGet(key, headOnly) {
       backend: BACKEND,
     });
     const items = [
-      ...dirs.map((d) => `<li><a href="${encodeURIComponent(displayName(d.key))}">${escXml(displayName(d.key))}/</a></li>`),
-      ...files.map((f) => `<li><a href="${encodeURIComponent(displayName(f.key))}">${escXml(displayName(f.key))}</a> (${f.size} bytes)</li>`),
+      ...dirs.map(
+        (d) =>
+          `<li><a href="${encodeURIComponent(displayName(d.key))}">${escXml(displayName(d.key))}/</a></li>`,
+      ),
+      ...files.map(
+        (f) =>
+          `<li><a href="${encodeURIComponent(displayName(f.key))}">${escXml(displayName(f.key))}</a> (${f.size} bytes)</li>`,
+      ),
     ];
     const html = `<!DOCTYPE html><html><body><ul>${items.join("")}</ul></body></html>`;
     return new Response(headOnly ? null : html, {
@@ -261,9 +270,14 @@ async function handlePut(request, key) {
       backend: BACKEND,
     });
   } catch (err) {
-    return new Response(String(err?.message || "Upload failed"), { status: 502 });
+    return new Response(String(err?.message || "Upload failed"), {
+      status: 502,
+    });
   }
-  return new Response(null, { status: 201, headers: { "Content-Location": keyToHref(key) } });
+  return new Response(null, {
+    status: 201,
+    headers: { "Content-Location": keyToHref(key) },
+  });
 }
 
 async function handleDelete(key) {
@@ -274,7 +288,9 @@ async function handleDelete(key) {
   try {
     await deleteBucketObject({ key, backend: BACKEND });
   } catch (err) {
-    return new Response(String(err?.message || "Delete failed"), { status: 502 });
+    return new Response(String(err?.message || "Delete failed"), {
+      status: 502,
+    });
   }
   return new Response(null, { status: 204 });
 }
@@ -288,14 +304,28 @@ function handleMkcol() {
 // ─── Tiny MIME helper ─────────────────────────────────────────────────────────
 
 const MIME_MAP = {
-  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
-  gif: "image/gif", svg: "image/svg+xml", avif: "image/avif", pdf: "application/pdf",
-  mp4: "video/mp4", mp3: "audio/mpeg", txt: "text/plain", json: "application/json",
-  csv: "text/csv", zip: "application/zip", mov: "video/quicktime",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  avif: "image/avif",
+  pdf: "application/pdf",
+  mp4: "video/mp4",
+  mp3: "audio/mpeg",
+  txt: "text/plain",
+  json: "application/json",
+  csv: "text/csv",
+  zip: "application/zip",
+  mov: "video/quicktime",
 };
 
 function mimeFromKey(key) {
-  const ext = String(key || "").split(".").pop().toLowerCase();
+  const ext = String(key || "")
+    .split(".")
+    .pop()
+    .toLowerCase();
   return MIME_MAP[ext] || "application/octet-stream";
 }
 
@@ -314,8 +344,9 @@ async function handle(request) {
   const pathname = new URL(request.url).pathname;
   const key = pathnameToKey(pathname);
   // PROPFIND/MKCOL arrive as POST (forwarded by middleware); read real method.
-  const method =
-    (request.headers.get("x-dav-method") || request.method).toUpperCase();
+  const method = (
+    request.headers.get("x-dav-method") || request.method
+  ).toUpperCase();
 
   switch (method) {
     case "OPTIONS":

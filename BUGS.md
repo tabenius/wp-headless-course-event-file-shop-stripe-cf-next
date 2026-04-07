@@ -1,4 +1,5 @@
 # protocol
+
 remember to tick off these as they are finished: [x] BUG: there is a TDZ bug around media / asset library
 
 remember that Those named FUTURE you should all know about.
@@ -89,3 +90,8 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [x] BUG (P1, codex regression): download routes proxied entire file through worker (fetch + stream) — OOM/timeout for large files. Fixed: fallback is now redirect to raw URL instead of proxy.
 [x] BUG (P2): presigned R2 URLs used unsorted query params in canonical request — S3v4 spec requires lexicographic sort. Fixed: urlObj.searchParams.sort() before signing.
 [x] BUG (P1, latent): grantDigitalAccess uses read-modify-write on a single KV blob without locking — concurrent claims can overwrite each other. Fixed: per-user KV keys (digital-access:user:{email}) + per-product reverse index.
+[ ] RENAME: DEFAULT_COURSE_FEE_CURRENCY to DEFAULT_CURRENCY
+[ ] RENAME: COURSE_ACCESS_BACKEND to CONTENT_ACCESS_BACKEND and set it to "cloudflare-d1"
+[ ] REFACTOR: "64f99034-504d-4389-ab45-fd85cf63ae3f" is the D1 database id for the database named "sofiacerne" in my account, binding: "DB" which will be the main store now for digital access, wp content access, products and users
+[ ] edit product item (type dropdown removal / full delivery-panel inline layout)
+[ ] BUG CRITICAL/WORKAROUND: digital files get asset- as slug prefix but their fileUrl is not set (patched digital/[slug]/route.js so now it returns assetId if so, was otherwise returning imageUrl).

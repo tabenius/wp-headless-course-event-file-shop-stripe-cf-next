@@ -48,8 +48,12 @@ export async function listDerivations() {
   if (!kvEntries || kvEntries.length === 0) {
     return mapConfigDerivations();
   }
-  const configMap = new Map(mapConfigDerivations().map((item) => [item.id, item]));
-  const merged = mapConfigDerivations().map((item) => kvEntries.find((kv) => kv.id === item.id) || item);
+  const configMap = new Map(
+    mapConfigDerivations().map((item) => [item.id, item]),
+  );
+  const merged = mapConfigDerivations().map(
+    (item) => kvEntries.find((kv) => kv.id === item.id) || item,
+  );
   const extras = kvEntries.filter((entry) => !configMap.has(entry.id));
   return [...merged, ...extras];
 }

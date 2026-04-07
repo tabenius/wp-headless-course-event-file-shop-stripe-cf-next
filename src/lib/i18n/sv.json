@@ -760,7 +760,7 @@
     "storageProviderKvName": "Cloudflare KV",
     "storageProviderKvDesc": "Snabb edge-distribuerad nyckelvärdeslagring. Rekommenderas på Cloudflare Workers. Kräver CLOUDFLARE_ACCOUNT_ID, CF_API_TOKEN och CF_KV_NAMESPACE_ID.",
     "storageProviderWpName": "WordPress GraphQL",
-    "storageProviderWpDesc": "Lagrar åtkomstdata i WordPress användarmeta via WPGraphQL-mutationer. Kräver COURSE_ACCESS_BACKEND=wordpress och tillhörande tillägg.",
+    "storageProviderWpDesc": "Lagrar åtkomstdata i WordPress användarmeta via WPGraphQL-mutationer. Kräver CONTENT_ACCESS_BACKEND=wordpress och tillhörande tillägg.",
     "storageProviderLocalName": "Lokal fil",
     "storageProviderLocalDesc": "Lagrar data i .data/course-access.json på serverns filsystem. Passar endast lokal utveckling.",
     "storageActive": "Aktiv",
@@ -826,6 +826,7 @@
     "userAccessOverview": "Användaråtkomst",
     "userAccessOverviewDesc": "Hitta en användare och se vilka resurser de har tillgång till. Bocka i eller ur för att ge eller ta bort åtkomst.",
     "confirmRemoveProduct": "Är du säker på att du vill ta bort den här produkten? Det går inte att ångra.",
+    "confirmRemovePurchasedProduct": "VARNING: {count} användare har köpt eller beviljats åtkomst till den här produkten. Att ta bort den tar bort den från deras inventarie. Är du helt säker?",
     "shopVisibilitySaved": "Butikssynlighet sparad.",
     "configuredBadgeTooltip": "Det här objektet har pris och åtkomstregler konfigurerade.",
     "requiredField": "Obligatoriskt",
@@ -1131,6 +1132,18 @@
     "claimingFree": "Hämtar åtkomst…",
     "claimFailed": "Det gick inte att hämta gratis åtkomst just nu. Försök igen.",
     "downloadProduct": "Ladda ner"
+  },
+  "inventory": {
+    "title": "Inventarie",
+    "subtitle": "Alla produkter och innehåll du har tillgång till.",
+    "backToShop": "Tillbaka till butiken",
+    "openShop": "Öppna butiken",
+    "empty": "Inga köpta produkter hittades ännu.",
+    "unavailable": "Köpet finns men produkten är inte längre tillgänglig.",
+    "noAction": "Ingen åtgärd tillgänglig.",
+    "grantedAccess": "Beviljad åtkomst",
+    "openContent": "Öppna innehåll",
+    "grantedDescription": "Du har beviljats åtkomst till detta innehåll."
   },
   "darkMode": {
     "lightMode": "Ljust läge",

@@ -27,9 +27,10 @@ function stats(vals) {
   const min = sorted[0];
   const max = sorted[n - 1];
   const mean = vals.reduce((s, v) => s + v, 0) / n;
-  const mid = n % 2 === 0
-    ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
-    : sorted[Math.floor(n / 2)];
+  const mid =
+    n % 2 === 0
+      ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
+      : sorted[Math.floor(n / 2)];
   return {
     min,
     avg: mean,
@@ -49,7 +50,14 @@ function colorCls(value, metric) {
 
 const METRICS = [
   { key: "ttfb", label: "TTFB", unit: "ms", good: 200, warn: 500, decimals: 0 },
-  { key: "domComplete", label: "DOM complete", unit: "ms", good: 1500, warn: 3000, decimals: 0 },
+  {
+    key: "domComplete",
+    label: "DOM complete",
+    unit: "ms",
+    good: 1500,
+    warn: 3000,
+    decimals: 0,
+  },
   { key: "lcp", label: "LCP", unit: "ms", good: 2500, warn: 4000, decimals: 0 },
   { key: "fcp", label: "FCP", unit: "ms", good: 1800, warn: 3000, decimals: 0 },
   { key: "inp", label: "INP", unit: "ms", good: 200, warn: 500, decimals: 0 },
@@ -66,7 +74,9 @@ function formatMetricValue(value, metric) {
 }
 
 function formatRelayReason(reason, status) {
-  const safe = String(reason || "").trim().toLowerCase();
+  const safe = String(reason || "")
+    .trim()
+    .toLowerCase();
   if (safe === "home_connection_missing") {
     return "Relay skipped: RAGBAZ home connection missing (account/passkey not available).";
   }
@@ -89,12 +99,12 @@ function shortSession(sid) {
 }
 
 const CHART_COLORS = {
-  ttfb: "#6366f1",       // indigo
+  ttfb: "#6366f1", // indigo
   domComplete: "#0ea5e9", // sky
-  lcp: "#f59e0b",        // amber
-  fcp: "#10b981",        // emerald
-  inp: "#ef4444",        // red
-  cls: "#a855f7",        // purple
+  lcp: "#f59e0b", // amber
+  fcp: "#10b981", // emerald
+  inp: "#ef4444", // red
+  cls: "#a855f7", // purple
 };
 
 const CHART_W = 720;
@@ -132,7 +142,13 @@ function VitalsChart({ log }) {
     }
 
     // Pages with buy buttons: /shop, /events, /courses and everything below them
-    const buyPatterns = [/^\/shop(\/|$)/, /^\/events(\/|$)/, /^\/courses(\/|$)/, /^\/butik(\/|$)/, /^\/checkout(\/|$)/];
+    const buyPatterns = [
+      /^\/shop(\/|$)/,
+      /^\/events(\/|$)/,
+      /^\/courses(\/|$)/,
+      /^\/butik(\/|$)/,
+      /^\/checkout(\/|$)/,
+    ];
     for (let i = 0; i < points.length; i++) {
       const url = (points[i].url || "").split("?")[0];
       if (buyPatterns.some((rx) => rx.test(url))) {
@@ -199,7 +215,11 @@ function VitalsChart({ log }) {
       segs.push({ x: xScale(p.ts), y: yScale(v) });
     }
     if (segs.length < 2) return null;
-    return segs.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(" ");
+    return segs
+      .map(
+        (s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`,
+      )
+      .join(" ");
   }
 
   function handleMouseMove(e) {
@@ -234,7 +254,8 @@ function VitalsChart({ log }) {
 
   function formatTick(ts) {
     const d = new Date(ts);
-    if (showDate) return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+    if (showDate)
+      return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
     return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
   }
 
@@ -253,7 +274,10 @@ function VitalsChart({ log }) {
         </span>
         <div className="flex flex-wrap gap-3">
           {msMetrics.map((m) => (
-            <span key={m.key} className="flex items-center gap-1 text-[11px] text-gray-600">
+            <span
+              key={m.key}
+              className="flex items-center gap-1 text-[11px] text-gray-600"
+            >
               <span
                 className="inline-block w-3 h-0.5 rounded"
                 style={{ backgroundColor: CHART_COLORS[m.key] }}
@@ -408,7 +432,10 @@ function VitalsChart({ log }) {
             style={{
               left: `${(tooltip.x / CHART_W) * 100}%`,
               top: 8,
-              transform: tooltip.x > CHART_W * 0.65 ? "translateX(-100%)" : "translateX(0)",
+              transform:
+                tooltip.x > CHART_W * 0.65
+                  ? "translateX(-100%)"
+                  : "translateX(0)",
             }}
           >
             <div className="font-semibold mb-1">
@@ -423,7 +450,9 @@ function VitalsChart({ log }) {
                 <div key={m.key} className="flex items-center gap-2">
                   <span
                     className="inline-block w-2 h-2 rounded-full"
-                    style={{ backgroundColor: CHART_COLORS[m.key] || "#9ca3af" }}
+                    style={{
+                      backgroundColor: CHART_COLORS[m.key] || "#9ca3af",
+                    }}
                   />
                   <span className="text-gray-400">{m.label}:</span>
                   <span className="font-medium">
@@ -444,8 +473,12 @@ function VitalsChart({ log }) {
               if (!isLogin && !isBuy) return null;
               return (
                 <div className="mt-1 pt-1 border-t border-gray-700 flex gap-2">
-                  {isLogin && <span className="text-blue-400">&#9679; Login</span>}
-                  {isBuy && <span className="text-cyan-400">&#9679; Buy page</span>}
+                  {isLogin && (
+                    <span className="text-blue-400">&#9679; Login</span>
+                  )}
+                  {isBuy && (
+                    <span className="text-cyan-400">&#9679; Buy page</span>
+                  )}
                 </div>
               );
             })()}
@@ -470,7 +503,11 @@ export default function PagePerformancePanel() {
     try {
       const { json: data } = await adminFetch(API);
       setLog(Array.isArray(data.log) ? data.log : []);
-      setRelayStatus(data.relayStatus && typeof data.relayStatus === "object" ? data.relayStatus : null);
+      setRelayStatus(
+        data.relayStatus && typeof data.relayStatus === "object"
+          ? data.relayStatus
+          : null,
+      );
     } catch (e) {
       setError(`Failed to load: ${e.message}`);
     } finally {
@@ -496,9 +533,12 @@ export default function PagePerformancePanel() {
     }
   }
 
-
   if (loading) {
-    return <div className="text-sm text-gray-400 py-4">Loading performance data…</div>;
+    return (
+      <div className="text-sm text-gray-400 py-4">
+        Loading performance data…
+      </div>
+    );
   }
 
   const metricStats = METRICS.map(({ key, label }) => ({
@@ -516,7 +556,8 @@ export default function PagePerformancePanel() {
         <div>
           <h3 className="font-semibold text-gray-800">Page load performance</h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Recorded automatically from browser after each page load (TTFB, DOM, LCP, FCP, INP, CLS).
+            Recorded automatically from browser after each page load (TTFB, DOM,
+            LCP, FCP, INP, CLS).
           </p>
         </div>
         <div className="flex gap-2">
@@ -576,7 +617,8 @@ export default function PagePerformancePanel() {
 
       {log.length === 0 && !error && (
         <p className="text-sm text-gray-400">
-          No page performance data recorded yet. Vitals are captured automatically on every page load.
+          No page performance data recorded yet. Vitals are captured
+          automatically on every page load.
         </p>
       )}
 
@@ -584,13 +626,21 @@ export default function PagePerformancePanel() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
             {metricStats.map(({ key, label, metric, s }) => (
-              <div key={`kpi-${key}`} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                <div className="text-[11px] uppercase tracking-wide text-gray-500">{label} p75</div>
-                <div className={`text-lg font-semibold ${colorCls(s?.p75, metric)}`}>
+              <div
+                key={`kpi-${key}`}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2"
+              >
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                  {label} p75
+                </div>
+                <div
+                  className={`text-lg font-semibold ${colorCls(s?.p75, metric)}`}
+                >
                   {formatMetricValue(s?.p75, metric)}
                 </div>
                 <div className="text-[11px] text-gray-500">
-                  Good ≤ {formatMetricValue(metric.good, metric)} · Warn ≤ {formatMetricValue(metric.warn, metric)}
+                  Good ≤ {formatMetricValue(metric.good, metric)} · Warn ≤{" "}
+                  {formatMetricValue(metric.warn, metric)}
                 </div>
               </div>
             ))}
@@ -610,31 +660,51 @@ export default function PagePerformancePanel() {
               <table className="min-w-full text-xs">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Metric</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">Min</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">Avg</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">Median</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">p75</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">Max</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">
+                      Metric
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      Min
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      Avg
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      Median
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      p75
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      Max
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {metricStats.map(({ key, label, metric, s }) => (
                     <tr key={label} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-gray-700">{label}</td>
+                      <td className="px-3 py-2 font-medium text-gray-700">
+                        {label}
+                      </td>
                       <td className="px-3 py-2 text-right text-emerald-600">
                         {s ? formatMetricValue(s.min, metric) : "—"}
                       </td>
-                      <td className={`px-3 py-2 text-right font-semibold ${s ? colorCls(s.avg, metric) : "text-gray-400"}`}>
+                      <td
+                        className={`px-3 py-2 text-right font-semibold ${s ? colorCls(s.avg, metric) : "text-gray-400"}`}
+                      >
                         {s ? formatMetricValue(s.avg, metric) : "—"}
                       </td>
                       <td className="px-3 py-2 text-right text-gray-700">
                         {s ? formatMetricValue(s.median, metric) : "—"}
                       </td>
-                      <td className={`px-3 py-2 text-right font-semibold ${s ? colorCls(s.p75, metric) : "text-gray-400"}`}>
+                      <td
+                        className={`px-3 py-2 text-right font-semibold ${s ? colorCls(s.p75, metric) : "text-gray-400"}`}
+                      >
                         {s ? formatMetricValue(s.p75, metric) : "—"}
                       </td>
-                      <td className={`px-3 py-2 text-right ${s ? colorCls(s.max, metric) : "text-gray-400"}`}>
+                      <td
+                        className={`px-3 py-2 text-right ${s ? colorCls(s.max, metric) : "text-gray-400"}`}
+                      >
                         {s ? formatMetricValue(s.max, metric) : "—"}
                       </td>
                     </tr>
@@ -645,51 +715,61 @@ export default function PagePerformancePanel() {
           </div>
 
           {/* Session breadcrumb drill-down */}
-          {selectedSession && (() => {
-            const sessionLog = log
-              .filter((d) => d.sessionId === selectedSession)
-              .sort((a, b) => a.ts - b.ts);
-            return (
-              <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-indigo-800 uppercase tracking-wide">
-                    Session {shortSession(selectedSession)}
-                    {sessionLog.find((d) => d.userEmail) && (
-                      <span className="ml-2 font-normal text-indigo-600">
-                        {sessionLog.find((d) => d.userEmail).userEmail}
-                      </span>
-                    )}
-                    {" — "}{sessionLog.length} page{sessionLog.length !== 1 ? "s" : ""}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedSession(null)}
-                    className="text-xs text-indigo-600 hover:text-indigo-800"
-                  >
-                    Close
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-center gap-1 text-xs">
-                  {sessionLog.map((d, i) => (
-                    <span key={i} className="flex items-center gap-1">
-                      {i > 0 && <span className="text-indigo-400">&rarr;</span>}
-                      <span className="inline-flex items-center gap-1 bg-white border border-indigo-200 rounded px-2 py-0.5">
-                        <span className="font-mono text-indigo-900">{d.url || "/"}</span>
-                        <span className="text-gray-400">
-                          {new Date(d.ts).toLocaleTimeString()}
+          {selectedSession &&
+            (() => {
+              const sessionLog = log
+                .filter((d) => d.sessionId === selectedSession)
+                .sort((a, b) => a.ts - b.ts);
+              return (
+                <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-indigo-800 uppercase tracking-wide">
+                      Session {shortSession(selectedSession)}
+                      {sessionLog.find((d) => d.userEmail) && (
+                        <span className="ml-2 font-normal text-indigo-600">
+                          {sessionLog.find((d) => d.userEmail).userEmail}
+                        </span>
+                      )}
+                      {" — "}
+                      {sessionLog.length} page
+                      {sessionLog.length !== 1 ? "s" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSession(null)}
+                      className="text-xs text-indigo-600 hover:text-indigo-800"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1 text-xs">
+                    {sessionLog.map((d, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        {i > 0 && (
+                          <span className="text-indigo-400">&rarr;</span>
+                        )}
+                        <span className="inline-flex items-center gap-1 bg-white border border-indigo-200 rounded px-2 py-0.5">
+                          <span className="font-mono text-indigo-900">
+                            {d.url || "/"}
+                          </span>
+                          <span className="text-gray-400">
+                            {new Date(d.ts).toLocaleTimeString()}
+                          </span>
                         </span>
                       </span>
-                    </span>
-                  ))}
-                </div>
-                {sessionLog[0]?.referrer && (
-                  <div className="text-xs text-indigo-600 mt-1.5">
-                    Entry referrer: <span className="font-mono">{sessionLog[0].referrer}</span>
+                    ))}
                   </div>
-                )}
-              </div>
-            );
-          })()}
+                  {sessionLog[0]?.referrer && (
+                    <div className="text-xs text-indigo-600 mt-1.5">
+                      Entry referrer:{" "}
+                      <span className="font-mono">
+                        {sessionLog[0].referrer}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
           {/* Recent page loads */}
           <div>
@@ -702,31 +782,61 @@ export default function PagePerformancePanel() {
               <table className="min-w-full text-xs">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Date &amp; time</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Session</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">URL</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Type</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">TTFB</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">DOM</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">LCP</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">FCP</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">INP</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">CLS</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">
+                      Date &amp; time
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">
+                      Session
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">
+                      URL
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">
+                      Type
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      TTFB
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      DOM
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      LCP
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      FCP
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      INP
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-500">
+                      CLS
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {recent.map((d, i) => {
                     const date = new Date(d.ts);
                     return (
-                      <tr key={i} className={`hover:bg-gray-50 ${selectedSession && d.sessionId === selectedSession ? "bg-indigo-50" : ""}`}>
+                      <tr
+                        key={i}
+                        className={`hover:bg-gray-50 ${selectedSession && d.sessionId === selectedSession ? "bg-indigo-50" : ""}`}
+                      >
                         <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                          {date.toLocaleDateString()} {date.toLocaleTimeString()}
+                          {date.toLocaleDateString()}{" "}
+                          {date.toLocaleTimeString()}
                         </td>
                         <td className="px-3 py-2">
                           {d.sessionId ? (
                             <button
                               type="button"
-                              onClick={() => setSelectedSession(d.sessionId === selectedSession ? null : d.sessionId)}
+                              onClick={() =>
+                                setSelectedSession(
+                                  d.sessionId === selectedSession
+                                    ? null
+                                    : d.sessionId,
+                                )
+                              }
                               className="font-mono text-indigo-600 hover:text-indigo-800 hover:underline"
                               title={d.sessionId}
                             >
@@ -742,22 +852,34 @@ export default function PagePerformancePanel() {
                         <td className="px-3 py-2 text-gray-600">
                           {d.navigationType || "navigate"}
                         </td>
-                        <td className={`px-3 py-2 text-right ${colorCls(d.ttfb, METRICS[0])}`}>
+                        <td
+                          className={`px-3 py-2 text-right ${colorCls(d.ttfb, METRICS[0])}`}
+                        >
                           {formatMetricValue(d.ttfb, METRICS[0])}
                         </td>
-                        <td className={`px-3 py-2 text-right ${colorCls(d.domComplete, METRICS[1])}`}>
+                        <td
+                          className={`px-3 py-2 text-right ${colorCls(d.domComplete, METRICS[1])}`}
+                        >
                           {formatMetricValue(d.domComplete, METRICS[1])}
                         </td>
-                        <td className={`px-3 py-2 text-right ${colorCls(d.lcp, METRICS[2])}`}>
+                        <td
+                          className={`px-3 py-2 text-right ${colorCls(d.lcp, METRICS[2])}`}
+                        >
                           {formatMetricValue(d.lcp, METRICS[2])}
                         </td>
-                        <td className={`px-3 py-2 text-right ${colorCls(d.fcp, METRICS[3])}`}>
+                        <td
+                          className={`px-3 py-2 text-right ${colorCls(d.fcp, METRICS[3])}`}
+                        >
                           {formatMetricValue(d.fcp, METRICS[3])}
                         </td>
-                        <td className={`px-3 py-2 text-right ${colorCls(d.inp, METRICS[4])}`}>
+                        <td
+                          className={`px-3 py-2 text-right ${colorCls(d.inp, METRICS[4])}`}
+                        >
                           {formatMetricValue(d.inp, METRICS[4])}
                         </td>
-                        <td className={`px-3 py-2 text-right ${colorCls(d.cls, METRICS[5])}`}>
+                        <td
+                          className={`px-3 py-2 text-right ${colorCls(d.cls, METRICS[5])}`}
+                        >
                           {formatMetricValue(d.cls, METRICS[5])}
                         </td>
                       </tr>

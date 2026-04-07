@@ -11,7 +11,9 @@ const MARKDOWN_EXTENSIONS = new Set(["md", "markdown"]);
 const SQLITE_EXTENSIONS = new Set(["sqlite", "sqlite3", "db"]);
 
 function safeText(value, max = 2048) {
-  return String(value ?? "").trim().slice(0, max);
+  return String(value ?? "")
+    .trim()
+    .slice(0, max);
 }
 
 function extFromName(name) {
@@ -34,7 +36,9 @@ function buildAllowedHosts(request) {
   const originHost = hostFromUrl(request?.nextUrl?.origin || "");
   if (originHost) hosts.add(originHost);
   const wpHost = hostFromUrl(
-    process.env.NEXT_PUBLIC_WORDPRESS_URL || process.env.WORDPRESS_API_URL || "",
+    process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+      process.env.WORDPRESS_API_URL ||
+      "",
   );
   if (wpHost) hosts.add(wpHost);
   const r2Host = hostFromUrl(
@@ -112,14 +116,17 @@ function normalizeCsvCell(value) {
 }
 
 function inferCsvType(values) {
-  const samples = values.map((value) => normalizeCsvCell(value)).filter(Boolean);
+  const samples = values
+    .map((value) => normalizeCsvCell(value))
+    .filter(Boolean);
   if (samples.length === 0) return "string";
   const allInteger = samples.every((value) => /^-?\d+$/.test(value));
   const allNumber = samples.every((value) => /^-?\d+(?:\.\d+)?$/.test(value));
   if (allInteger) {
     const asNumbers = samples.map((value) => Number.parseInt(value, 10));
     const looksLikeTimeT = asNumbers.every(
-      (value) => Number.isFinite(value) && value >= 631152000 && value <= 4102444800,
+      (value) =>
+        Number.isFinite(value) && value >= 631152000 && value <= 4102444800,
     );
     return looksLikeTimeT ? "time_t" : "integer";
   }
@@ -128,7 +135,9 @@ function inferCsvType(values) {
     /^(true|false|0|1|yes|no)$/i.test(value),
   );
   if (allBoolean) return "boolean";
-  const allDatetime = samples.every((value) => Number.isFinite(Date.parse(value)));
+  const allDatetime = samples.every((value) =>
+    Number.isFinite(Date.parse(value)),
+  );
   if (allDatetime) return "datetime";
   return "string";
 }
@@ -163,19 +172,27 @@ function buildCsvViewer(text) {
   const dataRows = rows.slice(1);
   const columnCount = headerRow.length;
   const columns = Array.from({ length: columnCount }).map((_, index) => {
-    const header = parseHeaderAnnotation(headerRow[index] || `column_${index + 1}`);
+    const header = parseHeaderAnnotation(
+      headerRow[index] || `column_${index + 1}`,
+    );
     const values = dataRows.map((row) => row[index] || "");
     return {
       index: index + 1,
       name: header.name || `column_${index + 1}`,
       annotatedType: header.annotatedType || "",
       inferredType: inferCsvType(values),
-      sample: normalizeCsvCell(values.find((value) => normalizeCsvCell(value)) || ""),
+      sample: normalizeCsvCell(
+        values.find((value) => normalizeCsvCell(value)) || "",
+      ),
     };
   });
-  const previewRows = dataRows.slice(0, 30).map((row) =>
-    Array.from({ length: columnCount }).map((_, index) => normalizeCsvCell(row[index] || "")),
-  );
+  const previewRows = dataRows
+    .slice(0, 30)
+    .map((row) =>
+      Array.from({ length: columnCount }).map((_, index) =>
+        normalizeCsvCell(row[index] || ""),
+      ),
+    );
   return {
     columns,
     rows: previewRows,
@@ -282,7 +299,8 @@ export async function GET(request) {
       return NextResponse.json(
         {
           ok: false,
-          error: `Could not load asset (${response.status}) ${body.slice(0, 120)}`.trim(),
+          error:
+            `Could not load asset (${response.status}) ${body.slice(0, 120)}`.trim(),
         },
         { status: 400 },
       );
@@ -304,7 +322,10 @@ export async function GET(request) {
       const sqlite = parseSqliteHeader(bytes);
       if (!sqlite) {
         return NextResponse.json(
-          { ok: false, error: "File does not look like a valid SQLite database." },
+          {
+            ok: false,
+            error: "File does not look like a valid SQLite database.",
+          },
           { status: 400 },
         );
       }
@@ -395,7 +416,8 @@ export async function GET(request) {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Could not load asset view.",
+        error:
+          error instanceof Error ? error.message : "Could not load asset view.",
       },
       { status: 500 },
     );

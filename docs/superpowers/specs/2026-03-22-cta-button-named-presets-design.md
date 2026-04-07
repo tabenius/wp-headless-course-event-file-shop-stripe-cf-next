@@ -45,6 +45,7 @@ siteStyle: {
 ```
 
 **Default** (Filled preset — derives from existing `primary` + `background` colors):
+
 ```js
 {
   bgColor: "primary", textColor: "background", borderRadius: "md",
@@ -55,13 +56,13 @@ siteStyle: {
 
 ### Four built-in CTA presets (hardcoded, not deletable)
 
-| Name | bgColor | textColor | borderRadius | border | borderColor | shadow |
-|------|---------|-----------|--------------|--------|-------------|--------|
-| **Upstream** | — | — | — | — | — | — |
-| **Filled** | primary | background | md | none | — | none |
-| **Outline** | background | primary | md | solid | primary | none |
-| **Pill** | primary | background | full | none | — | none |
-| **Secondary** | secondary | foreground | md | none | — | none |
+| Name          | bgColor    | textColor  | borderRadius | border | borderColor | shadow |
+| ------------- | ---------- | ---------- | ------------ | ------ | ----------- | ------ |
+| **Upstream**  | —          | —          | —            | —      | —           | —      |
+| **Filled**    | primary    | background | md           | none   | —           | none   |
+| **Outline**   | background | primary    | md           | solid  | primary     | none   |
+| **Pill**      | primary    | background | full         | none   | —           | none   |
+| **Secondary** | secondary  | foreground | md           | none   | —           | none   |
 
 Upstream is always shown first and is not a style object — selecting it sets `ctaStyle: { type: "upstream" }`.
 
@@ -104,8 +105,8 @@ IDs are generated with `crypto.randomUUID()` on save. User-created presets are d
 
 ### Migration defaults
 
-| Field | Default |
-|-------|---------|
+| Field      | Default                                                               |
+| ---------- | --------------------------------------------------------------------- |
 | `ctaStyle` | `{ type: "upstream" }` — no CSS written; WP theme button styles apply |
 
 When `ctaStyle` is absent from an existing siteStyle record, `normalizeCtaStyle()` returns `{ type: "upstream" }`.
@@ -119,11 +120,13 @@ When `ctaStyle` is absent from an existing siteStyle record, `normalizeCtaStyle(
 All three methods require admin auth.
 
 **`GET /api/admin/style-presets`**
+
 - Reads KV key `style-presets`
 - Returns `{ ok: true, cta: [...], typography: [...] }`
 - Returns `{ ok: true, cta: [], typography: [] }` if key is absent
 
 **`POST /api/admin/style-presets`**
+
 - Body: `{ type: "cta" | "typography", name: string, style: object }`
 - Validates: `name` is a non-empty string (max 80 chars); `type` is one of the two values; `style` is present
 - For CTA presets: runs `style` through `normalizeCtaStyle()` before storing — invalid fields are clamped, missing `borderColor` defaults to `"primary"`. Rejects if `normalizeCtaStyle()` returns `{ type: "upstream" }` (cannot save upstream as a named preset)
@@ -133,6 +136,7 @@ All three methods require admin auth.
 - Returns `{ ok: true, preset: { id, name, style } }`
 
 **`DELETE /api/admin/style-presets`**
+
 - Body: `{ id: string, type: "cta" | "typography" }` — `id` must be a non-empty string, max 64 chars
 - Read-modify-write — filters out the matching entry by id from the matching array
 - Returns `{ ok: true }` (idempotent — no error if id not found)
@@ -140,18 +144,21 @@ All three methods require admin auth.
 ### Modifications to `shopSettings.js`
 
 **`normalizeCtaStyle(source)`** — new exported helper:
+
 - If `source` is absent/null or `source.type === "upstream"` → return `{ type: "upstream" }`
 - If `source` is an object with `bgColor` → validate and clamp each field, return full style object
 - Otherwise → return `{ type: "upstream" }` (safe fallback)
 
 **`normalizeSiteStyle()`** — add:
+
 ```js
 ctaStyle: normalizeCtaStyle(source.ctaStyle),
 ```
 
 **`areSiteStylesEqual()`** — add:
+
 ```js
-JSON.stringify(a.ctaStyle) === JSON.stringify(b.ctaStyle)
+JSON.stringify(a.ctaStyle) === JSON.stringify(b.ctaStyle);
 ```
 
 ### CSS variable generation (`theme.generated.css`)
@@ -159,19 +166,20 @@ JSON.stringify(a.ctaStyle) === JSON.stringify(b.ctaStyle)
 When `ctaStyle.type === "upstream"`, write nothing. Otherwise write ten variables (always in this order, for stable `JSON.stringify` comparison in `areSiteStylesEqual`):
 
 ```css
---btn-bg:           <resolved color>;
---btn-color:        <resolved color>;
---btn-radius:       <px value>;
+--btn-bg: <resolved color>;
+--btn-color: <resolved color>;
+--btn-radius: <px value>;
 --btn-border-width: <0px | 1px>;
 --btn-border-color: <resolved color | transparent>;
---btn-shadow:       <value>;
---btn-font-weight:  <number>;
+--btn-shadow: <value>;
+--btn-font-weight: <number>;
 --btn-text-transform: <value>;
---btn-padding-x:    <rem value>;
---btn-padding-y:    <rem value>;
+--btn-padding-x: <rem value>;
+--btn-padding-y: <rem value>;
 ```
 
 Color slot resolution:
+
 - `"primary"` → `var(--color-primary)`
 - `"secondary"` → `var(--color-secondary)`
 - `"foreground"` → `var(--color-fg)`
@@ -189,13 +197,14 @@ For existing color fields (`background`, `foreground`, `primary`, etc.) — when
 ```css
 :where(button, .btn, [role="button"], input[type="submit"]) {
   background-color: var(--btn-bg, var(--color-primary));
-  color:            var(--btn-color, var(--color-bg));
-  border-radius:    var(--btn-radius, 8px);
-  border:           var(--btn-border-width, 0px) solid var(--btn-border-color, transparent);
-  box-shadow:       var(--btn-shadow, none);
-  font-weight:      var(--btn-font-weight, 600);
-  text-transform:   var(--btn-text-transform, none);
-  padding:          var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
+  color: var(--btn-color, var(--color-bg));
+  border-radius: var(--btn-radius, 8px);
+  border: var(--btn-border-width, 0px) solid
+    var(--btn-border-color, transparent);
+  box-shadow: var(--btn-shadow, none);
+  font-weight: var(--btn-font-weight, 600);
+  text-transform: var(--btn-text-transform, none);
+  padding: var(--btn-padding-y, 0.625rem) var(--btn-padding-x, 1.25rem);
 }
 ```
 
@@ -277,10 +286,12 @@ Themes
 ## Section 5: File Map
 
 **New files:**
+
 - `src/app/api/admin/style-presets/route.js` — GET/POST/DELETE named preset library
 - `tests/stylePresets.test.js` — unit tests for preset CRUD
 
 **Modified files:**
+
 - `src/lib/shopSettings.js` — add `normalizeCtaStyle()`, extend `normalizeSiteStyle()` and `areSiteStylesEqual()`, handle upstream for all fields
 - `src/app/globals.css` — add ten `--btn-*` bindings (with fallback values) to button elements via `:where()` rule
 - `src/app/theme.generated.css` — write `--btn-*` variables when `ctaStyle` is non-upstream; write nothing for upstream fields. Fallback/default values live exclusively in the `globals.css` `var()` fallback chain — not here.

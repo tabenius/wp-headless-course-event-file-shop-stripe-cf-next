@@ -45,19 +45,22 @@ async function checkWordPressGraphQL() {
   }
 
   try {
-    const response = await fetchWithTimeout(`${url.replace(/\/$/, "")}/graphql`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: auth.authorization,
+    const response = await fetchWithTimeout(
+      `${url.replace(/\/$/, "")}/graphql`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: auth.authorization,
+        },
+        body: JSON.stringify({
+          query:
+            "query HealthCheck { courseAccessRules { courseUri } __typename }",
+        }),
+        cache: "no-store",
       },
-      body: JSON.stringify({
-        query:
-          "query HealthCheck { courseAccessRules { courseUri } __typename }",
-      }),
-      cache: "no-store",
-    });
+    );
     const json = await response.json();
     if (!response.ok) {
       return { ok: false, message: t("health.wpNotResponding") };
@@ -78,24 +81,27 @@ async function checkWpSchema() {
   if (!url || !auth.authorization)
     return { ok: false, message: t("health.wpSchemaUnknown") };
   try {
-    const response = await fetchWithTimeout(`${url.replace(/\/$/, "")}/graphql`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: auth.authorization,
-      },
-      body: JSON.stringify({
-        query: `
+    const response = await fetchWithTimeout(
+      `${url.replace(/\/$/, "")}/graphql`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: auth.authorization,
+        },
+        body: JSON.stringify({
+          query: `
           query SchemaCheck {
             __schema { types { name } }
             events: events(first: 1) { edges { node { uri } } }
             lpCourses(first: 1) { edges { node { uri } } }
           }
         `,
-      }),
-      cache: "no-store",
-    });
+        }),
+        cache: "no-store",
+      },
+    );
     const json = await response.json().catch(() => null);
     if (!response.ok || !json?.data)
       return { ok: false, message: t("health.wpSchemaFailed") };
@@ -304,10 +310,13 @@ async function checkStripe() {
     if (!secretKey) {
       return { ok: false, message: t("health.stripeNotConfigured") };
     }
-    const response = await fetchWithTimeout("https://api.stripe.com/v1/account", {
-      headers: { Authorization: `Bearer ${secretKey}` },
-      cache: "no-store",
-    });
+    const response = await fetchWithTimeout(
+      "https://api.stripe.com/v1/account",
+      {
+        headers: { Authorization: `Bearer ${secretKey}` },
+        cache: "no-store",
+      },
+    );
     if (!response.ok) {
       return { ok: false, message: t("health.stripeNotResponding") };
     }
@@ -328,10 +337,14 @@ async function checkOAuthProviders(providers) {
       const config = getProviderConfig(id);
       if (!config?.authorizationUrl) return { id, reachable: false };
       try {
-        const res = await fetchWithTimeout(config.authorizationUrl, {
-          method: "HEAD",
-          redirect: "manual",
-        }, 5000);
+        const res = await fetchWithTimeout(
+          config.authorizationUrl,
+          {
+            method: "HEAD",
+            redirect: "manual",
+          },
+          5000,
+        );
         // 2xx, 3xx, or 400 (expected without params) all mean the endpoint exists
         return { id, reachable: res.status < 500 };
       } catch {
@@ -378,7 +391,10 @@ export async function GET(request) {
     );
   }
 
-  const backend = process.env.COURSE_ACCESS_BACKEND || "local";
+  const backend =
+    process.env.CONTENT_ACCESS_BACKEND ||
+    process.env.COURSE_ACCESS_BACKEND ||
+    "local";
   const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL;
   const wpConfigured = Boolean(wpUrl);
   const providers = getEnabledProviders();
@@ -386,44 +402,38 @@ export async function GET(request) {
   const authSecretConfigured = Boolean(process.env.AUTH_SECRET);
   const stripeWebhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET);
 
-  const [
-    wordpressCheck,
-    wpSchemaCheck,
-    ragbazCheck,
-    stripeCheck,
-    kvCheck,
-  ] = await Promise.all([
-    wpConfigured
-      ? checkWordPressGraphQL()
-      : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
-    wpConfigured
-      ? checkWpSchema()
-      : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
-    wpConfigured
-      ? checkRagbazPlugin()
-      : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
-    checkStripe(),
-    checkKvStorage(),
-  ]);
-  const ragbazRuntimeCheck =
-    wpConfigured
-      ? {
-          ok: Boolean(ragbazCheck?.ok),
-          message: ragbazCheck?.ok
-            ? ragbazCheck?.details?.runtime
-              ? "Runtime probe available."
-              : "Runtime probe not exposed by installed plugin version."
-            : t("health.ragbazMissing"),
-          details: {
-            pluginVersion:
-              ragbazCheck?.details?.pluginVersion ||
-              ragbazCheck?.details?.version ||
-              null,
-            runtime: ragbazCheck?.details?.runtime || null,
-            availability: ragbazCheck?.details?.availability || null,
-          },
-        }
-      : { ok: true, message: t("health.wpModeNotEnabled") };
+  const [wordpressCheck, wpSchemaCheck, ragbazCheck, stripeCheck, kvCheck] =
+    await Promise.all([
+      wpConfigured
+        ? checkWordPressGraphQL()
+        : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
+      wpConfigured
+        ? checkWpSchema()
+        : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
+      wpConfigured
+        ? checkRagbazPlugin()
+        : Promise.resolve({ ok: true, message: t("health.wpModeNotEnabled") }),
+      checkStripe(),
+      checkKvStorage(),
+    ]);
+  const ragbazRuntimeCheck = wpConfigured
+    ? {
+        ok: Boolean(ragbazCheck?.ok),
+        message: ragbazCheck?.ok
+          ? ragbazCheck?.details?.runtime
+            ? "Runtime probe available."
+            : "Runtime probe not exposed by installed plugin version."
+          : t("health.ragbazMissing"),
+        details: {
+          pluginVersion:
+            ragbazCheck?.details?.pluginVersion ||
+            ragbazCheck?.details?.version ||
+            null,
+          runtime: ragbazCheck?.details?.runtime || null,
+          availability: ragbazCheck?.details?.availability || null,
+        },
+      }
+    : { ok: true, message: t("health.wpModeNotEnabled") };
   // Build the webhook URL from the request
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;

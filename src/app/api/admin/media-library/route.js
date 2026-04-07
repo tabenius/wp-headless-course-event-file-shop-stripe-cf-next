@@ -112,9 +112,7 @@ function normalizeOwnerUri(value, max = 320) {
       path = raw;
     }
   }
-  let safe = path
-    .replace(/\s+/g, "")
-    .replace(/\/{2,}/g, "/");
+  let safe = path.replace(/\s+/g, "").replace(/\/{2,}/g, "/");
   if (!safe.startsWith("/")) safe = `/${safe}`;
   if (safe.length > 1) safe = safe.replace(/\/+$/, "");
   return safe.slice(0, max) || "/";
@@ -246,18 +244,7 @@ function parseJpegDimensions(bytes) {
     return null;
   }
   const sofMarkers = new Set([
-    0xc0,
-    0xc1,
-    0xc2,
-    0xc3,
-    0xc5,
-    0xc6,
-    0xc7,
-    0xc9,
-    0xca,
-    0xcb,
-    0xcd,
-    0xce,
+    0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce,
     0xcf,
   ]);
   let offset = 2;
@@ -434,8 +421,13 @@ function normalizeWordPressMediaRow(row) {
   const caption = normalizeWordPressText(row?.caption);
   const description = normalizeWordPressText(row?.description);
   const altText = sanitizeText(row?.alt_text, 300);
-  const tooltip = readWordPressMeta(rowMeta, "ragbaz_asset_tooltip", 300) || caption;
-  const usageNotes = readWordPressMeta(rowMeta, "ragbaz_asset_usage_notes", 1200);
+  const tooltip =
+    readWordPressMeta(rowMeta, "ragbaz_asset_tooltip", 300) || caption;
+  const usageNotes = readWordPressMeta(
+    rowMeta,
+    "ragbaz_asset_usage_notes",
+    1200,
+  );
   const structuredMeta = readWordPressMeta(
     rowMeta,
     "ragbaz_asset_structured_meta",
@@ -446,7 +438,9 @@ function normalizeWordPressMediaRow(row) {
     rowAsset?.assetId || readWordPressMeta(rowMeta, "ragbaz_asset_id", 96),
   );
   const ownerUri = normalizeOwnerUri(
-    rowAsset?.ownerUri || readWordPressMeta(rowMeta, "ragbaz_asset_owner_uri", 320) || "/",
+    rowAsset?.ownerUri ||
+      readWordPressMeta(rowMeta, "ragbaz_asset_owner_uri", 320) ||
+      "/",
   );
   const assetUri =
     sanitizeText(rowAsset?.uri, 400) ||
@@ -465,20 +459,22 @@ function normalizeWordPressMediaRow(row) {
   );
   const variantKind =
     sanitizeText(
-      rowAsset?.variantKind || readWordPressMeta(rowMeta, "ragbaz_asset_variant_kind", 80),
+      rowAsset?.variantKind ||
+        readWordPressMeta(rowMeta, "ragbaz_asset_variant_kind", 80),
       80,
-    ) ||
-    (assetRole === "original" ? "original" : "");
+    ) || (assetRole === "original" ? "original" : "");
   const sourceHash = sanitizeText(
     rowAsset?.hash || readWordPressMeta(rowMeta, "ragbaz_asset_hash", 180),
     180,
   );
   const originalUrl = sanitizeText(
-    rowAsset?.original?.url || readWordPressMeta(rowMeta, "ragbaz_asset_original_url", 1024),
+    rowAsset?.original?.url ||
+      readWordPressMeta(rowMeta, "ragbaz_asset_original_url", 1024),
     1024,
   );
   const originalId = sanitizeText(
-    rowAsset?.original?.id || readWordPressMeta(rowMeta, "ragbaz_asset_original_id", 96),
+    rowAsset?.original?.id ||
+      readWordPressMeta(rowMeta, "ragbaz_asset_original_id", 96),
     96,
   );
   const authorType = normalizeAuthorType(
@@ -575,14 +571,17 @@ async function fetchWordPressMedia({ limit, search }) {
       "id,date,date_gmt,source_url,mime_type,slug,title,media_type,media_details,alt_text,caption,description,meta,ragbaz_asset",
   });
   if (search) params.set("search", search);
-  const response = await fetch(`${baseUrl}/wp-json/wp/v2/media?${params.toString()}`, {
-    headers: {
-      Accept: "application/json",
-      ...(auth?.authorization ? { Authorization: auth.authorization } : {}),
-      ...(auth?.headers || {}),
+  const response = await fetch(
+    `${baseUrl}/wp-json/wp/v2/media?${params.toString()}`,
+    {
+      headers: {
+        Accept: "application/json",
+        ...(auth?.authorization ? { Authorization: auth.authorization } : {}),
+        ...(auth?.headers || {}),
+      },
+      cache: "no-store",
     },
-    cache: "no-store",
-  });
+  );
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(
@@ -610,7 +609,9 @@ async function fetchBucketMedia({ backend, limit, prefix, search }) {
   if (search) {
     const needle = search.toLowerCase();
     objects = objects.filter((object) =>
-      `${object?.key || ""} ${object?.url || ""}`.toLowerCase().includes(needle),
+      `${object?.key || ""} ${object?.url || ""}`
+        .toLowerCase()
+        .includes(needle),
     );
   }
 
@@ -669,7 +670,11 @@ async function fetchBucketMedia({ backend, limit, prefix, search }) {
     .filter((row) => isImageMime(row.mimeType, row.title))
     .slice(0, PROBE_IMAGE_LIMIT);
   await runWithConcurrency(imageRows, PROBE_CONCURRENCY, async (row) => {
-    const dimensions = await probeRemoteResolution(row.url, row.mimeType, row.title);
+    const dimensions = await probeRemoteResolution(
+      row.url,
+      row.mimeType,
+      row.title,
+    );
     if (!dimensions) return;
     if (dimensions.mimeType && !row.mimeType) {
       row.mimeType = dimensions.mimeType;
@@ -726,7 +731,8 @@ async function fetchBucketMedia({ backend, limit, prefix, search }) {
         }
       }
       const ownerUri = normalizeOwnerUri(meta.asset_owner_uri || "/");
-      const assetUri = sanitizeText(meta.asset_uri, 400) || buildAssetIdUri(assetId);
+      const assetUri =
+        sanitizeText(meta.asset_uri, 400) || buildAssetIdUri(assetId);
       const assetSlug = sanitizeAssetSlug(meta.asset_slug, 120);
       const authorType = normalizeAuthorType(meta.asset_author_type);
       const authorId =
@@ -793,8 +799,7 @@ function toPatchPayload(body) {
     throw error;
   }
   const sourceIdRaw = body?.sourceId;
-  const sourceId =
-    source === "wordpress" ? normalizeInt(sourceIdRaw) : null;
+  const sourceId = source === "wordpress" ? normalizeInt(sourceIdRaw) : null;
   if (source === "wordpress" && !sourceId) {
     const error = new Error("WordPress attachment id is required.");
     error.statusCode = 400;
@@ -814,12 +819,12 @@ function toPatchPayload(body) {
   const assetId = sanitizeAssetId(asset?.assetId || "", 96);
   const assetUri = assetUriRaw || buildAssetIdUri(assetId);
   const assetSlug = sanitizeAssetSlug(asset?.slug, 120);
-  const authorType = normalizeAuthorType(asset?.author?.type || asset?.authorType);
+  const authorType = normalizeAuthorType(
+    asset?.author?.type || asset?.authorType,
+  );
   const authorId =
-    normalizeAuthorId(
-      asset?.author?.id || asset?.authorId,
-      authorType,
-    ) || "admins";
+    normalizeAuthorId(asset?.author?.id || asset?.authorId, authorType) ||
+    "admins";
   return {
     source,
     sourceId,
@@ -850,7 +855,12 @@ function toPatchPayload(body) {
   };
 }
 
-async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights, asset }) {
+async function updateWordPressAttachmentMetadata({
+  sourceId,
+  metadata,
+  rights,
+  asset,
+}) {
   const baseUrl = normalizeWordPressUrl();
   if (!baseUrl) throw new Error("WordPress URL is not configured.");
   const auth = await getWordPressGraphqlAuth();
@@ -924,7 +934,13 @@ async function updateWordPressAttachmentMetadata({ sourceId, metadata, rights, a
   return normalizeWordPressMediaRow(row);
 }
 
-async function updateBucketObjectMetadata({ backend, key, metadata, rights, asset }) {
+async function updateBucketObjectMetadata({
+  backend,
+  key,
+  metadata,
+  rights,
+  asset,
+}) {
   if (backend !== "r2" && backend !== "s3") {
     throw new Error("Invalid bucket backend.");
   }
@@ -967,7 +983,8 @@ export async function GET(request) {
     : "all";
   const includeWordPress = sourceParam === "all" || sourceParam === "wordpress";
   const includeR2 = sourceParam === "all" || sourceParam === "r2";
-  const includeS3 = sourceParam === "s3" || (sourceParam === "all" && isS3Configured("s3"));
+  const includeS3 =
+    sourceParam === "s3" || (sourceParam === "all" && isS3Configured("s3"));
   const limit = clampLimit(request.nextUrl.searchParams.get("limit"));
   const search = toSafeSearch(request.nextUrl.searchParams.get("search"));
   const prefix = toSafePrefix(request.nextUrl.searchParams.get("prefix"));
@@ -988,7 +1005,10 @@ export async function GET(request) {
       sources.wordpress.ok = true;
       sources.wordpress.count = wordpressItems.length;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load WordPress media.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to load WordPress media.";
       sources.wordpress.error = message;
       warnings.push(`WordPress: ${message}`);
     }
@@ -996,11 +1016,17 @@ export async function GET(request) {
 
   if (includeR2) {
     try {
-      r2Items = await fetchBucketMedia({ backend: "r2", limit, prefix, search });
+      r2Items = await fetchBucketMedia({
+        backend: "r2",
+        limit,
+        prefix,
+        search,
+      });
       sources.r2.ok = true;
       sources.r2.count = r2Items.length;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load R2 media.";
+      const message =
+        error instanceof Error ? error.message : "Failed to load R2 media.";
       sources.r2.error = message;
       warnings.push(`R2: ${message}`);
     }
@@ -1008,11 +1034,17 @@ export async function GET(request) {
 
   if (includeS3) {
     try {
-      s3Items = await fetchBucketMedia({ backend: "s3", limit, prefix, search });
+      s3Items = await fetchBucketMedia({
+        backend: "s3",
+        limit,
+        prefix,
+        search,
+      });
       sources.s3.ok = true;
       sources.s3.count = s3Items.length;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load S3 media.";
+      const message =
+        error instanceof Error ? error.message : "Failed to load S3 media.";
       sources.s3.error = message;
       warnings.push(`S3: ${message}`);
     }
@@ -1044,7 +1076,9 @@ export async function POST(request) {
   } catch (error) {
     const status = Number(error?.statusCode) || 500;
     const message =
-      error instanceof Error ? error.message : "Failed to update media metadata.";
+      error instanceof Error
+        ? error.message
+        : "Failed to update media metadata.";
     return NextResponse.json({ ok: false, error: message }, { status });
   }
 }

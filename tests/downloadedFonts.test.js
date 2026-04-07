@@ -127,7 +127,10 @@ describe("getAllFontFaceCss", () => {
 
 describe("parseFontWeightList", () => {
   it("parses comma separated strings and dedupes", () => {
-    assert.deepEqual(parseFontWeightList("300, 400, 400, 700"), [300, 400, 700]);
+    assert.deepEqual(
+      parseFontWeightList("300, 400, 400, 700"),
+      [300, 400, 700],
+    );
   });
 
   it("parses arrays and ignores invalid values", () => {

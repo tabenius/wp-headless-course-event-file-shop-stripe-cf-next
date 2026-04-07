@@ -10,16 +10,16 @@ Reorganise the admin settings into three progressive-disclosure tiers — **Basi
 
 The admin uses a flat tab bar with seven base tabs rendered from `ADMIN_TABS_BASE`:
 
-| Tab | Component | Contains |
-|-----|-----------|----------|
-| `welcome` | `AdminWelcomeTab` | Onboarding story, revision badge |
-| `sales` | `AdminSalesTab` | Payment list, receipt download, Stripe status |
-| `media` | `AdminMediaLibraryTab` | Upload, media library, derivation editor |
-| `products` | `AdminProductsTab` | Shop products, course management, user access |
-| `support` | `AdminSupportTab` | Support tickets |
-| `style` | `AdminStyleTab` | Site colours, fonts, CTA button style |
-| `info` | `AdminInfoHubTab` | Sub-sections: Overview, Stats, Health check, Storage, Docs, Beta & monitoring |
-| `chat` | `ChatPanel` | Beta AI assistant |
+| Tab        | Component              | Contains                                                                      |
+| ---------- | ---------------------- | ----------------------------------------------------------------------------- |
+| `welcome`  | `AdminWelcomeTab`      | Onboarding story, revision badge                                              |
+| `sales`    | `AdminSalesTab`        | Payment list, receipt download, Stripe status                                 |
+| `media`    | `AdminMediaLibraryTab` | Upload, media library, derivation editor                                      |
+| `products` | `AdminProductsTab`     | Shop products, course management, user access                                 |
+| `support`  | `AdminSupportTab`      | Support tickets                                                               |
+| `style`    | `AdminStyleTab`        | Site colours, fonts, CTA button style                                         |
+| `info`     | `AdminInfoHubTab`      | Sub-sections: Overview, Stats, Health check, Storage, Docs, Beta & monitoring |
+| `chat`     | `ChatPanel`            | Beta AI assistant                                                             |
 
 The `AdminInfoHubTab` has its own internal section nav (`overview`, `stats`, `health`, `storage`, `docs`, `beta`). Inside those sub-sections live the panels that will move into the Advanced / Developer tiers:
 
@@ -42,6 +42,7 @@ Config is driven by `CLOUDFLARE_ACCOUNT_ID`, `CF_API_TOKEN`, `CF_KV_NAMESPACE_ID
 ### Stripe Webhook (`src/app/api/stripe/webhook/route.js`)
 
 Handles `checkout.session.completed` events. After signature verification the handler:
+
 1. Grants course / digital-product access
 2. Sends a purchase-confirmation email
 
@@ -53,11 +54,11 @@ The proxy forwarding hook will be inserted after step 2.
 
 ### Tier Definitions
 
-| Tier | Visibility | Target user | Icon hint |
-|------|-----------|-------------|-----------|
-| **Basic** | Always visible — the default tab bar | Shop owner doing daily work | Normal tab icons |
-| **Advanced** | Behind a `...` (ellipsis) overflow button in the tab bar | Admin who configures integrations | Gear icon |
-| **Developer** | Nested inside Advanced, behind a `< > Utvecklarläge` toggle | Developer / site builder | Code brackets |
+| Tier          | Visibility                                                  | Target user                       | Icon hint        |
+| ------------- | ----------------------------------------------------------- | --------------------------------- | ---------------- |
+| **Basic**     | Always visible — the default tab bar                        | Shop owner doing daily work       | Normal tab icons |
+| **Advanced**  | Behind a `...` (ellipsis) overflow button in the tab bar    | Admin who configures integrations | Gear icon        |
+| **Developer** | Nested inside Advanced, behind a `< > Utvecklarläge` toggle | Developer / site builder          | Code brackets    |
 
 ### Classification of Settings
 
@@ -76,23 +77,23 @@ The existing **Info** tab keeps its Overview, Stats, and Docs sub-sections as Ba
 
 #### Advanced (ellipsis submenu)
 
-| Setting | Current location | Description (Swedish) |
-|---------|-----------------|----------------------|
-| R2 connection panel | Info → Storage | "S3/R2-uppkopplingsinformation och klientinställningar." |
+| Setting                                         | Current location                      | Description (Swedish)                                                                                 |
+| ----------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| R2 connection panel                             | Info → Storage                        | "S3/R2-uppkopplingsinformation och klientinställningar."                                              |
 | Backend selector (storage + upload destination) | Info → Storage → `StorageConfigPanel` | "Välj lagringsbackend (Cloudflare KV, WordPress, lokal fil) och uppladdningsmål (WordPress, R2, S3)." |
-| Health check / connectors | Info → Health | "Hälsokontroll av WordPress-anslutning, Stripe-webhook och RAGBAZ-plugin." |
-| WooCommerce webhook proxy | **NEW** | "Vidarebefordra betalningshändelser till WooCommerce." |
-| Beta features (chat toggle, GraphQL monitor) | Info → Beta | "Experimentella funktioner och övervakning." |
+| Health check / connectors                       | Info → Health                         | "Hälsokontroll av WordPress-anslutning, Stripe-webhook och RAGBAZ-plugin."                            |
+| WooCommerce webhook proxy                       | **NEW**                               | "Vidarebefordra betalningshändelser till WooCommerce."                                                |
+| Beta features (chat toggle, GraphQL monitor)    | Info → Beta                           | "Experimentella funktioner och övervakning."                                                          |
 
 #### Developer (nested inside Advanced)
 
-| Setting | Current location | Description (Swedish) |
-|---------|-----------------|----------------------|
-| Raw credentials / env status table | Info → Storage → `StorageConfigPanel` (env-status) | "Visa alla konfigurerade miljövariabler och deras status." |
-| Stripe key overrides | **NEW** | "Skriv över STRIPE_SECRET_KEY och NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY via admin-gränssnittet." |
-| WooCommerce REST API integration | **NEW** | "Skicka kvitton och läs momsinformation från WooCommerce REST API." |
-| API endpoints reference | Info → Docs | "Lista över alla API-endpoints i systemet." |
-| Debug tools (client log panel, sandbox) | Info → Beta → `AdminSandboxTab` | "Klientloggar, sandbox-körning och felsökningsverktyg." |
+| Setting                                 | Current location                                   | Description (Swedish)                                                                         |
+| --------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Raw credentials / env status table      | Info → Storage → `StorageConfigPanel` (env-status) | "Visa alla konfigurerade miljövariabler och deras status."                                    |
+| Stripe key overrides                    | **NEW**                                            | "Skriv över STRIPE_SECRET_KEY och NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY via admin-gränssnittet." |
+| WooCommerce REST API integration        | **NEW**                                            | "Skicka kvitton och läs momsinformation från WooCommerce REST API."                           |
+| API endpoints reference                 | Info → Docs                                        | "Lista över alla API-endpoints i systemet."                                                   |
+| Debug tools (client log panel, sandbox) | Info → Beta → `AdminSandboxTab`                    | "Klientloggar, sandbox-körning och felsökningsverktyg."                                       |
 
 ---
 
@@ -247,6 +248,7 @@ try {
 ```
 
 Key design decisions:
+
 - **Non-blocking**: The proxy is fire-and-forget with a 10 s timeout. A failure does not affect the main webhook response.
 - **Forwards raw body**: The original Stripe event JSON is forwarded as-is so WooCommerce can process it natively.
 - **Header annotation**: `X-Forwarded-Source` lets the receiving end distinguish proxied events from direct Stripe calls.
@@ -400,17 +402,25 @@ A new helper in `src/lib/stripeConfig.js`:
 ```js
 export async function getStripeSecretKey() {
   try {
-    const overrides = await readCloudflareKvJson("settings:stripe_key_overrides");
+    const overrides = await readCloudflareKvJson(
+      "settings:stripe_key_overrides",
+    );
     if (overrides?.secretKey) return overrides.secretKey;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return process.env.STRIPE_SECRET_KEY || "";
 }
 
 export async function getStripePublishableKey() {
   try {
-    const overrides = await readCloudflareKvJson("settings:stripe_key_overrides");
+    const overrides = await readCloudflareKvJson(
+      "settings:stripe_key_overrides",
+    );
     if (overrides?.publishableKey) return overrides.publishableKey;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 }
 ```
@@ -460,32 +470,32 @@ Callers that currently read `process.env.STRIPE_SECRET_KEY` directly (e.g. `Admi
 
 ## KV Key Summary
 
-| Key | Purpose | Written by |
-|-----|---------|-----------|
-| `settings:wc_proxy` | WC webhook proxy toggle + URL | Admin UI |
-| `settings:wc_rest_api` | WC REST API credentials + toggles | Admin UI |
-| `settings:stripe_key_overrides` | Stripe key overrides | Admin UI |
-| `cache:wc_tax_rates` | Cached WC tax rates (1h TTL) | Server-side on first checkout |
+| Key                             | Purpose                           | Written by                    |
+| ------------------------------- | --------------------------------- | ----------------------------- |
+| `settings:wc_proxy`             | WC webhook proxy toggle + URL     | Admin UI                      |
+| `settings:wc_rest_api`          | WC REST API credentials + toggles | Admin UI                      |
+| `settings:stripe_key_overrides` | Stripe key overrides              | Admin UI                      |
+| `cache:wc_tax_rates`            | Cached WC tax rates (1h TTL)      | Server-side on first checkout |
 
 ---
 
 ## File Impact Summary
 
-| File | Change |
-|------|--------|
-| `src/components/admin/AdminHeader.js` | Add `TieredMenuButton` (ellipsis menu + popover) |
-| `src/components/admin/AdminDashboard.js` | Add `settings` pseudo-tab, route to `AdminSettingsPanel` |
-| `src/components/admin/AdminSettingsPanel.js` | **New** — routes to setting panels based on hash |
-| `src/components/admin/TieredMenuButton.js` | **New** — the `···` button + popover with Advanced/Developer sections |
-| `src/components/admin/WcProxySettingsPanel.js` | **New** — toggle + URL field |
-| `src/components/admin/WcRestApiPanel.js` | **New** — WC REST API credentials + toggles |
-| `src/components/admin/StripeKeyOverridePanel.js` | **New** — Stripe key override fields |
-| `src/components/admin/AdminInfoHubTab.js` | Remove Storage, Health, Beta sub-sections (moved to tiered menu) |
-| `src/lib/stripeConfig.js` | **New** — `getStripeSecretKey()`, `getStripePublishableKey()` |
-| `src/lib/wooCommerceApi.js` | **New** — `createWcOrder()`, `getWcTaxRates()`, `testWcConnection()` |
-| `src/app/api/stripe/webhook/route.js` | Add WC proxy forwarding + WC order sync blocks |
-| `src/app/api/admin/settings/wc-proxy/route.js` | **New** — GET/POST for WC proxy config |
-| `src/app/api/admin/settings/wc-rest-api/route.js` | **New** — GET/POST for WC REST API config |
-| `src/app/api/admin/settings/stripe-keys/route.js` | **New** — GET/POST/DELETE for Stripe key overrides |
-| `src/lib/i18n/sv.json` | Add Swedish translations for all new labels |
-| `src/lib/i18n/en.json` | Add English translations |
+| File                                              | Change                                                                |
+| ------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/components/admin/AdminHeader.js`             | Add `TieredMenuButton` (ellipsis menu + popover)                      |
+| `src/components/admin/AdminDashboard.js`          | Add `settings` pseudo-tab, route to `AdminSettingsPanel`              |
+| `src/components/admin/AdminSettingsPanel.js`      | **New** — routes to setting panels based on hash                      |
+| `src/components/admin/TieredMenuButton.js`        | **New** — the `···` button + popover with Advanced/Developer sections |
+| `src/components/admin/WcProxySettingsPanel.js`    | **New** — toggle + URL field                                          |
+| `src/components/admin/WcRestApiPanel.js`          | **New** — WC REST API credentials + toggles                           |
+| `src/components/admin/StripeKeyOverridePanel.js`  | **New** — Stripe key override fields                                  |
+| `src/components/admin/AdminInfoHubTab.js`         | Remove Storage, Health, Beta sub-sections (moved to tiered menu)      |
+| `src/lib/stripeConfig.js`                         | **New** — `getStripeSecretKey()`, `getStripePublishableKey()`         |
+| `src/lib/wooCommerceApi.js`                       | **New** — `createWcOrder()`, `getWcTaxRates()`, `testWcConnection()`  |
+| `src/app/api/stripe/webhook/route.js`             | Add WC proxy forwarding + WC order sync blocks                        |
+| `src/app/api/admin/settings/wc-proxy/route.js`    | **New** — GET/POST for WC proxy config                                |
+| `src/app/api/admin/settings/wc-rest-api/route.js` | **New** — GET/POST for WC REST API config                             |
+| `src/app/api/admin/settings/stripe-keys/route.js` | **New** — GET/POST/DELETE for Stripe key overrides                    |
+| `src/lib/i18n/sv.json`                            | Add Swedish translations for all new labels                           |
+| `src/lib/i18n/en.json`                            | Add English translations                                              |

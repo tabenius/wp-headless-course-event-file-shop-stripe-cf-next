@@ -196,7 +196,9 @@ function enrichPaymentWithVat(payment, lookups, vatByCategory) {
   }
 
   // Amounts from Stripe charges are treated as gross (tax-inclusive).
-  const vatAmount = Math.round((payment.amount * vatPercent) / (100 + vatPercent));
+  const vatAmount = Math.round(
+    (payment.amount * vatPercent) / (100 + vatPercent),
+  );
   const netAmount = payment.amount - vatAmount;
   return {
     ...payment,
@@ -232,7 +234,9 @@ async function fetchReceiptCandidate(url, stripeKey, trace, source) {
     };
   }
 
-  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  const contentType = (
+    response.headers.get("content-type") || ""
+  ).toLowerCase();
   const finalUrl = response.url || url;
   trace.push({
     source,
@@ -364,7 +368,9 @@ export async function GET(request) {
     const emailParam = searchParams.get("email");
     const email = emailParam ? emailParam.trim().toLowerCase() : undefined;
     const limitParam = searchParams.get("limit");
-    const parsedLimit = limitParam ? Number.parseInt(limitParam, 10) : Number.NaN;
+    const parsedLimit = limitParam
+      ? Number.parseInt(limitParam, 10)
+      : Number.NaN;
     const limit = Number.isFinite(parsedLimit)
       ? Math.max(1, Math.min(parsedLimit, 100))
       : 20;

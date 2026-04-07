@@ -12,18 +12,19 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|---|---|---|
-| `src/lib/photonPipeline.js` | **Create** | Pure helpers (format resolution, preset crop math, size guard) + `executeOperations()` orchestrator |
-| `src/app/api/admin/derivations/apply/route.js` | **Modify** | Wire pipeline: fetch → load → execute → serialize → return binary response |
-| `src/components/admin/AdminMediaLibraryTab.js` | **Modify** | Handle binary response, blob URL preview, save-to-library upload, remove localStorage pattern |
-| `tests/photon-pipeline.test.js` | **Create** | Unit tests for pure helper functions (no WASM required) |
+| File                                           | Action     | Responsibility                                                                                      |
+| ---------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------- |
+| `src/lib/photonPipeline.js`                    | **Create** | Pure helpers (format resolution, preset crop math, size guard) + `executeOperations()` orchestrator |
+| `src/app/api/admin/derivations/apply/route.js` | **Modify** | Wire pipeline: fetch → load → execute → serialize → return binary response                          |
+| `src/components/admin/AdminMediaLibraryTab.js` | **Modify** | Handle binary response, blob URL preview, save-to-library upload, remove localStorage pattern       |
+| `tests/photon-pipeline.test.js`                | **Create** | Unit tests for pure helper functions (no WASM required)                                             |
 
 ---
 
 ## Task 1: Install @cf-wasm/photon
 
 **Files:**
+
 - Modify: `package.json` (via npm install)
 
 - [ ] **Step 1: Install the package**
@@ -55,6 +56,7 @@ git commit -m "chore: add @cf-wasm/photon for edge image processing"
 ## Task 2: Create photonPipeline.js — pure helpers + tests
 
 **Files:**
+
 - Create: `src/lib/photonPipeline.js`
 - Create: `tests/photon-pipeline.test.js`
 
@@ -76,12 +78,18 @@ import {
 
 describe("resolveOutputFormat", () => {
   it("returns jpeg when no cropCircle operation", () => {
-    const ops = [{ type: "source" }, { type: "resize", params: { width: 800, height: 600 } }];
+    const ops = [
+      { type: "source" },
+      { type: "resize", params: { width: 800, height: 600 } },
+    ];
     assert.equal(resolveOutputFormat(ops), "jpeg");
   });
 
   it("returns png when cropCircle is present", () => {
-    const ops = [{ type: "source" }, { type: "cropCircle", params: { diameter: 200 } }];
+    const ops = [
+      { type: "source" },
+      { type: "cropCircle", params: { diameter: 200 } },
+    ];
     assert.equal(resolveOutputFormat(ops), "png");
   });
 
@@ -138,7 +146,10 @@ describe("clampSaturation", () => {
   });
 
   it("returns desaturate fn with positive amount when input is negative", () => {
-    assert.deepEqual(clampSaturation(-0.3), { fn: "desaturate_hsl", amount: 0.3 });
+    assert.deepEqual(clampSaturation(-0.3), {
+      fn: "desaturate_hsl",
+      amount: 0.3,
+    });
   });
 
   it("clamps amount to [0, 1]", () => {
@@ -291,7 +302,10 @@ export function executeOperations(photon, img, operations) {
         const h = Math.max(1, Math.round(Number(p.height) || 1));
         // SamplingFilter: 1=Nearest 2=Triangle 3=CatmullRom 4=Gaussian 5=Lanczos3
         const next = photon.resize(current, w, h, 5);
-        if (next !== current) { current.free(); current = next; }
+        if (next !== current) {
+          current.free();
+          current = next;
+        }
         break;
       }
 
@@ -305,7 +319,10 @@ export function executeOperations(photon, img, operations) {
         const x2 = Math.min(srcW, x1 + w);
         const y2 = Math.min(srcH, y1 + h);
         const next = photon.crop(current, x1, y1, x2, y2);
-        if (next !== current) { current.free(); current = next; }
+        if (next !== current) {
+          current.free();
+          current = next;
+        }
         break;
       }
 
@@ -324,7 +341,10 @@ export function executeOperations(photon, img, operations) {
         break;
 
       case "colorBoost": {
-        const contrast = Math.min(100, Math.max(-100, Number(p.contrast || 0) * 100));
+        const contrast = Math.min(
+          100,
+          Math.max(-100, Number(p.contrast || 0) * 100),
+        );
         photon.adjust_contrast(current, contrast);
         // Approximate vibrance with a saturation nudge
         if (p.vibrance != null) {
@@ -339,8 +359,17 @@ export function executeOperations(photon, img, operations) {
         const srcH = current.get_height();
         const coords = parsePresetCrop(p.preset, p.scale, srcW, srcH);
         if (coords) {
-          const next = photon.crop(current, coords.x1, coords.y1, coords.x2, coords.y2);
-          if (next !== current) { current.free(); current = next; }
+          const next = photon.crop(
+            current,
+            coords.x1,
+            coords.y1,
+            coords.x2,
+            coords.y2,
+          );
+          if (next !== current) {
+            current.free();
+            current = next;
+          }
         }
         break;
       }
@@ -348,10 +377,15 @@ export function executeOperations(photon, img, operations) {
       case "cropCircle": {
         const srcW = current.get_width();
         const srcH = current.get_height();
-        const diameter = Math.max(1, Math.round(Number(p.diameter) || Math.min(srcW, srcH)));
+        const diameter = Math.max(
+          1,
+          Math.round(Number(p.diameter) || Math.min(srcW, srcH)),
+        );
         const radius = diameter / 2;
-        const cx = p.centerX != null ? (Number(p.centerX) / 100) * srcW : srcW / 2;
-        const cy = p.centerY != null ? (Number(p.centerY) / 100) * srcH : srcH / 2;
+        const cx =
+          p.centerX != null ? (Number(p.centerX) / 100) * srcW : srcW / 2;
+        const cy =
+          p.centerY != null ? (Number(p.centerY) / 100) * srcH : srcH / 2;
         // Photon exposes get_raw_pixels() → Uint8Array (RGBA) and a constructor
         // that takes raw pixels + dimensions
         const raw = current.get_raw_pixels();
@@ -427,6 +461,7 @@ git commit -m "feat: add photon pipeline helpers (resolveOutputFormat, parsePres
 ## Task 3: Rewrite apply route to return image bytes
 
 **Files:**
+
 - Modify: `src/app/api/admin/derivations/apply/route.js`
 
 The route stays edge runtime (no `export const runtime` change). It now fetches source bytes, runs the pipeline, and returns a binary image response instead of JSON.
@@ -492,7 +527,9 @@ export async function POST(request) {
   try {
     const sourceResponse = await fetch(asset.url);
     if (!sourceResponse.ok) {
-      return jsonError(`Could not fetch source image (HTTP ${sourceResponse.status}).`);
+      return jsonError(
+        `Could not fetch source image (HTTP ${sourceResponse.status}).`,
+      );
     }
     const buffer = await sourceResponse.arrayBuffer();
     guardSourceSize(buffer.byteLength, MAX_SOURCE_BYTES);
@@ -560,9 +597,11 @@ git commit -m "feat: rewrite derivations apply route to execute photon pipeline 
 ## Task 4: Update AdminMediaLibraryTab.js — preview + save
 
 **Files:**
+
 - Modify: `src/components/admin/AdminMediaLibraryTab.js`
 
 Replace the JSON-response + localStorage pattern with:
+
 1. Blob URL preview rendered in the derivation panel
 2. "Save to library" that POSTs the blob to `/api/admin/upload`
 
@@ -607,7 +646,10 @@ useEffect(() => {
 
 useEffect(() => {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem("savedDerivedAssets", JSON.stringify(savedDerivedAssets));
+  window.localStorage.setItem(
+    "savedDerivedAssets",
+    JSON.stringify(savedDerivedAssets),
+  );
 }, [savedDerivedAssets]);
 ```
 
@@ -633,10 +675,15 @@ Find and replace the entire `handleSaveDerivedAsset` function (around lines 1126
 function handleSaveDerivedAsset() {
   if (!lastDerivedAsset) return;
   const entry = {
-    id: lastDerivedAsset.id || `${selectedDerivationId || "derived"}-${Date.now()}`,
-    title: lastDerivedAsset.title || selectedDerivation?.name || "Derived asset",
+    id:
+      lastDerivedAsset.id ||
+      `${selectedDerivationId || "derived"}-${Date.now()}`,
+    title:
+      lastDerivedAsset.title || selectedDerivation?.name || "Derived asset",
     url: lastDerivedAsset.url || "",
-    operations: Array.isArray(lastDerivedAsset.operations) ? lastDerivedAsset.operations : [],
+    operations: Array.isArray(lastDerivedAsset.operations)
+      ? lastDerivedAsset.operations
+      : [],
     timestamp: Date.now(),
   };
   setSavedDerivedAssets((current) => {
@@ -665,12 +712,18 @@ async function savePreviewToLibrary() {
     });
     const json = await response.json().catch(() => ({}));
     if (!response.ok || !json?.ok) {
-      throw new Error(json?.error || t("admin.mediaDerivationSaveFailed", "Could not save derived asset."));
+      throw new Error(
+        json?.error ||
+          t("admin.mediaDerivationSaveFailed", "Could not save derived asset."),
+      );
     }
     const entry = buildUploadHistoryEntry({
       name: filename,
       status: "uploaded",
-      detail: t("admin.mediaDerivationApplied", "Derived asset saved to library"),
+      detail: t(
+        "admin.mediaDerivationApplied",
+        "Derived asset saved to library",
+      ),
       url: json.url || "",
       backend: selectedUploadBackend,
     });
@@ -695,7 +748,12 @@ Find and replace the entire `applySelectedDerivation` function (around lines 114
 ```js
 async function applySelectedDerivation() {
   if (!selectedDerivation || !focusedItem) {
-    setDerivationError(t("admin.mediaDerivationRequiresSelection", "Select a derivation and an asset first."));
+    setDerivationError(
+      t(
+        "admin.mediaDerivationRequiresSelection",
+        "Select a derivation and an asset first.",
+      ),
+    );
     return;
   }
   if (derivationUnboundParameters.length > 0) {
@@ -707,7 +765,10 @@ async function applySelectedDerivation() {
     );
     return;
   }
-  const operationsToApply = bindOperationsToAsset(customOperations, focusedItem?.id);
+  const operationsToApply = bindOperationsToAsset(
+    customOperations,
+    focusedItem?.id,
+  );
   setApplyingDerivation(true);
   setDerivationError("");
   setSavePreviewError("");
@@ -733,7 +794,10 @@ async function applySelectedDerivation() {
     if (!response.ok) {
       // Error responses are JSON
       const json = await response.json().catch(() => ({}));
-      throw new Error(json?.error || t("admin.mediaDerivationFailed", "Could not apply derivation."));
+      throw new Error(
+        json?.error ||
+          t("admin.mediaDerivationFailed", "Could not apply derivation."),
+      );
     }
 
     const blob = await response.blob();
@@ -759,101 +823,103 @@ Find and replace the save button + savedDerivedAssets block using these exact st
 **Remove** (exact text, lines ~2121–2189):
 
 ```jsx
-            <button
-              type="button"
-              onClick={handleSaveDerivedAsset}
-              disabled={!lastDerivedAsset}
-              className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
-            >
-              {t("admin.mediaSaveDerivedAsset", "Save derived asset")}
-            </button>
+<button
+  type="button"
+  onClick={handleSaveDerivedAsset}
+  disabled={!lastDerivedAsset}
+  className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
+>
+  {t("admin.mediaSaveDerivedAsset", "Save derived asset")}
+</button>
 ```
 
 **Replace with:**
 
 ```jsx
-            <button
-              type="button"
-              onClick={savePreviewToLibrary}
-              disabled={!previewBlob || savingPreview}
-              className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
-            >
-              {savingPreview
-                ? t("admin.mediaSavingDerivedAsset", "Saving…")
-                : t("admin.mediaSaveDerivedAsset", "Save to library")}
-            </button>
+<button
+  type="button"
+  onClick={savePreviewToLibrary}
+  disabled={!previewBlob || savingPreview}
+  className="px-3 py-1.5 rounded border text-[11px] bg-white disabled:opacity-50"
+>
+  {savingPreview
+    ? t("admin.mediaSavingDerivedAsset", "Saving…")
+    : t("admin.mediaSaveDerivedAsset", "Save to library")}
+</button>
 ```
 
 Then find and remove the entire `savedDerivedAssets` block (exact anchor: starts with `{savedDerivedAssets.length > 0 && (`):
 
 ```jsx
-          {savedDerivedAssets.length > 0 && (
-            <div className="rounded border border-indigo-100 bg-white p-3 space-y-2 text-[11px] text-gray-700">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-indigo-800">
-                  {t("admin.mediaDerivedAssetsHeading", "Saved derived assets")}
-                </p>
-              </div>
-              <div className="space-y-2">
-                {savedDerivedAssets.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex flex-wrap items-center justify-between gap-2 border rounded p-2 bg-indigo-50"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-semibold text-indigo-800 truncate">
-                        {entry.title}
-                      </p>
-                      <p className="text-[11px] text-gray-600">
-                        {t("admin.mediaDerivedAssetSavedOn", "Saved on {time}", {
-                          time: new Date(entry.timestamp).toLocaleString("sv-SE"),
-                        })}
-                      </p>
-                      <p className="text-[11px] text-gray-500">
-                        {t(
-                          "admin.mediaDerivedAssetOperations",
-                          "Operations: {count}",
-                          { count: entry.operations?.length || 0 },
-                        )}
-                      </p>
-                    </div>
-                    {entry.url && (
-                      <a
-                        href={entry.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] text-purple-700 hover:underline"
-                      >
-                        {t("admin.mediaDerivedAssetOpen", "Open")}
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
+{
+  savedDerivedAssets.length > 0 && (
+    <div className="rounded border border-indigo-100 bg-white p-3 space-y-2 text-[11px] text-gray-700">
+      <div className="flex items-center justify-between">
+        <p className="font-semibold text-indigo-800">
+          {t("admin.mediaDerivedAssetsHeading", "Saved derived assets")}
+        </p>
+      </div>
+      <div className="space-y-2">
+        {savedDerivedAssets.map((entry) => (
+          <div
+            key={entry.id}
+            className="flex flex-wrap items-center justify-between gap-2 border rounded p-2 bg-indigo-50"
+          >
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold text-indigo-800 truncate">
+                {entry.title}
+              </p>
+              <p className="text-[11px] text-gray-600">
+                {t("admin.mediaDerivedAssetSavedOn", "Saved on {time}", {
+                  time: new Date(entry.timestamp).toLocaleString("sv-SE"),
+                })}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                {t("admin.mediaDerivedAssetOperations", "Operations: {count}", {
+                  count: entry.operations?.length || 0,
+                })}
+              </p>
             </div>
-          )}
+            {entry.url && (
+              <a
+                href={entry.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-purple-700 hover:underline"
+              >
+                {t("admin.mediaDerivedAssetOpen", "Open")}
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 ```
 
 **Replace the removed block with** (inline blob preview — insert just before the closing `</div>` of the derivations section, i.e. the `</div>` on line ~2190):
 
 ```jsx
-          {previewBlobUrl && (
-            <div className="rounded border border-indigo-100 bg-white p-3 space-y-2">
-              <p className="text-[11px] font-semibold text-indigo-800">
-                {t("admin.mediaDerivationPreview", "Preview")}
-              </p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewBlobUrl}
-                alt={t("admin.mediaDerivationPreviewAlt", "Derived image preview")}
-                className="max-w-full rounded border"
-                style={{ maxHeight: "260px", objectFit: "contain" }}
-              />
-              {savePreviewError && (
-                <p className="text-[11px] text-red-600">{savePreviewError}</p>
-              )}
-            </div>
-          )}
+{
+  previewBlobUrl && (
+    <div className="rounded border border-indigo-100 bg-white p-3 space-y-2">
+      <p className="text-[11px] font-semibold text-indigo-800">
+        {t("admin.mediaDerivationPreview", "Preview")}
+      </p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={previewBlobUrl}
+        alt={t("admin.mediaDerivationPreviewAlt", "Derived image preview")}
+        className="max-w-full rounded border"
+        style={{ maxHeight: "260px", objectFit: "contain" }}
+      />
+      {savePreviewError && (
+        <p className="text-[11px] text-red-600">{savePreviewError}</p>
+      )}
+    </div>
+  );
+}
 ```
 
 - [ ] **Step 7: Add missing i18n keys**
@@ -861,6 +927,7 @@ Then find and remove the entire `savedDerivedAssets` block (exact anchor: starts
 In `src/lib/i18n/en.json`, `sv.json`, `es.json` — add these keys after the existing `"mediaSaveDerivedAsset"` key (line ~392 in en.json) as an anchor:
 
 **en.json** (insert after `"mediaSaveDerivedAsset": "Save derived asset",`):
+
 ```json
 "mediaDerivationPreview": "Preview",
 "mediaDerivationPreviewAlt": "Derived image preview",
@@ -868,6 +935,7 @@ In `src/lib/i18n/en.json`, `sv.json`, `es.json` — add these keys after the exi
 ```
 
 **sv.json** (insert after the same key):
+
 ```json
 "mediaDerivationPreview": "Förhandsvisning",
 "mediaDerivationPreviewAlt": "Förhandsgranskning av härledd bild",
@@ -875,6 +943,7 @@ In `src/lib/i18n/en.json`, `sv.json`, `es.json` — add these keys after the exi
 ```
 
 **es.json** (insert after the same key):
+
 ```json
 "mediaDerivationPreview": "Vista previa",
 "mediaDerivationPreviewAlt": "Vista previa de imagen derivada",
@@ -910,6 +979,7 @@ git commit -m "feat: wire photon preview + save-to-library flow in media library
 ## Task 5: WebP output + AVIF source rejection
 
 **Files:**
+
 - Modify: `src/lib/photonPipeline.js` — add `webp` to `serializeImage`, export `isAvifSource`
 - Modify: `src/app/api/admin/derivations/apply/route.js` — accept `format` body param, reject AVIF source early
 - Modify: `tests/photon-pipeline.test.js` — add WebP and AVIF tests
@@ -982,7 +1052,10 @@ Update `resolveOutputFormat` to accept an optional second `requestedFormat` para
 ```js
 export function resolveOutputFormat(operations, requestedFormat) {
   // cropCircle requires transparency — PNG always wins
-  if (Array.isArray(operations) && operations.some((op) => op.type === "cropCircle")) {
+  if (
+    Array.isArray(operations) &&
+    operations.some((op) => op.type === "cropCircle")
+  ) {
     return "png";
   }
   if (requestedFormat === "webp") return "webp";
@@ -995,7 +1068,9 @@ Add `isAvifSource` as a new export after `guardSourceSize`:
 
 ```js
 export function isAvifSource(contentType) {
-  return String(contentType || "").toLowerCase().includes("avif");
+  return String(contentType || "")
+    .toLowerCase()
+    .includes("avif");
 }
 ```
 
@@ -1036,7 +1111,12 @@ import {
 2. Destructure `format` from payload:
 
 ```js
-const { derivationId, asset, operations, format: requestedFormat } = payload || {};
+const {
+  derivationId,
+  asset,
+  operations,
+  format: requestedFormat,
+} = payload || {};
 ```
 
 3. Pass `requestedFormat` to `resolveOutputFormat`:

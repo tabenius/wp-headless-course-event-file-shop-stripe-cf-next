@@ -103,7 +103,11 @@ async function collectWordPressContent() {
   }
   for (const edge of productsData?.products?.edges || []) {
     const node = edge?.node || {};
-    const title = firstString(node.name, node.uri, String(node.databaseId || ""));
+    const title = firstString(
+      node.name,
+      node.uri,
+      String(node.databaseId || ""),
+    );
     nodes.push({
       id: String(node.databaseId || title),
       kind: "product",
@@ -159,8 +163,12 @@ function collectLinkOccurrences(nodes, classificationContext) {
 function fetchWithTimeout(url, init, timeoutMs = LINK_CHECK_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(url, { ...init, redirect: "follow", cache: "no-store", signal: controller.signal })
-    .finally(() => clearTimeout(timeout));
+  return fetch(url, {
+    ...init,
+    redirect: "follow",
+    cache: "no-store",
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
 }
 
 function sleep(ms) {
@@ -217,7 +225,11 @@ async function checkLinkReachability(entry, paceRequest) {
       reachability: "broken",
       statusCode: null,
       finalUrl: null,
-      error: String(error?.name === "AbortError" ? "timeout" : error?.message || "network_error"),
+      error: String(
+        error?.name === "AbortError"
+          ? "timeout"
+          : error?.message || "network_error",
+      ),
     };
   }
 }
@@ -258,17 +270,22 @@ export async function GET(request) {
       origin: requestOrigin,
     });
     const sorted = groupedLinks.sort((a, b) => {
-      if (a.kind !== b.kind) return String(a.kind).localeCompare(String(b.kind));
+      if (a.kind !== b.kind)
+        return String(a.kind).localeCompare(String(b.kind));
       if (a.occurrences !== b.occurrences) return b.occurrences - a.occurrences;
       return String(a.href).localeCompare(String(b.href));
     });
 
     const toCheck = sorted.slice(0, limit);
     const paceRequest = createRequestPacer(MIN_LINK_CHECK_INTERVAL_MS);
-    const checked = await mapWithConcurrency(toCheck, LINK_CHECK_CONCURRENCY, async (entry) => ({
-      ...entry,
-      ...(await checkLinkReachability(entry, paceRequest)),
-    }));
+    const checked = await mapWithConcurrency(
+      toCheck,
+      LINK_CHECK_CONCURRENCY,
+      async (entry) => ({
+        ...entry,
+        ...(await checkLinkReachability(entry, paceRequest)),
+      }),
+    );
     const unchecked = sorted.slice(limit).map((entry) => ({
       ...entry,
       reachability: "unchecked",

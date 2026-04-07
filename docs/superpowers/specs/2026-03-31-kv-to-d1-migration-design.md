@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 ```
 
 **D1 operations:**
+
 - `INCREMENT`: `INSERT INTO rate_limits (key, count, expires_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = count + 1` — atomic, no race.
 - `CHECK`: `SELECT count FROM rate_limits WHERE key = ? AND expires_at > datetime('now')`
 - `CLEANUP`: `DELETE FROM rate_limits WHERE expires_at < datetime('now')` — periodic, replaces KV TTL.
@@ -63,6 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 ```
 
 **D1 operations:**
+
 - `REGISTER`: `INSERT INTO users (...) VALUES (...)` — unique email constraint prevents duplicates.
 - `LOGIN`: `SELECT * FROM users WHERE email = ? LIMIT 1`
 - `UPDATE`: `UPDATE users SET ... WHERE id = ?`
@@ -104,6 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_products_active ON products (active);
 ```
 
 **D1 operations:**
+
 - `LIST`: `SELECT * FROM products WHERE active = 1` (shop) or `SELECT * FROM products` (admin)
 - `GET`: `SELECT * FROM products WHERE slug = ?`
 - `CREATE`: `INSERT INTO products (...) VALUES (...)`
@@ -140,6 +143,7 @@ CREATE INDEX IF NOT EXISTS idx_media_assets_mime ON media_assets (mime_type);
 ```
 
 **D1 operations:**
+
 - `LIST`: `SELECT * FROM media_assets ORDER BY saved_at DESC`
 - `GET`: `SELECT * FROM media_assets WHERE id = ?`
 - `UPSERT`: `INSERT OR REPLACE INTO media_assets (...) VALUES (...)`
@@ -178,6 +182,7 @@ CREATE INDEX IF NOT EXISTS idx_avatar_rel_to ON avatar_relationships (to_avatar_
 ```
 
 **D1 operations:**
+
 - `GET`: `SELECT * FROM avatars WHERE id = ?`
 - `BY_NAME`: `SELECT * FROM avatars WHERE canonical_name = ?`
 - `UPDATE`: `UPDATE avatars SET ... WHERE id = ?`
@@ -203,6 +208,7 @@ CREATE TABLE IF NOT EXISTS content_access (
 ```
 
 **D1 operations:**
+
 - `LIST`: `SELECT * FROM content_access`
 - `GET`: `SELECT * FROM content_access WHERE course_uri = ?`
 - `HAS_ACCESS`: `SELECT allowed_users FROM content_access WHERE course_uri = ? AND active = 1` then check JSON array in JS.
@@ -228,6 +234,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_history_key ON chat_messages (history_key, i
 ```
 
 **D1 operations:**
+
 - `APPEND`: `INSERT INTO chat_messages (history_key, role, content) VALUES (?, ?, ?)` — atomic, no race.
 - `READ`: `SELECT * FROM chat_messages WHERE history_key = ? ORDER BY id`
 - `CLEAR`: `DELETE FROM chat_messages WHERE history_key = ?`
@@ -261,6 +268,7 @@ CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket ON ticket_comments (ticket
 ```
 
 **D1 operations:**
+
 - `CREATE_TICKET`: `INSERT INTO support_tickets (...) VALUES (...)`
 - `ADD_COMMENT`: `INSERT INTO ticket_comments (...) VALUES (...)`
 - `LIST`: `SELECT * FROM support_tickets ORDER BY created_at DESC`
@@ -273,22 +281,23 @@ CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket ON ticket_comments (ticket
 
 These stores are well-suited to KV and do not benefit from D1:
 
-| Store | Reason |
-|-------|--------|
-| Admin settings (4 keys) | Tiny, per-key, infrequent |
-| Style presets | Small, admin-only writes |
-| UI feedback | Analytics, eventual consistency fine |
-| Debug log | Ring buffer with TTL |
-| Fonts catalog | Reference cache with TTL |
-| Downloaded fonts | CSS cache, low write |
-| Storefront cache epoch | Single counter |
-| Menu snapshot | Cache layer |
-| Password reset tokens | Ephemeral, TTL cleanup |
-| Avatar feed store | Deferred — reassess after avatars migration |
+| Store                   | Reason                                      |
+| ----------------------- | ------------------------------------------- |
+| Admin settings (4 keys) | Tiny, per-key, infrequent                   |
+| Style presets           | Small, admin-only writes                    |
+| UI feedback             | Analytics, eventual consistency fine        |
+| Debug log               | Ring buffer with TTL                        |
+| Fonts catalog           | Reference cache with TTL                    |
+| Downloaded fonts        | CSS cache, low write                        |
+| Storefront cache epoch  | Single counter                              |
+| Menu snapshot           | Cache layer                                 |
+| Password reset tokens   | Ephemeral, TTL cleanup                      |
+| Avatar feed store       | Deferred — reassess after avatars migration |
 
 ## Error Handling
 
 All D1 paths follow the same pattern:
+
 1. `tryGetD1()` returns `null` → fall through to KV
 2. D1 query throws → log error, fall through to KV
 3. KV also fails → return safe default (empty array, false, etc.)
@@ -298,6 +307,7 @@ No store should throw to the caller due to a backend failure.
 ## Testing
 
 Each store migration should be verified by:
+
 1. Lint passes
 2. Build succeeds (`npm run cf:deploy`)
 3. Manual smoke test of the affected UI/API path
@@ -306,6 +316,7 @@ Each store migration should be verified by:
 ## Cleanup (Post-Migration)
 
 After all stores are confirmed stable on D1:
+
 - Rate limit cleanup: periodic `DELETE WHERE expires_at < datetime('now')` via scheduled worker or on-read pruning.
 - KV fallback code can be removed in a future pass (not part of this migration).
 - `avatar-feed-store` can be reassessed once avatars table is live.

@@ -87,11 +87,7 @@ function checkClientChunkBudget() {
   ];
   const chunkFiles = [];
   for (const dirPath of chunkDirs) {
-    walkFiles(
-      dirPath,
-      (filePath) => filePath.endsWith(".js"),
-      chunkFiles,
-    );
+    walkFiles(dirPath, (filePath) => filePath.endsWith(".js"), chunkFiles);
   }
   if (chunkFiles.length === 0) {
     return {

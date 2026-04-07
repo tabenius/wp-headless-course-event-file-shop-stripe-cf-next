@@ -20,7 +20,10 @@ const JPEG_QUALITY = 85;
  * @returns {"jpeg"|"png"|"webp"|"avif"}
  */
 export function resolveOutputFormat(operations, requestedFormat) {
-  if (Array.isArray(operations) && operations.some((op) => op.type === "cropCircle")) {
+  if (
+    Array.isArray(operations) &&
+    operations.some((op) => op.type === "cropCircle")
+  ) {
     return "png";
   }
   if (requestedFormat === "avif") return "avif";
@@ -98,7 +101,9 @@ export function clampSaturation(amount) {
  * @returns {boolean}
  */
 export function isAvifSource(contentType) {
-  return String(contentType || "").toLowerCase().includes("avif");
+  return String(contentType || "")
+    .toLowerCase()
+    .includes("avif");
 }
 
 /**
@@ -161,7 +166,10 @@ function applyCircleMask(rawPixels, width, height, centerX, centerY, radius) {
 // ─── Blend helper ─────────────────────────────────────────────────────────────
 
 function blendWithOriginal(current, effectFn, amount, photon) {
-  if (amount >= 1) { effectFn(current); return; }
+  if (amount >= 1) {
+    effectFn(current);
+    return;
+  }
   if (amount <= 0) return;
   const origPixels = new Uint8Array(current.get_raw_pixels());
   effectFn(current);
@@ -195,286 +203,356 @@ export function executeOperations(photon, img, operations, onProgress) {
 
   let current = img;
 
-  const total = Array.isArray(operations) ? operations.filter((op) => op.type !== "source").length : 0;
+  const total = Array.isArray(operations)
+    ? operations.filter((op) => op.type !== "source").length
+    : 0;
   let done = 0;
 
   try {
-  for (const op of operations) {
-    const p = op.params || {};
+    for (const op of operations) {
+      const p = op.params || {};
 
-    switch (op.type) {
-      case "source":
-        // No-op — asset binding only, resolved before this call
-        break;
+      switch (op.type) {
+        case "source":
+          // No-op — asset binding only, resolved before this call
+          break;
 
-      case "resize": {
-        const w = Math.max(1, Math.round(Number(p.width) || 1));
-        const h = Math.max(1, Math.round(Number(p.height) || 1));
-        // SamplingFilter values: 1=Nearest 2=Triangle 3=CatmullRom 4=Gaussian 5=Lanczos3
-        const next = photon.resize(current, w, h, 5);
-        if (next !== current) { current.free(); current = next; }
-        break;
-      }
+        case "resize": {
+          const w = Math.max(1, Math.round(Number(p.width) || 1));
+          const h = Math.max(1, Math.round(Number(p.height) || 1));
+          // SamplingFilter values: 1=Nearest 2=Triangle 3=CatmullRom 4=Gaussian 5=Lanczos3
+          const next = photon.resize(current, w, h, 5);
+          if (next !== current) {
+            current.free();
+            current = next;
+          }
+          break;
+        }
 
-      case "crop": {
-        const w = Math.max(1, Math.round(Number(p.width) || 1));
-        const h = Math.max(1, Math.round(Number(p.height) || 1));
-        const srcW = current.get_width();
-        const srcH = current.get_height();
-        // Use explicit x1/y1 if provided, otherwise center-crop
-        const x1 = p.x1 != null
-          ? Math.max(0, Math.min(srcW - 1, Math.round(Number(p.x1))))
-          : Math.max(0, Math.round((srcW - w) / 2));
-        const y1 = p.y1 != null
-          ? Math.max(0, Math.min(srcH - 1, Math.round(Number(p.y1))))
-          : Math.max(0, Math.round((srcH - h) / 2));
-        const x2 = Math.min(srcW, x1 + w);
-        const y2 = Math.min(srcH, y1 + h);
-        const next = photon.crop(current, x1, y1, x2, y2);
-        if (next !== current) { current.free(); current = next; }
-        break;
-      }
+        case "crop": {
+          const w = Math.max(1, Math.round(Number(p.width) || 1));
+          const h = Math.max(1, Math.round(Number(p.height) || 1));
+          const srcW = current.get_width();
+          const srcH = current.get_height();
+          // Use explicit x1/y1 if provided, otherwise center-crop
+          const x1 =
+            p.x1 != null
+              ? Math.max(0, Math.min(srcW - 1, Math.round(Number(p.x1))))
+              : Math.max(0, Math.round((srcW - w) / 2));
+          const y1 =
+            p.y1 != null
+              ? Math.max(0, Math.min(srcH - 1, Math.round(Number(p.y1))))
+              : Math.max(0, Math.round((srcH - h) / 2));
+          const x2 = Math.min(srcW, x1 + w);
+          const y2 = Math.min(srcH, y1 + h);
+          const next = photon.crop(current, x1, y1, x2, y2);
+          if (next !== current) {
+            current.free();
+            current = next;
+          }
+          break;
+        }
 
-      case "sharpen":
-        photon.sharpen(current);
-        break;
+        case "sharpen":
+          photon.sharpen(current);
+          break;
 
-      case "saturation": {
-        const { fn, amount } = clampSaturation(p.amount);
-        photon[fn](current, amount);
-        break;
-      }
-
-      case "sepia": {
-        const amount = Number(p.amount ?? 1);
-        const result = blendWithOriginal(
-          current, (img) => photon.sepia(img), amount, photon
-        );
-        if (result) current = result;
-        break;
-      }
-
-      case "colorBoost": {
-        const contrast = Math.min(100, Math.max(-100, Number(p.contrast || 0) * 100));
-        photon.adjust_contrast(current, contrast);
-        if (p.vibrance != null) {
-          const { fn, amount } = clampSaturation(Number(p.vibrance) * 0.5);
+        case "saturation": {
+          const { fn, amount } = clampSaturation(p.amount);
           photon[fn](current, amount);
+          break;
         }
-        break;
-      }
 
-      case "presetCrop": {
-        const srcW = current.get_width();
-        const srcH = current.get_height();
-        const coords = parsePresetCrop(p.preset, p.scale, srcW, srcH);
-        if (coords) {
-          const next = photon.crop(current, coords.x1, coords.y1, coords.x2, coords.y2);
-          if (next !== current) { current.free(); current = next; }
+        case "sepia": {
+          const amount = Number(p.amount ?? 1);
+          const result = blendWithOriginal(
+            current,
+            (img) => photon.sepia(img),
+            amount,
+            photon,
+          );
+          if (result) current = result;
+          break;
         }
-        break;
-      }
 
-      case "cropCircle": {
-        const srcW = current.get_width();
-        const srcH = current.get_height();
-        const diameter = Math.min(
-          Math.min(srcW, srcH),
-          Math.max(1, Math.round(Number(p.diameter) || Math.min(srcW, srcH))),
-        );
-        const radius = diameter / 2;
-        const cx = p.centerX != null ? (Number(p.centerX) / 100) * srcW : srcW / 2;
-        const cy = p.centerY != null ? (Number(p.centerY) / 100) * srcH : srcH / 2;
-        const raw = current.get_raw_pixels();
-        const masked = applyCircleMask(raw, srcW, srcH, cx, cy, radius);
-        const next = new photon.PhotonImage(masked, srcW, srcH);
-        current.free();
-        current = next;
-        break;
-      }
-
-      case "textOverlay": {
-        const text = String(p.text || "");
-        if (!text) break;
-        const srcW = current.get_width();
-        const srcH = current.get_height();
-        const xPx = Math.round((Number(p.x) || 0) * srcW);
-        const yPx = Math.round((Number(p.y) || 0) * srcH);
-        const size = Math.max(6, Math.min(200, Number(p.size) || 24));
-        // typeface param accepted but ignored — only Roboto is bundled in photon WASM
-        photon.draw_text(current, text, xPx, yPx, size);
-        break;
-      }
-
-      case "brightness": {
-        let raw = Number(p.amount) || 0;
-        if (Math.abs(raw) <= 1) raw = raw * 255;
-        const amount = Math.round(Math.min(255, Math.max(-255, raw)));
-        photon.adjust_brightness(current, amount);
-        break;
-      }
-
-      case "grayscale": {
-        const amount = Number(p.amount ?? 1);
-        const result = blendWithOriginal(
-          current, (img) => photon.grayscale_human_corrected(img), amount, photon
-        );
-        if (result) current = result;
-        break;
-      }
-
-      case "flip": {
-        const dir = String(p.direction || "h").toLowerCase();
-        if (dir === "v") {
-          photon.flipv(current);
-        } else {
-          photon.fliph(current);
+        case "colorBoost": {
+          const contrast = Math.min(
+            100,
+            Math.max(-100, Number(p.contrast || 0) * 100),
+          );
+          photon.adjust_contrast(current, contrast);
+          if (p.vibrance != null) {
+            const { fn, amount } = clampSaturation(Number(p.vibrance) * 0.5);
+            photon[fn](current, amount);
+          }
+          break;
         }
-        break;
-      }
 
-      case "rotate": {
-        const degrees = Number(p.degrees) || 0;
-        const next = photon.rotate(current, degrees);
-        if (next !== current) { current.free(); current = next; }
-        break;
-      }
-
-      case "blur": {
-        const radius = Math.max(1, Math.round(Number(p.radius) || 1));
-        photon.gaussian_blur(current, radius);
-        break;
-      }
-
-      case "tiltShift": {
-        const srcW = current.get_width();
-        const srcH = current.get_height();
-        const halfMin = Math.max(1, Math.min(srcW, srcH) / 2);
-        const mode = String(p.mode || "radial").toLowerCase();
-        const centerX = Math.min(1, Math.max(0, Number(p.centerX) || 0.5));
-        const centerY = Math.min(1, Math.max(0, Number(p.centerY) || 0.5));
-        const cx = centerX * (srcW - 1);
-        const cy = centerY * (srcH - 1);
-        const focusRadius = Math.min(1, Math.max(0, Number(p.focusRadius) || 0.35));
-        const variance = Math.min(1, Math.max(0.01, Number(p.variance) || 0.25));
-        const intensity = Math.min(1, Math.max(0, Number(p.intensity) || 0.85));
-        const blurRadius = Math.max(1, Math.min(32, Math.round(Number(p.blurRadius) || 10)));
-        if (intensity <= 0) break;
-
-        const original = new Uint8Array(current.get_raw_pixels());
-        const blurImage = new photon.PhotonImage(new Uint8Array(original), srcW, srcH);
-        try {
-          photon.gaussian_blur(blurImage, blurRadius);
-          const blurred = blurImage.get_raw_pixels();
-          const result = new Uint8Array(original.length);
-          for (let y = 0; y < srcH; y++) {
-            const dy = (y - cy) / halfMin;
-            for (let x = 0; x < srcW; x++) {
-              const dx = (x - cx) / halfMin;
-              const distance = mode === "linear" ? Math.abs(dy) : Math.hypot(dx, dy);
-              const blend = computeTiltShiftBlendFactor(
-                distance,
-                focusRadius,
-                variance,
-                intensity,
-              );
-              const keep = 1 - blend;
-              const offset = (y * srcW + x) * 4;
-              result[offset] = Math.round(original[offset] * keep + blurred[offset] * blend);
-              result[offset + 1] = Math.round(original[offset + 1] * keep + blurred[offset + 1] * blend);
-              result[offset + 2] = Math.round(original[offset + 2] * keep + blurred[offset + 2] * blend);
-              result[offset + 3] = Math.round(original[offset + 3] * keep + blurred[offset + 3] * blend);
+        case "presetCrop": {
+          const srcW = current.get_width();
+          const srcH = current.get_height();
+          const coords = parsePresetCrop(p.preset, p.scale, srcW, srcH);
+          if (coords) {
+            const next = photon.crop(
+              current,
+              coords.x1,
+              coords.y1,
+              coords.x2,
+              coords.y2,
+            );
+            if (next !== current) {
+              current.free();
+              current = next;
             }
           }
-          const next = new photon.PhotonImage(result, srcW, srcH);
+          break;
+        }
+
+        case "cropCircle": {
+          const srcW = current.get_width();
+          const srcH = current.get_height();
+          const diameter = Math.min(
+            Math.min(srcW, srcH),
+            Math.max(1, Math.round(Number(p.diameter) || Math.min(srcW, srcH))),
+          );
+          const radius = diameter / 2;
+          const cx =
+            p.centerX != null ? (Number(p.centerX) / 100) * srcW : srcW / 2;
+          const cy =
+            p.centerY != null ? (Number(p.centerY) / 100) * srcH : srcH / 2;
+          const raw = current.get_raw_pixels();
+          const masked = applyCircleMask(raw, srcW, srcH, cx, cy, radius);
+          const next = new photon.PhotonImage(masked, srcW, srcH);
           current.free();
           current = next;
-        } finally {
-          blurImage.free();
+          break;
         }
-        break;
-      }
 
-      case "padding": {
-        const pad = Math.max(0, Math.round(Number(p.padding) || 0));
-        if (pad === 0) break;
-        const r = Math.round(Math.min(255, Math.max(0, Number(p.r ?? 255))));
-        const g = Math.round(Math.min(255, Math.max(0, Number(p.g ?? 255))));
-        const b = Math.round(Math.min(255, Math.max(0, Number(p.b ?? 255))));
-        const a = Math.round(Math.min(255, Math.max(0, Number(p.a ?? 255))));
-        const rgba = new photon.Rgba(r, g, b, a);
-        const next = photon.padding_uniform(current, pad, rgba);
-        if (next !== current) { current.free(); current = next; }
-        break;
-      }
+        case "textOverlay": {
+          const text = String(p.text || "");
+          if (!text) break;
+          const srcW = current.get_width();
+          const srcH = current.get_height();
+          const xPx = Math.round((Number(p.x) || 0) * srcW);
+          const yPx = Math.round((Number(p.y) || 0) * srcH);
+          const size = Math.max(6, Math.min(200, Number(p.size) || 24));
+          // typeface param accepted but ignored — only Roboto is bundled in photon WASM
+          photon.draw_text(current, text, xPx, yPx, size);
+          break;
+        }
 
-      case "tint": {
-        const r = Math.round(Math.min(255, Math.max(-255, Number(p.r) || 0)));
-        const g = Math.round(Math.min(255, Math.max(-255, Number(p.g) || 0)));
-        const b = Math.round(Math.min(255, Math.max(-255, Number(p.b) || 0)));
-        photon.tint(current, r, g, b);
-        break;
-      }
+        case "brightness": {
+          let raw = Number(p.amount) || 0;
+          if (Math.abs(raw) <= 1) raw = raw * 255;
+          const amount = Math.round(Math.min(255, Math.max(-255, raw)));
+          photon.adjust_brightness(current, amount);
+          break;
+        }
 
-      case "hueRotate": {
-        const degrees = Number(p.degrees) || 0;
-        photon.hue_rotate_hsl(current, degrees);
-        break;
-      }
+        case "grayscale": {
+          const amount = Number(p.amount ?? 1);
+          const result = blendWithOriginal(
+            current,
+            (img) => photon.grayscale_human_corrected(img),
+            amount,
+            photon,
+          );
+          if (result) current = result;
+          break;
+        }
 
-      case "invert": {
-        const amount = Number(p.amount ?? 1);
-        const result = blendWithOriginal(
-          current, (img) => photon.invert(img), amount, photon
-        );
-        if (result) current = result;
-        break;
-      }
+        case "flip": {
+          const dir = String(p.direction || "h").toLowerCase();
+          if (dir === "v") {
+            photon.flipv(current);
+          } else {
+            photon.fliph(current);
+          }
+          break;
+        }
 
-      case "solarize": {
-        photon.solarize(current);
-        break;
-      }
+        case "rotate": {
+          const degrees = Number(p.degrees) || 0;
+          const next = photon.rotate(current, degrees);
+          if (next !== current) {
+            current.free();
+            current = next;
+          }
+          break;
+        }
 
-      case "pixelize": {
-        const size = Math.max(2, Math.round(Number(p.size) || 8));
-        photon.pixelize(current, size);
-        break;
-      }
+        case "blur": {
+          const radius = Math.max(1, Math.round(Number(p.radius) || 1));
+          photon.gaussian_blur(current, radius);
+          break;
+        }
 
-      case "duotone": {
-        // color1/color2: {r, g, b} each 0–255
-        const c1 = p.color1 || {};
-        const c2 = p.color2 || {};
-        const rgb1 = new photon.Rgb(
-          Math.round(Math.min(255, Math.max(0, Number(c1.r) || 0))),
-          Math.round(Math.min(255, Math.max(0, Number(c1.g) || 0))),
-          Math.round(Math.min(255, Math.max(0, Number(c1.b) || 0))),
-        );
-        const rgb2 = new photon.Rgb(
-          Math.round(Math.min(255, Math.max(0, Number(c2.r) || 0))),
-          Math.round(Math.min(255, Math.max(0, Number(c2.g) || 0))),
-          Math.round(Math.min(255, Math.max(0, Number(c2.b) || 0))),
-        );
-        photon.duotone(current, rgb1, rgb2);
-        break;
-      }
+        case "tiltShift": {
+          const srcW = current.get_width();
+          const srcH = current.get_height();
+          const halfMin = Math.max(1, Math.min(srcW, srcH) / 2);
+          const mode = String(p.mode || "radial").toLowerCase();
+          const centerX = Math.min(1, Math.max(0, Number(p.centerX) || 0.5));
+          const centerY = Math.min(1, Math.max(0, Number(p.centerY) || 0.5));
+          const cx = centerX * (srcW - 1);
+          const cy = centerY * (srcH - 1);
+          const focusRadius = Math.min(
+            1,
+            Math.max(0, Number(p.focusRadius) || 0.35),
+          );
+          const variance = Math.min(
+            1,
+            Math.max(0.01, Number(p.variance) || 0.25),
+          );
+          const intensity = Math.min(
+            1,
+            Math.max(0, Number(p.intensity) || 0.85),
+          );
+          const blurRadius = Math.max(
+            1,
+            Math.min(32, Math.round(Number(p.blurRadius) || 10)),
+          );
+          if (intensity <= 0) break;
 
-      case "oil": {
-        const radius = Math.max(1, Math.min(5, Math.round(Number(p.radius) || 2)));
-        const intensity = Math.min(60, Math.max(10, Number(p.intensity) || 30));
-        photon.oil(current, radius, intensity);
-        break;
-      }
+          const original = new Uint8Array(current.get_raw_pixels());
+          const blurImage = new photon.PhotonImage(
+            new Uint8Array(original),
+            srcW,
+            srcH,
+          );
+          try {
+            photon.gaussian_blur(blurImage, blurRadius);
+            const blurred = blurImage.get_raw_pixels();
+            const result = new Uint8Array(original.length);
+            for (let y = 0; y < srcH; y++) {
+              const dy = (y - cy) / halfMin;
+              for (let x = 0; x < srcW; x++) {
+                const dx = (x - cx) / halfMin;
+                const distance =
+                  mode === "linear" ? Math.abs(dy) : Math.hypot(dx, dy);
+                const blend = computeTiltShiftBlendFactor(
+                  distance,
+                  focusRadius,
+                  variance,
+                  intensity,
+                );
+                const keep = 1 - blend;
+                const offset = (y * srcW + x) * 4;
+                result[offset] = Math.round(
+                  original[offset] * keep + blurred[offset] * blend,
+                );
+                result[offset + 1] = Math.round(
+                  original[offset + 1] * keep + blurred[offset + 1] * blend,
+                );
+                result[offset + 2] = Math.round(
+                  original[offset + 2] * keep + blurred[offset + 2] * blend,
+                );
+                result[offset + 3] = Math.round(
+                  original[offset + 3] * keep + blurred[offset + 3] * blend,
+                );
+              }
+            }
+            const next = new photon.PhotonImage(result, srcW, srcH);
+            current.free();
+            current = next;
+          } finally {
+            blurImage.free();
+          }
+          break;
+        }
 
-      default:
-        // Unknown operator — skip silently to keep pipeline resilient
-        break;
+        case "padding": {
+          const pad = Math.max(0, Math.round(Number(p.padding) || 0));
+          if (pad === 0) break;
+          const r = Math.round(Math.min(255, Math.max(0, Number(p.r ?? 255))));
+          const g = Math.round(Math.min(255, Math.max(0, Number(p.g ?? 255))));
+          const b = Math.round(Math.min(255, Math.max(0, Number(p.b ?? 255))));
+          const a = Math.round(Math.min(255, Math.max(0, Number(p.a ?? 255))));
+          const rgba = new photon.Rgba(r, g, b, a);
+          const next = photon.padding_uniform(current, pad, rgba);
+          if (next !== current) {
+            current.free();
+            current = next;
+          }
+          break;
+        }
+
+        case "tint": {
+          const r = Math.round(Math.min(255, Math.max(-255, Number(p.r) || 0)));
+          const g = Math.round(Math.min(255, Math.max(-255, Number(p.g) || 0)));
+          const b = Math.round(Math.min(255, Math.max(-255, Number(p.b) || 0)));
+          photon.tint(current, r, g, b);
+          break;
+        }
+
+        case "hueRotate": {
+          const degrees = Number(p.degrees) || 0;
+          photon.hue_rotate_hsl(current, degrees);
+          break;
+        }
+
+        case "invert": {
+          const amount = Number(p.amount ?? 1);
+          const result = blendWithOriginal(
+            current,
+            (img) => photon.invert(img),
+            amount,
+            photon,
+          );
+          if (result) current = result;
+          break;
+        }
+
+        case "solarize": {
+          photon.solarize(current);
+          break;
+        }
+
+        case "pixelize": {
+          const size = Math.max(2, Math.round(Number(p.size) || 8));
+          photon.pixelize(current, size);
+          break;
+        }
+
+        case "duotone": {
+          // color1/color2: {r, g, b} each 0–255
+          const c1 = p.color1 || {};
+          const c2 = p.color2 || {};
+          const rgb1 = new photon.Rgb(
+            Math.round(Math.min(255, Math.max(0, Number(c1.r) || 0))),
+            Math.round(Math.min(255, Math.max(0, Number(c1.g) || 0))),
+            Math.round(Math.min(255, Math.max(0, Number(c1.b) || 0))),
+          );
+          const rgb2 = new photon.Rgb(
+            Math.round(Math.min(255, Math.max(0, Number(c2.r) || 0))),
+            Math.round(Math.min(255, Math.max(0, Number(c2.g) || 0))),
+            Math.round(Math.min(255, Math.max(0, Number(c2.b) || 0))),
+          );
+          photon.duotone(current, rgb1, rgb2);
+          break;
+        }
+
+        case "oil": {
+          const radius = Math.max(
+            1,
+            Math.min(5, Math.round(Number(p.radius) || 2)),
+          );
+          const intensity = Math.min(
+            60,
+            Math.max(10, Number(p.intensity) || 30),
+          );
+          photon.oil(current, radius, intensity);
+          break;
+        }
+
+        default:
+          // Unknown operator — skip silently to keep pipeline resilient
+          break;
+      }
+      if (op.type !== "source" && onProgress) {
+        onProgress(++done, total, op.type);
+      }
     }
-    if (op.type !== "source" && onProgress) {
-      onProgress(++done, total, op.type);
-    }
-  }
   } catch (err) {
     // Free intermediate image if it diverged from the original before re-throwing
     if (current !== img) current.free();

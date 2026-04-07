@@ -19,9 +19,10 @@
     "dev": "next dev --turbopack",
     "build": "node scripts/build-with-lock.mjs next build",
     "start": "next start",
-    "cf:build": "node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs",
-    "cf:preview": "node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs && wrangler dev",
-    "cf:deploy": "node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs && wrangler deploy",
+    "clean": "rm -rf .open-next .next .wrangler/tmp",
+    "cf:build": "NODE_OPTIONS=--max-old-space-size=8192 node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs",
+    "cf:preview": "NODE_OPTIONS=--max-old-space-size=8192 node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs && wrangler dev",
+    "cf:deploy": "NODE_OPTIONS=--max-old-space-size=8192 node scripts/build-with-lock.mjs opennextjs-cloudflare build && node scripts/patch-cf-worker.mjs && wrangler deploy",
     "perf:budget": "node scripts/check-performance-budgets.mjs",
     "wasm:upload": "bash scripts/upload-wasm-to-r2.sh",
     "lint": "eslint .",
@@ -50,12 +51,12 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
-    "@opennextjs/cloudflare": "^1.4.0",
+    "@opennextjs/cloudflare": "^1.18.0",
     "@tailwindcss/postcss": "^4",
-    "eslint": "^9",
-    "eslint-config-next": "^16.2.0",
+    "eslint": "^10.1.0",
+    "eslint-config-next": "^16.2.2",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^4",
-    "wrangler": "^4.70.0"
+    "wrangler": "^4.80.0"
   }
 }

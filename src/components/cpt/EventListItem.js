@@ -63,7 +63,10 @@ export default function EventListItem({ post }) {
       )}
 
       {dateLabel && (
-        <div className="text-sm text-gray-600 mb-2 flex items-center gap-2" aria-label="Event date">
+        <div
+          className="text-sm text-gray-600 mb-2 flex items-center gap-2"
+          aria-label="Event date"
+        >
           {dateLabel}
           {passed ? (
             <span className="inline-flex items-center rounded-full bg-rose-700 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">

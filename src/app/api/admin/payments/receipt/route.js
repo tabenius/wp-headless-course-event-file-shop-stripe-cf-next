@@ -29,7 +29,9 @@ async function stripeGet(path) {
   });
   if (!response.ok) {
     const json = await response.json().catch(() => null);
-    throw new Error(json?.error?.message || `Stripe ${response.status}: ${path}`);
+    throw new Error(
+      json?.error?.message || `Stripe ${response.status}: ${path}`,
+    );
   }
   return response.json();
 }
@@ -45,10 +47,14 @@ async function fetchReceiptData(chargeId) {
 
   const [customer, invoice] = await Promise.all([
     typeof charge.customer === "string"
-      ? stripeGet(`/v1/customers/${encodeURIComponent(charge.customer)}`).catch(() => null)
+      ? stripeGet(`/v1/customers/${encodeURIComponent(charge.customer)}`).catch(
+          () => null,
+        )
       : Promise.resolve(null),
     typeof charge.invoice === "string"
-      ? stripeGet(`/v1/invoices/${encodeURIComponent(charge.invoice)}`).catch(() => null)
+      ? stripeGet(`/v1/invoices/${encodeURIComponent(charge.invoice)}`).catch(
+          () => null,
+        )
       : Promise.resolve(null),
   ]);
 
@@ -86,7 +92,11 @@ async function fetchReceiptData(chargeId) {
 
   // Line items from invoice, or synthesise one from the charge
   let lineItems;
-  if (invoice && Array.isArray(invoice.lines?.data) && invoice.lines.data.length > 0) {
+  if (
+    invoice &&
+    Array.isArray(invoice.lines?.data) &&
+    invoice.lines.data.length > 0
+  ) {
     lineItems = invoice.lines.data.map((line) => ({
       description: line.description || line.price?.nickname || "",
       quantity: line.quantity || 1,
@@ -225,7 +235,9 @@ function renderHtmlReceipt(data) {
     footer,
   } = data;
 
-  const title = receiptNumber ? `Receipt #${escHtml(receiptNumber)}` : `Receipt — ${escHtml(chargeId)}`;
+  const title = receiptNumber
+    ? `Receipt #${escHtml(receiptNumber)}`
+    : `Receipt — ${escHtml(chargeId)}`;
   const statusBadge = refunded
     ? `<span style="color:#b91c1c;font-weight:600">Refunded${amountRefunded < total ? " (partial)" : ""}</span>`
     : `<span style="color:#15803d;font-weight:600">Paid</span>`;
@@ -346,7 +358,10 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const chargeId = String(searchParams.get("chargeId") || "").trim();
   if (!chargeId) {
-    return NextResponse.json({ ok: false, error: "chargeId is required." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "chargeId is required." },
+      { status: 400 },
+    );
   }
 
   const format = String(searchParams.get("format") || "html").toLowerCase();
@@ -355,7 +370,8 @@ export async function GET(request) {
   try {
     data = await fetchReceiptData(chargeId);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to fetch receipt data.";
+    const message =
+      err instanceof Error ? err.message : "Failed to fetch receipt data.";
     if (format === "json") {
       return NextResponse.json({ ok: false, error: message }, { status: 502 });
     }

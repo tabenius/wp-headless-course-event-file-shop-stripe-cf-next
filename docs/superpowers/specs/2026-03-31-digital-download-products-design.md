@@ -61,11 +61,11 @@ Make digital download products fully functional: any asset in the media library 
 
 ### Pricing states
 
-| `free` | `priceCents` | Result |
-|--------|-------------|--------|
-| `true` | forced to 0 | Listable as free product |
-| `false` | > 0 | Listable with Stripe checkout |
-| `false` | 0 | **Ambiguous** — hidden from shop, warning in admin |
+| `free`  | `priceCents` | Result                                             |
+| ------- | ------------ | -------------------------------------------------- |
+| `true`  | forced to 0  | Listable as free product                           |
+| `false` | > 0          | Listable with Stripe checkout                      |
+| `false` | 0            | **Ambiguous** — hidden from shop, warning in admin |
 
 ### Sanitization rules
 
@@ -142,13 +142,14 @@ Make digital download products fully functional: any asset in the media library 
 
 **Enforce in `sanitizeProduct`:** A product mode is exactly one of three values, and irrelevant fields are cleared:
 
-| Mode | Required | Cleared |
-|------|----------|---------|
-| `asset` | `assetId` | `courseUri` |
-| `manual_uri` | `courseUri` | `assetId`, `fileUrl` |
-| `digital_file` | `fileUrl` | `courseUri`, `assetId` |
+| Mode           | Required    | Cleared                |
+| -------------- | ----------- | ---------------------- |
+| `asset`        | `assetId`   | `courseUri`            |
+| `manual_uri`   | `courseUri` | `assetId`, `fileUrl`   |
+| `digital_file` | `fileUrl`   | `courseUri`, `assetId` |
 
 **Product type derived from mode, never set independently:**
+
 - `asset` or `digital_file` → `type: "digital_file"`
 - `manual_uri` → `type: "course"`
 
@@ -163,6 +164,7 @@ Make digital download products fully functional: any asset in the media library 
 ## i18n keys needed
 
 All three locales (EN/SV/ES):
+
 - `admin.productFree` / `admin.productFreeHint`
 - `admin.productPriceAmbiguous` (warning text)
 - `admin.productCreatedSetPrice` (post-creation nudge)
@@ -174,17 +176,17 @@ All three locales (EN/SV/ES):
 
 ## Files changed (summary)
 
-| File | Change |
-|------|--------|
-| `src/app/api/admin/media-library/route.js` | Auto-assign assetId during HEAD probe |
-| `src/lib/s3upload.js` | Add helper to write metadata back to R2 object |
-| `src/app/api/admin/products/from-asset/route.js` | Better error reporting, new defaults |
-| `src/lib/digitalProducts.js` | `free` field, stricter mutual exclusivity, listability check |
-| `src/components/admin/AdminProductsTab.js` | Free toggle, pricing warnings, mode-switch cleanup |
-| `src/components/admin/AdminMediaLibraryTab.js` | Minor: button should work now (no code change needed) |
-| `src/app/digital/[slug]/route.js` | **New:** download route behind paywall |
-| `src/app/api/digital/claim/route.js` | **New:** free product claim endpoint |
-| `src/components/shop/ShopProductDetail.js` | Free vs paid display, claim button |
-| `src/app/inventory/page.js` | Link to `/digital/{slug}` |
-| `src/app/api/stripe/webhook/route.js` | Email links use `/digital/{slug}` |
-| `src/lib/i18n/{en,sv,es}.json` | New keys |
+| File                                             | Change                                                       |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `src/app/api/admin/media-library/route.js`       | Auto-assign assetId during HEAD probe                        |
+| `src/lib/s3upload.js`                            | Add helper to write metadata back to R2 object               |
+| `src/app/api/admin/products/from-asset/route.js` | Better error reporting, new defaults                         |
+| `src/lib/digitalProducts.js`                     | `free` field, stricter mutual exclusivity, listability check |
+| `src/components/admin/AdminProductsTab.js`       | Free toggle, pricing warnings, mode-switch cleanup           |
+| `src/components/admin/AdminMediaLibraryTab.js`   | Minor: button should work now (no code change needed)        |
+| `src/app/digital/[slug]/route.js`                | **New:** download route behind paywall                       |
+| `src/app/api/digital/claim/route.js`             | **New:** free product claim endpoint                         |
+| `src/components/shop/ShopProductDetail.js`       | Free vs paid display, claim button                           |
+| `src/app/inventory/page.js`                      | Link to `/digital/{slug}`                                    |
+| `src/app/api/stripe/webhook/route.js`            | Email links use `/digital/{slug}`                            |
+| `src/lib/i18n/{en,sv,es}.json`                   | New keys                                                     |

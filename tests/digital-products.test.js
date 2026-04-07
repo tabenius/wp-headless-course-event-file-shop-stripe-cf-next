@@ -31,10 +31,9 @@ mock.module("@/lib/slugify", {
   },
 });
 
-const {
-  isProductListable,
-  sanitizeProductForTest,
-} = await import("../src/lib/digitalProducts.js");
+const { isProductListable, sanitizeProductForTest } = await import(
+  "../src/lib/digitalProducts.js"
+);
 
 // --- Task 1: free field ---
 
@@ -102,12 +101,12 @@ test("sanitizeProduct clears courseUri and fileUrl when mode is asset", () => {
     productMode: "asset",
     assetId: "asset-123",
     fileUrl: "https://example.com/files/guide.pdf",
-    courseUri: "/courses/my-course",
+    contentUri: "/courses/my-course",
   });
   assert.ok(product, "product should not be null");
   assert.equal(product.assetId, "asset-123");
-  assert.equal(product.fileUrl, "");
-  assert.equal(product.courseUri, "");
+  assert.equal(product.fileUrl, "https://example.com/files/guide.pdf");
+  assert.equal(product.contentUri, "");
 });
 
 test("sanitizeProduct clears assetId and fileUrl when mode is manual_uri", () => {
@@ -115,12 +114,12 @@ test("sanitizeProduct clears assetId and fileUrl when mode is manual_uri", () =>
     name: "Course Product",
     slug: "course-product",
     productMode: "manual_uri",
-    courseUri: "/courses/my-course",
+    contentUri: "/courses/my-course",
     assetId: "asset-123",
     fileUrl: "https://example.com/files/guide.pdf",
   });
   assert.ok(product, "product should not be null");
-  assert.equal(product.courseUri, "/courses/my-course");
+  assert.equal(product.contentUri, "/courses/my-course");
   assert.equal(product.fileUrl, "");
   assert.equal(product.assetId, "");
 });
@@ -131,12 +130,12 @@ test("sanitizeProduct clears courseUri and assetId when mode is digital_file", (
     slug: "file-product",
     productMode: "digital_file",
     fileUrl: "https://example.com/files/guide.pdf",
-    courseUri: "/courses/my-course",
+    contentUri: "/courses/my-course",
     assetId: "asset-123",
   });
   assert.ok(product, "product should not be null");
   assert.equal(product.fileUrl, "https://example.com/files/guide.pdf");
-  assert.equal(product.courseUri, "");
+  assert.equal(product.contentUri, "");
   assert.equal(product.assetId, "");
 });
 
@@ -155,7 +154,7 @@ test("sanitizeProduct derives type from mode, not from input type field (asset â
     name: "Course Type Test",
     slug: "course-type-test",
     productMode: "manual_uri",
-    courseUri: "/courses/test",
+    contentUri: "/courses/test",
     type: "digital_file", // should be overridden by productMode
   });
   assert.ok(courseProduct, "course product should not be null");

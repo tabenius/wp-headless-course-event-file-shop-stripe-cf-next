@@ -52,9 +52,6 @@ const html = `<!doctype html>
 
 await writeFile(htmlOut, html, "utf8");
 
-await Promise.all([
-  rm(jsOut, { force: true }),
-  rm(cssOut, { force: true }),
-]);
+await Promise.all([rm(jsOut, { force: true }), rm(cssOut, { force: true })]);
 
 console.log(`Wrote ${htmlOut}`);

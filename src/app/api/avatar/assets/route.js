@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getOwnAvatar } from "@/lib/avatarStore";
-import {
-  listAssetsByCreator,
-  upsertAssetRecord,
-} from "@/lib/avatarFeedStore";
+import { listAssetsByCreator, upsertAssetRecord } from "@/lib/avatarFeedStore";
 
 function unauthorized() {
   return NextResponse.json(
@@ -22,7 +19,9 @@ function createAssetId() {
       bytes[i] = Math.floor(Math.random() * 256);
     }
   }
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 function statusForError(error) {
@@ -117,4 +116,3 @@ export async function POST(request) {
     );
   }
 }
-

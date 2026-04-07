@@ -1,6 +1,7 @@
 # Billing / Subscriptions
 
 ## Table of contents
+
 - When to use Billing APIs
 - Recommended frontend pairing
 - Traps to avoid

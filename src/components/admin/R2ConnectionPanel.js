@@ -8,7 +8,11 @@ import {
   resolveStorageServerHost,
 } from "@/lib/mediaLibraryHelpers";
 
-export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInfoDetails }) {
+export default function R2ConnectionPanel({
+  uploadBackend,
+  uploadInfo,
+  uploadInfoDetails,
+}) {
   const [showSecret, setShowSecret] = useState(false);
   const [copiedField, setCopiedField] = useState("");
   const [bookmarkDownloading, setBookmarkDownloading] = useState(false);
@@ -34,25 +38,41 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
 
   const checklistRows = [
     { id: "protocol", label: t("admin.clientProtocol"), value: "S3" },
-    { id: "host", label: t("admin.clientHost", "Host / server"), value: serverHost || t("common.noDetails") },
+    {
+      id: "host",
+      label: t("admin.clientHost", "Host / server"),
+      value: serverHost || t("common.noDetails"),
+    },
     {
       id: "bucketPath",
       label: t("admin.clientBucketPath", "Bucket / path"),
       value: bucketPathDisplay || t("common.noDetails"),
     },
-    { id: "accessKey", label: t("admin.clientAccessKey"), value: clientDetails.accessKeyId || t("common.noDetails") },
-    { id: "secretKey", label: t("admin.clientSecretKey"), value: clientDetails.secretKey || t("common.noDetails"), secret: true },
+    {
+      id: "accessKey",
+      label: t("admin.clientAccessKey"),
+      value: clientDetails.accessKeyId || t("common.noDetails"),
+    },
+    {
+      id: "secretKey",
+      label: t("admin.clientSecretKey"),
+      value: clientDetails.secretKey || t("common.noDetails"),
+      secret: true,
+    },
   ];
 
   async function copyValue(fieldId, value) {
     const text = typeof value === "string" ? value.trim() : "";
     if (!text || text === t("common.noDetails")) return;
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return;
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText)
+      return;
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldId);
       setTimeout(() => setCopiedField(""), 1200);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   async function handleBookmarkDownload() {
@@ -68,7 +88,10 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
       setBookmarkError(
         error instanceof Error
           ? error.message
-          : t("common.downloadFailed", "Download failed. Please try again soon."),
+          : t(
+              "common.downloadFailed",
+              "Download failed. Please try again soon.",
+            ),
       );
     } finally {
       setBookmarkDownloading(false);
@@ -83,11 +106,15 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           <h3 className="inline-flex rounded-md border border-slate-500 bg-slate-700 px-3 py-1 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-slate-100">
             {t("admin.clientChecklistTitle")}
           </h3>
-          <p className="text-[11px] text-gray-500">{t("admin.clientChecklistHint")}</p>
+          <p className="text-[11px] text-gray-500">
+            {t("admin.clientChecklistHint")}
+          </p>
           <div className="border rounded-xl p-3 bg-slate-100/60 border-slate-300 space-y-2 font-sans">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 text-slate-800">
-                {backendMode === "r2" ? t("admin.uploadClientModeR2") : t("admin.uploadClientModeS3")}
+                {backendMode === "r2"
+                  ? t("admin.uploadClientModeR2")
+                  : t("admin.uploadClientModeS3")}
               </span>
             </div>
             <div className="space-y-1.5">
@@ -95,13 +122,17 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
                 const rawValue = row.value || t("common.noDetails");
                 const isNoDetails = rawValue === t("common.noDetails");
                 const displayValue =
-                  row.secret && !showSecret && !isNoDetails ? "••••••••••••••••" : rawValue;
+                  row.secret && !showSecret && !isNoDetails
+                    ? "••••••••••••••••"
+                    : rawValue;
                 return (
                   <div
                     key={row.id}
                     className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)_auto] gap-2 items-center bg-slate-100 border border-slate-300 rounded px-2 py-1.5"
                   >
-                    <span className="text-[11px] font-medium text-gray-500">{row.label}</span>
+                    <span className="text-[11px] font-medium text-gray-500">
+                      {row.label}
+                    </span>
                     <span
                       className={`font-mono text-[12px] break-all ${
                         row.secret && !showSecret && !isNoDetails
@@ -118,7 +149,9 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
                           onClick={() => setShowSecret((prev) => !prev)}
                           className="text-[10px] text-slate-700 hover:underline"
                         >
-                          {showSecret ? t("admin.hideSecret") : t("admin.showSecret")}
+                          {showSecret
+                            ? t("admin.hideSecret")
+                            : t("admin.showSecret")}
                         </button>
                       )}
                       <button
@@ -127,7 +160,9 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
                         disabled={isNoDetails}
                         className="text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        {copiedField === row.id ? t("admin.clientCopied") : t("common.copy")}
+                        {copiedField === row.id
+                          ? t("admin.clientCopied")
+                          : t("common.copy")}
                       </button>
                     </div>
                   </div>
@@ -142,7 +177,10 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-gray-700 font-sans">
-            {t("admin.uploadClientsSectionTitle", "Upload with CyberDuck or WinSCP over R2 / S3")}
+            {t(
+              "admin.uploadClientsSectionTitle",
+              "Upload with CyberDuck or WinSCP over R2 / S3",
+            )}
           </h3>
           <button
             type="button"
@@ -150,7 +188,11 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             disabled={bookmarkDownloading || !canDownloadBookmark}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-slate-700 text-slate-100 hover:bg-slate-800 disabled:opacity-50"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+            <svg
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              className="w-3.5 h-3.5"
+            >
               <path d="M8 12l-5-5h3V2h4v5h3L8 12z" />
               <rect x="2" y="13" width="12" height="1.5" rx=".75" />
             </svg>
@@ -175,7 +217,12 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             >
               <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
                 <circle cx="12" cy="12" r="10" fill="#fbbf24" />
-                <path d="M12 4v16M4 12h16" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M12 4v16M4 12h16"
+                  stroke="#0f172a"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
               <span>{t("admin.r2Docs")}</span>
             </a>
@@ -188,8 +235,21 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
               className="flex items-center gap-2 rounded-full border border-gray-700/60 px-3 py-1 transition hover:border-gray-400"
             >
               <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-                <rect x="3" y="7" width="18" height="10" rx="2" fill="#f5af19" />
-                <path d="M6 16 4 9h4l2 7h4l2-7h4l-2 7" stroke="#1f2937" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <rect
+                  x="3"
+                  y="7"
+                  width="18"
+                  height="10"
+                  rx="2"
+                  fill="#f5af19"
+                />
+                <path
+                  d="M6 16 4 9h4l2 7h4l2-7h4l-2 7"
+                  stroke="#1f2937"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               <span>{t("admin.s3Docs")}</span>
             </a>
@@ -201,15 +261,36 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             <span className="flex items-center gap-3">
               <span className="h-7 w-7 flex-shrink-0">
                 <svg viewBox="0 0 32 32" className="h-7 w-7">
-                  <rect x="2" y="7" width="28" height="18" rx="4" fill="#1c3f94" />
-                  <path d="M8 12h16" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-                  <path d="M8 18h12" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+                  <rect
+                    x="2"
+                    y="7"
+                    width="28"
+                    height="18"
+                    rx="4"
+                    fill="#1c3f94"
+                  />
+                  <path
+                    d="M8 12h16"
+                    stroke="#fff"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M8 18h12"
+                    stroke="#fff"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
                   <circle cx="24" cy="23" r="2" fill="#fcd34d" />
                 </svg>
               </span>
               <span>
-                <span className="block font-semibold text-gray-900">{t("admin.winscpTitle")}</span>
-                <span className="block text-[11px] text-gray-500">{t("admin.winscpSummary")}</span>
+                <span className="block font-semibold text-gray-900">
+                  {t("admin.winscpTitle")}
+                </span>
+                <span className="block text-[11px] text-gray-500">
+                  {t("admin.winscpSummary")}
+                </span>
               </span>
             </span>
             <a
@@ -235,13 +316,23 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
             <span className="flex items-center gap-3">
               <span className="h-7 w-7 flex-shrink-0">
                 <svg viewBox="0 0 32 32" className="h-7 w-7">
-                  <path d="M4 18c0-6 6-10 12-10s12 4 12 10c0 5-6 10-12 10S4 23 4 18" fill="#f59e0b" />
-                  <path d="M10 16c0-2 2-4 5-4s5 2 5 4-2 4-5 4-5-2-5-4z" fill="#fff" />
+                  <path
+                    d="M4 18c0-6 6-10 12-10s12 4 12 10c0 5-6 10-12 10S4 23 4 18"
+                    fill="#f59e0b"
+                  />
+                  <path
+                    d="M10 16c0-2 2-4 5-4s5 2 5 4-2 4-5 4-5-2-5-4z"
+                    fill="#fff"
+                  />
                 </svg>
               </span>
               <span>
-                <span className="block font-semibold text-gray-900">{t("admin.cyberduckTitle")}</span>
-                <span className="block text-[11px] text-gray-500">{t("admin.cyberduckSummary")}</span>
+                <span className="block font-semibold text-gray-900">
+                  {t("admin.cyberduckTitle")}
+                </span>
+                <span className="block text-[11px] text-gray-500">
+                  {t("admin.cyberduckSummary")}
+                </span>
               </span>
             </span>
             <a
@@ -267,10 +358,16 @@ export default function R2ConnectionPanel({ uploadBackend, uploadInfo, uploadInf
           {(serverHost || clientDetails.endpoint) && (
             <div className="mt-3 pt-3 border-t border-amber-200">
               <p className="text-[11px] text-gray-500 mb-2">
-                {t("admin.cyberduckProfileHint", "Download a pre-filled bookmark file with credentials included. Double-click it to open directly in CyberDuck.")}
+                {t(
+                  "admin.cyberduckProfileHint",
+                  "Download a pre-filled bookmark file with credentials included. Double-click it to open directly in CyberDuck.",
+                )}
               </p>
               <p className="text-[11px] text-gray-600">
-                {t("admin.cyberduckProfileNowInHeader", "Use the download button in the section header above to fetch the bookmark file.")}
+                {t(
+                  "admin.cyberduckProfileNowInHeader",
+                  "Use the download button in the section header above to fetch the bookmark file.",
+                )}
               </p>
             </div>
           )}

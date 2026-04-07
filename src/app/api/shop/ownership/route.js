@@ -4,7 +4,10 @@ import {
   listAccessibleDigitalProductIds,
   grantDigitalAccess,
 } from "@/lib/digitalAccessStore";
-import { grantContentAccess, listAccessibleContentUris } from "@/lib/contentAccess";
+import {
+  grantContentAccess,
+  listAccessibleContentUris,
+} from "@/lib/contentAccess";
 import { fetchStripeCheckoutSession } from "@/lib/stripe";
 import { appendServerLog } from "@/lib/serverLog";
 
@@ -21,7 +24,9 @@ function normalizeUriList(value) {
 export async function POST(request) {
   const startedAt = Date.now();
   const session = await auth();
-  const userEmail = String(session?.user?.email || "").trim().toLowerCase();
+  const userEmail = String(session?.user?.email || "")
+    .trim()
+    .toLowerCase();
 
   let payload = {};
   try {
@@ -33,9 +38,13 @@ export async function POST(request) {
   const checkoutStatus =
     typeof payload?.checkoutStatus === "string" ? payload.checkoutStatus : "";
   const checkoutSessionId =
-    typeof payload?.checkoutSessionId === "string" ? payload.checkoutSessionId : "";
+    typeof payload?.checkoutSessionId === "string"
+      ? payload.checkoutSessionId
+      : "";
   const checkoutProductId =
-    typeof payload?.checkoutProductId === "string" ? payload.checkoutProductId : "";
+    typeof payload?.checkoutProductId === "string"
+      ? payload.checkoutProductId
+      : "";
   const wpUris = normalizeUriList(payload?.uris);
 
   let checkoutError = false;
@@ -96,27 +105,29 @@ export async function POST(request) {
     });
   }
 
-  const ownedProductIds = await listAccessibleDigitalProductIds(userEmail).catch(
-    (err) => {
-      appendServerLog({
-        level: "error",
-        msg: `listAccessibleDigitalProductIds failed for ${userEmail}: ${err?.message || err}`,
-      }).catch(() => {});
-      return [];
-    },
-  );
+  const ownedProductIds = await listAccessibleDigitalProductIds(
+    userEmail,
+  ).catch((err) => {
+    appendServerLog({
+      level: "error",
+      msg: `listAccessibleDigitalProductIds failed for ${userEmail}: ${err?.message || err}`,
+    }).catch(() => {});
+    return [];
+  });
 
   let ownedUris = [];
   let accessBatchFailed = false;
   if (wpUris.length > 0) {
-    ownedUris = await listAccessibleContentUris(wpUris, userEmail).catch((err) => {
-      accessBatchFailed = true;
-      appendServerLog({
-        level: "error",
-        msg: `listAccessibleContentUris failed for ${userEmail}: ${err?.message || err}`,
-      }).catch(() => {});
-      return [];
-    });
+    ownedUris = await listAccessibleContentUris(wpUris, userEmail).catch(
+      (err) => {
+        accessBatchFailed = true;
+        appendServerLog({
+          level: "error",
+          msg: `listAccessibleContentUris failed for ${userEmail}: ${err?.message || err}`,
+        }).catch(() => {});
+        return [];
+      },
+    );
   }
 
   return NextResponse.json({

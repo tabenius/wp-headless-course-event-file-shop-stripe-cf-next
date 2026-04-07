@@ -49,8 +49,8 @@ export function resolveProductAction(product) {
 /** Display label for the product type. */
 export function resolveProductTypeLabel(product) {
   const mode = product?.productMode || "digital_file";
-  if (mode === "asset") return "Asset product";
+  if (mode === "asset") return "Asset";
   if (mode === "digital_file") return "Digital file";
   if (mode === "manual_uri") return "Protected content";
-  return "Product";
+  return "Asset";
 }

@@ -22,15 +22,15 @@ export async function checkRateLimit(
   try {
     const window = Math.floor(Date.now() / (windowSecs * 1000));
     const key = `rl:${endpoint}:${identifier}:${window}`;
-    const expiresAt = new Date(
-      (window + 2) * windowSecs * 1000,
-    ).toISOString();
+    const expiresAt = new Date((window + 2) * windowSecs * 1000).toISOString();
 
     const db = await tryGetD1();
     if (db) {
       // Opportunistic cleanup of expired rows (~1% of requests)
       if (Math.random() < 0.01) {
-        db.prepare("DELETE FROM rate_limits WHERE expires_at < datetime('now')").run().catch(() => {});
+        db.prepare("DELETE FROM rate_limits WHERE expires_at < datetime('now')")
+          .run()
+          .catch(() => {});
       }
       const row = await db
         .prepare(

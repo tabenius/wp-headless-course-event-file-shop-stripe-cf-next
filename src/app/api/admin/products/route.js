@@ -4,6 +4,7 @@ import {
   listDigitalProducts,
   saveDigitalProducts,
 } from "@/lib/digitalProducts";
+import { listUsersWithProductAccess } from "@/lib/digitalAccessStore";
 import { t } from "@/lib/i18n";
 
 export async function GET(request) {
@@ -37,13 +38,31 @@ export async function DELETE(request) {
       );
     }
 
+    // Check if anyone has purchased / been granted access to this product
+    const owners = await listUsersWithProductAccess(target.id).catch(() => []);
+    const confirmed = searchParams.get("confirm") === "true";
+    if (owners.length > 0 && !confirmed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          needsConfirmation: true,
+          ownerCount: owners.length,
+          error: `This product has ${owners.length} owner(s). Deleting it will remove it from their inventory. Pass confirm=true to proceed.`,
+        },
+        { status: 409 },
+      );
+    }
+
     const remaining = products.filter((p) => p?.slug !== slug);
     const saved = await saveDigitalProducts(remaining);
     return NextResponse.json({ ok: true, deleted: slug, products: saved });
   } catch (error) {
     console.error("Admin product delete failed:", error);
     return NextResponse.json(
-      { ok: false, error: `Could not delete product: ${error?.message || "unknown error"}.` },
+      {
+        ok: false,
+        error: `Could not delete product: ${error?.message || "unknown error"}.`,
+      },
       { status: 500 },
     );
   }

@@ -15,12 +15,7 @@ export const revalidate = 300;
 async function ShopPageContent() {
   const items = await listAllShopItems();
 
-  return (
-    <ShopIndex
-      items={items}
-      stripeEnabled={isStripeEnabled()}
-    />
-  );
+  return <ShopIndex items={items} stripeEnabled={isStripeEnabled()} />;
 }
 
 export default function ShopPage() {

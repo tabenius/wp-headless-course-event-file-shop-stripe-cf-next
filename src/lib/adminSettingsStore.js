@@ -20,7 +20,9 @@ const inMemory = {
 const ENV_NAME_RE = /^[A-Z][A-Z0-9_]{0,95}$/;
 
 function normalizeUrl(value, max = 500) {
-  const raw = String(value || "").trim().slice(0, max);
+  const raw = String(value || "")
+    .trim()
+    .slice(0, max);
   if (!raw) return "";
   try {
     const parsed = new URL(raw);
@@ -94,7 +96,10 @@ function normalizeEnvName(name) {
 
 function normalizeEnvOverrides(input) {
   const valuesInput =
-    input && typeof input === "object" && input.values && typeof input.values === "object"
+    input &&
+    typeof input === "object" &&
+    input.values &&
+    typeof input.values === "object"
       ? input.values
       : input && typeof input === "object"
         ? input
@@ -103,7 +108,9 @@ function normalizeEnvOverrides(input) {
   for (const [rawName, rawValue] of Object.entries(valuesInput || {})) {
     const name = normalizeEnvName(rawName);
     if (!name) continue;
-    const value = String(rawValue ?? "").trim().slice(0, 8000);
+    const value = String(rawValue ?? "")
+      .trim()
+      .slice(0, 8000);
     if (!value) continue;
     values[name] = value;
   }
@@ -194,7 +201,9 @@ export async function saveEnvOverride(name, value) {
   if (!envName) {
     throw new Error("Invalid environment variable name.");
   }
-  const nextValue = String(value || "").trim().slice(0, 8000);
+  const nextValue = String(value || "")
+    .trim()
+    .slice(0, 8000);
   const current = await readEnvOverrides();
   const values = { ...(current.values || {}) };
   if (!nextValue) {

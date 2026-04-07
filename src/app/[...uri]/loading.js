@@ -3,4 +3,3 @@ import { StorefrontArticleSkeleton } from "@/components/common/StorefrontSkeleto
 export default function Loading() {
   return <StorefrontArticleSkeleton paragraphs={10} />;
 }
-

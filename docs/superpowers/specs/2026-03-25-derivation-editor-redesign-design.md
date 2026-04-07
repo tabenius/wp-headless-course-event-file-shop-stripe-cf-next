@@ -24,15 +24,15 @@ AdminMediaLibraryTab.js (existing, trimmed ~600 lines)
 
 ### File Responsibilities
 
-| File | Responsibility | Estimated lines |
-|------|---------------|-----------------|
-| `DerivationEditor.js` | Container component. Owns derivation state (selected derivation, operations array, validation, API calls for load/save/apply). Passes props down. | ~200 |
-| `DerivationSelector.js` | Derivation dropdown, metadata form (id, name, description, asset types), "show matching / show all" toggle. | ~120 |
-| `OperationGridPicker.js` | Renders four category sections. Each section has a heading and a row of icon tiles. Clicking a tile calls `onAddOperation(type)`. | ~100 |
-| `OperationPipeline.js` | Renders ordered list of `OperationCard` components. Manages HTML5 drag-and-drop reorder logic. Calls `onReorder(fromIndex, toIndex)`. | ~120 |
-| `OperationCard.js` | Single pipeline step. Drag handle, header (step number, name, category badge, remove button), collapsible body with parameter controls (sliders, text inputs, selects). | ~180 |
-| `DerivationPreview.js` | Preview image display, Apply/Save buttons, progress bar, error state. | ~100 |
-| `operationRegistry.js` | Exports `OPERATION_SCHEMAS` (all 22 operations), `OPERATION_CATEGORIES`, and icon mappings. Pure data, no JSX. | ~150 |
+| File                     | Responsibility                                                                                                                                                          | Estimated lines |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `DerivationEditor.js`    | Container component. Owns derivation state (selected derivation, operations array, validation, API calls for load/save/apply). Passes props down.                       | ~200            |
+| `DerivationSelector.js`  | Derivation dropdown, metadata form (id, name, description, asset types), "show matching / show all" toggle.                                                             | ~120            |
+| `OperationGridPicker.js` | Renders four category sections. Each section has a heading and a row of icon tiles. Clicking a tile calls `onAddOperation(type)`.                                       | ~100            |
+| `OperationPipeline.js`   | Renders ordered list of `OperationCard` components. Manages HTML5 drag-and-drop reorder logic. Calls `onReorder(fromIndex, toIndex)`.                                   | ~120            |
+| `OperationCard.js`       | Single pipeline step. Drag handle, header (step number, name, category badge, remove button), collapsible body with parameter controls (sliders, text inputs, selects). | ~180            |
+| `DerivationPreview.js`   | Preview image display, Apply/Save buttons, progress bar, error state.                                                                                                   | ~100            |
+| `operationRegistry.js`   | Exports `OPERATION_SCHEMAS` (all 22 operations), `OPERATION_CATEGORIES`, and icon mappings. Pure data, no JSX.                                                          | ~150            |
 
 ### Data Flow
 
@@ -66,12 +66,14 @@ AdminMediaLibraryTab
 ### Layout
 
 Four category sections arranged vertically. Each has:
+
 - A category heading (subtle, uppercase, small font)
 - A flex-wrap row of tiles
 
 ### Tile Design
 
 Each tile is ~64x64px:
+
 - Icon/emoji centered (large, ~24px)
 - Label below (small, ~11px)
 - Rounded corners, subtle border
@@ -84,42 +86,46 @@ No separate "Add" button — clicking the tile is the action.
 ### Categories and Icons
 
 #### Transform
-| Operation | Icon | Description |
-|-----------|------|-------------|
-| crop | &#x2702; (scissors) | Crop to exact dimensions |
-| resize | &#x21F2; (resize arrows) | Scale to target size |
-| presetCrop | &#x25A3; (aspect box) | Crop to aspect ratio preset |
-| flip | &#x21C4; (arrows) | Mirror horizontally or vertically |
-| rotate | &#x21BB; (clockwise arrow) | Rotate by degrees |
-| padding | &#x25A1; (square outline) | Add border padding |
+
+| Operation  | Icon                       | Description                       |
+| ---------- | -------------------------- | --------------------------------- |
+| crop       | &#x2702; (scissors)        | Crop to exact dimensions          |
+| resize     | &#x21F2; (resize arrows)   | Scale to target size              |
+| presetCrop | &#x25A3; (aspect box)      | Crop to aspect ratio preset       |
+| flip       | &#x21C4; (arrows)          | Mirror horizontally or vertically |
+| rotate     | &#x21BB; (clockwise arrow) | Rotate by degrees                 |
+| padding    | &#x25A1; (square outline)  | Add border padding                |
 
 #### Color & Tone
-| Operation | Icon | Description |
-|-----------|------|-------------|
-| brightness | &#x2600; (sun) | Adjust brightness |
-| saturation | &#x1F308; (rainbow) | Boost or reduce saturation |
-| colorBoost | &#x1F3A8; (palette) | Vibrance + contrast combined |
-| hueRotate | &#x1F504; (cycle arrows) | Shift color hue |
-| tint | &#x1F4A7; (droplet) | Apply RGB color tint |
-| grayscale | &#x25D1; (half circle) | Convert to grayscale |
-| invert | &#x25D0; (inverse half) | Invert colors |
+
+| Operation  | Icon                     | Description                  |
+| ---------- | ------------------------ | ---------------------------- |
+| brightness | &#x2600; (sun)           | Adjust brightness            |
+| saturation | &#x1F308; (rainbow)      | Boost or reduce saturation   |
+| colorBoost | &#x1F3A8; (palette)      | Vibrance + contrast combined |
+| hueRotate  | &#x1F504; (cycle arrows) | Shift color hue              |
+| tint       | &#x1F4A7; (droplet)      | Apply RGB color tint         |
+| grayscale  | &#x25D1; (half circle)   | Convert to grayscale         |
+| invert     | &#x25D0; (inverse half)  | Invert colors                |
 
 #### Effects
-| Operation | Icon | Description |
-|-----------|------|-------------|
-| sharpen | &#x25C8; (diamond) | Sharpen edges |
-| blur | &#x1F32B; (fog) | Gaussian blur |
-| sepia | &#x1F4DC; (scroll) | Vintage sepia tone |
-| solarize | &#x26A1; (lightning) | Solarize effect |
-| pixelize | &#x25A6; (grid) | Pixelation / mosaic |
+
+| Operation | Icon                 | Description         |
+| --------- | -------------------- | ------------------- |
+| sharpen   | &#x25C8; (diamond)   | Sharpen edges       |
+| blur      | &#x1F32B; (fog)      | Gaussian blur       |
+| sepia     | &#x1F4DC; (scroll)   | Vintage sepia tone  |
+| solarize  | &#x26A1; (lightning) | Solarize effect     |
+| pixelize  | &#x25A6; (grid)      | Pixelation / mosaic |
 
 #### Artistic
-| Operation | Icon | Description |
-|-----------|------|-------------|
-| duotone | &#x25D3; (circle half) | Two-tone color mapping |
-| oil | &#x1F58C; (brush) | Oil painting effect |
-| cropCircle | &#x25EF; (circle) | Circular crop with transparency |
-| textOverlay | &#x1F524; (abc) | Draw text on image |
+
+| Operation   | Icon                   | Description                     |
+| ----------- | ---------------------- | ------------------------------- |
+| duotone     | &#x25D3; (circle half) | Two-tone color mapping          |
+| oil         | &#x1F58C; (brush)      | Oil painting effect             |
+| cropCircle  | &#x25EF; (circle)      | Circular crop with transparency |
+| textOverlay | &#x1F524; (abc)        | Draw text on image              |
 
 ## Operation Pipeline (Drag-and-Drop)
 
@@ -137,13 +143,16 @@ Vertical list of `OperationCard` components inside a container with a dashed-bor
 ### Operation Card
 
 **Collapsed state (default):**
+
 ```
 [::] 1. Resize — width: 800, height: 600                    [x]
 ```
+
 - Grip handle | step number | operation name | parameter summary | remove button
 - Category color accent on left border (Transform=blue, Color=amber, Effects=purple, Artistic=rose)
 
 **Expanded state (click header to toggle):**
+
 ```
 [::] 1. Resize                                               [x]
      ┌─────────────────────────────────────────────────┐
@@ -199,45 +208,45 @@ Vertical list of `OperationCard` components inside a container with a dashed-bor
 
 ### Existing (updated)
 
-| Operation | Label | Parameters |
-|-----------|-------|-----------|
-| crop | Crop | width: number (32-4000, step 1), height: number (32-4000, step 1) |
-| resize | Resize | width: number (64-4000, step 1), height: number (64-4000, step 1) |
-| sharpen | Sharpen | *(none)* |
-| colorBoost | Color Boost | vibrance: number (-1 to 1, step 0.05), contrast: number (-1 to 1, step 0.05) |
-| saturation | Saturation | amount: number (-1 to 1, step 0.05) |
-| sepia | Sepia | amount: number (0-1, step 0.05, default 1.0) |
-| cropCircle | Circle Crop | diameter: number (32-4000, step 1), centerX: number (0-100, step 1), centerY: number (0-100, step 1) |
-| presetCrop | Preset Crop | preset: select ["4:5", "1:1", "9:16", "3:4", "16:9", "2:1", "21:9"], scale: number (0.5-1, step 0.05) |
+| Operation   | Label        | Parameters                                                                                                                                                    |
+| ----------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| crop        | Crop         | width: number (32-4000, step 1), height: number (32-4000, step 1)                                                                                             |
+| resize      | Resize       | width: number (64-4000, step 1), height: number (64-4000, step 1)                                                                                             |
+| sharpen     | Sharpen      | _(none)_                                                                                                                                                      |
+| colorBoost  | Color Boost  | vibrance: number (-1 to 1, step 0.05), contrast: number (-1 to 1, step 0.05)                                                                                  |
+| saturation  | Saturation   | amount: number (-1 to 1, step 0.05)                                                                                                                           |
+| sepia       | Sepia        | amount: number (0-1, step 0.05, default 1.0)                                                                                                                  |
+| cropCircle  | Circle Crop  | diameter: number (32-4000, step 1), centerX: number (0-100, step 1), centerY: number (0-100, step 1)                                                          |
+| presetCrop  | Preset Crop  | preset: select ["4:5", "1:1", "9:16", "3:4", "16:9", "2:1", "21:9"], scale: number (0.5-1, step 0.05)                                                         |
 | textOverlay | Text Overlay | text: text, x: number (0-1, step 0.01), y: number (0-1, step 0.01), typeface: text (no-op — only Roboto bundled in photon WASM), size: number (6-200, step 1) |
-| source | Source Asset | assetId: text |
+| source      | Source Asset | assetId: text                                                                                                                                                 |
 
 ### New
 
-| Operation | Label | Category | Parameters |
-|-----------|-------|----------|-----------|
-| brightness | Brightness | Color & Tone | amount: number (-1 to 1, step 0.05, default 0). Pipeline multiplies by 255 before calling `photon.adjust_brightness()`. |
-| grayscale | Grayscale | Color & Tone | amount: number (0-1, step 0.05, default 1.0) |
-| flip | Flip | Transform | direction: select ["h", "v"] with display labels "Horizontal" / "Vertical" (default "h"). Matches pipeline which checks `dir === "v"`. |
-| rotate | Rotate | Transform | degrees: number (0-360, step 1, default 90). UI shows segmented toggle for 90/180/270 as shortcuts, plus free number input for arbitrary angles. |
-| blur | Blur | Effects | radius: number (1-20, step 1, default 3) |
-| padding | Padding | Transform | padding: number (0-500, step 1, default 0), r: number (0-255, step 1, default 255), g: number (0-255, step 1, default 255), b: number (0-255, step 1, default 255), a: number (0-255, step 1, default 255). Matches pipeline's `photon.padding_uniform(img, padding, Rgba(r,g,b,a))`. |
-| tint | Tint | Color & Tone | r: number (-255 to 255, step 1, default 0), g: number (-255 to 255, step 1, default 0), b: number (-255 to 255, step 1, default 0). Matches pipeline's `photon.tint(img, r, g, b)` which accepts negative values. |
-| hueRotate | Hue Rotate | Color & Tone | degrees: number (0-360, step 1, default 0) |
-| invert | Invert | Color & Tone | amount: number (0-1, step 0.05, default 1.0) |
-| solarize | Solarize | Effects | *(none)* |
-| pixelize | Pixelize | Effects | size: number (2-50, step 1, default 8). Key is `size` to match pipeline's `p.size`. |
-| duotone | Duotone | Artistic | color1: {r, g, b} each 0-255 (default {255,255,255}), color2: {r, g, b} each 0-255 (default {0,0,0}). UI shows two color pickers with hex input; `OperationCard` converts hex to `{r,g,b}` object before saving to the operation params. Matches pipeline's `photon.duotone(img, Rgb(c1.r,c1.g,c1.b), Rgb(c2.r,c2.g,c2.b))`. |
-| oil | Oil Painting | Artistic | radius: number (1-5, step 1, default 2), intensity: number (10-60, step 1, default 30). Ranges match pipeline clamp values. |
+| Operation  | Label        | Category     | Parameters                                                                                                                                                                                                                                                                                                                   |
+| ---------- | ------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| brightness | Brightness   | Color & Tone | amount: number (-1 to 1, step 0.05, default 0). Pipeline multiplies by 255 before calling `photon.adjust_brightness()`.                                                                                                                                                                                                      |
+| grayscale  | Grayscale    | Color & Tone | amount: number (0-1, step 0.05, default 1.0)                                                                                                                                                                                                                                                                                 |
+| flip       | Flip         | Transform    | direction: select ["h", "v"] with display labels "Horizontal" / "Vertical" (default "h"). Matches pipeline which checks `dir === "v"`.                                                                                                                                                                                       |
+| rotate     | Rotate       | Transform    | degrees: number (0-360, step 1, default 90). UI shows segmented toggle for 90/180/270 as shortcuts, plus free number input for arbitrary angles.                                                                                                                                                                             |
+| blur       | Blur         | Effects      | radius: number (1-20, step 1, default 3)                                                                                                                                                                                                                                                                                     |
+| padding    | Padding      | Transform    | padding: number (0-500, step 1, default 0), r: number (0-255, step 1, default 255), g: number (0-255, step 1, default 255), b: number (0-255, step 1, default 255), a: number (0-255, step 1, default 255). Matches pipeline's `photon.padding_uniform(img, padding, Rgba(r,g,b,a))`.                                        |
+| tint       | Tint         | Color & Tone | r: number (-255 to 255, step 1, default 0), g: number (-255 to 255, step 1, default 0), b: number (-255 to 255, step 1, default 0). Matches pipeline's `photon.tint(img, r, g, b)` which accepts negative values.                                                                                                            |
+| hueRotate  | Hue Rotate   | Color & Tone | degrees: number (0-360, step 1, default 0)                                                                                                                                                                                                                                                                                   |
+| invert     | Invert       | Color & Tone | amount: number (0-1, step 0.05, default 1.0)                                                                                                                                                                                                                                                                                 |
+| solarize   | Solarize     | Effects      | _(none)_                                                                                                                                                                                                                                                                                                                     |
+| pixelize   | Pixelize     | Effects      | size: number (2-50, step 1, default 8). Key is `size` to match pipeline's `p.size`.                                                                                                                                                                                                                                          |
+| duotone    | Duotone      | Artistic     | color1: {r, g, b} each 0-255 (default {255,255,255}), color2: {r, g, b} each 0-255 (default {0,0,0}). UI shows two color pickers with hex input; `OperationCard` converts hex to `{r,g,b}` object before saving to the operation params. Matches pipeline's `photon.duotone(img, Rgb(c1.r,c1.g,c1.b), Rgb(c2.r,c2.g,c2.b))`. |
+| oil        | Oil Painting | Artistic     | radius: number (1-5, step 1, default 2), intensity: number (10-60, step 1, default 30). Ranges match pipeline clamp values.                                                                                                                                                                                                  |
 
 ### Category Assignments (all 22)
 
-| Category | Operations |
-|----------|-----------|
-| Transform | crop, resize, presetCrop, flip, rotate, padding |
+| Category     | Operations                                                             |
+| ------------ | ---------------------------------------------------------------------- |
+| Transform    | crop, resize, presetCrop, flip, rotate, padding                        |
 | Color & Tone | brightness, saturation, colorBoost, hueRotate, tint, grayscale, invert |
-| Effects | sharpen, blur, sepia, solarize, pixelize |
-| Artistic | duotone, oil, cropCircle, textOverlay |
+| Effects      | sharpen, blur, sepia, solarize, pixelize                               |
+| Artistic     | duotone, oil, cropCircle, textOverlay                                  |
 
 ## Pipeline Changes
 
@@ -274,6 +283,7 @@ Existing validation logic (`isInvalidNumericParam`) carries forward unchanged. T
 ## Dependencies
 
 **Zero new dependencies.** Everything uses:
+
 - HTML5 Drag and Drop API (built-in)
 - HTML `<input type="range">` (built-in)
 - Existing Tailwind/CSS styling patterns from the admin UI

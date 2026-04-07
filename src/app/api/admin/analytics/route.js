@@ -200,8 +200,7 @@ export async function GET(request) {
   const auth = await requireAdmin(request);
   if (auth.error) return auth.error;
 
-  const token =
-    process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
+  const token = process.env.CF_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
   const zoneId = process.env.CF_ZONE_ID;
   const accountId =
     process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID;

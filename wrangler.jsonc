@@ -7,11 +7,11 @@
   "upload_source_maps": true,
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "vars": {
     "CLOUDFLARE_IMAGE_RESIZING": "0",
-    "COURSE_ACCESS_BACKEND": "cloudflare-kv",
+    "CONTENT_ACCESS_BACKEND": "cloudflare-d1",
     "COURSE_ACCESS_STORE": "cloudflare",
     "USER_STORE_BACKEND": "cloudflare",
     "DIGITAL_ACCESS_STORE": "cloudflare",
@@ -28,31 +28,31 @@
     "S3_PUBLIC_URL": "https://pub-e84fd23dec9840a39cb1c4ae26afe418.r2.dev",
     "GITHUB_REPO": "tabenius/wp-headless-course-event-file-shop-stripe-cf-next",
     "GITHUB_DEPLOY_WORKFLOW": "deploy.yml",
-    "CF_ZONE_ID": "da8ddd68aabe75784a69da9a189d4673"
+    "CF_ZONE_ID": "da8ddd68aabe75784a69da9a189d4673",
   },
   "ai": {
     "binding": "AI",
-    "remote": true
+    "remote": true,
   },
   "r2_buckets": [
     {
       "binding": "R2_BUCKET",
-      "bucket_name": "sofiacerne"
-    }
+      "bucket_name": "sofiacerne",
+    },
   ],
   "kv_namespaces": [
     {
       "binding": "COURSE_ACCESS",
       "id": "0ac8a81b4e404ebbbc23172b59154191",
-      "remote": true
-    }
+      "remote": true,
+    },
   ],
   "d1_databases": [
     {
       "remote": true,
       "binding": "DB",
       "database_name": "sofiacerne",
-      "database_id": "64f99034-504d-4389-ab45-fd85cf63ae3f"
-    }
-  ]
+      "database_id": "64f99034-504d-4389-ab45-fd85cf63ae3f",
+    },
+  ],
 }

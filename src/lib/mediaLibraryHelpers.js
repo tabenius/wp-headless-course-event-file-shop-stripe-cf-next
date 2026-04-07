@@ -66,12 +66,7 @@ const DOCUMENT_EXTENSIONS = new Set([
   "epub",
   "pages",
 ]);
-const PRESENTATION_EXTENSIONS = new Set([
-  "ppt",
-  "pptx",
-  "odp",
-  "key",
-]);
+const PRESENTATION_EXTENSIONS = new Set(["ppt", "pptx", "odp", "key"]);
 const DATABASE_EXTENSIONS = new Set([
   "sqlite",
   "sqlite3",
@@ -108,12 +103,7 @@ const VIDEO_EXTENSIONS = new Set([
   "mpg",
   "m4v",
 ]);
-const FONT_EXTENSIONS = new Set([
-  "ttf",
-  "otf",
-  "woff",
-  "woff2",
-]);
+const FONT_EXTENSIONS = new Set(["ttf", "otf", "woff", "woff2"]);
 const BINARY_EXTENSIONS = new Set([
   "exe",
   "msi",
@@ -246,7 +236,7 @@ export function formatBytes(bytes) {
     units.length - 1,
     Math.floor(Math.log(value) / Math.log(1024)),
   );
-  const scaled = value / (1024 ** exponent);
+  const scaled = value / 1024 ** exponent;
   const precision = scaled >= 100 || exponent === 0 ? 0 : scaled >= 10 ? 1 : 2;
   return `${scaled.toFixed(precision)} ${units[exponent]}`;
 }
@@ -290,7 +280,9 @@ export function sourceBadgeClass(source) {
 export function buildPseudoDerivationName(operations) {
   if (!Array.isArray(operations) || operations.length === 0) return "empty";
   return operations
-    .map((operation) => OPERATION_SCHEMAS[operation.type]?.label || operation.type)
+    .map(
+      (operation) => OPERATION_SCHEMAS[operation.type]?.label || operation.type,
+    )
     .map((label) => label.toLowerCase())
     .join(" · ");
 }
@@ -311,11 +303,13 @@ export function getUnboundParameters(operations) {
 
 export function describeOperationParameters(operation) {
   const schema = OPERATION_SCHEMAS[operation.type];
-  return (schema?.parameters || []).map((param) => {
-    if (param.key === "assetId") return null;
-    const value = operation.params?.[param.key];
-    return value == null ? param.key : `${param.key}=${value}`;
-  }).filter(Boolean);
+  return (schema?.parameters || [])
+    .map((param) => {
+      if (param.key === "assetId") return null;
+      const value = operation.params?.[param.key];
+      return value == null ? param.key : `${param.key}=${value}`;
+    })
+    .filter(Boolean);
 }
 
 export function formatParameterValue(value) {
@@ -324,7 +318,9 @@ export function formatParameterValue(value) {
     return Number.isFinite(value) ? value.toString() : String(value);
   }
   if (typeof value === "object") {
-    const hasRgb = ["r", "g", "b"].every((key) => Number.isFinite(Number(value?.[key])));
+    const hasRgb = ["r", "g", "b"].every((key) =>
+      Number.isFinite(Number(value?.[key])),
+    );
     if (hasRgb) {
       const r = Math.max(0, Math.min(255, Math.round(Number(value.r))));
       const g = Math.max(0, Math.min(255, Math.round(Number(value.g))));
@@ -397,7 +393,9 @@ export function detectAssetKind(file) {
 
 export function isSupportedUploadFile(file) {
   const kind = detectAssetKind(file);
-  return kind === "image" || DATA_ASSET_EXTENSIONS.has(extFromFileName(file?.name));
+  return (
+    kind === "image" || DATA_ASSET_EXTENSIONS.has(extFromFileName(file?.name))
+  );
 }
 
 export function canOpenDataViewer(item) {
@@ -479,9 +477,7 @@ export function normalizeEditorMultiline(value, max = 1200) {
 export function normalizeOwnerUri(value, max = 320) {
   const raw = String(value ?? "").trim();
   if (!raw || raw === "/") return "/";
-  let safe = raw
-    .replace(/\s+/g, "")
-    .replace(/\/{2,}/g, "/");
+  let safe = raw.replace(/\s+/g, "").replace(/\/{2,}/g, "/");
   if (!safe.startsWith("/")) safe = `/${safe}`;
   if (safe.length > 1) safe = safe.replace(/\/+$/, "");
   return safe.slice(0, max) || "/";
@@ -508,7 +504,10 @@ export function toEditorState(item) {
     altText: normalizeEditorValue(metadata.altText || "", 300),
     tooltip: normalizeEditorValue(metadata.tooltip || "", 300),
     usageNotes: normalizeEditorMultiline(metadata.usageNotes || "", 1200),
-    structuredMeta: normalizeEditorMultiline(metadata.structuredMeta || "", 1800),
+    structuredMeta: normalizeEditorMultiline(
+      metadata.structuredMeta || "",
+      1800,
+    ),
     schemaRef: normalizeEditorValue(metadata.schemaRef || "", 400),
     ownerUri: normalizeOwnerUri(asset.ownerUri || "/"),
     assetUri: normalizeEditorValue(asset.uri || "", 400),
@@ -572,7 +571,9 @@ export function buildR2ServerHost(accountId) {
 }
 
 export function resolveStorageServerHost(details = {}) {
-  const directHost = normalizeEndpointHost(details.server || details.endpoint || "");
+  const directHost = normalizeEndpointHost(
+    details.server || details.endpoint || "",
+  );
   if (directHost) return directHost;
   return buildR2ServerHost(details.accountId);
 }
@@ -632,10 +633,13 @@ export async function downloadCyberduckBookmarkFromServer({
 } = {}) {
   const params = new URLSearchParams();
   if (backend) params.set("backend", backend);
-  const response = await fetch(`/api/admin/upload-info/cyberduck-bookmark?${params.toString()}`, {
-    method: "GET",
-    cache: "no-store",
-  });
+  const response = await fetch(
+    `/api/admin/upload-info/cyberduck-bookmark?${params.toString()}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    },
+  );
   if (!response.ok) {
     const json = await response.json().catch(() => ({}));
     throw new Error(

@@ -19,9 +19,14 @@ function normalizeFieldId(value) {
 
 function normalizeEntry(entry) {
   if (!entry || typeof entry !== "object") return null;
-  const value = String(entry.value || "").trim().toLowerCase();
+  const value = String(entry.value || "")
+    .trim()
+    .toLowerCase();
   if (!VALID_VALUES.has(value)) return null;
-  const by = String(entry.by || "").trim().toLowerCase().slice(0, 160);
+  const by = String(entry.by || "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 160);
   const updatedAt = String(entry.updatedAt || "").trim();
   return { value, by, updatedAt };
 }
@@ -40,7 +45,11 @@ function normalizeStore(raw) {
 }
 
 export function isValidUiFeedbackValue(value) {
-  return VALID_VALUES.has(String(value || "").trim().toLowerCase());
+  return VALID_VALUES.has(
+    String(value || "")
+      .trim()
+      .toLowerCase(),
+  );
 }
 
 export function normalizeUiFeedbackFieldId(value) {
@@ -63,10 +72,16 @@ export async function getAdminUiFeedback() {
 
 export async function setAdminUiFeedback(fieldId, value, by) {
   const normalizedFieldId = normalizeFieldId(fieldId);
-  const normalizedValue = String(value || "").trim().toLowerCase();
-  const normalizedBy = String(by || "").trim().toLowerCase().slice(0, 160);
+  const normalizedValue = String(value || "")
+    .trim()
+    .toLowerCase();
+  const normalizedBy = String(by || "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 160);
   if (!normalizedFieldId) throw new Error("fieldId is required");
-  if (!VALID_VALUES.has(normalizedValue)) throw new Error("Invalid feedback value");
+  if (!VALID_VALUES.has(normalizedValue))
+    throw new Error("Invalid feedback value");
 
   const current = await getAdminUiFeedback();
   const next = {
@@ -89,4 +104,3 @@ export async function setAdminUiFeedback(fieldId, value, by) {
   memoryStore = next;
   return next;
 }
-

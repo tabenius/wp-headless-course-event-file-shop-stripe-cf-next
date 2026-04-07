@@ -17,7 +17,11 @@ async function tryGetD1() {
 function avatarRowToObject(row, relationships = []) {
   if (!row) return null;
   let details = {};
-  try { details = JSON.parse(row.details || "{}"); } catch { /* ignore */ }
+  try {
+    details = JSON.parse(row.details || "{}");
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.id,
     ownerUserId: row.owner_user_id,
@@ -39,7 +43,10 @@ function avatarRowToObject(row, relationships = []) {
 }
 
 async function d1GetAvatarWithRels(db, whereClause, bindValues) {
-  const row = await db.prepare(`SELECT * FROM avatars WHERE ${whereClause} LIMIT 1`).bind(...bindValues).first();
+  const row = await db
+    .prepare(`SELECT * FROM avatars WHERE ${whereClause} LIMIT 1`)
+    .bind(...bindValues)
+    .first();
   if (!row) return null;
   const { results: rels } = await db
     .prepare("SELECT * FROM avatar_relationships WHERE from_avatar_id = ?")
@@ -62,7 +69,9 @@ function normalizeEmail(value) {
 }
 
 function normalizeAvatarId(value) {
-  const raw = String(value || "").trim().toLowerCase();
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase();
   const withoutPrefix = raw.startsWith("0x") ? raw.slice(2) : raw;
   if (!withoutPrefix || !HEX_RE.test(withoutPrefix)) return "";
   return withoutPrefix;
@@ -82,7 +91,9 @@ function normalizeCanonicalName(value) {
 }
 
 function normalizeRelationshipKind(value) {
-  const safe = String(value || "").trim().toLowerCase();
+  const safe = String(value || "")
+    .trim()
+    .toLowerCase();
   if (!safe || !REL_KIND_RE.test(safe)) return "follow";
   return safe;
 }
@@ -101,7 +112,9 @@ function sanitizeDetails(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   const output = {};
   for (const [key, rawVal] of Object.entries(value)) {
-    const safeKey = String(key || "").trim().slice(0, 64);
+    const safeKey = String(key || "")
+      .trim()
+      .slice(0, 64);
     if (!safeKey) continue;
     const safeValue =
       typeof rawVal === "string" ? rawVal : JSON.stringify(rawVal ?? "");
@@ -137,7 +150,8 @@ function sanitizeRelationships(value, selfAvatarId) {
           ? row.updatedAt
           : new Date().toISOString(),
       note:
-        typeof row?.note === "string" && Buffer.byteLength(row.note, "utf8") <= 512
+        typeof row?.note === "string" &&
+        Buffer.byteLength(row.note, "utf8") <= 512
           ? row.note.trim()
           : "",
     });
@@ -160,7 +174,8 @@ function sanitizeAvatarRecord(raw, canonicalNameMap) {
   if (uniqueCanonicalName) canonicalNameMap.set(canonicalNameKey, id);
 
   const profileImageUrl =
-    typeof raw?.profileImageUrl === "string" && isValidHttpUrl(raw.profileImageUrl)
+    typeof raw?.profileImageUrl === "string" &&
+    isValidHttpUrl(raw.profileImageUrl)
       ? raw.profileImageUrl.trim()
       : "";
 
@@ -407,7 +422,9 @@ function applyAvatarPatch({ state, index, current, patch = {} }) {
   if (patch && Object.prototype.hasOwnProperty.call(patch, "canonicalName")) {
     const canonicalName = normalizeCanonicalName(patch.canonicalName);
     if (patch.canonicalName && !canonicalName) {
-      throw new Error("Invalid canonical name (must be UTF-8 up to 128 bytes).");
+      throw new Error(
+        "Invalid canonical name (must be UTF-8 up to 128 bytes).",
+      );
     }
     const canonicalKey = canonicalName.toLocaleLowerCase("und");
     if (canonicalName) {
@@ -418,7 +435,9 @@ function applyAvatarPatch({ state, index, current, patch = {} }) {
           avatar.canonicalName.toLocaleLowerCase("und") === canonicalKey,
       );
       if (collision) {
-        throw new Error("Canonical name is already registered by another avatar.");
+        throw new Error(
+          "Canonical name is already registered by another avatar.",
+        );
       }
     }
     next.canonicalName = canonicalName;
@@ -426,7 +445,9 @@ function applyAvatarPatch({ state, index, current, patch = {} }) {
 
   if (patch && Object.prototype.hasOwnProperty.call(patch, "profileImageUrl")) {
     const profileImageUrl =
-      typeof patch.profileImageUrl === "string" ? patch.profileImageUrl.trim() : "";
+      typeof patch.profileImageUrl === "string"
+        ? patch.profileImageUrl.trim()
+        : "";
     if (!isValidHttpUrl(profileImageUrl)) {
       throw new Error("Invalid profile image URL.");
     }
@@ -454,7 +475,9 @@ export async function getOwnAvatar(user) {
 
   const db = await tryGetD1();
   if (db) {
-    const avatar = await d1GetAvatarWithRels(db, "owner_user_id = ?", [ownerUserId]);
+    const avatar = await d1GetAvatarWithRels(db, "owner_user_id = ?", [
+      ownerUserId,
+    ]);
     return avatar ? serializeAvatarForOwner(avatar) : null;
   }
 
@@ -470,31 +493,64 @@ export async function createOwnAvatar(user, initialPatch = {}) {
 
   const db = await tryGetD1();
   if (db) {
-    const existing = await d1GetAvatarWithRels(db, "owner_user_id = ?", [ownerUserId]);
-    if (existing) return { avatar: serializeAvatarForOwner(existing), created: false };
+    const existing = await d1GetAvatarWithRels(db, "owner_user_id = ?", [
+      ownerUserId,
+    ]);
+    if (existing)
+      return { avatar: serializeAvatarForOwner(existing), created: false };
 
     const ownerEmail = normalizeEmail(user?.email || "");
     const preferredId = deriveAvatarIdFromEmail(ownerEmail);
-    const idCheck = preferredId ? await db.prepare("SELECT 1 FROM avatars WHERE id = ?").bind(preferredId).first() : true;
-    const avatarId = (preferredId && !idCheck) ? preferredId : randomAvatarId(new Set());
+    const idCheck = preferredId
+      ? await db
+          .prepare("SELECT 1 FROM avatars WHERE id = ?")
+          .bind(preferredId)
+          .first()
+      : true;
+    const avatarId =
+      preferredId && !idCheck ? preferredId : randomAvatarId(new Set());
     const now = new Date().toISOString();
 
-    const canonicalName = normalizeCanonicalName(initialPatch?.canonicalName || "");
+    const canonicalName = normalizeCanonicalName(
+      initialPatch?.canonicalName || "",
+    );
     const isPublic = initialPatch?.isPublic === true ? 1 : 0;
-    const profileImageUrl = typeof initialPatch?.profileImageUrl === "string" && isValidHttpUrl(initialPatch.profileImageUrl) ? initialPatch.profileImageUrl.trim() : "";
-    const bio = typeof initialPatch?.bio === "string" ? initialPatch.bio.trim() : "";
-    const details = JSON.stringify(sanitizeDetails(initialPatch?.details || {}));
+    const profileImageUrl =
+      typeof initialPatch?.profileImageUrl === "string" &&
+      isValidHttpUrl(initialPatch.profileImageUrl)
+        ? initialPatch.profileImageUrl.trim()
+        : "";
+    const bio =
+      typeof initialPatch?.bio === "string" ? initialPatch.bio.trim() : "";
+    const details = JSON.stringify(
+      sanitizeDetails(initialPatch?.details || {}),
+    );
 
     try {
       await db
         .prepare(
           "INSERT INTO avatars (id, owner_user_id, canonical_name, is_public, profile_image_url, bio, details, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .bind(avatarId, ownerUserId, canonicalName || null, isPublic, profileImageUrl, bio, details, now, now)
+        .bind(
+          avatarId,
+          ownerUserId,
+          canonicalName || null,
+          isPublic,
+          profileImageUrl,
+          bio,
+          details,
+          now,
+          now,
+        )
         .run();
     } catch (err) {
-      if (String(err).includes("UNIQUE constraint failed") && String(err).includes("canonical_name")) {
-        throw new Error("Canonical name is already registered by another avatar.");
+      if (
+        String(err).includes("UNIQUE constraint failed") &&
+        String(err).includes("canonical_name")
+      ) {
+        throw new Error(
+          "Canonical name is already registered by another avatar.",
+        );
       }
       throw err;
     }
@@ -558,7 +614,9 @@ export async function getPublicAvatarById(avatarId) {
 
   const db = await tryGetD1();
   if (db) {
-    const avatar = await d1GetAvatarWithRels(db, "id = ? AND is_public = 1", [safeAvatarId]);
+    const avatar = await d1GetAvatarWithRels(db, "id = ? AND is_public = 1", [
+      safeAvatarId,
+    ]);
     return avatar ? serializeAvatarForPublic(avatar) : null;
   }
 
@@ -594,13 +652,27 @@ export async function getAvatarForProfileHandle(
     if (avatarId) {
       avatar = await d1GetAvatarWithRels(db, "id = ?", [avatarId]);
     } else {
-      avatar = await d1GetAvatarWithRels(db, "canonical_name = ? COLLATE NOCASE", [safeHandle]);
+      avatar = await d1GetAvatarWithRels(
+        db,
+        "canonical_name = ? COLLATE NOCASE",
+        [safeHandle],
+      );
     }
     if (!avatar) return null;
-    const isOwner = typeof viewerUserId === "string" && viewerUserId.trim() !== "" && avatar.ownerUserId === viewerUserId.trim();
+    const isOwner =
+      typeof viewerUserId === "string" &&
+      viewerUserId.trim() !== "" &&
+      avatar.ownerUserId === viewerUserId.trim();
     if (avatar.isPublic !== true && !isOwner) return null;
-    const base = isOwner ? serializeAvatarForOwner(avatar) : serializeAvatarForPublic(avatar);
-    return { ...base, isOwner, isPublic: avatar.isPublic === true, canonicalProfilePath: buildCanonicalAvatarProfilePath(avatar) };
+    const base = isOwner
+      ? serializeAvatarForOwner(avatar)
+      : serializeAvatarForPublic(avatar);
+    return {
+      ...base,
+      isOwner,
+      isPublic: avatar.isPublic === true,
+      canonicalProfilePath: buildCanonicalAvatarProfilePath(avatar),
+    };
   }
 
   // existing KV/local path (unchanged)
@@ -637,7 +709,9 @@ export async function updateOwnAvatar(user, patch = {}) {
 
   const db = await tryGetD1();
   if (db) {
-    const current = await d1GetAvatarWithRels(db, "owner_user_id = ?", [ownerUserId]);
+    const current = await d1GetAvatarWithRels(db, "owner_user_id = ?", [
+      ownerUserId,
+    ]);
     if (!current) throw new Error("Avatar not found. Create an avatar first.");
 
     const updates = [];
@@ -649,19 +723,26 @@ export async function updateOwnAvatar(user, patch = {}) {
     }
     if (Object.prototype.hasOwnProperty.call(patch, "canonicalName")) {
       const cn = normalizeCanonicalName(patch.canonicalName);
-      if (patch.canonicalName && !cn) throw new Error("Invalid canonical name (must be UTF-8 up to 128 bytes).");
+      if (patch.canonicalName && !cn)
+        throw new Error(
+          "Invalid canonical name (must be UTF-8 up to 128 bytes).",
+        );
       updates.push("canonical_name = ?");
       binds.push(cn || null);
     }
     if (Object.prototype.hasOwnProperty.call(patch, "profileImageUrl")) {
-      const url = typeof patch.profileImageUrl === "string" ? patch.profileImageUrl.trim() : "";
+      const url =
+        typeof patch.profileImageUrl === "string"
+          ? patch.profileImageUrl.trim()
+          : "";
       if (!isValidHttpUrl(url)) throw new Error("Invalid profile image URL.");
       updates.push("profile_image_url = ?");
       binds.push(url);
     }
     if (Object.prototype.hasOwnProperty.call(patch, "bio")) {
       const bio = typeof patch.bio === "string" ? patch.bio.trim() : "";
-      if (Buffer.byteLength(bio, "utf8") > 8192) throw new Error("Bio is too long.");
+      if (Buffer.byteLength(bio, "utf8") > 8192)
+        throw new Error("Bio is too long.");
       updates.push("bio = ?");
       binds.push(bio);
     }
@@ -675,10 +756,18 @@ export async function updateOwnAvatar(user, patch = {}) {
       updates.push("updated_at = ?");
       binds.push(now, current.id);
       try {
-        await db.prepare(`UPDATE avatars SET ${updates.join(", ")} WHERE id = ?`).bind(...binds).run();
+        await db
+          .prepare(`UPDATE avatars SET ${updates.join(", ")} WHERE id = ?`)
+          .bind(...binds)
+          .run();
       } catch (err) {
-        if (String(err).includes("UNIQUE constraint failed") && String(err).includes("canonical_name")) {
-          throw new Error("Canonical name is already registered by another avatar.");
+        if (
+          String(err).includes("UNIQUE constraint failed") &&
+          String(err).includes("canonical_name")
+        ) {
+          throw new Error(
+            "Canonical name is already registered by another avatar.",
+          );
         }
         throw err;
       }
@@ -724,14 +813,26 @@ export async function upsertOwnAvatarRelationship(
   const db = await tryGetD1();
   if (db) {
     const ownerUserId = String(user?.id || "").trim();
-    const source = await db.prepare("SELECT * FROM avatars WHERE owner_user_id = ? LIMIT 1").bind(ownerUserId).first();
+    const source = await db
+      .prepare("SELECT * FROM avatars WHERE owner_user_id = ? LIMIT 1")
+      .bind(ownerUserId)
+      .first();
     if (!source) throw new Error("Avatar not found. Create an avatar first.");
-    if (source.id === safeToAvatarId) throw new Error("Avatar relationship target must be different from source.");
-    const target = await db.prepare("SELECT 1 FROM avatars WHERE id = ?").bind(safeToAvatarId).first();
+    if (source.id === safeToAvatarId)
+      throw new Error(
+        "Avatar relationship target must be different from source.",
+      );
+    const target = await db
+      .prepare("SELECT 1 FROM avatars WHERE id = ?")
+      .bind(safeToAvatarId)
+      .first();
     if (!target) throw new Error("Target avatar not found.");
 
     const safeKind = normalizeRelationshipKind(kind);
-    const safeNote = typeof note === "string" && Buffer.byteLength(note, "utf8") <= 512 ? note.trim() : "";
+    const safeNote =
+      typeof note === "string" && Buffer.byteLength(note, "utf8") <= 512
+        ? note.trim()
+        : "";
     const now = new Date().toISOString();
     await db
       .prepare(
@@ -754,7 +855,9 @@ export async function upsertOwnAvatarRelationship(
   const index = resolved.index;
   const source = state.avatars[index];
   if (source.id === safeToAvatarId) {
-    throw new Error("Avatar relationship target must be different from source.");
+    throw new Error(
+      "Avatar relationship target must be different from source.",
+    );
   }
 
   const targetIndex = findAvatarIndexById(state.avatars, safeToAvatarId);
@@ -812,10 +915,15 @@ export async function removeOwnAvatarRelationship(
   const db = await tryGetD1();
   if (db) {
     const ownerUserId = String(user?.id || "").trim();
-    const source = await db.prepare("SELECT * FROM avatars WHERE owner_user_id = ? LIMIT 1").bind(ownerUserId).first();
+    const source = await db
+      .prepare("SELECT * FROM avatars WHERE owner_user_id = ? LIMIT 1")
+      .bind(ownerUserId)
+      .first();
     if (!source) throw new Error("Avatar not found. Create an avatar first.");
     await db
-      .prepare("DELETE FROM avatar_relationships WHERE from_avatar_id = ? AND to_avatar_id = ? AND kind = ?")
+      .prepare(
+        "DELETE FROM avatar_relationships WHERE from_avatar_id = ? AND to_avatar_id = ? AND kind = ?",
+      )
       .bind(source.id, safeToAvatarId, safeKind)
       .run();
 

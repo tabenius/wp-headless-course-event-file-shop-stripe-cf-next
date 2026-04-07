@@ -17,6 +17,7 @@ The admin style tab has 5 typography theme presets and a font browser modal for 
 Add a "Vintage" preset to `typographyThemes.js` alongside Clean, Editorial, Technical, Warm, and Haute.
 
 Font choices for Vintage theme:
+
 - **fontDisplay:** Playfair Display (variable, weight 400-900, serif)
 - **fontHeading:** Cormorant Garamond (variable, weight 300-700, serif)
 - **fontSubheading:** inherit (from heading)
@@ -49,11 +50,11 @@ No weight compatibility validation — YAGNI. The badge is sufficient for awaren
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `src/lib/typographyThemes.js` | Add "Vintage" theme preset |
-| `src/components/admin/AdminStyleTab.js` | Add collapsible CSS panel per font role card; pass `usedFonts` to modal |
-| `src/components/admin/AdminFontBrowserModal.js` | Accept `usedFonts` prop, show role badges next to used fonts |
+| File                                            | Change                                                                  |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| `src/lib/typographyThemes.js`                   | Add "Vintage" theme preset                                              |
+| `src/components/admin/AdminStyleTab.js`         | Add collapsible CSS panel per font role card; pass `usedFonts` to modal |
+| `src/components/admin/AdminFontBrowserModal.js` | Accept `usedFonts` prop, show role badges next to used fonts            |
 
 ## Out of Scope
 

@@ -30,7 +30,11 @@ export default function CyberduckBookmarkPanel({
   uploadInfoDetails,
   className = "",
 }) {
-  const r2Available = hasR2Available(uploadBackend, uploadInfo, uploadInfoDetails);
+  const r2Available = hasR2Available(
+    uploadBackend,
+    uploadInfo,
+    uploadInfoDetails,
+  );
   const [details, setDetails] = useState(uploadInfoDetails || null);
   const [showSecret, setShowSecret] = useState(false);
   const [copiedField, setCopiedField] = useState("");
@@ -98,12 +102,14 @@ export default function CyberduckBookmarkPanel({
       value: bucketPathDisplay || safeValue(""),
     },
   ];
-  const rootClass = `rounded-lg border border-slate-300 bg-slate-50 p-3 ${className}`.trim();
+  const rootClass =
+    `rounded-lg border border-slate-300 bg-slate-50 p-3 ${className}`.trim();
 
   async function copyValue(fieldId, value) {
     const text = String(value || "").trim();
     if (!text || text === "—") return;
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return;
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText)
+      return;
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldId);
@@ -126,7 +132,10 @@ export default function CyberduckBookmarkPanel({
       setBookmarkError(
         error instanceof Error
           ? error.message
-          : t("common.downloadFailed", "Download failed. Please try again soon."),
+          : t(
+              "common.downloadFailed",
+              "Download failed. Please try again soon.",
+            ),
       );
     } finally {
       setDownloadingBookmark(false);
@@ -136,7 +145,9 @@ export default function CyberduckBookmarkPanel({
   return (
     <div className={rootClass}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-slate-900">{t("admin.cyberduckTitle")}</p>
+        <p className="text-xs font-semibold text-slate-900">
+          {t("admin.cyberduckTitle")}
+        </p>
         <button
           type="button"
           onClick={handleDownloadBookmark}
@@ -177,7 +188,9 @@ export default function CyberduckBookmarkPanel({
                     onClick={() => setShowSecret((current) => !current)}
                     className="rounded border border-slate-200 px-1.5 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50"
                   >
-                    {showSecret ? t("admin.hideSecret", "Hide") : t("admin.showSecret", "Show")}
+                    {showSecret
+                      ? t("admin.hideSecret", "Hide")
+                      : t("admin.showSecret", "Show")}
                   </button>
                 )}
                 <button

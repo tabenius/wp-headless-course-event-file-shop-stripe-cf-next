@@ -30,11 +30,13 @@ export async function POST(request) {
   const url = String(payload?.url || "").trim();
   if (enabled && !url) {
     return NextResponse.json(
-      { ok: false, error: "A HTTPS proxy URL is required when proxy is enabled." },
+      {
+        ok: false,
+        error: "A HTTPS proxy URL is required when proxy is enabled.",
+      },
       { status: 400 },
     );
   }
   const settings = await saveWcProxySettings({ enabled, url });
   return NextResponse.json({ ok: true, settings });
 }
-

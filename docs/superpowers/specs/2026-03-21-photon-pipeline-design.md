@@ -41,18 +41,18 @@ executeOperations(photonImage, operations) -> void  // mutates in place
 
 Operator mapping:
 
-| Operator | Photon call | Notes |
-|---|---|---|
-| `source` | skip | Asset selection only |
-| `resize` | `resize(img, w, h, SamplingFilter.Lanczos3)` | |
-| `crop` | `crop(img, x1, y1, x2, y2)` | x2=x1+w, y2=y1+h |
-| `sharpen` | `sharpen(img)` | |
-| `saturation` | `saturate_hsl` / `desaturate_hsl` | sign of `amount` param |
-| `sepia` | `sepia(img)` | |
-| `colorBoost` | `adjust_contrast(img, contrast*100)` + `saturate_hsl` for vibrance | vibrance → saturation approximation |
-| `presetCrop` | parse ratio → calculate px dims → `crop()` | `scale` param shrinks result |
-| `cropCircle` | manual pixel loop on `get_raw_pixels()` | forces PNG output |
-| `textOverlay` | `draw_text(img, text, x_px, y_px, size)` | typeface ignored (Roboto only) |
+| Operator      | Photon call                                                        | Notes                               |
+| ------------- | ------------------------------------------------------------------ | ----------------------------------- |
+| `source`      | skip                                                               | Asset selection only                |
+| `resize`      | `resize(img, w, h, SamplingFilter.Lanczos3)`                       |                                     |
+| `crop`        | `crop(img, x1, y1, x2, y2)`                                        | x2=x1+w, y2=y1+h                    |
+| `sharpen`     | `sharpen(img)`                                                     |                                     |
+| `saturation`  | `saturate_hsl` / `desaturate_hsl`                                  | sign of `amount` param              |
+| `sepia`       | `sepia(img)`                                                       |                                     |
+| `colorBoost`  | `adjust_contrast(img, contrast*100)` + `saturate_hsl` for vibrance | vibrance → saturation approximation |
+| `presetCrop`  | parse ratio → calculate px dims → `crop()`                         | `scale` param shrinks result        |
+| `cropCircle`  | manual pixel loop on `get_raw_pixels()`                            | forces PNG output                   |
+| `textOverlay` | `draw_text(img, text, x_px, y_px, size)`                           | typeface ignored (Roboto only)      |
 
 ---
 

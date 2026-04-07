@@ -3,8 +3,9 @@ import { OPERATION_REGISTRY } from "@/components/admin/DerivationEditor/operatio
 // Re-export in the legacy shape for backward compat (route.js, helpers, etc.)
 export const OPERATION_SCHEMAS = Object.fromEntries(
   Object.entries(OPERATION_REGISTRY).map(([type, { label, parameters }]) => [
-    type, { label, parameters },
-  ])
+    type,
+    { label, parameters },
+  ]),
 );
 // Also include source (internal, not in registry)
 OPERATION_SCHEMAS.source = {
@@ -71,7 +72,8 @@ export function validateDerivationPayload(payload) {
   return {
     id: id.trim(),
     name: name.trim(),
-    description: typeof payload.description === "string" ? payload.description.trim() : "",
+    description:
+      typeof payload.description === "string" ? payload.description.trim() : "",
     operations: normalizedOperations,
     assetTypes,
   };

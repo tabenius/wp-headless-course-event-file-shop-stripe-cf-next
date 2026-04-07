@@ -154,7 +154,9 @@ export async function listTickets() {
     const output = [];
     for (const row of tickets || []) {
       const { results: comments } = await db
-        .prepare("SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at")
+        .prepare(
+          "SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at",
+        )
         .bind(row.id)
         .all();
       output.push(ticketRowToObject(row, comments || []));
@@ -181,8 +183,11 @@ export async function createTicket({
     const now = new Date().toISOString();
     const safeTitle = String(title || "Untitled").slice(0, 200);
     const safeDesc = String(description || "").slice(0, 5000);
-    const safePriority = ["critical", "moderate", "low"].includes(priority) ? priority : "moderate";
-    const safeBuild = typeof buildTime === "string" ? buildTime.slice(0, 40) : "";
+    const safePriority = ["critical", "moderate", "low"].includes(priority)
+      ? priority
+      : "moderate";
+    const safeBuild =
+      typeof buildTime === "string" ? buildTime.slice(0, 40) : "";
     const safeSha = typeof gitSha === "string" ? gitSha.slice(0, 40) : "";
     await db
       .prepare(
@@ -190,7 +195,18 @@ export async function createTicket({
       )
       .bind(id, safeTitle, safeDesc, safePriority, safeBuild, safeSha, now, now)
       .run();
-    return { id, title: safeTitle, description: safeDesc, priority: safePriority, status: "open", comments: [], buildTime: safeBuild, gitSha: safeSha, createdAt: now, updatedAt: now };
+    return {
+      id,
+      title: safeTitle,
+      description: safeDesc,
+      priority: safePriority,
+      status: "open",
+      comments: [],
+      buildTime: safeBuild,
+      gitSha: safeSha,
+      createdAt: now,
+      updatedAt: now,
+    };
   }
 
   // existing KV path (unchanged)
@@ -215,27 +231,46 @@ export async function createTicket({
 export async function updateTicket(id, { status, comment, author = "admin" }) {
   const db = await tryGetD1();
   if (db) {
-    const row = await db.prepare("SELECT * FROM support_tickets WHERE id = ?").bind(id).first();
+    const row = await db
+      .prepare("SELECT * FROM support_tickets WHERE id = ?")
+      .bind(id)
+      .first();
     if (!row) throw new Error("Ticket not found");
 
     const now = new Date().toISOString();
     if (status && ["open", "will-fix", "resolved"].includes(status)) {
-      await db.prepare("UPDATE support_tickets SET status = ?, updated_at = ? WHERE id = ?").bind(status, now, id).run();
+      await db
+        .prepare(
+          "UPDATE support_tickets SET status = ?, updated_at = ? WHERE id = ?",
+        )
+        .bind(status, now, id)
+        .run();
     } else {
-      await db.prepare("UPDATE support_tickets SET updated_at = ? WHERE id = ?").bind(now, id).run();
+      await db
+        .prepare("UPDATE support_tickets SET updated_at = ? WHERE id = ?")
+        .bind(now, id)
+        .run();
     }
     if (comment && comment.trim()) {
-      const commentId = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+      const commentId =
+        crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
       await db
-        .prepare("INSERT INTO ticket_comments (id, ticket_id, text, author, created_at) VALUES (?, ?, ?, ?, ?)")
+        .prepare(
+          "INSERT INTO ticket_comments (id, ticket_id, text, author, created_at) VALUES (?, ?, ?, ?, ?)",
+        )
         .bind(commentId, id, comment.trim().slice(0, 2000), author, now)
         .run();
     }
     const { results: comments } = await db
-      .prepare("SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at")
+      .prepare(
+        "SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at",
+      )
       .bind(id)
       .all();
-    const updated = await db.prepare("SELECT * FROM support_tickets WHERE id = ?").bind(id).first();
+    const updated = await db
+      .prepare("SELECT * FROM support_tickets WHERE id = ?")
+      .bind(id)
+      .first();
     return ticketRowToObject(updated, comments || []);
   }
 

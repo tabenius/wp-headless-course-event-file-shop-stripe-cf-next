@@ -32,7 +32,7 @@ export function extractAnchorsFromHtml(html) {
 
 export function classifyHref(
   href,
-  { siteHost, origin, pseudoExternalHosts = [] } = {}
+  { siteHost, origin, pseudoExternalHosts = [] } = {},
 ) {
   const rawHref = normalizeText(href);
   if (!rawHref) {
@@ -73,7 +73,9 @@ export function classifyHref(
       href: rawHref,
       kind: "internal",
       translatedPath,
-      checkUrl: normalizedOrigin ? new URL(translatedPath, normalizedOrigin).toString() : null,
+      checkUrl: normalizedOrigin
+        ? new URL(translatedPath, normalizedOrigin).toString()
+        : null,
     };
   }
 
@@ -83,7 +85,9 @@ export function classifyHref(
       href: rawHref,
       kind: "internal",
       translatedPath,
-      checkUrl: normalizedOrigin ? new URL(translatedPath, normalizedOrigin).toString() : null,
+      checkUrl: normalizedOrigin
+        ? new URL(translatedPath, normalizedOrigin).toString()
+        : null,
     };
   }
 
@@ -117,7 +121,9 @@ export function classifyHref(
       href: rawHref,
       kind: "internal",
       translatedPath: path,
-      checkUrl: normalizedOrigin ? new URL(path, normalizedOrigin).toString() : parsed.toString(),
+      checkUrl: normalizedOrigin
+        ? new URL(path, normalizedOrigin).toString()
+        : parsed.toString(),
     };
   }
 

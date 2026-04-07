@@ -33,12 +33,12 @@ export default async function AdminAssetPage({ params: paramsPromise }) {
           <span className="font-semibold">Asset root:</span> `/assets/{assetId}`
         </p>
         <p className="text-sm text-gray-700">
-          <span className="font-semibold">Buyable mount:</span>{" "}
-          `/shop/{assetId}`
+          <span className="font-semibold">Buyable mount:</span> `/shop/{assetId}
+          `
         </p>
         <p className="text-sm text-gray-700">
-          <span className="font-semibold">Owned mount:</span>{" "}
-          `/inventory/{assetId}`
+          <span className="font-semibold">Owned mount:</span> `/inventory/
+          {assetId}`
         </p>
       </div>
 
@@ -47,7 +47,9 @@ export default async function AdminAssetPage({ params: paramsPromise }) {
           <p className="text-sm text-emerald-900">
             Linked product: <strong>{linkedProduct.name}</strong>
           </p>
-          <p className="text-xs text-emerald-800">Product id: {linkedProduct.id}</p>
+          <p className="text-xs text-emerald-800">
+            Product id: {linkedProduct.id}
+          </p>
           <p>
             <Link
               href={`/shop/${encodeURIComponent(assetId)}`}

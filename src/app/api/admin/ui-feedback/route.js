@@ -8,7 +8,9 @@ import {
 } from "@/lib/adminUiFeedbackStore";
 
 function canEditFeedback(session) {
-  const email = String(session?.email || "").trim().toLowerCase();
+  const email = String(session?.email || "")
+    .trim()
+    .toLowerCase();
   return email.startsWith("sofia");
 }
 
@@ -38,19 +40,33 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON." },
+      { status: 400 },
+    );
   }
 
   const fieldId = normalizeUiFeedbackFieldId(body?.fieldId);
-  const value = String(body?.value || "").trim().toLowerCase();
+  const value = String(body?.value || "")
+    .trim()
+    .toLowerCase();
   if (!fieldId) {
-    return NextResponse.json({ ok: false, error: "fieldId is required." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "fieldId is required." },
+      { status: 400 },
+    );
   }
   if (!isValidUiFeedbackValue(value)) {
-    return NextResponse.json({ ok: false, error: "Invalid feedback value." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid feedback value." },
+      { status: 400 },
+    );
   }
 
-  const next = await setAdminUiFeedback(fieldId, value, auth.session?.email || "");
+  const next = await setAdminUiFeedback(
+    fieldId,
+    value,
+    auth.session?.email || "",
+  );
   return NextResponse.json({ ok: true, fields: next.fields || {} });
 }
-

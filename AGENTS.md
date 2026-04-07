@@ -105,7 +105,7 @@ The lock is created automatically by `scripts/build-with-lock.mjs` and removed o
 - Before enabling `GRAPHQL_AVAILABILITY_AUTO_RECORD=1`, the active agent must warn both:
   - the user in-chat, and
   - the other agent via `claude+codex-coop.md`,
-  about static/ISR static→dynamic risk and expected telemetry tradeoffs.
+    about static/ISR static→dynamic risk and expected telemetry tradeoffs.
 - If enabled temporarily, record the start/stop intent in coop and turn it back off (`0`) after diagnostics.
 - Build scripts now emit a warning whenever `GRAPHQL_AVAILABILITY_AUTO_RECORD=1` is present; treat that warning as a required manual confirmation checkpoint.
 
@@ -124,7 +124,7 @@ But here are natural areas of focus:
 | `src/lib/i18n/*.json`                                   | Translations — always update all three languages together        |
 | `src/lib/ai.js`, `src/lib/imageQuota.js`                | AI helpers — pure functions, well-tested                         |
 | `src/lib/cloudflareKv.js`, `src/lib/digitalProducts.js` | KV/storage layer                                                 |
-| `packages/ragbaz-bridge-plugin/`                    | WordPress plugin — independent; build with `npm run plugin:copy` |
+| `packages/ragbaz-bridge-plugin/`                        | WordPress plugin — independent; build with `npm run plugin:copy` |
 | `tests/`                                                | `node:test` tests — run with `npm test`                          |
 
 ---
@@ -224,6 +224,7 @@ Full list in `.env.example`.
 ### Ranked backlog (see coop file for full detail)
 
 DONE (2026-03-27, Codex): prioritized implementation batch landed in order:
+
 1. R2 binding + CF bundle-size migration
 2. Media/derivation UX hardening (quick-add + panel hotkeys + async WP auth callsites)
 3. Image pipeline defaults (WebP-first + responsive variant uploads + stricter variant-kind defaults)
@@ -231,6 +232,13 @@ DONE (2026-03-27, Codex): prioritized implementation batch landed in order:
 5. Tiered settings panel with WC proxy + Stripe key override settings (KV-backed) and runtime wiring
 
 **Follow-up / Monitoring** — Validate new settings/Stripe override paths and shop enrichment flow in staging/production, then continue planned `AdminMediaLibraryTab` extraction.
+
+### Active handoff plan (Claude/Codex)
+
+- Digital download + asset handling + route/product bug-candidate audit plan:
+  - `docs/plans/2026-04-06-digital-download-assets-routes-audit.md`
+- Detailed implementation plan for fixes:
+  - `docs/plans/2026-04-06-digital-download-assets-routes-implementation-plan.md`
 
 ### Working rules for this backlog
 

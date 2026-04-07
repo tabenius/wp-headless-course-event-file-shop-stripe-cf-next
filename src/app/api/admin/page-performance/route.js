@@ -33,8 +33,10 @@ export async function POST(request) {
   // Fire-and-forget — we don't want to block the client waiting for D1/KV
   recordPagePerformance({
     url: String(body.url || "").slice(0, 500),
-    referrer: typeof body.referrer === "string" ? body.referrer.slice(0, 500) : "",
-    sessionId: typeof body.sessionId === "string" ? body.sessionId.slice(0, 64) : "",
+    referrer:
+      typeof body.referrer === "string" ? body.referrer.slice(0, 500) : "",
+    sessionId:
+      typeof body.sessionId === "string" ? body.sessionId.slice(0, 64) : "",
     ttfb: Number(body.ttfb) || 0,
     domComplete: Number(body.domComplete) || 0,
     lcp: body.lcp != null ? Number(body.lcp) : undefined,
@@ -42,7 +44,9 @@ export async function POST(request) {
     inp: body.inp != null ? Number(body.inp) : undefined,
     cls: body.cls != null ? Number(body.cls) : undefined,
     navigationType:
-      typeof body.navigationType === "string" ? body.navigationType.slice(0, 32) : undefined,
+      typeof body.navigationType === "string"
+        ? body.navigationType.slice(0, 32)
+        : undefined,
   }).catch(() => {});
 
   // If user is authenticated, tie this browsing session to their identity
@@ -63,7 +67,8 @@ export async function POST(request) {
         ok: false,
         skipped: false,
         reason: "relay_exception",
-        message: error instanceof Error ? error.message : String(error || "unknown"),
+        message:
+          error instanceof Error ? error.message : String(error || "unknown"),
       }),
     );
 
@@ -96,7 +101,10 @@ export async function GET(request) {
     }),
     {
       status: 200,
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      },
     },
   );
 }

@@ -62,4 +62,3 @@ It is intentionally high-level and focused on user/admin experience.
 - Continued foundation hardening for headless WordPress + Cloudflare operation.
 - Expanded operational tooling and environment setup guidance to support faster onboarding and safer day-to-day administration.
 - Prepared the groundwork for later admin usability, media workflow, and storefront reliability improvements delivered in subsequent weeks.
-

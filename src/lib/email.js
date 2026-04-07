@@ -20,8 +20,8 @@ export async function sendEmail({ to, subject, html }) {
           .split(",")
           .map((entry) => entry.trim())
           .filter(Boolean),
-      ].filter(Boolean)
-    )
+      ].filter(Boolean),
+    ),
   );
 
   const payload = {

@@ -15,7 +15,8 @@ import { useEffect } from "react";
  */
 export function usePagePerformanceLogger() {
   useEffect(() => {
-    if (typeof window === "undefined" || typeof performance === "undefined") return;
+    if (typeof window === "undefined" || typeof performance === "undefined")
+      return;
 
     let sent = false;
     let lcp = null;
@@ -62,7 +63,10 @@ export function usePagePerformanceLogger() {
       // Use sendBeacon when available so the request survives page unload
       const body = JSON.stringify(payload);
       if (typeof navigator.sendBeacon === "function") {
-        navigator.sendBeacon("/api/admin/page-performance", new Blob([body], { type: "application/json" }));
+        navigator.sendBeacon(
+          "/api/admin/page-performance",
+          new Blob([body], { type: "application/json" }),
+        );
       } else {
         fetch("/api/admin/page-performance", {
           method: "POST",
@@ -96,7 +100,11 @@ export function usePagePerformanceLogger() {
           inp = inp == null ? duration : Math.max(inp, duration);
         }
       });
-      inpObserver.observe({ type: "event", buffered: true, durationThreshold: 40 });
+      inpObserver.observe({
+        type: "event",
+        buffered: true,
+        durationThreshold: 40,
+      });
     } catch {
       // Not supported in all browsers
     }

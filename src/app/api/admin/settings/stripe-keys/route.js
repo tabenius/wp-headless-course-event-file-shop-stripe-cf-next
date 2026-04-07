@@ -48,7 +48,10 @@ export async function POST(request) {
   const publishableKey = String(payload?.publishableKey || "").trim();
   if (enabled && !secretKey) {
     return NextResponse.json(
-      { ok: false, error: "Secret key is required when overrides are enabled." },
+      {
+        ok: false,
+        error: "Secret key is required when overrides are enabled.",
+      },
       { status: 400 },
     );
   }
@@ -77,4 +80,3 @@ export async function DELETE(request) {
   await clearStripeKeyOverrides();
   return NextResponse.json({ ok: true });
 }
-

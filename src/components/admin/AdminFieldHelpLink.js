@@ -10,7 +10,11 @@ const SLUG_TOPIC_KEYS = {
   "technical-manual": "docsGuideTechnical",
 };
 
-export default function AdminFieldHelpLink({ slug, topic = "", className = "" }) {
+export default function AdminFieldHelpLink({
+  slug,
+  topic = "",
+  className = "",
+}) {
   const docsLang = normalizeDocsLanguage(getLocale());
   const href = buildRagbazDocsUrl({ lang: docsLang, slug });
   const resolvedTopic =

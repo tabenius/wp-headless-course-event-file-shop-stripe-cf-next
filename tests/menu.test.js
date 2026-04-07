@@ -52,7 +52,10 @@ test("filterNavigationByExistence drops invalid object shapes", async () => {
     { label: "No href" },
   ];
 
-  const result = await filterNavigationByExistence(navigation, async () => true);
+  const result = await filterNavigationByExistence(
+    navigation,
+    async () => true,
+  );
   assert.deepEqual(result, [{ href: "/valid", label: "Valid" }]);
 });
 

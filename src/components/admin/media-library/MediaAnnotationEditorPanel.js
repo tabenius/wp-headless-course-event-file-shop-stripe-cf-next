@@ -145,7 +145,9 @@ export default function MediaAnnotationEditorPanel({
           />
         </label>
         <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
-          <span>{t("admin.mediaStructuredMeta", "Structured metadata (JSON/YAML)")}</span>
+          <span>
+            {t("admin.mediaStructuredMeta", "Structured metadata (JSON/YAML)")}
+          </span>
           <textarea
             value={editor.structuredMeta}
             onChange={(event) =>
@@ -207,7 +209,10 @@ export default function MediaAnnotationEditorPanel({
               }))
             }
             className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-            placeholder={t("admin.mediaAssetSlugPlaceholder", "optional-human-readable-label")}
+            placeholder={t(
+              "admin.mediaAssetSlugPlaceholder",
+              "optional-human-readable-label",
+            )}
           />
         </label>
         <label className="space-y-1 text-xs text-gray-600 md:col-span-2">
@@ -222,11 +227,16 @@ export default function MediaAnnotationEditorPanel({
               }))
             }
             className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
-            placeholder={t("admin.mediaAssetUriPlaceholder", "/asset/<asset-id>")}
+            placeholder={t(
+              "admin.mediaAssetUriPlaceholder",
+              "/asset/<asset-id>",
+            )}
           />
         </label>
         <label className="space-y-1 text-xs text-gray-600">
-          <span>{t("admin.imageCopyrightHolderLabel", "Copyright holder")}</span>
+          <span>
+            {t("admin.imageCopyrightHolderLabel", "Copyright holder")}
+          </span>
           <input
             type="text"
             value={editor.copyrightHolder}

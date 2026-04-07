@@ -148,9 +148,7 @@ function AdminSuspenseFallback({ variant = "default", title = "Loading" }) {
 
   return (
     <div className="rounded-lg border p-4 space-y-3" aria-live="polite">
-      <div className="text-xs text-gray-500">
-        {title}
-      </div>
+      <div className="text-xs text-gray-500">{title}</div>
       <AdminSkeletonLine className="h-5 w-48" />
       <AdminSkeletonLine className="h-3 w-full" />
       <AdminSkeletonLine className="h-3 w-[92%]" />
@@ -179,7 +177,9 @@ function extractHashPath(value) {
   const lower = raw.toLowerCase();
   const lastHashRoute = lower.lastIndexOf("#/");
   const candidate =
-    lastHashRoute >= 0 ? lower.slice(lastHashRoute + 2) : lower.replace(/^#\/?/, "");
+    lastHashRoute >= 0
+      ? lower.slice(lastHashRoute + 2)
+      : lower.replace(/^#\/?/, "");
   return candidate.replace(/^\/+/, "");
 }
 
@@ -251,7 +251,11 @@ function normalizeProductModeValue(mode, product) {
     return safe;
   }
   if (String(product?.assetId || "").trim()) return "asset";
-  if (String(product?.type || "").trim().toLowerCase() === "course") {
+  if (
+    String(product?.type || "")
+      .trim()
+      .toLowerCase() === "course"
+  ) {
     return "manual_uri";
   }
   return "digital_file";
@@ -286,8 +290,20 @@ const SITE_STYLE_DEFAULTS = {
 
 // ── CTA button style ──────────────────────────────────────────────────────────
 
-const CTA_BG_COLORS = ["primary", "secondary", "foreground", "background", "custom"];
-const CTA_TEXT_COLORS = ["background", "foreground", "primary", "secondary", "custom"];
+const CTA_BG_COLORS = [
+  "primary",
+  "secondary",
+  "foreground",
+  "background",
+  "custom",
+];
+const CTA_TEXT_COLORS = [
+  "background",
+  "foreground",
+  "primary",
+  "secondary",
+  "custom",
+];
 const CTA_BORDER_RADII = ["none", "sm", "md", "lg", "full"];
 const CTA_BORDERS = ["none", "solid"];
 const CTA_BORDER_COLORS = ["primary", "secondary", "foreground", "custom"];
@@ -306,7 +322,13 @@ const _CTA_WEIGHTS_SET = new Set(CTA_FONT_WEIGHTS);
 const _CTA_TRANSFORMS_SET = new Set(CTA_TEXT_TRANSFORMS);
 const _CTA_PADDING_SET = new Set(CTA_PADDING_SIZES);
 
-const CTA_RADIUS_MAP = { none: "0px", sm: "4px", md: "8px", lg: "16px", full: "9999px" };
+const CTA_RADIUS_MAP = {
+  none: "0px",
+  sm: "4px",
+  md: "8px",
+  lg: "16px",
+  full: "9999px",
+};
 const CTA_PADDING_MAP = {
   sm: { x: "0.875rem", y: "0.375rem" },
   md: { x: "1.25rem", y: "0.625rem" },
@@ -317,21 +339,71 @@ const CTA_SHADOW_MAP = {
   sm: "0 1px 2px rgba(0,0,0,.08)",
   md: "0 4px 6px rgba(0,0,0,.10)",
 };
-const CTA_FONT_WEIGHT_MAP = { normal: 400, medium: 500, semibold: 600, bold: 700 };
+const CTA_FONT_WEIGHT_MAP = {
+  normal: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+};
 
 const CTA_UPSTREAM = { type: "upstream" };
 const CTA_DEFAULT_STYLE = {
-  bgColor: "primary", textColor: "background", borderRadius: "md",
-  border: "none", shadow: "none", fontWeight: "semibold",
-  textTransform: "none", paddingSize: "md",
+  bgColor: "primary",
+  textColor: "background",
+  borderRadius: "md",
+  border: "none",
+  shadow: "none",
+  fontWeight: "semibold",
+  textTransform: "none",
+  paddingSize: "md",
 };
 
 const CTA_BUILTIN_PRESETS = [
   { id: "upstream", name: "Upstream", style: CTA_UPSTREAM },
-  { id: "filled",   name: "Filled",   style: { ...CTA_DEFAULT_STYLE } },
-  { id: "outline",  name: "Outline",  style: { bgColor: "background", textColor: "primary", borderRadius: "md", border: "solid", borderColor: "primary", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
-  { id: "pill",     name: "Pill",     style: { bgColor: "primary", textColor: "background", borderRadius: "full", border: "none", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
-  { id: "secondary",name: "Secondary",style: { bgColor: "secondary", textColor: "foreground", borderRadius: "md", border: "none", shadow: "none", fontWeight: "semibold", textTransform: "none", paddingSize: "md" } },
+  { id: "filled", name: "Filled", style: { ...CTA_DEFAULT_STYLE } },
+  {
+    id: "outline",
+    name: "Outline",
+    style: {
+      bgColor: "background",
+      textColor: "primary",
+      borderRadius: "md",
+      border: "solid",
+      borderColor: "primary",
+      shadow: "none",
+      fontWeight: "semibold",
+      textTransform: "none",
+      paddingSize: "md",
+    },
+  },
+  {
+    id: "pill",
+    name: "Pill",
+    style: {
+      bgColor: "primary",
+      textColor: "background",
+      borderRadius: "full",
+      border: "none",
+      shadow: "none",
+      fontWeight: "semibold",
+      textTransform: "none",
+      paddingSize: "md",
+    },
+  },
+  {
+    id: "secondary",
+    name: "Secondary",
+    style: {
+      bgColor: "secondary",
+      textColor: "foreground",
+      borderRadius: "md",
+      border: "none",
+      shadow: "none",
+      fontWeight: "semibold",
+      textTransform: "none",
+      paddingSize: "md",
+    },
+  },
 ];
 
 /** Client-side mirror of normalizeCtaStyle from shopSettings.js */
@@ -340,19 +412,42 @@ function normalizeCtaStyleClient(source) {
   if (source.type === "upstream") return { type: "upstream" };
   if (!_CTA_BG_SET.has(source.bgColor)) return { type: "upstream" };
   const bgColor = source.bgColor;
-  const textColor = _CTA_TEXT_SET.has(source.textColor) ? source.textColor : "background";
-  const borderRadius = _CTA_RADII_SET.has(source.borderRadius) ? source.borderRadius : "md";
+  const textColor = _CTA_TEXT_SET.has(source.textColor)
+    ? source.textColor
+    : "background";
+  const borderRadius = _CTA_RADII_SET.has(source.borderRadius)
+    ? source.borderRadius
+    : "md";
   const border = _CTA_BORDERS_SET.has(source.border) ? source.border : "none";
   const shadow = _CTA_SHADOWS_SET.has(source.shadow) ? source.shadow : "none";
-  const fontWeight = _CTA_WEIGHTS_SET.has(source.fontWeight) ? source.fontWeight : "semibold";
-  const textTransform = _CTA_TRANSFORMS_SET.has(source.textTransform) ? source.textTransform : "none";
-  const paddingSize = _CTA_PADDING_SET.has(source.paddingSize) ? source.paddingSize : "md";
-  const result = { bgColor, textColor, borderRadius, border, shadow, fontWeight, textTransform, paddingSize };
+  const fontWeight = _CTA_WEIGHTS_SET.has(source.fontWeight)
+    ? source.fontWeight
+    : "semibold";
+  const textTransform = _CTA_TRANSFORMS_SET.has(source.textTransform)
+    ? source.textTransform
+    : "none";
+  const paddingSize = _CTA_PADDING_SET.has(source.paddingSize)
+    ? source.paddingSize
+    : "md";
+  const result = {
+    bgColor,
+    textColor,
+    borderRadius,
+    border,
+    shadow,
+    fontWeight,
+    textTransform,
+    paddingSize,
+  };
   if (bgColor === "custom") result.bgCustom = source.bgCustom || "#000000";
-  if (textColor === "custom") result.textCustom = source.textCustom || "#ffffff";
+  if (textColor === "custom")
+    result.textCustom = source.textCustom || "#ffffff";
   if (border === "solid") {
-    result.borderColor = _CTA_BORDER_COLOR_SET.has(source.borderColor) ? source.borderColor : "primary";
-    if (result.borderColor === "custom") result.borderCustom = source.borderCustom || "#000000";
+    result.borderColor = _CTA_BORDER_COLOR_SET.has(source.borderColor)
+      ? source.borderColor
+      : "primary";
+    if (result.borderColor === "custom")
+      result.borderCustom = source.borderCustom || "#000000";
   }
   return result;
 }
@@ -368,7 +463,10 @@ function ctaPreviewStyle(cta, tokens) {
   if (!cta || cta.type === "upstream") return {};
   const bg = resolveCtaColor(cta.bgColor, cta.bgCustom, tokens);
   const color = resolveCtaColor(cta.textColor, cta.textCustom, tokens);
-  const borderColor = cta.border === "solid" ? resolveCtaColor(cta.borderColor, cta.borderCustom, tokens) : "transparent";
+  const borderColor =
+    cta.border === "solid"
+      ? resolveCtaColor(cta.borderColor, cta.borderCustom, tokens)
+      : "transparent";
   const pad = CTA_PADDING_MAP[cta.paddingSize] || CTA_PADDING_MAP.md;
   return {
     backgroundColor: bg,
@@ -396,7 +494,11 @@ const SITE_STYLE_COLOR_FIELDS = [
     labelKey: "admin.styleColorForeground",
     token: "--color-foreground",
   },
-  { key: "primary", labelKey: "admin.styleColorPrimary", token: "--color-primary" },
+  {
+    key: "primary",
+    labelKey: "admin.styleColorPrimary",
+    token: "--color-primary",
+  },
   {
     key: "secondary",
     labelKey: "admin.styleColorSecondary",
@@ -490,10 +592,7 @@ function applySiteStyleTokensToDom(tokens) {
   root.style.setProperty("--color-secondary", safe.secondary);
   root.style.setProperty("--color-tertiary", safe.tertiary);
   root.style.setProperty("--color-muted", safe.muted);
-  root.style.setProperty(
-    "--focus-ring-color",
-    safe.focusRing || safe.primary,
-  );
+  root.style.setProperty("--focus-ring-color", safe.focusRing || safe.primary);
   root.style.setProperty("--font-heading", safe.fontHeading);
   root.style.setProperty("--font-body", safe.fontBody);
   root.style.setProperty("--background", "var(--color-background)");
@@ -505,23 +604,59 @@ function applySiteStyleTokensToDom(tokens) {
   if (cta && cta.type !== "upstream" && cta.bgColor) {
     const resolve = (slot, custom) => {
       if (slot === "custom") return custom || "";
-      const varMap = { primary: "var(--color-primary)", secondary: "var(--color-secondary)", foreground: "var(--color-foreground)", background: "var(--color-background)" };
+      const varMap = {
+        primary: "var(--color-primary)",
+        secondary: "var(--color-secondary)",
+        foreground: "var(--color-foreground)",
+        background: "var(--color-background)",
+      };
       return varMap[slot] || "";
     };
     root.style.setProperty("--btn-bg", resolve(cta.bgColor, cta.bgCustom));
-    root.style.setProperty("--btn-color", resolve(cta.textColor, cta.textCustom));
-    root.style.setProperty("--btn-radius", CTA_RADIUS_MAP[cta.borderRadius] || "8px");
-    root.style.setProperty("--btn-border-width", cta.border === "solid" ? "1px" : "0px");
-    root.style.setProperty("--btn-border-color", cta.border === "solid" ? resolve(cta.borderColor, cta.borderCustom) : "transparent");
-    root.style.setProperty("--btn-shadow", CTA_SHADOW_MAP[cta.shadow] || "none");
-    root.style.setProperty("--btn-font-weight", String(CTA_FONT_WEIGHT_MAP[cta.fontWeight] || 600));
+    root.style.setProperty(
+      "--btn-color",
+      resolve(cta.textColor, cta.textCustom),
+    );
+    root.style.setProperty(
+      "--btn-radius",
+      CTA_RADIUS_MAP[cta.borderRadius] || "8px",
+    );
+    root.style.setProperty(
+      "--btn-border-width",
+      cta.border === "solid" ? "1px" : "0px",
+    );
+    root.style.setProperty(
+      "--btn-border-color",
+      cta.border === "solid"
+        ? resolve(cta.borderColor, cta.borderCustom)
+        : "transparent",
+    );
+    root.style.setProperty(
+      "--btn-shadow",
+      CTA_SHADOW_MAP[cta.shadow] || "none",
+    );
+    root.style.setProperty(
+      "--btn-font-weight",
+      String(CTA_FONT_WEIGHT_MAP[cta.fontWeight] || 600),
+    );
     root.style.setProperty("--btn-text-transform", cta.textTransform || "none");
     const pad = CTA_PADDING_MAP[cta.paddingSize] || CTA_PADDING_MAP.md;
     root.style.setProperty("--btn-padding-x", pad.x);
     root.style.setProperty("--btn-padding-y", pad.y);
   } else {
     // Upstream — remove overrides so WP theme styles apply
-    ["--btn-bg","--btn-color","--btn-radius","--btn-border-width","--btn-border-color","--btn-shadow","--btn-font-weight","--btn-text-transform","--btn-padding-x","--btn-padding-y"].forEach(v => root.style.removeProperty(v));
+    [
+      "--btn-bg",
+      "--btn-color",
+      "--btn-radius",
+      "--btn-border-width",
+      "--btn-border-color",
+      "--btn-shadow",
+      "--btn-font-weight",
+      "--btn-text-transform",
+      "--btn-padding-x",
+      "--btn-padding-y",
+    ].forEach((v) => root.style.removeProperty(v));
   }
 }
 
@@ -533,7 +668,8 @@ function applyFontRolesToDom(roles, palette, ls) {
   function fontFamilyValue(role) {
     if (!role || typeof role !== "object") return null;
     if (role.type === "preset") return role.stack || null;
-    if (role.type === "google") return `'${role.family}', system-ui, sans-serif`;
+    if (role.type === "google")
+      return `'${role.family}', system-ui, sans-serif`;
     return null;
   }
 
@@ -725,8 +861,9 @@ function UserAccessPanel({ users, courses, allWpContent, products }) {
               Access backends
             </h3>
             <p className="text-xs text-gray-500">
-              WordPress course access is written via GraphQL and optionally mirrored to KV.
-              Digital product access uses its own KV store (always active).
+              WordPress course access is written via GraphQL and optionally
+              mirrored to KV. Digital product access uses its own KV store
+              (always active).
             </p>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="px-3 py-1 rounded bg-green-50 text-green-800 border border-green-200">
@@ -950,7 +1087,9 @@ export default function AdminDashboard() {
   const setChatBetaEnabled = useCallback((val) => {
     const next = Boolean(val);
     setChatBetaEnabledState(next);
-    try { localStorage.setItem(CHAT_BETA_STORAGE_KEY, String(next)); } catch {}
+    try {
+      localStorage.setItem(CHAT_BETA_STORAGE_KEY, String(next));
+    } catch {}
   }, []);
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -1093,14 +1232,25 @@ export default function AdminDashboard() {
   const [typographySaveExpanded, setTypographySaveExpanded] = useState(false);
   // Font role state (new system)
   const [fontRoles, setFontRoles] = useState({
-    fontDisplay: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
-    fontHeading: { type: "preset", stack: "system-ui, sans-serif", colorSlot: 1 },
+    fontDisplay: {
+      type: "preset",
+      stack: "system-ui, sans-serif",
+      colorSlot: 1,
+    },
+    fontHeading: {
+      type: "preset",
+      stack: "system-ui, sans-serif",
+      colorSlot: 1,
+    },
     fontSubheading: { type: "inherit" },
     fontBody: { type: "preset", stack: "Georgia, serif" },
     fontButton: { type: "preset", stack: "system-ui, sans-serif" },
   });
   const [typographyPalette, setTypographyPalette] = useState(["#111111"]);
-  const [linkStyle, setLinkStyle] = useState({ hoverVariant: "underline", underlineDefault: "hover" });
+  const [linkStyle, setLinkStyle] = useState({
+    hoverVariant: "underline",
+    underlineDefault: "hover",
+  });
   const [fontBrowserRole, setFontBrowserRole] = useState(null);
   const [downloadedFamilies] = useState([]);
   const [downloadingRole, setDownloadingRole] = useState(null);
@@ -1139,7 +1289,8 @@ export default function AdminDashboard() {
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState("");
   const [paymentsErrorCode, setPaymentsErrorCode] = useState("");
-  const [paymentsStripeConfigured, setPaymentsStripeConfigured] = useState(true);
+  const [paymentsStripeConfigured, setPaymentsStripeConfigured] =
+    useState(true);
   const [paymentsEmptyReason, setPaymentsEmptyReason] = useState(null);
   const [downloading, setDownloading] = useState(null);
 
@@ -1158,10 +1309,7 @@ export default function AdminDashboard() {
   }, [loadUiFeedback]);
 
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      window.localStorage === undefined
-    ) {
+    if (typeof window === "undefined" || window.localStorage === undefined) {
       return;
     }
     const stored = window.localStorage.getItem(WELCOME_SEEN_KEY);
@@ -1180,7 +1328,11 @@ export default function AdminDashboard() {
       if (tab) {
         e.preventDefault();
         const routeDetail =
-          tab === "health" ? "info/health" : tab === "stats" ? "info/stats" : tab;
+          tab === "health"
+            ? "info/health"
+            : tab === "stats"
+              ? "info/stats"
+              : tab;
         const normalizedTab = normalizeAdminTab(routeDetail) || "welcome";
         setActiveTab(normalizedTab);
         const nextHash = hashForAdminRoute(routeDetail);
@@ -1264,9 +1416,7 @@ export default function AdminDashboard() {
         return;
       }
       setActiveTab(tab);
-      window.dispatchEvent(
-        new CustomEvent("admin:switchTab", { detail: tab }),
-      );
+      window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: tab }));
     }
     onHashChange();
     window.addEventListener("hashchange", onHashChange);
@@ -1281,7 +1431,8 @@ export default function AdminDashboard() {
       }
     }
     window.addEventListener("admin:selectProduct", onSelectProduct);
-    return () => window.removeEventListener("admin:selectProduct", onSelectProduct);
+    return () =>
+      window.removeEventListener("admin:selectProduct", onSelectProduct);
   }, []);
 
   const handleWelcomeSeen = useCallback(() => {
@@ -1304,20 +1455,25 @@ export default function AdminDashboard() {
     if (typeof window === "undefined" || !ADMIN_TAB_SET.has(activeTab)) return;
     if (
       activeTab === "info" &&
-      String(window.location.hash || "").toLowerCase().startsWith("#/info/")
+      String(window.location.hash || "")
+        .toLowerCase()
+        .startsWith("#/info/")
     ) {
       return;
     }
-    const productSlug = activeTab === "products" && selectedShopProduct?.slug
-      ? `/${selectedShopProduct.slug}`
-      : "";
+    const productSlug =
+      activeTab === "products" && selectedShopProduct?.slug
+        ? `/${selectedShopProduct.slug}`
+        : "";
     const nextHash = `#/${activeTab}${productSlug}`;
     if (window.location.hash === nextHash) return;
     const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
     window.history.replaceState(null, "", nextUrl);
   }, [activeTab, selectedShopProduct]);
   const isWpSelection =
-    selectedContent && !selectedContent.startsWith("__") && selectedContent !== "";
+    selectedContent &&
+    !selectedContent.startsWith("__") &&
+    selectedContent !== "";
 
   // The URI used for access config (empty if not applicable)
   const accessUri = useMemo(() => {
@@ -1387,7 +1543,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!loaded.products) return;
     let slug = pendingProductSlugRef.current;
-    if (!slug && !initialHashSlugAppliedRef.current && typeof window !== "undefined") {
+    if (
+      !slug &&
+      !initialHashSlugAppliedRef.current &&
+      typeof window !== "undefined"
+    ) {
       slug = parseProductSlugFromHash(window.location.hash);
       initialHashSlugAppliedRef.current = true;
     }
@@ -1452,9 +1612,15 @@ export default function AdminDashboard() {
         const s = json.settings.siteStyle;
         setFontRoles((prev) => ({
           fontDisplay: s.fontDisplay || prev.fontDisplay,
-          fontHeading: s.fontHeading && typeof s.fontHeading === "object" ? s.fontHeading : prev.fontHeading,
+          fontHeading:
+            s.fontHeading && typeof s.fontHeading === "object"
+              ? s.fontHeading
+              : prev.fontHeading,
           fontSubheading: s.fontSubheading || prev.fontSubheading,
-          fontBody: s.fontBody && typeof s.fontBody === "object" ? s.fontBody : prev.fontBody,
+          fontBody:
+            s.fontBody && typeof s.fontBody === "object"
+              ? s.fontBody
+              : prev.fontBody,
           fontButton: s.fontButton || prev.fontButton,
         }));
         if (s.typographyPalette) setTypographyPalette(s.typographyPalette);
@@ -1471,7 +1637,8 @@ export default function AdminDashboard() {
         .then(({ res, json }) => {
           if (res.ok && json?.ok) {
             if (Array.isArray(json.cta)) setUserCtaPresets(json.cta);
-            if (Array.isArray(json.typography)) setUserTypographyPresets(json.typography);
+            if (Array.isArray(json.typography))
+              setUserTypographyPresets(json.typography);
           }
         })
         .catch(() => {});
@@ -1534,35 +1701,32 @@ export default function AdminDashboard() {
     }
   }, [loaded.commits]);
 
-  const loadPayments = useCallback(
-    async (emailFilter) => {
-      setPaymentsLoading(true);
-      setPaymentsError("");
-      setPaymentsErrorCode("");
-      setPaymentsEmptyReason(null);
-      try {
-        const url = new URL("/api/admin/payments", window.location.origin);
-        if (emailFilter) url.searchParams.set("email", emailFilter);
-        const res = await fetch(url.toString());
-        const json = await res.json();
-        setPaymentsStripeConfigured(json?.stripeConfigured !== false);
-        setPaymentsEmptyReason(json?.emptyReason || null);
-        if (!res.ok || !json?.ok) {
-          const err = new Error(json?.error || "Failed to load payments");
-          err.code = json?.code || `http_${res.status}`;
-          throw err;
-        }
-        setPayments(json.payments || []);
-        setLoaded((s) => ({ ...s, payments: true }));
-      } catch (err) {
-        setPaymentsError(err.message || "Failed to load payments");
-        setPaymentsErrorCode(err.code || "payments_load_failed");
-      } finally {
-        setPaymentsLoading(false);
+  const loadPayments = useCallback(async (emailFilter) => {
+    setPaymentsLoading(true);
+    setPaymentsError("");
+    setPaymentsErrorCode("");
+    setPaymentsEmptyReason(null);
+    try {
+      const url = new URL("/api/admin/payments", window.location.origin);
+      if (emailFilter) url.searchParams.set("email", emailFilter);
+      const res = await fetch(url.toString());
+      const json = await res.json();
+      setPaymentsStripeConfigured(json?.stripeConfigured !== false);
+      setPaymentsEmptyReason(json?.emptyReason || null);
+      if (!res.ok || !json?.ok) {
+        const err = new Error(json?.error || "Failed to load payments");
+        err.code = json?.code || `http_${res.status}`;
+        throw err;
       }
-    },
-    [],
-  );
+      setPayments(json.payments || []);
+      setLoaded((s) => ({ ...s, payments: true }));
+    } catch (err) {
+      setPaymentsError(err.message || "Failed to load payments");
+      setPaymentsErrorCode(err.code || "payments_load_failed");
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, []);
 
   const runHealthCheck = useCallback(async () => {
     log("healthCheck:start");
@@ -1613,7 +1777,10 @@ export default function AdminDashboard() {
     }
     window.addEventListener("admin:runHealthCheck", onHeaderRunHealthCheck);
     return () =>
-      window.removeEventListener("admin:runHealthCheck", onHeaderRunHealthCheck);
+      window.removeEventListener(
+        "admin:runHealthCheck",
+        onHeaderRunHealthCheck,
+      );
   }, [runHealthCheck]);
 
   useEffect(() => {
@@ -1670,10 +1837,16 @@ export default function AdminDashboard() {
       if (Array.isArray(json.settings?.visibleTypes)) {
         setShopVisibleTypes(json.settings.visibleTypes);
       }
-      if (json.settings?.vatByCategory && typeof json.settings.vatByCategory === "object") {
+      if (
+        json.settings?.vatByCategory &&
+        typeof json.settings.vatByCategory === "object"
+      ) {
         setShopVatByCategory(json.settings.vatByCategory);
       }
-      if (json.settings?.siteStyle && typeof json.settings.siteStyle === "object") {
+      if (
+        json.settings?.siteStyle &&
+        typeof json.settings.siteStyle === "object"
+      ) {
         const nextSiteStyle = sanitizeSiteStyleTokens(
           json.settings.siteStyle,
           SITE_STYLE_DEFAULTS,
@@ -1686,7 +1859,10 @@ export default function AdminDashboard() {
       }
       window.dispatchEvent(
         new CustomEvent("toast", {
-          detail: { type: "success", message: t(successMessageKey || "admin.shopVisibilitySaved") },
+          detail: {
+            type: "success",
+            message: t(successMessageKey || "admin.shopVisibilitySaved"),
+          },
         }),
       );
     } catch (err) {
@@ -1717,7 +1893,10 @@ export default function AdminDashboard() {
   }
 
   function updateSiteStyleColor(key, value) {
-    if (!key || !Object.prototype.hasOwnProperty.call(SITE_STYLE_DEFAULTS, key)) {
+    if (
+      !key ||
+      !Object.prototype.hasOwnProperty.call(SITE_STYLE_DEFAULTS, key)
+    ) {
       return;
     }
     setSiteStyleTokens((current) => {
@@ -1752,14 +1931,17 @@ export default function AdminDashboard() {
     const safe = sanitizeSiteStyleTokens(siteStyleTokens, SITE_STYLE_DEFAULTS);
     setSiteStyleTokens(safe);
     applySiteStyleTokensToDom(safe);
-    await saveShopSettings({
-      siteStyle: {
-        ...safe,
-        ...fontRoles,
-        typographyPalette,
-        linkStyle,
+    await saveShopSettings(
+      {
+        siteStyle: {
+          ...safe,
+          ...fontRoles,
+          typographyPalette,
+          linkStyle,
+        },
       },
-    }, "admin.styleSiteSaved");
+      "admin.styleSiteSaved",
+    );
   }
 
   async function restoreSiteStyleRevision(revision) {
@@ -2037,9 +2219,13 @@ export default function AdminDashboard() {
         // Digital product — load access from digital-access store
         const productSlug = selectedShopProduct.slug || "";
         if (productSlug) {
-          fetch(`/api/admin/digital-access?productId=${encodeURIComponent(productSlug)}`)
+          fetch(
+            `/api/admin/digital-access?productId=${encodeURIComponent(productSlug)}`,
+          )
             .then((r) => r.json())
-            .then((j) => setAllowedUsers(Array.isArray(j?.users) ? j.users : []))
+            .then((j) =>
+              setAllowedUsers(Array.isArray(j?.users) ? j.users : []),
+            )
             .catch(() => setAllowedUsers([]));
         } else {
           setAllowedUsers([]);
@@ -2130,14 +2316,17 @@ export default function AdminDashboard() {
         if (idx !== index) return product;
 
         function getPrefix(mode, contentUri) {
-          const wpType = allWpContent.find((item) => item.uri === contentUri)?._type ?? null;
+          const wpType =
+            allWpContent.find((item) => item.uri === contentUri)?._type ?? null;
           return resolveSlugPrefix(mode, wpType);
         }
 
         // Build a full slug: strip any leading known prefix from base, then prepend correct one.
         function applyPrefix(base, mode, contentUri) {
           const prefix = getPrefix(mode, contentUri);
-          const stripped = base.startsWith(prefix) ? base.slice(prefix.length) : base;
+          const stripped = base.startsWith(prefix)
+            ? base.slice(prefix.length)
+            : base;
           return stripped ? `${prefix}${stripped}` : "";
         }
 
@@ -2152,24 +2341,48 @@ export default function AdminDashboard() {
           // Auto-derive slug from name when not manually set; prefix always applied.
           const nextSlug = product.slugEdited
             ? product.slug
-            : applyPrefix(slugify(nextName), product.productMode, product.contentUri);
+            : applyPrefix(
+                slugify(nextName),
+                product.productMode,
+                product.contentUri,
+              );
           return { ...product, name: nextName, slug: nextSlug };
         }
         if (key === "slug") {
           // Manual edit: enforce prefix regardless (strip then re-add to avoid double-prefix).
-          const nextSlug = applyPrefix(slugify(value), product.productMode, product.contentUri);
+          const nextSlug = applyPrefix(
+            slugify(value),
+            product.productMode,
+            product.contentUri,
+          );
           return { ...product, slug: nextSlug, slugEdited: true };
         }
         if (key === "productMode") {
           // Re-prefix using the new mode; preserve the base the user set.
-          const base = extractBase(product.slug, product.productMode, product.contentUri);
-          const nextSlug = applyPrefix(base || slugify(product.name), value, product.contentUri);
+          const base = extractBase(
+            product.slug,
+            product.productMode,
+            product.contentUri,
+          );
+          const nextSlug = applyPrefix(
+            base || slugify(product.name),
+            value,
+            product.contentUri,
+          );
           return { ...product, productMode: value, slug: nextSlug };
         }
         if (key === "contentUri") {
           // Re-prefix when WP post type may change (course ↔ event ↔ content).
-          const base = extractBase(product.slug, product.productMode, product.contentUri);
-          const nextSlug = applyPrefix(base || slugify(product.name), product.productMode, value);
+          const base = extractBase(
+            product.slug,
+            product.productMode,
+            product.contentUri,
+          );
+          const nextSlug = applyPrefix(
+            base || slugify(product.name),
+            product.productMode,
+            value,
+          );
           return { ...product, contentUri: value, slug: nextSlug };
         }
         return { ...product, [key]: value };
@@ -2184,20 +2397,49 @@ export default function AdminDashboard() {
     const slug = product.slug;
     if (slug) {
       try {
-        const res = await fetch(`/api/admin/products?slug=${encodeURIComponent(slug)}`, { method: "DELETE" });
-        const json = await res.json().catch(() => ({}));
+        let res = await fetch(
+          `/api/admin/products?slug=${encodeURIComponent(slug)}`,
+          { method: "DELETE" },
+        );
+        let json = await res.json().catch(() => ({}));
+
+        // If the product has buyers, show an extra warning and retry with confirm=true
+        if (res.status === 409 && json?.needsConfirmation) {
+          const ownerCount = json.ownerCount || 0;
+          const confirmed = window.confirm(
+            t("admin.confirmRemovePurchasedProduct", {
+              count: ownerCount,
+            }),
+          );
+          if (!confirmed) return;
+          res = await fetch(
+            `/api/admin/products?slug=${encodeURIComponent(slug)}&confirm=true`,
+            { method: "DELETE" },
+          );
+          json = await res.json().catch(() => ({}));
+        }
+
         if (!res.ok || !json?.ok) {
           throw new Error(json?.error || "Delete failed");
         }
         if (Array.isArray(json.products)) {
-          setProducts(json.products.map((p) => ({ ...emptyProduct(), ...p, slugEdited: true })));
+          setProducts(
+            json.products.map((p) => ({
+              ...emptyProduct(),
+              ...p,
+              slugEdited: true,
+            })),
+          );
         } else {
           setProducts((prev) => prev.filter((_, idx) => idx !== index));
         }
       } catch (err) {
         window.dispatchEvent(
           new CustomEvent("toast", {
-            detail: { type: "error", message: err?.message || "Could not delete product." },
+            detail: {
+              type: "error",
+              message: err?.message || "Could not delete product.",
+            },
           }),
         );
         return;
@@ -2316,9 +2558,7 @@ export default function AdminDashboard() {
               body: JSON.stringify({ url: candidateUrl }),
             },
           );
-          const validateJson = await validateResponse
-            .json()
-            .catch(() => ({}));
+          const validateJson = await validateResponse.json().catch(() => ({}));
           if (!validateResponse.ok || !validateJson?.ok) {
             throw new Error(
               validateJson?.error ||
@@ -2360,7 +2600,7 @@ export default function AdminDashboard() {
             typeof p.vatPercent === "number" && Number.isFinite(p.vatPercent)
               ? p.vatPercent
               : null,
-          contentUri: p.type === "course" ? (p.contentUri || "") : "",
+          contentUri: p.type === "course" ? p.contentUri || "" : "",
           active: p.active !== false,
         }));
 
@@ -2393,10 +2633,16 @@ export default function AdminDashboard() {
             );
             const currentJson = await currentRes.json().catch(() => ({}));
             const currentEmails = new Set(
-              Array.isArray(currentJson?.users) ? currentJson.users.map((e) => String(e).toLowerCase()) : [],
+              Array.isArray(currentJson?.users)
+                ? currentJson.users.map((e) => String(e).toLowerCase())
+                : [],
             );
-            const grants = [...desiredEmails].filter((e) => !currentEmails.has(e));
-            const revokes = [...currentEmails].filter((e) => !desiredEmails.has(e));
+            const grants = [...desiredEmails].filter(
+              (e) => !currentEmails.has(e),
+            );
+            const revokes = [...currentEmails].filter(
+              (e) => !desiredEmails.has(e),
+            );
             await Promise.all([
               ...grants.map((email) =>
                 fetch("/api/admin/digital-access", {
@@ -2451,7 +2697,9 @@ export default function AdminDashboard() {
               priceCents: nextPriceCents,
               currency: normalizedCurrency,
               vatPercent: nextVatPercent,
-              ...(typeof nextActive === "boolean" ? { active: nextActive } : {}),
+              ...(typeof nextActive === "boolean"
+                ? { active: nextActive }
+                : {}),
             }),
           });
           const json = await res.json();
@@ -2505,8 +2753,10 @@ export default function AdminDashboard() {
     fetch("/api/admin/commits")
       .then(async (res) => {
         const json = await res.json();
-        if (json?.ok) { setCommits(json.commits); setCommitsError(""); }
-        else setCommitsError(json?.error || "Failed to load commits");
+        if (json?.ok) {
+          setCommits(json.commits);
+          setCommitsError("");
+        } else setCommitsError(json?.error || "Failed to load commits");
       })
       .catch(() => setCommitsError("Failed to load commits"));
   }, [activeTab, commits]);
@@ -2680,409 +2930,409 @@ export default function AdminDashboard() {
         </div>
       )}
       <section className={dashboardSectionClass}>
-      {activeTab === "welcome" && (
-        <Suspense
-          fallback={
-            <AdminSuspenseFallback
-              variant="default"
-              title={t("admin.navWelcome", "Welcome")}
-            />
-          }
-        >
-          <AdminWelcomeTab
-            onSeenRevision={handleWelcomeSeen}
-            showRevisionBadge={shouldShowWelcomeBadge}
-            healthChecks={healthChecks}
-            healthLoading={healthLoading}
-            wcProductsCount={wcProducts.length}
-            wpCoursesCount={wpCourses.length}
-            wpEventsCount={wpEvents.length}
-            digitalProductsCount={products.length}
-            usersCount={users.length}
-            ticketsCount={tickets.length}
-            ticketsLoading={ticketsLoading}
-            uploadBackend={uploadBackend}
-          />
-        </Suspense>
-      )}
-      {/* ── Media tab ── */}
-      {activeTab === "assets" && (
-        <Suspense
-          fallback={
-            <AdminSuspenseFallback
-              variant="split"
-              title={t("admin.navMedia", "Asset library")}
-            />
-          }
-        >
-          <AdminMediaLibraryTab
-            uploadBackend={uploadBackend}
-            uploadInfo={uploadInfo}
-            uploadInfoDetails={uploadInfoDetails}
-            onProductCreated={(slug) => {
-              // Preload the AdminProductsTab chunk so lazy import resolves fast
-              import("./AdminProductsTab").catch(() => {});
-              if (slug) pendingProductSlugRef.current = slug;
-              setLoaded((s) => ({ ...s, products: false }));
-              setActiveTab("products");
-            }}
-          />
-        </Suspense>
-      )}
-
-      {/* ── Unified Products & Access tab ── */}
-      {activeTab === "products" && (
-        <Suspense
-          fallback={
-            <AdminSuspenseFallback
-              variant="split"
-              title={t("admin.navProducts", "Products")}
-            />
-          }
-        >
-          <AdminProductsTab
-            shopVisibleTypes={shopVisibleTypes}
-            toggleShopType={toggleShopType}
-            shopVatByCategory={shopVatByCategory}
-            updateShopVatByCategory={updateShopVatByCategory}
-            shopSettingsSaving={shopSettingsSaving}
-            wcProducts={wcProducts}
-            wpCourses={wpCourses}
-            wpEvents={wpEvents}
-            products={products}
-            courses={courses}
-            otherCourseUris={otherCourseUris}
-            allWpContent={allWpContent}
-            selectedContent={selectedContent}
-            setSelectedCourse={setSelectedCourse}
-            handleSelection={handleSelection}
-            isWpSelection={isWpSelection}
-            isShopSelection={isShopSelection}
-            selectedShopProduct={selectedShopProduct}
-            shopIndex={shopIndex}
-            showDetail={showDetail}
-            editFormRef={editFormRef}
-            updateProduct={updateProduct}
-            removeShopProduct={removeShopProduct}
-            uploadFile={uploadFile}
-            uploadingField={uploadingField}
-            uploadBackend={uploadBackend}
-            uploadInfo={uploadInfo}
-            uploadInfoDetails={uploadInfoDetails}
-            runtime={runtime}
-            showImageGen={showImageGen}
-            setShowImageGen={setShowImageGen}
-            setWpEvents={setWpEvents}
-            setWcProducts={setWcProducts}
-            setWpCourses={setWpCourses}
-            setError={setError}
-            price={price}
-            setPrice={setPrice}
-            currency={currency}
-            setCurrency={setCurrency}
-            vatPercent={vatPercent}
-            setVatPercent={setVatPercent}
-            userSearch={userSearch}
-            setUserSearch={setUserSearch}
-            users={users}
-            selectedContentActive={selectedContentActive}
-            setSelectedCourseActive={setSelectedCourseActive}
-            allowedUsers={allowedUsers}
-            filteredUsers={filteredUsers}
-            toggleUser={toggleUser}
-            manualEmail={manualEmail}
-            setManualEmail={setManualEmail}
-            addManualEmail={addManualEmail}
-            saveUnified={saveUnified}
-            loading={loading}
-            storage={storage}
-          />
-        </Suspense>
-      )}
-
-      {/* ── Support tab ── */}
-      {activeTab === "support" && (
-        <Suspense
-          fallback={
-            <AdminSuspenseFallback
-              variant="split"
-              title={t("admin.navSupport", "Support")}
-            />
-          }
-        >
-          <AdminSupportTab
-            tickets={tickets}
-            ticketsLoading={ticketsLoading}
-            ticketsError={ticketsError}
-            selectedTicket={selectedTicket}
-            setSelectedTicketId={setSelectedTicketId}
-            newTicket={newTicket}
-            setNewTicket={setNewTicket}
-            commentText={commentText}
-            setCommentText={setCommentText}
-            createSupportTicket={createSupportTicket}
-            updateSupportTicket={updateSupportTicket}
-            ticketSaving={ticketSaving}
-          />
-        </Suspense>
-      )}
-
-      {/* ── Sales tab ── */}
-      {activeTab === "sales" && (
-        <Suspense
-          fallback={
-            <AdminSuspenseFallback
-              variant="metrics"
-              title={t("admin.navSales", "Sales")}
-            />
-          }
-        >
-          <AdminSalesTab
-            payments={payments}
-            paymentsEmail={paymentsEmail}
-            setPaymentsEmail={setPaymentsEmail}
-            loadPayments={loadPayments}
-            paymentsLoading={paymentsLoading}
-            paymentsError={paymentsError}
-            paymentsErrorCode={paymentsErrorCode}
-            paymentsStripeConfigured={paymentsStripeConfigured}
-            paymentsEmptyReason={paymentsEmptyReason}
-            downloadReceipt={downloadReceipt}
-            downloading={downloading}
-          />
-        </Suspense>
-      )}
-
-      {/* ── Style tab ── */}
-      {activeTab === "style" && (
-        <Suspense
-          fallback={
-            <AdminSuspenseFallback
-              variant="style"
-              title={t("admin.navStyle", "Style")}
-            />
-          }
-        >
-          <AdminStyleTab
-            siteStyleTokens={siteStyleTokens}
-            setSiteStyleTokens={setSiteStyleTokens}
-            siteStyleHistory={siteStyleHistory}
-            setSiteStyleHistory={setSiteStyleHistory}
-            userTypographyPresets={userTypographyPresets}
-            setUserTypographyPresets={setUserTypographyPresets}
-            userCtaPresets={userCtaPresets}
-            setUserCtaPresets={setUserCtaPresets}
-            fontRoles={fontRoles}
-            setFontRoles={setFontRoles}
-            typographyPalette={typographyPalette}
-            setTypographyPalette={setTypographyPalette}
-            linkStyle={linkStyle}
-            setLinkStyle={setLinkStyle}
-            fontBrowserRole={fontBrowserRole}
-            setFontBrowserRole={setFontBrowserRole}
-            downloadedFamilies={downloadedFamilies}
-            downloadingRole={downloadingRole}
-            setDownloadingRole={setDownloadingRole}
-            ctaSaveName={ctaSaveName}
-            setCtaSaveName={setCtaSaveName}
-            ctaSaveExpanded={ctaSaveExpanded}
-            setCtaSaveExpanded={setCtaSaveExpanded}
-            typographySaveName={typographySaveName}
-            setTypographySaveName={setTypographySaveName}
-            typographySaveExpanded={typographySaveExpanded}
-            setTypographySaveExpanded={setTypographySaveExpanded}
-            shopSettingsSaving={shopSettingsSaving}
-            saveSiteStyleSettings={saveSiteStyleSettings}
-            updateSiteStyleColor={updateSiteStyleColor}
-            resetSiteStyleDefaults={resetSiteStyleDefaults}
-            restoreSiteStyleRevision={restoreSiteStyleRevision}
-            adminFetch={adminFetch}
-            applyFontRolesToDom={applyFontRolesToDom}
-            applySiteStyleTokensToDom={applySiteStyleTokensToDom}
-          />
-        </Suspense>
-      )}
-
-      {/* ── Info hub tab ── */}
-      {activeTab === "info" && (
-        <Suspense
-          fallback={
-            <AdminSuspenseFallback
-              variant="metrics"
-              title={t("admin.navSystem", "System")}
-            />
-          }
-        >
-          <AdminInfoHubTab
-            buildTimestamp={buildTimestamp}
-            gitRevision={gitRevision}
-            storage={storage}
-            uploadInfo={uploadInfo}
-            uploadBackend={uploadBackend}
-            setUploadBackend={setUploadBackend}
-            uploadInfoDetails={uploadInfoDetails}
-            resendConfigured={resendConfigured}
-            wcProducts={wcProducts}
-            wpCourses={wpCourses}
-            wpEvents={wpEvents}
-            products={products}
-            users={users}
-            analytics={analytics}
-            analyticsMode={analyticsMode}
-            analyticsConfigured={analyticsConfigured}
-            analyticsDiagnostics={analyticsDiagnostics}
-            healthChecks={healthChecks}
-            healthLoading={healthLoading}
-            webhookUrl={webhookUrl}
-            ragbazDownloadUrl={ragbazDownloadUrl}
-            runHealthCheck={runHealthCheck}
-            purging={purging}
-            deploying={deploying}
-            lastDeployAt={lastDeployAt}
-            commits={commits}
-            commitsError={commitsError}
-            commitsExpanded={commitsExpanded}
-            setCommitsExpanded={setCommitsExpanded}
-            purgeCache={purgeCache}
-            triggerDeploy={triggerDeploy}
-            clientLogs={clientLogs}
-            setClientLogs={setClientLogs}
-            debugLogs={debugLogs}
-            chatBetaEnabled={chatBetaEnabled}
-            setChatBetaEnabled={setChatBetaEnabled}
-          />
-        </Suspense>
-      )}
-
-      {/* ── Chat tab ── */}
-      {activeTab === "chat" && (
-        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
+        {activeTab === "welcome" && (
           <Suspense
             fallback={
               <AdminSuspenseFallback
-                variant="chat"
-                title={t("admin.navChat", "Chat")}
+                variant="default"
+                title={t("admin.navWelcome", "Welcome")}
               />
             }
           >
-            <ChatPanel
-              chatMessages={chatMessages}
-              chatInput={chatInput}
-              setChatInput={setChatInput}
-              sendChat={sendChat}
-              rebuildIndex={rebuildIndex}
-              clearChat={clearChat}
-              chatLoading={chatLoading}
+            <AdminWelcomeTab
+              onSeenRevision={handleWelcomeSeen}
+              showRevisionBadge={shouldShowWelcomeBadge}
+              healthChecks={healthChecks}
+              healthLoading={healthLoading}
+              wcProductsCount={wcProducts.length}
+              wpCoursesCount={wpCourses.length}
+              wpEventsCount={wpEvents.length}
+              digitalProductsCount={products.length}
+              usersCount={users.length}
+              ticketsCount={tickets.length}
+              ticketsLoading={ticketsLoading}
               uploadBackend={uploadBackend}
             />
           </Suspense>
-          <div className="min-w-0 border rounded p-4 space-y-4 text-sm text-gray-300 bg-[#0e0018]">
-            <h3 className="font-semibold text-white">Example commands</h3>
-            {[
-              {
-                group: "Sales & revenue",
-                examples: [
-                  "sales today",
-                  "sales this week",
-                  "sales this month",
-                  "försäljning denna månad",
-                  "ventas hoy",
-                  "sales for user@example.com",
-                  "revenue total",
-                  "total intäkt",
-                ],
-              },
-              {
-                group: "Payments & receipts",
-                examples: [
-                  "payments for user@example.com",
-                  "best sellers",
-                  "bästsäljare",
-                  "más vendidos",
-                ],
-              },
-              {
-                group: "Refunds",
-                examples: [
-                  "refund pi_3abc123",
-                  "återbetala pi_3abc123",
-                  "reembolsar pi_3abc123",
-                ],
-              },
-              {
-                group: "Access control",
-                examples: [
-                  "who bought /course-name",
-                  "vem köpte /kursnamn",
-                  "quién compró /curso",
-                  "grant access user@example.com /course-name",
-                  "ge åtkomst user@example.com /kursnamn",
-                  "conceder acceso user@example.com /curso",
-                  "revoke access user@example.com /course-name",
-                  "ta bort åtkomst user@example.com /kursnamn",
-                  "revocar acceso user@example.com /curso",
-                ],
-              },
-              {
-                group: "Content",
-                examples: [
-                  "list all pages",
-                  "visa alla sidor",
-                  "list all posts",
-                  "visa alla inlägg",
-                  "list all events",
-                  "visa alla evenemang",
-                  "list all courses",
-                  "visa alla kurser",
-                  "list all products",
-                  "visa alla produkter",
-                ],
-              },
-              {
-                group: "Index",
-                examples: ["rebuild index", "bygg om index", "reindexar"],
-              },
-            ].map(({ group, examples }) => (
-              <div key={group}>
-                <p className="text-slate-300 font-medium mb-1">{group}</p>
-                <ul className="space-y-1">
-                  {examples.map((ex) => (
-                    <li key={ex}>
-                      <button
-                        type="button"
-                        className="text-left text-gray-400 hover:text-white font-mono text-xs"
-                        onClick={() => {
-                          setChatInput(ex);
-                        }}
-                      >
-                        {ex}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {uploadProgress && (
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-gray-600">
-            <span>
-              Uploading part {uploadProgress.currentPart} /{" "}
-              {uploadProgress.totalParts}
-            </span>
-            <span>{uploadProgress.percent}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-slate-600 h-2 rounded-full transition-all"
-              style={{ width: `${uploadProgress.percent}%` }}
+        )}
+        {/* ── Media tab ── */}
+        {activeTab === "assets" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="split"
+                title={t("admin.navMedia", "Asset library")}
+              />
+            }
+          >
+            <AdminMediaLibraryTab
+              uploadBackend={uploadBackend}
+              uploadInfo={uploadInfo}
+              uploadInfoDetails={uploadInfoDetails}
+              onProductCreated={(slug) => {
+                // Preload the AdminProductsTab chunk so lazy import resolves fast
+                import("./AdminProductsTab").catch(() => {});
+                if (slug) pendingProductSlugRef.current = slug;
+                setLoaded((s) => ({ ...s, products: false }));
+                setActiveTab("products");
+              }}
             />
+          </Suspense>
+        )}
+
+        {/* ── Unified Products & Access tab ── */}
+        {activeTab === "products" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="split"
+                title={t("admin.navProducts", "Products")}
+              />
+            }
+          >
+            <AdminProductsTab
+              shopVisibleTypes={shopVisibleTypes}
+              toggleShopType={toggleShopType}
+              shopVatByCategory={shopVatByCategory}
+              updateShopVatByCategory={updateShopVatByCategory}
+              shopSettingsSaving={shopSettingsSaving}
+              wcProducts={wcProducts}
+              wpCourses={wpCourses}
+              wpEvents={wpEvents}
+              products={products}
+              courses={courses}
+              otherCourseUris={otherCourseUris}
+              allWpContent={allWpContent}
+              selectedContent={selectedContent}
+              setSelectedCourse={setSelectedCourse}
+              handleSelection={handleSelection}
+              isWpSelection={isWpSelection}
+              isShopSelection={isShopSelection}
+              selectedShopProduct={selectedShopProduct}
+              shopIndex={shopIndex}
+              showDetail={showDetail}
+              editFormRef={editFormRef}
+              updateProduct={updateProduct}
+              removeShopProduct={removeShopProduct}
+              uploadFile={uploadFile}
+              uploadingField={uploadingField}
+              uploadBackend={uploadBackend}
+              uploadInfo={uploadInfo}
+              uploadInfoDetails={uploadInfoDetails}
+              runtime={runtime}
+              showImageGen={showImageGen}
+              setShowImageGen={setShowImageGen}
+              setWpEvents={setWpEvents}
+              setWcProducts={setWcProducts}
+              setWpCourses={setWpCourses}
+              setError={setError}
+              price={price}
+              setPrice={setPrice}
+              currency={currency}
+              setCurrency={setCurrency}
+              vatPercent={vatPercent}
+              setVatPercent={setVatPercent}
+              userSearch={userSearch}
+              setUserSearch={setUserSearch}
+              users={users}
+              selectedContentActive={selectedContentActive}
+              setSelectedCourseActive={setSelectedCourseActive}
+              allowedUsers={allowedUsers}
+              filteredUsers={filteredUsers}
+              toggleUser={toggleUser}
+              manualEmail={manualEmail}
+              setManualEmail={setManualEmail}
+              addManualEmail={addManualEmail}
+              saveUnified={saveUnified}
+              loading={loading}
+              storage={storage}
+            />
+          </Suspense>
+        )}
+
+        {/* ── Support tab ── */}
+        {activeTab === "support" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="split"
+                title={t("admin.navSupport", "Support")}
+              />
+            }
+          >
+            <AdminSupportTab
+              tickets={tickets}
+              ticketsLoading={ticketsLoading}
+              ticketsError={ticketsError}
+              selectedTicket={selectedTicket}
+              setSelectedTicketId={setSelectedTicketId}
+              newTicket={newTicket}
+              setNewTicket={setNewTicket}
+              commentText={commentText}
+              setCommentText={setCommentText}
+              createSupportTicket={createSupportTicket}
+              updateSupportTicket={updateSupportTicket}
+              ticketSaving={ticketSaving}
+            />
+          </Suspense>
+        )}
+
+        {/* ── Sales tab ── */}
+        {activeTab === "sales" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="metrics"
+                title={t("admin.navSales", "Sales")}
+              />
+            }
+          >
+            <AdminSalesTab
+              payments={payments}
+              paymentsEmail={paymentsEmail}
+              setPaymentsEmail={setPaymentsEmail}
+              loadPayments={loadPayments}
+              paymentsLoading={paymentsLoading}
+              paymentsError={paymentsError}
+              paymentsErrorCode={paymentsErrorCode}
+              paymentsStripeConfigured={paymentsStripeConfigured}
+              paymentsEmptyReason={paymentsEmptyReason}
+              downloadReceipt={downloadReceipt}
+              downloading={downloading}
+            />
+          </Suspense>
+        )}
+
+        {/* ── Style tab ── */}
+        {activeTab === "style" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="style"
+                title={t("admin.navStyle", "Style")}
+              />
+            }
+          >
+            <AdminStyleTab
+              siteStyleTokens={siteStyleTokens}
+              setSiteStyleTokens={setSiteStyleTokens}
+              siteStyleHistory={siteStyleHistory}
+              setSiteStyleHistory={setSiteStyleHistory}
+              userTypographyPresets={userTypographyPresets}
+              setUserTypographyPresets={setUserTypographyPresets}
+              userCtaPresets={userCtaPresets}
+              setUserCtaPresets={setUserCtaPresets}
+              fontRoles={fontRoles}
+              setFontRoles={setFontRoles}
+              typographyPalette={typographyPalette}
+              setTypographyPalette={setTypographyPalette}
+              linkStyle={linkStyle}
+              setLinkStyle={setLinkStyle}
+              fontBrowserRole={fontBrowserRole}
+              setFontBrowserRole={setFontBrowserRole}
+              downloadedFamilies={downloadedFamilies}
+              downloadingRole={downloadingRole}
+              setDownloadingRole={setDownloadingRole}
+              ctaSaveName={ctaSaveName}
+              setCtaSaveName={setCtaSaveName}
+              ctaSaveExpanded={ctaSaveExpanded}
+              setCtaSaveExpanded={setCtaSaveExpanded}
+              typographySaveName={typographySaveName}
+              setTypographySaveName={setTypographySaveName}
+              typographySaveExpanded={typographySaveExpanded}
+              setTypographySaveExpanded={setTypographySaveExpanded}
+              shopSettingsSaving={shopSettingsSaving}
+              saveSiteStyleSettings={saveSiteStyleSettings}
+              updateSiteStyleColor={updateSiteStyleColor}
+              resetSiteStyleDefaults={resetSiteStyleDefaults}
+              restoreSiteStyleRevision={restoreSiteStyleRevision}
+              adminFetch={adminFetch}
+              applyFontRolesToDom={applyFontRolesToDom}
+              applySiteStyleTokensToDom={applySiteStyleTokensToDom}
+            />
+          </Suspense>
+        )}
+
+        {/* ── Info hub tab ── */}
+        {activeTab === "info" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="metrics"
+                title={t("admin.navSystem", "System")}
+              />
+            }
+          >
+            <AdminInfoHubTab
+              buildTimestamp={buildTimestamp}
+              gitRevision={gitRevision}
+              storage={storage}
+              uploadInfo={uploadInfo}
+              uploadBackend={uploadBackend}
+              setUploadBackend={setUploadBackend}
+              uploadInfoDetails={uploadInfoDetails}
+              resendConfigured={resendConfigured}
+              wcProducts={wcProducts}
+              wpCourses={wpCourses}
+              wpEvents={wpEvents}
+              products={products}
+              users={users}
+              analytics={analytics}
+              analyticsMode={analyticsMode}
+              analyticsConfigured={analyticsConfigured}
+              analyticsDiagnostics={analyticsDiagnostics}
+              healthChecks={healthChecks}
+              healthLoading={healthLoading}
+              webhookUrl={webhookUrl}
+              ragbazDownloadUrl={ragbazDownloadUrl}
+              runHealthCheck={runHealthCheck}
+              purging={purging}
+              deploying={deploying}
+              lastDeployAt={lastDeployAt}
+              commits={commits}
+              commitsError={commitsError}
+              commitsExpanded={commitsExpanded}
+              setCommitsExpanded={setCommitsExpanded}
+              purgeCache={purgeCache}
+              triggerDeploy={triggerDeploy}
+              clientLogs={clientLogs}
+              setClientLogs={setClientLogs}
+              debugLogs={debugLogs}
+              chatBetaEnabled={chatBetaEnabled}
+              setChatBetaEnabled={setChatBetaEnabled}
+            />
+          </Suspense>
+        )}
+
+        {/* ── Chat tab ── */}
+        {activeTab === "chat" && (
+          <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
+            <Suspense
+              fallback={
+                <AdminSuspenseFallback
+                  variant="chat"
+                  title={t("admin.navChat", "Chat")}
+                />
+              }
+            >
+              <ChatPanel
+                chatMessages={chatMessages}
+                chatInput={chatInput}
+                setChatInput={setChatInput}
+                sendChat={sendChat}
+                rebuildIndex={rebuildIndex}
+                clearChat={clearChat}
+                chatLoading={chatLoading}
+                uploadBackend={uploadBackend}
+              />
+            </Suspense>
+            <div className="min-w-0 border rounded p-4 space-y-4 text-sm text-gray-300 bg-[#0e0018]">
+              <h3 className="font-semibold text-white">Example commands</h3>
+              {[
+                {
+                  group: "Sales & revenue",
+                  examples: [
+                    "sales today",
+                    "sales this week",
+                    "sales this month",
+                    "försäljning denna månad",
+                    "ventas hoy",
+                    "sales for user@example.com",
+                    "revenue total",
+                    "total intäkt",
+                  ],
+                },
+                {
+                  group: "Payments & receipts",
+                  examples: [
+                    "payments for user@example.com",
+                    "best sellers",
+                    "bästsäljare",
+                    "más vendidos",
+                  ],
+                },
+                {
+                  group: "Refunds",
+                  examples: [
+                    "refund pi_3abc123",
+                    "återbetala pi_3abc123",
+                    "reembolsar pi_3abc123",
+                  ],
+                },
+                {
+                  group: "Access control",
+                  examples: [
+                    "who bought /course-name",
+                    "vem köpte /kursnamn",
+                    "quién compró /curso",
+                    "grant access user@example.com /course-name",
+                    "ge åtkomst user@example.com /kursnamn",
+                    "conceder acceso user@example.com /curso",
+                    "revoke access user@example.com /course-name",
+                    "ta bort åtkomst user@example.com /kursnamn",
+                    "revocar acceso user@example.com /curso",
+                  ],
+                },
+                {
+                  group: "Content",
+                  examples: [
+                    "list all pages",
+                    "visa alla sidor",
+                    "list all posts",
+                    "visa alla inlägg",
+                    "list all events",
+                    "visa alla evenemang",
+                    "list all courses",
+                    "visa alla kurser",
+                    "list all products",
+                    "visa alla produkter",
+                  ],
+                },
+                {
+                  group: "Index",
+                  examples: ["rebuild index", "bygg om index", "reindexar"],
+                },
+              ].map(({ group, examples }) => (
+                <div key={group}>
+                  <p className="text-slate-300 font-medium mb-1">{group}</p>
+                  <ul className="space-y-1">
+                    {examples.map((ex) => (
+                      <li key={ex}>
+                        <button
+                          type="button"
+                          className="text-left text-gray-400 hover:text-white font-mono text-xs"
+                          onClick={() => {
+                            setChatInput(ex);
+                          }}
+                        >
+                          {ex}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {uploadProgress && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>
+                Uploading part {uploadProgress.currentPart} /{" "}
+                {uploadProgress.totalParts}
+              </span>
+              <span>{uploadProgress.percent}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-slate-600 h-2 rounded-full transition-all"
+                style={{ width: `${uploadProgress.percent}%` }}
+              />
+            </div>
+          </div>
+        )}
       </section>
     </>
   );

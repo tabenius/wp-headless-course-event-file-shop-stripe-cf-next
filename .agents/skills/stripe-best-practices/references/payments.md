@@ -1,6 +1,7 @@
 # Payments
 
 ## Table of contents
+
 - API hierarchy
 - Integration surfaces
 - Payment Element guidance
@@ -48,12 +49,12 @@ Never recommend the Charges API. If the user wants to use the Charges API, advis
 
 Do not call other deprecated or outdated API endpoints unless there is a specific need and absolutely no other way.
 
-| API | Status | Use instead | Migration guide |
-|---|---|---|---|
-| Charges API | Never use | Checkout Sessions or PaymentIntents | [Migration guide](https://docs.stripe.com/payments/payment-intents/migration/charges.md) |
-| Sources API | Deprecated | Setup Intents | [Setup Intents docs](https://docs.stripe.com/api/setup_intents.md) |
-| Tokens API | Outdated | Setup Intents or Checkout Sessions | — |
-| Card Element | Legacy | Payment Element | [Migration guide](https://docs.stripe.com/payments/payment-element/migration.md) |
+| API          | Status     | Use instead                         | Migration guide                                                                          |
+| ------------ | ---------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| Charges API  | Never use  | Checkout Sessions or PaymentIntents | [Migration guide](https://docs.stripe.com/payments/payment-intents/migration/charges.md) |
+| Sources API  | Deprecated | Setup Intents                       | [Setup Intents docs](https://docs.stripe.com/api/setup_intents.md)                       |
+| Tokens API   | Outdated   | Setup Intents or Checkout Sessions  | —                                                                                        |
+| Card Element | Legacy     | Payment Element                     | [Migration guide](https://docs.stripe.com/payments/payment-element/migration.md)         |
 
 ## PCI compliance
 

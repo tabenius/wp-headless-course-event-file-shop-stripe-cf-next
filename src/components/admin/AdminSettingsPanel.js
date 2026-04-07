@@ -94,7 +94,9 @@ export default function AdminSettingsPanel() {
         throw new Error(wcJson?.error || "Could not load WC proxy settings.");
       }
       if (!wcRestRes.ok || !wcRestJson?.ok) {
-        throw new Error(wcRestJson?.error || "Could not load WC REST API settings.");
+        throw new Error(
+          wcRestJson?.error || "Could not load WC REST API settings.",
+        );
       }
       if (!stripeRes.ok || !stripeJson?.ok) {
         throw new Error(
@@ -219,7 +221,9 @@ export default function AdminSettingsPanel() {
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok || !json?.ok) {
-        throw new Error(json?.error || "Could not save WooCommerce REST API settings.");
+        throw new Error(
+          json?.error || "Could not save WooCommerce REST API settings.",
+        );
       }
       setWcRestApi((current) => ({
         ...current,
@@ -232,7 +236,9 @@ export default function AdminSettingsPanel() {
         updatedAt: json.settings?.updatedAt || null,
       }));
     } catch (saveError) {
-      setError(saveError?.message || "Could not save WooCommerce REST API settings.");
+      setError(
+        saveError?.message || "Could not save WooCommerce REST API settings.",
+      );
     } finally {
       setSavingWcRest(false);
     }
@@ -314,7 +320,9 @@ export default function AdminSettingsPanel() {
           className="px-3 py-1.5 rounded border hover:bg-gray-50 text-sm"
           disabled={loading}
         >
-          {loading ? t("admin.loading", "Loading…") : t("admin.reload", "Reload")}
+          {loading
+            ? t("admin.loading", "Loading…")
+            : t("admin.reload", "Reload")}
         </button>
       </div>
 
@@ -357,7 +365,10 @@ export default function AdminSettingsPanel() {
         <div className="rounded border p-4 space-y-3">
           <div className="inline-flex items-center gap-1">
             <h3 className="text-lg font-semibold text-gray-900">
-              {t("admin.settingsWcProxyTitle", "Advanced: WooCommerce proxy relay")}
+              {t(
+                "admin.settingsWcProxyTitle",
+                "Advanced: WooCommerce proxy relay",
+              )}
             </h3>
             <AdminFieldHelpLink slug="technical-manual" />
           </div>
@@ -553,7 +564,10 @@ export default function AdminSettingsPanel() {
         <div className="rounded border p-4 space-y-3">
           <div className="inline-flex items-center gap-1">
             <h3 className="text-lg font-semibold text-gray-900">
-              {t("admin.settingsStripeOverrideTitle", "Developer: Stripe key overrides")}
+              {t(
+                "admin.settingsStripeOverrideTitle",
+                "Developer: Stripe key overrides",
+              )}
             </h3>
             <AdminFieldHelpLink slug="technical-manual" />
           </div>
@@ -586,7 +600,11 @@ export default function AdminSettingsPanel() {
                 value={stripeSecretInput}
                 onChange={(event) => setStripeSecretInput(event.target.value)}
                 className="w-full rounded border px-3 py-2 text-sm"
-                placeholder={stripe.hasSecretKey ? "Leave blank to keep current key" : "sk_live_..."}
+                placeholder={
+                  stripe.hasSecretKey
+                    ? "Leave blank to keep current key"
+                    : "sk_live_..."
+                }
               />
               {stripe.hasSecretKey && (
                 <span className="mt-1 block text-xs text-gray-500">

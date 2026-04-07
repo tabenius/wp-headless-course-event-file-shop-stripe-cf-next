@@ -151,7 +151,10 @@ export default function AdminVatTab({
                   key={row.slug}
                   className="grid grid-cols-[minmax(0,1fr)_92px_52px] gap-2 items-center rounded-lg border border-slate-100 bg-white px-2 py-1.5"
                 >
-                  <span className="text-sm text-gray-700 truncate" title={row.slug}>
+                  <span
+                    className="text-sm text-gray-700 truncate"
+                    title={row.slug}
+                  >
                     {row.name}
                   </span>
                   <input

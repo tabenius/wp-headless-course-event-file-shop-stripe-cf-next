@@ -13,4 +13,3 @@ This directory keeps tenant branding/domain constants out of shared app code.
 ## Activation
 
 Set `NEXT_PUBLIC_TENANT_KEY=xtas.nu` (or `TENANT_KEY=xtas.nu` on server-only flows).
-

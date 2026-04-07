@@ -59,7 +59,10 @@ export function scoreFontSimilarity(selected, candidate) {
   let score = 0;
   if (selected.category && selected.category === candidate.category) score += 3;
   if (candidateLower.startsWith(selectedTokens[0] || "")) score += 2;
-  if (candidateLower.includes(selectedLower) || selectedLower.includes(candidateLower)) {
+  if (
+    candidateLower.includes(selectedLower) ||
+    selectedLower.includes(candidateLower)
+  ) {
     score += 4;
   }
   for (const token of selectedTokens) {
@@ -74,7 +77,9 @@ export function getSimilarFonts(selected, fonts, limit = 5) {
     .filter((row) => Number.isFinite(row.score) && row.score > 0)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      return String(a.font.family || "").localeCompare(String(b.font.family || ""));
+      return String(a.font.family || "").localeCompare(
+        String(b.font.family || ""),
+      );
     })
     .slice(0, Math.max(0, limit))
     .map((row) => row.font);

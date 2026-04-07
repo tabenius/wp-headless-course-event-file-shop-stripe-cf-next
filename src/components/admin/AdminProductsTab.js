@@ -35,7 +35,11 @@ function normalizeMode(product = {}) {
   const explicit = String(product?.productMode || "")
     .trim()
     .toLowerCase();
-  if (explicit === "asset" || explicit === "manual_uri" || explicit === "digital_file") {
+  if (
+    explicit === "asset" ||
+    explicit === "manual_uri" ||
+    explicit === "digital_file"
+  ) {
     return explicit;
   }
   if (product?.type === "course") return "manual_uri";
@@ -114,8 +118,10 @@ function fallbackAssetIdFromItem(item) {
 function formatSize(bytes) {
   const numeric = Number(bytes);
   if (!Number.isFinite(numeric) || numeric <= 0) return "0 B";
-  if (numeric >= 1024 * 1024 * 1024) return `${(numeric / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-  if (numeric >= 1024 * 1024) return `${(numeric / (1024 * 1024)).toFixed(1)} MB`;
+  if (numeric >= 1024 * 1024 * 1024)
+    return `${(numeric / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  if (numeric >= 1024 * 1024)
+    return `${(numeric / (1024 * 1024)).toFixed(1)} MB`;
   if (numeric >= 1024) return `${(numeric / 1024).toFixed(1)} KB`;
   return `${numeric} B`;
 }
@@ -345,7 +351,8 @@ function PriceAccessForm({
         <div className="flex items-center justify-between gap-3">
           <label className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700">
             <span>
-              {t("common.price", "Price")} <span className="text-red-500">*</span>
+              {t("common.price", "Price")}{" "}
+              <span className="text-red-500">*</span>
             </span>
             <AdminFieldHelpLink slug="product-value" />
           </label>
@@ -364,9 +371,13 @@ function PriceAccessForm({
           </label>
         </div>
 
-        {!freeAccessEnabled && Number.isFinite(parsedPrice) && parsedPrice === 0 && (
-          <p className="text-xs text-amber-600">{t("admin.productPriceAmbiguous")}</p>
-        )}
+        {!freeAccessEnabled &&
+          Number.isFinite(parsedPrice) &&
+          parsedPrice === 0 && (
+            <p className="text-xs text-amber-600">
+              {t("admin.productPriceAmbiguous")}
+            </p>
+          )}
         <div className="flex gap-2">
           <input
             type="number"
@@ -527,7 +538,9 @@ function AssetPickerModal({ open, onClose, onSelect }) {
         limit: "80",
       });
       if (searchText.trim()) params.set("search", searchText.trim());
-      const response = await fetch(`/api/admin/media-library?${params.toString()}`);
+      const response = await fetch(
+        `/api/admin/media-library?${params.toString()}`,
+      );
       const json = await response.json().catch(() => ({}));
       if (!response.ok || !json?.ok) {
         throw new Error(json?.error || t("admin.imageBrowseLibraryLoadFailed"));
@@ -625,16 +638,23 @@ function AssetPickerModal({ open, onClose, onSelect }) {
                 const sizeText = formatSize(item?.sizeBytes);
                 return (
                   <div
-                    key={item.id || `${item.source}-${item.key || item.url || item.title}`}
+                    key={
+                      item.id ||
+                      `${item.source}-${item.key || item.url || item.title}`
+                    }
                     className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-slate-900">
-                          {item?.title || item?.key || item?.url || "Untitled asset"}
+                          {item?.title ||
+                            item?.key ||
+                            item?.url ||
+                            "Untitled asset"}
                         </p>
                         <p className="truncate text-[11px] text-slate-500">
-                          {assetId} · {item?.mimeType || "application/octet-stream"} ·{" "}
+                          {assetId} ·{" "}
+                          {item?.mimeType || "application/octet-stream"} ·{" "}
                           {sizeText} · {item?.source || "source"}
                         </p>
                       </div>
@@ -655,7 +675,9 @@ function AssetPickerModal({ open, onClose, onSelect }) {
                       </button>
                     </div>
                     {safeUrl ? (
-                      <p className="mt-1 truncate text-[11px] text-slate-500">{safeUrl}</p>
+                      <p className="mt-1 truncate text-[11px] text-slate-500">
+                        {safeUrl}
+                      </p>
                     ) : (
                       <p className="mt-1 text-[11px] text-amber-700">
                         {t(
@@ -846,7 +868,12 @@ function AccessTab({
       const idx = Number.parseInt(uri.replace("__shop_", ""), 10);
       const p = Number.isFinite(idx) ? products[idx] : null;
       if (!p) {
-        return [t("admin.needsConfigReasonMissingProduct", "Product entry is missing.")];
+        return [
+          t(
+            "admin.needsConfigReasonMissingProduct",
+            "Product entry is missing.",
+          ),
+        ];
       }
       return digitalConfigReasons(p);
     }
@@ -971,10 +998,7 @@ function AccessTab({
       if (typeof target.focus === "function") {
         target.focus();
       }
-      if (
-        target !== container &&
-        typeof target.scrollIntoView === "function"
-      ) {
+      if (target !== container && typeof target.scrollIntoView === "function") {
         target.scrollIntoView({ block: "nearest" });
       }
     });
@@ -1022,7 +1046,8 @@ function AccessTab({
     }
 
     window.addEventListener("keydown", handleEscapeToCloseEditor);
-    return () => window.removeEventListener("keydown", handleEscapeToCloseEditor);
+    return () =>
+      window.removeEventListener("keydown", handleEscapeToCloseEditor);
   }, [focusProductList, selectedContent, setSelectedCourse, showDetail]);
 
   const handleListKeyDown = useCallback(
@@ -1080,8 +1105,15 @@ function AccessTab({
     updateProduct(assetPickerProductIndex, "productMode", "asset");
     updateProduct(assetPickerProductIndex, "assetId", selection.assetId || "");
     updateProduct(assetPickerProductIndex, "fileUrl", selection.url || "");
-    updateProduct(assetPickerProductIndex, "mimeType", selection.mimeType || "");
-    if ((products?.[assetPickerProductIndex]?.name || "").trim() === "" && selection.title) {
+    updateProduct(
+      assetPickerProductIndex,
+      "mimeType",
+      selection.mimeType || "",
+    );
+    if (
+      (products?.[assetPickerProductIndex]?.name || "").trim() === "" &&
+      selection.title
+    ) {
       updateProduct(assetPickerProductIndex, "name", selection.title);
     }
     setAssetPickerOpen(false);
@@ -1090,934 +1122,1008 @@ function AccessTab({
 
   return (
     <>
-    <div
-      className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:min-h-[520px]"
-    >
-      {/* ── Left: content list ── */}
-      <div className="border rounded flex flex-col overflow-hidden min-w-0">
-        {/* Filter pills */}
-        <div className="p-2 border-b bg-gray-50 space-y-1.5">
-          <div className="flex flex-wrap gap-1">
-            {[
-              {
-                key: "all",
-                label: `${t("admin.filterAll", "All")} (${allItemsCount})`,
-              },
-              needsConfigCount > 0 && {
-                key: "needs-config",
-                label: `${t("admin.filterNeedsConfig", "Needs config")} (${needsConfigCount})`,
-                urgent: true,
-              },
-              allItemsCount - needsConfigCount > 0 && {
-                key: "configured",
-                label: `${t("admin.filterConfigured", "Configured")} (${allItemsCount - needsConfigCount})`,
-              },
-            ]
-              .filter(Boolean)
-              .map(({ key, label, urgent }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setTypeFilter(key)}
-                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
-                    typeFilter === key
-                      ? urgent
-                        ? "admin-pill-attention-active"
-                        : "admin-pill-active"
-                      : urgent
-                        ? "admin-pill-attention"
+      <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:min-h-[520px]">
+        {/* ── Left: content list ── */}
+        <div className="border rounded flex flex-col overflow-hidden min-w-0">
+          {/* Filter pills */}
+          <div className="p-2 border-b bg-gray-50 space-y-1.5">
+            <div className="flex flex-wrap gap-1">
+              {[
+                {
+                  key: "all",
+                  label: `${t("admin.filterAll", "All")} (${allItemsCount})`,
+                },
+                needsConfigCount > 0 && {
+                  key: "needs-config",
+                  label: `${t("admin.filterNeedsConfig", "Needs config")} (${needsConfigCount})`,
+                  urgent: true,
+                },
+                allItemsCount - needsConfigCount > 0 && {
+                  key: "configured",
+                  label: `${t("admin.filterConfigured", "Configured")} (${allItemsCount - needsConfigCount})`,
+                },
+              ]
+                .filter(Boolean)
+                .map(({ key, label, urgent }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTypeFilter(key)}
+                    className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                      typeFilter === key
+                        ? urgent
+                          ? "admin-pill-attention-active"
+                          : "admin-pill-active"
+                        : urgent
+                          ? "admin-pill-attention"
+                          : "admin-pill-subtle"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {[
+                wcProducts.length > 0 && {
+                  key: "wc",
+                  label: `WC (${wcProducts.length})`,
+                },
+                wpCourses.length > 0 && {
+                  key: "lp",
+                  label: `LP (${wpCourses.length})`,
+                },
+                wpEvents.length > 0 && {
+                  key: "ev",
+                  label: `Events (${wpEvents.length})`,
+                },
+                products.length > 0 && {
+                  key: "shop",
+                  label: `${t("admin.downloadsLabel", "Downloads")} (${products.length})`,
+                },
+              ]
+                .filter(Boolean)
+                .map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTypeFilter(key)}
+                    className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                      typeFilter === key
+                        ? "admin-pill-active"
                         : "admin-pill-subtle"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {[
-              wcProducts.length > 0 && {
-                key: "wc",
-                label: `WC (${wcProducts.length})`,
-              },
-              wpCourses.length > 0 && {
-                key: "lp",
-                label: `LP (${wpCourses.length})`,
-              },
-              wpEvents.length > 0 && {
-                key: "ev",
-                label: `Events (${wpEvents.length})`,
-              },
-              products.length > 0 && {
-                key: "shop",
-                label: `${t("admin.downloadsLabel", "Downloads")} (${products.length})`,
-              },
-            ]
-              .filter(Boolean)
-              .map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setTypeFilter(key)}
-                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
-                    typeFilter === key
-                      ? "admin-pill-active"
-                      : "admin-pill-subtle"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+
+          {/* Sortable column header */}
+          <div className="flex items-center px-2 py-1 border-b bg-gray-50 text-[10px] font-semibold text-gray-500 gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => toggleSort("source")}
+              className="w-9 shrink-0 text-left hover:text-gray-800"
+            >
+              {t("admin.colType", "Type")}
+              <SortArrow field="source" />
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleSort("name")}
+              className="flex-1 text-left hover:text-gray-800"
+            >
+              {t("admin.colName", "Name")}
+              <SortArrow field="name" />
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleSort("status")}
+              className="w-5 text-right hover:text-gray-800"
+              title={t("admin.colStatus", "Status")}
+            >
+              <SortArrow field="status" />●
+            </button>
           </div>
-        </div>
 
-        {/* Sortable column header */}
-        <div className="flex items-center px-2 py-1 border-b bg-gray-50 text-[10px] font-semibold text-gray-500 gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => toggleSort("source")}
-            className="w-9 shrink-0 text-left hover:text-gray-800"
+          <div
+            ref={listContainerRef}
+            className="flex-1 overflow-auto focus:outline-none"
+            tabIndex={0}
+            onKeyDown={handleListKeyDown}
+            aria-label={t("admin.productList", "Product list")}
           >
-            {t("admin.colType", "Type")}
-            <SortArrow field="source" />
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleSort("name")}
-            className="flex-1 text-left hover:text-gray-800"
-          >
-            {t("admin.colName", "Name")}
-            <SortArrow field="name" />
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleSort("status")}
-            className="w-5 text-right hover:text-gray-800"
-            title={t("admin.colStatus", "Status")}
-          >
-            <SortArrow field="status" />●
-          </button>
-        </div>
+            {(() => {
+              // Build flat list from all sources
+              const flat = [
+                ...wcProducts.map((p) => ({
+                  uri: p.uri,
+                  name: p.name,
+                  source: "wc",
+                  active: courses[p.uri]?.active,
+                  categories: p.categories,
+                  imageUrl:
+                    p?.featuredImage?.node?.sourceUrl ||
+                    p?.image?.sourceUrl ||
+                    p?.image ||
+                    "",
+                })),
+                ...wpCourses.map((c) => ({
+                  uri: c.uri,
+                  name: c.title,
+                  source: "lp",
+                  active: courses[c.uri]?.active,
+                  categories: c.categories,
+                  imageUrl:
+                    c?.featuredImage?.node?.sourceUrl ||
+                    c?.image?.sourceUrl ||
+                    c?.image ||
+                    "",
+                })),
+                ...wpEvents.map((e) => ({
+                  uri: e.uri,
+                  name: e.title,
+                  source: "ev",
+                  active: courses[e.uri]?.active,
+                  categories: e.categories,
+                  imageUrl:
+                    e?.featuredImage?.node?.sourceUrl ||
+                    e?.image?.sourceUrl ||
+                    e?.image ||
+                    "",
+                })),
+                ...products.map((p, i) => ({
+                  uri: `__shop_${i}`,
+                  name: p.name || `Product ${i + 1}`,
+                  source: "shop",
+                  active: p.active,
+                  categories: deriveDigitalProductCategories(p).categories,
+                  imageUrl: p.imageUrl || "",
+                  free: p.free,
+                  priceCents: p.priceCents,
+                })),
+                ...otherCourseUris.map((uri) => ({
+                  uri,
+                  name: uri,
+                  source: "other",
+                  active: courses[uri]?.active,
+                  categories: [],
+                  imageUrl: "",
+                })),
+              ];
 
-        <div
-          ref={listContainerRef}
-          className="flex-1 overflow-auto focus:outline-none"
-          tabIndex={0}
-          onKeyDown={handleListKeyDown}
-          aria-label={t("admin.productList", "Product list")}
-        >
-          {(() => {
-            // Build flat list from all sources
-            const flat = [
-              ...wcProducts.map((p) => ({
-                uri: p.uri,
-                name: p.name,
-                source: "wc",
-                active: courses[p.uri]?.active,
-                categories: p.categories,
-                imageUrl:
-                  p?.featuredImage?.node?.sourceUrl ||
-                  p?.image?.sourceUrl ||
-                  p?.image ||
-                  "",
-              })),
-              ...wpCourses.map((c) => ({
-                uri: c.uri,
-                name: c.title,
-                source: "lp",
-                active: courses[c.uri]?.active,
-                categories: c.categories,
-                imageUrl:
-                  c?.featuredImage?.node?.sourceUrl ||
-                  c?.image?.sourceUrl ||
-                  c?.image ||
-                  "",
-              })),
-              ...wpEvents.map((e) => ({
-                uri: e.uri,
-                name: e.title,
-                source: "ev",
-                active: courses[e.uri]?.active,
-                categories: e.categories,
-                imageUrl:
-                  e?.featuredImage?.node?.sourceUrl ||
-                  e?.image?.sourceUrl ||
-                  e?.image ||
-                  "",
-              })),
-              ...products.map((p, i) => ({
-                uri: `__shop_${i}`,
-                name: p.name || `Product ${i + 1}`,
-                source: "shop",
-                active: p.active,
-                categories: deriveDigitalProductCategories(p).categories,
-                imageUrl: p.imageUrl || "",
-                free: p.free,
-                priceCents: p.priceCents,
-              })),
-              ...otherCourseUris.map((uri) => ({
-                uri,
-                name: uri,
-                source: "other",
-                active: courses[uri]?.active,
-                categories: [],
-                imageUrl: "",
-              })),
-            ];
-
-            // Apply filter
-            const filtered = flat.filter((item) =>
-              showItem(item.uri, item.source),
-            );
-
-            // Sort
-            const sorted = [...filtered].sort((a, b) => {
-              let va, vb;
-              if (sortField === "source") {
-                va = a.source;
-                vb = b.source;
-              } else if (sortField === "status") {
-                va = isConfigured(a.uri) ? 1 : 0;
-                vb = isConfigured(b.uri) ? 1 : 0;
-              } else {
-                va = (a.name || "").toLowerCase();
-                vb = (b.name || "").toLowerCase();
-              }
-              if (va < vb) return sortDir === "asc" ? -1 : 1;
-              if (va > vb) return sortDir === "asc" ? 1 : -1;
-              return 0;
-            });
-
-            if (sorted.length === 0)
-              return (
-                <p className="text-xs text-gray-400 p-4 text-center">
-                  {allItemsCount === 0
-                    ? "No content found."
-                    : "No items match the current filter."}
-                </p>
+              // Apply filter
+              const filtered = flat.filter((item) =>
+                showItem(item.uri, item.source),
               );
 
-            return sorted.map((item) => {
-              const isActive = selectedContent === item.uri;
-              const configured = isConfigured(item.uri);
-              const configReasons = configured ? [] : configReasonsForUri(item.uri);
-              const categoriesPreview = extractCategoryNames(item.categories)
-                .slice(0, 2)
-                .join(", ");
-              const titleText = categoriesPreview
-                ? `${item.name || item.uri} · ${categoriesPreview}`
-                : item.name || item.uri;
-              return (
-                <button
-                  key={item.uri}
-                  type="button"
-                  onClick={() => handleSelection(item.uri)}
-                  data-product-list-item="true"
-                  data-product-uri={item.uri}
-                  title={titleText}
-                  className={`w-full text-left px-2 py-2.5 flex min-h-[78px] items-center gap-2 border-b last:border-b-0 transition-colors ${
-                    isActive
-                      ? "bg-blue-700 text-white border-l-2 border-l-blue-300"
-                      : "hover:bg-gray-50 border-l-2 border-l-transparent"
-                  }`}
-                >
-                  <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 w-9 text-center ${TYPE_COLOR[item.source]}`}
+              // Sort
+              const sorted = [...filtered].sort((a, b) => {
+                let va, vb;
+                if (sortField === "source") {
+                  va = a.source;
+                  vb = b.source;
+                } else if (sortField === "status") {
+                  va = isConfigured(a.uri) ? 1 : 0;
+                  vb = isConfigured(b.uri) ? 1 : 0;
+                } else {
+                  va = (a.name || "").toLowerCase();
+                  vb = (b.name || "").toLowerCase();
+                }
+                if (va < vb) return sortDir === "asc" ? -1 : 1;
+                if (va > vb) return sortDir === "asc" ? 1 : -1;
+                return 0;
+              });
+
+              if (sorted.length === 0)
+                return (
+                  <p className="text-xs text-gray-400 p-4 text-center">
+                    {allItemsCount === 0
+                      ? "No content found."
+                      : "No items match the current filter."}
+                  </p>
+                );
+
+              return sorted.map((item) => {
+                const isActive = selectedContent === item.uri;
+                const configured = isConfigured(item.uri);
+                const configReasons = configured
+                  ? []
+                  : configReasonsForUri(item.uri);
+                const categoriesPreview = extractCategoryNames(item.categories)
+                  .slice(0, 2)
+                  .join(", ");
+                const titleText = categoriesPreview
+                  ? `${item.name || item.uri} · ${categoriesPreview}`
+                  : item.name || item.uri;
+                return (
+                  <button
+                    key={item.uri}
+                    type="button"
+                    onClick={() => handleSelection(item.uri)}
+                    data-product-list-item="true"
+                    data-product-uri={item.uri}
+                    title={titleText}
+                    className={`w-full text-left px-2 py-2.5 flex min-h-[78px] items-center gap-2 border-b last:border-b-0 transition-colors ${
+                      isActive
+                        ? "bg-blue-700 text-white border-l-2 border-l-blue-300"
+                        : "hover:bg-gray-50 border-l-2 border-l-transparent"
+                    }`}
                   >
-                    {TYPE_LABEL[item.source]}
-                  </span>
-                  <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-gray-300 bg-gray-100">
-                    <SafeProductImage
-                      src={item.imageUrl}
-                      alt={item.name || item.uri}
-                      className="h-full w-full object-cover"
-                      fallbackClassName="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400"
-                    />
-                  </span>
-                  <div className="flex-1 min-w-0">
                     <span
-                      className={`admin-product-title block text-base truncate ${
-                        isActive ? "text-white" : "text-gray-800"
-                      }`}
-                      title={item.name || item.uri}
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 w-9 text-center ${TYPE_COLOR[item.source]}`}
                     >
-                      {item.name}
+                      {TYPE_LABEL[item.source]}
                     </span>
-                    {categoriesPreview && (
+                    <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-gray-300 bg-gray-100">
+                      <SafeProductImage
+                        src={item.imageUrl}
+                        alt={item.name || item.uri}
+                        className="h-full w-full object-cover"
+                        fallbackClassName="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400"
+                      />
+                    </span>
+                    <div className="flex-1 min-w-0">
                       <span
-                        className={`block text-xs truncate ${
-                          isActive ? "text-white/75" : "text-gray-400"
+                        className={`admin-product-title block text-base truncate ${
+                          isActive ? "text-white" : "text-gray-800"
+                        }`}
+                        title={item.name || item.uri}
+                      >
+                        {item.name}
+                      </span>
+                      {categoriesPreview && (
+                        <span
+                          className={`block text-xs truncate ${
+                            isActive ? "text-white/75" : "text-gray-400"
+                          }`}
+                        >
+                          {categoriesPreview}
+                        </span>
+                      )}
+                    </div>
+                    {item.active === false && (
+                      <span
+                        className={`text-[9px] px-1 rounded shrink-0 ${
+                          isActive
+                            ? "bg-red-200 text-red-800"
+                            : "bg-red-50 text-red-500"
                         }`}
                       >
-                        {categoriesPreview}
+                        Off
                       </span>
                     )}
-                  </div>
-                  {item.active === false && (
+                    {!item.free && item.priceCents === 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium shrink-0">
+                        {t("admin.productPriceAmbiguous")}
+                      </span>
+                    )}
                     <span
-                      className={`text-[9px] px-1 rounded shrink-0 ${
-                        isActive
-                          ? "bg-red-200 text-red-800"
-                          : "bg-red-50 text-red-500"
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                        configured
+                          ? isActive
+                            ? "bg-white"
+                            : "bg-slate-500"
+                          : isActive
+                            ? "bg-amber-200"
+                            : "bg-amber-300"
                       }`}
-                    >
-                      Off
-                    </span>
-                  )}
-                  {!item.free && item.priceCents === 0 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium shrink-0">
-                      {t("admin.productPriceAmbiguous")}
-                    </span>
-                  )}
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      configured
-                        ? isActive
-                          ? "bg-white"
-                          : "bg-slate-500"
-                        : isActive
-                          ? "bg-amber-200"
-                          : "bg-amber-300"
-                    }`}
-                    title={
-                      configured
-                        ? t("admin.configuredBadge")
-                        : `${t("admin.filterNeedsConfig", "Needs config")}: ${configReasons[0] || ""}`
-                    }
-                  />
+                      title={
+                        configured
+                          ? t("admin.configuredBadge")
+                          : `${t("admin.filterNeedsConfig", "Needs config")}: ${configReasons[0] || ""}`
+                      }
+                    />
+                  </button>
+                );
+              });
+            })()}
+          </div>
+
+          {/* Manual entry */}
+          <div className="border-t p-2 bg-gray-50">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCourse("__custom__");
+                setManualUriInput("");
+              }}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              + Enter URI manually
+            </button>
+            {selectedContent === "__custom__" && (
+              <div className="mt-1 flex gap-1.5">
+                <input
+                  type="text"
+                  value={manualUriInput}
+                  onChange={(e) => setManualUriInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    applyManualUri();
+                  }}
+                  placeholder={t("admin.courseUriInputPlaceholder")}
+                  className="w-full border rounded px-2 py-1.5 text-xs"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={applyManualUri}
+                  className="px-2 py-1.5 text-[11px] rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
+                >
+                  {t("common.use", "Use")}
                 </button>
-              );
-            });
-          })()}
-        </div>
-
-        {/* Manual entry */}
-        <div className="border-t p-2 bg-gray-50">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedCourse("__custom__");
-              setManualUriInput("");
-            }}
-            className="text-xs text-gray-500 hover:text-gray-700"
-          >
-            + Enter URI manually
-          </button>
-          {selectedContent === "__custom__" && (
-            <div className="mt-1 flex gap-1.5">
-              <input
-                type="text"
-                value={manualUriInput}
-                onChange={(e) => setManualUriInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  e.preventDefault();
-                  applyManualUri();
-                }}
-                placeholder={t("admin.courseUriInputPlaceholder")}
-                className="w-full border rounded px-2 py-1.5 text-xs"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={applyManualUri}
-                className="px-2 py-1.5 text-[11px] rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
-              >
-                {t("common.use", "Use")}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Right: detail panel ── */}
-      <div ref={editFormRef} className="border rounded overflow-auto min-w-0">
-        {showDetail ? (
-          <div className="p-5 space-y-5">
-            {selectedConfigReasons.length > 0 && (
-              <div className="rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-                <p className="font-semibold">
-                  {t("admin.filterNeedsConfig", "Needs config")}
-                </p>
-                <ul className="mt-1 list-disc pl-5 space-y-0.5">
-                  {selectedConfigReasons.map((reason, idx) => (
-                    <li key={`${selectedContent}-config-${idx}`}>{reason}</li>
-                  ))}
-                </ul>
               </div>
             )}
+          </div>
+        </div>
 
-            {/* WP item info card */}
-            {isWpSelection &&
-              (() => {
-                const wpItem = allWpContent.find(
-                  (item) => item.uri === selectedContent,
-                );
-                if (!wpItem) return null;
-                const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
-                const rawPrice = wpItem?.price || wpItem?.priceRendered || "";
-                const wpPrice = (typeof rawPrice === "string" ? rawPrice : String(rawPrice)).replace(/&nbsp;/g, " ");
-                const wpParsedCents = parsePriceCents(wpPrice);
-                const wpCategories = extractCategoryNames(wpItem?.categories);
-                const sourceLabel =
-                  wpItem?._source === "woocommerce"
-                    ? "WooCommerce"
-                    : wpItem?._source === "learnpress"
-                      ? "LearnPress"
-                      : wpItem?._source === "wordpress"
-                        ? "Event"
-                        : "Manual";
-                const sourceColor =
-                  wpItem?._source === "woocommerce"
-                    ? "bg-blue-100 text-blue-800"
-                    : wpItem?._source === "learnpress"
-                      ? "bg-slate-100 text-slate-800"
-                      : "bg-amber-100 text-amber-800";
+        {/* ── Right: detail panel ── */}
+        <div ref={editFormRef} className="border rounded overflow-auto min-w-0">
+          {showDetail ? (
+            <div className="p-5 space-y-5">
+              {selectedConfigReasons.length > 0 && (
+                <div className="rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                  <p className="font-semibold">
+                    {t("admin.filterNeedsConfig", "Needs config")}
+                  </p>
+                  <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                    {selectedConfigReasons.map((reason, idx) => (
+                      <li key={`${selectedContent}-config-${idx}`}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-                return (
-                  <div>
-                    {/* Item header */}
-                    <div className="flex gap-4 mb-4">
-                    <ImagePickerButton
-                      imgUrl={imgUrl}
-                      sizeClass="h-56 w-56"
-                      uploadBackend="wordpress"
-                      uploadOptions={imageUploadOptions}
-                      onUploaded={(url) => {
-                          const upd = (setter) =>
-                            setter((prev) =>
-                              prev.map((x) =>
-                                x.uri === selectedContent
-                                  ? {
-                                      ...x,
-                                      featuredImage: {
-                                        node: { sourceUrl: url },
-                                      },
-                                    }
-                                  : x,
-                              ),
-                            );
-                          upd(setWpEvents);
-                          upd(setWcProducts);
-                          upd(setWpCourses);
-                        }}
-                        onError={setError}
-                      />
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <h3 className="admin-product-title text-base font-bold break-words">
-                          {wpItem?.title || wpItem?.name || selectedContent}
-                        </h3>
-                        <div className="flex flex-wrap gap-1.5 text-xs">
-                          <span
-                            className={`px-2 py-0.5 rounded ${sourceColor}`}
-                          >
-                            {sourceLabel}
-                          </span>
-                          {wpPrice && (
-                            <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                              WP: {wpPrice}
+              {/* WP item info card */}
+              {isWpSelection &&
+                (() => {
+                  const wpItem = allWpContent.find(
+                    (item) => item.uri === selectedContent,
+                  );
+                  if (!wpItem) return null;
+                  const imgUrl = wpItem?.featuredImage?.node?.sourceUrl;
+                  const rawPrice = wpItem?.price || wpItem?.priceRendered || "";
+                  const wpPrice = (
+                    typeof rawPrice === "string" ? rawPrice : String(rawPrice)
+                  ).replace(/&nbsp;/g, " ");
+                  const wpParsedCents = parsePriceCents(wpPrice);
+                  const wpCategories = extractCategoryNames(wpItem?.categories);
+                  const sourceLabel =
+                    wpItem?._source === "woocommerce"
+                      ? "WooCommerce"
+                      : wpItem?._source === "learnpress"
+                        ? "LearnPress"
+                        : wpItem?._source === "wordpress"
+                          ? "Event"
+                          : "Manual";
+                  const sourceColor =
+                    wpItem?._source === "woocommerce"
+                      ? "bg-blue-100 text-blue-800"
+                      : wpItem?._source === "learnpress"
+                        ? "bg-slate-100 text-slate-800"
+                        : "bg-amber-100 text-amber-800";
+
+                  return (
+                    <div>
+                      {/* Item header */}
+                      <div className="flex gap-4 mb-4">
+                        <ImagePickerButton
+                          imgUrl={imgUrl}
+                          sizeClass="h-56 w-56"
+                          uploadBackend="wordpress"
+                          uploadOptions={imageUploadOptions}
+                          onUploaded={(url) => {
+                            const upd = (setter) =>
+                              setter((prev) =>
+                                prev.map((x) =>
+                                  x.uri === selectedContent
+                                    ? {
+                                        ...x,
+                                        featuredImage: {
+                                          node: { sourceUrl: url },
+                                        },
+                                      }
+                                    : x,
+                                ),
+                              );
+                            upd(setWpEvents);
+                            upd(setWcProducts);
+                            upd(setWpCourses);
+                          }}
+                          onError={setError}
+                        />
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <h3 className="admin-product-title text-base font-bold break-words">
+                            {wpItem?.title || wpItem?.name || selectedContent}
+                          </h3>
+                          <div className="flex flex-wrap gap-1.5 text-xs">
+                            <span
+                              className={`px-2 py-0.5 rounded ${sourceColor}`}
+                            >
+                              {sourceLabel}
                             </span>
-                          )}
-                          {(courses[selectedContent] || wpParsedCents > 0) && (
-                            <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
-                              {t("admin.configuredBadge")}
-                            </span>
+                            {wpPrice && (
+                              <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                                WP: {wpPrice}
+                              </span>
+                            )}
+                            {(courses[selectedContent] ||
+                              wpParsedCents > 0) && (
+                              <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
+                                {t("admin.configuredBadge")}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 truncate">
+                            {selectedContent}
+                          </p>
+                          {wpCategories.length > 0 && (
+                            <p className="text-xs text-gray-500 truncate">
+                              {t("admin.categoryLabel")}:{" "}
+                              {wpCategories.join(", ")}
+                            </p>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 truncate">
-                          {selectedContent}
+                      </div>
+
+                      {/* "Not buyable" warning */}
+                      {(() => {
+                        const cfg = courses[selectedContent];
+                        const hasPriceCents =
+                          cfg &&
+                          typeof cfg.priceCents === "number" &&
+                          cfg.priceCents > 0;
+                        if (hasPriceCents || wpParsedCents > 0) return null;
+                        return (
+                          <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 mb-4">
+                            <div className="flex items-start gap-2">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                className="w-4 h-4 shrink-0 mt-0.5"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <div>
+                                <p className="font-semibold text-xs">
+                                  {t("admin.notBuyableTitle")}
+                                </p>
+                                <p className="text-xs mt-0.5 text-amber-700">
+                                  {t("admin.notBuyableHint")}
+                                </p>
+                              </div>
+                            </div>
+                            {wpPrice && wpParsedCents > 0 && (
+                              <div className="flex items-center gap-3 mt-2 pt-2 border-t border-amber-200">
+                                <span className="text-xs">
+                                  WP price: <strong>{wpPrice}</strong>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPrice((wpParsedCents / 100).toFixed(2));
+                                    setAutoSaveTrigger((n) => n + 1);
+                                  }}
+                                  className="px-2 py-0.5 rounded border border-amber-400 bg-white text-amber-800 text-xs hover:bg-amber-100"
+                                >
+                                  {t("admin.notBuyableUseWpPrice")}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      <hr />
+                    </div>
+                  );
+                })()}
+
+              {/* Shop product full details (merged from Digital Downloads tab) */}
+              {isShopSelection && selectedShopProduct && (
+                <div className="mb-4 space-y-4 rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <ImagePickerButton
+                        imgUrl={selectedShopProduct.imageUrl}
+                        sizeClass="h-56 w-56"
+                        uploadBackend="wordpress"
+                        uploadOptions={imageUploadOptions}
+                        onUploaded={(url) =>
+                          updateProduct(shopIndex, "imageUrl", url)
+                        }
+                        onError={setError}
+                      />
+                      <div className="min-w-0">
+                        <p className="admin-product-title font-sans text-base font-semibold text-amber-700 break-words">
+                          {selectedShopProduct.name ||
+                            `Product ${shopIndex + 1}`}
                         </p>
-                        {wpCategories.length > 0 && (
-                          <p className="text-xs text-gray-500 truncate">
-                            {t("admin.categoryLabel")}: {wpCategories.join(", ")}
-                          </p>
+                        {selectedShopCategories.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {selectedShopCategories.map((category) => (
+                              <span
+                                key={`${selectedShopProduct.id || shopIndex}-${category}`}
+                                className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-sans text-slate-700"
+                              >
+                                {category}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => removeShopProduct(shopIndex)}
+                      className="shrink-0 rounded border border-slate-300 bg-white p-1.5 text-slate-600 transition-colors hover:bg-slate-100"
+                      aria-label={t("common.remove")}
+                      title={t("common.remove")}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="h-4 w-4"
+                        aria-hidden
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.75 2.5a1.75 1.75 0 00-1.75 1.75v.25H4.75a.75.75 0 000 1.5h.37l.69 9.11A2 2 0 007.8 17h4.4a2 2 0 001.99-1.89l.69-9.11h.37a.75.75 0 000-1.5H13v-.25A1.75 1.75 0 0011.25 2.5h-2.5zm3 2v-.25a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25v.25h3zM8 8a.75.75 0 011.5 0v5a.75.75 0 01-1.5 0V8zm3.5-.75a.75.75 0 00-.75.75v5a.75.75 0 001.5 0V8a.75.75 0 00-.75-.75z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </div>
 
-                    {/* "Not buyable" warning */}
-                    {(() => {
-                      const cfg = courses[selectedContent];
-                      const hasPriceCents =
-                        cfg &&
-                        typeof cfg.priceCents === "number" &&
-                        cfg.priceCents > 0;
-                      if (hasPriceCents || wpParsedCents > 0) return null;
-                      return (
-                        <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 mb-4">
-                          <div className="flex items-start gap-2">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              className="w-4 h-4 shrink-0 mt-0.5"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            <div>
-                              <p className="font-semibold text-xs">
-                                {t("admin.notBuyableTitle")}
-                              </p>
-                              <p className="text-xs mt-0.5 text-amber-700">
-                                {t("admin.notBuyableHint")}
-                              </p>
-                            </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedShopProduct.name}
+                        onChange={(e) =>
+                          updateProduct(shopIndex, "name", e.target.value)
+                        }
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Slug
+                      </label>
+                      {(() => {
+                        const wpType =
+                          allWpContent.find(
+                            (item) =>
+                              item.uri === selectedShopProduct.contentUri,
+                          )?._type ?? null;
+                        const prefix = resolveSlugPrefix(
+                          selectedShopMode,
+                          wpType,
+                        );
+                        const base =
+                          prefix && selectedShopProduct.slug.startsWith(prefix)
+                            ? selectedShopProduct.slug.slice(prefix.length)
+                            : selectedShopProduct.slug;
+                        return (
+                          <div className="flex items-center border rounded overflow-hidden text-sm">
+                            {prefix && (
+                              <span className="px-2 py-2 bg-gray-100 text-gray-500 border-r shrink-0 select-none font-mono text-xs">
+                                {prefix}
+                              </span>
+                            )}
+                            <input
+                              type="text"
+                              value={base}
+                              onChange={(e) =>
+                                updateProduct(shopIndex, "slug", e.target.value)
+                              }
+                              className="flex-1 px-3 py-2 min-w-0"
+                            />
                           </div>
-                          {wpPrice && wpParsedCents > 0 && (
-                            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-amber-200">
-                              <span className="text-xs">
-                                WP price: <strong>{wpPrice}</strong>
+                        );
+                      })()}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Type
+                      </label>
+                      <select
+                        value={selectedShopProduct.type}
+                        onChange={(e) =>
+                          updateProduct(shopIndex, "type", e.target.value)
+                        }
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      >
+                        <option value="digital_file">
+                          {t("admin.digitalFile")}
+                        </option>
+                        <option value="course">
+                          {t("admin.courseProduct")}
+                        </option>
+                      </select>
+                    </div>
+                    <div className="flex items-end gap-5 pb-2">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedShopProduct.active !== false}
+                          onChange={(e) =>
+                            updateProduct(shopIndex, "active", e.target.checked)
+                          }
+                          className="accent-slate-600"
+                        />
+                        <span className="text-gray-700">
+                          {t("admin.activeProduct")}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      rows="3"
+                      value={selectedShopProduct.description}
+                      onChange={(e) =>
+                        updateProduct(shopIndex, "description", e.target.value)
+                      }
+                      className="w-full border rounded px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowImageGen((v) => !v)}
+                      className="mt-1 text-xs px-2.5 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
+                    >
+                      {t("admin.generateImages")}
+                    </button>
+                    {showImageGen && (
+                      <div className="mt-2">
+                        <ImageGenerationPanel
+                          description={
+                            selectedShopProduct.description ||
+                            selectedShopProduct.name ||
+                            ""
+                          }
+                          onSave={(url) =>
+                            updateProduct(shopIndex, "imageUrl", url)
+                          }
+                          context="editor"
+                          uploadBackend={uploadBackend}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {selectedShopProduct.type === "digital_file" ? (
+                      <>
+                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                          <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5">
+                            <p className="text-[11px] font-sans font-semibold uppercase tracking-wide text-slate-700">
+                              FILE
+                            </p>
+                          </div>
+                          <div className="space-y-3 p-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs font-medium text-slate-700">
+                                {t(
+                                  "admin.productSourceLabel",
+                                  "Delivery source",
+                                )}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setPrice((wpParsedCents / 100).toFixed(2));
-                                  setAutoSaveTrigger((n) => n + 1);
+                                  updateProduct(
+                                    shopIndex,
+                                    "productMode",
+                                    "asset",
+                                  );
+                                  updateProduct(shopIndex, "contentUri", "");
+                                  updateProduct(shopIndex, "fileUrl", "");
                                 }}
-                                className="px-2 py-0.5 rounded border border-amber-400 bg-white text-amber-800 text-xs hover:bg-amber-100"
+                                className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                                  selectedShopMode === "asset"
+                                    ? "admin-pill-active"
+                                    : "admin-pill-subtle"
+                                }`}
                               >
-                                {t("admin.notBuyableUseWpPrice")}
+                                {t("admin.productSourceAsset", "Asset")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateProduct(
+                                    shopIndex,
+                                    "productMode",
+                                    "digital_file",
+                                  );
+                                  updateProduct(shopIndex, "contentUri", "");
+                                  updateProduct(shopIndex, "assetId", "");
+                                }}
+                                className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                                  selectedShopMode === "digital_file"
+                                    ? "admin-pill-active"
+                                    : "admin-pill-subtle"
+                                }`}
+                              >
+                                {t(
+                                  "admin.productSourceDirectUrl",
+                                  "Direct URL",
+                                )}
                               </button>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })()}
 
-                    <hr />
-                  </div>
-                );
-              })()}
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openAssetPicker(shopIndex)}
+                                className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                              >
+                                {selectedShopProduct.assetId
+                                  ? t(
+                                      "admin.productAssetChange",
+                                      "Change asset",
+                                    )
+                                  : t(
+                                      "admin.productAssetChoose",
+                                      "Choose asset",
+                                    )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => uploadFile(shopIndex, "fileUrl")}
+                                disabled={!!uploadingField}
+                                className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                              >
+                                {uploadingField === "fileUrl"
+                                  ? t("common.loading")
+                                  : t("admin.uploadFile")}
+                              </button>
+                            </div>
 
-            {/* Shop product full details (merged from Digital Downloads tab) */}
-            {isShopSelection && selectedShopProduct && (
-              <div className="mb-4 space-y-4 rounded-lg border p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <ImagePickerButton
-                      imgUrl={selectedShopProduct.imageUrl}
-                      sizeClass="h-56 w-56"
-                      uploadBackend="wordpress"
-                      uploadOptions={imageUploadOptions}
-                      onUploaded={(url) => updateProduct(shopIndex, "imageUrl", url)}
-                      onError={setError}
-                    />
-                    <div className="min-w-0">
-                      <p className="admin-product-title font-sans text-base font-semibold text-amber-700 break-words">
-                        {selectedShopProduct.name || `Product ${shopIndex + 1}`}
-                      </p>
-                      {selectedShopCategories.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {selectedShopCategories.map((category) => (
-                            <span
-                              key={`${selectedShopProduct.id || shopIndex}-${category}`}
-                              className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-sans text-slate-700"
-                            >
-                              {category}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeShopProduct(shopIndex)}
-                    className="shrink-0 rounded border border-slate-300 bg-white p-1.5 text-slate-600 transition-colors hover:bg-slate-100"
-                    aria-label={t("common.remove")}
-                    title={t("common.remove")}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="h-4 w-4"
-                      aria-hidden
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8.75 2.5a1.75 1.75 0 00-1.75 1.75v.25H4.75a.75.75 0 000 1.5h.37l.69 9.11A2 2 0 007.8 17h4.4a2 2 0 001.99-1.89l.69-9.11h.37a.75.75 0 000-1.5H13v-.25A1.75 1.75 0 0011.25 2.5h-2.5zm3 2v-.25a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25v.25h3zM8 8a.75.75 0 011.5 0v5a.75.75 0 01-1.5 0V8zm3.5-.75a.75.75 0 00-.75.75v5a.75.75 0 001.5 0V8a.75.75 0 00-.75-.75z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedShopProduct.name}
-                      onChange={(e) =>
-                        updateProduct(shopIndex, "name", e.target.value)
-                      }
-                      className="w-full border rounded px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Slug
-                    </label>
-                    {(() => {
-                      const wpType = allWpContent.find((item) => item.uri === selectedShopProduct.contentUri)?._type ?? null;
-                      const prefix = resolveSlugPrefix(selectedShopMode, wpType);
-                      const base = prefix && selectedShopProduct.slug.startsWith(prefix)
-                        ? selectedShopProduct.slug.slice(prefix.length)
-                        : selectedShopProduct.slug;
-                      return (
-                        <div className="flex items-center border rounded overflow-hidden text-sm">
-                          {prefix && (
-                            <span className="px-2 py-2 bg-gray-100 text-gray-500 border-r shrink-0 select-none font-mono text-xs">
-                              {prefix}
-                            </span>
-                          )}
-                          <input
-                            type="text"
-                            value={base}
-                            onChange={(e) => updateProduct(shopIndex, "slug", e.target.value)}
-                            className="flex-1 px-3 py-2 min-w-0"
-                          />
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Type
-                    </label>
-                    <select
-                      value={selectedShopProduct.type}
-                      onChange={(e) =>
-                        updateProduct(shopIndex, "type", e.target.value)
-                      }
-                      className="w-full border rounded px-3 py-2 text-sm"
-                    >
-                      <option value="digital_file">{t("admin.digitalFile")}</option>
-                      <option value="course">{t("admin.courseProduct")}</option>
-                    </select>
-                  </div>
-                  <div className="flex items-end gap-5 pb-2">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedShopProduct.active !== false}
-                        onChange={(e) =>
-                          updateProduct(shopIndex, "active", e.target.checked)
-                        }
-                        className="accent-slate-600"
-                      />
-                      <span className="text-gray-700">
-                        {t("admin.activeProduct")}
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    rows="3"
-                    value={selectedShopProduct.description}
-                    onChange={(e) =>
-                      updateProduct(shopIndex, "description", e.target.value)
-                    }
-                    className="w-full border rounded px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowImageGen((v) => !v)}
-                    className="mt-1 text-xs px-2.5 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
-                  >
-                    {t("admin.generateImages")}
-                  </button>
-                  {showImageGen && (
-                    <div className="mt-2">
-                      <ImageGenerationPanel
-                        description={
-                          selectedShopProduct.description ||
-                          selectedShopProduct.name ||
-                          ""
-                        }
-                        onSave={(url) => updateProduct(shopIndex, "imageUrl", url)}
-                        context="editor"
-                        uploadBackend={uploadBackend}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  {selectedShopProduct.type === "digital_file" ? (
-                    <>
-                      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-                        <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5">
-                          <p className="text-[11px] font-sans font-semibold uppercase tracking-wide text-slate-700">
-                            FILE
-                          </p>
-                        </div>
-                        <div className="space-y-3 p-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-medium text-slate-700">
-                            {t("admin.productSourceLabel", "Delivery source")}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              updateProduct(shopIndex, "productMode", "asset");
-                              updateProduct(shopIndex, "contentUri", "");
-                              updateProduct(shopIndex, "fileUrl", "");
-                            }}
-                            className={`rounded-full border px-2.5 py-1 text-[11px] ${
-                              selectedShopMode === "asset"
-                                ? "admin-pill-active"
-                                : "admin-pill-subtle"
-                            }`}
-                          >
-                            {t("admin.productSourceAsset", "Asset")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              updateProduct(shopIndex, "productMode", "digital_file");
-                              updateProduct(shopIndex, "contentUri", "");
-                              updateProduct(shopIndex, "assetId", "");
-                            }}
-                            className={`rounded-full border px-2.5 py-1 text-[11px] ${
-                              selectedShopMode === "digital_file"
-                                ? "admin-pill-active"
-                                : "admin-pill-subtle"
-                            }`}
-                          >
-                            {t("admin.productSourceDirectUrl", "Direct URL")}
-                          </button>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openAssetPicker(shopIndex)}
-                            className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                          >
-                            {selectedShopProduct.assetId
-                              ? t("admin.productAssetChange", "Change asset")
-                              : t("admin.productAssetChoose", "Choose asset")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => uploadFile(shopIndex, "fileUrl")}
-                            disabled={!!uploadingField}
-                            className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                          >
-                            {uploadingField === "fileUrl"
-                              ? t("common.loading")
-                              : t("admin.uploadFile")}
-                          </button>
-                        </div>
-
-                        {selectedShopProduct.assetId ? (
-                          <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-2">
-                            <p>
-                              <span className="font-semibold">
-                                {t("admin.productSourceId", "ID")}:
-                              </span>{" "}
-                              <span className="font-mono">{selectedShopProduct.assetId}</span>
-                            </p>
-                            {selectedShopProduct.fileUrl && (
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold shrink-0">
-                                  {t("admin.fileUrl", "File URL")}:
-                                </span>
-                                <span className="font-mono tracking-widest text-slate-400 select-none">
-                                  {"•".repeat(12)}
-                                </span>
-                                <button
-                                  type="button"
-                                  title={t("common.copy", "Copy")}
-                                  onClick={() =>
-                                    navigator.clipboard?.writeText(selectedShopProduct.fileUrl)
-                                  }
-                                  className="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                  </svg>
-                                </button>
-                                <a
-                                  href={selectedShopProduct.fileUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title={t("common.openInNewTab", "Open in new tab")}
-                                  className="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                                    <polyline points="15 3 21 3 21 9"/>
-                                    <line x1="10" y1="14" x2="21" y2="3"/>
-                                  </svg>
-                                </a>
+                            {selectedShopProduct.assetId ? (
+                              <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-2">
+                                <p>
+                                  <span className="font-semibold">
+                                    {t("admin.productSourceId", "ID")}:
+                                  </span>{" "}
+                                  <span className="font-mono">
+                                    {selectedShopProduct.assetId}
+                                  </span>
+                                </p>
+                                {selectedShopProduct.fileUrl && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold shrink-0">
+                                      {t("admin.fileUrl", "File URL")}:
+                                    </span>
+                                    <span className="font-mono tracking-widest text-slate-400 select-none">
+                                      {"•".repeat(12)}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      title={t("common.copy", "Copy")}
+                                      onClick={() =>
+                                        navigator.clipboard?.writeText(
+                                          selectedShopProduct.fileUrl,
+                                        )
+                                      }
+                                      className="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="w-3.5 h-3.5"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      >
+                                        <rect
+                                          x="9"
+                                          y="9"
+                                          width="13"
+                                          height="13"
+                                          rx="2"
+                                          ry="2"
+                                        />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                      </svg>
+                                    </button>
+                                    <a
+                                      href={selectedShopProduct.fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title={t(
+                                        "common.openInNewTab",
+                                        "Open in new tab",
+                                      )}
+                                      className="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="w-3.5 h-3.5"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      >
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                        <polyline points="15 3 21 3 21 9" />
+                                        <line x1="10" y1="14" x2="21" y2="3" />
+                                      </svg>
+                                    </a>
+                                  </div>
+                                )}
                               </div>
+                            ) : selectedShopMode === "asset" ? (
+                              <p className="text-[11px] text-amber-700">
+                                {t(
+                                  "admin.productAssetRequired",
+                                  "Asset mode requires an asset selection.",
+                                )}
+                              </p>
+                            ) : null}
+
+                            {selectedShopMode === "digital_file" && (
+                              <>
+                                <input
+                                  type="text"
+                                  value={selectedShopProduct.fileUrl}
+                                  onChange={(e) =>
+                                    updateProduct(
+                                      shopIndex,
+                                      "fileUrl",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder={t("admin.fileUrlPlaceholder")}
+                                  className="w-full border rounded px-3 py-2 text-sm"
+                                />
+                                <p className="text-[11px] text-slate-500">
+                                  {t(
+                                    "admin.productUrlValidateOnSave",
+                                    "This URL is validated with a HEAD check before save.",
+                                  )}
+                                </p>
+                              </>
                             )}
                           </div>
-                        ) : selectedShopMode === "asset" ? (
-                          <p className="text-[11px] text-amber-700">
-                            {t(
-                              "admin.productAssetRequired",
-                              "Asset mode requires an asset selection.",
-                            )}
-                          </p>
-                        ) : null}
-
-                        {selectedShopMode === "digital_file" && (
+                        </div>
+                        {!selectedShopProduct.assetId && (
                           <>
-                            <input
-                              type="text"
-                              value={selectedShopProduct.fileUrl}
-                              onChange={(e) =>
-                                updateProduct(shopIndex, "fileUrl", e.target.value)
-                              }
-                              placeholder={t("admin.fileUrlPlaceholder")}
-                              className="w-full border rounded px-3 py-2 text-sm"
-                            />
-                            <p className="text-[11px] text-slate-500">
-                              {t(
-                                "admin.productUrlValidateOnSave",
-                                "This URL is validated with a HEAD check before save.",
-                              )}
+                            <p className="text-[11px] text-gray-500">
+                              Backend:{" "}
+                              <strong className="text-gray-700">
+                                {uploadBackend === "wordpress"
+                                  ? "WordPress Media"
+                                  : uploadBackend === "r2"
+                                    ? "Cloudflare R2"
+                                    : "S3/Spaces"}
+                              </strong>
+                              .{" "}
+                              {runtime === "edge"
+                                ? t(
+                                    "admin.uploadEdgeLimit",
+                                    "Single PUT ≤100 MB, multipart for larger.",
+                                  )
+                                : t(
+                                    "admin.uploadNodeLimit",
+                                    "Multipart upload for large files.",
+                                  )}
                             </p>
+                            <CyberduckBookmarkPanel
+                              uploadBackend={uploadBackend}
+                              uploadInfo={uploadInfo}
+                              uploadInfoDetails={uploadInfoDetails}
+                              className="mt-2"
+                            />
                           </>
                         )}
-                        </div>
-                      </div>
-                      {!selectedShopProduct.assetId && (
-                        <>
-                          <p className="text-[11px] text-gray-500">
-                            Backend:{" "}
-                            <strong className="text-gray-700">
-                              {uploadBackend === "wordpress"
-                                ? "WordPress Media"
-                                : uploadBackend === "r2"
-                                  ? "Cloudflare R2"
-                                  : "S3/Spaces"}
-                            </strong>
-                            .{" "}
-                            {runtime === "edge"
-                              ? t(
-                                  "admin.uploadEdgeLimit",
-                                  "Single PUT ≤100 MB, multipart for larger.",
-                                )
-                              : t(
-                                  "admin.uploadNodeLimit",
-                                  "Multipart upload for large files.",
-                              )}
-                          </p>
-                          <CyberduckBookmarkPanel
-                            uploadBackend={uploadBackend}
-                            uploadInfo={uploadInfo}
-                            uploadInfoDetails={uploadInfoDetails}
-                            className="mt-2"
-                          />
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <input
-                      type="text"
-                      value={selectedShopProduct.contentUri}
-                      onChange={(e) =>
-                        updateProduct(shopIndex, "contentUri", e.target.value)
-                      }
-                      className="w-full border rounded px-3 py-2 text-sm"
-                    />
-                  )}
+                      </>
+                    ) : (
+                      <input
+                        type="text"
+                        value={selectedShopProduct.contentUri}
+                        onChange={(e) =>
+                          updateProduct(shopIndex, "contentUri", e.target.value)
+                        }
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {!isShopSelection && (
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={selectedContentActive !== false}
-                  onChange={(e) => setSelectedCourseActive(e.target.checked)}
-                  className="accent-slate-600"
-                />
-                <span>{t("admin.activeProduct", "Active product")}</span>
-              </label>
-            )}
+              {!isShopSelection && (
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={selectedContentActive !== false}
+                    onChange={(e) => setSelectedCourseActive(e.target.checked)}
+                    className="accent-slate-600"
+                  />
+                  <span>{t("admin.activeProduct", "Active product")}</span>
+                </label>
+              )}
 
-            <PriceAccessForm
-              price={price}
-              setPrice={setPrice}
-              free={selectedShopProduct?.free ?? false}
-              setFree={(val) => updateProduct(shopIndex, "free", val)}
-              currency={currency}
-              setCurrency={setCurrency}
-              vatPercent={vatPercent}
-              setVatPercent={setVatPercent}
-              userSearch={userSearch}
-              setUserSearch={setUserSearch}
-              users={users}
-              allowedUsers={allowedUsers}
-              filteredUsers={filteredUsers}
-              toggleUser={toggleUser}
-              manualEmail={manualEmail}
-              setManualEmail={setManualEmail}
-              addManualEmail={addManualEmail}
-              saveUnified={saveUnified}
-              loading={loading}
-              autoSaveTrigger={autoSaveTrigger}
-            />
-
-          </div>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300 p-8">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-10 h-10"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"
-                clipRule="evenodd"
+              <PriceAccessForm
+                price={price}
+                setPrice={setPrice}
+                free={selectedShopProduct?.free ?? false}
+                setFree={(val) => updateProduct(shopIndex, "free", val)}
+                currency={currency}
+                setCurrency={setCurrency}
+                vatPercent={vatPercent}
+                setVatPercent={setVatPercent}
+                userSearch={userSearch}
+                setUserSearch={setUserSearch}
+                users={users}
+                allowedUsers={allowedUsers}
+                filteredUsers={filteredUsers}
+                toggleUser={toggleUser}
+                manualEmail={manualEmail}
+                setManualEmail={setManualEmail}
+                addManualEmail={addManualEmail}
+                saveUnified={saveUnified}
+                loading={loading}
+                autoSaveTrigger={autoSaveTrigger}
               />
-            </svg>
-            <p className="text-sm text-gray-500 admin-soft-yellow">
-              {t("admin.selectItemToConfigureAccess")}
-            </p>
-          </div>
-        )}
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300 p-8">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-10 h-10"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <p className="text-sm text-gray-500 admin-soft-yellow">
+                {t("admin.selectItemToConfigureAccess")}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-    <AssetPickerModal
-      open={assetPickerOpen}
-      onClose={() => {
-        setAssetPickerOpen(false);
-        setAssetPickerProductIndex(-1);
-      }}
-      onSelect={applyAssetSelection}
-    />
+      <AssetPickerModal
+        open={assetPickerOpen}
+        onClose={() => {
+          setAssetPickerOpen(false);
+          setAssetPickerProductIndex(-1);
+        }}
+        onSelect={applyAssetSelection}
+      />
     </>
   );
 }
 
 // ── Tab: Settings ─────────────────────────────────────────────────────────────
 
-function SettingsTab({
-  shopVisibleTypes,
-  toggleShopType,
-  shopSettingsSaving,
-}) {
+function SettingsTab({ shopVisibleTypes, toggleShopType, shopSettingsSaving }) {
   const types = [
     {
       key: "product",
@@ -2151,7 +2257,10 @@ export default function AdminProductsTab(props) {
         <div>
           <h2 className="inline-flex items-center gap-2 text-2xl font-semibold">
             <span>{t("admin.contentAccess")}</span>
-            <AdminFieldHelpLink slug="product-value" className="h-5 w-5 text-xs" />
+            <AdminFieldHelpLink
+              slug="product-value"
+              className="h-5 w-5 text-xs"
+            />
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             {t("admin.contentAccessDesc")}

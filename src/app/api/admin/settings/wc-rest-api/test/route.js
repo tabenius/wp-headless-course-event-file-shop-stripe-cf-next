@@ -20,7 +20,9 @@ export async function POST(request) {
     const settings = {
       ...current,
       wcUrl: String(payload?.wcUrl || current.wcUrl || "").trim(),
-      consumerKey: String(payload?.consumerKey || current.consumerKey || "").trim(),
+      consumerKey: String(
+        payload?.consumerKey || current.consumerKey || "",
+      ).trim(),
       consumerSecret: String(
         payload?.consumerSecret || current.consumerSecret || "",
       ).trim(),

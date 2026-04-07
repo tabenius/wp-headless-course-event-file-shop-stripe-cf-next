@@ -7,6 +7,11 @@ import { deriveDigitalProductCategories } from "@/lib/contentCategories";
 import { slugify } from "@/lib/slugify";
 import { getD1Database } from "@/lib/d1Bindings";
 
+const log = (...args) => {
+  // Console output is streamed by wrangler tail in production.
+  console.error("[/lib/digitalProducts.js]", ...args);
+};
+
 async function tryGetD1() {
   try {
     return await getD1Database();
@@ -17,8 +22,12 @@ async function tryGetD1() {
 
 function productRowToObject(row) {
   if (!row) return null;
-  let categories = {};
-  try { categories = JSON.parse(row.categories || "{}"); } catch { /* ignore */ }
+  let extra = {};
+  try {
+    extra = JSON.parse(row.categories || "{}");
+  } catch {
+    /* ignore */
+  }
   return {
     id: row.slug,
     slug: row.slug,
@@ -38,26 +47,55 @@ function productRowToObject(row) {
     vatPercent: row.vat_percent,
     active: row.active === 1,
     updatedAt: row.updated_at,
-    ...categories,
+    categories: Array.isArray(extra.categories) ? extra.categories : [],
+    categorySlugs: Array.isArray(extra.categorySlugs)
+      ? extra.categorySlugs
+      : [],
   };
 }
 
 function productObjectToRow(p) {
-  const { id, slug, name, title, description, imageUrl, type, productMode,
-    priceCents, free, currency, fileUrl, contentUri, mimeType, assetId,
-    vatPercent, active, updatedAt, ...rest } = p;
+  const {
+    id,
+    slug,
+    name,
+    title,
+    description,
+    imageUrl,
+    type,
+    productMode,
+    priceCents,
+    free,
+    currency,
+    fileUrl,
+    contentUri,
+    mimeType,
+    assetId,
+    vatPercent,
+    active,
+    updatedAt,
+    ...rest
+  } = p;
   const cats = {};
   for (const [k, v] of Object.entries(rest)) {
     if (v !== undefined) cats[k] = v;
   }
   return {
-    slug, name, title: title || name, description: description || "",
-    image_url: imageUrl || "", type: type || "digital_file",
+    slug,
+    name,
+    title: title || name,
+    description: description || "",
+    image_url: imageUrl || "",
+    type: type || "digital_file",
     product_mode: productMode || "digital_file",
-    price_cents: priceCents || 0, currency: currency || "SEK",
-    free: free ? 1 : 0, active: active !== false ? 1 : 0,
-    file_url: fileUrl || "", content_uri: contentUri || "",
-    mime_type: mimeType || "", asset_id: assetId || "",
+    price_cents: priceCents || 0,
+    currency: currency || "SEK",
+    free: free ? 1 : 0,
+    active: active !== false ? 1 : 0,
+    file_url: fileUrl || "",
+    content_uri: contentUri || "",
+    mime_type: mimeType || "",
+    asset_id: assetId || "",
     vat_percent: vatPercent ?? null,
     categories: JSON.stringify(cats),
     updated_at: updatedAt || new Date().toISOString(),
@@ -181,7 +219,8 @@ function sanitizeProduct(product, seenSlugs) {
 
   if (imageUrl && !isValidHttpUrl(imageUrl)) return null;
   // Incomplete delivery fields are only hard errors for active products (drafts may be saved without them)
-  if (active && productMode === "digital_file" && !isValidHttpUrl(fileUrl)) return null;
+  if (active && productMode === "digital_file" && !isValidHttpUrl(fileUrl))
+    return null;
   if (active && productMode === "manual_uri" && !contentUri) return null;
   if (productMode === "asset" && !assetId) return null;
 
@@ -206,14 +245,17 @@ function sanitizeProduct(product, seenSlugs) {
     priceCents: effectivePriceCents,
     free,
     currency: normalizeCurrency(product?.currency),
-    fileUrl: productMode === "digital_file" ? fileUrl : "",
+    fileUrl:
+      productMode === "digital_file" || productMode === "asset" ? fileUrl : "",
     contentUri: productMode === "manual_uri" ? contentUri : "",
-    mimeType: productMode === "digital_file" || productMode === "asset" ? mimeType : "",
+    mimeType:
+      productMode === "digital_file" || productMode === "asset" ? mimeType : "",
     assetId: productMode === "asset" ? assetId : "",
     vatPercent,
     active,
     updatedAt: new Date().toISOString(),
-    ...categories,
+    categories: categories.categories || [],
+    categorySlugs: categories.categorySlugs || [],
   };
 }
 
@@ -258,7 +300,10 @@ async function readProducts() {
     }
     return seed;
   } catch (error) {
-    console.error("Cloudflare KV products read failed, falling back to bundled:", error);
+    console.error(
+      "Cloudflare KV products read failed, falling back to bundled:",
+      error,
+    );
     return readFromBundled();
   }
 }
@@ -299,7 +344,10 @@ export async function listDigitalProducts({ includeInactive = false } = {}) {
 }
 
 export async function getDigitalProductBySlug(slug) {
-  const rawSlug = String(slug || "").trim().replace(/^\/+|\/+$/g, "");
+  log("getDigitalProductBySlug");
+  const rawSlug = String(slug || "")
+    .trim()
+    .replace(/^\/+|\/+$/g, "");
   const decodedSlug = (() => {
     if (!rawSlug) return "";
     try {
@@ -313,17 +361,27 @@ export async function getDigitalProductBySlug(slug) {
   if (!safeSlug && !safeAssetId) return null;
 
   const db = await tryGetD1();
+  log("getDigitalProductBySlug: got DB");
   if (db) {
     let row = null;
     if (safeSlug) {
-      row = await db.prepare("SELECT * FROM products WHERE slug = ? LIMIT 1").bind(safeSlug).first();
+      row = await db
+        .prepare("SELECT * FROM products WHERE slug = ? LIMIT 1")
+        .bind(safeSlug)
+        .first();
     }
     if (!row && safeAssetId) {
-      row = await db.prepare("SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1").bind(safeAssetId).first();
+      row = await db
+        .prepare(
+          "SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1",
+        )
+        .bind(safeAssetId)
+        .first();
     }
     return row ? productRowToObject(row) : null;
   }
 
+  log("getDigitalProductBySlug: searching for inactive too");
   const products = await listDigitalProducts({ includeInactive: true });
   return (
     products.find(
@@ -345,7 +403,9 @@ export async function getDigitalProductByAssetId(assetId) {
   const db = await tryGetD1();
   if (db) {
     const row = await db
-      .prepare("SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1")
+      .prepare(
+        "SELECT * FROM products WHERE product_mode = 'asset' AND asset_id = ? LIMIT 1",
+      )
       .bind(safeAssetId)
       .first();
     return row ? productRowToObject(row) : null;
@@ -369,9 +429,9 @@ export async function saveDigitalProducts(products) {
 
   const db = await tryGetD1();
   if (db) {
-    for (const p of safeProducts) {
+    const statements = safeProducts.map((p) => {
       const r = productObjectToRow(p);
-      await db
+      return db
         .prepare(
           `INSERT INTO products (slug, name, title, description, image_url, type, product_mode, price_cents, currency, free, active, file_url, content_uri, mime_type, asset_id, vat_percent, categories, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -383,8 +443,29 @@ export async function saveDigitalProducts(products) {
              mime_type=excluded.mime_type, asset_id=excluded.asset_id, vat_percent=excluded.vat_percent,
              categories=excluded.categories, updated_at=excluded.updated_at`,
         )
-        .bind(r.slug, r.name, r.title, r.description, r.image_url, r.type, r.product_mode, r.price_cents, r.currency, r.free, r.active, r.file_url, r.content_uri, r.mime_type, r.asset_id, r.vat_percent, r.categories, r.updated_at)
-        .run();
+        .bind(
+          r.slug,
+          r.name,
+          r.title,
+          r.description,
+          r.image_url,
+          r.type,
+          r.product_mode,
+          r.price_cents,
+          r.currency,
+          r.free,
+          r.active,
+          r.file_url,
+          r.content_uri,
+          r.mime_type,
+          r.asset_id,
+          r.vat_percent,
+          r.categories,
+          r.updated_at,
+        );
+    });
+    if (statements.length > 0) {
+      await db.batch(statements);
     }
     return safeProducts;
   }
@@ -398,6 +479,19 @@ export function isProductListable(product) {
   if (!product?.active) return false;
   if (product.free === true) return true;
   return typeof product.priceCents === "number" && product.priceCents > 0;
+}
+
+/**
+ * Resolve the downloadable file URL for a product, handling asset-mode
+ * products whose fileUrl may be empty (legacy records created before the fix).
+ */
+export function resolveFileUrl(product) {
+  if (product?.fileUrl) return product.fileUrl;
+  if (product?.productMode === "asset" && product.assetId)
+    return product.assetId;
+  if (product?.imageUrl && product?.productMode === "asset")
+    return product.imageUrl;
+  return "";
 }
 
 export function sanitizeProductForTest(product) {

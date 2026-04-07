@@ -17,7 +17,10 @@ describe("normalizePresets", () => {
   });
 
   it("filters non-array cta to empty", () => {
-    assert.deepEqual(normalizePresets({ cta: "bad", typography: [] }), { cta: [], typography: [] });
+    assert.deepEqual(normalizePresets({ cta: "bad", typography: [] }), {
+      cta: [],
+      typography: [],
+    });
   });
 
   it("filters preset entries without id or name", () => {
@@ -67,7 +70,9 @@ describe("validatePresetInput", () => {
   });
 
   it("accepts valid typography input", () => {
-    const err = validatePresetInput("typography", "Elegant Sofia", { fontDisplay: {} });
+    const err = validatePresetInput("typography", "Elegant Sofia", {
+      fontDisplay: {},
+    });
     assert.equal(err, null);
   });
 });
@@ -75,7 +80,11 @@ describe("validatePresetInput", () => {
 describe("applyAddPreset", () => {
   it("appends to the correct array", () => {
     const presets = { cta: [], typography: [] };
-    const result = applyAddPreset(presets, "cta", { id: "x1", name: "Dark", style: {} });
+    const result = applyAddPreset(presets, "cta", {
+      id: "x1",
+      name: "Dark",
+      style: {},
+    });
     assert.equal(result.cta.length, 1);
     assert.equal(result.cta[0].id, "x1");
     assert.equal(result.typography.length, 0);
@@ -83,7 +92,11 @@ describe("applyAddPreset", () => {
 
   it("appends to typography array", () => {
     const presets = { cta: [], typography: [] };
-    const result = applyAddPreset(presets, "typography", { id: "y1", name: "Elegant", style: {} });
+    const result = applyAddPreset(presets, "typography", {
+      id: "y1",
+      name: "Elegant",
+      style: {},
+    });
     assert.equal(result.typography.length, 1);
     assert.equal(result.cta.length, 0);
   });

@@ -122,7 +122,9 @@ describe("compilePayments — output shape", () => {
    */
   function normalise(charge, fallbackEmail) {
     const configuredCurrency = String(
-      process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+      process.env.DEFAULT_CURRENCY ||
+        process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+        "SEK",
     ).toLowerCase();
     return {
       id: charge.payment_intent || charge.id,
@@ -360,7 +362,9 @@ describe("compilePayments — edge cases", () => {
   it("handles charges with different currencies in a single list", () => {
     function normalise(charge) {
       const configuredCurrency = String(
-        process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+        process.env.DEFAULT_CURRENCY ||
+          process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+          "SEK",
       ).toLowerCase();
       return {
         id: charge.payment_intent || charge.id,
@@ -392,7 +396,9 @@ describe("compilePayments — edge cases", () => {
   it("normalises a charge with all nullable fields without throwing", () => {
     function normalise(charge, fallbackEmail) {
       const configuredCurrency = String(
-        process.env.DEFAULT_COURSE_FEE_CURRENCY || "SEK",
+        process.env.DEFAULT_CURRENCY ||
+          process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+          "SEK",
       ).toLowerCase();
       return {
         id: charge.payment_intent || charge.id,
