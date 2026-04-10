@@ -145,6 +145,7 @@ export default function AdminFontBrowserModal({
   onClose,
   onDownloadStart,
   onDownloadEnd,
+  onDownloadedFamily,
 }) {
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +162,12 @@ export default function AdminFontBrowserModal({
   const [catalogError, setCatalogError] = useState(null);
   const [downloading, setDownloading] = useState(new Set());
   const [downloaded, setDownloaded] = useState(
-    new Set(downloadedFamilies || []),
+    () =>
+      new Set(
+        (downloadedFamilies || [])
+          .map((entry) => (typeof entry === "string" ? entry : entry?.family))
+          .filter(Boolean),
+      ),
   );
   const [downloadErrors, setDownloadErrors] = useState({});
   const [weightPickerFamily, setWeightPickerFamily] = useState(null);
@@ -169,6 +175,16 @@ export default function AdminFontBrowserModal({
 
   const sentinelRef = useRef(null);
   const { previewFont, cleanup } = useGoogleFontsPreview();
+
+  useEffect(() => {
+    setDownloaded(
+      new Set(
+        (downloadedFamilies || [])
+          .map((entry) => (typeof entry === "string" ? entry : entry?.family))
+          .filter(Boolean),
+      ),
+    );
+  }, [downloadedFamilies]);
 
   const fetchCatalog = useCallback(async () => {
     setLoading(true);
@@ -232,10 +248,15 @@ export default function AdminFontBrowserModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ family, weights }),
       });
+      const data = await res.json().catch(() => null);
       if (res.ok) {
         setDownloaded((d) => new Set([...d, family]));
+        if (data?.record && onDownloadedFamily) onDownloadedFamily(data.record);
       } else {
-        setDownloadErrors((e) => ({ ...e, [family]: "Download failed" }));
+        setDownloadErrors((e) => ({
+          ...e,
+          [family]: data?.error || "Download failed",
+        }));
       }
     } catch (err) {
       setDownloadErrors((e) => ({ ...e, [family]: err.message }));

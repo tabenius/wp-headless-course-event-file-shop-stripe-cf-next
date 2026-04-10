@@ -1,4 +1,5 @@
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 
 function normalizeEnv(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -74,7 +75,7 @@ async function rawGraphQL(wpUrl, query, variables, authHeader) {
   try {
     const res = await fetch(endpoint, {
       method: "POST",
-      headers,
+      headers: withWordPressUserAgent(headers),
       body: JSON.stringify({ query, variables }),
     });
     if (!res.ok) return null;

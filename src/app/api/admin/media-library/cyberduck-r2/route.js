@@ -130,7 +130,7 @@ function extensionFromKey(key) {
 
 function defaultAssetUri(assetId) {
   if (!assetId) return "";
-  return `/asset/${encodeURIComponent(assetId)}`;
+  return `/assets/${encodeURIComponent(assetId)}`;
 }
 
 function buildPublicUrlFromKey(key) {

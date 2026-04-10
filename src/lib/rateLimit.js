@@ -1,17 +1,8 @@
 import { getD1Database } from "@/lib/d1Bindings";
-import { readCloudflareKvJson, writeCloudflareKvJson } from "./cloudflareKv";
-
-async function tryGetD1() {
-  try {
-    return await getD1Database();
-  } catch {
-    return null;
-  }
-}
 
 /**
- * Fixed-window rate limiter backed by D1 (atomic) with KV fallback.
- * Fails open — if neither backend is available the request is allowed through.
+ * Fixed-window rate limiter backed by D1 (atomic).
+ * Fails open — if D1 is unreachable the request is allowed through.
  */
 export async function checkRateLimit(
   endpoint,
@@ -20,38 +11,25 @@ export async function checkRateLimit(
   windowSecs = 3600,
 ) {
   try {
+    const db = await getD1Database();
     const window = Math.floor(Date.now() / (windowSecs * 1000));
     const key = `rl:${endpoint}:${identifier}:${window}`;
     const expiresAt = new Date((window + 2) * windowSecs * 1000).toISOString();
 
-    const db = await tryGetD1();
-    if (db) {
-      // Opportunistic cleanup of expired rows (~1% of requests)
-      if (Math.random() < 0.01) {
-        db.prepare("DELETE FROM rate_limits WHERE expires_at < datetime('now')")
-          .run()
-          .catch(() => {});
-      }
-      const row = await db
-        .prepare(
-          "INSERT INTO rate_limits (key, count, expires_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = count + 1 RETURNING count",
-        )
-        .bind(key, expiresAt)
-        .first();
-      const count = row?.count ?? 0;
-      if (count > limit) return { limited: true, remaining: 0 };
-      return { limited: false, remaining: limit - count };
+    // Opportunistic cleanup of expired rows (~1% of requests)
+    if (Math.random() < 0.01) {
+      db.prepare("DELETE FROM rate_limits WHERE expires_at < datetime('now')")
+        .run()
+        .catch(() => {});
     }
-
-    // KV fallback (non-atomic, best effort)
-    const current = (await readCloudflareKvJson(key)) ?? { count: 0 };
-    const count = (current.count ?? 0) + 1;
+    const row = await db
+      .prepare(
+        "INSERT INTO rate_limits (key, count, expires_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = count + 1 RETURNING count",
+      )
+      .bind(key, expiresAt)
+      .first();
+    const count = row?.count ?? 0;
     if (count > limit) return { limited: true, remaining: 0 };
-    await writeCloudflareKvJson(
-      key,
-      { count },
-      { expirationTtl: windowSecs * 2 },
-    );
     return { limited: false, remaining: limit - count };
   } catch {
     return { limited: false, remaining: -1 };

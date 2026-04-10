@@ -11,6 +11,7 @@ import {
   shouldSkipUpstreamDuringBuild,
 } from "@/lib/buildUpstreamGuard";
 import { addServerTiming } from "@/lib/serverTiming";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 
 const DEFAULT_DELAY_MS =
   Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
@@ -321,9 +322,7 @@ export async function fetchGraphQL(
 
       const fetchOptions = {
         method: "POST",
-        headers: {
-          ...headers,
-        },
+        headers: withWordPressUserAgent(headers),
         body: JSON.stringify({
           query,
           variables,

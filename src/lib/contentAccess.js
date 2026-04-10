@@ -6,12 +6,11 @@ import {
   hasContentAccess as hasLocalContentAccess,
   setContentAccess as setLocalContentAccess,
 } from "@/lib/contentAccessStore";
+import { appendServerLog } from "@/lib/serverLog";
+import { hashLogEmail } from "@/lib/logIdentity";
 import { listUsers as listLocalUsers } from "@/lib/userStore";
 import { getWordPressGraphqlAuthOptions } from "@/lib/wordpressGraphqlAuth";
-import {
-  isCloudflareKvConfigured,
-  writeCloudflareKvJson,
-} from "@/lib/cloudflareKv";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 
 function isWordPressBackend() {
   return (
@@ -35,6 +34,13 @@ function normalizeContentUri(courseUri) {
   const withLeadingSlash = value.startsWith("/") ? value : `/${value}`;
   const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, "");
   return withoutTrailingSlash || "/";
+}
+
+async function buildAccessLogContext({ branch, courseUri, email, error }) {
+  const normalizedUri = normalizeContentUri(courseUri);
+  const userHash = await hashLogEmail(email);
+  const errorText = error?.message || String(error || "unknown error");
+  return `access.${branch} uri=${normalizedUri || "<empty>"} userHash=${userHash || "<anon>"} err=${errorText}`;
 }
 
 async function fetchWordPressGraphQL(query, variables = {}) {
@@ -66,7 +72,7 @@ async function fetchWordPressGraphQL(query, variables = {}) {
 
     const response = await fetch(endpoint, {
       method: "POST",
-      headers,
+      headers: withWordPressUserAgent(headers),
       body: JSON.stringify({ query, variables }),
       cache: "no-store",
     });
@@ -625,182 +631,255 @@ async function getWordPressCourseAccessConfig(courseUri) {
   };
 }
 
-async function replicateToCloudflare(state) {
-  const key = process.env.CF_KV_KEY || "course-access";
-  const shouldReplica =
-    process.env.COURSE_ACCESS_STORE === "cloudflare" ||
-    isCloudflareKvConfigured();
-  if (!shouldReplica) return;
-  try {
-    await writeCloudflareKvJson(key, state);
-  } catch (error) {
-    console.error("Failed to replicate course access to Cloudflare KV:", error);
-  }
-}
-
 export async function getContentAccessState() {
-  if (isWordPressBackend()) {
-    if (!isWordPressBackendConfigured()) {
-      console.error(
-        "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
-      );
-      return getLocalContentAccessState();
-    }
-    try {
-      const data = await getWordPressAdminState();
-      const state = { courses: data.courses };
-      await replicateToCloudflare(state);
-      return state;
-    } catch (error) {
-      console.error(
-        "WordPress course access read failed. Falling back to local course access store:",
-        error,
-      );
-      return getLocalContentAccessState();
-    }
-  }
   return getLocalContentAccessState();
 }
 
 export async function setContentAccess(payload) {
-  if (isWordPressBackend()) {
-    if (!isWordPressBackendConfigured()) {
-      console.error(
-        "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
-      );
-      return setLocalContentAccess(payload);
-    }
-    try {
-      const result = await setWordPressCourseAccess(payload);
-      if (
-        isCloudflareKvConfigured() ||
-        process.env.COURSE_ACCESS_STORE === "cloudflare"
-      ) {
-        await setLocalContentAccess(payload);
-      }
-      return result;
-    } catch (error) {
-      console.error(
-        "WordPress course access update failed. Falling back to local course access store:",
-        error,
-      );
-      return setLocalContentAccess(payload);
-    }
-  }
   return setLocalContentAccess(payload);
 }
 
 export async function hasContentAccess(courseUri, email) {
-  if (isWordPressBackend()) {
-    if (!isWordPressBackendConfigured()) {
-      console.error(
-        "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
-      );
-      return hasLocalContentAccess(courseUri, email);
-    }
-    try {
-      const wpHas = await hasWordPressCourseAccess(courseUri, email);
-      if (wpHas) return true;
-      if (
-        isCloudflareKvConfigured() ||
-        process.env.COURSE_ACCESS_STORE === "cloudflare"
-      ) {
-        return hasLocalContentAccess(courseUri, email);
-      }
-      return false;
-    } catch (error) {
-      console.error(
-        "WordPress course access check failed. Falling back to local course access store:",
+  let localConfig = null;
+  try {
+    localConfig = await getLocalContentAccessConfig(courseUri);
+  } catch (error) {
+    await appendServerLog({
+      level: "error",
+      msg: await buildAccessLogContext({
+        branch: "local-config-read",
+        courseUri,
+        email,
         error,
-      );
-      return hasLocalContentAccess(courseUri, email);
+      }),
+      persist: false,
+    }).catch(() => {});
+    throw error;
+  }
+  if (localConfig) {
+    try {
+      return await hasLocalContentAccess(courseUri, email);
+    } catch (error) {
+      await appendServerLog({
+        level: "error",
+        msg: await buildAccessLogContext({
+          branch: "local-has-access",
+          courseUri,
+          email,
+          error,
+        }),
+        persist: false,
+      }).catch(() => {});
+      throw error;
     }
   }
-  return hasLocalContentAccess(courseUri, email);
+  if (!isWordPressBackend()) {
+    try {
+      return await hasLocalContentAccess(courseUri, email);
+    } catch (error) {
+      await appendServerLog({
+        level: "error",
+        msg: await buildAccessLogContext({
+          branch: "local-has-access-no-wp",
+          courseUri,
+          email,
+          error,
+        }),
+        persist: false,
+      }).catch(() => {});
+      throw error;
+    }
+  }
+  if (!isWordPressBackendConfigured()) {
+    console.error(
+      "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
+    );
+    return hasLocalContentAccess(courseUri, email);
+  }
+  try {
+    return await hasWordPressCourseAccess(courseUri, email);
+  } catch (error) {
+    await appendServerLog({
+      level: "error",
+      msg: await buildAccessLogContext({
+        branch: "wordpress-has-access",
+        courseUri,
+        email,
+        error,
+      }),
+      persist: false,
+    }).catch(() => {});
+    console.error(
+      "WordPress course access check failed. Falling back to local course access store:",
+      error,
+    );
+    try {
+      return await hasLocalContentAccess(courseUri, email);
+    } catch (localError) {
+      await appendServerLog({
+        level: "error",
+        msg: await buildAccessLogContext({
+          branch: "local-has-access-after-wp-failure",
+          courseUri,
+          email,
+          error: localError,
+        }),
+        persist: false,
+      }).catch(() => {});
+      throw localError;
+    }
+  }
 }
 
 export async function listAccessibleContentUris(courseUris, email) {
-  if (isWordPressBackend()) {
-    if (!isWordPressBackendConfigured()) {
-      console.error(
-        "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
-      );
-      return listLocalAccessibleCourseUris(courseUris, email);
-    }
-    try {
-      const wordpressUris = await listWordPressAccessibleCourseUris(
-        courseUris,
+  const normalizedUris = Array.isArray(courseUris)
+    ? courseUris.map(normalizeContentUri).filter(Boolean)
+    : [];
+  if (normalizedUris.length === 0) return [];
+
+  let localState;
+  try {
+    localState = await getLocalContentAccessState();
+  } catch (error) {
+    await appendServerLog({
+      level: "error",
+      msg: await buildAccessLogContext({
+        branch: "local-state-read",
+        courseUri: normalizedUris.join(","),
         email,
-      );
-      if (
-        isCloudflareKvConfigured() ||
-        process.env.COURSE_ACCESS_STORE === "cloudflare"
-      ) {
-        const localUris = await listLocalAccessibleCourseUris(
-          courseUris,
-          email,
-        );
-        return [...new Set([...wordpressUris, ...localUris])];
-      }
-      return wordpressUris;
-    } catch (error) {
-      console.error(
-        "WordPress course access list failed. Falling back to local course access store:",
         error,
-      );
-      return listLocalAccessibleCourseUris(courseUris, email);
-    }
+      }),
+      persist: false,
+    }).catch(() => {});
+    throw error;
   }
-  return listLocalAccessibleCourseUris(courseUris, email);
+  const localCourseMap =
+    localState && typeof localState === "object" && localState.courses
+      ? localState.courses
+      : {};
+  const locallyManagedUris = normalizedUris.filter((uri) =>
+    Object.prototype.hasOwnProperty.call(localCourseMap, uri),
+  );
+  const legacyUris = normalizedUris.filter(
+    (uri) => !Object.prototype.hasOwnProperty.call(localCourseMap, uri),
+  );
+
+  let localUris;
+  try {
+    localUris = await listLocalAccessibleCourseUris(locallyManagedUris, email);
+  } catch (error) {
+    await appendServerLog({
+      level: "error",
+      msg: await buildAccessLogContext({
+        branch: "local-list-access",
+        courseUri: locallyManagedUris.join(","),
+        email,
+        error,
+      }),
+      persist: false,
+    }).catch(() => {});
+    throw error;
+  }
+  if (!isWordPressBackend() || legacyUris.length === 0) {
+    return localUris;
+  }
+  if (!isWordPressBackendConfigured()) {
+    console.error(
+      "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
+    );
+    return [...new Set([...localUris, ...(await listLocalAccessibleCourseUris(legacyUris, email))])];
+  }
+  try {
+    const wordpressUris = await listWordPressAccessibleCourseUris(
+      legacyUris,
+      email,
+    );
+    return [...new Set([...localUris, ...wordpressUris])];
+  } catch (error) {
+    await appendServerLog({
+      level: "error",
+      msg: await buildAccessLogContext({
+        branch: "wordpress-list-access",
+        courseUri: legacyUris.join(","),
+        email,
+        error,
+      }),
+      persist: false,
+    }).catch(() => {});
+    console.error(
+      "WordPress course access list failed. Falling back to local course access store:",
+      error,
+    );
+    let fallbackLocalUris = [];
+    try {
+      fallbackLocalUris = await listLocalAccessibleCourseUris(legacyUris, email);
+    } catch (localError) {
+      await appendServerLog({
+        level: "error",
+        msg: await buildAccessLogContext({
+          branch: "local-list-access-after-wp-failure",
+          courseUri: legacyUris.join(","),
+          email,
+          error: localError,
+        }),
+        persist: false,
+      }).catch(() => {});
+      throw localError;
+    }
+    return [...new Set([...localUris, ...fallbackLocalUris])];
+  }
 }
 
 export async function grantContentAccess(courseUri, email) {
-  if (isWordPressBackend()) {
-    if (!isWordPressBackendConfigured()) {
-      console.error(
-        "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
-      );
-      return grantLocalContentAccess(courseUri, email);
-    }
-    try {
-      await grantWordPressCourseAccess(courseUri, email);
-      if (
-        isCloudflareKvConfigured() ||
-        process.env.COURSE_ACCESS_STORE === "cloudflare"
-      ) {
-        await grantLocalContentAccess(courseUri, email);
-      }
-      return;
-    } catch (error) {
-      console.error(
-        "WordPress course access grant failed. Falling back to local course access store:",
-        error,
-      );
-      return grantLocalContentAccess(courseUri, email);
-    }
-  }
   return grantLocalContentAccess(courseUri, email);
 }
 
 export async function getContentAccessConfig(courseUri) {
-  if (isWordPressBackend()) {
-    if (!isWordPressBackendConfigured()) {
-      console.error(
-        "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
-      );
-      return getLocalContentAccessConfig(courseUri);
-    }
-    try {
-      return getWordPressCourseAccessConfig(courseUri);
-    } catch (error) {
-      console.error(
-        "WordPress course config lookup failed. Falling back to local course access store:",
+  let localConfig = null;
+  try {
+    localConfig = await getLocalContentAccessConfig(courseUri);
+  } catch (error) {
+    await appendServerLog({
+      level: "error",
+      msg: await buildAccessLogContext({
+        branch: "local-config-lookup",
+        courseUri,
+        email: "",
         error,
-      );
-      return getLocalContentAccessConfig(courseUri);
-    }
+      }),
+      persist: false,
+    }).catch(() => {});
+    throw error;
   }
-  return getLocalContentAccessConfig(courseUri);
+  if (localConfig) return localConfig;
+  if (!isWordPressBackend()) {
+    return null;
+  }
+  if (!isWordPressBackendConfigured()) {
+    console.error(
+      "WordPress course backend selected but NEXT_PUBLIC_WORDPRESS_URL is missing. Falling back to local course access store.",
+    );
+    return null;
+  }
+  try {
+    return await getWordPressCourseAccessConfig(courseUri);
+  } catch (error) {
+    await appendServerLog({
+      level: "error",
+      msg: await buildAccessLogContext({
+        branch: "wordpress-config-lookup",
+        courseUri,
+        email: "",
+        error,
+      }),
+      persist: false,
+    }).catch(() => {});
+    console.error(
+      "WordPress course config lookup failed. Falling back to local course access store:",
+      error,
+    );
+    return null;
+  }
 }
 
 export async function listAccessUsers() {
@@ -826,15 +905,5 @@ export async function listAccessUsers() {
 }
 
 export function getContentStorageInfo() {
-  if (isWordPressBackend()) {
-    const replicas = [];
-    if (
-      isCloudflareKvConfigured() ||
-      process.env.COURSE_ACCESS_STORE === "cloudflare"
-    ) {
-      replicas.push("cloudflare-kv");
-    }
-    return { provider: "wordpress-graphql-user-meta", replicas };
-  }
   return getLocalStorageInfo();
 }

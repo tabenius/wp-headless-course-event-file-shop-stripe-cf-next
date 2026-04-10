@@ -10,6 +10,7 @@ import {
 } from "@/lib/contentAccess";
 import { fetchStripeCheckoutSession } from "@/lib/stripe";
 import { appendServerLog } from "@/lib/serverLog";
+import { hashLogEmail } from "@/lib/logIdentity";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,7 @@ export async function POST(request) {
       console.error("Failed to confirm shop purchase:", error);
       appendServerLog({
         level: "warn",
-        msg: `shop ownership checkout confirm failed for ${userEmail || "anonymous"}: ${error?.message || error}`,
+        msg: `shop ownership checkout confirm failed userHash=${(await hashLogEmail(userEmail)) || "<anon>"} err=${error?.message || error}`,
       }).catch(() => {});
     }
   }
@@ -107,10 +108,10 @@ export async function POST(request) {
 
   const ownedProductIds = await listAccessibleDigitalProductIds(
     userEmail,
-  ).catch((err) => {
+  ).catch(async (err) => {
     appendServerLog({
       level: "error",
-      msg: `listAccessibleDigitalProductIds failed for ${userEmail}: ${err?.message || err}`,
+      msg: `listAccessibleDigitalProductIds failed userHash=${(await hashLogEmail(userEmail)) || "<anon>"} err=${err?.message || err}`,
     }).catch(() => {});
     return [];
   });
@@ -119,11 +120,11 @@ export async function POST(request) {
   let accessBatchFailed = false;
   if (wpUris.length > 0) {
     ownedUris = await listAccessibleContentUris(wpUris, userEmail).catch(
-      (err) => {
+      async (err) => {
         accessBatchFailed = true;
         appendServerLog({
           level: "error",
-          msg: `listAccessibleContentUris failed for ${userEmail}: ${err?.message || err}`,
+          msg: `listAccessibleContentUris failed userHash=${(await hashLogEmail(userEmail)) || "<anon>"} uris=${wpUris.join(",")} err=${err?.message || err}`,
         }).catch(() => {});
         return [];
       },

@@ -37,14 +37,34 @@ const wpImageHosts = (() => {
   return Array.from(hosts);
 })();
 
+const ragbazHomeBase = (() => {
+  const raw =
+    process.env.NEXT_PUBLIC_RAGBAZ_HOME_BASE_URL ||
+    process.env.RAGBAZ_HOME_BASE_URL ||
+    "https://ragbaz.xyz";
+  return String(raw).replace(/\/+$/, "");
+})();
+
+const ragbazDocsBase = (() => {
+  const raw =
+    process.env.NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL ||
+    `${ragbazHomeBase}/docs`;
+  return String(raw).replace(/\/+$/, "");
+})();
+
+const enableSpanishLocale = envFlagEnabled(
+  process.env.NEXT_PUBLIC_ENABLE_ES_LOCALE,
+  false,
+);
+
 const nextConfig = {
   trailingSlash: true,
   reactStrictMode: true,
-  // Keep source maps on by default so production errors can be resolved via
-  // protected /__maps access. Set PRODUCTION_BROWSER_SOURCEMAPS=0 to opt out.
+  // Keep production browser source maps disabled by default. Enable them only
+  // for builds where protected /__maps debugging is needed.
   productionBrowserSourceMaps: envFlagEnabled(
     process.env.PRODUCTION_BROWSER_SOURCEMAPS,
-    true,
+    false,
   ),
   outputFileTracingRoot: __dirname,
   env: {
@@ -73,7 +93,76 @@ const nextConfig = {
       test: /\.md$/,
       type: "asset/source",
     });
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@/lib/i18n/es.runtime":
+        enableSpanishLocale === true
+          ? path.resolve(__dirname, "src/lib/i18n/es.runtime.js")
+          : path.resolve(__dirname, "src/lib/i18n/es.disabled.js"),
+    };
     return config;
+  },
+  async redirects() {
+    return [
+      // Docs split: keep local /docs/admin/* static assets intact, only redirect
+      // guide/documentation pages.
+      {
+        source: "/docs",
+        destination: `${ragbazDocsBase}`,
+        permanent: true,
+      },
+      {
+        source: "/docs/:lang(en|sv|es)",
+        destination: `${ragbazDocsBase}/:lang`,
+        permanent: true,
+      },
+      {
+        source: "/docs/:lang(en|sv|es)/:slug*",
+        destination: `${ragbazDocsBase}/:lang/:slug*`,
+        permanent: true,
+      },
+      {
+        source: "/technical-manual",
+        destination: `${ragbazDocsBase}/en/technical-manual`,
+        permanent: true,
+      },
+      {
+        source: "/changelog",
+        destination: `${ragbazDocsBase}/en/changelog`,
+        permanent: true,
+      },
+      // Release/download split to ragbaz.xyz.
+      {
+        source: "/downloads/ragbaz-bridge/ragbaz-bridge.zip",
+        destination: `${ragbazHomeBase}/downloads/ragbaz-bridge/ragbaz-bridge.zip`,
+        permanent: true,
+      },
+      {
+        source: "/release/ragbaz-bridge.zip",
+        destination: `${ragbazHomeBase}/release/ragbaz-bridge.zip`,
+        permanent: true,
+      },
+      {
+        source: "/release/ragbaz-bridge/latest",
+        destination: `${ragbazHomeBase}/release/ragbaz-bridge/latest`,
+        permanent: true,
+      },
+      {
+        source: "/release/ragbaz-bridge/:version/ragbaz-bridge.zip",
+        destination: `${ragbazHomeBase}/release/ragbaz-bridge/:version/ragbaz-bridge.zip`,
+        permanent: true,
+      },
+      {
+        source: "/bridge/plugin-download",
+        destination: `${ragbazHomeBase}/bridge/plugin-download`,
+        permanent: true,
+      },
+      {
+        source: "/articulate/plugin-download",
+        destination: `${ragbazHomeBase}/articulate/plugin-download`,
+        permanent: true,
+      },
+    ];
   },
   async rewrites() {
     const wpBase = (process.env.NEXT_PUBLIC_WORDPRESS_URL || "").replace(

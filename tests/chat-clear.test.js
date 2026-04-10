@@ -6,7 +6,10 @@
  */
 import { it, describe } from "node:test";
 import assert from "node:assert/strict";
-import { getChatHistory, saveChatHistory } from "../src/lib/cloudflareKv.js";
+import {
+  getChatHistory,
+  saveChatHistory,
+} from "../src/lib/chatHistoryStore.js";
 
 // ── KV key convention ────────────────────────────────────────────────────────
 

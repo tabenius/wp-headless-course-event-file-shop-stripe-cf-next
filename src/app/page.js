@@ -8,7 +8,8 @@ import {
   StorefrontArticleSkeleton,
   StorefrontListSkeleton,
 } from "@/components/common/StorefrontSkeletons";
-import WordPressSetupPage from "@/components/setup/WordPressSetupPage";
+import Link from "next/link";
+import { buildRagbazDocsUrl } from "@/lib/ragbazDocs";
 import { notFound } from "next/navigation";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
@@ -29,19 +30,48 @@ const log = (...args) => {
   console.error("[app/page]", ...args);
 };
 
+function SetupDocsFallback() {
+  const docsHref = buildRagbazDocsUrl({ lang: "en", slug: "quick-start" });
+  return (
+    <div className="flex min-h-[48vh] flex-col items-center justify-center px-6 text-center">
+      <div className="max-w-xl space-y-4 rounded-2xl border bg-white/80 p-8 shadow-sm">
+        <h1 className="text-2xl font-semibold text-gray-900">Storefront Setup Required</h1>
+        <p className="text-sm leading-6 text-gray-600">
+          This storefront does not have an active WordPress source configured yet.
+          Open the setup guide on ragbaz.xyz to connect the site.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <Link
+            href="/setup"
+            className="inline-flex items-center rounded-lg border px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+          >
+            Open Setup Docs
+          </Link>
+          <a
+            href={docsHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+          >
+            Open On Ragbaz.xyz
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default async function HomePage() {
-  log("before WordPressSetupPage");
+  log("before setup fallback");
   if (shouldSkipUpstreamDuringBuild()) {
-    return <WordPressSetupPage />;
+    return <SetupDocsFallback />;
   }
 
-  // If no WordPress host is configured (env var or cookie), show the setup page.
-  // This also makes the build succeed without a live WordPress instance.
   const wpUrl = await resolveWordPressUrl();
   if (!wpUrl) {
-    return <WordPressSetupPage />;
+    return <SetupDocsFallback />;
   }
-  log("past WordPressSetupPage");
+  log("past setup fallback");
 
   return (
     <>

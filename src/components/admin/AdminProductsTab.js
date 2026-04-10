@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { t } from "@/lib/i18n";
+import { AVAILABLE_LOCALES, t } from "@/lib/i18n";
 import { parsePriceCents } from "@/lib/parsePrice";
 import {
   deriveDigitalProductCategories,
@@ -47,13 +47,71 @@ function normalizeMode(product = {}) {
   return "digital_file";
 }
 
+function hasExternalBooking(product = {}) {
+  return (
+    product?.externalBookingEnabled === true &&
+    String(product?.externalBookingUrl || "").trim().length > 0
+  );
+}
+
+function toDateTimeLocalValue(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const direct = raw.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
+  if (direct) return direct[1];
+  const dateOnly = raw.match(/^(\d{4}-\d{2}-\d{2})$/);
+  if (dateOnly) return `${dateOnly[1]}T00:00`;
+  const parsed = new Date(raw);
+  if (!Number.isFinite(parsed.getTime())) return "";
+  const pad = (num) => String(num).padStart(2, "0");
+  const yyyy = parsed.getFullYear();
+  const mm = pad(parsed.getMonth() + 1);
+  const dd = pad(parsed.getDate());
+  const hh = pad(parsed.getHours());
+  const min = pad(parsed.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+}
+
+function formatScheduleDate(value, timezone) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const parsed = new Date(raw);
+  if (!Number.isFinite(parsed.getTime())) return raw;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      ...(timezone ? { timeZone: timezone } : {}),
+    }).format(parsed);
+  } catch {
+    return parsed.toLocaleString();
+  }
+}
+
 function digitalConfigReasons(product = {}) {
   const reasons = [];
   const mode = normalizeMode(product);
   const isFree = product?.free === true;
   const priceCents = Number(product?.priceCents || 0);
+  const externalCheckout = hasExternalBooking(product);
 
-  if (!isFree && !(Number.isFinite(priceCents) && priceCents > 0)) {
+  if (
+    product?.externalBookingEnabled === true &&
+    !String(product?.externalBookingUrl || "").trim()
+  ) {
+    reasons.push(
+      t(
+        "admin.needsConfigReasonMissingExternalUrl",
+        "External booking is enabled but no external URL is set.",
+      ),
+    );
+  }
+
+  if (
+    !externalCheckout &&
+    !isFree &&
+    !(Number.isFinite(priceCents) && priceCents > 0)
+  ) {
     reasons.push(
       t(
         "admin.needsConfigReasonMissingPrice",
@@ -62,7 +120,11 @@ function digitalConfigReasons(product = {}) {
     );
   }
 
-  if (mode === "digital_file" && !String(product?.fileUrl || "").trim()) {
+  if (
+    !externalCheckout &&
+    mode === "digital_file" &&
+    !String(product?.fileUrl || "").trim()
+  ) {
     reasons.push(
       t(
         "admin.needsConfigReasonMissingFileUrl",
@@ -71,7 +133,11 @@ function digitalConfigReasons(product = {}) {
     );
   }
 
-  if (mode === "manual_uri" && !String(product?.contentUri || "").trim()) {
+  if (
+    !externalCheckout &&
+    mode === "manual_uri" &&
+    !String(product?.contentUri || "").trim()
+  ) {
     reasons.push(
       t(
         "admin.needsConfigReasonMissingContentUri",
@@ -80,7 +146,11 @@ function digitalConfigReasons(product = {}) {
     );
   }
 
-  if (mode === "asset" && !String(product?.assetId || "").trim()) {
+  if (
+    !externalCheckout &&
+    mode === "asset" &&
+    !String(product?.assetId || "").trim()
+  ) {
     reasons.push(
       t(
         "admin.needsConfigReasonMissingAssetId",
@@ -1755,6 +1825,28 @@ function AccessTab({
                         </option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        {t("admin.productLanguageLabel", "Product language")}
+                      </label>
+                      <select
+                        value={selectedShopProduct.language || "sv"}
+                        onChange={(e) =>
+                          updateProduct(shopIndex, "language", e.target.value)
+                        }
+                        className="w-full border rounded px-3 py-2 text-sm"
+                        title={t(
+                          "admin.productLanguageHint",
+                          "Used for storefront labels on this product. Defaults to Swedish.",
+                        )}
+                      >
+                        <option value="sv">Svenska</option>
+                        <option value="en">English</option>
+                        {AVAILABLE_LOCALES.includes("es") ? (
+                          <option value="es">Español</option>
+                        ) : null}
+                      </select>
+                    </div>
                     <div className="flex items-end gap-5 pb-2">
                       <label className="flex items-center gap-2 text-sm cursor-pointer">
                         <input
@@ -1769,6 +1861,276 @@ function AccessTab({
                           {t("admin.activeProduct")}
                         </span>
                       </label>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-amber-50 p-3.5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+                        {t("admin.buyablePresentationLabel", "Landing buyable")}
+                      </p>
+                      <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                        {selectedShopProduct.buyableNoun ||
+                          selectedShopProduct.buyableKind ||
+                          t("admin.buyableKindDownload", "download")}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          {t("admin.buyableKindLabel", "Buyable kind")}
+                        </label>
+                        <select
+                          value={selectedShopProduct.buyableKind || "download"}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "buyableKind",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="download">
+                            {t("admin.buyableKindDownload", "download")}
+                          </option>
+                          <option value="asset">
+                            {t("admin.buyableKindAsset", "asset")}
+                          </option>
+                          <option value="course">
+                            {t("admin.buyableKindCourse", "course")}
+                          </option>
+                          <option value="event">
+                            {t("admin.buyableKindEvent", "event")}
+                          </option>
+                          <option value="workshop">
+                            {t("admin.buyableKindWorkshop", "workshop")}
+                          </option>
+                          <option value="service">
+                            {t("admin.buyableKindService", "service")}
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          {t("admin.buyableNounLabel", "Visible noun")}
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedShopProduct.buyableNoun || ""}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "buyableNoun",
+                              e.target.value,
+                            )
+                          }
+                          placeholder={t(
+                            "admin.buyableNounPlaceholder",
+                            "Leave empty to use kind",
+                          )}
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          {t("admin.buyableTimezoneLabel", "Timezone")}
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedShopProduct.scheduleTimezone || ""}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "scheduleTimezone",
+                              e.target.value,
+                            )
+                          }
+                          placeholder={t(
+                            "admin.buyableTimezonePlaceholder",
+                            "Europe/Stockholm",
+                          )}
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          {t("admin.buyableStartLabel", "Start")}
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={toDateTimeLocalValue(
+                            selectedShopProduct.scheduleStart,
+                          )}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "scheduleStart",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          {t("admin.buyableEndLabel", "End")}
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={toDateTimeLocalValue(
+                            selectedShopProduct.scheduleEnd,
+                          )}
+                          onChange={(e) =>
+                            updateProduct(shopIndex, "scheduleEnd", e.target.value)
+                          }
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          {t("admin.buyableVenueNameLabel", "Venue")}
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedShopProduct.venueName || ""}
+                          onChange={(e) =>
+                            updateProduct(shopIndex, "venueName", e.target.value)
+                          }
+                          placeholder={t(
+                            "admin.buyableVenueNamePlaceholder",
+                            "Grand Hall",
+                          )}
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          {t("admin.buyableVenueAddressLabel", "Address")}
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedShopProduct.venueAddress || ""}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "venueAddress",
+                              e.target.value,
+                            )
+                          }
+                          placeholder={t(
+                            "admin.buyableVenueAddressPlaceholder",
+                            "Street, city",
+                          )}
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 rounded-lg border border-slate-200 bg-white/70 p-3">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedShopProduct.externalBookingEnabled === true}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "externalBookingEnabled",
+                              e.target.checked,
+                            )
+                          }
+                          className="accent-slate-600"
+                        />
+                        <span className="text-gray-700">
+                          {t(
+                            "admin.externalBookingToggleLabel",
+                            "Use external booking/payment link",
+                          )}
+                        </span>
+                      </label>
+                      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_220px]">
+                        <input
+                          type="url"
+                          value={selectedShopProduct.externalBookingUrl || ""}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "externalBookingUrl",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="https://tickster.com/..."
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          value={selectedShopProduct.externalBookingLabel || ""}
+                          onChange={(e) =>
+                            updateProduct(
+                              shopIndex,
+                              "externalBookingLabel",
+                              e.target.value,
+                            )
+                          }
+                          placeholder={t(
+                            "admin.externalBookingCtaLabel",
+                            "Book now",
+                          )}
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        />
+                      </div>
+                      {selectedShopProduct.externalBookingEnabled === true &&
+                        !String(selectedShopProduct.externalBookingUrl || "").trim() && (
+                          <p className="text-[11px] text-amber-700">
+                            {t(
+                              "admin.externalBookingUrlRequired",
+                              "External booking is enabled. Add a full https URL.",
+                            )}
+                          </p>
+                        )}
+                    </div>
+
+                    <div className="rounded-xl border border-slate-300 bg-slate-900 px-3.5 py-3 text-slate-100 shadow-[0_12px_24px_-16px_rgba(15,23,42,0.65)]">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-slate-300">
+                        {t("admin.buyablePreviewLabel", "Landing preview")}
+                      </p>
+                      <p className="mt-1 text-base font-semibold">
+                        {selectedShopProduct.name ||
+                          t("admin.buyableUntitled", "Untitled buyable")}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                        {selectedShopProduct.buyableKind && (
+                          <span className="rounded-full border border-slate-500 px-2 py-0.5 text-slate-200">
+                            {selectedShopProduct.buyableNoun ||
+                              selectedShopProduct.buyableKind}
+                          </span>
+                        )}
+                        {selectedShopProduct.scheduleStart && (
+                          <span className="rounded-full border border-slate-500 px-2 py-0.5 text-slate-200">
+                            {formatScheduleDate(
+                              selectedShopProduct.scheduleStart,
+                              selectedShopProduct.scheduleTimezone,
+                            )}
+                          </span>
+                        )}
+                        {selectedShopProduct.venueName && (
+                          <span className="rounded-full border border-slate-500 px-2 py-0.5 text-slate-200">
+                            {selectedShopProduct.venueName}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs text-slate-300">
+                        {hasExternalBooking(selectedShopProduct)
+                          ? t(
+                              "admin.externalBookingPreviewHint",
+                              "Shop will show an external booking button for this item.",
+                            )
+                          : t(
+                              "admin.internalCheckoutPreviewHint",
+                              "Shop will use internal checkout and ownership handling.",
+                            )}
+                      </p>
                     </div>
                   </div>
 
@@ -1896,6 +2258,14 @@ function AccessTab({
                                   : t("admin.uploadFile")}
                               </button>
                             </div>
+                            {hasExternalBooking(selectedShopProduct) && (
+                              <p className="text-[11px] rounded border border-blue-200 bg-blue-50 px-2 py-1 text-blue-700">
+                                {t(
+                                  "admin.externalBookingDeliveryHint",
+                                  "External booking is enabled. Internal file delivery fields are optional.",
+                                )}
+                              </p>
+                            )}
 
                             {selectedShopProduct.assetId ? (
                               <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-2">

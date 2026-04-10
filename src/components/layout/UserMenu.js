@@ -70,7 +70,9 @@ export default function UserMenu({ isLoggedIn, userName, signOutButton }) {
             </Link>
           )}
           {isLoggedIn ? (
-            <div onClick={() => setOpen(false)}>{signOutButton}</div>
+            <div className="rounded-none [border-radius:0]" onClick={() => setOpen(false)}>
+              {signOutButton}
+            </div>
           ) : (
             <>
               <Link

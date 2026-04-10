@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/userStore";
-import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import { createPasswordResetToken } from "@/lib/passwordResetStore";
 import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
 
@@ -39,16 +39,7 @@ export async function POST(request) {
 
     if (user) {
       const token = crypto.randomUUID();
-      const kvKey = `password-reset:${token}`;
-
-      await writeCloudflareKvJson(
-        kvKey,
-        {
-          email: normalized,
-          createdAt: new Date().toISOString(),
-        },
-        { expirationTtl: RESET_TTL },
-      );
+      await createPasswordResetToken(token, normalized, RESET_TTL);
 
       const origin =
         process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;

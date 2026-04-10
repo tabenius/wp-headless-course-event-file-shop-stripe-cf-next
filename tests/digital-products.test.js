@@ -160,3 +160,34 @@ test("sanitizeProduct derives type from mode, not from input type field (asset â
   assert.ok(courseProduct, "course product should not be null");
   assert.equal(courseProduct.type, "course");
 });
+
+test("sanitizeProduct allows external booking without internal delivery fields", () => {
+  const product = sanitizeProductForTest({
+    name: "Live Workshop",
+    slug: "live-workshop",
+    productMode: "digital_file",
+    externalBookingEnabled: true,
+    externalBookingUrl: "https://example.com/tickets/workshop",
+    buyableKind: "workshop",
+    buyableNoun: "masterclass",
+  });
+  assert.ok(product, "product should not be null");
+  assert.equal(product.externalBookingEnabled, true);
+  assert.equal(
+    product.externalBookingUrl,
+    "https://example.com/tickets/workshop",
+  );
+  assert.equal(product.buyableKind, "workshop");
+  assert.equal(product.buyableNoun, "masterclass");
+});
+
+test("sanitizeProduct rejects external booking when URL is invalid", () => {
+  const product = sanitizeProductForTest({
+    name: "Broken Event",
+    slug: "broken-event",
+    externalBookingEnabled: true,
+    externalBookingUrl: "not-a-url",
+    productMode: "digital_file",
+  });
+  assert.equal(product, null);
+});

@@ -37,6 +37,11 @@ function normalizeHttpUrl(value) {
   }
 }
 
+function isStorageAssetId(value) {
+  const safe = sanitizeText(value, 160).toLowerCase();
+  return safe.startsWith("r2:") || safe.startsWith("s3:");
+}
+
 function inferNameFromUrl(value) {
   const safeUrl = normalizeHttpUrl(value);
   if (!safeUrl) return "";
@@ -130,7 +135,9 @@ export async function POST(request) {
 
     const mimeType = normalizeMimeType(body.mimeType || "");
     const name = resolveProductName(body, assetId);
-    const fileUrl = normalizeHttpUrl(body.url || "");
+    const fileUrl = isStorageAssetId(assetId)
+      ? assetId
+      : normalizeHttpUrl(body.url || "");
     const explicitImageUrl = normalizeHttpUrl(body.imageUrl || "");
     const imageUrlCandidate = normalizeHttpUrl(body.url || "");
     const imageUrl =

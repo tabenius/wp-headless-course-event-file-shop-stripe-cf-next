@@ -58,7 +58,11 @@ export async function POST(request) {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, fontFaceCss: record.fontFaceCss }),
+    JSON.stringify({
+      ok: true,
+      record,
+      fontFaceCss: record.fontFaceCss,
+    }),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }

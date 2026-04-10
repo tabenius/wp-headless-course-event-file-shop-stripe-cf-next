@@ -7,6 +7,7 @@ import { ALL_TYPES, getShopSettings } from "@/lib/shopSettings";
 import { stripHtml } from "@/lib/slugify";
 import { decodeEntities } from "@/lib/decodeEntities";
 import { parsePriceCents } from "@/lib/parsePrice";
+import { getEventEndIso, getEventStartIso, isEventPassed } from "@/lib/eventDates";
 import {
   deriveCategories,
   deriveDigitalProductCategories,
@@ -198,20 +199,6 @@ const SHOP_CORE_COMBINED_QUERY = `
         }
       }
     }
-    lpCourses(first: 100) {
-      edges {
-        node {
-          databaseId
-          uri
-          title
-          price
-          priceRendered
-          duration
-          featuredImage { node { sourceUrl } }
-          lpCourseCategory { nodes { name slug } }
-        }
-      }
-    }
     events(first: 100) {
       edges {
         node {
@@ -219,6 +206,9 @@ const SHOP_CORE_COMBINED_QUERY = `
           uri
           title
           slug
+          startDate
+          endDate
+          date
           featuredImage { node { sourceUrl } }
           eventCategories { nodes { name slug } }
         }
@@ -277,13 +267,24 @@ const SHOP_COURSES_ONLY_QUERY = `
     lpCourses(first: 100) {
       edges {
         node {
+          id
           databaseId
           uri
           title
+          excerpt
           price
           priceRendered
           duration
-          featuredImage { node { sourceUrl } }
+          featuredImage {
+            node {
+              sourceUrl
+              altText
+              mediaDetails {
+                width
+                height
+              }
+            }
+          }
         }
       }
     }
@@ -292,6 +293,25 @@ const SHOP_COURSES_ONLY_QUERY = `
 
 const SHOP_EVENTS_ONLY_QUERY = `
   query ShopEventsOnly {
+    events(first: 100) {
+      edges {
+        node {
+          databaseId
+          uri
+          title
+          slug
+          startDate
+          endDate
+          date
+          featuredImage { node { sourceUrl } }
+        }
+      }
+    }
+  }
+`;
+
+const SHOP_EVENTS_ONLY_FALLBACK_QUERY = `
+  query ShopEventsOnlyFallback {
     events(first: 100) {
       edges {
         node {
@@ -312,28 +332,33 @@ async function fetchShopCoreGraphDataCombined() {
   });
   return {
     wcProducts: extractNodes(data, "products").filter((node) => node?.name),
-    lpCourses: extractNodes(data, "lpCourses"),
     events: extractNodes(data, "events"),
   };
 }
 
+async function fetchShopCoursesData() {
+  const data = await fetchGraphQL(SHOP_COURSES_ONLY_QUERY, {}, 300, {
+    edgeCache: true,
+  });
+  return extractNodes(data, "lpCourses");
+}
+
 async function fetchShopCoreGraphDataLegacy() {
-  const [productsData, coursesData, eventsData] = await Promise.all([
+  const [productsData, eventsData] = await Promise.all([
     fetchGraphQL(SHOP_PRODUCTS_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
       () => ({}),
     ),
-    fetchGraphQL(SHOP_COURSES_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
-      () => ({}),
-    ),
     fetchGraphQL(SHOP_EVENTS_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
-      () => ({}),
+      () =>
+        fetchGraphQL(SHOP_EVENTS_ONLY_FALLBACK_QUERY, {}, 300, {
+          edgeCache: true,
+        }).catch(() => ({})),
     ),
   ]);
   return {
     wcProducts: extractNodes(productsData, "products").filter(
       (node) => node?.name,
     ),
-    lpCourses: extractNodes(coursesData, "lpCourses"),
     events: extractNodes(eventsData, "events"),
   };
 }
@@ -391,7 +416,17 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
     return cloneItems(shopCatalogCache.items);
   }
 
-  const { wcProducts, lpCourses, events } = await fetchShopCoreGraphData();
+  const [{ wcProducts, events }, lpCourses] = await Promise.all([
+    fetchShopCoreGraphData(),
+    fetchShopCoursesData().catch((err) => {
+      appendServerLog({
+        level: "warn",
+        msg: `Shop LearnPress course query failed: ${err?.message || err}`,
+        persist: false,
+      }).catch(() => {});
+      return [];
+    }),
+  ]);
   const [digitalProducts, accessState, shopSettings] = await Promise.all([
     listDigitalProducts(),
     getContentAccessState(),
@@ -401,12 +436,9 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
   const visibleTypes = Array.isArray(shopSettings?.visibleTypes)
     ? shopSettings.visibleTypes
     : ALL_TYPES;
-  const hasAtLeastOneCoreType = ["product", "course", "event"].some((type) =>
-    visibleTypes.includes(type),
-  );
-  // Guardrail: if all core source types are hidden, storefront appears broken
-  // and only digital items remain visible. Fall back to all types.
-  const safeVisibleTypes = hasAtLeastOneCoreType ? visibleTypes : ALL_TYPES;
+  const safeVisibleTypes = [
+    ...new Set([...visibleTypes, "product", "course", "event"]),
+  ];
 
   const courseConfigs = accessState?.courses || {};
   const items = [];
@@ -475,12 +507,11 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
     });
   }
 
-  // Events (only those with a configured price)
+  // Events
   for (const e of events) {
     const uri = e.uri?.replace(/\/+$/, "") || "";
-    if (!uri) continue;
+    if (!uri || isEventPassed(e)) continue;
     const config = courseConfigs[uri];
-    if (!config || !config.priceCents) continue; // skip free / unconfigured events
     const eventCategories = deriveCategories({
       explicit: e.eventCategories,
       implied: ["Event", "WordPress"],
@@ -492,11 +523,13 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       description: "",
       imageUrl: e.featuredImage?.node?.sourceUrl || "",
       price: "",
-      priceCents: config.priceCents,
-      currency: config.currency || defaultCurrency,
+      priceCents: config?.priceCents || 0,
+      currency: config?.currency || defaultCurrency,
       type: "event",
       source: "wordpress",
       uri,
+      scheduleStart: getEventStartIso(e) || "",
+      scheduleEnd: getEventEndIso(e) || "",
       vatPercent:
         typeof config?.vatPercent === "number" &&
         Number.isFinite(config.vatPercent)
@@ -513,16 +546,7 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       d.productMode || (d.type === "course" ? "manual_uri" : "digital_file");
     const normalizedType =
       mode === "manual_uri" ? "digital_course" : "digital_file";
-    // FIXME: kludge as /shop does 404 on the assetId /xyzzy
-    /*
-    const buyableUri =
-      mode === "asset" && d.assetId
-        ? `/shop/${encodeURIComponent(d.assetId)}`
-        : `/shop/${d.slug}`;
-    */
-    const buyableUri = d.slug;
-    // /FIXME
-    //
+    const buyableUri = `/shop/${encodeURIComponent(d.slug)}`;
     const digitalCategories = deriveDigitalProductCategories({
       ...d,
       type: normalizedType,
@@ -542,6 +566,17 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       uri: buyableUri,
       productMode: mode,
       assetId: mode === "asset" ? d.assetId || "" : "",
+      buyableKind: d.buyableKind || "",
+      buyableNoun: d.buyableNoun || "",
+      scheduleStart: d.scheduleStart || "",
+      scheduleEnd: d.scheduleEnd || "",
+      scheduleTimezone: d.scheduleTimezone || "",
+      venueName: d.venueName || "",
+      venueAddress: d.venueAddress || "",
+      externalBookingEnabled: d.externalBookingEnabled === true,
+      externalBookingUrl: d.externalBookingUrl || "",
+      externalBookingLabel: d.externalBookingLabel || "",
+      language: d.language || "sv",
       vatPercent:
         typeof d.vatPercent === "number" && Number.isFinite(d.vatPercent)
           ? d.vatPercent
@@ -555,11 +590,20 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
   // be listable even if their parsed price is missing, otherwise the storefront
   // looks empty except for digital products.
   const filtered = items.filter((item) => {
-    if (!safeVisibleTypes.includes(item.type)) return false;
     if (item.active === false) return false;
+    if (item.source !== "digital") {
+      return item.type !== "event" || !isEventPassed(item);
+    }
+    if (!safeVisibleTypes.includes(item.type)) return false;
     const hasPrice = item.priceCents > 0 || (item.price && item.price !== "0");
-    if (item.source === "digital") return hasPrice || item.free === true;
-    return true;
+    if (
+      item.externalBookingEnabled === true &&
+      typeof item.externalBookingUrl === "string" &&
+      item.externalBookingUrl.trim()
+    ) {
+      return true;
+    }
+    return hasPrice || item.free === true;
   });
 
   const assetIds = [

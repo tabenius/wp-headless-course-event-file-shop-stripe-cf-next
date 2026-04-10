@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { t, getLocale, setLocale } from "@/lib/i18n";
+import { AVAILABLE_LOCALES, t, getLocale, setLocale } from "@/lib/i18n";
 import {
   ADMIN_ACTION_HOTKEYS,
   getAdminTabHotkeyLabel,
@@ -11,8 +11,6 @@ import {
   shouldIgnoreAdminHotkeys,
 } from "@/lib/adminHotkeys";
 import RagbazLogo from "./ragbaz-logo";
-
-const CHAT_BETA_STORAGE_KEY = "ragbaz_chat_beta_enabled";
 
 function formatBuildTimestamp() {
   const raw = process.env.NEXT_PUBLIC_BUILD_TIME;
@@ -53,13 +51,11 @@ function BuildTimestamp() {
 }
 
 const ADMIN_TAB_SET = new Set([
-  "welcome",
   "sales",
   "assets",
   "products",
-  "chat",
+  "contacts",
   "style",
-  "info",
   "support",
 ]);
 
@@ -87,48 +83,17 @@ function normalizeTab(value) {
   const normalized = extractHashPath(value);
   const base = normalized.split(/[/?&]/)[0];
   if (!base) return null;
-  if (
-    base === "sandbox" ||
-    base === "health" ||
-    base === "stats" ||
-    base === "docs" ||
-    base === "documentation"
-  ) {
-    return "info";
-  }
   return ADMIN_TAB_SET.has(base) ? base : null;
 }
 
 function hashForTabRoute(value) {
-  const normalized = extractHashPath(value);
-  if (
-    normalized === "health" ||
-    normalized === "status" ||
-    normalized === "info/health"
-  ) {
-    return "#/info/health";
-  }
-  if (
-    normalized === "stats" ||
-    normalized === "statistics" ||
-    normalized === "info/stats"
-  ) {
-    return "#/info/stats";
-  }
-  if (
-    normalized === "docs" ||
-    normalized === "documentation" ||
-    normalized === "info/docs"
-  ) {
-    return "#/info/docs";
-  }
-  const tab = normalizeTab(normalized);
+  const tab = normalizeTab(value);
   if (!tab) return null;
   return `#/${tab}`;
 }
 
-function getNavItems(chatBetaEnabled) {
-  const items = [
+function getNavItems() {
+  return [
     {
       label: t("admin.navSales", "Sales"),
       tab: "sales",
@@ -145,6 +110,11 @@ function getNavItems(chatBetaEnabled) {
       hotkey: getAdminTabHotkeyLabel("products"),
     },
     {
+      label: t("admin.navContacts", "Contacts"),
+      tab: "contacts",
+      hotkey: getAdminTabHotkeyLabel("contacts"),
+    },
+    {
       label: t("admin.navSupport"),
       tab: "support",
       hotkey: getAdminTabHotkeyLabel("support"),
@@ -154,27 +124,7 @@ function getNavItems(chatBetaEnabled) {
       tab: "style",
       hotkey: getAdminTabHotkeyLabel("style"),
     },
-    ...(chatBetaEnabled
-      ? [
-          {
-            label: t("admin.navChat"),
-            tab: "chat",
-            hotkey: getAdminTabHotkeyLabel("chat"),
-          },
-        ]
-      : []),
-    {
-      label: t("admin.navSystem", "System"),
-      tab: "info",
-      hotkey: getAdminTabHotkeyLabel("info"),
-    },
-    {
-      label: t("admin.navWelcome", "Welcome"),
-      tab: "welcome",
-      hotkey: getAdminTabHotkeyLabel("welcome"),
-    },
   ];
-  return items;
 }
 
 const healthDotColor = {
@@ -217,8 +167,8 @@ export default function AdminHeader({ logoUrl }) {
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window === "undefined") return "welcome";
-    return parseTabHash(window.location.hash) || "welcome";
+    if (typeof window === "undefined") return "sales";
+    return parseTabHash(window.location.hash) || "sales";
   });
   const [localeState, setLocaleState] = useState(getLocale);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -235,10 +185,6 @@ export default function AdminHeader({ logoUrl }) {
   const [tickerStats, setTickerStats] = useState(null);
   const [adminEmail, setAdminEmail] = useState("");
   const [adminSessionLoaded, setAdminSessionLoaded] = useState(false);
-  const [chatBetaEnabled, setChatBetaEnabled] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(CHAT_BETA_STORAGE_KEY) === "true";
-  });
   const log = (...args) => console.info("[AdminHeader]", ...args);
   const healthLabelMap = {
     unknown: t("admin.healthStatusUnknown", "Status unknown"),
@@ -276,15 +222,6 @@ export default function AdminHeader({ logoUrl }) {
       window.removeEventListener("admin:healthStatus", onHealthStatus);
   }, []);
 
-  useEffect(() => {
-    function onStorage(e) {
-      if (e.key === CHAT_BETA_STORAGE_KEY) {
-        setChatBetaEnabled(e.newValue === "true");
-      }
-    }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -522,13 +459,18 @@ export default function AdminHeader({ logoUrl }) {
       setMenuOpen(false);
       return;
     }
+    const previousHash = window.location.hash;
     if (window.location.hash !== nextHash) {
       const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
       window.history.replaceState(null, "", nextUrl);
+      window.dispatchEvent(new Event("hashchange"));
     }
     window.dispatchEvent(
       new CustomEvent("admin:switchTab", {
-        detail: nextHash.replace(/^#\/?/, ""),
+        detail:
+          window.location.hash.replace(/^#\/?/, "") ||
+          previousHash.replace(/^#\/?/, "") ||
+          safeTab,
       }),
     );
     setMenuOpen(false);
@@ -538,12 +480,8 @@ export default function AdminHeader({ logoUrl }) {
     window.dispatchEvent(new CustomEvent("admin:runHealthCheck"));
   }
 
-  const navItems = getNavItems(chatBetaEnabled);
+  const navItems = getNavItems();
   const tabItems = navItems.filter((item) => item.tab);
-  const healthHotkey = getAdminTabHotkeyLabel("health")
-    .split("+")
-    .pop()
-    .toUpperCase();
   const logoutHotkey = ADMIN_ACTION_HOTKEYS.logout.combo
     .split("+")
     .pop()
@@ -576,7 +514,7 @@ export default function AdminHeader({ logoUrl }) {
               </span>
             </div>
             <Link
-              href="/admin#/welcome"
+              href="/admin#/sales"
               className="admin-header-brand-link flex flex-col items-center justify-center gap-0.5 transition-colors"
               aria-label={t("admin.headerAria", "Goto admin home")}
             >
@@ -700,17 +638,14 @@ export default function AdminHeader({ logoUrl }) {
                   >
                     {t("admin.healthRunNow", "Run now")}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsHealthTooltipPinned(false);
-                      setIsHealthTooltipHovered(false);
-                      switchTab("info/health");
-                    }}
+                  <a
+                    href="https://ragbaz.xyz/docs/en/technical-manual"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="admin-header-control inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
                   >
-                    {t("admin.healthOpenChecks", "Open checks")}
-                  </button>
+                    {t("admin.documentation", "Documentation")}
+                  </a>
                 </div>
               </div>
             )}
@@ -775,19 +710,20 @@ export default function AdminHeader({ logoUrl }) {
                     >
                       <option value="sv">Svenska</option>
                       <option value="en">English</option>
-                      <option value="es">Español</option>
+                      {AVAILABLE_LOCALES.includes("es") ? (
+                        <option value="es">Español</option>
+                      ) : null}
                     </select>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => switchTab("info/health")}
+                  <a
+                    href="https://ragbaz.xyz/docs/en/technical-manual"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center justify-between w-full"
                   >
-                    <span>{t("admin.healthCheck")}</span>
-                    <kbd className="admin-header-kbd rounded border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
-                      {healthHotkey}
-                    </kbd>
-                  </button>
+                    <span>{t("admin.documentation", "Documentation")}</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
                   <button
                     type="button"
                     onClick={logoutAdmin}

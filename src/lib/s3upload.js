@@ -21,9 +21,12 @@ const isNodeRuntime =
 const isEdgeRuntime =
   typeof EdgeRuntime !== "undefined" || process?.env?.NEXT_RUNTIME === "edge";
   */
-const isNodeRuntime = false;
-const isEdgeRuntime = true;
-// /FIXME
+const isNodeRuntime =
+  typeof process !== "undefined" &&
+  !!process.versions?.node &&
+  process?.env?.NEXT_RUNTIME !== "edge";
+const isEdgeRuntime =
+  typeof EdgeRuntime !== "undefined" || process?.env?.NEXT_RUNTIME === "edge";
 export const EDGE_R2_MAX_BYTES = 100 * 1024 * 1024; // 100 MB cap for edge uploads
 
 function isS3Enabled() {
@@ -224,6 +227,8 @@ function r2ObjectToHead(obj) {
     contentDisposition: obj.httpMetadata?.contentDisposition || "",
     contentEncoding: obj.httpMetadata?.contentEncoding || "",
     contentLanguage: obj.httpMetadata?.contentLanguage || "",
+    sizeBytes: obj.size ?? null,
+    lastModified: obj.uploaded ? obj.uploaded.toISOString() : "",
     expires: obj.httpMetadata?.expiration
       ? new Date(obj.httpMetadata.expiration).toISOString()
       : "",
@@ -258,13 +263,15 @@ function clampSignedUrlExpiresIn(rawValue) {
   return parsed;
 }
 
-function buildDownloadDisposition(fileName) {
+function buildContentDisposition(fileName, mode = "attachment") {
   const safe = String(fileName || "")
     .replace(/[\r\n"]/g, " ")
     .trim()
     .slice(0, 180);
-  if (!safe) return "";
-  return `attachment; filename="${safe}"`;
+  const safeMode = String(mode || "").trim().toLowerCase();
+  if (safeMode !== "attachment" && safeMode !== "inline") return "";
+  if (!safe) return safeMode;
+  return `${safeMode}; filename="${safe}"`;
 }
 
 export function resolveStorageObjectKey(fileUrl, { backend } = {}) {
@@ -283,37 +290,50 @@ async function createR2SignedDownloadUrl({
   objectKey,
   expiresIn,
   downloadFileName,
+  dispositionMode = "attachment",
 }) {
   const { accessKeyId, secretAccessKey, accountId, bucket } = getEdgeR2Creds();
   if (!accessKeyId || !secretAccessKey || !accountId || !bucket) return null;
 
   const baseUrl = buildR2Url({ accountId, bucket, key: objectKey });
   const requestUrl = new URL(baseUrl);
-  const disposition = buildDownloadDisposition(downloadFileName);
+  const disposition = buildContentDisposition(
+    downloadFileName,
+    dispositionMode,
+  );
   if (disposition) {
     requestUrl.searchParams.set("response-content-disposition", disposition);
   }
-  return presignR2Url({
-    method: "GET",
-    url: requestUrl.toString(),
-    expiresIn,
+  requestUrl.searchParams.set("X-Amz-Expires", String(expiresIn));
+  const { AwsClient } = await import("aws4fetch");
+  const signer = new AwsClient({
     accessKeyId,
     secretAccessKey,
+    service: "s3",
     region: "auto",
   });
+  const signed = await signer.sign(
+    new Request(requestUrl.toString(), { method: "GET" }),
+    { aws: { signQuery: true } },
+  );
+  return signed.url;
 }
 
 async function createS3SignedDownloadUrl({
   objectKey,
   expiresIn,
   downloadFileName,
+  dispositionMode = "attachment",
 }) {
   if (!isNodeRuntime || !isS3Enabled()) return null;
 
   const { GetObjectCommand, getSignedUrl } = await loadAwsSdk();
   const client = await getS3Client("s3");
   const bucketName = getBucket("s3");
-  const disposition = buildDownloadDisposition(downloadFileName);
+  const disposition = buildContentDisposition(
+    downloadFileName,
+    dispositionMode,
+  );
   const command = new GetObjectCommand({
     Bucket: bucketName,
     Key: objectKey,
@@ -331,6 +351,7 @@ export async function createSignedDownloadUrl({
   backend = "r2",
   expiresIn = 300,
   downloadFileName = "",
+  dispositionMode = "attachment",
 } = {}) {
   let resolvedUrl = String(fileUrl || "").trim();
   if (!resolvedUrl) return null;
@@ -365,6 +386,7 @@ export async function createSignedDownloadUrl({
           objectKey,
           expiresIn: ttl,
           downloadFileName,
+          dispositionMode,
         });
       }
       if (candidate === "s3") {
@@ -372,6 +394,7 @@ export async function createSignedDownloadUrl({
           objectKey,
           expiresIn: ttl,
           downloadFileName,
+          dispositionMode,
         });
       }
     } catch (error) {
@@ -933,6 +956,10 @@ export async function headBucketObject({ key, backend } = {}) {
     contentDisposition: result?.ContentDisposition || "",
     contentEncoding: result?.ContentEncoding || "",
     contentLanguage: result?.ContentLanguage || "",
+    sizeBytes: result?.ContentLength ?? null,
+    lastModified: result?.LastModified
+      ? new Date(result.LastModified).toISOString()
+      : "",
     expires: result?.Expires
       ? new Date(result.Expires).toISOString()
       : result?.ExpiresString || "",
@@ -1203,9 +1230,9 @@ export async function deleteBucketObject({ key, backend } = {}) {
 
 /**
  * Stream an object's content from S3/R2.
- * Returns { body: ReadableStream, contentType, contentLength }.
+ * Returns { body: ReadableStream, contentType, contentLength, totalLength, lastModified }.
  */
-export async function getBucketObjectStream({ key, backend } = {}) {
+export async function getBucketObjectStream({ key, backend, byteRange } = {}) {
   const safeKey = String(key || "").trim();
   if (!safeKey) throw new Error("Object key is required.");
   const backendToUse = backend || resolveBackend();
@@ -1219,13 +1246,26 @@ export async function getBucketObjectStream({ key, backend } = {}) {
   if (backendToUse === "r2") {
     const bucket = await getR2Bucket();
     if (bucket) {
-      const obj = await bucket.get(safeKey);
+      const options =
+        byteRange &&
+        Number.isInteger(byteRange.start) &&
+        Number.isInteger(byteRange.end) &&
+        byteRange.end >= byteRange.start
+          ? {
+              range: {
+                offset: byteRange.start,
+                length: byteRange.end - byteRange.start + 1,
+              },
+            }
+          : undefined;
+      const obj = await bucket.get(safeKey, options);
       if (!obj) throw new Error(`Object not found: ${safeKey}`);
       return {
         body: obj.body,
         contentType:
           obj.httpMetadata?.contentType || "application/octet-stream",
         contentLength: obj.size ?? null,
+        totalLength: obj.size ?? null,
         lastModified: obj.uploaded ? obj.uploaded.toISOString() : null,
       };
     }
@@ -1235,13 +1275,29 @@ export async function getBucketObjectStream({ key, backend } = {}) {
   const { GetObjectCommand } = await loadAwsSdk();
   const client = await getS3Client(backendToUse);
   const bucketName = getBucket();
-  const result = await client.send(
-    new GetObjectCommand({ Bucket: bucketName, Key: safeKey }),
+  const command = {
+    Bucket: bucketName,
+    Key: safeKey,
+  };
+  if (
+    byteRange &&
+    Number.isInteger(byteRange.start) &&
+    Number.isInteger(byteRange.end) &&
+    byteRange.end >= byteRange.start
+  ) {
+    command.Range = `bytes=${byteRange.start}-${byteRange.end}`;
+  }
+  const result = await client.send(new GetObjectCommand(command));
+  const totalLengthFromRange = String(result.ContentRange || "").match(
+    /\/(\d+)$/,
   );
   return {
     body: result.Body.transformToWebStream(),
     contentType: result.ContentType || "application/octet-stream",
     contentLength: result.ContentLength ?? null,
+    totalLength: totalLengthFromRange
+      ? Number.parseInt(totalLengthFromRange[1], 10)
+      : result.ContentLength ?? null,
     lastModified: result.LastModified
       ? result.LastModified.toISOString()
       : null,

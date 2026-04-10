@@ -5,6 +5,7 @@ import { buildR2Url, signR2Put } from "@/lib/r2Edge";
 import { registerUploadedAsset } from "@/lib/avatarFeedStore";
 import { t } from "@/lib/i18n";
 import { runUploadPipeline } from "@/lib/uploadPipeline";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 
 const DEFAULT_MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
 const DEFAULT_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
@@ -140,7 +141,7 @@ function sanitizeAssetSlug(value, max = 120) {
 function buildAssetIdUri(assetId) {
   const safeId = sanitizeAssetId(assetId);
   if (!safeId) return "";
-  return `/asset/${encodeURIComponent(safeId)}`;
+  return `/assets/${encodeURIComponent(safeId)}`;
 }
 
 function parseNullableInt(value) {
@@ -301,10 +302,10 @@ async function maybeUpdateWordPressMediaMeta({ wpUrl, auth, mediaId, meta }) {
   try {
     const response = await fetch(`${wpUrl}/wp-json/wp/v2/media/${mediaId}`, {
       method: "POST",
-      headers: {
+      headers: withWordPressUserAgent({
         Authorization: auth.authorization,
         "Content-Type": "application/json",
-      },
+      }),
       body: JSON.stringify({ meta }),
     });
     if (!response.ok) {
@@ -332,11 +333,11 @@ async function uploadToWordPress(arrayBuffer, file, assetContext) {
 
   const response = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
     method: "POST",
-    headers: {
+    headers: withWordPressUserAgent({
       Authorization: auth.authorization,
       "Content-Disposition": `attachment; filename="${encodeURIComponent(file.name)}"`,
       "Content-Type": file.type || "application/octet-stream",
-    },
+    }),
     body: arrayBuffer,
   });
 

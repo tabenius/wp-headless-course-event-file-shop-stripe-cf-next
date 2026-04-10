@@ -1,10 +1,11 @@
-import WordPressSetupPage from "@/components/setup/WordPressSetupPage";
+import { redirect } from "next/navigation";
+import { buildRagbazDocsUrl } from "@/lib/ragbazDocs";
 
 export const metadata = {
-  title: "Connect to WordPress",
-  description: "Configure your WordPress site to use this storefront.",
+  title: "Setup Docs",
+  description: "Open the setup guide on ragbaz.xyz.",
 };
 
 export default function SetupPage() {
-  return <WordPressSetupPage />;
+  redirect(buildRagbazDocsUrl({ lang: "en", slug: "quick-start" }));
 }

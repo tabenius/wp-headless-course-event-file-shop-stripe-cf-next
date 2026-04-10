@@ -5,7 +5,7 @@ import {
   getContentAccessState,
   getContentStorageInfo,
   listAccessUsers,
-  setCourseAccess,
+  setContentAccess,
 } from "@/lib/contentAccess";
 import { fetchGraphQL } from "@/lib/client";
 import { deriveCategories } from "@/lib/contentCategories";

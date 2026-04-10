@@ -239,11 +239,20 @@ DONE (2026-03-27, Codex): prioritized implementation batch landed in order:
   - `docs/plans/2026-04-06-digital-download-assets-routes-audit.md`
 - Detailed implementation plan for fixes:
   - `docs/plans/2026-04-06-digital-download-assets-routes-implementation-plan.md`
+- Review comments on Claude's download/asset/route fixes (commit `ec280ee`):
+  - `docs/plans/2026-04-07-review-claude-download-asset-route-fixes.md`
+- Follow-up re-review findings (2026-04-08):
+  - `docs/plans/2026-04-08-review-claude-followup.md`
+- Re-review #2 findings (2026-04-08):
+  - `docs/plans/2026-04-08-review-claude-rereview-2.md`
+- Requested split plan checklist for moving Docs/Release/Plugin pipeline/Admin-ops to `ragbaz.xyz` (2026-04-09):
+  - `docs/plans/2026-04-09-ragbaz-split-checklist.md`
 
 ### Working rules for this backlog
 
 - Execute in listed order unless a production regression interrupts.
 - Keep TODO ownership/status in `claude+codex-coop.md` top section.
+- Run tests with `npm test` (not bare `node --test`) — the test script includes `--experimental-test-module-mocks` and a `@/` path alias loader required for all tests to pass.
 - Run targeted lint/tests after each backlog item lands.
 
 ---

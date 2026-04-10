@@ -2,13 +2,13 @@ const DEFAULT_DOCS_BASE = "https://ragbaz.xyz/docs";
 const DOCS_LANGUAGES = new Set(["en", "sv", "es"]);
 
 const DOCS_CONTEXT_BY_TAB = Object.freeze({
-  welcome: ["quick-start", "product-value"],
+  sales: ["performance-explained", "technical-manual"],
+  assets: ["technical-manual", "quick-start"],
   media: ["technical-manual", "quick-start"],
   products: ["product-value", "technical-manual"],
+  contacts: ["technical-manual", "quick-start"],
   support: ["technical-manual", "quick-start"],
-  sales: ["performance-explained", "technical-manual"],
   style: ["performance-explained", "product-value"],
-  info: ["technical-manual", "performance-explained"],
   chat: ["technical-manual", "product-value"],
 });
 
@@ -27,7 +27,7 @@ export function contextDocSlugsForTab(tab) {
   const key = String(tab || "")
     .trim()
     .toLowerCase();
-  return DOCS_CONTEXT_BY_TAB[key] || DOCS_CONTEXT_BY_TAB.welcome;
+  return DOCS_CONTEXT_BY_TAB[key] || DOCS_CONTEXT_BY_TAB.products;
 }
 
 export function ragbazDocsBaseUrl() {

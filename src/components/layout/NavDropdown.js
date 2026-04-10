@@ -18,7 +18,6 @@ export default function NavDropdown({
 
   const parentHref = item.href && item.href !== "#" ? item.href : null;
 
-  // Highlight if parent or any child matches the current path
   const isParentActive =
     parentHref &&
     (pathname === parentHref || pathname === parentHref.replace(/\/$/, ""));
@@ -32,19 +31,27 @@ export default function NavDropdown({
   });
   const isActive = isParentActive || isChildActive;
 
-  function enter() {
+  function clearCloseTimer() {
     clearTimeout(timeoutRef.current);
+  }
+
+  function openMenu() {
+    clearCloseTimer();
     setOpen(true);
   }
 
-  function leave() {
+  function closeMenu() {
+    clearCloseTimer();
     timeoutRef.current = setTimeout(() => setOpen(false), 150);
   }
 
-  useEffect(() => () => clearTimeout(timeoutRef.current), []);
+  function closeMenuNow() {
+    clearCloseTimer();
+    setOpen(false);
+  }
 
-  // Parent label: clickable link if it has an href, otherwise a toggle button.
-  // Hover always opens the dropdown; click navigates (link) or toggles (button).
+  useEffect(() => () => clearCloseTimer(), []);
+
   const labelContent = (
     <>
       {item.label}
@@ -74,13 +81,34 @@ export default function NavDropdown({
     <div
       ref={containerRef}
       className="relative flex items-center"
-      onMouseEnter={enter}
-      onMouseLeave={leave}
+      onMouseEnter={openMenu}
+      onMouseLeave={closeMenu}
+      onFocusCapture={openMenu}
+      onBlurCapture={(event) => {
+        if (containerRef.current?.contains(event.relatedTarget)) return;
+        closeMenuNow();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.stopPropagation();
+          closeMenuNow();
+        }
+      }}
     >
       {parentHref ? (
         <Link
           href={parentHref}
           className={`${className}${isActive ? ` ${activeClassName}` : ""}`}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={(event) => {
+            if (!open) {
+              event.preventDefault();
+              openMenu();
+              return;
+            }
+            closeMenuNow();
+          }}
         >
           {labelContent}
         </Link>
@@ -89,20 +117,22 @@ export default function NavDropdown({
           type="button"
           onClick={() => setOpen((prev) => !prev)}
           className={`${buttonClassName} focus-ring-brand${isActive ? ` ${activeClassName}` : ""}`}
+          aria-haspopup="menu"
+          aria-expanded={open}
         >
           {labelContent}
         </button>
       )}
       {open && (
         <div className="absolute top-full left-0 pt-1 z-50">
-          <div className={dropdownClassName}>
-            {/* Include parent page in dropdown for touch devices */}
+          <div className={dropdownClassName} role="menu">
             {parentHref && (
               <NavLink
                 href={parentHref}
                 className="storefront-nav-dropdown-link storefront-nav-dropdown-link-border block whitespace-nowrap border-b border-[var(--color-muted)] px-4 py-2 font-submenu font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-muted)]/25"
                 activeClassName="text-[var(--color-primary)]"
-                onClick={() => setOpen(false)}
+                onClick={closeMenuNow}
+                role="menuitem"
               >
                 {item.label}
               </NavLink>
@@ -113,7 +143,8 @@ export default function NavDropdown({
                 href={child.href}
                 className="storefront-nav-dropdown-link block whitespace-nowrap px-4 py-2 font-submenu text-[var(--color-foreground)] hover:bg-[var(--color-muted)]/25"
                 activeClassName="text-[var(--color-primary)] font-semibold"
-                onClick={() => setOpen(false)}
+                onClick={closeMenuNow}
+                role="menuitem"
               >
                 {child.label}
               </NavLink>

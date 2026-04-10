@@ -63,7 +63,7 @@ export default function HeaderNavClient({ navigation = [] }) {
   const mobileAuthClass =
     "block font-menu font-normal py-[6px] border-b border-[var(--color-muted)] hover:text-[var(--color-primary)] leading-tight";
   const mobileAuthButtonClass =
-    "block font-button text-[13px] font-normal py-[6px] border-b border-[var(--color-muted)] hover:text-[var(--color-primary)] leading-tight";
+    "block rounded-none border-0 bg-transparent font-button text-[13px] font-normal py-[6px] border-b border-[var(--color-muted)] text-left hover:text-[var(--color-primary)] leading-tight shadow-none";
 
   const mobileAuthLinks = isLoggedIn ? (
     <>
@@ -87,7 +87,7 @@ export default function HeaderNavClient({ navigation = [] }) {
   );
 
   const userMenuSignOut = (
-    <SignOutButton className="block w-full whitespace-nowrap px-4 py-2 text-left font-button text-[13px] text-[var(--color-foreground)] hover:bg-[var(--color-muted)]" />
+    <SignOutButton className="block w-full whitespace-nowrap rounded-none border-0 bg-transparent px-4 py-2 text-left font-button text-[13px] text-[var(--color-foreground)] shadow-none hover:bg-[var(--color-muted)] [border-radius:0]" />
   );
 
   return (

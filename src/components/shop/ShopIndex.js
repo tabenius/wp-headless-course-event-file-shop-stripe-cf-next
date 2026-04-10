@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { t } from "@/lib/i18n";
+import { t, tForLocale } from "@/lib/i18n";
 import { resolveProductHref } from "@/lib/productRoutes";
 
 const OWNERSHIP_MAX_ATTEMPTS = 3;
@@ -59,18 +59,50 @@ function buildImageLoader(imageSources, fallbackUrl) {
     pickVariantUrlByWidth(variants, width, fallbackUrl || src || "");
 }
 
+function normalizeProductLanguage(value) {
+  const safe = String(value || "").trim().toLowerCase();
+  return safe === "en" || safe === "es" ? safe : "sv";
+}
+
+function itemT(item, key, fallback) {
+  if (item?.source === "digital") {
+    return tForLocale(normalizeProductLanguage(item.language), key, fallback);
+  }
+  return t(key, fallback);
+}
+
+function translateBuyableKind(item, kind) {
+  switch (String(kind || "").trim().toLowerCase()) {
+    case "download":
+    case "digital_file":
+    case "asset":
+      return itemT(item, "shop.downloadProduct", "Download");
+    case "course":
+      return itemT(item, "common.course", "Course");
+    case "event":
+      return itemT(item, "common.event", "Event");
+    case "product":
+    case "service":
+      return itemT(item, "common.product", "Product");
+    case "workshop":
+      return itemT(item, "shop.typeEvent", "Event");
+    default:
+      return String(kind || "").trim();
+  }
+}
+
 function typeLabel(item) {
   switch (item.type) {
     case "product":
-      return t("shop.typeProduct");
+      return itemT(item, "shop.typeProduct", "Product");
     case "course":
-      return t("shop.typeCourse");
+      return itemT(item, "shop.typeCourse", "Course");
     case "event":
-      return t("shop.typeEvent");
+      return itemT(item, "shop.typeEvent", "Event");
     case "digital_file":
-      return t("shop.typeDigitalFile");
+      return itemT(item, "shop.downloadProduct", "Download");
     case "digital_course":
-      return t("shop.typeCourse");
+      return itemT(item, "shop.typeCourse", "Course");
     default:
       return "";
   }
@@ -91,6 +123,53 @@ function typeBadgeColor(item) {
     default:
       return "bg-gray-100 text-gray-800";
   }
+}
+
+function resolveBuyableNoun(item) {
+  const custom = String(item?.buyableNoun || "").trim();
+  if (custom) return custom;
+  const translatedType = String(typeLabel(item) || "").trim().toLowerCase();
+  const translatedKind = translateBuyableKind(item, item?.buyableKind);
+  const safeKind = String(translatedKind || "").trim();
+  if (!safeKind) return "";
+  if (safeKind.toLowerCase() === translatedType) return "";
+  return safeKind;
+}
+
+function formatScheduleLabel(item) {
+  const startRaw = String(item?.scheduleStart || "").trim();
+  const endRaw = String(item?.scheduleEnd || "").trim();
+  if (!startRaw && !endRaw) return "";
+  const tz = String(item?.scheduleTimezone || "").trim();
+  const format = (raw) => {
+    const parsed = new Date(raw);
+    if (!Number.isFinite(parsed.getTime())) return raw;
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        ...(tz ? { timeZone: tz } : {}),
+      }).format(parsed);
+    } catch {
+      return parsed.toLocaleString();
+    }
+  };
+  if (startRaw && endRaw) return `${format(startRaw)} - ${format(endRaw)}`;
+  return format(startRaw || endRaw);
+}
+
+function resolveShopBrowseHref(item) {
+  const uri = typeof item?.uri === "string" ? item.uri.trim() : "";
+  if (uri) return uri;
+  const slug = typeof item?.slug === "string" ? item.slug.trim() : "";
+  return slug ? `/shop/${encodeURIComponent(slug)}` : "";
+}
+
+function resolveShopOwnedHref(item) {
+  if (item?.source === "digital") {
+    return resolveProductHref(item);
+  }
+  return resolveShopBrowseHref(item);
 }
 
 function ShopIndexContent({ items }) {
@@ -304,36 +383,35 @@ function ShopIndexContent({ items }) {
           const imageLoader = buildImageLoader(imageSources, imageUrl);
           const showImage = imageUrl && !brokenImages[item.id];
           const owned = isOwned(item);
-          const boughtUri = resolveProductHref(item);
+          const ownedHref = resolveShopOwnedHref(item);
+          const browseHref = resolveShopBrowseHref(item);
           const effectiveCents =
             item.priceCents > 0 ? item.priceCents : parseWpPrice(item.price);
           const priceDisplay = formatPrice(effectiveCents, item.currency) || "";
-          const cardHref =
-            !owned &&
-            !ownershipPending &&
-            typeof item.uri === "string" &&
-            item.uri
-              ? item.uri
-              : "";
+          const scheduleLabel = formatScheduleLabel(item);
+          const buyableNoun = resolveBuyableNoun(item);
+          const hasExternalBooking =
+            item?.externalBookingEnabled === true &&
+            typeof item?.externalBookingUrl === "string" &&
+            item.externalBookingUrl.trim().length > 0;
+          const cardHref = !owned && !ownershipPending ? browseHref : "";
 
           // .bg-white when in .dark-mode is #2A2A2A !IMPORTANT
           return (
             <article
               key={item.id}
-              className={`relative flex overflow-hidden rounded-lg border-2 bg-white ${
+              className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_12px_28px_-22px_rgba(15,23,42,0.55)] transition-all duration-200 sm:flex-row ${
                 cardHref
-                  ? "border-[var(--color-muted)] transition-colors hover:border-amber-500"
-                  : "border-amber-500"
+                  ? "border-[var(--color-muted)] hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-[0_20px_42px_-24px_rgba(217,119,6,0.45)]"
+                  : "border-amber-300"
               }`}
             >
-              {cardHref ? (
-                <Link
-                  href={cardHref}
-                  aria-label={`${t("shop.viewAndBuy")} ${item.name}`}
-                  className="absolute inset-0 z-10 rounded-lg"
-                />
-              ) : null}
-
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/80 to-transparent" />
+              {hasExternalBooking && (
+                <span className="pointer-events-none absolute right-3 top-3 z-[15] rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-800">
+                  {t("shop.externalBadge", "External booking")}
+                </span>
+              )}
               {showImage ? (
                 <Image
                   src={imageUrl}
@@ -347,13 +425,13 @@ function ShopIndexContent({ items }) {
                     "(max-width: 768px) 100vh, (max-width: 1200px) 50vh, 33vh"
                     // basis-1/2 since we are in a flex-col s.t. the vertical is the main axis
                   }
-                  className="w-1/2 basis-1/2 object-cover object-top border-r border-black"
+                  className="h-56 w-full object-cover object-top border-b border-black/10 sm:h-auto sm:w-[44%] sm:basis-[44%] sm:border-b-0 sm:border-r"
                   onError={() =>
                     setBrokenImages((prev) => ({ ...prev, [item.id]: true }))
                   }
                 />
               ) : (
-                <div className="flex h-44 w-full items-center justify-center bg-[var(--color-muted)] text-[var(--color-background)]">
+                <div className="flex h-56 w-full items-center justify-center bg-[var(--color-muted)] text-[var(--color-background)] sm:h-auto sm:w-[44%] sm:basis-[44%]">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
@@ -369,54 +447,74 @@ function ShopIndexContent({ items }) {
                 </div>
               )}
 
-              <div className="p-5 space-y-2 flex-1 flex flex-col">
-                <span
+              <div className="relative z-10 flex flex-1 flex-col gap-2 p-5">
+                <h2
+                  className="text-[1.08rem] leading-snug"
                   style={{
-                    padding: "0.25rem",
-                    "text-align": "center",
-                    "font-weight": 200,
-                    "font-size": "12pt",
-                    "font-family": "var(--font-heading)",
+                    fontFamily: "var(--font-heading)",
+                    fontWeight: 550,
                   }}
                 >
                   {item.name}
-                </span>
-                <br />
-                <div className="flex shrink-0 items-start gap-1 justify-between">
-                  <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded whitespace-nowrap border border-black font-sans ${typeBadgeColor(item)}`}
-                  >
-                    {typeLabel(item)}
-                  </span>
+                </h2>
+                <div className="flex shrink-0 items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span
+                      className={`px-2 py-0.5 rounded whitespace-nowrap border border-black font-sans text-[11px] font-semibold uppercase tracking-[0.14em] ${typeBadgeColor(item)}`}
+                    >
+                      {typeLabel(item)}
+                    </span>
+                    {buyableNoun ? (
+                      <span className="rounded whitespace-nowrap border border-slate-300 bg-slate-100 px-2 py-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700">
+                        {buyableNoun}
+                      </span>
+                    ) : null}
+                  </div>
                   {priceDisplay ? (
-                    <p className="text-sm font-semibold">{priceDisplay}</p>
+                    <p className="px-1 text-sm font-semibold tracking-[0.04em] text-slate-700">
+                      {priceDisplay}
+                    </p>
                   ) : null}
                 </div>
+                {(scheduleLabel || item.venueName) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {scheduleLabel ? (
+                      <p className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700">
+                        {scheduleLabel}
+                      </p>
+                    ) : null}
+                    {item.venueName ? (
+                      <p className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                        {item.venueName}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
 
                 {item.description && (
                   <pre
-                    className="line-clamp-7 text-[11pt]"
+                    className="line-clamp-6 text-[10.5pt] text-slate-700"
                     style={{
-                      "white-space": "pre-wrap",
-                      "word-wrap": "break-word",
+                      whiteSpace: "pre-wrap",
+                      wordWrap: "break-word",
                     }}
                   >
                     {item.description}
                   </pre>
                 )}
                 {item.duration && !/^0\s/.test(item.duration) && (
-                  <p className="text-xs">{item.duration}</p>
+                  <p className="text-xs text-slate-600">{item.duration}</p>
                 )}
 
-                <div className="mt-auto pt-3">
-                  <div className="flex gap-2 items-center">
+                <div className="mt-auto border-t border-slate-200/80 pt-3">
+                  <div className="flex items-center gap-2">
                     {owned ? (
-                      boughtUri ? (
+                      ownedHref ? (
                         <Link
-                          href={boughtUri}
-                          className="px-4 py-2 rounded bg-teal-700 text-white shop-cta hover:bg-teal-600 text-sm"
+                          href={ownedHref}
+                          className="rounded-lg bg-teal-700 px-4 py-2 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-white shop-cta hover:bg-teal-600"
                         >
-                          {t("shop.openPurchasedAsset", "Open purchased asset")}
+                          {itemT(item, "shop.openPurchasedAsset", "Access")}
                         </Link>
                       ) : (
                         <span className="text-sm font-semibold text-green-700 dark:text-green-300">
@@ -425,9 +523,20 @@ function ShopIndexContent({ items }) {
                       )
                     ) : ownershipPending ? (
                       <span className="inline-block h-8 w-24 animate-pulse rounded bg-[var(--color-muted)]" />
+                    ) : cardHref ? (
+                      <Link
+                        href={cardHref}
+                        className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-white shop-cta hover:bg-slate-800"
+                      >
+                        {hasExternalBooking
+                          ? t("shop.viewDetails", "View details")
+                          : t("shop.viewAndBuy")}
+                      </Link>
                     ) : (
-                      <span className="text-sm font-medium text-[var(--color-primary)]">
-                        {t("shop.viewAndBuy")}
+                      <span className="text-sm font-medium text-[var(--color-primary)] underline-offset-4 group-hover:underline">
+                        {hasExternalBooking
+                          ? t("shop.viewDetails", "View details")
+                          : t("shop.viewAndBuy")}
                       </span>
                     )}
                   </div>

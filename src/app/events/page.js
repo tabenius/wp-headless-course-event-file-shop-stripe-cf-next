@@ -93,12 +93,9 @@ function eventSortTime(event) {
 
 function sortEventsForDisplay(events) {
   const now = new Date();
-  return [...events].sort((a, b) => {
-    const aPast = isEventPassed(a, now);
-    const bPast = isEventPassed(b, now);
-    if (aPast !== bPast) return aPast ? 1 : -1;
-    return eventSortTime(a) - eventSortTime(b);
-  });
+  return [...events]
+    .filter((event) => !isEventPassed(event, now))
+    .sort((a, b) => eventSortTime(a) - eventSortTime(b));
 }
 
 async function EventsPageContent() {

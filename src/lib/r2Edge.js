@@ -53,6 +53,23 @@ function dateStamp(date = new Date()) {
   return `${yyyy}${mm}${dd}`;
 }
 
+function encodeRfc3986(value) {
+  return encodeURIComponent(String(value)).replace(/[!'()*]/g, (char) =>
+    `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+function canonicalizeQuery(searchParams) {
+  return Array.from(searchParams.entries())
+    .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)])
+    .sort(([aKey, aValue], [bKey, bValue]) => {
+      if (aKey === bKey) return aValue.localeCompare(bValue);
+      return aKey.localeCompare(bKey);
+    })
+    .map(([key, value]) => `${key}=${value}`)
+    .join("&");
+}
+
 /**
  * Sign a single R2 S3-compatible request (PUT).
  * Returns headers including Authorization, x-amz-date, x-amz-content-sha256.
@@ -73,7 +90,7 @@ async function signCanonical({
   const urlObj = new URL(url);
   const host = urlObj.host;
   const canonicalUri = urlObj.pathname;
-  const canonicalQuery = urlObj.searchParams.toString();
+  const canonicalQuery = canonicalizeQuery(urlObj.searchParams);
 
   const lowerHeaders = Object.fromEntries(
     Object.entries({
@@ -207,12 +224,11 @@ export async function presignR2Url({
   urlObj.searchParams.set("X-Amz-Expires", String(expiresIn));
   urlObj.searchParams.set("X-Amz-SignedHeaders", "host");
 
-  // S3 V4 requires lexicographic sort of query params in canonical request
-  urlObj.searchParams.sort();
+  const canonicalQuery = canonicalizeQuery(urlObj.searchParams);
   const canonicalRequest = [
     method.toUpperCase(),
     urlObj.pathname,
-    urlObj.searchParams.toString(),
+    canonicalQuery,
     `host:${urlObj.host}\n`,
     "host",
     "UNSIGNED-PAYLOAD",

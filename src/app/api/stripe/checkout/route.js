@@ -4,7 +4,7 @@ import { auth, createSessionToken, createSessionCookie } from "@/auth";
 import { getContentAccessConfig } from "@/lib/contentAccess";
 import { createStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { findUserByEmail, createUser } from "@/lib/userStore";
-import { writeCloudflareKvJson } from "@/lib/cloudflareKv";
+import { createPasswordResetToken } from "@/lib/passwordResetStore";
 import { fetchGraphQL } from "@/lib/client";
 import { parsePriceCents } from "@/lib/parsePrice";
 import { sendEmail } from "@/lib/email";
@@ -169,11 +169,7 @@ function randomPassword() {
 /** Send a "set your password" email for newly created guest accounts. */
 async function sendSetPasswordEmail(email, origin) {
   const token = crypto.randomUUID();
-  await writeCloudflareKvJson(
-    `password-reset:${token}`,
-    { email, createdAt: new Date().toISOString() },
-    { expirationTtl: SETUP_TTL },
-  );
+  await createPasswordResetToken(token, email, SETUP_TTL);
   const resetUrl = `${origin}/auth/reset-password?token=${token}`;
   await sendEmail({
     to: email,

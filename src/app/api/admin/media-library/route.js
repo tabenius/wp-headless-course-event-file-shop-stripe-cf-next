@@ -8,6 +8,7 @@ import {
   replaceBucketObjectMetadata,
 } from "@/lib/s3upload";
 import { decodeEntities } from "@/lib/decodeEntities";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 
 export const runtime = "nodejs";
 
@@ -158,7 +159,7 @@ function normalizeAuthorId(value, authorType) {
 function buildAssetIdUri(assetId) {
   const safeId = sanitizeAssetId(assetId);
   if (!safeId) return "";
-  return `/asset/${encodeURIComponent(safeId)}`;
+  return `/assets/${encodeURIComponent(safeId)}`;
 }
 
 function htmlToText(value, max = MAX_METADATA_TEXT) {
@@ -574,11 +575,11 @@ async function fetchWordPressMedia({ limit, search }) {
   const response = await fetch(
     `${baseUrl}/wp-json/wp/v2/media?${params.toString()}`,
     {
-      headers: {
+      headers: withWordPressUserAgent({
         Accept: "application/json",
         ...(auth?.authorization ? { Authorization: auth.authorization } : {}),
         ...(auth?.headers || {}),
-      },
+      }),
       cache: "no-store",
     },
   );
@@ -897,12 +898,12 @@ async function updateWordPressAttachmentMetadata({
   async function postUpdate(payload) {
     const response = await fetch(`${baseUrl}/wp-json/wp/v2/media/${sourceId}`, {
       method: "POST",
-      headers: {
+      headers: withWordPressUserAgent({
         Accept: "application/json",
         "Content-Type": "application/json",
         ...(auth?.authorization ? { Authorization: auth.authorization } : {}),
         ...(auth?.headers || {}),
-      },
+      }),
       body: JSON.stringify(payload),
       cache: "no-store",
     });

@@ -6,12 +6,21 @@ import {
   isProductListable,
   resolveFileUrl,
 } from "@/lib/digitalProducts";
-import { createSignedDownloadUrl } from "@/lib/s3upload";
+import {
+  createSignedDownloadUrl,
+  getBucketObjectStream,
+  headBucketObject,
+  resolveStorageObjectKey,
+} from "@/lib/s3upload";
 import { t } from "@/lib/i18n";
 
-export const runtime = "edge";
-
 function getFileName(fileUrl, fallbackId) {
+  const storageCandidate = String(fileUrl || "")
+    .trim()
+    .replace(/^(?:r2|s3):/i, "");
+  if (/\.\w{1,8}$/.test(storageCandidate)) {
+    return storageCandidate.split("/").filter(Boolean).pop() || `${fallbackId}.bin`;
+  }
   try {
     const pathname = new URL(fileUrl).pathname;
     const segments = pathname.split("/").filter(Boolean);
@@ -29,13 +38,137 @@ function sanitizeDispositionFilename(raw) {
     .slice(0, 180);
 }
 
-function getSignedUrlTtlSeconds() {
-  const raw = process.env.DIGITAL_DOWNLOAD_SIGNED_URL_TTL_SECONDS;
-  const parsed = Number.parseInt(String(raw || ""), 10);
-  if (!Number.isFinite(parsed)) return 300;
-  if (parsed < 30) return 30;
-  if (parsed > 3600) return 3600;
-  return parsed;
+function buildAttachmentDisposition(fileName) {
+  const safe = sanitizeDispositionFilename(fileName);
+  return safe ? `attachment; filename="${safe}"` : "attachment";
+}
+
+function parseSingleRangeHeader(rangeHeader, totalLength) {
+  const safeHeader = String(rangeHeader || "").trim();
+  if (!safeHeader) return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(safeHeader);
+  if (!match || !Number.isFinite(totalLength) || totalLength <= 0) {
+    return { invalid: true };
+  }
+
+  const [, startRaw, endRaw] = match;
+  if (!startRaw && !endRaw) return { invalid: true };
+
+  if (!startRaw) {
+    const suffixLength = Number.parseInt(endRaw, 10);
+    if (!Number.isFinite(suffixLength) || suffixLength <= 0) {
+      return { invalid: true };
+    }
+    const length = Math.min(suffixLength, totalLength);
+    return {
+      start: totalLength - length,
+      end: totalLength - 1,
+      status: 206,
+    };
+  }
+
+  const start = Number.parseInt(startRaw, 10);
+  if (!Number.isFinite(start) || start < 0 || start >= totalLength) {
+    return { invalid: true };
+  }
+
+  if (!endRaw) {
+    return {
+      start,
+      end: totalLength - 1,
+      status: 206,
+    };
+  }
+
+  const end = Number.parseInt(endRaw, 10);
+  if (!Number.isFinite(end) || end < start) return { invalid: true };
+  return {
+    start,
+    end: Math.min(end, totalLength - 1),
+    status: 206,
+  };
+}
+
+async function createStorageDownloadResponse(
+  fileUrl,
+  downloadFileName,
+  rangeHeader,
+) {
+  const safeUrl = String(fileUrl || "").trim();
+  if (!safeUrl) return null;
+
+  const storagePrefixMatch = /^(r2|s3):(.*)$/i.exec(safeUrl);
+  const candidates = [];
+
+  if (storagePrefixMatch) {
+    const backend = String(storagePrefixMatch[1] || "").toLowerCase();
+    const key = String(storagePrefixMatch[2] || "").trim();
+    if (key) candidates.push({ backend, key });
+  } else {
+    for (const backend of ["r2", "s3"]) {
+      const key = resolveStorageObjectKey(safeUrl, { backend });
+      if (key) candidates.push({ backend, key });
+    }
+  }
+
+  let lastError = null;
+  for (const candidate of candidates) {
+    try {
+      const head = await headBucketObject(candidate);
+      const totalLength = Number(head?.sizeBytes);
+      const range = parseSingleRangeHeader(rangeHeader, totalLength);
+      if (range?.invalid) {
+        return new Response(null, {
+          status: 416,
+          headers: {
+            "Cache-Control": "private, no-store",
+            "Content-Range": `bytes */${Number.isFinite(totalLength) ? totalLength : "*"}`,
+            "Accept-Ranges": "bytes",
+          },
+        });
+      }
+
+      const stream = await getBucketObjectStream({
+        ...candidate,
+        byteRange:
+          range && Number.isInteger(range.start) && Number.isInteger(range.end)
+            ? { start: range.start, end: range.end }
+            : null,
+      });
+      const headers = new Headers({
+        "Cache-Control": "private, no-store",
+        "Content-Disposition": buildAttachmentDisposition(downloadFileName),
+        "Content-Type": stream.contentType || "application/octet-stream",
+        "Accept-Ranges": "bytes",
+      });
+      if (
+        Number.isFinite(Number(stream.contentLength)) &&
+        Number(stream.contentLength) > 0
+      ) {
+        headers.set("Content-Length", String(stream.contentLength));
+      }
+      if (stream.lastModified) {
+        headers.set("Last-Modified", stream.lastModified);
+      }
+      if (range && range.status === 206) {
+        headers.set(
+          "Content-Range",
+          `bytes ${range.start}-${range.end}/${Number.isFinite(totalLength) ? totalLength : "*"}`,
+        );
+      }
+      return new Response(stream.body, {
+        status: range?.status || 200,
+        headers,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) {
+    console.error("Digital download storage stream failed:", lastError);
+  }
+  return null;
 }
 
 export async function GET(request) {
@@ -70,7 +203,6 @@ export async function GET(request) {
     );
   }
 
-  // Use uncached read — user may have just claimed access moments ago
   const canDownload = await hasDigitalAccessUncached(
     product.id,
     session.user.email,
@@ -83,17 +215,18 @@ export async function GET(request) {
   }
 
   try {
-    const fileUrl = resolveFileUrl(product);
+    const fileUrl = await resolveFileUrl(product);
     if (!fileUrl) {
       return NextResponse.json(
         { ok: false, error: t("apiErrors.downloadFailed") },
         { status: 404 },
       );
     }
+
     const rawName = getFileName(fileUrl, product.id);
     const signedUrl = await createSignedDownloadUrl({
       fileUrl,
-      expiresIn: getSignedUrlTtlSeconds(),
+      expiresIn: 300,
       downloadFileName: rawName,
     });
     if (signedUrl) {
@@ -104,8 +237,20 @@ export async function GET(request) {
         },
       });
     }
+    const storageResponse = await createStorageDownloadResponse(
+      fileUrl,
+      rawName,
+      request.headers.get("range"),
+    );
+    if (storageResponse) return storageResponse;
 
-    // Fallback: redirect to raw URL (avoid proxying large files through the worker)
+    if (/^(?:r2|s3):/i.test(fileUrl)) {
+      return NextResponse.json(
+        { ok: false, error: t("apiErrors.downloadFailed") },
+        { status: 502 },
+      );
+    }
+
     return NextResponse.redirect(fileUrl, {
       status: 302,
       headers: {

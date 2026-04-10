@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { readCloudflareKvJson, deleteCloudflareKv } from "@/lib/cloudflareKv";
+import {
+  readPasswordResetToken,
+  deletePasswordResetToken,
+  maybeCleanupExpiredTokens,
+} from "@/lib/passwordResetStore";
 import { updateUserPassword } from "@/lib/userStore";
 import { t } from "@/lib/i18n";
 
@@ -21,8 +25,7 @@ export async function POST(request) {
       );
     }
 
-    const kvKey = `password-reset:${token}`;
-    const data = await readCloudflareKvJson(kvKey);
+    const data = await readPasswordResetToken(token);
 
     if (!data?.email) {
       return NextResponse.json(
@@ -34,7 +37,8 @@ export async function POST(request) {
     await updateUserPassword(data.email, password);
 
     // Delete token so it can't be reused
-    await deleteCloudflareKv(kvKey).catch(() => {});
+    await deletePasswordResetToken(token).catch(() => {});
+    maybeCleanupExpiredTokens();
 
     return NextResponse.json({ ok: true });
   } catch (err) {

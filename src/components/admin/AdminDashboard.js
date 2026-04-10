@@ -21,40 +21,24 @@ import {
   resolveAdminTabHotkey,
   shouldIgnoreAdminHotkeys,
 } from "@/lib/adminHotkeys";
-import {
-  deriveWelcomeRevisionState,
-  persistWelcomeRevision,
-  WELCOME_SEEN_KEY,
-} from "@/lib/adminWelcomeRevision";
-
-const WELCOME_REVISION =
-  process.env.NEXT_PUBLIC_WELCOME_REVISION ||
-  process.env.NEXT_PUBLIC_GIT_SHA ||
-  "";
 
 const AdminProductsTab = lazy(() => import("./AdminProductsTab"));
+const AdminContactsTab = lazy(() => import("./AdminContactsTab"));
 const AdminSupportTab = lazy(() => import("./AdminSupportTab"));
 const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
-const AdminWelcomeTab = lazy(() => import("./AdminWelcomeTab"));
 const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
-const AdminInfoHubTab = lazy(() => import("./AdminInfoHubTab"));
 const AdminStyleTab = lazy(() => import("./AdminStyleTab"));
-const ChatPanel = lazy(() => import("./ChatPanel"));
 const AdminVatTab = lazy(() => import("./AdminVatTab"));
 
 const ADMIN_TABS_BASE = [
   "sales",
   "assets",
   "products",
+  "contacts",
   "support",
   "style",
-  "info",
-  "welcome",
 ];
-// "chat" is a beta feature — shown only when the admin has enabled it via
-// Admin → Info → Beta features.
-const CHAT_BETA_STORAGE_KEY = "ragbaz_chat_beta_enabled";
-const ADMIN_TAB_SET = new Set([...ADMIN_TABS_BASE, "chat"]);
+const ADMIN_TAB_SET = new Set(ADMIN_TABS_BASE);
 
 function AdminSkeletonLine({ className = "" }) {
   return (
@@ -66,28 +50,6 @@ function AdminSkeletonLine({ className = "" }) {
 }
 
 function AdminSuspenseFallback({ variant = "default", title = "Loading" }) {
-  if (variant === "chat") {
-    return (
-      <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
-        <div className="rounded-lg border p-4 space-y-3">
-          <AdminSkeletonLine className="h-5 w-40" />
-          <AdminSkeletonLine className="h-16 w-full" />
-          <div className="grid grid-cols-2 gap-2">
-            <AdminSkeletonLine className="h-8 w-full" />
-            <AdminSkeletonLine className="h-8 w-full" />
-          </div>
-        </div>
-        <div className="rounded-lg border p-4 space-y-3">
-          <AdminSkeletonLine className="h-5 w-32" />
-          <AdminSkeletonLine className="h-3 w-full" />
-          <AdminSkeletonLine className="h-3 w-[92%]" />
-          <AdminSkeletonLine className="h-3 w-[80%]" />
-          <AdminSkeletonLine className="h-3 w-[88%]" />
-        </div>
-      </div>
-    );
-  }
-
   if (variant === "split") {
     return (
       <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:gap-6">
@@ -160,15 +122,6 @@ function AdminSuspenseFallback({ variant = "default", title = "Loading" }) {
 function normalizeAdminTab(value) {
   const normalized = extractHashPath(value).split(/[/?&]/)[0];
   if (!normalized) return null;
-  if (
-    normalized === "sandbox" ||
-    normalized === "health" ||
-    normalized === "stats" ||
-    normalized === "docs" ||
-    normalized === "documentation"
-  ) {
-    return "info";
-  }
   return ADMIN_TAB_SET.has(normalized) ? normalized : null;
 }
 
@@ -184,29 +137,7 @@ function extractHashPath(value) {
 }
 
 function hashForAdminRoute(detail) {
-  const normalized = extractHashPath(detail);
-  if (
-    normalized === "health" ||
-    normalized === "info/health" ||
-    normalized === "status"
-  ) {
-    return "#/info/health";
-  }
-  if (
-    normalized === "stats" ||
-    normalized === "info/stats" ||
-    normalized === "statistics"
-  ) {
-    return "#/info/stats";
-  }
-  if (
-    normalized === "docs" ||
-    normalized === "documentation" ||
-    normalized === "info/docs"
-  ) {
-    return "#/info/docs";
-  }
-  const tab = normalizeAdminTab(normalized);
+  const tab = normalizeAdminTab(detail);
   if (!tab) return null;
   return `#/${tab}`;
 }
@@ -718,6 +649,16 @@ function emptyProduct() {
     assetId: "",
     vatPercent: null,
     contentUri: "",
+    buyableKind: "download",
+    buyableNoun: "",
+    scheduleStart: "",
+    scheduleEnd: "",
+    scheduleTimezone: "",
+    venueName: "",
+    venueAddress: "",
+    externalBookingEnabled: false,
+    externalBookingUrl: "",
+    externalBookingLabel: "",
     active: true,
     slugEdited: false,
   };
@@ -1076,24 +1017,10 @@ export default function AdminDashboard() {
   const [healthLoading, setHealthLoading] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
   const [clientLogs, setClientLogs] = useState([]);
-  const [shouldShowWelcomeBadge, setShouldShowWelcomeBadge] = useState(
-    Boolean(WELCOME_REVISION),
-  );
   const [products, setProducts] = useState([]);
-  const [chatBetaEnabled, setChatBetaEnabledState] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(CHAT_BETA_STORAGE_KEY) === "true";
-  });
-  const setChatBetaEnabled = useCallback((val) => {
-    const next = Boolean(val);
-    setChatBetaEnabledState(next);
-    try {
-      localStorage.setItem(CHAT_BETA_STORAGE_KEY, String(next));
-    } catch {}
-  }, []);
 
   const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window === "undefined") return "welcome";
+    if (typeof window === "undefined") return "sales";
     // Check for a pending tab set by header cross-page navigation (sessionStorage)
     try {
       const pending = sessionStorage.getItem("admin:pendingTab");
@@ -1103,13 +1030,9 @@ export default function AdminDashboard() {
         if (normalizedPending) return normalizedPending;
       }
     } catch {}
-    return parseTabFromHash(window.location.hash) || "welcome";
+    return parseTabFromHash(window.location.hash) || "sales";
   });
   const activeTabRef = useRef(activeTab);
-  // If chat beta gets disabled while on the chat tab, redirect to info
-  useEffect(() => {
-    if (activeTab === "chat" && !chatBetaEnabled) setActiveTab("info");
-  }, [chatBetaEnabled, activeTab]);
   const error = errorState.message;
   const showErrorBanner =
     Boolean(error) &&
@@ -1168,6 +1091,18 @@ export default function AdminDashboard() {
       setUiFeedbackLoading(false);
     }
   }, [setError]);
+  const loadDownloadedFamilies = useCallback(async () => {
+    try {
+      const { res, json } = await adminFetch("/api/admin/fonts/downloaded");
+      if (res.ok && json?.ok && Array.isArray(json.fonts)) {
+        setDownloadedFamilies(json.fonts);
+        return;
+      }
+    } catch {
+      // Ignore font registry load errors; preview can still use temporary CDN loading.
+    }
+    setDownloadedFamilies([]);
+  }, []);
   const saveUiFeedback = useCallback(
     async (fieldId, value) => {
       if (!fieldId || uiFeedbackReadOnly) return;
@@ -1252,7 +1187,7 @@ export default function AdminDashboard() {
     underlineDefault: "hover",
   });
   const [fontBrowserRole, setFontBrowserRole] = useState(null);
-  const [downloadedFamilies] = useState([]);
+  const [downloadedFamilies, setDownloadedFamilies] = useState([]);
   const [downloadingRole, setDownloadingRole] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
@@ -1265,10 +1200,6 @@ export default function AdminDashboard() {
   });
   const [commentText, setCommentText] = useState("");
   const [showImageGen, setShowImageGen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatAbortRef = useRef(null);
   // Slug of a product to auto-select once the products list reloads (e.g. after create-from-asset)
   const pendingProductSlugRef = useRef(null);
   // Prevent re-applying the initial hash slug after the first products load
@@ -1309,17 +1240,9 @@ export default function AdminDashboard() {
   }, [loadUiFeedback]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || window.localStorage === undefined) {
-      return;
-    }
-    const stored = window.localStorage.getItem(WELCOME_SEEN_KEY);
-    const next = deriveWelcomeRevisionState({
-      revision: WELCOME_REVISION,
-      storedRevision: stored,
-      defaultShowStory: false,
-    });
-    setShouldShowWelcomeBadge(next.showRevisionBadge);
-  }, []);
+    void loadDownloadedFamilies();
+  }, [loadDownloadedFamilies]);
+
 
   useEffect(() => {
     function onKey(e) {
@@ -1327,13 +1250,8 @@ export default function AdminDashboard() {
       const tab = resolveAdminTabHotkey(e);
       if (tab) {
         e.preventDefault();
-        const routeDetail =
-          tab === "health"
-            ? "info/health"
-            : tab === "stats"
-              ? "info/stats"
-              : tab;
-        const normalizedTab = normalizeAdminTab(routeDetail) || "welcome";
+        const routeDetail = tab;
+        const normalizedTab = normalizeAdminTab(routeDetail) || "sales";
         setActiveTab(normalizedTab);
         const nextHash = hashForAdminRoute(routeDetail);
         if (nextHash && window.location.hash !== nextHash) {
@@ -1347,7 +1265,7 @@ export default function AdminDashboard() {
       }
       if (isAdminActionHotkey(e, "menuNext")) {
         e.preventDefault();
-        const current = normalizeAdminTab(activeTabRef.current) || "welcome";
+        const current = normalizeAdminTab(activeTabRef.current) || "sales";
         const currentIndex = Math.max(0, ADMIN_TABS_BASE.indexOf(current));
         const nextIndex = (currentIndex + 1) % ADMIN_TABS_BASE.length;
         const nextTab = ADMIN_TABS_BASE[nextIndex];
@@ -1359,7 +1277,7 @@ export default function AdminDashboard() {
       }
       if (isAdminActionHotkey(e, "menuPrev")) {
         e.preventDefault();
-        const current = normalizeAdminTab(activeTabRef.current) || "welcome";
+        const current = normalizeAdminTab(activeTabRef.current) || "sales";
         const currentIndex = Math.max(0, ADMIN_TABS_BASE.indexOf(current));
         const prevIndex =
           (currentIndex - 1 + ADMIN_TABS_BASE.length) % ADMIN_TABS_BASE.length;
@@ -1390,24 +1308,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     function onHashChange() {
-      const rawHash = String(window.location.hash || "").toLowerCase();
-      const legacyToInfoHash = rawHash.startsWith("#/health")
-        ? "#/info/health"
-        : rawHash.startsWith("#/stats")
-          ? "#/info/stats"
-          : rawHash.startsWith("#/docs")
-            ? "#/info/docs"
-            : null;
-      if (legacyToInfoHash && window.location.hash !== legacyToInfoHash) {
-        const migratedUrl = `${window.location.pathname}${window.location.search}${legacyToInfoHash}`;
-        window.history.replaceState(null, "", migratedUrl);
-      }
-
       const tab = parseTabFromHash(window.location.hash);
       if (!tab) {
         const fallback = ADMIN_TAB_SET.has(activeTabRef.current)
           ? activeTabRef.current
-          : "welcome";
+          : "sales";
         const expected = `#/${fallback}`;
         if (window.location.hash !== expected) {
           const nextUrl = `${window.location.pathname}${window.location.search}${expected}`;
@@ -1435,12 +1340,6 @@ export default function AdminDashboard() {
       window.removeEventListener("admin:selectProduct", onSelectProduct);
   }, []);
 
-  const handleWelcomeSeen = useCallback(() => {
-    if (typeof window === "undefined") return;
-    persistWelcomeRevision(window.localStorage, WELCOME_REVISION);
-    setShouldShowWelcomeBadge(false);
-  }, []);
-
   // Derived values for shop product selection
   const isShopSelection = selectedContent.startsWith("__shop_");
   const shopIndex = isShopSelection
@@ -1453,14 +1352,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !ADMIN_TAB_SET.has(activeTab)) return;
-    if (
-      activeTab === "info" &&
-      String(window.location.hash || "")
-        .toLowerCase()
-        .startsWith("#/info/")
-    ) {
-      return;
-    }
     const productSlug =
       activeTab === "products" && selectedShopProduct?.slug
         ? `/${selectedShopProduct.slug}`
@@ -1795,13 +1686,8 @@ export default function AdminDashboard() {
     if (activeTab === "support") {
       loadTickets();
     }
-    if (activeTab === "assets" || activeTab === "info") {
+    if (activeTab === "assets") {
       loadUploadInfo();
-    }
-    if (activeTab === "info") {
-      loadCommits();
-      loadAnalytics();
-      loadDeploy();
     }
     if (
       (activeTab === "support" || activeTab === "sales") &&
@@ -1865,9 +1751,11 @@ export default function AdminDashboard() {
           },
         }),
       );
+      return true;
     } catch (err) {
       console.error("Failed to save shop settings:", err);
       setError(err.message || t("admin.shopSettingsSaveFailed"));
+      return false;
     } finally {
       setShopSettingsSaving(false);
     }
@@ -1931,7 +1819,7 @@ export default function AdminDashboard() {
     const safe = sanitizeSiteStyleTokens(siteStyleTokens, SITE_STYLE_DEFAULTS);
     setSiteStyleTokens(safe);
     applySiteStyleTokensToDom(safe);
-    await saveShopSettings(
+    return await saveShopSettings(
       {
         siteStyle: {
           ...safe,
@@ -1959,111 +1847,6 @@ export default function AdminDashboard() {
     [tickets, selectedTicketId],
   );
 
-  async function rebuildIndex() {
-    setChatLoading(true);
-    setChatMessages((prev) => [
-      ...prev,
-      { role: "user", content: "rebuild index" },
-    ]);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "rebuild index", rebuild: true }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.ok)
-        throw new Error(json?.error || "Rebuild failed");
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: json.answer || "Index rebuilt.",
-          sources: json.sources || [],
-        },
-      ]);
-    } catch (err) {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: err.message || "Rebuild failed",
-          sources: [],
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  }
-
-  async function sendChat() {
-    if (!chatInput.trim()) return;
-    const message = chatInput.trim();
-    const isRebuild =
-      /^rebuild\s+index$/i.test(message) ||
-      /^(indexera|bygg\s+om\s+index|återbygg\s+index)$/i.test(message) ||
-      /^(reindexar|reconstruir\s+[ií]ndice|regenerar\s+[ií]ndice)$/i.test(
-        message,
-      );
-    setChatInput("");
-    if (isRebuild) {
-      await rebuildIndex();
-      return;
-    }
-    // Cancel any in-flight request
-    chatAbortRef.current?.abort();
-    const controller = new AbortController();
-    chatAbortRef.current = controller;
-    const history = [...chatMessages, { role: "user", content: message }];
-    setChatMessages(history);
-    setChatLoading(true);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-        signal: controller.signal,
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.ok) throw new Error(json?.error || "Chat failed");
-      if (json.type === "image-generation") {
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", type: "image-generation", prompt: json.prompt },
-        ]);
-      } else {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: json.answer,
-            sources: json.sources || [],
-          },
-        ]);
-      }
-    } catch (err) {
-      if (err?.name === "AbortError") return;
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: err.message || "Chat failed",
-          sources: [],
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  }
-
-  async function clearChat() {
-    setChatMessages([]);
-    try {
-      await fetch("/api/chat", { method: "DELETE" });
-    } catch (err) {
-      console.error("clearChat error", err);
-    }
-  }
 
   async function downloadReceipt(chargeId) {
     setDownloading(chargeId);
@@ -2539,7 +2322,8 @@ export default function AdminDashboard() {
         );
         if (
           selectedProduct?.type === "digital_file" &&
-          selectedMode === "digital_file"
+          selectedMode === "digital_file" &&
+          selectedProduct?.externalBookingEnabled !== true
         ) {
           const candidateUrl = String(selectedProduct?.fileUrl || "").trim();
           if (!candidateUrl) {
@@ -2582,10 +2366,11 @@ export default function AdminDashboard() {
           }
         }
         const payload = updated.map((p) => ({
+          // Keep mode normalized once so dependent fields are serialized consistently.
+          normalizedMode: normalizeProductModeValue(p.productMode, p),
           name: p.name,
           slug: p.slug,
           type: p.type === "course" ? "course" : "digital_file",
-          productMode: normalizeProductModeValue(p.productMode, p),
           description: p.description,
           imageUrl: p.imageUrl,
           priceCents: Number.isFinite(p.priceCents)
@@ -2600,14 +2385,51 @@ export default function AdminDashboard() {
             typeof p.vatPercent === "number" && Number.isFinite(p.vatPercent)
               ? p.vatPercent
               : null,
-          contentUri: p.type === "course" ? p.contentUri || "" : "",
+          contentUri: p.contentUri || "",
+          buyableKind: p.buyableKind || "",
+          buyableNoun: p.buyableNoun || "",
+          scheduleStart: p.scheduleStart || "",
+          scheduleEnd: p.scheduleEnd || "",
+          scheduleTimezone: p.scheduleTimezone || "",
+          venueName: p.venueName || "",
+          venueAddress: p.venueAddress || "",
+          externalBookingEnabled: p.externalBookingEnabled === true,
+          externalBookingUrl: p.externalBookingUrl || "",
+          externalBookingLabel: p.externalBookingLabel || "",
+          active: p.active !== false,
+        }));
+        const normalizedPayload = payload.map((p) => ({
+          name: p.name,
+          slug: p.slug,
+          type: p.type === "course" ? "course" : "digital_file",
+          productMode: p.normalizedMode,
+          description: p.description,
+          imageUrl: p.imageUrl,
+          priceCents: p.priceCents,
+          free: p.free === true,
+          currency: p.currency,
+          fileUrl: p.fileUrl,
+          mimeType: p.mimeType,
+          assetId: p.assetId,
+          vatPercent: p.vatPercent,
+          contentUri: p.normalizedMode === "manual_uri" ? p.contentUri : "",
+          buyableKind: p.buyableKind,
+          buyableNoun: p.buyableNoun,
+          scheduleStart: p.scheduleStart,
+          scheduleEnd: p.scheduleEnd,
+          scheduleTimezone: p.scheduleTimezone,
+          venueName: p.venueName,
+          venueAddress: p.venueAddress,
+          externalBookingEnabled: p.externalBookingEnabled,
+          externalBookingUrl: p.externalBookingUrl,
+          externalBookingLabel: p.externalBookingLabel,
           active: p.active !== false,
         }));
 
         const res = await fetch("/api/admin/products", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ products: payload }),
+          body: JSON.stringify({ products: normalizedPayload }),
         });
         const json = await res.json();
         if (!res.ok || !json?.ok) {
@@ -2747,19 +2569,6 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // Fetch commit log when Info tab is shown
-  useEffect(() => {
-    if (activeTab !== "info" || commits) return;
-    fetch("/api/admin/commits")
-      .then(async (res) => {
-        const json = await res.json();
-        if (json?.ok) {
-          setCommits(json.commits);
-          setCommitsError("");
-        } else setCommitsError(json?.error || "Failed to load commits");
-      })
-      .catch(() => setCommitsError("Failed to load commits"));
-  }, [activeTab, commits]);
 
   // Listen for courses updated from UserAccessPanel
   useEffect(() => {
@@ -2899,14 +2708,12 @@ export default function AdminDashboard() {
     "mx-auto w-full max-w-screen-2xl min-w-0 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 space-y-6 sm:space-y-8";
   const uiFeedbackFieldId = `tab:${activeTab}`;
   const uiFeedbackContextLabelMap = {
-    welcome: t("admin.navWelcome", "Welcome"),
     sales: t("admin.navSales", "Sales"),
     media: t("admin.navMedia", "Asset library"),
     products: t("admin.navProducts", "Products"),
+    contacts: t("admin.navContacts", "Contacts"),
     support: t("admin.navSupport", "Support"),
     style: t("admin.navStyle", "Style"),
-    info: t("admin.navInfo", "Info"),
-    chat: t("admin.navChat", "Chat"),
   };
   const uiFeedbackContextLabel =
     uiFeedbackContextLabelMap[activeTab] || activeTab;
@@ -2930,31 +2737,6 @@ export default function AdminDashboard() {
         </div>
       )}
       <section className={dashboardSectionClass}>
-        {activeTab === "welcome" && (
-          <Suspense
-            fallback={
-              <AdminSuspenseFallback
-                variant="default"
-                title={t("admin.navWelcome", "Welcome")}
-              />
-            }
-          >
-            <AdminWelcomeTab
-              onSeenRevision={handleWelcomeSeen}
-              showRevisionBadge={shouldShowWelcomeBadge}
-              healthChecks={healthChecks}
-              healthLoading={healthLoading}
-              wcProductsCount={wcProducts.length}
-              wpCoursesCount={wpCourses.length}
-              wpEventsCount={wpEvents.length}
-              digitalProductsCount={products.length}
-              usersCount={users.length}
-              ticketsCount={tickets.length}
-              ticketsLoading={ticketsLoading}
-              uploadBackend={uploadBackend}
-            />
-          </Suspense>
-        )}
         {/* ── Media tab ── */}
         {activeTab === "assets" && (
           <Suspense
@@ -3050,6 +2832,19 @@ export default function AdminDashboard() {
           </Suspense>
         )}
 
+        {activeTab === "contacts" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="split"
+                title={t("admin.navContacts", "Contacts")}
+              />
+            }
+          >
+            <AdminContactsTab />
+          </Suspense>
+        )}
+
         {/* ── Support tab ── */}
         {activeTab === "support" && (
           <Suspense
@@ -3131,6 +2926,7 @@ export default function AdminDashboard() {
               fontBrowserRole={fontBrowserRole}
               setFontBrowserRole={setFontBrowserRole}
               downloadedFamilies={downloadedFamilies}
+              setDownloadedFamilies={setDownloadedFamilies}
               downloadingRole={downloadingRole}
               setDownloadingRole={setDownloadingRole}
               ctaSaveName={ctaSaveName}
@@ -3153,186 +2949,6 @@ export default function AdminDashboard() {
           </Suspense>
         )}
 
-        {/* ── Info hub tab ── */}
-        {activeTab === "info" && (
-          <Suspense
-            fallback={
-              <AdminSuspenseFallback
-                variant="metrics"
-                title={t("admin.navSystem", "System")}
-              />
-            }
-          >
-            <AdminInfoHubTab
-              buildTimestamp={buildTimestamp}
-              gitRevision={gitRevision}
-              storage={storage}
-              uploadInfo={uploadInfo}
-              uploadBackend={uploadBackend}
-              setUploadBackend={setUploadBackend}
-              uploadInfoDetails={uploadInfoDetails}
-              resendConfigured={resendConfigured}
-              wcProducts={wcProducts}
-              wpCourses={wpCourses}
-              wpEvents={wpEvents}
-              products={products}
-              users={users}
-              analytics={analytics}
-              analyticsMode={analyticsMode}
-              analyticsConfigured={analyticsConfigured}
-              analyticsDiagnostics={analyticsDiagnostics}
-              healthChecks={healthChecks}
-              healthLoading={healthLoading}
-              webhookUrl={webhookUrl}
-              ragbazDownloadUrl={ragbazDownloadUrl}
-              runHealthCheck={runHealthCheck}
-              purging={purging}
-              deploying={deploying}
-              lastDeployAt={lastDeployAt}
-              commits={commits}
-              commitsError={commitsError}
-              commitsExpanded={commitsExpanded}
-              setCommitsExpanded={setCommitsExpanded}
-              purgeCache={purgeCache}
-              triggerDeploy={triggerDeploy}
-              clientLogs={clientLogs}
-              setClientLogs={setClientLogs}
-              debugLogs={debugLogs}
-              chatBetaEnabled={chatBetaEnabled}
-              setChatBetaEnabled={setChatBetaEnabled}
-            />
-          </Suspense>
-        )}
-
-        {/* ── Chat tab ── */}
-        {activeTab === "chat" && (
-          <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6 items-start">
-            <Suspense
-              fallback={
-                <AdminSuspenseFallback
-                  variant="chat"
-                  title={t("admin.navChat", "Chat")}
-                />
-              }
-            >
-              <ChatPanel
-                chatMessages={chatMessages}
-                chatInput={chatInput}
-                setChatInput={setChatInput}
-                sendChat={sendChat}
-                rebuildIndex={rebuildIndex}
-                clearChat={clearChat}
-                chatLoading={chatLoading}
-                uploadBackend={uploadBackend}
-              />
-            </Suspense>
-            <div className="min-w-0 border rounded p-4 space-y-4 text-sm text-gray-300 bg-[#0e0018]">
-              <h3 className="font-semibold text-white">Example commands</h3>
-              {[
-                {
-                  group: "Sales & revenue",
-                  examples: [
-                    "sales today",
-                    "sales this week",
-                    "sales this month",
-                    "försäljning denna månad",
-                    "ventas hoy",
-                    "sales for user@example.com",
-                    "revenue total",
-                    "total intäkt",
-                  ],
-                },
-                {
-                  group: "Payments & receipts",
-                  examples: [
-                    "payments for user@example.com",
-                    "best sellers",
-                    "bästsäljare",
-                    "más vendidos",
-                  ],
-                },
-                {
-                  group: "Refunds",
-                  examples: [
-                    "refund pi_3abc123",
-                    "återbetala pi_3abc123",
-                    "reembolsar pi_3abc123",
-                  ],
-                },
-                {
-                  group: "Access control",
-                  examples: [
-                    "who bought /course-name",
-                    "vem köpte /kursnamn",
-                    "quién compró /curso",
-                    "grant access user@example.com /course-name",
-                    "ge åtkomst user@example.com /kursnamn",
-                    "conceder acceso user@example.com /curso",
-                    "revoke access user@example.com /course-name",
-                    "ta bort åtkomst user@example.com /kursnamn",
-                    "revocar acceso user@example.com /curso",
-                  ],
-                },
-                {
-                  group: "Content",
-                  examples: [
-                    "list all pages",
-                    "visa alla sidor",
-                    "list all posts",
-                    "visa alla inlägg",
-                    "list all events",
-                    "visa alla evenemang",
-                    "list all courses",
-                    "visa alla kurser",
-                    "list all products",
-                    "visa alla produkter",
-                  ],
-                },
-                {
-                  group: "Index",
-                  examples: ["rebuild index", "bygg om index", "reindexar"],
-                },
-              ].map(({ group, examples }) => (
-                <div key={group}>
-                  <p className="text-slate-300 font-medium mb-1">{group}</p>
-                  <ul className="space-y-1">
-                    {examples.map((ex) => (
-                      <li key={ex}>
-                        <button
-                          type="button"
-                          className="text-left text-gray-400 hover:text-white font-mono text-xs"
-                          onClick={() => {
-                            setChatInput(ex);
-                          }}
-                        >
-                          {ex}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {uploadProgress && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>
-                Uploading part {uploadProgress.currentPart} /{" "}
-                {uploadProgress.totalParts}
-              </span>
-              <span>{uploadProgress.percent}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-slate-600 h-2 rounded-full transition-all"
-                style={{ width: `${uploadProgress.percent}%` }}
-              />
-            </div>
-          </div>
-        )}
       </section>
     </>
   );

@@ -149,7 +149,7 @@ export async function runUploadPipeline({
           width: def.width,
           height: def.height,
           originalUrl,
-          uri: `/asset/${encodeURIComponent(assetId)}`,
+          uri: `/assets/${encodeURIComponent(assetId)}`,
         },
         uploadResult: {
           url: uploadResult.url,

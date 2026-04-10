@@ -11,7 +11,7 @@
     "test:theme": "node --test scripts/generate-theme-css.test.mjs",
     "predev": "npm run theme:css",
     "prebuild": "npm run theme:css",
-    "postbuild": "npm run plugin:copy",
+    "postbuild": "node scripts/postbuild.mjs",
     "prestart": "npm run theme:css",
     "precf:build": "npm run theme:css",
     "config": "./configure.sh",

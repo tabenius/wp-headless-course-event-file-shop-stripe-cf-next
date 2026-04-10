@@ -59,34 +59,5 @@
     { "href": "/courses", "label": "Onlinekurser" }
   ],
   "footerColumns": [
-    {
-      "title": "Kurser & sessioner",
-      "links": [
-        { "href": "/kurser-events", "label": "Kurser & Events" },
-        {
-          "href": "/heartconnection-vip-24h-sanctuary",
-          "label": "Kärleksverkstad – relationsspa"
-        },
-        { "href": "/kursen-rora-och-berora", "label": "Röra och beröra" },
-        { "href": "/behandlingar", "label": "Tantrisk massage" },
-        { "href": "/bdsm-sessioner", "label": "Tantrickink" },
-        {
-          "href": "/coachning-och-samtal-om-relationer-och-tantra",
-          "label": "Tantric Talk & Teachings"
-        }
-      ]
-    },
-    {
-      "title": "Mer",
-      "links": [
-        { "href": "/om-sofia-cerne", "label": "Om Sofia" },
-        { "href": "/handbok-tantriskmassage", "label": "Boken Röra & Beröra" },
-        { "href": "/blog", "label": "Blog" },
-        { "href": "/relationsterapi-for-par", "label": "Utveckling för par" },
-        { "href": "/events", "label": "Evenemang" },
-        { "href": "/shop", "label": "Butik" },
-        { "href": "/courses", "label": "Onlinekurser" }
-      ]
-    }
   ]
 }

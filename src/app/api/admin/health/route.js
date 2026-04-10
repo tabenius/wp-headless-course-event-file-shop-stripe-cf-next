@@ -12,6 +12,7 @@ import {
   readCloudflareKvJson,
 } from "@/lib/cloudflareKv";
 import { t } from "@/lib/i18n";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 import { buildRagbazDownloadUrl } from "./helpers";
 
 const HEALTH_FETCH_TIMEOUT_MS =
@@ -53,6 +54,7 @@ async function checkWordPressGraphQL() {
           Accept: "application/json",
           "Content-Type": "application/json",
           Authorization: auth.authorization,
+          "User-Agent": withWordPressUserAgent()["User-Agent"],
         },
         body: JSON.stringify({
           query:
@@ -89,6 +91,7 @@ async function checkWpSchema() {
           Accept: "application/json",
           "Content-Type": "application/json",
           Authorization: auth.authorization,
+          "User-Agent": withWordPressUserAgent()["User-Agent"],
         },
         body: JSON.stringify({
           query: `
@@ -140,7 +143,7 @@ async function checkRagbazPlugin() {
   try {
     const response = await fetchWithTimeout(endpoint, {
       method: "POST",
-      headers,
+      headers: withWordPressUserAgent(headers),
       body: JSON.stringify({
         query: `
           query RagbazCheck {

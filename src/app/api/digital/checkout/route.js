@@ -4,6 +4,14 @@ import { getDigitalProductBySlug } from "@/lib/digitalProducts";
 import { createStripePaymentSession, isStripeEnabled } from "@/lib/stripe";
 import { t } from "@/lib/i18n";
 
+function hasExternalBooking(product) {
+  return (
+    product?.externalBookingEnabled === true &&
+    typeof product?.externalBookingUrl === "string" &&
+    product.externalBookingUrl.trim().length > 0
+  );
+}
+
 export async function POST(request) {
   const session = await auth();
   if (!session?.user?.email) {
@@ -35,6 +43,19 @@ export async function POST(request) {
       return NextResponse.json(
         { ok: false, error: t("apiErrors.productNotAvailable") },
         { status: 400 },
+      );
+    }
+    if (hasExternalBooking(product)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: t(
+            "apiErrors.externalBookingOnly",
+            "This item uses external booking and cannot be purchased here.",
+          ),
+          externalUrl: product.externalBookingUrl,
+        },
+        { status: 409 },
       );
     }
 

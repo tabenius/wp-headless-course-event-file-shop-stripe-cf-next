@@ -20,6 +20,7 @@ export default function Paywall({
   currency,
   stripeEnabled,
   contentKind = "course",
+  accessCheckFailed = false,
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -157,7 +158,28 @@ export default function Paywall({
       )}
 
       <div className="space-y-4 border-t border-[var(--color-muted)] pt-4 text-center">
-        {!canBuy ? (
+        {accessCheckFailed && isLoggedIn ? (
+          <div className="mx-auto max-w-lg space-y-3 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-left">
+            <p className="font-semibold text-amber-900">
+              {t("errors.serviceTemporarilyUnavailable")}
+            </p>
+            <p className="text-sm text-amber-800">{t("errors.accessCheckFailed")}</p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href=""
+                className="inline-flex items-center justify-center rounded bg-amber-700 px-4 py-2 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-white hover:bg-amber-600"
+              >
+                {t("errors.tryAgainReload")}
+              </a>
+              <Link
+                href="/inventory"
+                className="inline-flex items-center justify-center rounded border border-amber-400 px-4 py-2 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-amber-900 hover:bg-amber-100"
+              >
+                {t("common.inventory", "Inventory")}
+              </Link>
+            </div>
+          </div>
+        ) : !canBuy ? (
           <p className="italic text-[var(--color-foreground)]">
             {t("paywall.priceNotConfigured")}
           </p>

@@ -25,6 +25,8 @@ import { decodeEntities } from "@/lib/decodeEntities";
 import { parsePriceCents } from "@/lib/parsePrice";
 import { t } from "@/lib/i18n";
 import { appendServerLog } from "@/lib/serverLog";
+import { hashLogEmail } from "@/lib/logIdentity";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
 import { cache, Suspense } from "react";
@@ -335,10 +337,10 @@ async function fetchRestFallback(uri, wordpressUrl = null) {
     let res;
     try {
       res = await fetch(url, {
-        headers: {
+        headers: withWordPressUserAgent({
           Accept: "application/json",
           ...(auth.authorization ? { Authorization: auth.authorization } : {}),
-        },
+        }),
         cache: "force-cache",
         next: { revalidate: 60 },
         signal: AbortSignal.timeout(8000),
@@ -390,10 +392,6 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
   `;
   const data = await fetchGraphQL(query, { uri }, 1800, { edgeCache: true });
   if (data?.lpCourse) return data.lpCourse;
-  const dataBySlug = await fetchGraphQL(query, { uri: slug }, 1800, {
-    edgeCache: true,
-  });
-  if (dataBySlug?.lpCourse) return dataBySlug.lpCourse;
 
   // REST fallback for LearnPress course
   if (!wp) return null;
@@ -402,10 +400,10 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
     res = await fetch(
       `${wp}/wp-json/wp/v2/lp_course?slug=${encodeURIComponent(slug)}`,
       {
-        headers: {
+        headers: withWordPressUserAgent({
           Accept: "application/json",
           ...(auth.authorization ? { Authorization: auth.authorization } : {}),
-        },
+        }),
         cache: "force-cache",
         next: { revalidate: 60 },
         signal: AbortSignal.timeout(8000),
@@ -664,7 +662,7 @@ async function ContentPageInner({
         accessCheckFailed = true;
         appendServerLog({
           level: "error",
-          msg: `hasCourseAccess failed for ${uri} (user: ${userEmail}): ${err?.message || err}`,
+          msg: `hasCourseAccess failed uri=${uri} userHash=${(await hashLogEmail(userEmail)) || "<anon>"} err=${err?.message || err}`,
           persist: false,
         }).catch(() => {});
       }
@@ -699,25 +697,6 @@ async function ContentPageInner({
       } catch (error) {
         console.error("Failed to confirm Stripe checkout session:", error);
       }
-    }
-
-    // Logged-in user's access check failed due to KV/network outage — don't show
-    // the paywall (they may already have access and could accidentally repurchase).
-    if (accessCheckFailed && userEmail) {
-      return (
-        <main className="max-w-2xl mx-auto px-6 py-24 text-center space-y-6">
-          <h1 className="text-2xl font-semibold">
-            {t("errors.serviceTemporarilyUnavailable")}
-          </h1>
-          <p className="text-gray-600">{t("errors.accessCheckFailed")}</p>
-          <a
-            href=""
-            className="inline-block px-6 py-3 rounded bg-gray-800 text-white hover:bg-gray-700"
-          >
-            {t("errors.tryAgainReload")}
-          </a>
-        </main>
-      );
     }
 
     if (!canAccess) {
@@ -765,6 +744,7 @@ async function ContentPageInner({
           }
           stripeEnabled={isStripeEnabled()}
           contentKind={contentKind}
+          accessCheckFailed={accessCheckFailed && Boolean(userEmail)}
         />
       );
     }

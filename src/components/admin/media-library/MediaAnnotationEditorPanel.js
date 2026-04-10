@@ -229,7 +229,7 @@ export default function MediaAnnotationEditorPanel({
             className="w-full border rounded px-2 py-1.5 text-sm text-gray-800"
             placeholder={t(
               "admin.mediaAssetUriPlaceholder",
-              "/asset/<asset-id>",
+              "/assets/<asset-id>",
             )}
           />
         </label>

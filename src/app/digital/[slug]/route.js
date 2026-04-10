@@ -1,4 +1,3 @@
-// XXX: beware, be sure to use named imports
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import {
@@ -10,15 +9,15 @@ import {
   isProductListable,
   resolveFileUrl,
 } from "@/lib/digitalProducts";
-import { createSignedDownloadUrl } from "@/lib/s3upload";
+import {
+  createSignedDownloadUrl,
+  getBucketObjectStream,
+  headBucketObject,
+  resolveStorageObjectKey,
+} from "@/lib/s3upload";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
-// XXX: OpenNext CF Adapter already handles this
-//
-//export const runtime = "edge";
-
 const log = (...args) => {
-  // Console output is streamed by wrangler tail in production.
   console.error("[/digital/]", ...args);
 };
 
@@ -27,7 +26,10 @@ function getFileName(product) {
   for (const candidate of candidates) {
     const safe = String(candidate || "").trim();
     if (!safe) continue;
-    if (/\.\w{1,8}$/.test(safe)) return safe;
+    const withoutStoragePrefix = safe.replace(/^(?:r2|s3):/i, "");
+    const lastSegment = withoutStoragePrefix.split("/").filter(Boolean).pop() || "";
+    if (/\.\w{1,8}$/.test(lastSegment)) return lastSegment;
+    if (/\.\w{1,8}$/.test(withoutStoragePrefix)) return withoutStoragePrefix;
     const ext = mimeToExtension(product.mimeType);
     return ext ? `${safe}${ext}` : safe;
   }
@@ -51,13 +53,144 @@ function mimeToExtension(mimeType) {
   return map[mime] || "";
 }
 
-function getSignedUrlTtlSeconds() {
-  const raw = process.env.DIGITAL_DOWNLOAD_SIGNED_URL_TTL_SECONDS;
-  const parsed = Number.parseInt(String(raw || ""), 10);
-  if (!Number.isFinite(parsed)) return 300;
-  if (parsed < 30) return 30;
-  if (parsed > 3600) return 3600;
-  return parsed;
+function sanitizeDispositionFilename(raw) {
+  return String(raw || "")
+    .replace(/[\r\n"\\]/g, "_")
+    .trim()
+    .slice(0, 180);
+}
+
+function buildAttachmentDisposition(fileName) {
+  const safe = sanitizeDispositionFilename(fileName);
+  return safe ? `attachment; filename="${safe}"` : "attachment";
+}
+
+function parseSingleRangeHeader(rangeHeader, totalLength) {
+  const safeHeader = String(rangeHeader || "").trim();
+  if (!safeHeader) return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(safeHeader);
+  if (!match || !Number.isFinite(totalLength) || totalLength <= 0) {
+    return { invalid: true };
+  }
+
+  const [, startRaw, endRaw] = match;
+  if (!startRaw && !endRaw) return { invalid: true };
+
+  if (!startRaw) {
+    const suffixLength = Number.parseInt(endRaw, 10);
+    if (!Number.isFinite(suffixLength) || suffixLength <= 0) {
+      return { invalid: true };
+    }
+    const length = Math.min(suffixLength, totalLength);
+    return {
+      start: totalLength - length,
+      end: totalLength - 1,
+      status: 206,
+    };
+  }
+
+  const start = Number.parseInt(startRaw, 10);
+  if (!Number.isFinite(start) || start < 0 || start >= totalLength) {
+    return { invalid: true };
+  }
+
+  if (!endRaw) {
+    return {
+      start,
+      end: totalLength - 1,
+      status: 206,
+    };
+  }
+
+  const end = Number.parseInt(endRaw, 10);
+  if (!Number.isFinite(end) || end < start) return { invalid: true };
+  return {
+    start,
+    end: Math.min(end, totalLength - 1),
+    status: 206,
+  };
+}
+
+async function createStorageDownloadResponse(
+  fileUrl,
+  downloadFileName,
+  rangeHeader,
+) {
+  const safeUrl = String(fileUrl || "").trim();
+  if (!safeUrl) return null;
+
+  const storagePrefixMatch = /^(r2|s3):(.*)$/i.exec(safeUrl);
+  const candidates = [];
+
+  if (storagePrefixMatch) {
+    const backend = String(storagePrefixMatch[1] || "").toLowerCase();
+    const key = String(storagePrefixMatch[2] || "").trim();
+    if (key) candidates.push({ backend, key });
+  } else {
+    for (const backend of ["r2", "s3"]) {
+      const key = resolveStorageObjectKey(safeUrl, { backend });
+      if (key) candidates.push({ backend, key });
+    }
+  }
+
+  let lastError = null;
+  for (const candidate of candidates) {
+    try {
+      const head = await headBucketObject(candidate);
+      const totalLength = Number(head?.sizeBytes);
+      const range = parseSingleRangeHeader(rangeHeader, totalLength);
+      if (range?.invalid) {
+        return new Response(null, {
+          status: 416,
+          headers: {
+            "Cache-Control": "private, no-store",
+            "Content-Range": `bytes */${Number.isFinite(totalLength) ? totalLength : "*"}`,
+            "Accept-Ranges": "bytes",
+          },
+        });
+      }
+
+      const stream = await getBucketObjectStream({
+        ...candidate,
+        byteRange:
+          range && Number.isInteger(range.start) && Number.isInteger(range.end)
+            ? { start: range.start, end: range.end }
+            : null,
+      });
+      const headers = new Headers({
+        "Cache-Control": "private, no-store",
+        "Content-Disposition": buildAttachmentDisposition(downloadFileName),
+        "Content-Type": stream.contentType || "application/octet-stream",
+        "Accept-Ranges": "bytes",
+      });
+      if (
+        Number.isFinite(Number(stream.contentLength)) &&
+        Number(stream.contentLength) > 0
+      ) {
+        headers.set("Content-Length", String(stream.contentLength));
+      }
+      if (stream.lastModified) {
+        headers.set("Last-Modified", stream.lastModified);
+      }
+      if (range && range.status === 206) {
+        headers.set(
+          "Content-Range",
+          `bytes ${range.start}-${range.end}/${Number.isFinite(totalLength) ? totalLength : "*"}`,
+        );
+      }
+      return new Response(stream.body, {
+        status: range?.status || 200,
+        headers,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) {
+    console.error("Digital storage stream failed:", lastError);
+  }
+  return null;
 }
 
 export async function GET(request, { params }) {
@@ -65,9 +198,6 @@ export async function GET(request, { params }) {
   const { slug } = await params;
   log(slug);
   const product = await getDigitalProductBySlug(slug);
-  log(product);
-  log(product.slug);
-  log(product.assetId);
 
   if (!product || !isProductListable(product)) {
     return new NextResponse("Not found", { status: 404 });
@@ -83,7 +213,6 @@ export async function GET(request, { params }) {
     return NextResponse.redirect(new URL(loginUrl, request.url));
   }
 
-  // Use uncached read — user may have just claimed moments ago
   let canDownload = await hasDigitalAccessUncached(
     product.id,
     session.user.email,
@@ -91,15 +220,14 @@ export async function GET(request, { params }) {
   const isFreeProduct =
     product.free === true || Number(product.priceCents || 0) <= 0;
   if (!canDownload && isFreeProduct) {
-    // Rate-limit free product claims: 20 per hour per IP
     const ip = getClientIp(request);
     const rl = await checkRateLimit("free-claim", ip, 20);
-    if (!rl.allowed) {
+    if (rl.limited) {
       return NextResponse.json(
         {
           ok: false,
           error: "Rate limit exceeded for free product claims",
-          limit: rl.limit,
+          limit: 20,
           remaining: rl.remaining,
           retryAfterSeconds: 3600,
         },
@@ -117,7 +245,7 @@ export async function GET(request, { params }) {
     return NextResponse.redirect(new URL(shopUrl, request.url));
   }
 
-  const fileUrl = resolveFileUrl(product);
+  const fileUrl = await resolveFileUrl(product);
   if (!fileUrl) {
     return new NextResponse("File not available", { status: 404 });
   }
@@ -125,7 +253,7 @@ export async function GET(request, { params }) {
   try {
     const signedUrl = await createSignedDownloadUrl({
       fileUrl,
-      expiresIn: getSignedUrlTtlSeconds(),
+      expiresIn: 300,
       downloadFileName: getFileName(product),
     });
     if (signedUrl) {
@@ -136,8 +264,17 @@ export async function GET(request, { params }) {
         },
       });
     }
+    const storageResponse = await createStorageDownloadResponse(
+      fileUrl,
+      getFileName(product),
+      request.headers.get("range"),
+    );
+    if (storageResponse) return storageResponse;
 
-    // Fallback: redirect to raw URL (avoid proxying large files through the worker)
+    if (/^(?:r2|s3):/i.test(fileUrl)) {
+      return new NextResponse("Download unavailable", { status: 502 });
+    }
+
     return NextResponse.redirect(fileUrl, {
       status: 302,
       headers: {

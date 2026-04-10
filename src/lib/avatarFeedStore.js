@@ -1,10 +1,5 @@
-import {
-  isCloudflareKvConfigured,
-  readCloudflareKvJson,
-  writeCloudflareKvJson,
-} from "@/lib/cloudflareKv";
+import { getD1Database } from "@/lib/d1Bindings";
 
-const LOCAL_FILE = ".data/avatar-feed-store.json";
 const DEFAULT_FEED_SLUG = "default";
 const COMPOSITE_FEED_SLUG = "composite";
 const RESERVED_FEED_SLUGS = new Set([DEFAULT_FEED_SLUG, COMPOSITE_FEED_SLUG]);
@@ -13,13 +8,6 @@ const HEX_RE = /^[0-9a-f]+$/;
 const ASSET_ID_RE = /^[a-z0-9._:-]+$/;
 const FEED_SLUG_RE = /^[a-z0-9._-]+$/;
 const CREATOR_TYPE_SET = new Set(["admin", "user", "avatar"]);
-
-let inMemoryState = {
-  assets: [],
-  feeds: [],
-  follows: [],
-  items: [],
-};
 
 function nowIso() {
   return new Date().toISOString();
@@ -63,17 +51,6 @@ function createHexId(length = 24) {
     byte.toString(16).padStart(2, "0"),
   ).join("");
   return hex.slice(0, length);
-}
-
-function getStoreKvKey() {
-  return process.env.CF_AVATAR_FEED_STORE_KEY || "avatar-feed-store";
-}
-
-function shouldUseCloudflareBackend() {
-  return (
-    process.env.AVATAR_FEED_STORE_BACKEND === "cloudflare" ||
-    isCloudflareKvConfigured()
-  );
 }
 
 function normalizeOwnerUri(value, max = 320) {
@@ -384,112 +361,194 @@ function sanitizeState(rawState) {
   return { assets, feeds, follows, items };
 }
 
-async function ensureLocalStore() {
-  const [{ promises: fs }, path] = await Promise.all([
-    import("node:fs"),
-    import("node:path"),
-  ]);
-  const dataDir = path.join(process.cwd(), ".data");
-  const filePath = path.join(process.cwd(), LOCAL_FILE);
-  await fs.mkdir(dataDir, { recursive: true });
+function assetRowToObject(row) {
+  if (!row) return null;
+  let rights = {},
+    source = {},
+    variants = [];
   try {
-    await fs.access(filePath);
+    rights = JSON.parse(row.rights || "{}");
   } catch {
-    await fs.writeFile(
-      filePath,
-      JSON.stringify(sanitizeState(inMemoryState), null, 2),
-      "utf8",
-    );
+    /* ignore */
   }
-}
-
-async function readLocalState() {
   try {
-    await ensureLocalStore();
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const filePath = path.join(process.cwd(), LOCAL_FILE);
-    const raw = await fs.readFile(filePath, "utf8");
-    return sanitizeState(JSON.parse(raw));
-  } catch (error) {
-    console.error(
-      "Local avatar feed store unavailable. Using in-memory fallback:",
-      error,
-    );
-    return sanitizeState(inMemoryState);
+    source = JSON.parse(row.source || "{}");
+  } catch {
+    /* ignore */
   }
-}
-
-async function writeLocalState(state) {
   try {
-    await ensureLocalStore();
-    const [{ promises: fs }, path] = await Promise.all([
-      import("node:fs"),
-      import("node:path"),
-    ]);
-    const filePath = path.join(process.cwd(), LOCAL_FILE);
-    const safe = sanitizeState(state);
-    await fs.writeFile(filePath, JSON.stringify(safe, null, 2), "utf8");
-  } catch (error) {
-    console.error(
-      "Local avatar feed store write unavailable. Updating in-memory fallback:",
-      error,
-    );
-    inMemoryState = sanitizeState(state);
+    variants = JSON.parse(row.variants || "[]");
+  } catch {
+    /* ignore */
   }
+  return {
+    assetId: row.asset_id,
+    ownerUri: row.owner_uri,
+    uri: row.uri,
+    slug: row.slug || "",
+    title: row.title || "",
+    creatorType: row.creator_type,
+    creatorId: row.creator_id,
+    rights,
+    source,
+    variants: Array.isArray(variants) ? variants : [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
-async function readCloudflareState() {
-  const data = await readCloudflareKvJson(getStoreKvKey());
-  return sanitizeState(data || {});
+function feedRowToObject(row) {
+  if (!row) return null;
+  let references = [];
+  try {
+    references = JSON.parse(row.references_json || "[]");
+  } catch {
+    /* ignore */
+  }
+  return {
+    feedId: row.feed_id,
+    avatarId: row.avatar_id,
+    slug: row.slug,
+    kind: row.kind || "collection",
+    title: row.title || "",
+    description: row.description || "",
+    references: Array.isArray(references) ? references : [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
-async function writeCloudflareState(state) {
-  return writeCloudflareKvJson(getStoreKvKey(), sanitizeState(state));
+function followRowToObject(row) {
+  if (!row) return null;
+  return {
+    followerAvatarId: row.follower_avatar_id,
+    targetAvatarId: row.target_avatar_id,
+    feedSlug: row.feed_slug,
+    createdAt: row.created_at,
+  };
+}
+
+function itemRowToObject(row) {
+  if (!row) return null;
+  return {
+    itemId: row.item_id,
+    avatarId: row.avatar_id,
+    feedSlug: row.feed_slug,
+    assetId: row.asset_id,
+    caption: row.caption || "",
+    note: row.note || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 async function getState() {
-  if (shouldUseCloudflareBackend()) {
-    try {
-      return await readCloudflareState();
-    } catch (error) {
-      console.error(
-        "Cloudflare avatar feed store read failed; using in-memory fallback:",
-        error,
-      );
-      return sanitizeState(inMemoryState);
-    }
-  }
-  // Local file I/O is not available in edge/Cloudflare Workers runtime
-  if (process.env.NEXT_RUNTIME === "edge") {
-    return sanitizeState(inMemoryState);
-  }
-  return readLocalState();
+  const db = await getD1Database();
+  const [assetsRes, feedsRes, followsRes, itemsRes] = await db.batch([
+    db.prepare("SELECT * FROM avatar_feed_assets"),
+    db.prepare("SELECT * FROM avatar_collection_feeds"),
+    db.prepare("SELECT * FROM avatar_feed_follows"),
+    db.prepare("SELECT * FROM avatar_feed_items ORDER BY created_at DESC"),
+  ]);
+  return {
+    assets: (assetsRes.results || []).map(assetRowToObject).filter(Boolean),
+    feeds: (feedsRes.results || []).map(feedRowToObject).filter(Boolean),
+    follows: (followsRes.results || []).map(followRowToObject).filter(Boolean),
+    items: (itemsRes.results || []).map(itemRowToObject).filter(Boolean),
+  };
 }
 
 async function saveState(state) {
   const safe = sanitizeState(state);
-  if (shouldUseCloudflareBackend()) {
-    try {
-      const wrote = await writeCloudflareState(safe);
-      if (wrote) return safe;
-    } catch (error) {
-      console.error(
-        "Cloudflare avatar feed store write failed; updating in-memory fallback:",
-        error,
-      );
-      inMemoryState = safe;
-      return safe;
-    }
+  const db = await getD1Database();
+  const statements = [];
+
+  // Clear and rewrite all tables
+  statements.push(db.prepare("DELETE FROM avatar_feed_assets"));
+  statements.push(db.prepare("DELETE FROM avatar_collection_feeds"));
+  statements.push(db.prepare("DELETE FROM avatar_feed_follows"));
+  statements.push(db.prepare("DELETE FROM avatar_feed_items"));
+
+  for (const a of safe.assets) {
+    statements.push(
+      db
+        .prepare(
+          "INSERT INTO avatar_feed_assets (asset_id, owner_uri, uri, slug, title, creator_type, creator_id, rights, source, variants, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(
+          a.assetId,
+          a.ownerUri,
+          a.uri,
+          a.slug || null,
+          a.title || null,
+          a.creatorType,
+          a.creatorId,
+          JSON.stringify(a.rights || {}),
+          JSON.stringify(a.source || {}),
+          JSON.stringify(a.variants || []),
+          a.createdAt,
+          a.updatedAt,
+        ),
+    );
   }
-  // Local file I/O is not available in edge/Cloudflare Workers runtime
-  if (process.env.NEXT_RUNTIME === "edge") {
-    inMemoryState = safe;
-    return safe;
+
+  for (const f of safe.feeds) {
+    statements.push(
+      db
+        .prepare(
+          "INSERT INTO avatar_collection_feeds (feed_id, avatar_id, slug, kind, title, description, references_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(
+          f.feedId,
+          f.avatarId,
+          f.slug,
+          f.kind,
+          f.title || null,
+          f.description || null,
+          JSON.stringify(f.references || []),
+          f.createdAt,
+          f.updatedAt,
+        ),
+    );
   }
-  await writeLocalState(safe);
+
+  for (const fw of safe.follows) {
+    statements.push(
+      db
+        .prepare(
+          "INSERT INTO avatar_feed_follows (follower_avatar_id, target_avatar_id, feed_slug, created_at) VALUES (?, ?, ?, ?)",
+        )
+        .bind(
+          fw.followerAvatarId,
+          fw.targetAvatarId,
+          fw.feedSlug,
+          fw.createdAt,
+        ),
+    );
+  }
+
+  for (const it of safe.items) {
+    statements.push(
+      db
+        .prepare(
+          "INSERT INTO avatar_feed_items (item_id, avatar_id, feed_slug, asset_id, caption, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(
+          it.itemId,
+          it.avatarId,
+          it.feedSlug,
+          it.assetId,
+          it.caption || null,
+          it.note || null,
+          it.createdAt,
+          it.updatedAt,
+        ),
+    );
+  }
+
+  if (statements.length > 0) {
+    await db.batch(statements);
+  }
   return safe;
 }
 
@@ -761,9 +820,15 @@ function serializeItem(row, assetsById) {
 }
 
 export function getAvatarFeedStoreInfo() {
-  return shouldUseCloudflareBackend()
-    ? { provider: "cloudflare-kv", key: getStoreKvKey() }
-    : { provider: "local-file", path: LOCAL_FILE };
+  return {
+    provider: "cloudflare-d1",
+    tables: [
+      "avatar_feed_assets",
+      "avatar_collection_feeds",
+      "avatar_feed_follows",
+      "avatar_feed_items",
+    ],
+  };
 }
 
 export function getDefaultFeedSlug() {

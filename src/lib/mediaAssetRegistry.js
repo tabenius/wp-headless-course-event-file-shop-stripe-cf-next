@@ -1,17 +1,4 @@
-import {
-  isCloudflareKvConfigured,
-  readCloudflareKvJson,
-  writeCloudflareKvJson,
-} from "@/lib/cloudflareKv";
 import { getD1Database } from "@/lib/d1Bindings";
-
-async function tryGetD1() {
-  try {
-    return await getD1Database();
-  } catch {
-    return null;
-  }
-}
 
 function assetRowToObject(row) {
   if (!row) return null;
@@ -52,9 +39,6 @@ function assetRowToObject(row) {
     updatedAt: row.saved_at,
   };
 }
-
-const KV_KEY = process.env.CF_MEDIA_ASSETS_KV_KEY || "media-asset-registry";
-let inMemoryState = { assets: [] };
 
 function safeText(value, max = 600) {
   return String(value ?? "")
@@ -102,7 +86,7 @@ function normalizeIsoDate(value) {
 
 function defaultAssetUri(assetId) {
   if (!assetId) return "";
-  return `/asset/${encodeURIComponent(assetId)}`;
+  return `/assets/${encodeURIComponent(assetId)}`;
 }
 
 function sanitizeAssetEntry(entry, existing = null) {
@@ -187,58 +171,24 @@ function sanitizeAssetEntry(entry, existing = null) {
   return next;
 }
 
-function sanitizeState(state) {
-  const assets = Array.isArray(state?.assets)
-    ? state.assets
-        .map((entry) => sanitizeAssetEntry(entry))
-        .filter(Boolean)
-        .sort((left, right) =>
-          String(right.updatedAt || "").localeCompare(
-            String(left.updatedAt || ""),
-          ),
-        )
-    : [];
-  return { assets };
-}
-
-async function readState() {
-  if (isCloudflareKvConfigured()) {
-    try {
-      const fromKv = await readCloudflareKvJson(KV_KEY);
-      return sanitizeState(fromKv || { assets: [] });
-    } catch (error) {
-      console.error("Media asset registry KV read failed", error);
-    }
-  }
-  return sanitizeState(inMemoryState);
-}
-
-async function writeState(state) {
-  const safe = sanitizeState(state);
-  if (isCloudflareKvConfigured()) {
-    try {
-      await writeCloudflareKvJson(KV_KEY, safe);
-      return safe;
-    } catch (error) {
-      console.error("Media asset registry KV write failed", error);
-    }
-  }
-  inMemoryState = safe;
-  return safe;
-}
-
 export async function listMediaAssetRegistry() {
-  const db = await tryGetD1();
-  if (db) {
-    const { results } = await db
-      .prepare("SELECT * FROM media_assets ORDER BY saved_at DESC")
-      .all();
-    return (results || []).map(assetRowToObject).filter(Boolean);
-  }
+  const db = await getD1Database();
+  const { results } = await db
+    .prepare("SELECT * FROM media_assets ORDER BY saved_at DESC")
+    .all();
+  return (results || []).map(assetRowToObject).filter(Boolean);
+}
 
-  // existing KV path (unchanged)
-  const state = await readState();
-  return state.assets;
+export async function findMediaAssetByAssetId(assetId) {
+  if (!assetId) return null;
+  const db = await getD1Database();
+  const row = await db
+    .prepare(
+      "SELECT * FROM media_assets WHERE json_extract(asset_info, '$.assetId') = ? LIMIT 1",
+    )
+    .bind(assetId)
+    .first();
+  return assetRowToObject(row);
 }
 
 export async function upsertMediaAssetRegistry(entry) {
@@ -246,66 +196,47 @@ export async function upsertMediaAssetRegistry(entry) {
     safeText(entry?.id, 180) ||
     `r2:${safeText(entry?.key, 512).replace(/^\/+/, "")}`;
 
-  const db = await tryGetD1();
-  if (db) {
-    const existingRow = await db
-      .prepare("SELECT * FROM media_assets WHERE id = ?")
-      .bind(id)
-      .first();
-    const existing = existingRow ? assetRowToObject(existingRow) : null;
-    const next = sanitizeAssetEntry({ ...existing, ...entry, id }, existing);
-    if (!next) throw new Error("Invalid media asset registry entry.");
-    const now = new Date().toISOString();
-    await db
-      .prepare(
-        `INSERT INTO media_assets (id, source, source_id, key, title, url, mime_type, size_bytes, width, height, metadata, rights, asset_info, created_at, saved_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
-           source=excluded.source, source_id=excluded.source_id, key=excluded.key,
-           title=excluded.title, url=excluded.url, mime_type=excluded.mime_type,
-           size_bytes=excluded.size_bytes, width=excluded.width, height=excluded.height,
-           metadata=excluded.metadata, rights=excluded.rights, asset_info=excluded.asset_info,
-           saved_at=excluded.saved_at`,
-      )
-      .bind(
-        next.id,
-        next.source || "r2",
-        next.sourceId || "",
-        next.key,
-        next.title,
-        next.url,
-        next.mimeType || "",
-        next.sizeBytes ?? null,
-        next.width ?? null,
-        next.height ?? null,
-        JSON.stringify(next.metadata || {}),
-        JSON.stringify(next.rights || {}),
-        JSON.stringify(next.asset || {}),
-        next.createdAt || now,
-        now,
-      )
-      .run();
-    return next;
-  }
-
-  // existing KV path (unchanged)
-  const state = await readState();
-  const currentIndex = state.assets.findIndex((row) => row.id === id);
-  const current = currentIndex >= 0 ? state.assets[currentIndex] : null;
-  const next = sanitizeAssetEntry({ ...current, ...entry, id }, current);
+  const db = await getD1Database();
+  const existingRow = await db
+    .prepare("SELECT * FROM media_assets WHERE id = ?")
+    .bind(id)
+    .first();
+  const existing = existingRow ? assetRowToObject(existingRow) : null;
+  const next = sanitizeAssetEntry({ ...existing, ...entry, id }, existing);
   if (!next) throw new Error("Invalid media asset registry entry.");
-  if (currentIndex >= 0) {
-    state.assets[currentIndex] = next;
-  } else {
-    state.assets.unshift(next);
-  }
-  const saved = await writeState(state);
-  return saved.assets.find((row) => row.id === next.id) || next;
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `INSERT INTO media_assets (id, source, source_id, key, title, url, mime_type, size_bytes, width, height, metadata, rights, asset_info, created_at, saved_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         source=excluded.source, source_id=excluded.source_id, key=excluded.key,
+         title=excluded.title, url=excluded.url, mime_type=excluded.mime_type,
+         size_bytes=excluded.size_bytes, width=excluded.width, height=excluded.height,
+         metadata=excluded.metadata, rights=excluded.rights, asset_info=excluded.asset_info,
+         saved_at=excluded.saved_at`,
+    )
+    .bind(
+      next.id,
+      next.source || "r2",
+      next.sourceId || "",
+      next.key,
+      next.title,
+      next.url,
+      next.mimeType || "",
+      next.sizeBytes ?? null,
+      next.width ?? null,
+      next.height ?? null,
+      JSON.stringify(next.metadata || {}),
+      JSON.stringify(next.rights || {}),
+      JSON.stringify(next.asset || {}),
+      next.createdAt || now,
+      now,
+    )
+    .run();
+  return next;
 }
 
 export function getMediaAssetRegistryStorageInfo() {
-  return {
-    provider: "d1+kv-fallback",
-    key: KV_KEY,
-  };
+  return { provider: "cloudflare-d1", table: "media_assets" };
 }

@@ -1,4 +1,5 @@
 import { readWcRestApiSettings } from "@/lib/adminSettingsStore";
+import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 
 function normalizeBaseUrl(value) {
   const raw = String(value || "").trim();
@@ -68,7 +69,7 @@ async function wcRequest(path, { method = "GET", config, body } = {}) {
   }
   const response = await fetch(endpoint, {
     method,
-    headers,
+    headers: withWordPressUserAgent(headers),
     body: body !== undefined ? JSON.stringify(body) : undefined,
     cache: "no-store",
   });

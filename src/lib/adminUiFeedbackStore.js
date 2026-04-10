@@ -1,11 +1,6 @@
-import {
-  readCloudflareKvJson,
-  writeCloudflareKvJson,
-} from "@/lib/cloudflareKv";
+import { getD1Database } from "@/lib/d1Bindings";
 
-const KV_KEY = process.env.CF_UI_FEEDBACK_KV_KEY || "admin-ui-feedback";
 const VALID_VALUES = new Set(["up", "heart", "down"]);
-let memoryStore = { fields: {} };
 
 function normalizeFieldId(value) {
   return String(value || "")
@@ -15,33 +10,6 @@ function normalizeFieldId(value) {
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
-}
-
-function normalizeEntry(entry) {
-  if (!entry || typeof entry !== "object") return null;
-  const value = String(entry.value || "")
-    .trim()
-    .toLowerCase();
-  if (!VALID_VALUES.has(value)) return null;
-  const by = String(entry.by || "")
-    .trim()
-    .toLowerCase()
-    .slice(0, 160);
-  const updatedAt = String(entry.updatedAt || "").trim();
-  return { value, by, updatedAt };
-}
-
-function normalizeStore(raw) {
-  if (!raw || typeof raw !== "object") return { fields: {} };
-  const input = raw.fields && typeof raw.fields === "object" ? raw.fields : {};
-  const fields = {};
-  for (const [key, entry] of Object.entries(input)) {
-    const normalizedKey = normalizeFieldId(key);
-    const normalizedEntry = normalizeEntry(entry);
-    if (!normalizedKey || !normalizedEntry) continue;
-    fields[normalizedKey] = normalizedEntry;
-  }
-  return { fields };
 }
 
 export function isValidUiFeedbackValue(value) {
@@ -58,16 +26,25 @@ export function normalizeUiFeedbackFieldId(value) {
 
 export async function getAdminUiFeedback() {
   try {
-    const fromKv = await readCloudflareKvJson(KV_KEY);
-    if (fromKv && typeof fromKv === "object") {
-      const normalized = normalizeStore(fromKv);
-      memoryStore = normalized;
-      return normalized;
+    const db = await getD1Database();
+    const { results } = await db
+      .prepare(
+        "SELECT field_id, value, updated_by, updated_at FROM admin_ui_feedback",
+      )
+      .all();
+    const fields = {};
+    for (const row of results || []) {
+      fields[row.field_id] = {
+        value: row.value,
+        by: row.updated_by || "",
+        updatedAt: row.updated_at,
+      };
     }
+    return { fields };
   } catch (error) {
-    console.error("Admin UI feedback KV read failed", error);
+    console.error("Admin UI feedback D1 read failed", error);
+    return { fields: {} };
   }
-  return memoryStore;
 }
 
 export async function setAdminUiFeedback(fieldId, value, by) {
@@ -83,24 +60,17 @@ export async function setAdminUiFeedback(fieldId, value, by) {
   if (!VALID_VALUES.has(normalizedValue))
     throw new Error("Invalid feedback value");
 
-  const current = await getAdminUiFeedback();
-  const next = {
-    ...current,
-    fields: {
-      ...(current.fields || {}),
-      [normalizedFieldId]: {
-        value: normalizedValue,
-        by: normalizedBy,
-        updatedAt: new Date().toISOString(),
-      },
-    },
-  };
+  const db = await getD1Database();
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `INSERT INTO admin_ui_feedback (field_id, value, updated_by, updated_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(field_id) DO UPDATE SET
+         value=excluded.value, updated_by=excluded.updated_by, updated_at=excluded.updated_at`,
+    )
+    .bind(normalizedFieldId, normalizedValue, normalizedBy, now)
+    .run();
 
-  try {
-    await writeCloudflareKvJson(KV_KEY, next);
-  } catch (error) {
-    console.error("Admin UI feedback KV write failed", error);
-  }
-  memoryStore = next;
-  return next;
+  return getAdminUiFeedback();
 }

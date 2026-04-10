@@ -1,5 +1,5 @@
 import { StorefrontGridSkeleton } from "@/components/common/StorefrontSkeletons";
 
-export default function Loading() {
+export default function ShopLoading() {
   return <StorefrontGridSkeleton items={8} />;
 }

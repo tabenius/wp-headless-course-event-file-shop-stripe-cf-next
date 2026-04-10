@@ -1,11 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
 import { TYPOGRAPHY_THEMES } from "@/lib/typographyThemes";
 import AdminFontBrowserModal from "./AdminFontBrowserModal";
 import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
+
+const PREVIEW_FONT_LINK_ID = "ragbaz-admin-preview-fonts";
+
+function collectGoogleRoleEntries(fontRoles) {
+  const seen = new Map();
+  for (const role of Object.values(fontRoles || {})) {
+    if (!role || role.type !== "google" || !role.family) continue;
+    const current = seen.get(role.family) || {
+      family: role.family,
+      isVariable: false,
+      weights: new Set(),
+      weightRange: [100, 900],
+    };
+    current.isVariable = current.isVariable || Boolean(role.isVariable);
+    if (Array.isArray(role.weights)) {
+      role.weights.forEach((weight) => current.weights.add(Number(weight) || 400));
+    }
+    if (Array.isArray(role.weightRange) && role.weightRange.length === 2) {
+      current.weightRange = [
+        Number(role.weightRange[0]) || 100,
+        Number(role.weightRange[1]) || 900,
+      ];
+    }
+    seen.set(role.family, current);
+  }
+  return Array.from(seen.values());
+}
+
+function buildGooglePreviewHref(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) return null;
+  const query = entries
+    .map((entry) => {
+      const family = encodeURIComponent(entry.family).replace(/%20/g, "+");
+      if (entry.isVariable) {
+        const start = entry.weightRange?.[0] ?? 100;
+        const end = entry.weightRange?.[1] ?? 900;
+        return `family=${family}:wght@${start}..${end}`;
+      }
+      const weights = Array.from(entry.weights || [])
+        .map((weight) => Number(weight) || 400)
+        .sort((a, b) => a - b);
+      const requested = weights.length > 0 ? weights : [400, 700];
+      return `family=${family}:wght@${requested.join(";")}`;
+    })
+    .join("&");
+  return `https://fonts.googleapis.com/css2?${query}&display=swap`;
+}
+
+function upsertDownloadedFamilyEntry(entries, record) {
+  if (!record?.family) return Array.isArray(entries) ? entries : [];
+  const list = Array.isArray(entries) ? [...entries] : [];
+  const index = list.findIndex((entry) => entry?.family === record.family);
+  if (index >= 0) list[index] = record;
+  else list.push(record);
+  return list;
+}
+
+function fontStatusColor(status) {
+  if (status === "loaded" || status === "downloaded") return "#166534";
+  if (status === "loading" || status === "downloading") return "#92400e";
+  if (status === "failed") return "#b91c1c";
+  return "#6b7280";
+}
 
 // ── CTA button style constants (mirrored from AdminDashboard.js) ──────────────
 
@@ -202,6 +265,203 @@ function ctaPreviewStyle(cta, tokens) {
   };
 }
 
+function parseHexColor(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmed)) return null;
+  const normalized =
+    trimmed.length === 4
+      ? trimmed
+          .slice(1)
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : trimmed.slice(1);
+  return {
+    r: Number.parseInt(normalized.slice(0, 2), 16),
+    g: Number.parseInt(normalized.slice(2, 4), 16),
+    b: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function relativeLuminance(value) {
+  const color = parseHexColor(value);
+  if (!color) return null;
+  const transform = (channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  };
+  return (
+    0.2126 * transform(color.r) +
+    0.7152 * transform(color.g) +
+    0.0722 * transform(color.b)
+  );
+}
+
+function contrastRatio(background, foreground) {
+  const backgroundLuminance = relativeLuminance(background);
+  const foregroundLuminance = relativeLuminance(foreground);
+  if (backgroundLuminance == null || foregroundLuminance == null) return 0;
+  const lighter = Math.max(backgroundLuminance, foregroundLuminance);
+  const darker = Math.min(backgroundLuminance, foregroundLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function ensureReadablePreviewColor(
+  background,
+  preferred,
+  fallbackDark = "#111827",
+  fallbackLight = "#ffffff",
+  minRatio = 4.5,
+) {
+  if (contrastRatio(background, preferred) >= minRatio) return preferred;
+  const darkContrast = contrastRatio(background, fallbackDark);
+  const lightContrast = contrastRatio(background, fallbackLight);
+  return darkContrast >= lightContrast ? fallbackDark : fallbackLight;
+}
+
+function normalizePreviewSurface(value, mode = "light") {
+  const luminance = relativeLuminance(value);
+  if (luminance == null) {
+    return mode === "dark" ? "#1a1a1a" : "#f8f5f0";
+  }
+  if (mode === "dark") {
+    return luminance <= 0.32 ? value : "#1a1a1a";
+  }
+  return luminance >= 0.68 ? value : "#f8f5f0";
+}
+
+function previewStatusPillStyle(tone, background) {
+  const isDarkSurface = (relativeLuminance(background) ?? 1) < 0.45;
+  if (tone === "success") {
+    return isDarkSurface
+      ? {
+          background: "rgba(34, 197, 94, 0.2)",
+          color: "#dcfce7",
+          border: "1px solid rgba(134, 239, 172, 0.35)",
+        }
+      : {
+          background: "#dcfce7",
+          color: "#166534",
+          border: "1px solid #86efac",
+        };
+  }
+  if (tone === "warning") {
+    return isDarkSurface
+      ? {
+          background: "rgba(245, 158, 11, 0.2)",
+          color: "#fef3c7",
+          border: "1px solid rgba(252, 211, 77, 0.35)",
+        }
+      : {
+          background: "#fef3c7",
+          color: "#92400e",
+          border: "1px solid #fcd34d",
+        };
+  }
+  return isDarkSurface
+    ? {
+        background: "rgba(239, 68, 68, 0.2)",
+        color: "#fee2e2",
+        border: "1px solid rgba(252, 165, 165, 0.35)",
+      }
+    : {
+        background: "#fee2e2",
+        color: "#991b1b",
+        border: "1px solid #fca5a5",
+      };
+}
+
+function buildPreviewTokens({
+  background,
+  foreground,
+  primary,
+  secondary,
+  tertiary,
+  muted,
+  focusRing,
+  invertedText,
+  linkColor,
+  displayColor,
+  headingColor,
+  subheadingColor,
+}) {
+  const textBody = ensureReadablePreviewColor(background, foreground || "#111827");
+  const textH1 = ensureReadablePreviewColor(
+    background,
+    displayColor || foreground || "#111827",
+  );
+  const textH2 = ensureReadablePreviewColor(
+    background,
+    headingColor || foreground || "#111827",
+  );
+  const textH3 = ensureReadablePreviewColor(
+    background,
+    subheadingColor || headingColor || foreground || "#111827",
+  );
+  const textH4 = ensureReadablePreviewColor(
+    background,
+    subheadingColor || headingColor || foreground || "#111827",
+  );
+  const textH5 = ensureReadablePreviewColor(
+    background,
+    subheadingColor || headingColor || foreground || "#111827",
+  );
+  const textMeta = ensureReadablePreviewColor(
+    background,
+    muted || foreground || "#6b7280",
+    "#4b5563",
+    "#d1d5db",
+    3,
+  );
+  const textLink = ensureReadablePreviewColor(
+    background,
+    linkColor || primary || "#2563eb",
+    "#1d4ed8",
+    "#93c5fd",
+  );
+
+  return {
+    background,
+    foreground: textBody,
+    primary,
+    secondary,
+    tertiary,
+    muted,
+    focusRing,
+    invertedText: ensureReadablePreviewColor(
+      primary || "#0f766e",
+      invertedText || background || "#ffffff",
+      "#111827",
+      "#ffffff",
+    ),
+    secondaryForeground: ensureReadablePreviewColor(
+      secondary || "#d1d5db",
+      foreground || textBody,
+      "#111827",
+      "#ffffff",
+    ),
+    outlineForeground: ensureReadablePreviewColor(
+      background,
+      primary || foreground || "#111827",
+      "#111827",
+      "#ffffff",
+    ),
+    textH1,
+    textH2,
+    textH3,
+    textH4,
+    textH5,
+    textH6: textH5,
+    textBody,
+    textBold: textBody,
+    textItalic: textBody,
+    textMeta,
+    textLink,
+  };
+}
 // ── Site style color fields ───────────────────────────────────────────────────
 
 const SITE_STYLE_COLOR_FIELDS = [
@@ -269,6 +529,7 @@ export default function AdminStyleTab({
   fontBrowserRole,
   setFontBrowserRole,
   downloadedFamilies,
+  setDownloadedFamilies,
   downloadingRole,
   setDownloadingRole,
   ctaSaveName,
@@ -293,6 +554,46 @@ export default function AdminStyleTab({
   const typographyColor1 =
     typographyPalette[0] || siteStyleTokens.foreground || "#111827";
   const typographyColor2 = typographyPalette[1] || typographyColor1;
+  const resolvePreviewRoleColor = (role, fallback) => {
+    const slot = role?.colorSlot;
+    if (slot && typographyPalette[slot - 1]) return typographyPalette[slot - 1];
+    return fallback;
+  };
+  const previewDisplayColor = resolvePreviewRoleColor(
+    fontRoles?.fontDisplay,
+    typographyColor1,
+  );
+  const previewHeadingColor = resolvePreviewRoleColor(
+    fontRoles?.fontHeading,
+    typographyColor1,
+  );
+  const previewSubheadingSource =
+    fontRoles?.fontSubheading?.type === "inherit"
+      ? fontRoles?.fontHeading
+      : fontRoles?.fontSubheading;
+  const previewSubheadingColor = resolvePreviewRoleColor(
+    previewSubheadingSource,
+    previewHeadingColor,
+  );
+  const [styleSaveState, setStyleSaveState] = useState("idle");
+  const [styleSavedAt, setStyleSavedAt] = useState(null);
+  const [fontPreviewState, setFontPreviewState] = useState({});
+  const [fontPersistenceState, setFontPersistenceState] = useState({});
+
+  useEffect(() => {
+    setStyleSaveState("idle");
+  }, [siteStyleTokens, fontRoles, typographyPalette, linkStyle]);
+
+  async function handleStyleSave() {
+    const ok = await saveSiteStyleSettings();
+    if (ok) {
+      setStyleSaveState("saved");
+      setStyleSavedAt(Date.now());
+      return;
+    }
+    setStyleSaveState("error");
+    setStyleSavedAt(null);
+  }
 
   const previewLinkUnderline =
     linkStyle?.underlineDefault === "always" ? "underline" : "none";
@@ -300,8 +601,11 @@ export default function AdminStyleTab({
     {
       id: "light",
       label: t("admin.stylePreviewModeLight", "Light"),
-      tokens: {
-        background: siteStyleTokens.background || "#ffffff",
+      tokens: buildPreviewTokens({
+        background: normalizePreviewSurface(
+          siteStyleTokens.background || "#ffffff",
+          "light",
+        ),
         foreground: siteStyleTokens.foreground || "#111827",
         primary: siteStyleTokens.primary || "#0f766e",
         secondary: siteStyleTokens.secondary || "#d1d5db",
@@ -309,13 +613,17 @@ export default function AdminStyleTab({
         muted: siteStyleTokens.muted || "#9ca3af",
         focusRing:
           siteStyleTokens.focusRing || siteStyleTokens.primary || "#0f766e",
-      },
+        linkColor: siteStyleTokens.primary || "#0f766e",
+        displayColor: previewDisplayColor,
+        headingColor: previewHeadingColor,
+        subheadingColor: previewSubheadingColor,
+      }),
     },
     {
       id: "dark",
       label: t("admin.stylePreviewModeDark", "Dark"),
-      tokens: {
-        background: "#1a1a1a",
+      tokens: buildPreviewTokens({
+        background: normalizePreviewSurface("#1a1a1a", "dark"),
         foreground: "#ffffff",
         primary: siteStyleTokens.primary || "#22c55e",
         secondary: siteStyleTokens.secondary || "#475569",
@@ -324,15 +632,264 @@ export default function AdminStyleTab({
         focusRing:
           siteStyleTokens.focusRing || siteStyleTokens.primary || "#22c55e",
         invertedText: siteStyleTokens.background || "#ffffff",
-        lightForeground: siteStyleTokens.foreground || "#111827",
         linkColor: siteStyleTokens.secondary || "#d1d5db",
-      },
+        displayColor: previewDisplayColor,
+        headingColor: previewHeadingColor,
+        subheadingColor: previewSubheadingColor,
+      }),
     },
   ];
   const visiblePreviewSurfaces =
     previewMode === "both"
       ? previewSurfaces
       : previewSurfaces.filter((surface) => surface.id === previewMode);
+  const editorPreviewTokens = previewSurfaces[0]?.tokens || buildPreviewTokens({
+    background: normalizePreviewSurface(
+      siteStyleTokens.background || "#ffffff",
+      "light",
+    ),
+    foreground: siteStyleTokens.foreground || "#111827",
+    primary: siteStyleTokens.primary || "#0f766e",
+    secondary: siteStyleTokens.secondary || "#d1d5db",
+    tertiary: siteStyleTokens.tertiary || "#4f46e5",
+    muted: siteStyleTokens.muted || "#9ca3af",
+    focusRing:
+      siteStyleTokens.focusRing || siteStyleTokens.primary || "#0f766e",
+    linkColor: siteStyleTokens.primary || "#0f766e",
+    displayColor: previewDisplayColor,
+    headingColor: previewHeadingColor,
+    subheadingColor: previewSubheadingColor,
+  });
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    let cancelled = false;
+    const googleEntries = collectGoogleRoleEntries(fontRoles);
+    const families = googleEntries.map((entry) => entry.family);
+    const existing = document.getElementById(PREVIEW_FONT_LINK_ID);
+
+    if (families.length === 0) {
+      if (existing) existing.remove();
+      setFontPreviewState({});
+      return undefined;
+    }
+
+    const link =
+      existing instanceof HTMLLinkElement
+        ? existing
+        : document.createElement("link");
+    if (!(existing instanceof HTMLLinkElement)) {
+      link.id = PREVIEW_FONT_LINK_ID;
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
+    }
+
+    const href = buildGooglePreviewHref(googleEntries);
+    setFontPreviewState(
+      Object.fromEntries(
+        families.map((family) => [
+          family,
+          {
+            status: "loading",
+            message: `Loading "${family}" for preview...`,
+          },
+        ]),
+      ),
+    );
+
+    const loadStylesheet = async (nextHref) => {
+      if (!nextHref) return false;
+      if (link.href === nextHref && link.sheet) return true;
+      return new Promise((resolve) => {
+        const onLoad = () => {
+          cleanup();
+          resolve(true);
+        };
+        const onError = () => {
+          cleanup();
+          resolve(false);
+        };
+        const cleanup = () => {
+          link.removeEventListener("load", onLoad);
+          link.removeEventListener("error", onError);
+        };
+        link.addEventListener("load", onLoad, { once: true });
+        link.addEventListener("error", onError, { once: true });
+        link.href = nextHref;
+      });
+    };
+
+    const verifyFonts = async () => {
+      let stylesheetOk = await loadStylesheet(href);
+      if (!stylesheetOk) {
+        stylesheetOk = await loadStylesheet(`${href}&retry=${Date.now()}`);
+      }
+      if (cancelled) return;
+      if (!stylesheetOk) {
+        setFontPreviewState(
+          Object.fromEntries(
+            families.map((family) => [
+              family,
+              {
+                status: "failed",
+                message: `Failed to load "${family}" for preview.`,
+              },
+            ]),
+          ),
+        );
+        return;
+      }
+
+      if (!("fonts" in document) || !document.fonts) {
+        setFontPreviewState(
+          Object.fromEntries(
+            families.map((family) => [
+              family,
+              {
+                status: "loaded",
+                message: `Loaded stylesheet for "${family}". Browser cannot verify font status.`,
+              },
+            ]),
+          ),
+        );
+        return;
+      }
+
+      const fontApi = document.fonts;
+      const verifiedEntries = await Promise.all(
+        families.map(async (family) => {
+          try {
+            await Promise.race([
+              fontApi.load(`16px "${family}"`),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("font load timeout")), 4500),
+              ),
+            ]);
+            const ok = fontApi.check(`16px "${family}"`);
+            return [
+              family,
+              ok
+                ? {
+                    status: "loaded",
+                    message: `Preview is using "${family}".`,
+                  }
+                : {
+                    status: "failed",
+                    message: `Could not verify "${family}" in the preview.`,
+                  },
+            ];
+          } catch {
+            return [
+              family,
+              {
+                status: "failed",
+                message: `Failed to load "${family}" for preview.`,
+              },
+            ];
+          }
+        }),
+      );
+
+      if (!cancelled) {
+        setFontPreviewState(Object.fromEntries(verifiedEntries));
+      }
+    };
+
+    void verifyFonts();
+    return () => {
+      cancelled = true;
+    };
+  }, [fontRoles]);
+
+  useEffect(() => {
+    const downloaded = new Set(
+      (downloadedFamilies || []).map((entry) => entry?.family).filter(Boolean),
+    );
+    if (downloaded.size === 0) return;
+    setFontPersistenceState((current) => {
+      const next = { ...current };
+      downloaded.forEach((family) => {
+        next[family] = {
+          status: "downloaded",
+          message: "Downloaded to the site font library.",
+        };
+      });
+      return next;
+    });
+  }, [downloadedFamilies]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const downloaded = new Set(
+      (downloadedFamilies || []).map((entry) => entry?.family).filter(Boolean),
+    );
+    const missing = collectGoogleRoleEntries(fontRoles).filter(
+      (entry) =>
+        !downloaded.has(entry.family) &&
+        fontPersistenceState[entry.family]?.status !== "downloading" &&
+        fontPersistenceState[entry.family]?.status !== "downloaded" &&
+        fontPersistenceState[entry.family]?.status !== "failed",
+    );
+
+    missing.forEach((entry) => {
+      setFontPersistenceState((current) => ({
+        ...current,
+        [entry.family]: {
+          status: "downloading",
+          message: `Downloading "${entry.family}" for persistent use...`,
+        },
+      }));
+
+      void (async () => {
+        try {
+          const { res, json } = await adminFetch("/api/admin/fonts/download", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              family: entry.family,
+              weights: entry.isVariable
+                ? undefined
+                : Array.from(entry.weights || []).sort((a, b) => a - b),
+            }),
+          });
+          if (!res.ok || !json?.ok || !json?.record) {
+            throw new Error(json?.error || `Failed to download "${entry.family}".`);
+          }
+          if (cancelled) return;
+          setDownloadedFamilies((current) =>
+            upsertDownloadedFamilyEntry(current, json.record),
+          );
+          setFontPersistenceState((current) => ({
+            ...current,
+            [entry.family]: {
+              status: "downloaded",
+              message: "Downloaded to the site font library.",
+            },
+          }));
+        } catch (error) {
+          if (cancelled) return;
+          setFontPersistenceState((current) => ({
+            ...current,
+            [entry.family]: {
+              status: "failed",
+              message:
+                error?.message || `Failed to download "${entry.family}".`,
+            },
+          }));
+        }
+      })();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    adminFetch,
+    downloadedFamilies,
+    fontPersistenceState,
+    fontRoles,
+    setDownloadedFamilies,
+  ]);
 
   return (
     <>
@@ -673,6 +1230,17 @@ export default function AdminStyleTab({
                   role?.type === "google"
                     ? downloadedFamilies?.find((f) => f.family === role.family)
                     : null;
+                const previewStatus =
+                  role?.type === "google" ? fontPreviewState[role.family] : null;
+                const persistenceStatus =
+                  role?.type === "google"
+                    ? downloadedEntry
+                      ? {
+                          status: "downloaded",
+                          message: "Downloaded to the site font library.",
+                        }
+                      : fontPersistenceState[role.family]
+                    : null;
                 const googleCdnUrl = downloadedEntry
                   ? downloadedEntry.isVariable
                     ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(downloadedEntry.family).replace(/%20/g, "+")}:wght@${downloadedEntry.weightRange?.[0] ?? 100}..${downloadedEntry.weightRange?.[1] ?? 900}&display=swap`
@@ -725,6 +1293,26 @@ export default function AdminStyleTab({
                             </span>
                           )}
                         </div>
+                        {persistenceStatus ? (
+                          <div
+                            className="text-[11px] mt-1"
+                            style={{
+                              color: fontStatusColor(persistenceStatus.status),
+                            }}
+                          >
+                            {persistenceStatus.message}
+                          </div>
+                        ) : null}
+                        {previewStatus ? (
+                          <div
+                            className="text-[11px] mt-0.5"
+                            style={{
+                              color: fontStatusColor(previewStatus.status),
+                            }}
+                          >
+                            {previewStatus.message}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {role?.type !== "preset" &&
@@ -898,7 +1486,7 @@ export default function AdminStyleTab({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={saveSiteStyleSettings}
+                onClick={handleStyleSave}
                 disabled={shopSettingsSaving}
                 className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm hover:bg-gray-700 disabled:opacity-50"
               >
@@ -913,25 +1501,61 @@ export default function AdminStyleTab({
               >
                 {t("admin.styleSiteResetDefaults", "Reset to defaults")}
               </button>
+              <span className="text-xs text-gray-500" aria-live="polite">
+                {shopSettingsSaving
+                  ? t("admin.saving", "Saving…")
+                  : styleSaveState === "saved"
+                    ? t(
+                        "admin.styleSavedFeedback",
+                        styleSavedAt
+                          ? "Saved " +
+                              new Date(styleSavedAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                          : "Saved",
+                      )
+                    : styleSaveState === "error"
+                      ? t(
+                          "admin.styleSaveFailedFeedback",
+                          "Save failed. Check the error banner and try again.",
+                        )
+                      : t(
+                          "admin.styleSaveHint",
+                          "Publish style changes to make them persistent.",
+                        )}
+              </span>
             </div>
             <div className="flex gap-3 flex-wrap">
               <button
-                className="px-4 py-2 rounded text-white text-sm font-medium"
-                style={{ background: siteStyleTokens.primary }}
+                className="px-4 py-2 rounded text-sm font-medium"
+                style={{
+                  background: siteStyleTokens.primary,
+                  color:
+                    editorPreviewTokens.invertedText ||
+                    editorPreviewTokens.background,
+                }}
               >
                 {t("admin.stylePrimaryButton")}
               </button>
               <button
-                className="px-4 py-2 rounded text-white text-sm font-medium"
-                style={{ background: siteStyleTokens.tertiary }}
+                className="px-4 py-2 rounded text-sm font-medium"
+                style={{
+                  background: siteStyleTokens.tertiary,
+                  color: ensureReadablePreviewColor(
+                    siteStyleTokens.tertiary || editorPreviewTokens.tertiary,
+                    siteStyleTokens.background || editorPreviewTokens.background,
+                  ),
+                }}
               >
                 {t("admin.styleTertiaryButton")}
               </button>
               <button
                 className="px-4 py-2 rounded text-sm font-medium border"
                 style={{
-                  color: siteStyleTokens.primary,
+                  color: editorPreviewTokens.textLink,
                   borderColor: siteStyleTokens.primary,
+                  background: siteStyleTokens.background,
                 }}
               >
                 {t("admin.styleOutlineButton")}
@@ -940,7 +1564,7 @@ export default function AdminStyleTab({
                 className="px-3 py-1 rounded-full text-sm font-medium"
                 style={{
                   background: siteStyleTokens.secondary,
-                  color: siteStyleTokens.foreground,
+                  color: editorPreviewTokens.secondaryForeground,
                 }}
               >
                 {t("admin.styleBadge")}
@@ -1435,52 +2059,184 @@ export default function AdminStyleTab({
                     borderColor: previewTokens.muted,
                   }}
                 >
-                  <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
+                  <div
+                    className="text-[10px] font-semibold uppercase tracking-wide opacity-70"
+                    style={{ color: previewTokens.textMeta }}
+                  >
                     {surface.label}
                   </div>
 
-                  <h1
+                  <div
+                    role="heading"
+                    aria-level={1}
                     className="leading-tight"
                     style={{
                       margin: 0,
+                      display: "block",
                       fontFamily:
                         "var(--font-display, var(--font-heading, system-ui, sans-serif))",
-                      color: previewTokens.foreground,
+                      color: previewTokens.textH1,
                       fontSize: "clamp(1.35rem, 2.4vw, 1.9rem)",
+                      fontWeight: 900,
+                      lineHeight: 1.25,
                     }}
                   >
-                    {t(
-                      "admin.styleActivePreviewDisplaySample",
-                      "Design with clarity and speed.",
-                    )}
-                  </h1>
+                    <span
+                      style={{
+                        color: previewTokens.textH1,
+                        WebkitTextFillColor: previewTokens.textH1,
+                      }}
+                    >
+                      {t(
+                        "admin.styleActivePreviewDisplaySample",
+                        "Design with clarity and speed.",
+                      )}
+                    </span>
+                  </div>
 
-                  <h2
+                  <div
+                    role="heading"
+                    aria-level={2}
                     className="text-base leading-snug"
                     style={{
                       margin: 0,
+                      display: "block",
                       fontFamily: "var(--font-heading, system-ui, sans-serif)",
-                      color: previewTokens.foreground,
+                      color: previewTokens.textH2,
+                      fontWeight: 900,
                     }}
                   >
-                    {t(
-                      "admin.styleActivePreviewHeadingSample",
-                      "Readable hierarchy for real content.",
-                    )}
-                  </h2>
+                    <span
+                      style={{
+                        color: previewTokens.textH2,
+                        WebkitTextFillColor: previewTokens.textH2,
+                      }}
+                    >
+                      {t(
+                        "admin.styleActivePreviewHeadingSample",
+                        "Readable hierarchy for real content.",
+                      )}
+                    </span>
+                  </div>
 
                   <p
                     className="text-sm leading-relaxed"
                     style={{
                       margin: 0,
                       fontFamily: "var(--font-body, system-ui, sans-serif)",
+                      color: previewTokens.textBody,
                     }}
                   >
                     {t("admin.fontBrowserPreviewText")}
                   </p>
 
+                  <div
+                    role="heading"
+                    aria-level={3}
+                    className="leading-snug"
+                    style={{
+                      margin: 0,
+                      display: "block",
+                      fontFamily: "var(--font-heading, system-ui, sans-serif)",
+                      color: previewTokens.textH3,
+                      fontSize: "1.05rem",
+                      fontWeight: 800,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: previewTokens.textH3,
+                        WebkitTextFillColor: previewTokens.textH3,
+                      }}
+                    >
+                      {t(
+                        "admin.styleActivePreviewHeadingThreeSample",
+                        "Subheading that helps longer pages scan quickly.",
+                      )}
+                    </span>
+                  </div>
+
+                  <div
+                    role="heading"
+                    aria-level={4}
+                    className="leading-snug"
+                    style={{
+                      margin: 0,
+                      display: "block",
+                      fontFamily: "var(--font-heading, system-ui, sans-serif)",
+                      color: previewTokens.textH4,
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: previewTokens.textH4,
+                        WebkitTextFillColor: previewTokens.textH4,
+                      }}
+                    >
+                      {t(
+                        "admin.styleActivePreviewHeadingFourSample",
+                        "Support label or eyebrow",
+                      )}
+                    </span>
+                  </div>
+
+                  <div
+                    role="heading"
+                    aria-level={5}
+                    className="leading-snug"
+                    style={{
+                      margin: 0,
+                      display: "block",
+                      fontFamily:
+                        "var(--font-subheading, var(--font-heading, system-ui, sans-serif))",
+                      color: previewTokens.textH5,
+                      fontSize: "0.94rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: previewTokens.textH5,
+                        WebkitTextFillColor: previewTokens.textH5,
+                      }}
+                    >
+                      {t(
+                        "admin.styleActivePreviewSubheadingSample",
+                        "Subheading role sample from the left-side color slot.",
+                      )}
+                    </span>
+                  </div>
+
+                  <div
+                    className="flex flex-wrap items-center gap-3 text-sm"
+                    style={{
+                      fontFamily: "var(--font-body, system-ui, sans-serif)",
+                      color: previewTokens.textBody,
+                    }}
+                  >
+                    <strong style={{ color: previewTokens.textBold }}>
+                      {t(
+                        "admin.styleActivePreviewBoldSample",
+                        "Bold emphasis sample",
+                      )}
+                    </strong>
+                    <em style={{ color: previewTokens.textItalic }}>
+                      {t(
+                        "admin.styleActivePreviewItalicSample",
+                        "Italic emphasis sample",
+                      )}
+                    </em>
+                  </div>
+
                   <div className="space-y-1">
-                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                    <div
+                      className="text-[10px] uppercase tracking-wide opacity-70"
+                      style={{ color: previewTokens.textMeta }}
+                    >
                       {t("admin.styleButtonsPreview", "Buttons and outlines")}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -1501,9 +2257,7 @@ export default function AdminStyleTab({
                           fontFamily:
                             "var(--font-button, var(--font-body, system-ui, sans-serif))",
                           background: previewTokens.secondary,
-                          color:
-                            previewTokens.lightForeground ||
-                            previewTokens.foreground,
+                          color: previewTokens.secondaryForeground,
                           border: `1px solid ${previewTokens.muted}`,
                         }}
                       >
@@ -1519,12 +2273,24 @@ export default function AdminStyleTab({
                           fontFamily:
                             "var(--font-button, var(--font-body, system-ui, sans-serif))",
                           color:
-                            previewTokens.invertedText || previewTokens.primary,
+                            previewTokens.outlineForeground ||
+                            previewTokens.primary ||
+                            previewTokens.foreground,
                           border: `1px solid ${previewTokens.primary}`,
                           background: "transparent",
+                          boxShadow: "none",
                         }}
                       >
-                        {t("admin.styleOutlineButton")}
+                        <span
+                          style={{
+                            color:
+                              previewTokens.outlineForeground ||
+                              previewTokens.primary ||
+                              previewTokens.foreground,
+                          }}
+                        >
+                          {t("admin.styleOutlineButton")}
+                        </span>
                       </button>
                       <button
                         type="button"
@@ -1545,7 +2311,10 @@ export default function AdminStyleTab({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                    <div
+                      className="text-[10px] uppercase tracking-wide opacity-70"
+                      style={{ color: previewTokens.textMeta }}
+                    >
                       {t("admin.stylePreviewMenuTitle", "Menu and submenu")}
                     </div>
                     <div
@@ -1604,7 +2373,10 @@ export default function AdminStyleTab({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                    <div
+                      className="text-[10px] uppercase tracking-wide opacity-70"
+                      style={{ color: previewTokens.textMeta }}
+                    >
                       {t("admin.stylePreviewLinkTitle", "Link behavior")}
                     </div>
                     <a
@@ -1613,7 +2385,7 @@ export default function AdminStyleTab({
                       className="text-sm"
                       style={{
                         fontFamily: "var(--font-body, system-ui, sans-serif)",
-                        color: previewTokens.linkColor || previewTokens.primary,
+                        color: previewTokens.textLink,
                         textDecoration: previewLinkUnderline,
                       }}
                     >
@@ -1625,7 +2397,10 @@ export default function AdminStyleTab({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                    <div
+                      className="text-[10px] uppercase tracking-wide opacity-70"
+                      style={{ color: previewTokens.textMeta }}
+                    >
                       {t("admin.styleFormPreview", "Form field")}
                     </div>
                     <input
@@ -1645,17 +2420,38 @@ export default function AdminStyleTab({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-[10px] uppercase tracking-wide opacity-70">
+                    <div
+                      className="text-[10px] uppercase tracking-wide opacity-70"
+                      style={{ color: previewTokens.textMeta }}
+                    >
                       {t("admin.styleStatusPreview", "Status pills")}
                     </div>
                     <div className="flex flex-wrap gap-1.5 text-[10px]">
-                      <span className="rounded px-2 py-0.5 bg-emerald-100 text-emerald-800">
+                      <span
+                        className="rounded px-2 py-0.5"
+                        style={previewStatusPillStyle(
+                          "success",
+                          previewTokens.background,
+                        )}
+                      >
                         {t("admin.ok", "OK")}
                       </span>
-                      <span className="rounded px-2 py-0.5 bg-amber-100 text-amber-800">
+                      <span
+                        className="rounded px-2 py-0.5"
+                        style={previewStatusPillStyle(
+                          "warning",
+                          previewTokens.background,
+                        )}
+                      >
                         {t("admin.warning", "Warning")}
                       </span>
-                      <span className="rounded px-2 py-0.5 bg-red-100 text-red-800">
+                      <span
+                        className="rounded px-2 py-0.5"
+                        style={previewStatusPillStyle(
+                          "danger",
+                          previewTokens.background,
+                        )}
+                      >
                         {t("admin.error", "Error")}
                       </span>
                     </div>
@@ -1673,6 +2469,11 @@ export default function AdminStyleTab({
           role={fontBrowserRole}
           currentFamily={fontRoles[fontBrowserRole]?.family}
           downloadedFamilies={downloadedFamilies}
+          onDownloadedFamily={(record) =>
+            setDownloadedFamilies((current) =>
+              upsertDownloadedFamilyEntry(current, record),
+            )
+          }
           usedFonts={Object.entries(fontRoles)
             .filter(
               ([k, r]) =>
