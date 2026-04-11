@@ -577,6 +577,8 @@ export default function AdminStyleTab({
   );
   const [styleSaveState, setStyleSaveState] = useState("idle");
   const [styleSavedAt, setStyleSavedAt] = useState(null);
+  const [typographyPresetState, setTypographyPresetState] = useState("idle");
+  const [ctaPresetState, setCtaPresetState] = useState("idle");
   const [fontPreviewState, setFontPreviewState] = useState({});
   const [fontPersistenceState, setFontPersistenceState] = useState({});
 
@@ -593,6 +595,65 @@ export default function AdminStyleTab({
     }
     setStyleSaveState("error");
     setStyleSavedAt(null);
+  }
+
+  async function handleCreateTypographyPreset() {
+    if (!typographySaveName.trim()) return;
+    setTypographyPresetState("saving");
+    const style = {
+      ...fontRoles,
+      typographyPalette,
+      linkStyle,
+    };
+    try {
+      const { json: data } = await adminFetch("/api/admin/style-presets", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "typography",
+          name: typographySaveName.trim(),
+          style,
+        }),
+      });
+      if (data?.ok && data.preset) {
+        setUserTypographyPresets((prev) => [data.preset, ...prev]);
+        setTypographySaveName("");
+        setTypographySaveExpanded(false);
+        setTypographyPresetState("created");
+        return;
+      }
+      setTypographyPresetState("error");
+    } catch {
+      setTypographyPresetState("error");
+    }
+  }
+
+  async function handleCreateCtaPreset() {
+    if (!ctaSaveName.trim()) return;
+    if (siteStyleTokens.ctaStyle?.type === "upstream") {
+      setCtaPresetState("upstream");
+      return;
+    }
+    setCtaPresetState("saving");
+    try {
+      const { json: data } = await adminFetch("/api/admin/style-presets", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "cta",
+          name: ctaSaveName.trim(),
+          style: siteStyleTokens.ctaStyle,
+        }),
+      });
+      if (data?.ok && data.preset) {
+        setUserCtaPresets((prev) => [data.preset, ...prev]);
+        setCtaSaveName("");
+        setCtaSaveExpanded(false);
+        setCtaPresetState("created");
+        return;
+      }
+      setCtaPresetState("error");
+    } catch {
+      setCtaPresetState("error");
+    }
   }
 
   const previewLinkUnderline =
@@ -969,12 +1030,18 @@ export default function AdminStyleTab({
               {/* Built-in themes strip */}
               <div>
                 <div className="inline-flex items-center gap-1 text-xs text-gray-500 mb-2">
-                  <span>{t("admin.styleThemesLabel", "Themes")}</span>
+                  <span>{t("admin.styleFontThemeShortcutsLabel", "Font theme shortcuts")}</span>
                   <AdminFieldHelpLink
                     slug="product-value"
-                    topic={t("admin.styleThemesLabel", "Themes")}
+                    topic={t("admin.styleFontThemeShortcutsLabel", "Font theme shortcuts")}
                   />
                 </div>
+                <p className="text-[11px] text-gray-500 mb-2 max-w-2xl">
+                  {t(
+                    "admin.styleThemeShortcutHint",
+                    "These apply font choices to the editor. They are not published until you use Save site style.",
+                  )}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {TYPOGRAPHY_THEMES.map((theme) => (
                     <button
@@ -1001,6 +1068,12 @@ export default function AdminStyleTab({
                       {theme.name}
                     </button>
                   ))}
+
+                  {userTypographyPresets.length > 0 ? (
+                    <span className="basis-full text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 mt-1">
+                      {t("admin.styleSavedFontPresets", "Saved font presets")}
+                    </span>
+                  ) : null}
 
                   {/* User typography presets */}
                   {userTypographyPresets.map((preset) => (
@@ -1054,13 +1127,20 @@ export default function AdminStyleTab({
                     </div>
                   ))}
 
-                  {/* Save current typography preset */}
+                  {/* Create typography preset shortcut */}
                   {!typographySaveExpanded ? (
                     <button
-                      onClick={() => setTypographySaveExpanded(true)}
+                      onClick={() => {
+                        setTypographyPresetState("idle");
+                        setTypographySaveExpanded(true);
+                      }}
                       className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
+                      title={t(
+                        "admin.styleCreateFontPresetTitle",
+                        "Create a reusable font preset. This does not publish the site style.",
+                      )}
                     >
-                      Save current…
+                      {t("admin.styleCreateFontPreset", "+ Font preset")}
                     </button>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -1068,41 +1148,21 @@ export default function AdminStyleTab({
                         type="text"
                         value={typographySaveName}
                         onChange={(e) => setTypographySaveName(e.target.value)}
-                        placeholder="Preset name"
+                        placeholder={t(
+                          "admin.styleFontPresetName",
+                          "Font preset name",
+                        )}
                         className="text-xs border border-gray-300 rounded px-2 py-1 w-44"
                         autoFocus
                       />
                       <button
-                        onClick={async () => {
-                          if (!typographySaveName.trim()) return;
-                          const style = {
-                            ...fontRoles,
-                            typographyPalette,
-                            linkStyle,
-                          };
-                          const { json: data } = await adminFetch(
-                            "/api/admin/style-presets",
-                            {
-                              method: "POST",
-                              body: JSON.stringify({
-                                type: "typography",
-                                name: typographySaveName.trim(),
-                                style,
-                              }),
-                            },
-                          );
-                          if (data?.ok && data.preset) {
-                            setUserTypographyPresets((prev) => [
-                              data.preset,
-                              ...prev,
-                            ]);
-                            setTypographySaveName("");
-                            setTypographySaveExpanded(false);
-                          }
-                        }}
-                        className="text-xs px-2 py-1 rounded bg-slate-600 text-white hover:bg-slate-700"
+                        onClick={handleCreateTypographyPreset}
+                        disabled={typographyPresetState === "saving"}
+                        className="text-xs px-2 py-1 rounded bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50"
                       >
-                        Save
+                        {typographyPresetState === "saving"
+                          ? t("admin.saving", "Saving…")
+                          : t("admin.styleCreatePresetButton", "Create preset")}
                       </button>
                       <button
                         onClick={() => {
@@ -1115,6 +1175,21 @@ export default function AdminStyleTab({
                       </button>
                     </div>
                   )}
+                  {typographyPresetState === "created" ? (
+                    <span className="text-[11px] text-emerald-700" aria-live="polite">
+                      {t(
+                        "admin.styleFontPresetCreated",
+                        "Font preset created. Use Save site style to publish it.",
+                      )}
+                    </span>
+                  ) : typographyPresetState === "error" ? (
+                    <span className="text-[11px] text-red-600" aria-live="polite">
+                      {t(
+                        "admin.styleFontPresetFailed",
+                        "Could not create font preset.",
+                      )}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
@@ -1492,7 +1567,7 @@ export default function AdminStyleTab({
               >
                 {shopSettingsSaving
                   ? t("admin.saving", "Saving…")
-                  : t("common.save")}
+                  : t("admin.styleSaveSiteStyle", "Save site style")}
               </button>
               <button
                 type="button"
@@ -1522,7 +1597,7 @@ export default function AdminStyleTab({
                         )
                       : t(
                           "admin.styleSaveHint",
-                          "Publish style changes to make them persistent.",
+                          "Saves the current colors, fonts, link style, and button style to the live site.",
                         )}
               </span>
             </div>
@@ -1677,8 +1752,15 @@ export default function AdminStyleTab({
             </div>
 
             {/* Preset strip */}
-            <div className="flex flex-wrap gap-2 items-center">
-              {CTA_BUILTIN_PRESETS.map((preset) => {
+            <div className="space-y-2">
+              <p className="text-[11px] text-gray-500 max-w-2xl">
+                {t(
+                  "admin.styleButtonPresetHint",
+                  "Button presets apply a reusable button look in this editor. They are not published until you use Save site style.",
+                )}
+              </p>
+              <div className="flex flex-wrap gap-2 items-center">
+                {CTA_BUILTIN_PRESETS.map((preset) => {
                 const isActive =
                   preset.id === "upstream"
                     ? siteStyleTokens.ctaStyle?.type === "upstream"
@@ -1738,13 +1820,20 @@ export default function AdminStyleTab({
                 </div>
               ))}
 
-              {/* Save current… */}
+              {/* Create button preset shortcut */}
               {!ctaSaveExpanded ? (
                 <button
-                  onClick={() => setCtaSaveExpanded(true)}
+                  onClick={() => {
+                    setCtaPresetState("idle");
+                    setCtaSaveExpanded(true);
+                  }}
                   className="px-3 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-500 hover:border-gray-400"
+                  title={t(
+                    "admin.styleCreateButtonPresetTitle",
+                    "Create a reusable button preset. This does not publish the site style.",
+                  )}
                 >
-                  Save current…
+                  {t("admin.styleCreateButtonPreset", "+ Button preset")}
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
@@ -1752,34 +1841,21 @@ export default function AdminStyleTab({
                     type="text"
                     value={ctaSaveName}
                     onChange={(e) => setCtaSaveName(e.target.value)}
-                    placeholder="Preset name"
+                    placeholder={t(
+                      "admin.styleButtonPresetName",
+                      "Button preset name",
+                    )}
                     className="text-xs border border-gray-300 rounded px-2 py-1 w-36"
                     autoFocus
                   />
                   <button
-                    onClick={async () => {
-                      if (!ctaSaveName.trim()) return;
-                      if (siteStyleTokens.ctaStyle?.type === "upstream") return; // can't save upstream as preset
-                      const { json: data } = await adminFetch(
-                        "/api/admin/style-presets",
-                        {
-                          method: "POST",
-                          body: JSON.stringify({
-                            type: "cta",
-                            name: ctaSaveName.trim(),
-                            style: siteStyleTokens.ctaStyle,
-                          }),
-                        },
-                      );
-                      if (data?.ok && data.preset) {
-                        setUserCtaPresets((prev) => [data.preset, ...prev]);
-                        setCtaSaveName("");
-                        setCtaSaveExpanded(false);
-                      }
-                    }}
-                    className="text-xs px-2 py-1 rounded bg-slate-600 text-white hover:bg-slate-700"
+                    onClick={handleCreateCtaPreset}
+                    disabled={ctaPresetState === "saving"}
+                    className="text-xs px-2 py-1 rounded bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-50"
                   >
-                    Save
+                    {ctaPresetState === "saving"
+                      ? t("admin.saving", "Saving…")
+                      : t("admin.styleCreatePresetButton", "Create preset")}
                   </button>
                   <button
                     onClick={() => {
@@ -1792,6 +1868,29 @@ export default function AdminStyleTab({
                   </button>
                 </div>
               )}
+              {ctaPresetState === "created" ? (
+                <span className="text-[11px] text-emerald-700" aria-live="polite">
+                  {t(
+                    "admin.styleButtonPresetCreated",
+                    "Button preset created. Use Save site style to publish it.",
+                  )}
+                </span>
+              ) : ctaPresetState === "upstream" ? (
+                <span className="text-[11px] text-amber-700" aria-live="polite">
+                  {t(
+                    "admin.styleButtonPresetUpstream",
+                    "WordPress default buttons cannot be stored as a custom preset.",
+                  )}
+                </span>
+              ) : ctaPresetState === "error" ? (
+                <span className="text-[11px] text-red-600" aria-live="polite">
+                  {t(
+                    "admin.styleButtonPresetFailed",
+                    "Could not create button preset.",
+                  )}
+                </span>
+              ) : null}
+              </div>
             </div>
 
             {/* Live preview */}
