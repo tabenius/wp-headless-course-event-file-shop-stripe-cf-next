@@ -71,6 +71,22 @@ function normalizeCanonicalName(value) {
   return normalized;
 }
 
+async function assertCanonicalNameAvailable(db, canonicalName, excludeAvatarId = "") {
+  const safeCanonicalName = normalizeCanonicalName(canonicalName);
+  if (!safeCanonicalName) return;
+  const existing = await db
+    .prepare(
+      "SELECT id FROM avatars WHERE canonical_name = ? COLLATE NOCASE LIMIT 1",
+    )
+    .bind(safeCanonicalName)
+    .first();
+  if (!existing) return;
+  if (excludeAvatarId && String(existing.id || "") === String(excludeAvatarId)) {
+    return;
+  }
+  throw new Error("Canonical name is already registered by another avatar.");
+}
+
 function normalizeRelationshipKind(value) {
   const safe = String(value || "")
     .trim()
@@ -221,6 +237,10 @@ export async function createOwnAvatar(user, initialPatch = {}) {
     typeof initialPatch?.bio === "string" ? initialPatch.bio.trim() : "";
   const details = JSON.stringify(sanitizeDetails(initialPatch?.details || {}));
 
+  if (canonicalName) {
+    await assertCanonicalNameAvailable(db, canonicalName);
+  }
+
   try {
     await db
       .prepare(
@@ -332,6 +352,9 @@ export async function updateOwnAvatar(user, patch = {}) {
       throw new Error(
         "Invalid canonical name (must be UTF-8 up to 128 bytes).",
       );
+    if (cn) {
+      await assertCanonicalNameAvailable(db, cn, current.id);
+    }
     updates.push("canonical_name = ?");
     binds.push(cn || null);
   }

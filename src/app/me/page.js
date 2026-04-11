@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getOwnAvatar, listOwnAvatarRelationships } from "@/lib/avatarStore";
 import AvatarMePanel from "@/components/profile/AvatarMePanel";
+import AvatarProfileOverview from "@/components/profile/AvatarProfileOverview";
 
 export const dynamic = "force-dynamic";
 
@@ -24,30 +25,37 @@ export default async function MePage() {
   ]);
 
   return (
-    <section className="max-w-4xl mx-auto px-6 py-16 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">My Avatar</h1>
-        <p className="text-gray-600 mt-2">
-          Configure your avatar profile, canonical name, visibility, and
-          relationships.
-        </p>
-      </div>
-
-      {avatar?.uriId ? (
-        <p className="text-sm text-gray-700">
-          Public profile URL:{" "}
-          <Link
-            href={`/profile/${encodeURIComponent(avatar.uriId)}`}
-            className="text-teal-700 hover:underline"
-          >
-            /profile/{avatar.uriId}
-          </Link>
-        </p>
-      ) : null}
+    <section className="max-w-4xl mx-auto px-6 py-16 space-y-8">
+      <AvatarProfileOverview
+        avatar={avatar || { uriId: "", canonicalName: "", isOwner: true }}
+        relationshipsOut={relationshipsOut}
+        subtitle=""
+        footerActions={
+          <>
+            <Link
+              href="/inventory"
+              className="inline-flex items-center rounded-xl border border-slate-700 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Inventory
+            </Link>
+            {avatar?.uriId && avatar?.isPublic ? (
+              <Link
+                href={`/profile/${encodeURIComponent(avatar.uriId)}`}
+                className="inline-flex items-center rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-600"
+              >
+                View public profile
+              </Link>
+            ) : null}
+          </>
+        }
+        actionSectionTitle="Current outgoing relationships"
+      />
 
       <AvatarMePanel
         initialAvatar={avatar}
         initialRelationships={relationshipsOut}
+        title="Manage avatar"
+        description="Configure your avatar profile, canonical name, visibility, and relationships."
       />
     </section>
   );

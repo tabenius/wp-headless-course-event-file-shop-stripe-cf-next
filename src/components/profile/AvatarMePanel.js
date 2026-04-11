@@ -22,6 +22,8 @@ function normalizeRelationshipId(raw) {
 export default function AvatarMePanel({
   initialAvatar,
   initialRelationships = [],
+  title = "Avatar profile",
+  description = "",
 }) {
   const [avatar, setAvatar] = useState(initialAvatar || null);
   const [relationships, setRelationships] = useState(
@@ -197,8 +199,17 @@ export default function AvatarMePanel({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-        <h2 className="text-xl font-semibold">Avatar profile</h2>
+      <div className="space-y-4 rounded-[1.75rem] border border-gray-700 bg-white p-6 shadow-[0_20px_40px_-32px_rgba(15,23,42,0.38)]">
+        <div className="space-y-2">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4b1d68]">
+            {title}
+          </p>
+          {description ? (
+            <p className="max-w-2xl text-sm leading-6 text-slate-600">
+              {description}
+            </p>
+          ) : null}
+        </div>
         {!hasAvatar ? (
           <p className="text-sm text-gray-700">
             You do not have an avatar yet. Create one below and set a canonical
@@ -285,9 +296,24 @@ export default function AvatarMePanel({
             type="button"
             onClick={saveAvatar}
             disabled={saving}
-            className="px-4 py-2 rounded bg-teal-700 text-white text-sm hover:bg-teal-600 disabled:opacity-60"
+            aria-label={saving ? "Saving avatar" : hasAvatar ? "Save avatar" : "Create avatar"}
+            title={saving ? "Saving..." : hasAvatar ? "Save avatar" : "Create avatar"}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-teal-700 text-white hover:bg-teal-600 disabled:opacity-60"
           >
-            {saving ? "Saving..." : hasAvatar ? "Save avatar" : "Create avatar"}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <rect x="4" y="11" width="16" height="9" rx="2" />
+              <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+            </svg>
           </button>
           <button
             type="button"
@@ -303,7 +329,7 @@ export default function AvatarMePanel({
       </div>
 
       {hasAvatar ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4">
+        <div className="space-y-4 rounded-[1.75rem] border border-gray-700 bg-white p-6 shadow-[0_20px_40px_-32px_rgba(15,23,42,0.38)]">
           <h2 className="text-xl font-semibold">Relationships</h2>
 
           <div className="grid gap-3 md:grid-cols-3">
@@ -360,7 +386,7 @@ export default function AvatarMePanel({
               {relationships.map((row) => (
                 <li
                   key={`${row.kind}:${row.toAvatarId}`}
-                  className="flex items-center justify-between gap-3 rounded border border-gray-200 px-3 py-2"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-gray-700 px-3 py-2"
                 >
                   <span className="text-sm text-gray-700 break-all">
                     {row.kind} → 0x{row.toAvatarId}
@@ -380,7 +406,7 @@ export default function AvatarMePanel({
           )}
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
+        <div className="rounded-[1.75rem] border border-gray-700 bg-white p-6 shadow-[0_20px_40px_-32px_rgba(15,23,42,0.38)]">
           <p className="text-sm text-gray-700">
             Create your avatar first to configure relationships.
           </p>
