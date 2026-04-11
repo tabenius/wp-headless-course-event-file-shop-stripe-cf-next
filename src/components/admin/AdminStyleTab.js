@@ -1558,49 +1558,6 @@ export default function AdminStyleTab({
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={handleStyleSave}
-                disabled={shopSettingsSaving}
-                className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm hover:bg-gray-700 disabled:opacity-50"
-              >
-                {shopSettingsSaving
-                  ? t("admin.saving", "Saving…")
-                  : t("admin.styleSaveSiteStyle", "Save site style")}
-              </button>
-              <button
-                type="button"
-                onClick={resetSiteStyleDefaults}
-                className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50"
-              >
-                {t("admin.styleSiteResetDefaults", "Reset to defaults")}
-              </button>
-              <span className="text-xs text-gray-500" aria-live="polite">
-                {shopSettingsSaving
-                  ? t("admin.saving", "Saving…")
-                  : styleSaveState === "saved"
-                    ? t(
-                        "admin.styleSavedFeedback",
-                        styleSavedAt
-                          ? "Saved " +
-                              new Date(styleSavedAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                          : "Saved",
-                      )
-                    : styleSaveState === "error"
-                      ? t(
-                          "admin.styleSaveFailedFeedback",
-                          "Save failed. Check the error banner and try again.",
-                        )
-                      : t(
-                          "admin.styleSaveHint",
-                          "Saves the current colors, fonts, link style, and button style to the live site.",
-                        )}
-              </span>
-            </div>
             <div className="flex gap-3 flex-wrap">
               <button
                 className="px-4 py-2 rounded text-sm font-medium"
@@ -1644,96 +1601,6 @@ export default function AdminStyleTab({
               >
                 {t("admin.styleBadge")}
               </span>
-            </div>
-            <div className="rounded border bg-gray-50 p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="inline-flex items-center gap-1">
-                  <h3 className="text-sm font-semibold text-gray-800">
-                    {t("admin.styleRevisionHistory", "Style revision history")}
-                  </h3>
-                  <AdminFieldHelpLink
-                    slug="technical-manual"
-                    topic={t(
-                      "admin.styleRevisionHistory",
-                      "Style revision history",
-                    )}
-                  />
-                </div>
-                <span className="text-xs text-gray-500">
-                  {t("admin.styleRevisionCount", {
-                    count: siteStyleHistory.length,
-                  })}
-                </span>
-              </div>
-              {siteStyleHistory.length === 0 ? (
-                <p className="text-xs text-gray-500">
-                  {t(
-                    "admin.styleRevisionEmpty",
-                    "No style revisions saved yet. Publish your first style to create history.",
-                  )}
-                </p>
-              ) : (
-                <div className="overflow-auto border rounded bg-white">
-                  <table className="min-w-full text-xs">
-                    <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide">
-                      <tr>
-                        <th className="text-left px-2 py-1.5">
-                          {t("admin.updatedAt", "Updated")}
-                        </th>
-                        <th className="text-left px-2 py-1.5">
-                          {t("admin.styleColors", "Colors")}
-                        </th>
-                        <th className="text-left px-2 py-1.5">
-                          {t("admin.action", "Action")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {siteStyleHistory.slice(0, 20).map((revision) => (
-                        <tr
-                          key={revision.id || revision.savedAt}
-                          className="border-t"
-                        >
-                          <td className="px-2 py-1.5 text-gray-600 whitespace-nowrap">
-                            {revision.savedAt
-                              ? new Date(revision.savedAt).toLocaleString(
-                                  "sv-SE",
-                                )
-                              : "—"}
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <div className="flex items-center gap-1.5">
-                              {[
-                                revision.style?.background,
-                                revision.style?.primary,
-                                revision.style?.secondary,
-                                revision.style?.tertiary,
-                              ].map((value, index) => (
-                                <span
-                                  key={`${revision.id || revision.savedAt}-swatch-${index}`}
-                                  className="inline-block h-4 w-4 rounded border border-gray-300"
-                                  style={{ background: value || "#000000" }}
-                                  title={value || ""}
-                                />
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <button
-                              type="button"
-                              onClick={() => restoreSiteStyleRevision(revision)}
-                              disabled={shopSettingsSaving}
-                              className="px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              {t("admin.styleRevisionRestore", "Restore")}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
           </div>
 
@@ -2089,6 +1956,142 @@ export default function AdminStyleTab({
               </div>
             )}
           </div>
+
+          <hr className="border-gray-200" />
+
+          <div className="rounded border bg-gray-50 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="inline-flex items-center gap-1">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {t("admin.styleRevisionHistory", "Style revision history")}
+                  </h3>
+                  <AdminFieldHelpLink
+                    slug="technical-manual"
+                    topic={t(
+                      "admin.styleRevisionHistory",
+                      "Style revision history",
+                    )}
+                  />
+                </div>
+                <span className="text-xs text-gray-500">
+                  {t("admin.styleRevisionCount", {
+                    count: siteStyleHistory.length,
+                  })}
+                </span>
+              </div>
+              {siteStyleHistory.length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  {t(
+                    "admin.styleRevisionEmpty",
+                    "No style revisions saved yet. Publish your first style to create history.",
+                  )}
+                </p>
+              ) : (
+                <div className="overflow-auto border rounded bg-white">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide">
+                      <tr>
+                        <th className="text-left px-2 py-1.5">
+                          {t("admin.updatedAt", "Updated")}
+                        </th>
+                        <th className="text-left px-2 py-1.5">
+                          {t("admin.styleColors", "Colors")}
+                        </th>
+                        <th className="text-left px-2 py-1.5">
+                          {t("admin.action", "Action")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {siteStyleHistory.slice(0, 20).map((revision) => (
+                        <tr
+                          key={revision.id || revision.savedAt}
+                          className="border-t"
+                        >
+                          <td className="px-2 py-1.5 text-gray-600 whitespace-nowrap">
+                            {revision.savedAt
+                              ? new Date(revision.savedAt).toLocaleString(
+                                  "sv-SE",
+                                )
+                              : "—"}
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1.5">
+                              {[
+                                revision.style?.background,
+                                revision.style?.primary,
+                                revision.style?.secondary,
+                                revision.style?.tertiary,
+                              ].map((value, index) => (
+                                <span
+                                  key={`${revision.id || revision.savedAt}-swatch-${index}`}
+                                  className="inline-block h-4 w-4 rounded border border-gray-300"
+                                  style={{ background: value || "#000000" }}
+                                  title={value || ""}
+                                />
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <button
+                              type="button"
+                              onClick={() => restoreSiteStyleRevision(revision)}
+                              disabled={shopSettingsSaving}
+                              className="px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              {t("admin.styleRevisionRestore", "Restore")}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleStyleSave}
+                disabled={shopSettingsSaving}
+                className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm hover:bg-gray-700 disabled:opacity-50"
+              >
+                {shopSettingsSaving
+                  ? t("admin.saving", "Saving…")
+                  : t("admin.styleSaveSiteStyle", "Save site style")}
+              </button>
+              <button
+                type="button"
+                onClick={resetSiteStyleDefaults}
+                className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50"
+              >
+                {t("admin.styleSiteResetDefaults", "Reset to defaults")}
+              </button>
+              <span className="text-xs text-gray-500" aria-live="polite">
+                {shopSettingsSaving
+                  ? t("admin.saving", "Saving…")
+                  : styleSaveState === "saved"
+                    ? t(
+                        "admin.styleSavedFeedback",
+                        styleSavedAt
+                          ? "Saved " +
+                              new Date(styleSavedAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                          : "Saved",
+                      )
+                    : styleSaveState === "error"
+                      ? t(
+                          "admin.styleSaveFailedFeedback",
+                          "Save failed. Check the error banner and try again.",
+                        )
+                      : t(
+                          "admin.styleSaveHint",
+                          "Saves the current colors, fonts, link style, and button style to the live site.",
+                        )}
+              </span>
+            </div>
         </div>
 
         <aside className="xl:sticky xl:top-20 space-y-4 border rounded p-4">
