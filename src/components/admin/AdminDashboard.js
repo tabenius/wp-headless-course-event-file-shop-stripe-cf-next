@@ -1396,12 +1396,27 @@ export default function AdminDashboard() {
       const value = e?.detail;
       if (typeof value === "string" && value.startsWith("__shop_")) {
         setSelectedCourse(value);
+        return;
       }
+      const slug =
+        typeof value === "string"
+          ? value
+          : typeof value?.slug === "string"
+            ? value.slug
+            : "";
+      if (!slug) return;
+      const idx = products.findIndex((p) => p.slug === slug);
+      if (idx >= 0) {
+        setSelectedCourse(`__shop_${idx}`);
+        return;
+      }
+      pendingProductSlugRef.current = slug;
+      setLoaded((s) => ({ ...s, products: false }));
     }
     window.addEventListener("admin:selectProduct", onSelectProduct);
     return () =>
       window.removeEventListener("admin:selectProduct", onSelectProduct);
-  }, []);
+  }, [products]);
 
   // Derived values for shop product selection
   const isShopSelection = selectedContent.startsWith("__shop_");

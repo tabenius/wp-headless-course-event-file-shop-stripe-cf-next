@@ -117,6 +117,7 @@ function MetadataAnnotationsEditor({
   const hasAnnotations = Boolean(
     duration || startDate || endDate || metadataText.trim(),
   );
+  const [isOpen, setIsOpen] = useState(hasAnnotations);
 
   function setAnnotationField(key, value) {
     if (isShopSelection) {
@@ -137,13 +138,20 @@ function MetadataAnnotationsEditor({
   }
 
   return (
-    <details
-      defaultOpen
-      className="group rounded-xl border border-slate-300 bg-gradient-to-br from-white via-slate-50 to-blue-50 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.65)]"
-    >
-      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-3.5 py-3 marker:hidden">
+    <section className="rounded-xl border border-slate-300 bg-gradient-to-br from-white via-slate-50 to-blue-50 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.65)]">
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 px-3.5 py-3 text-left"
+      >
         <span className="flex min-w-0 items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-full border border-slate-300 bg-white text-xs text-slate-600 transition group-open:rotate-90">
+          <span
+            className={`grid h-6 w-6 place-items-center rounded-full border border-slate-300 bg-white text-xs text-slate-600 transition ${
+              isOpen ? "rotate-90" : ""
+            }`}
+            aria-hidden
+          >
             &gt;
           </span>
           <span className="min-w-0">
@@ -159,68 +167,74 @@ function MetadataAnnotationsEditor({
           </span>
         </span>
         <span className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600">
-          {hasAnnotations
-            ? t("admin.annotationStatusConfigured", "Configured")
-            : t("common.editor", "Editor")}
+          {isOpen
+            ? t("common.hide", "Hide")
+            : hasAnnotations
+              ? t("admin.annotationStatusConfigured", "Configured")
+              : t("common.show", "Show")}
         </span>
-      </summary>
-      <div className="space-y-3 border-t border-slate-200 px-3.5 pb-3.5 pt-3">
-        <div className="grid gap-3 md:grid-cols-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              {t("admin.buyableDurationLabel", "Duration")}
-            </label>
-            <input
-              type="text"
-              value={duration}
-              onChange={(e) => setAnnotationField("duration", e.target.value)}
-              placeholder={t("admin.buyableDurationPlaceholder", "90 minutes")}
-              className="w-full rounded border px-3 py-2 text-sm"
-            />
+      </button>
+      {isOpen && (
+        <div className="space-y-3 border-t border-slate-200 px-3.5 pb-3.5 pt-3">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">
+                {t("admin.buyableDurationLabel", "Duration")}
+              </label>
+              <input
+                type="text"
+                value={duration}
+                onChange={(e) => setAnnotationField("duration", e.target.value)}
+                placeholder={t("admin.buyableDurationPlaceholder", "90 minutes")}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">
+                {t("admin.buyableStartLabel", "Start date")}
+              </label>
+              <input
+                type="datetime-local"
+                value={toDateTimeLocalValue(startDate)}
+                onChange={(e) =>
+                  setAnnotationField("startDate", e.target.value)
+                }
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">
+                {t("admin.buyableEndLabel", "End date")}
+              </label>
+              <input
+                type="datetime-local"
+                value={toDateTimeLocalValue(endDate)}
+                onChange={(e) => setAnnotationField("endDate", e.target.value)}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">
-              {t("admin.buyableStartLabel", "Start date")}
+              {t("admin.productMetadataLabel", "Metadata")}
             </label>
-            <input
-              type="datetime-local"
-              value={toDateTimeLocalValue(startDate)}
-              onChange={(e) => setAnnotationField("startDate", e.target.value)}
-              className="w-full rounded border px-3 py-2 text-sm"
+            <textarea
+              rows="4"
+              value={metadataText}
+              onChange={(e) => setMetadataJson(e.target.value)}
+              placeholder={'{\n  "seoTitle": "...",\n  "campaign": "spring"\n}'}
+              className="w-full rounded border px-3 py-2 font-mono text-xs"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              {t("admin.buyableEndLabel", "End date")}
-            </label>
-            <input
-              type="datetime-local"
-              value={toDateTimeLocalValue(endDate)}
-              onChange={(e) => setAnnotationField("endDate", e.target.value)}
-              className="w-full rounded border px-3 py-2 text-sm"
-            />
+            <p className="mt-1 text-[11px] text-slate-500">
+              {t(
+                "admin.productMetadataHint",
+                "Optional JSON object stored with this product for storefront and integration use.",
+              )}
+            </p>
           </div>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">
-            {t("admin.productMetadataLabel", "Metadata")}
-          </label>
-          <textarea
-            rows="4"
-            value={metadataText}
-            onChange={(e) => setMetadataJson(e.target.value)}
-            placeholder={'{\n  "seoTitle": "...",\n  "campaign": "spring"\n}'}
-            className="w-full rounded border px-3 py-2 font-mono text-xs"
-          />
-          <p className="mt-1 text-[11px] text-slate-500">
-            {t(
-              "admin.productMetadataHint",
-              "Optional JSON object stored with this product for storefront and integration use.",
-            )}
-          </p>
-        </div>
-      </div>
-    </details>
+      )}
+    </section>
   );
 }
 

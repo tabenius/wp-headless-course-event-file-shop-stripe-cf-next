@@ -3039,25 +3039,18 @@ export default function AdminMediaLibraryTab({
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const idx = [
-                                    ...productAssetIds.values(),
-                                  ].findIndex(
-                                    (p) => p.slug === assetProduct.slug,
+                                  window.dispatchEvent(
+                                    new CustomEvent("admin:switchTab", {
+                                      detail: "products",
+                                    }),
                                   );
-                                  if (idx >= 0) {
+                                  setTimeout(() => {
                                     window.dispatchEvent(
-                                      new CustomEvent("admin:switchTab", {
-                                        detail: "products",
+                                      new CustomEvent("admin:selectProduct", {
+                                        detail: { slug: assetProduct.slug },
                                       }),
                                     );
-                                    setTimeout(() => {
-                                      window.dispatchEvent(
-                                        new CustomEvent("admin:selectProduct", {
-                                          detail: `__shop_${idx}`,
-                                        }),
-                                      );
-                                    }, 200);
-                                  }
+                                  }, 200);
                                 }}
                                 className="text-xs px-2 py-1 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 font-medium"
                                 title={`${assetProduct.name || assetProduct.slug}${assetProduct.active ? "" : ` (${t("common.inactive", "inactive")})`}`}
