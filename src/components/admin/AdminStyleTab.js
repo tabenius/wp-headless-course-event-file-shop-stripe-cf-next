@@ -604,6 +604,10 @@ export default function AdminStyleTab({
     setStyleSaveState("idle");
   }, [siteStyleTokens, fontRoles, typographyPalette, linkStyle]);
 
+  useEffect(() => {
+    applyFontRolesToDom(fontRoles, typographyPalette, linkStyle);
+  }, [applyFontRolesToDom, fontRoles, linkStyle, typographyPalette]);
+
   async function handleStyleSave() {
     const ok = await saveSiteStyleSettings();
     if (ok) {
