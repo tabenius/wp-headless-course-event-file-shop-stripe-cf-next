@@ -8,6 +8,8 @@ import AdminDocsContextLinks from "./AdminDocsContextLinks";
 import AdminFieldHelpLink from "./AdminFieldHelpLink";
 
 const PREVIEW_FONT_LINK_ID = "ragbaz-admin-preview-fonts";
+const PREVIEW_DOWNLOADED_FONT_STYLE_ID =
+  "ragbaz-admin-preview-downloaded-fonts";
 
 function collectGoogleRoleEntries(fontRoles) {
   const seen = new Map();
@@ -61,6 +63,22 @@ function upsertDownloadedFamilyEntry(entries, record) {
   if (index >= 0) list[index] = record;
   else list.push(record);
   return list;
+}
+
+function buildDownloadedFontRecordMap(downloadedFamilies) {
+  return new Map(
+    (downloadedFamilies || [])
+      .filter((entry) => entry?.family && entry?.fontFaceCss)
+      .map((entry) => [entry.family, entry]),
+  );
+}
+
+function getDownloadedPreviewCss(googleEntries, downloadedFamilies) {
+  const downloaded = buildDownloadedFontRecordMap(downloadedFamilies);
+  return googleEntries
+    .map((entry) => downloaded.get(entry.family)?.fontFaceCss || "")
+    .filter(Boolean)
+    .join("\n");
 }
 
 function fontStatusColor(status) {
@@ -727,39 +745,67 @@ export default function AdminStyleTab({
     let cancelled = false;
     const googleEntries = collectGoogleRoleEntries(fontRoles);
     const families = googleEntries.map((entry) => entry.family);
-    const existing = document.getElementById(PREVIEW_FONT_LINK_ID);
+    const downloadedRecords = buildDownloadedFontRecordMap(downloadedFamilies);
+    const cdnEntries = googleEntries.filter(
+      (entry) => !downloadedRecords.has(entry.family),
+    );
+    const downloadedCss = getDownloadedPreviewCss(
+      googleEntries,
+      downloadedFamilies,
+    );
+    const existingLink = document.getElementById(PREVIEW_FONT_LINK_ID);
+    const existingDownloadedStyle = document.getElementById(
+      PREVIEW_DOWNLOADED_FONT_STYLE_ID,
+    );
 
     if (families.length === 0) {
-      if (existing) existing.remove();
+      if (existingLink) existingLink.remove();
+      if (existingDownloadedStyle) existingDownloadedStyle.remove();
       setFontPreviewState({});
       return undefined;
     }
 
+    if (downloadedCss) {
+      const style =
+        existingDownloadedStyle instanceof HTMLStyleElement
+          ? existingDownloadedStyle
+          : document.createElement("style");
+      style.id = PREVIEW_DOWNLOADED_FONT_STYLE_ID;
+      style.textContent = downloadedCss;
+      if (!style.parentNode) document.head.appendChild(style);
+    } else if (existingDownloadedStyle) {
+      existingDownloadedStyle.remove();
+    }
+
     const link =
-      existing instanceof HTMLLinkElement
-        ? existing
+      existingLink instanceof HTMLLinkElement
+        ? existingLink
         : document.createElement("link");
-    if (!(existing instanceof HTMLLinkElement)) {
+    if (cdnEntries.length > 0 && !(existingLink instanceof HTMLLinkElement)) {
       link.id = PREVIEW_FONT_LINK_ID;
       link.rel = "stylesheet";
       document.head.appendChild(link);
+    } else if (cdnEntries.length === 0 && existingLink) {
+      existingLink.remove();
     }
 
-    const href = buildGooglePreviewHref(googleEntries);
+    const href = buildGooglePreviewHref(cdnEntries);
     setFontPreviewState(
       Object.fromEntries(
         families.map((family) => [
           family,
           {
             status: "loading",
-            message: `Loading "${family}" for preview...`,
+            message: downloadedRecords.has(family)
+              ? `Loading downloaded "${family}" for preview...`
+              : `Loading "${family}" from Google Fonts for preview...`,
           },
         ]),
       ),
     );
 
     const loadStylesheet = async (nextHref) => {
-      if (!nextHref) return false;
+      if (!nextHref || cdnEntries.length === 0) return true;
       if (link.href === nextHref && link.sheet) return true;
       return new Promise((resolve) => {
         const onLoad = () => {
@@ -782,34 +828,31 @@ export default function AdminStyleTab({
 
     const verifyFonts = async () => {
       let stylesheetOk = await loadStylesheet(href);
-      if (!stylesheetOk) {
+      if (!stylesheetOk && href) {
         stylesheetOk = await loadStylesheet(`${href}&retry=${Date.now()}`);
       }
       if (cancelled) return;
-      if (!stylesheetOk) {
-        setFontPreviewState(
-          Object.fromEntries(
-            families.map((family) => [
-              family,
-              {
-                status: "failed",
-                message: `Failed to load "${family}" for preview.`,
-              },
-            ]),
-          ),
-        );
-        return;
-      }
+
+      const failedCdnFamilies = new Set(
+        stylesheetOk ? [] : cdnEntries.map((entry) => entry.family),
+      );
 
       if (!("fonts" in document) || !document.fonts) {
         setFontPreviewState(
           Object.fromEntries(
             families.map((family) => [
               family,
-              {
-                status: "loaded",
-                message: `Loaded stylesheet for "${family}". Browser cannot verify font status.`,
-              },
+              failedCdnFamilies.has(family)
+                ? {
+                    status: "failed",
+                    message: `Failed to load "${family}" for preview.`,
+                  }
+                : {
+                    status: "loaded",
+                    message: downloadedRecords.has(family)
+                      ? `Loaded downloaded CSS for "${family}". Browser cannot verify font status.`
+                      : `Loaded stylesheet for "${family}". Browser cannot verify font status.`,
+                  },
             ]),
           ),
         );
@@ -819,6 +862,15 @@ export default function AdminStyleTab({
       const fontApi = document.fonts;
       const verifiedEntries = await Promise.all(
         families.map(async (family) => {
+          if (failedCdnFamilies.has(family)) {
+            return [
+              family,
+              {
+                status: "failed",
+                message: `Failed to load "${family}" for preview.`,
+              },
+            ];
+          }
           try {
             await Promise.race([
               fontApi.load(`16px "${family}"`),
@@ -832,7 +884,9 @@ export default function AdminStyleTab({
               ok
                 ? {
                     status: "loaded",
-                    message: `Preview is using "${family}".`,
+                    message: downloadedRecords.has(family)
+                      ? `Preview is using downloaded "${family}".`
+                      : `Preview is using "${family}".`,
                   }
                 : {
                     status: "failed",
@@ -860,7 +914,7 @@ export default function AdminStyleTab({
     return () => {
       cancelled = true;
     };
-  }, [fontRoles]);
+  }, [fontRoles, downloadedFamilies]);
 
   useEffect(() => {
     const downloaded = new Set(
