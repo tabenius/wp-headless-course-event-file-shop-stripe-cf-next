@@ -634,6 +634,50 @@ function applyFontRolesToDom(roles, palette, ls) {
 }
 
 /** Alternating row background for product lists (neutral hues). */
+function emptyContentAnnotations() {
+  return {
+    duration: "",
+    startDate: "",
+    endDate: "",
+    metadata: {},
+    metadataJson: undefined,
+  };
+}
+
+
+function parseAnnotationMetadataForSave(source = {}) {
+  const value =
+    typeof source.metadataJson === "string" ? source.metadataJson : source.metadata;
+  if (value == null || value === "") return {};
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return {};
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error(
+        t("admin.productMetadataInvalidJson", "Metadata must be valid JSON."),
+      );
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error(
+        t(
+          "admin.productMetadataMustBeObject",
+          "Product metadata must be a JSON object.",
+        ),
+      );
+    }
+    return parsed;
+  }
+  if (typeof value === "object" && !Array.isArray(value)) return value;
+  return {};
+}
+
+function parseProductMetadataForSave(product) {
+  return parseAnnotationMetadataForSave(product);
+}
+
 function emptyProduct() {
   return {
     name: "",
@@ -651,9 +695,13 @@ function emptyProduct() {
     contentUri: "",
     buyableKind: "download",
     buyableNoun: "",
+    duration: "",
     scheduleStart: "",
     scheduleEnd: "",
+    startDate: "",
+    endDate: "",
     scheduleTimezone: "",
+    metadata: {},
     venueName: "",
     venueAddress: "",
     externalBookingEnabled: false,
@@ -1004,6 +1052,9 @@ export default function AdminDashboard() {
   const [storage, setStorage] = useState(null);
   const [selectedContent, setSelectedCourse] = useState("");
   const [selectedContentActive, setSelectedCourseActive] = useState(true);
+  const [contentAnnotations, setContentAnnotations] = useState(
+    emptyContentAnnotations,
+  );
   const [price, setPrice] = useState("0.00");
   const [currency, setCurrency] = useState("SEK");
   const [vatPercent, setVatPercent] = useState("");
@@ -1269,7 +1320,13 @@ export default function AdminDashboard() {
         const currentIndex = Math.max(0, ADMIN_TABS_BASE.indexOf(current));
         const nextIndex = (currentIndex + 1) % ADMIN_TABS_BASE.length;
         const nextTab = ADMIN_TABS_BASE[nextIndex];
+        activeTabRef.current = nextTab;
         setActiveTab(nextTab);
+        const nextHash = hashForAdminRoute(nextTab);
+        if (nextHash && window.location.hash !== nextHash) {
+          const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+          window.history.replaceState(null, "", nextUrl);
+        }
         window.dispatchEvent(
           new CustomEvent("admin:switchTab", { detail: nextTab }),
         );
@@ -1282,7 +1339,13 @@ export default function AdminDashboard() {
         const prevIndex =
           (currentIndex - 1 + ADMIN_TABS_BASE.length) % ADMIN_TABS_BASE.length;
         const prevTab = ADMIN_TABS_BASE[prevIndex];
+        activeTabRef.current = prevTab;
         setActiveTab(prevTab);
+        const nextHash = hashForAdminRoute(prevTab);
+        if (nextHash && window.location.hash !== nextHash) {
+          const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+          window.history.replaceState(null, "", nextUrl);
+        }
         window.dispatchEvent(
           new CustomEvent("admin:switchTab", { detail: prevTab }),
         );
@@ -1320,8 +1383,8 @@ export default function AdminDashboard() {
         }
         return;
       }
+      activeTabRef.current = tab;
       setActiveTab(tab);
-      window.dispatchEvent(new CustomEvent("admin:switchTab", { detail: tab }));
     }
     onHashChange();
     window.addEventListener("hashchange", onHashChange);
@@ -1990,6 +2053,7 @@ export default function AdminDashboard() {
       setCurrency((selectedShopProduct.currency || "SEK").toUpperCase());
       setVatPercent(vatPercentToInput(selectedShopProduct.vatPercent));
       setSelectedCourseActive(true);
+      setContentAnnotations(emptyContentAnnotations());
       const isCourseProd = selectedShopProduct.type === "course";
       if (isCourseProd) {
         const uri = selectedShopProduct.contentUri || "";
@@ -2019,23 +2083,37 @@ export default function AdminDashboard() {
 
     // WP item or manual URI
     const config = courses[selectedContent];
+    const match = allWpContent.find((item) => item.uri === selectedContent);
     if (config) {
       setPrice(toCurrencyUnits(config.priceCents ?? 0));
       setCurrency((config.currency || "SEK").toUpperCase());
       setVatPercent(vatPercentToInput(config.vatPercent));
       setSelectedCourseActive(config.active !== false);
+      setContentAnnotations({
+        duration: config.duration || match?.duration || "",
+        startDate: config.startDate || match?.startDate || "",
+        endDate: config.endDate || match?.endDate || "",
+        metadata: config.metadata || {},
+        metadataJson: undefined,
+      });
       setAllowedUsers(
         Array.isArray(config.allowedUsers) ? config.allowedUsers : [],
       );
       return;
     }
     // Auto-fill price from WordPress content
-    const match = allWpContent.find((item) => item.uri === selectedContent);
     const rawPrice =
       match?.price || match?.priceRendered || match?.regularPrice || "";
     const wpPriceCents = parsePriceCents(rawPrice);
     setPrice(wpPriceCents > 0 ? toCurrencyUnits(wpPriceCents) : "");
     setSelectedCourseActive(true);
+    setContentAnnotations({
+      duration: match?.duration || "",
+      startDate: match?.startDate || "",
+      endDate: match?.endDate || "",
+      metadata: {},
+      metadataJson: undefined,
+    });
     setCurrency("SEK");
     setVatPercent("");
     setAllowedUsers([]);
@@ -2168,6 +2246,12 @@ export default function AdminDashboard() {
           );
           return { ...product, contentUri: value, slug: nextSlug };
         }
+        if (key === "scheduleStart" || key === "startDate") {
+          return { ...product, scheduleStart: value, startDate: value };
+        }
+        if (key === "scheduleEnd" || key === "endDate") {
+          return { ...product, scheduleEnd: value, endDate: value };
+        }
         return { ...product, [key]: value };
       }),
     );
@@ -2288,12 +2372,35 @@ export default function AdminDashboard() {
             "",
         )
       : 0;
+    const annotationPayload = isShopSelection
+      ? {
+          duration: selectedShopProduct?.duration || "",
+          startDate:
+            selectedShopProduct?.startDate ||
+            selectedShopProduct?.scheduleStart ||
+            "",
+          endDate:
+            selectedShopProduct?.endDate || selectedShopProduct?.scheduleEnd || "",
+          metadata: parseAnnotationMetadataForSave(selectedShopProduct || {}),
+        }
+      : {
+          duration: contentAnnotations.duration || "",
+          startDate: contentAnnotations.startDate || "",
+          endDate: contentAnnotations.endDate || "",
+          metadata: parseAnnotationMetadataForSave(contentAnnotations),
+        };
+    const hasAnnotationValue =
+      Boolean(annotationPayload.duration) ||
+      Boolean(annotationPayload.startDate) ||
+      Boolean(annotationPayload.endDate) ||
+      Object.keys(annotationPayload.metadata || {}).length > 0;
 
     // Validate WP item selection
     if (isWpSelection) {
       if (
         (price === "" || price === null || price === undefined) &&
-        wpFallbackPriceCents <= 0
+        wpFallbackPriceCents <= 0 &&
+        !hasAnnotationValue
       ) {
         setError(t("admin.enterPrice"));
         return;
@@ -2368,6 +2475,7 @@ export default function AdminDashboard() {
         const payload = updated.map((p) => ({
           // Keep mode normalized once so dependent fields are serialized consistently.
           normalizedMode: normalizeProductModeValue(p.productMode, p),
+          metadata: parseProductMetadataForSave(p),
           name: p.name,
           slug: p.slug,
           type: p.type === "course" ? "course" : "digital_file",
@@ -2388,8 +2496,11 @@ export default function AdminDashboard() {
           contentUri: p.contentUri || "",
           buyableKind: p.buyableKind || "",
           buyableNoun: p.buyableNoun || "",
-          scheduleStart: p.scheduleStart || "",
-          scheduleEnd: p.scheduleEnd || "",
+          duration: p.duration || "",
+          scheduleStart: p.scheduleStart || p.startDate || "",
+          scheduleEnd: p.scheduleEnd || p.endDate || "",
+          startDate: p.startDate || p.scheduleStart || "",
+          endDate: p.endDate || p.scheduleEnd || "",
           scheduleTimezone: p.scheduleTimezone || "",
           venueName: p.venueName || "",
           venueAddress: p.venueAddress || "",
@@ -2415,9 +2526,13 @@ export default function AdminDashboard() {
           contentUri: p.normalizedMode === "manual_uri" ? p.contentUri : "",
           buyableKind: p.buyableKind,
           buyableNoun: p.buyableNoun,
+          duration: p.duration,
           scheduleStart: p.scheduleStart,
           scheduleEnd: p.scheduleEnd,
+          startDate: p.startDate,
+          endDate: p.endDate,
           scheduleTimezone: p.scheduleTimezone,
+          metadata: p.metadata,
           venueName: p.venueName,
           venueAddress: p.venueAddress,
           externalBookingEnabled: p.externalBookingEnabled,
@@ -2497,6 +2612,7 @@ export default function AdminDashboard() {
           nextActive === false;
         const hasCurrencyOverride =
           !currentConfig && isWpSelection && normalizedCurrency !== "SEK";
+        const hasAnnotationOverride = !isShopSelection && hasAnnotationValue;
         const needsManualPrice =
           !isWpSelection ||
           nextPriceCents !== wpFallbackPriceCents ||
@@ -2507,6 +2623,7 @@ export default function AdminDashboard() {
           hasManualUsers ||
           hasInactiveOverride ||
           hasCurrencyOverride ||
+          hasAnnotationOverride ||
           needsManualPrice;
 
         if (shouldPersistAccess) {
@@ -2519,6 +2636,7 @@ export default function AdminDashboard() {
               priceCents: nextPriceCents,
               currency: normalizedCurrency,
               vatPercent: nextVatPercent,
+              annotations: annotationPayload,
               ...(typeof nextActive === "boolean"
                 ? { active: nextActive }
                 : {}),
@@ -2551,9 +2669,10 @@ export default function AdminDashboard() {
       const detail = rawDetail.replace(/^#\/?/, "");
       const tab = normalizeAdminTab(detail);
       if (!tab) return;
+      activeTabRef.current = tab;
       setActiveTab(tab);
 
-      const nextHash = hashForAdminRoute(detail);
+      const nextHash = hashForAdminRoute(tab);
       if (
         nextHash &&
         typeof window !== "undefined" &&
@@ -2819,6 +2938,8 @@ export default function AdminDashboard() {
               users={users}
               selectedContentActive={selectedContentActive}
               setSelectedCourseActive={setSelectedCourseActive}
+              contentAnnotations={contentAnnotations}
+              setContentAnnotations={setContentAnnotations}
               allowedUsers={allowedUsers}
               filteredUsers={filteredUsers}
               toggleUser={toggleUser}

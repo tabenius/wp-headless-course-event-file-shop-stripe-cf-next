@@ -8,6 +8,68 @@ import { appendServerLog } from "@/lib/serverLog";
 
 const CONTENT_ACCESS_KV_KEY = process.env.CF_KV_KEY || "course-access";
 let memFallbackState = { courses: {} };
+let contentAccessMetadataColumnReady = false;
+
+function normalizeAnnotationText(value, maxLength = 120) {
+  const safe = typeof value === "string" ? value.trim() : "";
+  return safe.slice(0, maxLength);
+}
+
+function normalizeAnnotationDate(value) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return "";
+  if (raw.length > 40) return "";
+  if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}$/.test(raw)) return raw.replace(" ", "T");
+  const parsed = new Date(raw);
+  if (!Number.isFinite(parsed.getTime())) return "";
+  return raw;
+}
+
+function normalizeAnnotationMetadata(value) {
+  let source = value;
+  if (typeof source === "string") {
+    const raw = source.trim();
+    if (!raw) return {};
+    try {
+      source = JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
+  if (!source || typeof source !== "object" || Array.isArray(source)) return {};
+  try {
+    const serialized = JSON.stringify(source);
+    if (!serialized || serialized.length > 4000) return {};
+    return JSON.parse(serialized);
+  } catch {
+    return {};
+  }
+}
+
+function normalizeAnnotationFields(value = {}) {
+  return {
+    duration: normalizeAnnotationText(value.duration, 80),
+    startDate: normalizeAnnotationDate(value.startDate || value.scheduleStart),
+    endDate: normalizeAnnotationDate(value.endDate || value.scheduleEnd),
+    metadata: normalizeAnnotationMetadata(value.metadata),
+  };
+}
+
+async function ensureContentAccessMetadataColumn(db) {
+  if (!db || contentAccessMetadataColumnReady) return;
+  try {
+    await db
+      .prepare("ALTER TABLE content_access ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'")
+      .run();
+  } catch (error) {
+    const message = String(error?.message || error || "").toLowerCase();
+    if (!message.includes("duplicate column") && !message.includes("already exists")) {
+      throw error;
+    }
+  }
+  contentAccessMetadataColumnReady = true;
+}
 
 function normalizeStateShape(raw) {
   const safeCourses =
@@ -58,12 +120,23 @@ function accessRowToObject(row) {
   } catch {
     /* ignore */
   }
+  let annotations = {};
+  try {
+    annotations = JSON.parse(row.metadata || "{}");
+  } catch {
+    annotations = {};
+  }
+  const normalizedAnnotations = normalizeAnnotationFields(annotations);
   return {
     allowedUsers: Array.isArray(allowedUsers) ? allowedUsers : [],
     priceCents: row.price_cents,
     currency: row.currency,
     vatPercent: row.vat_percent,
     active: row.active === 1,
+    duration: normalizedAnnotations.duration,
+    startDate: normalizedAnnotations.startDate,
+    endDate: normalizedAnnotations.endDate,
+    metadata: normalizedAnnotations.metadata,
     updatedAt: row.updated_at,
   };
 }
@@ -104,6 +177,7 @@ export async function getContentAccessState() {
   if (!db) {
     return readFallbackState();
   }
+  await ensureContentAccessMetadataColumn(db);
   const { results } = await db.prepare("SELECT * FROM content_access").all();
   const courses = {};
   for (const row of results || []) {
@@ -119,6 +193,7 @@ export async function saveContentAccessState(nextState) {
   }
   const courses =
     nextState && typeof nextState === "object" ? nextState.courses : {};
+  await ensureContentAccessMetadataColumn(db);
   const statements = [];
 
   for (const [rawUri, rawValue] of Object.entries(courses || {})) {
@@ -134,6 +209,7 @@ export async function saveContentAccessState(nextState) {
     const currency = normalizeCurrency(rawValue?.currency);
     const vatPercent = normalizeVatPercent(rawValue?.vatPercent);
     const active = rawValue?.active !== false;
+    const annotations = normalizeAnnotationFields(rawValue);
     const updatedAt =
       typeof rawValue?.updatedAt === "string"
         ? rawValue.updatedAt
@@ -142,12 +218,12 @@ export async function saveContentAccessState(nextState) {
     statements.push(
       db
         .prepare(
-          `INSERT INTO content_access (course_uri, allowed_users, price_cents, currency, vat_percent, active, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO content_access (course_uri, allowed_users, price_cents, currency, vat_percent, active, metadata, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(course_uri) DO UPDATE SET
              allowed_users=excluded.allowed_users, price_cents=excluded.price_cents,
              currency=excluded.currency, vat_percent=excluded.vat_percent,
-             active=excluded.active, updated_at=excluded.updated_at`,
+             active=excluded.active, metadata=excluded.metadata, updated_at=excluded.updated_at`,
         )
         .bind(
           uri,
@@ -156,6 +232,7 @@ export async function saveContentAccessState(nextState) {
           currency,
           vatPercent ?? null,
           active ? 1 : 0,
+          JSON.stringify(annotations),
           updatedAt,
         ),
     );
@@ -175,6 +252,10 @@ export async function setContentAccess({
   currency,
   active,
   vatPercent,
+  duration,
+  startDate,
+  endDate,
+  metadata,
 }) {
   const uri = normalizeContentUri(courseUri);
   if (!uri) throw new Error("Invalid course URI");
@@ -192,12 +273,23 @@ export async function setContentAccess({
     vatPercent === undefined
       ? normalizeVatPercent(previous?.vatPercent)
       : safeVatPercent;
+  const previousAnnotations = normalizeAnnotationFields(previous || {});
+  const nextAnnotations = normalizeAnnotationFields({
+    duration: duration === undefined ? previousAnnotations.duration : duration,
+    startDate: startDate === undefined ? previousAnnotations.startDate : startDate,
+    endDate: endDate === undefined ? previousAnnotations.endDate : endDate,
+    metadata: metadata === undefined ? previousAnnotations.metadata : metadata,
+  });
   state.courses[uri] = {
     allowedUsers: normalizedUsers,
     priceCents: safePrice,
     currency: normalizeCurrency(currency),
     vatPercent: resolvedVatPercent,
     active: typeof active === "boolean" ? active : previous?.active !== false,
+    duration: nextAnnotations.duration,
+    startDate: nextAnnotations.startDate,
+    endDate: nextAnnotations.endDate,
+    metadata: nextAnnotations.metadata,
     updatedAt: new Date().toISOString(),
   };
   return saveContentAccessState(state);
@@ -232,40 +324,17 @@ export async function hasContentAccess(courseUri, email) {
   const uri = normalizeContentUri(courseUri);
   const normalizedEmail = normalizeEmail(email);
   if (!uri || !normalizedEmail) return false;
-
-  const db = await getD1Database();
-  if (!db) {
-    const state = await readFallbackState();
-    const course = state.courses?.[uri];
-    const users = Array.isArray(course?.allowedUsers) ? course.allowedUsers : [];
-    return users.includes(normalizedEmail) && course?.active !== false;
-  }
-  const row = await db
-    .prepare(
-      "SELECT allowed_users FROM content_access WHERE course_uri = ? AND active = 1",
-    )
-    .bind(uri)
-    .first();
-  if (!row) return false;
-  let users = [];
-  try {
-    users = JSON.parse(row.allowed_users || "[]");
-  } catch {
-    /* ignore */
-  }
-  return Array.isArray(users) && users.includes(normalizedEmail);
+  const state = await getContentAccessState();
+  const course = state?.courses?.[uri] || null;
+  const users = Array.isArray(course?.allowedUsers) ? course.allowedUsers : [];
+  return users.includes(normalizedEmail) && course?.active !== false;
 }
 
 export async function getContentAccessConfig(courseUri) {
   const uri = normalizeContentUri(courseUri);
   if (!uri) return null;
-  const db = await getD1Database();
-  if (!db) {
-    const state = await readFallbackState();
-    return state.courses[uri] || null;
-  }
   const state = await getContentAccessState();
-  return state.courses[uri] || null;
+  return state?.courses?.[uri] || null;
 }
 
 export function getContentStorageInfo() {

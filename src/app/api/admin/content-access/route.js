@@ -273,6 +273,10 @@ export async function PUT(request) {
         ? null
         : Number.parseFloat(String(vatPercentRaw).replace(",", "."));
     const active = typeof body?.active === "boolean" ? body.active : undefined;
+    const annotations =
+      body?.annotations && typeof body.annotations === "object"
+        ? body.annotations
+        : {};
     const state = await setContentAccess({
       courseUri,
       allowedUsers,
@@ -289,6 +293,30 @@ export async function PUT(request) {
           }
         : {}),
       active,
+      duration:
+        typeof annotations.duration === "string"
+          ? annotations.duration
+          : typeof body?.duration === "string"
+            ? body.duration
+            : undefined,
+      startDate:
+        typeof annotations.startDate === "string"
+          ? annotations.startDate
+          : typeof body?.startDate === "string"
+            ? body.startDate
+            : undefined,
+      endDate:
+        typeof annotations.endDate === "string"
+          ? annotations.endDate
+          : typeof body?.endDate === "string"
+            ? body.endDate
+            : undefined,
+      metadata:
+        annotations.metadata && typeof annotations.metadata === "object"
+          ? annotations.metadata
+          : body?.metadata && typeof body.metadata === "object"
+            ? body.metadata
+            : undefined,
     });
     return NextResponse.json({ ok: true, courses: state.courses });
   } catch (error) {

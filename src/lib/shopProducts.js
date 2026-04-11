@@ -568,9 +568,16 @@ export async function listAllShopItems({ bypassCache = false } = {}) {
       assetId: mode === "asset" ? d.assetId || "" : "",
       buyableKind: d.buyableKind || "",
       buyableNoun: d.buyableNoun || "",
-      scheduleStart: d.scheduleStart || "",
-      scheduleEnd: d.scheduleEnd || "",
+      duration: d.duration || "",
+      scheduleStart: d.scheduleStart || d.startDate || "",
+      scheduleEnd: d.scheduleEnd || d.endDate || "",
+      startDate: d.startDate || d.scheduleStart || "",
+      endDate: d.endDate || d.scheduleEnd || "",
       scheduleTimezone: d.scheduleTimezone || "",
+      metadata:
+        d.metadata && typeof d.metadata === "object" && !Array.isArray(d.metadata)
+          ? d.metadata
+          : {},
       venueName: d.venueName || "",
       venueAddress: d.venueAddress || "",
       externalBookingEnabled: d.externalBookingEnabled === true,

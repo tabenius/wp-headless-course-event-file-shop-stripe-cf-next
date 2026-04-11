@@ -61,6 +61,31 @@ function normalizeScheduleTimezone(value) {
   return normalizeShortText(value, 64);
 }
 
+function normalizeDurationValue(value) {
+  return normalizeShortText(value, 80);
+}
+
+function normalizeProductMetadata(value) {
+  let source = value;
+  if (typeof source === "string") {
+    const raw = source.trim();
+    if (!raw) return {};
+    try {
+      source = JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
+  if (!source || typeof source !== "object" || Array.isArray(source)) return {};
+  try {
+    const serialized = JSON.stringify(source);
+    if (!serialized || serialized.length > 4000) return {};
+    return JSON.parse(serialized);
+  } catch {
+    return {};
+  }
+}
+
 function normalizeExternalBookingLabel(value) {
   return normalizeShortText(value, 48);
 }
@@ -113,9 +138,13 @@ function productRowToObject(row) {
       row.type,
     ),
     buyableNoun: normalizeBuyableNoun(extra.buyableNoun),
-    scheduleStart: normalizeScheduleValue(extra.scheduleStart),
-    scheduleEnd: normalizeScheduleValue(extra.scheduleEnd),
+    duration: normalizeDurationValue(extra.duration),
+    scheduleStart: normalizeScheduleValue(extra.scheduleStart || extra.startDate),
+    scheduleEnd: normalizeScheduleValue(extra.scheduleEnd || extra.endDate),
+    startDate: normalizeScheduleValue(extra.scheduleStart || extra.startDate),
+    endDate: normalizeScheduleValue(extra.scheduleEnd || extra.endDate),
     scheduleTimezone: normalizeScheduleTimezone(extra.scheduleTimezone),
+    metadata: normalizeProductMetadata(extra.metadata),
     venueName: normalizeShortText(extra.venueName, 120),
     venueAddress: normalizeShortText(extra.venueAddress, 240),
     externalBookingEnabled: extra.externalBookingEnabled === true,
@@ -395,9 +424,13 @@ function sanitizeProduct(product, seenSlugs) {
     type,
   );
   const buyableNoun = normalizeBuyableNoun(product?.buyableNoun);
-  const scheduleStart = normalizeScheduleValue(product?.scheduleStart);
-  const scheduleEnd = normalizeScheduleValue(product?.scheduleEnd);
+  const duration = normalizeDurationValue(product?.duration);
+  const scheduleStart = normalizeScheduleValue(
+    product?.scheduleStart || product?.startDate,
+  );
+  const scheduleEnd = normalizeScheduleValue(product?.scheduleEnd || product?.endDate);
   const scheduleTimezone = normalizeScheduleTimezone(product?.scheduleTimezone);
+  const metadata = normalizeProductMetadata(product?.metadata);
   const venueName = normalizeShortText(product?.venueName, 120);
   const venueAddress = normalizeShortText(product?.venueAddress, 240);
   const externalBookingEnabled = product?.externalBookingEnabled === true;
@@ -455,9 +488,13 @@ function sanitizeProduct(product, seenSlugs) {
     active,
     buyableKind,
     buyableNoun,
+    duration,
     scheduleStart,
     scheduleEnd,
+    startDate: scheduleStart,
+    endDate: scheduleEnd,
     scheduleTimezone,
+    metadata,
     venueName,
     venueAddress,
     externalBookingEnabled,

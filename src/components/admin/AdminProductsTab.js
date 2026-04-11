@@ -88,6 +88,142 @@ function formatScheduleDate(value, timezone) {
   }
 }
 
+function productMetadataEditorValue(product = {}) {
+  if (typeof product.metadataJson === "string") return product.metadataJson;
+  const metadata = product.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return "";
+  }
+  try {
+    return JSON.stringify(metadata, null, 2);
+  } catch {
+    return "";
+  }
+}
+
+function MetadataAnnotationsEditor({
+  isShopSelection,
+  selectedShopProduct,
+  shopIndex,
+  updateProduct,
+  contentAnnotations,
+  setContentAnnotations,
+}) {
+  const source = isShopSelection ? selectedShopProduct || {} : contentAnnotations || {};
+  const duration = source.duration || "";
+  const startDate = source.scheduleStart || source.startDate || "";
+  const endDate = source.scheduleEnd || source.endDate || "";
+  const metadataText = productMetadataEditorValue(source);
+  const hasAnnotations = Boolean(
+    duration || startDate || endDate || metadataText.trim(),
+  );
+
+  function setAnnotationField(key, value) {
+    if (isShopSelection) {
+      const productKey =
+        key === "startDate" ? "scheduleStart" : key === "endDate" ? "scheduleEnd" : key;
+      updateProduct(shopIndex, productKey, value);
+      return;
+    }
+    setContentAnnotations((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setMetadataJson(value) {
+    if (isShopSelection) {
+      updateProduct(shopIndex, "metadataJson", value);
+      return;
+    }
+    setContentAnnotations((prev) => ({ ...prev, metadataJson: value }));
+  }
+
+  return (
+    <details
+      defaultOpen
+      className="group rounded-xl border border-slate-300 bg-gradient-to-br from-white via-slate-50 to-blue-50 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.65)]"
+    >
+      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-3.5 py-3 marker:hidden">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="grid h-6 w-6 place-items-center rounded-full border border-slate-300 bg-white text-xs text-slate-600 transition group-open:rotate-90">
+            &gt;
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+              {t("admin.metadataAnnotationsLabel", "Metadata annotations")}
+            </span>
+            <span className="block text-[11px] text-slate-500">
+              {t(
+                "admin.metadataAnnotationsHint",
+                "Duration, dates, and extra JSON stored with this item.",
+              )}
+            </span>
+          </span>
+        </span>
+        <span className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600">
+          {hasAnnotations
+            ? t("admin.annotationStatusConfigured", "Configured")
+            : t("common.editor", "Editor")}
+        </span>
+      </summary>
+      <div className="space-y-3 border-t border-slate-200 px-3.5 pb-3.5 pt-3">
+        <div className="grid gap-3 md:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              {t("admin.buyableDurationLabel", "Duration")}
+            </label>
+            <input
+              type="text"
+              value={duration}
+              onChange={(e) => setAnnotationField("duration", e.target.value)}
+              placeholder={t("admin.buyableDurationPlaceholder", "90 minutes")}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              {t("admin.buyableStartLabel", "Start date")}
+            </label>
+            <input
+              type="datetime-local"
+              value={toDateTimeLocalValue(startDate)}
+              onChange={(e) => setAnnotationField("startDate", e.target.value)}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              {t("admin.buyableEndLabel", "End date")}
+            </label>
+            <input
+              type="datetime-local"
+              value={toDateTimeLocalValue(endDate)}
+              onChange={(e) => setAnnotationField("endDate", e.target.value)}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-600">
+            {t("admin.productMetadataLabel", "Metadata")}
+          </label>
+          <textarea
+            rows="4"
+            value={metadataText}
+            onChange={(e) => setMetadataJson(e.target.value)}
+            placeholder={'{\n  "seoTitle": "...",\n  "campaign": "spring"\n}'}
+            className="w-full rounded border px-3 py-2 font-mono text-xs"
+          />
+          <p className="mt-1 text-[11px] text-slate-500">
+            {t(
+              "admin.productMetadataHint",
+              "Optional JSON object stored with this product for storefront and integration use.",
+            )}
+          </p>
+        </div>
+      </div>
+    </details>
+  );
+}
+
 function digitalConfigReasons(product = {}) {
   const reasons = [];
   const mode = normalizeMode(product);
@@ -810,6 +946,8 @@ function AccessTab({
   users,
   selectedContentActive,
   setSelectedCourseActive,
+  contentAnnotations,
+  setContentAnnotations,
   allowedUsers,
   filteredUsers,
   toggleUser,
@@ -1002,6 +1140,18 @@ function AccessTab({
   const selectedConfigReasons = selectedContent
     ? configReasonsForUri(selectedContent)
     : [];
+  const selectedEditorTitle = isShopSelection
+    ? selectedShopProduct?.name || `Product ${shopIndex + 1}`
+    : selectedWpItem?.title || selectedWpItem?.name || selectedContent;
+  const selectedEditorKind = isShopSelection
+    ? t("admin.shopProduct", "Shop product")
+    : selectedWpItem?._source === "woocommerce"
+      ? "WooCommerce"
+      : selectedWpItem?._source === "learnpress"
+        ? "LearnPress"
+        : selectedWpItem?._source === "wordpress"
+          ? t("admin.buyableKindEvent", "event")
+          : t("admin.manualUri", "Manual URI");
 
   useEffect(() => {
     if (!isShopSelection) {
@@ -1074,6 +1224,12 @@ function AccessTab({
     });
   }, []);
 
+  const closeProductEditor = useCallback(() => {
+    const closedUri = selectedContent;
+    setSelectedCourse("");
+    focusProductList(closedUri);
+  }, [focusProductList, selectedContent, setSelectedCourse]);
+
   useEffect(() => {
     if (didInitialListFocusRef.current || typeof window === "undefined") return;
 
@@ -1110,15 +1266,22 @@ function AccessTab({
         return;
       }
       event.preventDefault();
-      const closedUri = selectedContent;
-      setSelectedCourse("");
-      focusProductList(closedUri);
+      closeProductEditor();
     }
 
     window.addEventListener("keydown", handleEscapeToCloseEditor);
     return () =>
       window.removeEventListener("keydown", handleEscapeToCloseEditor);
-  }, [focusProductList, selectedContent, setSelectedCourse, showDetail]);
+  }, [closeProductEditor, selectedContent, showDetail]);
+
+  useEffect(() => {
+    if (!showDetail || typeof document === "undefined") return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showDetail]);
 
   const handleListKeyDown = useCallback(
     (event) => {
@@ -1192,7 +1355,7 @@ function AccessTab({
 
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:min-h-[520px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(320px,560px)] lg:min-h-[520px]">
         {/* ── Left: content list ── */}
         <div className="border rounded flex flex-col overflow-hidden min-w-0">
           {/* Filter pills */}
@@ -1531,10 +1694,50 @@ function AccessTab({
           </div>
         </div>
 
-        {/* ── Right: detail panel ── */}
-        <div ref={editFormRef} className="border rounded overflow-auto min-w-0">
-          {showDetail ? (
-            <div className="p-5 space-y-5">
+      </div>
+
+      {showDetail && (
+        <div className="fixed inset-0 z-[110] bg-slate-950/45 backdrop-blur-[2px]">
+          <button
+            type="button"
+            aria-label={t("common.close", "Close")}
+            className="absolute inset-0 h-full w-full cursor-default"
+            onClick={closeProductEditor}
+          />
+          <aside
+            ref={editFormRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-product-editor-title"
+            className="absolute inset-0 left-auto z-[1] flex h-full w-full flex-col overflow-hidden border-l border-slate-300 bg-white shadow-2xl sm:max-w-[760px] lg:max-w-[920px]"
+          >
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm sm:px-6">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  {selectedEditorKind}
+                </p>
+                <h3
+                  id="admin-product-editor-title"
+                  className="admin-product-title mt-0.5 truncate text-lg font-semibold text-slate-950"
+                >
+                  {selectedEditorTitle || t("admin.productEditor", "Product editor")}
+                </h3>
+                {selectedContent && (
+                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                    {selectedContent}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={closeProductEditor}
+                className="rounded border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                {t("common.close", "Close")}
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+              <div className="space-y-5">
               {selectedConfigReasons.length > 0 && (
                 <div className="rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
                   <p className="font-semibold">
@@ -1639,6 +1842,15 @@ function AccessTab({
                           )}
                         </div>
                       </div>
+
+                      <MetadataAnnotationsEditor
+                        isShopSelection={false}
+                        selectedShopProduct={null}
+                        shopIndex={-1}
+                        updateProduct={updateProduct}
+                        contentAnnotations={contentAnnotations}
+                        setContentAnnotations={setContentAnnotations}
+                      />
 
                       {/* "Not buyable" warning */}
                       {(() => {
@@ -1864,6 +2076,15 @@ function AccessTab({
                     </div>
                   </div>
 
+                  <MetadataAnnotationsEditor
+                    isShopSelection
+                    selectedShopProduct={selectedShopProduct}
+                    shopIndex={shopIndex}
+                    updateProduct={updateProduct}
+                    contentAnnotations={contentAnnotations}
+                    setContentAnnotations={setContentAnnotations}
+                  />
+
                   <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-amber-50 p-3.5 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
@@ -1951,40 +2172,6 @@ function AccessTab({
                             "admin.buyableTimezonePlaceholder",
                             "Europe/Stockholm",
                           )}
-                          className="w-full border rounded px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
-                          {t("admin.buyableStartLabel", "Start")}
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={toDateTimeLocalValue(
-                            selectedShopProduct.scheduleStart,
-                          )}
-                          onChange={(e) =>
-                            updateProduct(
-                              shopIndex,
-                              "scheduleStart",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full border rounded px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
-                          {t("admin.buyableEndLabel", "End")}
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={toDateTimeLocalValue(
-                            selectedShopProduct.scheduleEnd,
-                          )}
-                          onChange={(e) =>
-                            updateProduct(shopIndex, "scheduleEnd", e.target.value)
-                          }
                           className="w-full border rounded px-3 py-2 text-sm"
                         />
                       </div>
@@ -2114,6 +2301,11 @@ function AccessTab({
                             )}
                           </span>
                         )}
+                        {selectedShopProduct.duration && (
+                          <span className="rounded-full border border-slate-500 px-2 py-0.5 text-slate-200">
+                            {selectedShopProduct.duration}
+                          </span>
+                        )}
                         {selectedShopProduct.venueName && (
                           <span className="rounded-full border border-slate-500 px-2 py-0.5 text-slate-200">
                             {selectedShopProduct.venueName}
@@ -2170,6 +2362,7 @@ function AccessTab({
                       </div>
                     )}
                   </div>
+
 
                   <div className="space-y-1.5">
                     {selectedShopProduct.type === "digital_file" ? (
@@ -2457,28 +2650,28 @@ function AccessTab({
                 loading={loading}
                 autoSaveTrigger={autoSaveTrigger}
               />
+              </div>
             </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300 p-8">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-10 h-10"
+            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-10px_24px_-20px_rgba(15,23,42,0.75)] sm:px-6">
+              <button
+                type="button"
+                onClick={closeProductEditor}
+                className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <p className="text-sm text-gray-500 admin-soft-yellow">
-                {t("admin.selectItemToConfigureAccess")}
-              </p>
+                {t("common.close", "Close")}
+              </button>
+              <button
+                type="button"
+                onClick={saveUnified}
+                disabled={loading}
+                className="rounded bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? t("common.saving", "Saving...") : t("common.save", "Save")}
+              </button>
             </div>
-          )}
+          </aside>
         </div>
-      </div>
+      )}
       <AssetPickerModal
         open={assetPickerOpen}
         onClose={() => {
@@ -2609,6 +2802,8 @@ export default function AdminProductsTab(props) {
     users,
     selectedContentActive,
     setSelectedCourseActive,
+    contentAnnotations,
+    setContentAnnotations,
     allowedUsers,
     filteredUsers,
     toggleUser,
@@ -2684,6 +2879,8 @@ export default function AdminProductsTab(props) {
             users={users}
             selectedContentActive={selectedContentActive}
             setSelectedCourseActive={setSelectedCourseActive}
+            contentAnnotations={contentAnnotations}
+            setContentAnnotations={setContentAnnotations}
             allowedUsers={allowedUsers}
             filteredUsers={filteredUsers}
             toggleUser={toggleUser}
