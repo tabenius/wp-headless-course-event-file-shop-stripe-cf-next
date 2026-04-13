@@ -2751,7 +2751,6 @@ export default function AdminMediaLibraryTab({
         selectedItem={selectedItem}
         editor={editor}
         setEditor={setEditor}
-        closeEditor={closeEditor}
         saveError={saveError}
         saveSuccess={saveSuccess}
         suggestAnnotations={suggestAnnotations}
