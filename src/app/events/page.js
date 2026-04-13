@@ -16,7 +16,7 @@ export const metadata = {
 
 const LIST_EVENTS_QUERY = `
   query ListEvents {
-    events(first: 50) {
+    events(first: 200) {
       edges {
         node {
           id
@@ -51,7 +51,7 @@ const LIST_EVENTS_QUERY = `
 
 const LIST_EVENTS_FALLBACK_QUERY = `
   query ListEventsFallback {
-    events(first: 50) {
+    events(first: 200) {
       edges {
         node {
           id
@@ -91,8 +91,7 @@ function eventSortTime(event) {
   return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
 }
 
-function sortEventsForDisplay(events) {
-  const now = new Date();
+function sortEventsForDisplay(events, now = new Date()) {
   return [...events]
     .filter((event) => !isEventPassed(event, now))
     .sort((a, b) => eventSortTime(a) - eventSortTime(b));
@@ -109,7 +108,8 @@ async function EventsPageContent() {
     });
     events = extractEvents(fallback);
   }
-  const sortedEvents = sortEventsForDisplay(events);
+  const now = new Date();
+  const sortedEvents = sortEventsForDisplay(events, now);
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-24">
@@ -119,7 +119,7 @@ async function EventsPageContent() {
       ) : (
         <div className="space-y-6">
           {sortedEvents.map((event) => (
-            <EventListItem key={event.id} post={event} />
+            <EventListItem key={event.id} post={event} now={now} />
           ))}
         </div>
       )}

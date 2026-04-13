@@ -5,14 +5,14 @@
  * Description: GraphQL bridge for headless storefronts — exposes LearnPress courses, events (Event Organiser, The Events Calendar, Events Manager), WooCommerce products, and digital downloads via WPGraphQL. Includes built-in headless authentication via site-secret headers.
  * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
- * Version: 1.2.3
+ * Version: 1.3.0
  * Requires at least: 6.3
  * Tested up to: 6.5
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Requires: WPGraphQL
- * Optional: LearnPress, Event Organiser, The Events Calendar, Events Manager, WooCommerce + WPGraphQL for WooCommerce
+ * Optional: LearnPress, Event Organiser, The Events Calendar, Events Manager, Timely, WP Event Manager, WooCommerce + WPGraphQL for WooCommerce
  * Text Domain: ragbaz-bridge
  * Contact: ragbaz@proton.me
  */
@@ -23,7 +23,154 @@ if (!defined('ABSPATH')) {
 
 // Keep the legacy option name so existing rules remain intact.
 const RAGBAZ_COURSE_RULES_OPTION = 'Articulate_course_access_rules';
-const RAGBAZ_VERSION = '1.2.3';
+const RAGBAZ_VERSION = '1.3.0';
+
+// ---------------------------------------------------------------------------
+// Upgrade & activation safety
+// ---------------------------------------------------------------------------
+
+/**
+ * Activation hook — records install version and timestamp.
+ * Runs when the plugin is activated (not on every page load).
+ */
+register_activation_hook(__FILE__, function () {
+  $prev = get_option('ragbaz_bridge_version', '');
+  if (!$prev) {
+    // Fresh install
+    update_option('ragbaz_bridge_installed_at', gmdate('c'), false);
+  }
+  update_option('ragbaz_bridge_version', RAGBAZ_VERSION, false);
+  update_option('ragbaz_bridge_activated_at', gmdate('c'), false);
+  // Clear any previous upgrade notice
+  delete_transient('ragbaz_bridge_upgraded_from');
+});
+
+/**
+ * Deactivation hook — record for diagnostics but preserve all options.
+ * Data is NEVER deleted on deactivation so reactivating is safe.
+ */
+register_deactivation_hook(__FILE__, function () {
+  update_option('ragbaz_bridge_deactivated_at', gmdate('c'), false);
+});
+
+/**
+ * On every admin page load, compare stored version to code version.
+ * If they differ, run the upgrade routine exactly once.
+ */
+add_action('admin_init', function () {
+  if (!current_user_can('manage_options')) return;
+
+  $stored = get_option('ragbaz_bridge_version', '');
+  if ($stored === RAGBAZ_VERSION) return;
+
+  $old_version = $stored ?: '0.0.0';
+
+  // Run pre-flight checks before marking upgrade complete
+  $preflight = ragbaz_upgrade_preflight();
+  if (!empty($preflight['errors'])) {
+    // Store errors for display — do NOT update version so check runs again
+    set_transient('ragbaz_bridge_preflight_errors', $preflight['errors'], HOUR_IN_SECONDS);
+    return;
+  }
+
+  // Record the upgrade
+  set_transient('ragbaz_bridge_upgraded_from', $old_version, DAY_IN_SECONDS);
+  update_option('ragbaz_bridge_version', RAGBAZ_VERSION, false);
+  update_option('ragbaz_bridge_last_upgrade_at', gmdate('c'), false);
+
+  // Run version-specific migrations
+  ragbaz_run_migrations($old_version);
+});
+
+/**
+ * Pre-flight checks before accepting an upgrade.
+ * Returns ['errors' => [...], 'warnings' => [...]].
+ */
+function ragbaz_upgrade_preflight() {
+  $result = ['errors' => [], 'warnings' => []];
+
+  // PHP version
+  if (version_compare(PHP_VERSION, '7.4', '<')) {
+    $result['errors'][] = sprintf(
+      'PHP %s detected — RAGBAZ Bridge %s requires PHP 7.4+.',
+      PHP_VERSION, RAGBAZ_VERSION
+    );
+  }
+
+  // WPGraphQL must be present
+  if (!function_exists('register_graphql_field') && !class_exists('WPGraphQL')) {
+    $result['warnings'][] = 'WPGraphQL is not active. GraphQL fields will not be registered until it is activated.';
+  }
+
+  // Verify event tables are accessible if the event plugin is active
+  global $wpdb;
+  if (isset($wpdb->eo_events)) {
+    $test = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->eo_events} LIMIT 1");
+    if ($wpdb->last_error) {
+      $result['warnings'][] = 'Event Organiser table (eo_events) exists but query failed: ' . $wpdb->last_error;
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Run version-gated migrations. Each migration runs exactly once
+ * (guarded by the old version comparison).
+ */
+function ragbaz_run_migrations($from_version) {
+  // Example: if upgrading from before 1.3.0, clear stale caches
+  if (version_compare($from_version, '1.3.0', '<')) {
+    // Flush object cache for graphql results if available
+    if (function_exists('wp_cache_flush_group')) {
+      wp_cache_flush_group('graphql');
+    }
+    // Clear any transient caches this plugin uses
+    delete_transient('ragbaz_bridge_notice_shown');
+  }
+}
+
+/**
+ * Show admin notice after successful upgrade.
+ */
+add_action('admin_notices', function () {
+  if (!current_user_can('manage_options')) return;
+
+  // Pre-flight errors: block upgrade notice, show error instead
+  $preflight_errors = get_transient('ragbaz_bridge_preflight_errors');
+  if ($preflight_errors) {
+    echo '<div class="notice notice-error"><p>';
+    echo '<strong>RAGBAZ Bridge ' . esc_html(RAGBAZ_VERSION) . ' — upgrade blocked:</strong></p><ul style="margin:.2em 0 .6em 1.4em;list-style:disc">';
+    foreach ($preflight_errors as $err) {
+      echo '<li>' . esc_html($err) . '</li>';
+    }
+    echo '</ul><p style="color:#475569;font-size:13px">Fix the issues above, then reload this page. ';
+    echo 'To rollback: replace <code>ragbaz-bridge.php</code> with the previous version and deactivate/reactivate.</p></div>';
+    return;
+  }
+
+  // Success notice
+  $upgraded_from = get_transient('ragbaz_bridge_upgraded_from');
+  if (!$upgraded_from) return;
+  delete_transient('ragbaz_bridge_upgraded_from');
+
+  $url = esc_url(admin_url('tools.php?page=ragbaz-bridge'));
+  echo '<div class="notice notice-success is-dismissible"><p>';
+  printf(
+    '<strong>RAGBAZ Bridge updated:</strong> %s → %s. <a href="%s">Review settings</a>.',
+    esc_html($upgraded_from),
+    esc_html(RAGBAZ_VERSION),
+    $url
+  );
+
+  // Show event plugin detection result
+  $plugin_name = ragbaz_detect_events_plugin_name();
+  if ($plugin_name) {
+    printf(' Event calendar detected: <strong>%s</strong>.', esc_html($plugin_name));
+  }
+
+  echo '</p></div>';
+});
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -441,7 +588,7 @@ add_filter('register_post_type_args', function ($args, $post_type) {
   }
 
   // Events (multiple common plugins)
-  $event_types = ['event', 'events', 'tribe_events', 'event_listing', 'eo_event'];
+  $event_types = ['event', 'events', 'tribe_events', 'event_listing', 'eo_event', 'ai1ec_event'];
   if (in_array($post_type, $event_types, true)) {
     $args['show_in_graphql']     = true;
     $args['graphql_single_name'] = 'Event';
@@ -460,6 +607,12 @@ add_filter('register_taxonomy_args', function ($args, $taxonomy) {
     'event_tag'     => ['EventTag', 'EventTags'],
     'event-category'=> ['EventCategory', 'EventCategories'],
     'event_cat'     => ['EventCategory', 'EventCategories'],
+    // Timely (All-in-One Event Calendar)
+    'events_categories' => ['EventCategory', 'EventCategories'],
+    'events_tags'       => ['EventTag', 'EventTags'],
+    // WP Event Manager
+    'event_listing_category' => ['EventCategory', 'EventCategories'],
+    'event_listing_type'     => ['EventTag', 'EventTags'],
   ];
 
   if (isset($event_tax[$taxonomy])) {
@@ -474,24 +627,63 @@ add_filter('register_taxonomy_args', function ($args, $taxonomy) {
 // ---------------------------------------------------------------------------
 // GraphQL fields
 // ---------------------------------------------------------------------------
+/**
+ * Per-request caches of event date boundaries keyed by post_id.
+ * Each entry: ['start' => iso|null, 'end' => iso|null].
+ * One query per post_id covers both startDate and endDate resolvers.
+ */
+global $ragbaz_eo_date_cache, $ragbaz_em_date_cache, $ragbaz_timely_date_cache;
+$ragbaz_eo_date_cache = [];
+$ragbaz_em_date_cache = [];
+$ragbaz_timely_date_cache = [];
+
 function ragbaz_get_event_datetime($post_id, $which = 'start') {
   $post_id = intval($post_id);
   if ($post_id <= 0) return null;
 
-  // Event Organiser helper (preferred when available)
-  if ($which === 'start' && function_exists('eo_get_the_start')) {
-    $val = eo_get_the_start('c', $post_id);
-    if ($val) return ragbaz_normalize_iso_datetime($val);
-  }
-  if ($which === 'end' && function_exists('eo_get_the_end')) {
-    $val = eo_get_the_end('c', $post_id);
-    if ($val) return ragbaz_normalize_iso_datetime($val);
+  // ── Event Organiser (eo_events table) ──────────────────────────────────
+  // EO stores occurrences in its own table with StartDate/EndDate/StartTime/
+  // FinishTime columns. One direct query per post_id, cached for both fields.
+  global $wpdb, $ragbaz_eo_date_cache, $ragbaz_em_date_cache, $ragbaz_timely_date_cache;
+  if (isset($wpdb->eo_events)) {
+    if (!isset($ragbaz_eo_date_cache[$post_id])) {
+      $ragbaz_eo_date_cache[$post_id] = ragbaz_query_eo_dates($post_id);
+    }
+    $cached = $ragbaz_eo_date_cache[$post_id];
+    if ($cached[$which]) return $cached[$which];
   }
 
-  // The Events Calendar / Events Manager meta keys
+  // ── Events Manager (wp_em_events table) ────────────────────────────────
+  // EM stores events in {prefix}em_events with event_start_date/event_end_date
+  // columns. For recurring events, child occurrences are separate posts.
+  $em_table = $wpdb->prefix . 'em_events';
+  if (ragbaz_table_exists($em_table)) {
+    if (!isset($ragbaz_em_date_cache[$post_id])) {
+      $ragbaz_em_date_cache[$post_id] = ragbaz_query_em_dates($post_id);
+    }
+    $cached = $ragbaz_em_date_cache[$post_id];
+    if ($cached[$which]) return $cached[$which];
+  }
+
+  // ── Timely / All-in-One Event Calendar (ai1ec_event_instances table) ────
+  // Timely stores unix timestamps in ai1ec_events (master) and pre-expands
+  // recurring occurrences into ai1ec_event_instances.
+  $timely_inst = $wpdb->prefix . 'ai1ec_event_instances';
+  if (ragbaz_table_exists($timely_inst)) {
+    if (!isset($ragbaz_timely_date_cache[$post_id])) {
+      $ragbaz_timely_date_cache[$post_id] = ragbaz_query_timely_dates($post_id);
+    }
+    $cached = $ragbaz_timely_date_cache[$post_id];
+    if ($cached[$which]) return $cached[$which];
+  }
+
+  // ── The Events Calendar / WP Event Manager (post-meta based) ──────────
+  // TEC stores dates directly in post meta. TEC Pro recurring events create
+  // separate posts per occurrence, so meta is always per-occurrence.
+  // WP Event Manager uses _event_start_date / _event_end_date in meta.
   $meta_keys = $which === 'start'
-    ? ['_EventStartDate', '_EventStartDateUTC', '_event_start_date', '_event_start', '_EventStartDateISO']
-    : ['_EventEndDate', '_EventEndDateUTC', '_event_end_date', '_event_end', '_EventEndDateISO'];
+    ? ['_EventStartDate', '_EventStartDateUTC', '_EventStartDateISO', '_event_start_date']
+    : ['_EventEndDate', '_EventEndDateUTC', '_EventEndDateISO', '_event_end_date'];
   foreach ($meta_keys as $key) {
     $val = get_post_meta($post_id, $key, true);
     if ($val !== '' && $val !== false) {
@@ -500,24 +692,244 @@ function ragbaz_get_event_datetime($post_id, $which = 'start') {
     }
   }
 
-  $post = get_post($post_id);
-  if ($post) {
-    if ($which === 'start' && $post->post_date_gmt) return ragbaz_normalize_iso_datetime($post->post_date_gmt);
-    if ($which === 'end' && $post->post_modified_gmt) return ragbaz_normalize_iso_datetime($post->post_modified_gmt);
+  // WP Event Manager: combine date + time meta if separate
+  $date_key = $which === 'start' ? '_event_start_date' : '_event_end_date';
+  $time_key = $which === 'start' ? '_event_start_time' : '_event_end_time';
+  $date_val = get_post_meta($post_id, $date_key, true);
+  $time_val = get_post_meta($post_id, $time_key, true);
+  if ($date_val) {
+    $combined = $date_val . ($time_val ? 'T' . $time_val : '');
+    $iso = ragbaz_normalize_iso_datetime($combined);
+    if ($iso) return $iso;
   }
 
+  // No event date found — do NOT fall back to post_date/post_modified.
   return null;
+}
+
+/**
+ * Check if a database table exists (cached per request).
+ */
+function ragbaz_table_exists($table_name) {
+  static $cache = [];
+  if (!isset($cache[$table_name])) {
+    global $wpdb;
+    $cache[$table_name] = $wpdb->get_var(
+      $wpdb->prepare("SHOW TABLES LIKE %s", $table_name)
+    ) === $table_name;
+  }
+  return $cache[$table_name];
+}
+
+/**
+ * Get the next upcoming occurrence from EO's eo_events table for a given post.
+ * Returns ['start' => iso|null, 'end' => iso|null] — both from the same occurrence.
+ */
+function ragbaz_query_eo_dates($post_id) {
+  global $wpdb;
+  $result = ['start' => null, 'end' => null];
+
+  // Next occurrence where the start date is today or later
+  $row = $wpdb->get_row($wpdb->prepare(
+    "SELECT StartDate, StartTime, EndDate, FinishTime
+     FROM {$wpdb->eo_events}
+     WHERE post_id = %d AND StartDate >= CURDATE()
+     ORDER BY StartDate ASC, StartTime ASC
+     LIMIT 1",
+    $post_id
+  ));
+
+  // If no future occurrence, fall back to the last occurrence overall
+  /*
+  if (!$row) {
+    $row = $wpdb->get_row($wpdb->prepare(
+      "SELECT StartDate, StartTime, EndDate, FinishTime
+       FROM {$wpdb->eo_events}
+       WHERE post_id = %d
+       ORDER BY StartDate DESC, StartTime DESC
+       LIMIT 1",
+      $post_id
+    ));
+  }
+   */
+
+  if ($row) {
+    if (!empty($row->StartDate)) {
+      $result['start'] = ragbaz_normalize_iso_datetime($row->StartDate . 'T' . ($row->StartTime ?: '00:00:00'));
+    }
+    if (!empty($row->EndDate)) {
+      $result['end'] = ragbaz_normalize_iso_datetime($row->EndDate . 'T' . ($row->FinishTime ?: '23:59:59'));
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Get the next upcoming occurrence from Events Manager's em_events table.
+ * Returns ['start' => iso|null, 'end' => iso|null] — both from the same row.
+ *
+ * EM table columns: event_start_date (DATE), event_start_time (TIME),
+ *                   event_end_date (DATE), event_end_time (TIME),
+ *                   post_id, recurrence (0=normal/child, 1=parent template).
+ * For recurring events the parent row (recurrence=1) is a template — we skip it
+ * and query actual occurrence rows (recurrence != 1) instead.
+ */
+function ragbaz_query_em_dates($post_id) {
+  global $wpdb;
+  $table  = $wpdb->prefix . 'em_events';
+  $result = ['start' => null, 'end' => null];
+
+  // Next upcoming occurrence (skip recurrence templates)
+  $row = $wpdb->get_row($wpdb->prepare(
+    "SELECT event_start_date, event_start_time, event_end_date, event_end_time
+     FROM {$table}
+     WHERE post_id = %d AND (recurrence IS NULL OR recurrence != 1) AND event_start_date >= CURDATE()
+     ORDER BY event_start_date ASC, event_start_time ASC
+     LIMIT 1",
+    $post_id
+  ));
+
+  // If no future occurrence, fall back to the most recent past occurrence
+  if (!$row) {
+    $row = $wpdb->get_row($wpdb->prepare(
+      "SELECT event_start_date, event_start_time, event_end_date, event_end_time
+       FROM {$table}
+       WHERE post_id = %d AND (recurrence IS NULL OR recurrence != 1)
+       ORDER BY event_start_date DESC, event_start_time DESC
+       LIMIT 1",
+      $post_id
+    ));
+  }
+
+  // If still nothing (single non-recurring event stored as the only row)
+  if (!$row) {
+    $row = $wpdb->get_row($wpdb->prepare(
+      "SELECT event_start_date, event_start_time, event_end_date, event_end_time
+       FROM {$table}
+       WHERE post_id = %d
+       ORDER BY event_start_date DESC
+       LIMIT 1",
+      $post_id
+    ));
+  }
+
+  if ($row) {
+    if (!empty($row->event_start_date)) {
+      $result['start'] = ragbaz_normalize_iso_datetime(
+        $row->event_start_date . 'T' . ($row->event_start_time ?: '00:00:00')
+      );
+    }
+    if (!empty($row->event_end_date)) {
+      $result['end'] = ragbaz_normalize_iso_datetime(
+        $row->event_end_date . 'T' . ($row->event_end_time ?: '23:59:59')
+      );
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Get the next upcoming occurrence from Timely's ai1ec_event_instances table.
+ * Returns ['start' => iso|null, 'end' => iso|null].
+ *
+ * Timely pre-expands recurring events into ai1ec_event_instances with unix
+ * timestamps. The master row in ai1ec_events holds the original start/end
+ * but for recurring events we prefer the instances table.
+ */
+function ragbaz_query_timely_dates($post_id) {
+  global $wpdb;
+  $inst_table  = $wpdb->prefix . 'ai1ec_event_instances';
+  $event_table = $wpdb->prefix . 'ai1ec_events';
+  $result = ['start' => null, 'end' => null];
+
+  // Try instances table first (covers recurring + single events)
+  $row = $wpdb->get_row($wpdb->prepare(
+    "SELECT start, end
+     FROM {$inst_table}
+     WHERE post_id = %d AND start >= UNIX_TIMESTAMP(CURDATE())
+     ORDER BY start ASC
+     LIMIT 1",
+    $post_id
+  ));
+
+  // Fall back to most recent past instance
+  if (!$row) {
+    $row = $wpdb->get_row($wpdb->prepare(
+      "SELECT start, end
+       FROM {$inst_table}
+       WHERE post_id = %d
+       ORDER BY start DESC
+       LIMIT 1",
+      $post_id
+    ));
+  }
+
+  // Last resort: master row in ai1ec_events
+  if (!$row && ragbaz_table_exists($event_table)) {
+    $row = $wpdb->get_row($wpdb->prepare(
+      "SELECT start, end FROM {$event_table} WHERE post_id = %d LIMIT 1",
+      $post_id
+    ));
+  }
+
+  if ($row) {
+    if (!empty($row->start)) {
+      $result['start'] = ragbaz_normalize_iso_datetime($row->start);
+    }
+    if (!empty($row->end)) {
+      $result['end'] = ragbaz_normalize_iso_datetime($row->end);
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Get a single column from Timely's ai1ec_events table for a post.
+ * Used by allDay, timezone, venue, cost, ticket helpers.
+ */
+function ragbaz_get_timely_field($post_id, $column) {
+  global $wpdb;
+  $table = $wpdb->prefix . 'ai1ec_events';
+  if (!ragbaz_table_exists($table)) return null;
+  // Whitelist allowed columns to prevent SQL injection
+  $allowed = ['allday', 'timezone_name', 'venue', 'address', 'city', 'province',
+              'country', 'postal_code', 'cost', 'ticket_url', 'contact_url'];
+  if (!in_array($column, $allowed, true)) return null;
+  return $wpdb->get_var($wpdb->prepare(
+    "SELECT `{$column}` FROM {$table} WHERE post_id = %d LIMIT 1",
+    $post_id
+  ));
 }
 
 function ragbaz_get_event_all_day($post_id) {
   $post_id = intval($post_id);
   if ($post_id <= 0) return null;
 
+  // EO API
   if (function_exists('eo_is_all_day')) {
     return (bool) eo_is_all_day($post_id);
   }
 
-  $meta_keys = ['_EventAllDay', '_event_all_day'];
+  // EM: check em_events table directly
+  global $wpdb;
+  $em_table = $wpdb->prefix . 'em_events';
+  if (ragbaz_table_exists($em_table)) {
+    $val = $wpdb->get_var($wpdb->prepare(
+      "SELECT event_all_day FROM {$em_table} WHERE post_id = %d LIMIT 1",
+      $post_id
+    ));
+    if ($val !== null) return (bool) intval($val);
+  }
+
+  // Timely: allday column in ai1ec_events
+  $timely = ragbaz_get_timely_field($post_id, 'allday');
+  if ($timely !== null) return (bool) intval($timely);
+
+  // TEC / WP Event Manager / generic meta
+  $meta_keys = ['_EventAllDay', '_event_all_day', '_event_online'];
   foreach ($meta_keys as $key) {
     $val = get_post_meta($post_id, $key, true);
     if ($val !== '' && $val !== false) {
@@ -532,25 +944,68 @@ function ragbaz_get_event_timezone($post_id) {
   $post_id = intval($post_id);
   if ($post_id <= 0) return null;
 
-  $meta_keys = ['_EventTimezone', '_event_timezone'];
+  // TEC meta
+  $meta_keys = ['_EventTimezone'];
   foreach ($meta_keys as $key) {
     $val = get_post_meta($post_id, $key, true);
     if (is_string($val) && $val !== '') return $val;
   }
 
+  // EM: event_timezone column in em_events table
+  global $wpdb;
+  $em_table = $wpdb->prefix . 'em_events';
+  if (ragbaz_table_exists($em_table)) {
+    $val = $wpdb->get_var($wpdb->prepare(
+      "SELECT event_timezone FROM {$em_table} WHERE post_id = %d LIMIT 1",
+      $post_id
+    ));
+    if (is_string($val) && $val !== '') return $val;
+  }
+
+  // Timely: timezone_name column in ai1ec_events
+  $timely_tz = ragbaz_get_timely_field($post_id, 'timezone_name');
+  if (is_string($timely_tz) && $timely_tz !== '') return $timely_tz;
+
   return get_option('timezone_string') ?: null;
 }
 
 function ragbaz_get_event_venue_name($post_id) {
+  // EO API
   if (function_exists('eo_get_venue_name')) {
     $val = eo_get_venue_name(false, $post_id);
     if ($val) return $val;
   }
+  // TEC API
   if (function_exists('tribe_get_venue')) {
     $val = tribe_get_venue($post_id);
     if ($val) return $val;
   }
 
+  // EM: location_id in em_events → location_name in em_locations
+  global $wpdb;
+  $em_table = $wpdb->prefix . 'em_events';
+  $loc_table = $wpdb->prefix . 'em_locations';
+  if (ragbaz_table_exists($em_table) && ragbaz_table_exists($loc_table)) {
+    $val = $wpdb->get_var($wpdb->prepare(
+      "SELECT l.location_name
+       FROM {$em_table} e
+       JOIN {$loc_table} l ON e.location_id = l.location_id
+       WHERE e.post_id = %d AND e.location_id > 0
+       LIMIT 1",
+      $post_id
+    ));
+    if ($val) return $val;
+  }
+
+  // Timely: venue column in ai1ec_events
+  $timely_venue = ragbaz_get_timely_field($post_id, 'venue');
+  if ($timely_venue) return $timely_venue;
+
+  // WP Event Manager: _event_venue_name meta
+  $wpem_venue = get_post_meta($post_id, '_event_venue_name', true);
+  if (is_string($wpem_venue) && trim($wpem_venue) !== '') return $wpem_venue;
+
+  // Taxonomy fallback
   $terms = wp_get_post_terms($post_id, ['event-venue', 'event_venue', 'tribe_venue']);
   if (!is_wp_error($terms) && !empty($terms)) {
     return $terms[0]->name;
@@ -560,18 +1015,64 @@ function ragbaz_get_event_venue_name($post_id) {
 }
 
 function ragbaz_get_event_venue_address($post_id) {
+  // EO API
   if (function_exists('eo_get_venue_address')) {
     $address = eo_get_venue_address(false, $post_id);
     if (is_array($address) && !empty($address)) {
       return implode(', ', array_filter($address));
     }
   }
+  // TEC API
   if (function_exists('tribe_get_full_address')) {
     $addr = tribe_get_full_address($post_id, true);
     if ($addr) return $addr;
   }
 
-  $meta_keys = ['_VenueAddress', '_venue_address'];
+  // EM: join em_locations to build address from location_address, location_town,
+  // location_postcode, location_region, location_country columns
+  global $wpdb;
+  $em_table = $wpdb->prefix . 'em_events';
+  $loc_table = $wpdb->prefix . 'em_locations';
+  if (ragbaz_table_exists($em_table) && ragbaz_table_exists($loc_table)) {
+    $loc = $wpdb->get_row($wpdb->prepare(
+      "SELECT l.location_address, l.location_town, l.location_postcode, l.location_region, l.location_country
+       FROM {$em_table} e
+       JOIN {$loc_table} l ON e.location_id = l.location_id
+       WHERE e.post_id = %d AND e.location_id > 0
+       LIMIT 1",
+      $post_id
+    ));
+    if ($loc) {
+      $parts = array_filter([
+        $loc->location_address ?? '',
+        $loc->location_town ?? '',
+        $loc->location_postcode ?? '',
+        $loc->location_region ?? '',
+        $loc->location_country ?? '',
+      ], function ($p) { return trim($p) !== ''; });
+      if (!empty($parts)) return implode(', ', $parts);
+    }
+  }
+
+  // Timely: address, city, province, country, postal_code columns in ai1ec_events
+  global $wpdb;
+  $timely_table = $wpdb->prefix . 'ai1ec_events';
+  if (ragbaz_table_exists($timely_table)) {
+    $loc = $wpdb->get_row($wpdb->prepare(
+      "SELECT address, city, province, country, postal_code FROM {$timely_table} WHERE post_id = %d LIMIT 1",
+      $post_id
+    ));
+    if ($loc) {
+      $parts = array_filter([
+        $loc->address ?? '', $loc->city ?? '', $loc->province ?? '',
+        $loc->postal_code ?? '', $loc->country ?? '',
+      ], function ($p) { return trim($p) !== ''; });
+      if (!empty($parts)) return implode(', ', $parts);
+    }
+  }
+
+  // WP Event Manager / TEC / generic meta fallback
+  $meta_keys = ['_event_location', '_VenueAddress', '_venue_address'];
   foreach ($meta_keys as $key) {
     $val = get_post_meta($post_id, $key, true);
     if (is_string($val) && trim($val) !== '') return $val;
@@ -581,29 +1082,74 @@ function ragbaz_get_event_venue_address($post_id) {
 }
 
 function ragbaz_get_event_ticket_url($post_id) {
-  $meta_keys = ['_EventURL', '_event_url'];
+  $meta_keys = ['_EventURL', '_event_url', '_event_ticket_url'];
   foreach ($meta_keys as $key) {
     $val = get_post_meta($post_id, $key, true);
     if (is_string($val) && trim($val) !== '') return esc_url_raw($val);
   }
+  // Timely: ticket_url column in ai1ec_events
+  $timely = ragbaz_get_timely_field($post_id, 'ticket_url');
+  if (is_string($timely) && trim($timely) !== '') return esc_url_raw($timely);
   return null;
 }
 
 function ragbaz_get_event_cost($post_id) {
-  $meta_keys = ['_EventCost', '_event_cost', '_EventPrice'];
+  $meta_keys = ['_EventCost', '_event_cost', '_EventPrice', '_event_ticket_price'];
   foreach ($meta_keys as $key) {
     $val = get_post_meta($post_id, $key, true);
     if ($val !== '' && $val !== false) return (float) $val;
+  }
+  // Timely: cost column in ai1ec_events (free-text, e.g. "$25" or "Free")
+  $timely = ragbaz_get_timely_field($post_id, 'cost');
+  if (is_string($timely) && trim($timely) !== '') {
+    $numeric = preg_replace('/[^0-9.]/', '', $timely);
+    if ($numeric !== '' && is_numeric($numeric)) return (float) $numeric;
   }
   return null;
 }
 
 function ragbaz_detect_events_plugin() {
-  $event_types = ['event', 'events', 'tribe_events', 'event_listing', 'eo_event'];
+  $event_types = ['event', 'events', 'tribe_events', 'event_listing', 'eo_event', 'ai1ec_event'];
   foreach ($event_types as $type) {
     if (post_type_exists($type)) return true;
   }
   return false;
+}
+
+/**
+ * Detect and return the name of the active event calendar plugin.
+ * Returns null if no known plugin is found.
+ */
+function ragbaz_detect_events_plugin_name() {
+  global $wpdb;
+  // Event Organiser: registers 'event' post type, eo_events table exists
+  if (isset($wpdb->eo_events) || (post_type_exists('event') && defined('EVENT_ORGANISER_VER'))) {
+    return 'Event Organiser';
+  }
+  // The Events Calendar: registers 'tribe_events' post type
+  if (post_type_exists('tribe_events') || class_exists('Tribe__Events__Main')) {
+    return 'The Events Calendar';
+  }
+  // Events Manager: registers 'event' post type, em_events table exists
+  $em_table = $wpdb->prefix . 'em_events';
+  if (ragbaz_table_exists($em_table) || (post_type_exists('event') && defined('EM_VERSION'))) {
+    return 'Events Manager';
+  }
+  // Timely (All-in-One Event Calendar): registers 'ai1ec_event' post type
+  $timely_table = $wpdb->prefix . 'ai1ec_events';
+  if (post_type_exists('ai1ec_event') || ragbaz_table_exists($timely_table) || defined('AI1EC_VERSION')) {
+    return 'Timely';
+  }
+  // WP Event Manager: registers 'event_listing' post type
+  if (post_type_exists('event_listing') || class_exists('WP_Event_Manager')) {
+    return 'WP Event Manager';
+  }
+  // Generic event post type present but unknown plugin
+  $event_types = ['event', 'events', 'eo_event'];
+  foreach ($event_types as $type) {
+    if (post_type_exists($type)) return 'Unknown (post type: ' . $type . ')';
+  }
+  return null;
 }
 
 function ragbaz_get_attachment_asset_meta_keys() {
@@ -1802,11 +2348,58 @@ function ragbaz_render_info_page() {
       <thead><tr><th>Type / Field</th><th>Source</th><th>Fields added</th></tr></thead>
       <tbody>
         <tr><td><code>LpCourse</code></td><td>LearnPress</td><td>price, priceFormatted, currency, duration, durationUnit, instructor, curriculum (sections → lessons), hasEnrolled, enrolStatus</td></tr>
-        <tr><td><code>Event.startDate / endDate</code></td><td>Any events plugin</td><td>startDate, endDate, allDay, timezone, venueName, venueAddress, ticketUrl, cost</td></tr>
+        <tr><td><code>Event.startDate / endDate</code></td><td>Event calendar plugins (see below)</td><td>startDate, endDate, allDay, timezone, venueName, venueAddress, ticketUrl, cost</td></tr>
         <tr><td><code>MediaItem.ragbazAsset</code></td><td>Core</td><td>assetId, assetSlug, publicUrl, mimeType, fileSize, variants (array)</td></tr>
         <tr><td><code>RootQuery.ragbazInfo</code></td><td>Core</td><td>version, hasLearnPress, hasEventsPlugin, eventsPlugin, wpRuntime</td></tr>
         <tr><td><code>RootQuery.ragbazPluginVersion</code></td><td>Core</td><td>Version string</td></tr>
         <tr><td><code>RootQuery.ragbazWpRuntime</code></td><td>Core</td><td>Full runtime status object</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:20px">Supported event calendar plugins</h3>
+    <p style="color:#475569;max-width:720px">
+      RAGBAZ Bridge resolves <code>startDate</code> and <code>endDate</code> for events using
+      plugin-specific storage. The table below lists supported plugins and how dates are resolved.
+    </p>
+    <table class="widefat striped">
+      <thead><tr><th>Plugin</th><th>Post type</th><th>Date storage</th><th>Support level</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Event Organiser</strong></td>
+          <td><code>event</code></td>
+          <td>Custom <code>eo_events</code> table (<code>StartDate</code>, <code>StartTime</code>, <code>EndDate</code>, <code>FinishTime</code>). Queries the next upcoming occurrence (<code>StartDate &ge; CURDATE()</code>), falls back to the most recent past occurrence.</td>
+          <td><span style="color:#166534;font-weight:600">Full support</span></td>
+        </tr>
+        <tr>
+          <td><strong>The Events Calendar</strong> (TEC)</td>
+          <td><code>tribe_events</code></td>
+          <td>Post meta: <code>_EventStartDate</code>, <code>_EventEndDate</code></td>
+          <td><span style="color:#166534;font-weight:600">Supported</span></td>
+        </tr>
+        <tr>
+          <td><strong>Events Manager</strong></td>
+          <td><code>event</code></td>
+          <td>Custom <code>em_events</code> table (<code>event_start_date</code>, <code>event_start_time</code>, <code>event_end_date</code>, <code>event_end_time</code>). Queries next upcoming occurrence, skips recurrence templates. Venue resolved via <code>em_locations</code> join.</td>
+          <td><span style="color:#166534;font-weight:600">Full support</span></td>
+        </tr>
+        <tr>
+          <td><strong>Timely</strong> (All-in-One Event Calendar)</td>
+          <td><code>ai1ec_event</code></td>
+          <td>Custom <code>ai1ec_events</code> table (unix timestamps) + <code>ai1ec_event_instances</code> for pre-expanded recurring occurrences. Venue, cost, ticket URL, timezone, allDay all stored as columns in <code>ai1ec_events</code>.</td>
+          <td><span style="color:#166534;font-weight:600">Full support</span></td>
+        </tr>
+        <tr>
+          <td><strong>WP Event Manager</strong></td>
+          <td><code>event_listing</code></td>
+          <td>Post meta: <code>_event_start_date</code>, <code>_event_end_date</code>, <code>_event_start_time</code>, <code>_event_end_time</code>. Venue via <code>_event_venue_name</code>, location via <code>_event_location</code>.</td>
+          <td><span style="color:#166534;font-weight:600">Supported</span></td>
+        </tr>
+        <tr>
+          <td>Other / unknown</td>
+          <td>—</td>
+          <td>—</td>
+          <td><span style="color:#b91c1c">Not supported</span> — startDate/endDate will be empty</td>
+        </tr>
       </tbody>
     </table>
 
@@ -1816,11 +2409,11 @@ function ragbaz_render_info_page() {
       <tbody>
         <tr>
           <td><code>register_post_type_args</code></td>
-          <td>Sets <code>show_in_graphql: true</code> on event post types (<code>tribe_events</code>, <code>event</code>, <code>event_listing</code>, <code>eo_event</code>) so they appear in the WPGraphQL schema even if the originating plugin didn't set that flag.</td>
+          <td>Sets <code>show_in_graphql: true</code> on event post types (<code>tribe_events</code>, <code>event</code>, <code>event_listing</code>, <code>eo_event</code>, <code>ai1ec_event</code>) so they appear in the WPGraphQL schema even if the originating plugin didn't set that flag.</td>
         </tr>
         <tr>
           <td><code>register_taxonomy_args</code></td>
-          <td>Sets <code>show_in_graphql: true</code> on event-related taxonomies (<code>tribe_events_cat</code>, <code>event_tag</code>, <code>event_category</code>) for the same reason.</td>
+          <td>Sets <code>show_in_graphql: true</code> on event-related taxonomies (<code>tribe_events_cat</code>, <code>event_tag</code>, <code>event_category</code>, <code>events_categories</code>, <code>events_tags</code>, <code>event_listing_category</code>, <code>event_listing_type</code>) for the same reason.</td>
         </tr>
         <tr>
           <td><code>determine_current_user</code> (priority 20)</td>
@@ -2635,6 +3228,7 @@ add_action('graphql_register_types', function () {
       'pluginSemver' => ['type' => 'String'],
       'hasLearnPress' => ['type' => 'Boolean'],
       'hasEventsPlugin' => ['type' => 'Boolean'],
+      'eventsPlugin' => ['type' => 'String'],
       'wpRuntime' => ['type' => 'RagbazWpRuntime'],
       'capabilities' => ['type' => 'RagbazCapabilities'],
     ],
@@ -2698,6 +3292,7 @@ add_action('graphql_register_types', function () {
         'pluginSemver' => $capabilities['pluginSemver'],
         'hasLearnPress' => function_exists('learn_press_get_user'),
         'hasEventsPlugin' => ragbaz_detect_events_plugin(),
+        'eventsPlugin' => ragbaz_detect_events_plugin_name(),
         'wpRuntime' => current_user_can('manage_options')
           ? ragbaz_get_wp_runtime_status()
           : null,

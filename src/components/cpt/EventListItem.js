@@ -5,11 +5,11 @@ import { decodeEntities } from "@/lib/decodeEntities";
 import { formatEventDateRange, isEventPassed } from "@/lib/eventDates";
 import { t } from "@/lib/i18n";
 
-export default function EventListItem({ post }) {
+export default function EventListItem({ post, now }) {
   if (!post) return null;
   const { content, title, uri } = post;
   const dateLabel = formatEventDateRange(post);
-  const passed = isEventPassed(post);
+  const passed = isEventPassed(post, now);
 
   const venues =
     (post.eventVenues || post.location)?.edges

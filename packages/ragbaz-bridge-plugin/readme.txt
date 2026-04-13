@@ -1,10 +1,10 @@
 === RAGBAZ Bridge ===
 Contributors: ragbaz
-Tags: graphql, wpgraphql, learnpress, events, storefront, headless
+Tags: graphql, wpgraphql, learnpress, events, storefront, headless, timely, event-organiser
 Requires at least: 6.3
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.2.3
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Plugin URI: https://ragbaz.xyz/products
@@ -36,7 +36,7 @@ Other helpful GraphQL glue this plugin is ready to host:
 == Frequently Asked Questions ==
 
 = Do I need Event Organiser specifically? =
-No. Any plugin that registers an `Event`-like post type (e.g., `tribe_events`, `event`, `event_listing`, `eo_event`) will be exposed if present.
+No. RAGBAZ Bridge supports Event Organiser, The Events Calendar, Events Manager, Timely (All-in-One Event Calendar), and WP Event Manager. Each plugin's date storage is resolved natively — custom tables where available, post meta otherwise. See the Overview tab in wp-admin for details.
 
 = How does the storefront detect plugin capabilities and runtime settings? =
 Call `ragbazInfo { version hasLearnPress hasEventsPlugin }`, `ragbazPluginVersion`, and `ragbazWpRuntime { pluginVersion okForProduction wpDebug wpDebugLog scriptDebug saveQueries graphqlDebug queryMonitorActive xdebugActive objectCacheEnabled opcacheEnabled checkedAt }` in WPGraphQL. You can also open **Tools → RAGBAZ Bridge** in wp-admin for the same checks.
@@ -45,6 +45,18 @@ Call `ragbazInfo { version hasLearnPress hasEventsPlugin }`, `ragbazPluginVersio
 Email ragbaz@proton.me or visit https://ragbaz.xyz/products.
 
 == Changelog ==
+= 1.3.0 =
+* Added full support for Timely (All-in-One Event Calendar) — dates from `ai1ec_event_instances` table, venue/cost/timezone/allDay from `ai1ec_events` columns.
+* Added WP Event Manager support (`event_listing` post type) — dates, venue, location via post meta.
+* Upgraded Events Manager from partial to full support — direct `em_events` table queries for next upcoming occurrence, venue/address via `em_locations` join.
+* Event Organiser: fixed date resolution to use `eo_events` table instead of falling back to post creation/modification dates.
+* Added `eventsPlugin` string field to `ragbazInfo` GraphQL type — returns detected plugin name.
+* Added activation/deactivation hooks with version tracking (`ragbaz_bridge_version` option).
+* Added upgrade pre-flight checks: PHP version, WPGraphQL availability, event table integrity.
+* Added post-upgrade admin notice showing old → new version and detected event plugin.
+* Plugin options are preserved on deactivation — safe to deactivate/reactivate without data loss.
+* Documented all supported event calendar plugins in the Overview tab with storage details and support levels.
+
 = 1.2.3 =
 * Removed hardcoded storefront GitHub URL reference (`ragbaz-bridge-storefront`) from plugin source.
 

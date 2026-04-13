@@ -12,7 +12,7 @@ import {
  */
 const HOME_EVENTS_QUERY = `
   query HomeEvents {
-    events(first: 50) {
+    events(first: 200) {
       edges {
         node {
           id
@@ -35,7 +35,7 @@ const HOME_EVENTS_QUERY = `
 
 const HOME_EVENTS_FALLBACK_QUERY = `
   query HomeEventsFallback {
-    events(first: 50) {
+    events(first: 200) {
       edges {
         node {
           id
@@ -127,14 +127,11 @@ export async function fetchHomeEvents() {
         { edgeCache: true },
       );
       const fallbackRaw = toRenderableEvents(extractEventNodes(fallbackData));
-      const fallbackUpcoming = sortByStartDateAsc(
-        filterUpcomingEvents(fallbackRaw),
-      );
-      return { events: fallbackUpcoming, hasDates: false };
+      // No date fields available — skip date-based filtering, show all events.
+      return { events: fallbackRaw, hasDates: false };
     }
 
-    const withDates = sortByStartDateAsc(raw);
-    const upcoming = filterUpcomingEvents(withDates);
+    const upcoming = filterUpcomingEvents(raw);
     const display = sortByStartDateAsc(upcoming);
     const hasDates = display.some((e) => e.startDate || e.endDate);
     return { events: display, hasDates };
