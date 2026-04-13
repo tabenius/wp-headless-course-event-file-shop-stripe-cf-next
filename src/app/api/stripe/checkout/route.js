@@ -5,8 +5,7 @@ import { getContentAccessConfig } from "@/lib/contentAccess";
 import { createStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { findUserByEmail, createUser } from "@/lib/userStore";
 import { createPasswordResetToken } from "@/lib/passwordResetStore";
-import { fetchGraphQL } from "@/lib/client";
-import { parsePriceCents } from "@/lib/parsePrice";
+import { listDigitalProducts } from "@/lib/digitalProducts";
 import { sendEmail } from "@/lib/email";
 import { z } from "zod";
 import { t } from "@/lib/i18n";
@@ -59,98 +58,20 @@ function uriMatches(a, b) {
   return normalizeUri(a) === normalizeUri(b);
 }
 
-async function resolveWooPriceCentsByUri(courseUri) {
-  let after = null;
-  for (let page = 0; page < 20; page += 1) {
-    try {
-      const data = await fetchGraphQL(
-        `query WooProductsByUri($after: String) {
-          products(first: 100, after: $after, where: { status: "publish" }) {
-            edges {
-              node {
-                ... on SimpleProduct { uri price regularPrice }
-                ... on VariableProduct { uri price regularPrice }
-                ... on ExternalProduct { uri price regularPrice }
-              }
-            }
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-          }
-        }`,
-        { after },
-        300,
-      );
-      const rows = (data?.products?.edges || []).map((edge) => edge.node);
-      const match = rows.find((product) => uriMatches(product?.uri, courseUri));
-      if (match)
-        return parsePriceCents(match.price || match.regularPrice || "");
-
-      const pageInfo = data?.products?.pageInfo;
-      if (!pageInfo?.hasNextPage) return 0;
-      after = pageInfo.endCursor || null;
-      if (!after) return 0;
-    } catch {
-      return 0;
-    }
-  }
-  return 0;
-}
-
-async function resolveLpPriceCentsByUri(courseUri) {
-  let after = null;
-  for (let page = 0; page < 20; page += 1) {
-    try {
-      const data = await fetchGraphQL(
-        `query LpCoursesByUri($after: String) {
-          lpCourses(first: 100, after: $after) {
-            edges {
-              node {
-                uri
-                price
-                priceRendered
-              }
-            }
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-          }
-        }`,
-        { after },
-        300,
-      );
-      const rows = (data?.lpCourses?.edges || []).map((edge) => edge.node);
-      const match = rows.find((course) => uriMatches(course?.uri, courseUri));
-      if (match)
-        return parsePriceCents(match.priceRendered || match.price || "");
-
-      const pageInfo = data?.lpCourses?.pageInfo;
-      if (!pageInfo?.hasNextPage) return 0;
-      after = pageInfo.endCursor || null;
-      if (!after) return 0;
-    } catch {
-      return 0;
-    }
-  }
-  return 0;
-}
-
-async function resolveWordPressPriceCents(courseUri, contentKind) {
-  const normalized = normalizeUri(courseUri);
-  if (!normalized) return 0;
-  if (contentKind === "product") {
-    return await resolveWooPriceCentsByUri(normalized);
-  }
-  if (contentKind === "course") {
-    return await resolveLpPriceCentsByUri(normalized);
-  }
-  const wooPrice = await resolveWooPriceCentsByUri(normalized);
-  if (wooPrice > 0) return wooPrice;
-  const lpPrice = await resolveLpPriceCentsByUri(normalized);
-  if (lpPrice > 0) return lpPrice;
-  return 0;
+async function findLinkedLocalProduct(courseUri) {
+  const normalizedUri = normalizeUri(courseUri);
+  if (!normalizedUri) return null;
+  const products = await listDigitalProducts({ includeInactive: true }).catch(
+    () => [],
+  );
+  return (
+    products.find(
+      (product) =>
+        product?.active !== false &&
+        product?.productMode === "manual_uri" &&
+        uriMatches(product?.contentUri, normalizedUri),
+    ) || null
+  );
 }
 
 async function logCheckoutIssue(title, description, priority = "moderate") {
@@ -272,8 +193,20 @@ export async function POST(request) {
 
   try {
     const courseUri = body.contentUri || body.courseUri || "";
-    const courseTitle = body.contentTitle || body.courseTitle || "";
-    const contentKind = body.contentKind ?? "course";
+    const linkedProduct = await findLinkedLocalProduct(courseUri);
+    const courseTitle =
+      body.contentTitle ||
+      body.courseTitle ||
+      linkedProduct?.name ||
+      linkedProduct?.title ||
+      "";
+    const contentKind =
+      body.contentKind ??
+      (linkedProduct?.buyableKind === "event"
+        ? "event"
+        : linkedProduct?.buyableKind === "product"
+          ? "product"
+          : "course");
 
     if (!courseUri) {
       console.error("Stripe checkout request rejected: missing content URI");
@@ -296,17 +229,22 @@ export async function POST(request) {
       );
     }
     const configuredPriceCents = config?.priceCents ?? 0;
-    const fallbackWordPressPriceCents =
+    const fallbackLocalPriceCents =
       configuredPriceCents > 0
         ? 0
-        : await resolveWordPressPriceCents(courseUri, contentKind);
+        : typeof linkedProduct?.priceCents === "number" && linkedProduct.priceCents > 0
+          ? linkedProduct.priceCents
+          : 0;
     const priceCents = Math.max(
       configuredPriceCents,
-      fallbackWordPressPriceCents,
+      fallbackLocalPriceCents,
     );
-    const vatPercent = normalizeVatPercent(config?.vatPercent);
+    const vatPercent = normalizeVatPercent(
+      config?.vatPercent ?? linkedProduct?.vatPercent,
+    );
     const currency = (
       config?.currency ||
+      linkedProduct?.currency ||
       process.env.DEFAULT_CURRENCY ||
       process.env.DEFAULT_COURSE_FEE_CURRENCY ||
       site.defaultCurrency ||
@@ -319,7 +257,7 @@ export async function POST(request) {
       );
       logCheckoutIssue(
         "Checkout blocked: no price configured",
-        `The item ${courseUri} (${contentKind}) has no usable price in course-access KV or WordPress source data.`,
+        `The item ${courseUri} (${contentKind}) has no usable local price in content-access or linked product data.`,
         "moderate",
       );
       return NextResponse.json(

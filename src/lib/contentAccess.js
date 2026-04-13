@@ -657,21 +657,20 @@ export async function hasContentAccess(courseUri, email) {
     throw error;
   }
   if (localConfig) {
-    try {
-      return await hasLocalContentAccess(courseUri, email);
-    } catch (error) {
-      await appendServerLog({
-        level: "error",
-        msg: await buildAccessLogContext({
-          branch: "local-has-access",
-          courseUri,
-          email,
-          error,
-        }),
-        persist: false,
-      }).catch(() => {});
-      throw error;
-    }
+    const normalizedEmail = String(email || "")
+      .trim()
+      .toLowerCase();
+    const allowedUsers = Array.isArray(localConfig.allowedUsers)
+      ? localConfig.allowedUsers
+      : [];
+    return (
+      allowedUsers.some(
+        (userEmail) =>
+          String(userEmail || "")
+            .trim()
+            .toLowerCase() === normalizedEmail,
+      ) && localConfig.active !== false
+    );
   }
   if (!isWordPressBackend()) {
     try {
