@@ -5,7 +5,7 @@
  * Description: GraphQL bridge for headless storefronts — exposes LearnPress courses, events (Event Organiser, The Events Calendar, Events Manager), WooCommerce products, and digital downloads via WPGraphQL. Includes built-in headless authentication via site-secret headers.
  * Author: RAGBAZ / Articulate
  * Author URI: https://ragbaz.xyz
- * Version: 1.3.0
+ * Version: 1.3.1
  * Requires at least: 6.3
  * Tested up to: 6.5
  * Requires PHP: 7.4
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 // Keep the legacy option name so existing rules remain intact.
 const RAGBAZ_COURSE_RULES_OPTION = 'Articulate_course_access_rules';
-const RAGBAZ_VERSION = '1.3.0';
+const RAGBAZ_VERSION = '1.3.1';
 
 // ---------------------------------------------------------------------------
 // Upgrade & activation safety
@@ -1108,6 +1108,146 @@ function ragbaz_get_event_cost($post_id) {
   return null;
 }
 
+/**
+ * Get all occurrences for an event post. Returns an array of
+ * ['startDate' => iso, 'endDate' => iso, 'allDay' => bool] entries,
+ * upcoming first (ASC), then past occurrences (DESC).
+ *
+ * Supports: Event Organiser (eo_events), Events Manager (em_events),
+ * Timely (ai1ec_event_instances). For TEC and WP Event Manager (meta-based),
+ * returns a single-element array with the post's own dates.
+ */
+function ragbaz_get_event_occurrences($post_id) {
+  $post_id = intval($post_id);
+  if ($post_id <= 0) return [];
+
+  global $wpdb;
+  $occurrences = [];
+
+  // ── Event Organiser ──
+  if (isset($wpdb->eo_events)) {
+    // Upcoming occurrences first
+    $upcoming = $wpdb->get_results($wpdb->prepare(
+      "SELECT StartDate, StartTime, EndDate, FinishTime
+       FROM {$wpdb->eo_events}
+       WHERE post_id = %d AND StartDate >= CURDATE()
+       ORDER BY StartDate ASC, StartTime ASC",
+      $post_id
+    ));
+    // Then past occurrences (most recent first)
+    $past = $wpdb->get_results($wpdb->prepare(
+      "SELECT StartDate, StartTime, EndDate, FinishTime
+       FROM {$wpdb->eo_events}
+       WHERE post_id = %d AND StartDate < CURDATE()
+       ORDER BY StartDate DESC, StartTime DESC",
+      $post_id
+    ));
+    $rows = array_merge($upcoming ?: [], $past ?: []);
+    foreach ($rows as $row) {
+      $start = !empty($row->StartDate)
+        ? ragbaz_normalize_iso_datetime($row->StartDate . 'T' . ($row->StartTime ?: '00:00:00'))
+        : null;
+      $end = !empty($row->EndDate)
+        ? ragbaz_normalize_iso_datetime($row->EndDate . 'T' . ($row->FinishTime ?: '23:59:59'))
+        : null;
+      if ($start || $end) {
+        $occurrences[] = ['startDate' => $start, 'endDate' => $end, 'allDay' => null];
+      }
+    }
+    if (!empty($occurrences)) {
+      // Resolve allDay once for the event
+      $allDay = ragbaz_get_event_all_day($post_id);
+      foreach ($occurrences as &$occ) { $occ['allDay'] = $allDay; }
+      return $occurrences;
+    }
+  }
+
+  // ── Events Manager ──
+  $em_table = $wpdb->prefix . 'em_events';
+  if (ragbaz_table_exists($em_table)) {
+    $upcoming = $wpdb->get_results($wpdb->prepare(
+      "SELECT event_start_date, event_start_time, event_end_date, event_end_time, event_all_day
+       FROM {$em_table}
+       WHERE post_id = %d AND (recurrence IS NULL OR recurrence != 1) AND event_start_date >= CURDATE()
+       ORDER BY event_start_date ASC, event_start_time ASC",
+      $post_id
+    ));
+    $past = $wpdb->get_results($wpdb->prepare(
+      "SELECT event_start_date, event_start_time, event_end_date, event_end_time, event_all_day
+       FROM {$em_table}
+       WHERE post_id = %d AND (recurrence IS NULL OR recurrence != 1) AND event_start_date < CURDATE()
+       ORDER BY event_start_date DESC, event_start_time DESC",
+      $post_id
+    ));
+    $rows = array_merge($upcoming ?: [], $past ?: []);
+    // Fallback: include recurrence templates if no occurrence rows found
+    if (empty($rows)) {
+      $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT event_start_date, event_start_time, event_end_date, event_end_time, event_all_day
+         FROM {$em_table}
+         WHERE post_id = %d
+         ORDER BY event_start_date ASC",
+        $post_id
+      )) ?: [];
+    }
+    foreach ($rows as $row) {
+      $start = !empty($row->event_start_date)
+        ? ragbaz_normalize_iso_datetime($row->event_start_date . 'T' . ($row->event_start_time ?: '00:00:00'))
+        : null;
+      $end = !empty($row->event_end_date)
+        ? ragbaz_normalize_iso_datetime($row->event_end_date . 'T' . ($row->event_end_time ?: '23:59:59'))
+        : null;
+      if ($start || $end) {
+        $occurrences[] = [
+          'startDate' => $start,
+          'endDate' => $end,
+          'allDay' => isset($row->event_all_day) ? (bool) intval($row->event_all_day) : null,
+        ];
+      }
+    }
+    if (!empty($occurrences)) return $occurrences;
+  }
+
+  // ── Timely ──
+  $timely_inst = $wpdb->prefix . 'ai1ec_event_instances';
+  $timely_evt  = $wpdb->prefix . 'ai1ec_events';
+  if (ragbaz_table_exists($timely_inst)) {
+    $upcoming = $wpdb->get_results($wpdb->prepare(
+      "SELECT start, end FROM {$timely_inst}
+       WHERE post_id = %d AND start >= UNIX_TIMESTAMP(CURDATE())
+       ORDER BY start ASC",
+      $post_id
+    ));
+    $past = $wpdb->get_results($wpdb->prepare(
+      "SELECT start, end FROM {$timely_inst}
+       WHERE post_id = %d AND start < UNIX_TIMESTAMP(CURDATE())
+       ORDER BY start DESC",
+      $post_id
+    ));
+    $rows = array_merge($upcoming ?: [], $past ?: []);
+    $allDay = ragbaz_table_exists($timely_evt)
+      ? (bool) intval(ragbaz_get_timely_field($post_id, 'allday'))
+      : null;
+    foreach ($rows as $row) {
+      $start = !empty($row->start) ? ragbaz_normalize_iso_datetime($row->start) : null;
+      $end   = !empty($row->end)   ? ragbaz_normalize_iso_datetime($row->end) : null;
+      if ($start || $end) {
+        $occurrences[] = ['startDate' => $start, 'endDate' => $end, 'allDay' => $allDay];
+      }
+    }
+    if (!empty($occurrences)) return $occurrences;
+  }
+
+  // ── TEC / WP Event Manager (meta-based — single occurrence per post) ──
+  $start = ragbaz_get_event_datetime($post_id, 'start');
+  $end   = ragbaz_get_event_datetime($post_id, 'end');
+  if ($start || $end) {
+    return [['startDate' => $start, 'endDate' => $end, 'allDay' => ragbaz_get_event_all_day($post_id)]];
+  }
+
+  return [];
+}
+
 function ragbaz_detect_events_plugin() {
   $event_types = ['event', 'events', 'tribe_events', 'event_listing', 'eo_event', 'ai1ec_event'];
   foreach ($event_types as $type) {
@@ -1375,6 +1515,10 @@ function ragbaz_register_attachment_asset_rest_field() {
 }
 add_action('rest_api_init', 'ragbaz_register_attachment_asset_rest_field');
 
+function ragbaz_event_occurrences_enabled() {
+  return get_option('ragbaz_event_expand_occurrences', '0') === '1';
+}
+
 function ragbaz_get_capabilities() {
   $version = RAGBAZ_VERSION;
   $is_semver = preg_match('/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/', $version) === 1;
@@ -1385,6 +1529,7 @@ function ragbaz_get_capabilities() {
     'assetMetaSchemaVersion' => '1.0.0',
     'assetMetaRestField' => true,
     'assetMetaGraphqlField' => true,
+    'eventOccurrences' => ragbaz_event_occurrences_enabled(),
   ];
 }
 
@@ -2278,6 +2423,27 @@ function ragbaz_handle_connect_actions() {
 }
 add_action('admin_init', 'ragbaz_handle_connect_actions');
 
+/**
+ * Handle event occurrences toggle save from the Overview tab.
+ */
+function ragbaz_handle_event_settings() {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+  if (empty($_POST['ragbaz_event_settings_save'])) return;
+  if (!current_user_can('manage_options')) return;
+  check_admin_referer('ragbaz_event_settings');
+
+  $expand = !empty($_POST['ragbaz_event_expand_occurrences']) ? '1' : '0';
+  update_option('ragbaz_event_expand_occurrences', $expand, false);
+
+  wp_redirect(add_query_arg([
+    'page' => 'ragbaz-bridge',
+    'tab'  => 'overview',
+    'ragbaz_event_saved' => '1',
+  ], admin_url('tools.php')));
+  exit;
+}
+add_action('admin_init', 'ragbaz_handle_event_settings');
+
 // ── Main render ──────────────────────────────────────────────────────────────
 
 function ragbaz_render_info_page() {
@@ -2402,6 +2568,36 @@ function ragbaz_render_info_page() {
         </tr>
       </tbody>
     </table>
+
+    <?php if (!empty($_GET['ragbaz_event_saved'])) : ?>
+    <div class="notice notice-success inline" style="margin:12px 0"><p>Event settings saved.</p></div>
+    <?php endif; ?>
+
+    <h3 style="margin-top:20px">Event occurrence settings</h3>
+    <form method="post">
+      <?php wp_nonce_field('ragbaz_event_settings'); ?>
+      <input type="hidden" name="ragbaz_event_settings_save" value="1">
+      <table class="form-table" role="presentation">
+        <tr>
+          <th scope="row">Expand occurrences</th>
+          <td>
+            <label>
+              <input type="checkbox" name="ragbaz_event_expand_occurrences" value="1"
+                <?php checked(ragbaz_event_occurrences_enabled()); ?>>
+              Expose an <code>occurrences</code> field on the <code>Event</code> GraphQL type
+            </label>
+            <p class="description">
+              When enabled, each Event node includes an <code>occurrences</code> list with all
+              start/end dates from the calendar plugin's occurrence table (Event Organiser, Events Manager, Timely).
+              For meta-based plugins (TEC, WP Event Manager), a single occurrence is returned.<br>
+              The storefront can detect this via <code>ragbazCapabilities { eventOccurrences }</code>.
+              <strong>Default: off</strong> — <code>startDate</code>/<code>endDate</code> return the next upcoming occurrence only.
+            </p>
+          </td>
+        </tr>
+      </table>
+      <?php submit_button('Save event settings', 'secondary'); ?>
+    </form>
 
     <h3 style="margin-top:20px">WordPress behaviour changes</h3>
     <table class="widefat striped">
@@ -3175,6 +3371,7 @@ add_action('graphql_register_types', function () {
       'assetMetaSchemaVersion' => ['type' => 'String'],
       'assetMetaRestField' => ['type' => 'Boolean'],
       'assetMetaGraphqlField' => ['type' => 'Boolean'],
+      'eventOccurrences' => ['type' => 'Boolean'],
     ],
   ]);
 
@@ -3406,4 +3603,24 @@ add_action('graphql_register_types', function () {
       return ragbaz_get_event_cost($id);
     },
   ]);
+
+  // --- Event occurrences (Option A — opt-in via admin toggle) ---
+  if (ragbaz_event_occurrences_enabled()) {
+    register_graphql_object_type('EventOccurrence', [
+      'fields' => [
+        'startDate' => ['type' => 'String'],
+        'endDate'   => ['type' => 'String'],
+        'allDay'    => ['type' => 'Boolean'],
+      ],
+    ]);
+
+    register_graphql_field('Event', 'occurrences', [
+      'type'        => ['list_of' => 'EventOccurrence'],
+      'description' => 'All occurrences for this event (upcoming first, then past). Only populated when the "Expand occurrences" option is enabled in RAGBAZ Bridge settings.',
+      'resolve'     => function ($post) {
+        $id = isset($post->databaseId) ? $post->databaseId : (isset($post->ID) ? $post->ID : 0);
+        return ragbaz_get_event_occurrences($id);
+      },
+    ]);
+  }
 });

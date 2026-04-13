@@ -4,7 +4,7 @@ Tags: graphql, wpgraphql, learnpress, events, storefront, headless, timely, even
 Requires at least: 6.3
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Plugin URI: https://ragbaz.xyz/products
@@ -45,6 +45,12 @@ Call `ragbazInfo { version hasLearnPress hasEventsPlugin }`, `ragbazPluginVersio
 Email ragbaz@proton.me or visit https://ragbaz.xyz/products.
 
 == Changelog ==
+= 1.3.1 =
+* Added opt-in `occurrences` field on Event GraphQL type — returns all occurrences from EO/EM/Timely tables.
+* Toggle via Tools → RAGBAZ Bridge → Overview → "Expand occurrences" checkbox.
+* Frontend detection via `ragbazCapabilities { eventOccurrences }`.
+* Default off — `startDate`/`endDate` continue to return the next upcoming occurrence only.
+
 = 1.3.0 =
 * Added full support for Timely (All-in-One Event Calendar) — dates from `ai1ec_event_instances` table, venue/cost/timezone/allDay from `ai1ec_events` columns.
 * Added WP Event Manager support (`event_listing` post type) — dates, venue, location via post meta.
