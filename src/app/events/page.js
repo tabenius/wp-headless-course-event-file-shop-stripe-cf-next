@@ -25,7 +25,6 @@ const LIST_EVENTS_QUERY = `
           content
           startDate
           endDate
-          date
           featuredImage {
             node {
               sourceUrl

@@ -20,7 +20,6 @@ const HOME_EVENTS_QUERY = `
           uri
           startDate
           endDate
-          date
           featuredImage {
             node {
               sourceUrl

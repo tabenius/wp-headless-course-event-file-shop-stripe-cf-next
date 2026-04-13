@@ -20,11 +20,11 @@ function formatDateBadge(event) {
   const date = start || end;
   if (!date) return null;
 
-  const day = new Intl.DateTimeFormat("sv-SE", { day: "2-digit" }).format(date);
-  const month = new Intl.DateTimeFormat("sv-SE", { month: "short" }).format(
+  const day = new Intl.DateTimeFormat("sv-SE", { day: "2-digit", timeZone: "UTC" }).format(date);
+  const month = new Intl.DateTimeFormat("sv-SE", { month: "short", timeZone: "UTC" }).format(
     date,
   );
-  const year = new Intl.DateTimeFormat("sv-SE", { year: "numeric" }).format(
+  const year = new Intl.DateTimeFormat("sv-SE", { year: "numeric", timeZone: "UTC" }).format(
     date,
   );
   return { day, month: month.toUpperCase(), year };
