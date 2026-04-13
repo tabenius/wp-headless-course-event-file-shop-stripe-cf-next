@@ -23,6 +23,104 @@ function looksLikeApplicationPassword(value) {
   return value.includes(" ") && !value.includes(".");
 }
 
+const DEFAULT_AUTH_MODE_ORDER = [
+  "sitetoken",
+  "relay-secret",
+  "basic",
+  "bearer",
+  "none",
+];
+const AUTH_LEARN_TTL_MS =
+  Number.parseInt(process.env.WORDPRESS_GRAPHQL_AUTH_LEARN_TTL_MS || "", 10) ||
+  10 * 60 * 1000;
+const SITETOKEN_RETRY_MS =
+  Number.parseInt(process.env.WORDPRESS_GRAPHQL_SITETOKEN_RETRY_MS || "", 10) ||
+  60 * 1000;
+
+let _preferredAuthMode = "";
+let _preferredAuthModeTs = 0;
+let _siteTokenRetryAfter = 0;
+const _authModeStats = new Map();
+
+function getLearnedAuthMode() {
+  if (!_preferredAuthMode) return "";
+  if (Date.now() - _preferredAuthModeTs > AUTH_LEARN_TTL_MS) {
+    _preferredAuthMode = "";
+    _preferredAuthModeTs = 0;
+    return "";
+  }
+  return _preferredAuthMode;
+}
+
+function orderAuthModes() {
+  const preferred = getLearnedAuthMode();
+  if (!preferred || !DEFAULT_AUTH_MODE_ORDER.includes(preferred)) {
+    return DEFAULT_AUTH_MODE_ORDER;
+  }
+  return [
+    preferred,
+    ...DEFAULT_AUTH_MODE_ORDER.filter((mode) => mode !== preferred),
+  ];
+}
+
+function rememberSuccessfulAuthMode(mode, latencyMs) {
+  const safeMode = DEFAULT_AUTH_MODE_ORDER.includes(mode) ? mode : "";
+  if (!safeMode) return;
+  const safeLatency = Math.max(1, Math.round(Number(latencyMs) || 1));
+  const current = _authModeStats.get(safeMode) || {
+    ok: 0,
+    fail: 0,
+    avgLatencyMs: safeLatency,
+    lastOkTs: 0,
+    lastFailTs: 0,
+  };
+  const avgLatencyMs =
+    current.ok > 0
+      ? Math.round(current.avgLatencyMs * 0.7 + safeLatency * 0.3)
+      : safeLatency;
+  const next = {
+    ...current,
+    ok: current.ok + 1,
+    avgLatencyMs,
+    lastOkTs: Date.now(),
+  };
+  _authModeStats.set(safeMode, next);
+
+  const preferred = getLearnedAuthMode();
+  const preferredStats = preferred ? _authModeStats.get(preferred) : null;
+  if (
+    !preferred ||
+    !preferredStats ||
+    next.avgLatencyMs < preferredStats.avgLatencyMs * 0.85 ||
+    preferredStats.fail > next.fail + 1
+  ) {
+    _preferredAuthMode = safeMode;
+    _preferredAuthModeTs = Date.now();
+  }
+}
+
+function rememberFailedAuthMode(mode) {
+  const safeMode = DEFAULT_AUTH_MODE_ORDER.includes(mode) ? mode : "";
+  if (!safeMode) return;
+  const current = _authModeStats.get(safeMode) || {
+    ok: 0,
+    fail: 0,
+    avgLatencyMs: 0,
+    lastOkTs: 0,
+    lastFailTs: 0,
+  };
+  const next = {
+    ...current,
+    fail: current.fail + 1,
+    lastFailTs: Date.now(),
+  };
+  _authModeStats.set(safeMode, next);
+  if (safeMode === _preferredAuthMode && next.fail > current.ok + 1) {
+    _preferredAuthMode = "";
+    _preferredAuthModeTs = 0;
+  }
+}
+
 function getFaustSecret() {
   return (
     normalizeEnv(process.env.FAUST_SECRET_KEY) ||
@@ -134,6 +232,7 @@ async function refreshCachedToken(wpUrl) {
 async function getSiteTokenBearer() {
   const secret = getFaustSecret();
   if (!secret) return null;
+  if (Date.now() < _siteTokenRetryAfter) return null;
   const wpUrl = await resolveWordPressUrl();
   if (!wpUrl) return null;
 
@@ -151,9 +250,47 @@ async function getSiteTokenBearer() {
 
   // Full re-exchange
   const token = await exchangeSiteToken(wpUrl, secret);
-  if (!token) return null;
+  if (!token) {
+    _siteTokenRetryAfter = Date.now() + SITETOKEN_RETRY_MS;
+    return null;
+  }
   _tokenCache = token;
+  _siteTokenRetryAfter = 0;
   return `Bearer ${token.authToken}`;
+}
+
+function buildRelaySecretOption() {
+  const relaySecret = getRelaySecret();
+  if (!relaySecret) return null;
+  return {
+    mode: "relay-secret",
+    authorization: "",
+    headers: {
+      [getRelayHeaderName()]: relaySecret,
+    },
+  };
+}
+
+function buildBasicOption({ bearerToken, username, appPassword }) {
+  const tokenIsAppPassword =
+    bearerToken && looksLikeApplicationPassword(bearerToken);
+  const effectiveAppPassword =
+    appPassword || (tokenIsAppPassword ? bearerToken : "");
+  if (!username || !effectiveAppPassword) return null;
+  return {
+    mode: "basic",
+    authorization: `Basic ${encodeBasicCredentials(username, effectiveAppPassword)}`,
+  };
+}
+
+function buildBearerOption({ bearerToken }) {
+  const tokenIsAppPassword =
+    bearerToken && looksLikeApplicationPassword(bearerToken);
+  if (!bearerToken || tokenIsAppPassword) return null;
+  return {
+    mode: "bearer",
+    authorization: `Bearer ${bearerToken}`,
+  };
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -178,28 +315,7 @@ async function getSiteTokenBearer() {
  */
 export async function getWordPressGraphqlAuthOptions() {
   const options = [];
-
-  // 1. SiteToken → JWT (try first; fails gracefully if WP not configured)
-  try {
-    const bearer = await getSiteTokenBearer();
-    if (bearer) {
-      options.push({ mode: "sitetoken", authorization: bearer });
-    }
-  } catch {
-    // SiteToken unavailable — continue to other options
-  }
-
-  // 2. Relay secret header (dedicated auth lane from ragbaz-bridge)
-  const relaySecret = getRelaySecret();
-  if (relaySecret) {
-    options.push({
-      mode: "relay-secret",
-      authorization: "",
-      headers: {
-        [getRelayHeaderName()]: relaySecret,
-      },
-    });
-  }
+  const learnedMode = getLearnedAuthMode();
 
   const bearerToken = normalizeEnv(process.env.WORDPRESS_GRAPHQL_AUTH_TOKEN);
   const username =
@@ -211,25 +327,48 @@ export async function getWordPressGraphqlAuthOptions() {
       process.env.WORDPRESS_GRAPHQL_APP_PASSWORD,
   );
 
-  const tokenIsAppPassword =
-    bearerToken && looksLikeApplicationPassword(bearerToken);
-  const effectiveAppPassword =
-    appPassword || (tokenIsAppPassword ? bearerToken : "");
-
-  // 2. Basic auth (Application Password)
-  if (username && effectiveAppPassword) {
-    options.push({
-      mode: "basic",
-      authorization: `Basic ${encodeBasicCredentials(username, effectiveAppPassword)}`,
-    });
-  }
-
-  // 3. Bearer JWT (only if token looks like a JWT — has dots, no spaces)
-  if (bearerToken && !tokenIsAppPassword) {
-    options.push({
-      mode: "bearer",
-      authorization: `Bearer ${bearerToken}`,
-    });
+  for (const mode of orderAuthModes()) {
+    if (options.some((option) => option.mode === mode)) continue;
+    if (mode === "sitetoken") {
+      if (
+        learnedMode &&
+        learnedMode !== "sitetoken" &&
+        options.some((option) => option.mode === learnedMode)
+      ) {
+        continue;
+      }
+      try {
+        const bearer = await getSiteTokenBearer();
+        if (bearer) {
+          options.push({ mode: "sitetoken", authorization: bearer });
+        }
+      } catch {
+        _siteTokenRetryAfter = Date.now() + SITETOKEN_RETRY_MS;
+      }
+      continue;
+    }
+    if (mode === "relay-secret") {
+      const relayOption = buildRelaySecretOption();
+      if (relayOption) options.push(relayOption);
+      continue;
+    }
+    if (mode === "basic") {
+      const basicOption = buildBasicOption({
+        bearerToken,
+        username,
+        appPassword,
+      });
+      if (basicOption) options.push(basicOption);
+      continue;
+    }
+    if (mode === "bearer") {
+      const bearerOption = buildBearerOption({ bearerToken });
+      if (bearerOption) options.push(bearerOption);
+      continue;
+    }
+    if (mode === "none") {
+      options.push({ mode: "none", authorization: "" });
+    }
   }
 
   if (options.length === 0) {
@@ -241,6 +380,22 @@ export async function getWordPressGraphqlAuthOptions() {
 export async function getWordPressGraphqlAuth() {
   const [first] = await getWordPressGraphqlAuthOptions();
   return first || { mode: "none", authorization: "" };
+}
+
+export function recordWordPressGraphqlAuthResult(mode, { ok, latencyMs } = {}) {
+  if (ok) {
+    rememberSuccessfulAuthMode(mode, latencyMs);
+  } else {
+    rememberFailedAuthMode(mode);
+  }
+}
+
+export function getWordPressGraphqlAuthDiagnostics() {
+  return {
+    preferredMode: getLearnedAuthMode() || "",
+    siteTokenRetryAfter: _siteTokenRetryAfter || 0,
+    stats: Object.fromEntries(_authModeStats.entries()),
+  };
 }
 
 /** Invalidate the cached SiteToken JWT (e.g. on auth failure). */

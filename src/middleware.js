@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
 
-const log = (...args) => {
-  // Console output is streamed by wrangler tail in production.
-  console.error("[middleware]", ...args);
-};
-
 function shouldTag(request) {
   const { pathname } = request.nextUrl;
   return (
@@ -35,10 +30,8 @@ async function forwardDavMethod(request) {
 }
 
 export async function middleware(request) {
-  log(" start ");
   const { pathname } = request?.nextUrl || { pathname: "/" };
   const method = request?.method?.toUpperCase() || "GET";
-  log(method, pathname);
 
   // Forward WebDAV extension methods to the route handler via POST.
   if (

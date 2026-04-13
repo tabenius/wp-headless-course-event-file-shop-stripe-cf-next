@@ -21,6 +21,8 @@ const STOREFRONT_GRAPHQL_PROBE_TTL_MS =
     process.env.STOREFRONT_GRAPHQL_PROBE_TTL_MS || "900000",
     10,
   ) || 900000;
+const STOREFRONT_GRAPHQL_PROBE_ENABLED =
+  process.env.STOREFRONT_GRAPHQL_PROBE === "1";
 
 let lastProbeAt = 0;
 let pendingProbe = null;
@@ -38,6 +40,9 @@ function normalizeIntendedUri(uri) {
 }
 
 export async function probeStorefrontRagbazGraphql(intendedUri) {
+  if (!STOREFRONT_GRAPHQL_PROBE_ENABLED) {
+    return;
+  }
   const now = Date.now();
   if (lastProbeAt > 0 && now - lastProbeAt < STOREFRONT_GRAPHQL_PROBE_TTL_MS) {
     return;

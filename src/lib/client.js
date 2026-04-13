@@ -1,6 +1,7 @@
 import {
   getWordPressGraphqlAuthOptions,
   invalidateSiteTokenCache,
+  recordWordPressGraphqlAuthResult,
 } from "@/lib/wordpressGraphqlAuth";
 import { appendServerLog } from "@/lib/serverLog";
 import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
@@ -356,6 +357,10 @@ export async function fetchGraphQL(
         const latencyMs = Date.now() - attemptStart;
         addServerTiming("wp", latencyMs);
         recordAttempt(graphqlEndpoint, "network-error", false);
+        recordWordPressGraphqlAuthResult(auth.mode, {
+          ok: false,
+          latencyMs,
+        });
         enqueueAvailabilityDatapoint({
           ok: false,
           status: "network-error",
@@ -405,6 +410,10 @@ export async function fetchGraphQL(
         if (debugGraphQL) console.error(lastError);
         if (response.status === 429) {
           // Stop immediately for 429 — callers can render dedicated rate-limit UI.
+          recordWordPressGraphqlAuthResult(auth.mode, {
+            ok: false,
+            latencyMs,
+          });
           enqueueAvailabilityDatapoint({
             ok: false,
             status: 429,
@@ -418,6 +427,10 @@ export async function fetchGraphQL(
           });
           throw new RateLimitError(text, 429);
         }
+        recordWordPressGraphqlAuthResult(auth.mode, {
+          ok: false,
+          latencyMs,
+        });
         enqueueAvailabilityDatapoint({
           ok: false,
           status: response.status,
@@ -455,6 +468,10 @@ export async function fetchGraphQL(
         if (debugGraphQL || isAuthError) console.error(lastError);
         if (isAuthError && auth.mode === "sitetoken")
           invalidateSiteTokenCache();
+        recordWordPressGraphqlAuthResult(auth.mode, {
+          ok: false,
+          latencyMs,
+        });
         const normalizedErrors = normalizeGraphqlErrors(result.errors);
         enqueueAvailabilityDatapoint({
           ok: false,
@@ -471,6 +488,10 @@ export async function fetchGraphQL(
       }
 
       // Successful response — record availability
+      recordWordPressGraphqlAuthResult(auth.mode, {
+        ok: true,
+        latencyMs,
+      });
       enqueueAvailabilityDatapoint({
         ok: true,
         status: response.status,

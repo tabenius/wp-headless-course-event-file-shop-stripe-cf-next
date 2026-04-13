@@ -123,16 +123,18 @@ async function safeEqualStrings(a, b) {
   return diff === 0;
 }
 
+const AUTH_DEBUG = process.env.AUTH_DEBUG === "1";
+
 export async function auth() {
-  console.error("[auth]");
+  if (AUTH_DEBUG) console.error("[auth]");
   const cookieStore = await cookies();
-  console.error("[auth] cookieStore got");
+  if (AUTH_DEBUG) console.error("[auth] cookieStore got");
   const token = cookieStore.get(COOKIE_NAME)?.value;
-  console.error("[auth] got token");
+  if (AUTH_DEBUG) console.error("[auth] got token");
   const session = await decodeSession(token);
-  console.error("[auth] got session");
+  if (AUTH_DEBUG) console.error("[auth] got session");
   if (!session?.user) return null;
-  console.error("[auth] got user ", session?.user);
+  if (AUTH_DEBUG) console.error("[auth] got user ", session?.user);
   return { user: session.user };
 }
 /*
