@@ -25,11 +25,6 @@ query GetNodeByUri($uri: String!) {
   }
 }
 `;
-const log = (...args) => {
-  // Console output is streamed by wrangler tail in production.
-  console.error("[app/page]", ...args);
-};
-
 function SetupDocsFallback() {
   const docsHref = buildRagbazDocsUrl({ lang: "en", slug: "quick-start" });
   return (
@@ -62,7 +57,6 @@ function SetupDocsFallback() {
 }
 
 export default async function HomePage() {
-  log("before setup fallback");
   if (shouldSkipUpstreamDuringBuild()) {
     return <SetupDocsFallback />;
   }
@@ -71,7 +65,6 @@ export default async function HomePage() {
   if (!wpUrl) {
     return <SetupDocsFallback />;
   }
-  log("past setup fallback");
 
   return (
     <>
@@ -115,7 +108,6 @@ async function HomeContentSection() {
       );
     }
     const reason = err?.message || String(err) || "Unknown error";
-    console.error("[HomePage] Content fetch failed:", reason);
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] px-6 text-center space-y-4">
         <p className="text-5xl">⚠️</p>
@@ -132,7 +124,6 @@ async function HomeContentSection() {
   }
 
   if (!data?.nodeByUri) {
-    console.warn("No nodeByUri data found, returning 404");
     notFound();
   }
 

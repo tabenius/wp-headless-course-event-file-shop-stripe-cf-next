@@ -1,7 +1,7 @@
 import SingleContent from "./SingleContent";
 import { formatEventDateRange } from "@/lib/eventDates";
 
-export default function Event({ data }) {
+export default function Event({ data, footer = null }) {
   const { title } = data ?? {};
   const dateLabel = formatEventDateRange(data);
   const venues =
@@ -36,6 +36,7 @@ export default function Event({ data }) {
           </div>
         ) : null
       }
+      footer={footer}
     />
   );
 }

@@ -15,7 +15,7 @@ import { auth } from "@/auth";
 import {
   getContentAccessConfig,
   grantContentAccess,
-  hasCourseAccess,
+  hasContentAccess,
 } from "@/lib/contentAccess";
 import { fetchStripeCheckoutSession, isStripeEnabled } from "@/lib/stripe";
 import { stripHtml } from "@/lib/slugify";
@@ -29,10 +29,22 @@ import { hashLogEmail } from "@/lib/logIdentity";
 import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { probeStorefrontRagbazGraphql } from "@/lib/storefrontGraphqlProbe";
+import { listDigitalProducts } from "@/lib/digitalProducts";
 import { cache, Suspense } from "react";
 import { unstable_noStore as noStore } from "next/cache";
 import { StorefrontArticleSkeleton } from "@/components/common/StorefrontSkeletons";
+import { transformContent } from "@/lib/transformContent";
+import ContactFormHydrator from "@/components/forms/ContactFormHydrator";
 const DEBUG_WP_RESOLVE = process.env.STOREFRONT_RESOLVE_DEBUG === "1";
+const DEBUG_METADATA = process.env.STOREFRONT_METADATA_DEBUG === "1";
+const DETAIL_EDGE_CACHE_TTL_SECONDS =
+  Number.parseInt(process.env.STOREFRONT_DETAIL_EDGE_CACHE_TTL_SECONDS || "300", 10) ||
+  300;
+const DETAIL_EDGE_CACHE_STALE_SECONDS =
+  Number.parseInt(
+    process.env.STOREFRONT_DETAIL_EDGE_CACHE_STALE_SECONDS || "900",
+    10,
+  ) || 900;
 
 // See WPGraphQL docs on nodeByUri: https://www.wpgraphql.com/2021/12/23/query-any-page-by-its-path-using-wpgraphql
 
@@ -170,6 +182,50 @@ function isMatchingRequestedUri(requestedUri, candidateUri) {
   return requested === candidate;
 }
 
+function isLikelyCourseUri(uri) {
+  const normalized = normalizeUriForLookup(uri);
+  return normalized.startsWith("/courses/") && normalized !== "/courses";
+}
+
+function isLikelyEventUri(uri) {
+  const normalized = normalizeUriForLookup(uri);
+  return (
+    normalized.startsWith("/events/event/") ||
+    normalized.startsWith("/event/")
+  );
+}
+
+function isLikelyProductUri(uri) {
+  const normalized = normalizeUriForLookup(uri);
+  return (
+    normalized.startsWith("/product/") ||
+    normalized.startsWith("/produkt/")
+  );
+}
+
+function isLikelyBlogUri(uri) {
+  const normalized = normalizeUriForLookup(uri);
+  return normalized.startsWith("/blog/") && normalized !== "/blog";
+}
+
+async function fetchDirectEventNode(uri) {
+  const data = await fetchTypedContent(uri, "Event");
+  return data?.nodeByUri?.__typename === "Event" ? data.nodeByUri : null;
+}
+
+async function fetchDirectProductNode(uri) {
+  const data = await fetchTypedContent(uri, "Product");
+  return typeof data?.nodeByUri?.__typename === "string" &&
+    data.nodeByUri.__typename.includes("Product")
+    ? data.nodeByUri
+    : null;
+}
+
+async function fetchDirectPostNode(uri) {
+  const data = await fetchTypedContent(uri, "Post");
+  return data?.nodeByUri?.__typename === "Post" ? data.nodeByUri : null;
+}
+
 async function fetchNodeType(uri) {
   const attempts = buildUriLookupAttempts(uri);
   let lastData = null;
@@ -181,7 +237,11 @@ async function fetchNodeType(uri) {
         RESOLVE_NODE_TYPE_QUERY,
         { uri: candidateUri },
         1800,
-        { edgeCache: true },
+        {
+          edgeCache: true,
+          edgeCacheTtlSeconds: DETAIL_EDGE_CACHE_TTL_SECONDS,
+          edgeCacheStaleSeconds: DETAIL_EDGE_CACHE_STALE_SECONDS,
+        },
       );
       lastData = data;
       if (data?.nodeByUri?.__typename) {
@@ -225,6 +285,8 @@ async function fetchTypedContent(uri, nodeType) {
     try {
       const data = await fetchGraphQL(query, { uri: candidateUri }, 1800, {
         edgeCache: true,
+        edgeCacheTtlSeconds: DETAIL_EDGE_CACHE_TTL_SECONDS,
+        edgeCacheStaleSeconds: DETAIL_EDGE_CACHE_STALE_SECONDS,
       });
       if (data?.nodeByUri) return data;
     } catch (err) {
@@ -246,6 +308,107 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
   const normalizedUri = normalizeUriForLookup(uri);
   if (DEBUG_WP_RESOLVE) {
     console.log(`[WP-Resolve] Attempting to resolve: ${normalizedUri}`);
+  }
+
+  const wordpressUrl = await resolveWordPressUrl();
+
+  if (isLikelyCourseUri(normalizedUri)) {
+    try {
+      const directCourseNode = await fetchCourseFallback(
+        normalizedUri,
+        wordpressUrl,
+      );
+      if (directCourseNode) {
+        if (DEBUG_WP_RESOLVE) {
+          console.log(
+            `[WP-Resolve] Fast course path succeeded for ${normalizedUri}`,
+          );
+        }
+        return directCourseNode;
+      }
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        throw err;
+      }
+      if (DEBUG_WP_RESOLVE) {
+        console.error(
+          `[WP-Resolve] Fast course path failed for ${normalizedUri}:`,
+          err?.message || err,
+        );
+      }
+    }
+  }
+
+  if (isLikelyEventUri(normalizedUri)) {
+    try {
+      const directEventNode = await fetchDirectEventNode(normalizedUri);
+      if (directEventNode) {
+        if (DEBUG_WP_RESOLVE) {
+          console.log(
+            `[WP-Resolve] Fast event path succeeded for ${normalizedUri}`,
+          );
+        }
+        return directEventNode;
+      }
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        throw err;
+      }
+      if (DEBUG_WP_RESOLVE) {
+        console.error(
+          `[WP-Resolve] Fast event path failed for ${normalizedUri}:`,
+          err?.message || err,
+        );
+      }
+    }
+  }
+
+  if (isLikelyProductUri(normalizedUri)) {
+    try {
+      const directProductNode = await fetchDirectProductNode(normalizedUri);
+      if (directProductNode) {
+        if (DEBUG_WP_RESOLVE) {
+          console.log(
+            `[WP-Resolve] Fast product path succeeded for ${normalizedUri}`,
+          );
+        }
+        return directProductNode;
+      }
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        throw err;
+      }
+      if (DEBUG_WP_RESOLVE) {
+        console.error(
+          `[WP-Resolve] Fast product path failed for ${normalizedUri}:`,
+          err?.message || err,
+        );
+      }
+    }
+  }
+
+  if (isLikelyBlogUri(normalizedUri)) {
+    try {
+      const directPostNode = await fetchDirectPostNode(normalizedUri);
+      if (directPostNode) {
+        if (DEBUG_WP_RESOLVE) {
+          console.log(
+            `[WP-Resolve] Fast blog path succeeded for ${normalizedUri}`,
+          );
+        }
+        return directPostNode;
+      }
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        throw err;
+      }
+      if (DEBUG_WP_RESOLVE) {
+        console.error(
+          `[WP-Resolve] Fast blog path failed for ${normalizedUri}:`,
+          err?.message || err,
+        );
+      }
+    }
   }
 
   try {
@@ -289,7 +452,6 @@ const resolveNodeByUri = cache(async function resolveNodeByUri(uri) {
       `[WP-Resolve] GraphQL failed for ${normalizedUri}. Entering Fallback mode...`,
     );
   }
-  const wordpressUrl = await resolveWordPressUrl();
 
   const [restNode, courseNode] = await Promise.all([
     fetchRestFallback(normalizedUri, wordpressUrl).catch((e) => {
@@ -390,7 +552,11 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
       }
     }
   `;
-  const data = await fetchGraphQL(query, { uri }, 1800, { edgeCache: true });
+  const data = await fetchGraphQL(query, { uri }, 1800, {
+    edgeCache: true,
+    edgeCacheTtlSeconds: DETAIL_EDGE_CACHE_TTL_SECONDS,
+    edgeCacheStaleSeconds: DETAIL_EDGE_CACHE_STALE_SECONDS,
+  });
   if (data?.lpCourse) return data.lpCourse;
 
   // REST fallback for LearnPress course
@@ -461,6 +627,36 @@ function safeCanonicalUrl(uri) {
   }
 }
 
+function formatAccessPriceLabel(priceCents, currency) {
+  if (!(typeof priceCents === "number" && Number.isFinite(priceCents) && priceCents > 0)) {
+    return "";
+  }
+  return `${(priceCents / 100).toFixed(0)} ${String(currency || "SEK").toUpperCase()}`;
+}
+
+function normalizeContentUri(value) {
+  const safe = typeof value === "string" ? value.trim() : "";
+  if (!safe) return "";
+  const withLeadingSlash = safe.startsWith("/") ? safe : `/${safe}`;
+  return withLeadingSlash.replace(/\/+$/, "") || "/";
+}
+
+const getLinkedBuyableByContentUri = cache(async (contentUri) => {
+  const normalizedUri = normalizeContentUri(contentUri);
+  if (!normalizedUri) return null;
+
+  const products = await listDigitalProducts({ includeInactive: true }).catch(
+    () => [],
+  );
+  return (
+    products.find((product) => {
+      if (!product || product.active === false) return false;
+      if (product.productMode !== "manual_uri") return false;
+      return normalizeContentUri(product.contentUri) === normalizedUri;
+    }) || null
+  );
+});
+
 export async function generateMetadata({ params: paramsPromise }) {
   try {
     const params = await paramsPromise;
@@ -503,7 +699,9 @@ export async function generateMetadata({ params: paramsPromise }) {
         : undefined,
     };
   } catch (err) {
-    console.error("[Metadata] Failed to build metadata:", err?.message || err);
+    if (DEBUG_METADATA) {
+      console.error("[Metadata] Failed to build metadata:", err?.message || err);
+    }
     return {};
   }
 }
@@ -603,7 +801,6 @@ async function ContentPageInner({
     throw err;
   }
   if (!node) {
-    console.warn("No nodeByUri data found, returning 404");
     notFound();
   }
   const contentType = node?.__typename;
@@ -641,10 +838,11 @@ async function ContentPageInner({
           <div
             className="text-gray-800 prose prose-p:my-4 max-w-none wp-content text-xl"
             dangerouslySetInnerHTML={{
-              __html: decodeEntities(node?.content || ""),
+              __html: transformContent(node?.content || ""),
             }}
           />
         </article>
+        <ContactFormHydrator />
       </>
     );
   if (isPaidAccessType) {
@@ -699,8 +897,12 @@ async function ContentPageInner({
       }
     }
 
+    const accessConfig = await getContentAccessConfig(uri).catch(() => null);
+    const linkedBuyable = isEventType
+      ? await getLinkedBuyableByContentUri(uri).catch(() => null)
+      : null;
+
     if (!canAccess) {
-      const accessConfig = await getContentAccessConfig(uri).catch(() => null);
       if (accessConfig?.active === false) {
         notFound();
       }
@@ -752,13 +954,161 @@ async function ContentPageInner({
       return (
         <>
           {ldScript}
-          <Product data={node} />
+          <Product
+            data={node}
+            footer={
+              (() => {
+                const wpPriceCents = parsePriceCents(
+                  node?.priceRendered || node?.priceText || node?.price || "",
+                );
+                const displayPrice = formatAccessPriceLabel(
+                  typeof accessConfig?.priceCents === "number" &&
+                    accessConfig.priceCents > 0
+                    ? accessConfig.priceCents
+                    : wpPriceCents > 0
+                      ? wpPriceCents
+                      : Number.parseInt(
+                          process.env.DEFAULT_COURSE_FEE_CENTS || "0",
+                          10,
+                        ) || 0,
+                  accessConfig?.currency ||
+                    process.env.DEFAULT_CURRENCY ||
+                    process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+                    site.defaultCurrency ||
+                    "SEK",
+                );
+                return (
+                  <div className="rounded-xl border border-teal-200 bg-teal-50/80 p-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-teal-200 pb-3">
+                      <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-700">
+                        {t("shop.accessLabel", "Access")}
+                      </p>
+                      <span className="rounded-full border border-teal-300 bg-white px-2.5 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700 shadow-sm">
+                        {t("inventory.grantedAccess")}
+                      </span>
+                    </div>
+                    <div className="mt-4 space-y-2 text-[var(--color-foreground)]">
+                      {displayPrice ? (
+                        <p className="text-base">
+                          <span className="font-semibold">{t("paywall.fee")}:</span>{" "}
+                          {displayPrice}
+                        </p>
+                      ) : null}
+                      <p className="text-sm text-slate-700">
+                        {t(
+                          "inventory.grantedDescription",
+                          "You have been granted access to this content.",
+                        )}
+                      </p>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <a
+                        href="/inventory"
+                        className="inline-flex items-center justify-center rounded border border-teal-300 bg-white px-4 py-2 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-teal-800 hover:bg-teal-100"
+                      >
+                        {t("common.inventory", "Inventory")}
+                      </a>
+                    </div>
+                  </div>
+                );
+              })()
+            }
+          />
         </>
       );
     return isEventType ? (
       <>
         {ldScript}
-        <Event data={node} />
+        <Event
+          data={node}
+          footer={
+            (() => {
+              const wpPriceCents = parsePriceCents(
+                node?.priceRendered || node?.priceText || node?.price || "",
+              );
+              const linkedPriceCents =
+                typeof linkedBuyable?.priceCents === "number" &&
+                linkedBuyable.priceCents > 0
+                  ? linkedBuyable.priceCents
+                  : 0;
+              const displayPrice = formatAccessPriceLabel(
+                typeof accessConfig?.priceCents === "number" &&
+                  accessConfig.priceCents > 0
+                  ? accessConfig.priceCents
+                  : linkedPriceCents > 0
+                    ? linkedPriceCents
+                  : wpPriceCents > 0
+                    ? wpPriceCents
+                    : Number.parseInt(
+                        process.env.DEFAULT_COURSE_FEE_CENTS || "0",
+                        10,
+                      ) || 0,
+                accessConfig?.currency ||
+                  linkedBuyable?.currency ||
+                  process.env.DEFAULT_CURRENCY ||
+                  process.env.DEFAULT_COURSE_FEE_CURRENCY ||
+                  site.defaultCurrency ||
+                  "SEK",
+              );
+              const shopHref =
+                linkedBuyable?.slug
+                  ? `/shop/${encodeURIComponent(linkedBuyable.slug)}`
+                  : "";
+              const hasExternalBooking =
+                linkedBuyable?.externalBookingEnabled === true &&
+                typeof linkedBuyable?.externalBookingUrl === "string" &&
+                linkedBuyable.externalBookingUrl.trim() !== "";
+              return (
+                <div className="rounded-xl border border-teal-200 bg-teal-50/80 p-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-teal-200 pb-3">
+                    <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-700">
+                      {t("shop.bookingLabel", "Booking")}
+                    </p>
+                    <span className="rounded-full border border-teal-300 bg-white px-2.5 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700 shadow-sm">
+                      {t("inventory.grantedAccess")}
+                    </span>
+                  </div>
+                  <div className="mt-4 space-y-2 text-[var(--color-foreground)]">
+                    {displayPrice ? (
+                      <p className="text-base">
+                        <span className="font-semibold">{t("paywall.fee")}:</span>{" "}
+                        {displayPrice}
+                      </p>
+                    ) : null}
+                    <p className="text-sm text-slate-700">
+                      {t(
+                        "inventory.grantedDescription",
+                        "You have been granted access to this content.",
+                      )}
+                    </p>
+                  </div>
+                  {hasExternalBooking ? (
+                    <div className="mt-4 space-y-3 rounded-lg border border-teal-200 bg-white/90 p-3">
+                      <a
+                        href={linkedBuyable.externalBookingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex w-full items-center justify-center rounded bg-teal-700 px-5 py-3 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-white hover:bg-teal-600"
+                      >
+                        {linkedBuyable.externalBookingLabel ||
+                          t("shop.externalBookingCta", "Book externally")}
+                      </a>
+                    </div>
+                  ) : shopHref ? (
+                    <div className="mt-4 space-y-3 rounded-lg border border-teal-200 bg-white/90 p-3">
+                      <a
+                        href={shopHref}
+                        className="inline-flex w-full items-center justify-center rounded border border-teal-300 bg-white px-5 py-3 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-teal-800 hover:bg-teal-100"
+                      >
+                        {t("shop.openShop", "Open shop")}
+                      </a>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })()
+          }
+        />
       </>
     ) : (
       <>

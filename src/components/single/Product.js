@@ -1,6 +1,6 @@
 import SingleContent from "./SingleContent";
 
-export default function Product({ data }) {
+export default function Product({ data, footer = null }) {
   return (
     <SingleContent
       data={data}
@@ -9,6 +9,7 @@ export default function Product({ data }) {
           Product
         </p>
       }
+      footer={footer}
     />
   );
 }

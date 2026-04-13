@@ -1,6 +1,6 @@
 "use client";
 
-export default function GlobalError({ error, reset }) {
+export default function GlobalError({ error }) {
   return (
     <html lang="en">
       <body style={{ fontFamily: "system-ui, sans-serif", margin: 0 }}>
@@ -30,7 +30,11 @@ export default function GlobalError({ error, reset }) {
             </p>
             <button
               type="button"
-              onClick={() => reset()}
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.reload();
+                }
+              }}
               style={{
                 padding: "0.5rem 1.5rem",
                 borderRadius: "0.375rem",

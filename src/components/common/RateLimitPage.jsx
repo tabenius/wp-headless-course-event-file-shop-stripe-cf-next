@@ -37,8 +37,8 @@ export default function RateLimitPage({
         </div>
 
         {/* Instructions */}
-        <div className="space-y-1 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900 dark:border-yellow-500/40 dark:bg-yellow-900/20 dark:text-yellow-100">
-          <p className="font-semibold">What you can do:</p>
+        <div className="space-y-1 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-sm text-black dark:border-yellow-500/40 dark:bg-yellow-900/20 dark:text-yellow-100">
+          <p className="font-semibold text-black dark:text-yellow-50">What you can do:</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Wait 30–60 seconds, then reload this page.</li>
             <li>
@@ -47,7 +47,7 @@ export default function RateLimitPage({
             </li>
             <li>
               Set the{" "}
-              <code className="rounded bg-yellow-100 px-1 font-mono dark:bg-yellow-900/40">
+              <code className="rounded bg-yellow-100 px-1 font-mono text-black dark:bg-yellow-900/40 dark:text-yellow-50">
                 GRAPHQL_DELAY_MS
               </code>{" "}
               environment variable to add a delay between GraphQL calls.
