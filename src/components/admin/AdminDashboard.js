@@ -29,6 +29,7 @@ const AdminSalesTab = lazy(() => import("./AdminSalesTab"));
 const AdminMediaLibraryTab = lazy(() => import("./AdminMediaLibraryTab"));
 const AdminStyleTab = lazy(() => import("./AdminStyleTab"));
 const AdminVatTab = lazy(() => import("./AdminVatTab"));
+const AdminSandboxTab = lazy(() => import("./AdminSandboxTab"));
 
 const ADMIN_TABS_BASE = [
   "sales",
@@ -37,6 +38,7 @@ const ADMIN_TABS_BASE = [
   "contacts",
   "support",
   "style",
+  "sandbox",
 ];
 const ADMIN_TAB_SET = new Set(ADMIN_TABS_BASE);
 
@@ -136,11 +138,6 @@ function extractHashPath(value) {
   return candidate.replace(/^\/+/, "");
 }
 
-function hashForAdminRoute(detail) {
-  const tab = normalizeAdminTab(detail);
-  if (!tab) return null;
-  return `#/${tab}`;
-}
 
 const log = (...args) => {
   // Console output is streamed by wrangler tail in production.
@@ -1301,16 +1298,11 @@ export default function AdminDashboard() {
       const tab = resolveAdminTabHotkey(e);
       if (tab) {
         e.preventDefault();
-        const routeDetail = tab;
-        const normalizedTab = normalizeAdminTab(routeDetail) || "sales";
+        const normalizedTab = normalizeAdminTab(tab) || "sales";
+        activeTabRef.current = normalizedTab;
         setActiveTab(normalizedTab);
-        const nextHash = hashForAdminRoute(routeDetail);
-        if (nextHash && window.location.hash !== nextHash) {
-          const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-          window.history.replaceState(null, "", nextUrl);
-        }
         window.dispatchEvent(
-          new CustomEvent("admin:switchTab", { detail: routeDetail }),
+          new CustomEvent("admin:switchTab", { detail: normalizedTab }),
         );
         return;
       }
@@ -1322,11 +1314,6 @@ export default function AdminDashboard() {
         const nextTab = ADMIN_TABS_BASE[nextIndex];
         activeTabRef.current = nextTab;
         setActiveTab(nextTab);
-        const nextHash = hashForAdminRoute(nextTab);
-        if (nextHash && window.location.hash !== nextHash) {
-          const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-          window.history.replaceState(null, "", nextUrl);
-        }
         window.dispatchEvent(
           new CustomEvent("admin:switchTab", { detail: nextTab }),
         );
@@ -1341,11 +1328,6 @@ export default function AdminDashboard() {
         const prevTab = ADMIN_TABS_BASE[prevIndex];
         activeTabRef.current = prevTab;
         setActiveTab(prevTab);
-        const nextHash = hashForAdminRoute(prevTab);
-        if (nextHash && window.location.hash !== nextHash) {
-          const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-          window.history.replaceState(null, "", nextUrl);
-        }
         window.dispatchEvent(
           new CustomEvent("admin:switchTab", { detail: prevTab }),
         );
@@ -1373,14 +1355,12 @@ export default function AdminDashboard() {
     function onHashChange() {
       const tab = parseTabFromHash(window.location.hash);
       if (!tab) {
+        // Invalid hash — set fallback tab; the activeTab effect will fix the URL.
         const fallback = ADMIN_TAB_SET.has(activeTabRef.current)
           ? activeTabRef.current
           : "sales";
-        const expected = `#/${fallback}`;
-        if (window.location.hash !== expected) {
-          const nextUrl = `${window.location.pathname}${window.location.search}${expected}`;
-          window.history.replaceState(null, "", nextUrl);
-        }
+        activeTabRef.current = fallback;
+        setActiveTab(fallback);
         return;
       }
       activeTabRef.current = tab;
@@ -1766,6 +1746,11 @@ export default function AdminDashboard() {
     }
     if (activeTab === "assets") {
       loadUploadInfo();
+    }
+    if (activeTab === "sandbox") {
+      loadCommits();
+      loadDeploy();
+      loadAnalytics();
     }
     if (
       (activeTab === "support" || activeTab === "sales") &&
@@ -2677,7 +2662,9 @@ export default function AdminDashboard() {
     }
   }
 
-  // Listen for tab-switch events from AdminHeader
+  // Listen for tab-switch events from AdminHeader.
+  // Only update React state here — the useEffect([activeTab, selectedShopProduct])
+  // is the single owner of hash/URL updates to avoid duplicate replaceState races.
   useEffect(() => {
     function onSwitchTab(e) {
       const rawDetail = String(e?.detail || "");
@@ -2686,16 +2673,6 @@ export default function AdminDashboard() {
       if (!tab) return;
       activeTabRef.current = tab;
       setActiveTab(tab);
-
-      const nextHash = hashForAdminRoute(tab);
-      if (
-        nextHash &&
-        typeof window !== "undefined" &&
-        window.location.hash !== nextHash
-      ) {
-        const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-        window.history.replaceState(null, "", nextUrl);
-      }
     }
     window.addEventListener("admin:switchTab", onSwitchTab);
     return () => {
@@ -2848,6 +2825,7 @@ export default function AdminDashboard() {
     contacts: t("admin.navContacts", "Contacts"),
     support: t("admin.navSupport", "Support"),
     style: t("admin.navStyle", "Style"),
+    sandbox: t("admin.navSandbox", "Sandbox"),
   };
   const uiFeedbackContextLabel =
     uiFeedbackContextLabelMap[activeTab] || activeTab;
@@ -3081,6 +3059,40 @@ export default function AdminDashboard() {
               adminFetch={adminFetch}
               applyFontRolesToDom={applyFontRolesToDom}
               applySiteStyleTokensToDom={applySiteStyleTokensToDom}
+            />
+          </Suspense>
+        )}
+
+        {/* ── Sandbox tab ── */}
+        {activeTab === "sandbox" && (
+          <Suspense
+            fallback={
+              <AdminSuspenseFallback
+                variant="split"
+                title={t("admin.navSandbox", "Sandbox")}
+              />
+            }
+          >
+            <AdminSandboxTab
+              buildTimestamp={buildTimestamp}
+              gitRevision={gitRevision}
+              uploadBackend={uploadBackend}
+              resendConfigured={resendConfigured}
+              analyticsMode={analyticsMode}
+              analyticsConfigured={analyticsConfigured}
+              analyticsDiagnostics={analyticsDiagnostics}
+              purging={purging}
+              deploying={deploying}
+              lastDeployAt={lastDeployAt}
+              commits={commits}
+              commitsError={commitsError}
+              commitsExpanded={commitsExpanded}
+              setCommitsExpanded={setCommitsExpanded}
+              purgeCache={purgeCache}
+              triggerDeploy={triggerDeploy}
+              clientLogs={clientLogs}
+              setClientLogs={setClientLogs}
+              debugLogs={debugLogs}
             />
           </Suspense>
         )}

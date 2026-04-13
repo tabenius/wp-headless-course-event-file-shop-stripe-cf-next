@@ -57,6 +57,7 @@ const ADMIN_TAB_SET = new Set([
   "contacts",
   "style",
   "support",
+  "sandbox",
 ]);
 
 function parseTabHash(hashValue) {
@@ -86,11 +87,6 @@ function normalizeTab(value) {
   return ADMIN_TAB_SET.has(base) ? base : null;
 }
 
-function hashForTabRoute(value) {
-  const tab = normalizeTab(value);
-  if (!tab) return null;
-  return `#/${tab}`;
-}
 
 function getNavItems() {
   return [
@@ -123,6 +119,11 @@ function getNavItems() {
       label: t("admin.navStyle"),
       tab: "style",
       hotkey: getAdminTabHotkeyLabel("style"),
+    },
+    {
+      label: t("admin.navSandbox", "Sandbox"),
+      tab: "sandbox",
+      hotkey: getAdminTabHotkeyLabel("sandbox"),
     },
   ];
 }
@@ -450,28 +451,18 @@ export default function AdminHeader({ logoUrl }) {
   function switchTab(tab) {
     const safeTab = normalizeTab(tab);
     if (!safeTab) return;
-    const nextHash = hashForTabRoute(tab) || `#/${safeTab}`;
     if (pathname !== "/admin") {
       try {
         sessionStorage.setItem("admin:pendingTab", safeTab);
       } catch {}
-      router.push(`/admin${nextHash}`);
+      // Navigate without hash — AdminDashboard reads pendingTab from
+      // sessionStorage and owns the hash via its activeTab effect.
+      router.push("/admin");
       setMenuOpen(false);
       return;
     }
-    const previousHash = window.location.hash;
-    if (window.location.hash !== nextHash) {
-      const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-      window.history.replaceState(null, "", nextUrl);
-      window.dispatchEvent(new Event("hashchange"));
-    }
     window.dispatchEvent(
-      new CustomEvent("admin:switchTab", {
-        detail:
-          window.location.hash.replace(/^#\/?/, "") ||
-          previousHash.replace(/^#\/?/, "") ||
-          safeTab,
-      }),
+      new CustomEvent("admin:switchTab", { detail: safeTab }),
     );
     setMenuOpen(false);
   }
