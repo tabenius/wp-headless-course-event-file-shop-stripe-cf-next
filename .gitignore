@@ -66,3 +66,10 @@ __pycache__/
 # generated plugin archives (publish from source; do not track binaries here)
 /packages/ragbaz-bridge-plugin/dist/*.zip
 /public/downloads/ragbaz-bridge/*.zip
+
+# generated bundle/dist artifacts (rebuilt via build script)
+react-google-font-chooser-ui/build/
+react-google-font-chooser-ui/dist/
+
+# local-only scratch assets (not for distribution)
+src/assets/foo.mp4
