@@ -329,6 +329,7 @@ const SHOP_EVENTS_ONLY_FALLBACK_QUERY = `
 async function fetchShopCoreGraphDataCombined() {
   const data = await fetchGraphQL(SHOP_CORE_COMBINED_QUERY, {}, 300, {
     edgeCache: true,
+    apq: true,
   });
   return {
     wcProducts: extractNodes(data, "products").filter((node) => node?.name),
@@ -339,19 +340,21 @@ async function fetchShopCoreGraphDataCombined() {
 async function fetchShopCoursesData() {
   const data = await fetchGraphQL(SHOP_COURSES_ONLY_QUERY, {}, 300, {
     edgeCache: true,
+    apq: true,
   });
   return extractNodes(data, "lpCourses");
 }
 
 async function fetchShopCoreGraphDataLegacy() {
   const [productsData, eventsData] = await Promise.all([
-    fetchGraphQL(SHOP_PRODUCTS_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
+    fetchGraphQL(SHOP_PRODUCTS_ONLY_QUERY, {}, 300, { edgeCache: true, apq: true }).catch(
       () => ({}),
     ),
-    fetchGraphQL(SHOP_EVENTS_ONLY_QUERY, {}, 300, { edgeCache: true }).catch(
+    fetchGraphQL(SHOP_EVENTS_ONLY_QUERY, {}, 300, { edgeCache: true, apq: true }).catch(
       () =>
         fetchGraphQL(SHOP_EVENTS_ONLY_FALLBACK_QUERY, {}, 300, {
           edgeCache: true,
+          apq: true,
         }).catch(() => ({})),
     ),
   ]);

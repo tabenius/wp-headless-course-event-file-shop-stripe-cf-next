@@ -99,11 +99,13 @@ function sortEventsForDisplay(events, now = new Date()) {
 async function EventsPageContent() {
   const data = await fetchGraphQL(LIST_EVENTS_QUERY, {}, 1800, {
     edgeCache: true,
+    apq: true,
   });
   let events = extractEvents(data);
   if (events.length === 0) {
     const fallback = await fetchGraphQL(LIST_EVENTS_FALLBACK_QUERY, {}, 1800, {
       edgeCache: true,
+      apq: true,
     });
     events = extractEvents(fallback);
   }

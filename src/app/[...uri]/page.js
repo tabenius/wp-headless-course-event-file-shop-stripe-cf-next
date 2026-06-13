@@ -239,6 +239,7 @@ async function fetchNodeType(uri) {
         1800,
         {
           edgeCache: true,
+          apq: true,
           edgeCacheTtlSeconds: DETAIL_EDGE_CACHE_TTL_SECONDS,
           edgeCacheStaleSeconds: DETAIL_EDGE_CACHE_STALE_SECONDS,
         },
@@ -285,6 +286,7 @@ async function fetchTypedContent(uri, nodeType) {
     try {
       const data = await fetchGraphQL(query, { uri: candidateUri }, 1800, {
         edgeCache: true,
+        apq: true,
         edgeCacheTtlSeconds: DETAIL_EDGE_CACHE_TTL_SECONDS,
         edgeCacheStaleSeconds: DETAIL_EDGE_CACHE_STALE_SECONDS,
       });
@@ -554,6 +556,7 @@ async function fetchCourseFallback(uri, wordpressUrl = null) {
   `;
   const data = await fetchGraphQL(query, { uri }, 1800, {
     edgeCache: true,
+    apq: true,
     edgeCacheTtlSeconds: DETAIL_EDGE_CACHE_TTL_SECONDS,
     edgeCacheStaleSeconds: DETAIL_EDGE_CACHE_STALE_SECONDS,
   });

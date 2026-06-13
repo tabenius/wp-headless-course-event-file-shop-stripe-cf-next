@@ -34,6 +34,7 @@ export async function getPosts({
         after,
       },
       revalidate,
+      { apq: true },
     );
   }
 
@@ -46,6 +47,7 @@ export async function getPosts({
       after,
     },
     revalidate,
+    { apq: true },
   );
 }
 

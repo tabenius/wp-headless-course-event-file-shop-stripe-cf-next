@@ -114,6 +114,7 @@ export async function fetchHomeEvents() {
   try {
     const data = await fetchGraphQL(HOME_EVENTS_QUERY, {}, 1800, {
       edgeCache: true,
+      apq: true,
     });
     const raw = toRenderableEvents(extractEventNodes(data));
 
@@ -123,7 +124,7 @@ export async function fetchHomeEvents() {
         HOME_EVENTS_FALLBACK_QUERY,
         {},
         1800,
-        { edgeCache: true },
+        { edgeCache: true, apq: true },
       );
       const fallbackRaw = toRenderableEvents(extractEventNodes(fallbackData));
       // No date fields available — skip date-based filtering, show all events.

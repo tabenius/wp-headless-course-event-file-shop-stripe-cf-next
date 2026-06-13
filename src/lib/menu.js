@@ -471,7 +471,7 @@ async function buildFallbackNavigation() {
 
 async function fetchNavigationFromUpstreamOrFallback() {
   try {
-    const data = await fetchGraphQL(MENU_QUERY, {}, 1800, { edgeCache: true });
+    const data = await fetchGraphQL(MENU_QUERY, {}, 1800, { edgeCache: true, apq: true });
     const menuItems =
       data?.menus?.edges?.[0]?.node?.menuItems?.edges?.map((e) => e.node) || [];
 

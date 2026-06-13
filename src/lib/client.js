@@ -305,6 +305,41 @@ export async function fetchGraphQL(
   const queryPreview = trimText(query, 2400);
   const variablesPreview = stringifyVariablesPreview(variables, 1600);
 
+  // ── APQ: Automatic Persisted Queries ──────────────────────────────────────────
+  // Try GET with extensions hash first so HAProxy can serve cached responses.
+  // Falls back to POST registration on first request.
+  if (
+    options?.apq === true &&
+    !IS_BUILD_PHASE &&
+    process.env.NEXT_RUNTIME !== "edge"
+  ) {
+    const queryHash = await digestSha256Hex(query);
+    const extensionsPayload = JSON.stringify({
+      persistedQuery: { version: 1, sha256Hash: queryHash },
+    });
+    const getUrl = `${graphqlEndpoint}?extensions=${encodeURIComponent(extensionsPayload)}`;
+    try {
+      const getRes = await fetch(getUrl, {
+        method: "GET",
+        headers: withWordPressUserAgent({ Accept: "application/json" }),
+        next:
+          typeof revalidate === "number" && revalidate >= 0
+            ? { revalidate }
+            : undefined,
+      });
+      if (getRes.ok) {
+        const body = await getRes.json();
+        if (body?.data && Object.keys(body.data).length > 0) {
+          return body.data;
+        }
+      }
+    } catch {
+      // GET failed – fall through to POST registration
+    }
+    // Override the body to include extensions for POST registration
+    options._apqExtensions = extensionsPayload;
+  }
+
   try {
     if (debugGraphQL) {
       console.debug("[GraphQL Debug] Query:", query);
@@ -327,6 +362,9 @@ export async function fetchGraphQL(
         body: JSON.stringify({
           query,
           variables,
+          ...(options._apqExtensions
+            ? { extensions: JSON.parse(options._apqExtensions) }
+            : {}),
         }),
       };
 

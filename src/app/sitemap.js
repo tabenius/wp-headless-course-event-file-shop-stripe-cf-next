@@ -80,6 +80,7 @@ export default async function sitemap() {
   try {
     const data = await fetchGraphQL(SITEMAP_COMBINED_QUERY, {}, 3600, {
       edgeCache: true,
+      apq: true,
     });
     pushNodes(entries, data?.pages?.edges, {
       priority: 0.7,
@@ -101,6 +102,7 @@ export default async function sitemap() {
   try {
     const data = await fetchGraphQL(SITEMAP_CORE_QUERY, {}, 3600, {
       edgeCache: true,
+      apq: true,
     });
     pushNodes(entries, data?.pages?.edges, {
       priority: 0.7,

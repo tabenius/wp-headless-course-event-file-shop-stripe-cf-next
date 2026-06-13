@@ -127,6 +127,7 @@ async function fetchGrantedContentTitles(uris) {
       if (query) {
         const data = await fetchGraphQL(query, variables, 300, {
           edgeCache: true,
+          apq: true,
           edgeCacheTtlSeconds: INVENTORY_TITLE_EDGE_CACHE_TTL_SECONDS,
           edgeCacheStaleSeconds: INVENTORY_TITLE_EDGE_CACHE_STALE_SECONDS,
         });
@@ -150,6 +151,7 @@ async function fetchGrantedContentTitles(uris) {
       if (query) {
         const data = await fetchGraphQL(query, variables, 300, {
           edgeCache: true,
+          apq: true,
           edgeCacheTtlSeconds: INVENTORY_TITLE_EDGE_CACHE_TTL_SECONDS,
           edgeCacheStaleSeconds: INVENTORY_TITLE_EDGE_CACHE_STALE_SECONDS,
         });

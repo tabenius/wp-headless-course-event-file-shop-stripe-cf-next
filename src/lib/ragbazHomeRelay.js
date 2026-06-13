@@ -83,7 +83,7 @@ async function getConnection() {
   const now = Date.now();
   if (cachedConnection && now - cachedAt < CACHE_TTL_MS)
     return cachedConnection;
-  const data = await fetchGraphQL(CONNECTION_QUERY, {}, 0);
+  const data = await fetchGraphQL(CONNECTION_QUERY, {}, 0, { apq: true });
   const normalized = normalizeConnection(data?.ragbazHomeConnection || null);
   cachedConnection = normalized;
   cachedAt = now;

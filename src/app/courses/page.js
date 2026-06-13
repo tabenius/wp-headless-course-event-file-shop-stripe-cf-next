@@ -46,6 +46,7 @@ async function CoursesPageContent() {
   try {
     data = await fetchGraphQL(LIST_COURSES_QUERY, {}, 1800, {
       edgeCache: true,
+      apq: true,
     });
   } catch {
     return (

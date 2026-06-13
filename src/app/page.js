@@ -96,6 +96,7 @@ async function HomeContentSection() {
     await probeStorefrontRagbazGraphql("/");
     data = await fetchGraphQL(GET_CONTENT_QUERY, { uri: "/" }, 1800, {
       edgeCache: true,
+      apq: true,
     });
   } catch (err) {
     if (err instanceof RateLimitError) {
