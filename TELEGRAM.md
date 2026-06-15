@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - A Telegram account
-- Access to the Cloudflare dashboard for ragbaz.xyz
+- Access to the Cloudflare dashboard for ragbaz.cc
 - `wrangler` CLI authenticated
 
 ## Steps
@@ -19,7 +19,7 @@ Message [@userinfobot](https://t.me/userinfobot) on Telegram. It will reply with
 ### 3. Set secrets
 
 ```bash
-cd ragbaz.xyz
+cd ragbaz.cc
 wrangler secret put TELEGRAM_BOT_TOKEN
 # Paste the token from BotFather
 
@@ -29,7 +29,7 @@ wrangler secret put TELEGRAM_WEBHOOK_SECRET
 
 ### 4. Set admin ID
 
-Edit `ragbaz.xyz/wrangler.toml` and set your Telegram user ID:
+Edit `ragbaz.cc/wrangler.toml` and set your Telegram user ID:
 
 ```toml
 TELEGRAM_ADMIN_ID = "123456789"
@@ -38,7 +38,7 @@ TELEGRAM_ADMIN_ID = "123456789"
 ### 5. Deploy
 
 ```bash
-cd ragbaz.xyz
+cd ragbaz.cc
 npm run cf:deploy
 ```
 
@@ -47,7 +47,7 @@ npm run cf:deploy
 ```bash
 curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
   -H "Content-Type: application/json" \
-  -d '{"url":"https://ragbaz.xyz/telegram-webhook","secret_token":"<WEBHOOK_SECRET>"}'
+  -d '{"url":"https://ragbaz.cc/telegram-webhook","secret_token":"<WEBHOOK_SECRET>"}'
 ```
 
 Replace `<TOKEN>` with the BotFather token and `<WEBHOOK_SECRET>` with the secret from step 3.

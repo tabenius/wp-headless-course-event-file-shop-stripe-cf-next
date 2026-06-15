@@ -180,16 +180,16 @@
   - `src/components/admin/CyberduckBookmarkPanel.js`
 - Ticked corresponding BUGS.md item as completed.
 
-## 2026-03-30 (Codex) — zip policy cleanup: single ragbaz.xyz-hosted plugin artifact
+## 2026-03-30 (Codex) — zip policy cleanup: single ragbaz.cc-hosted plugin artifact
 
 - Landed `6f1c9d9`.
 - Removed tracked binary plugin zips from this repo:
   - `packages/ragbaz-bridge-plugin/dist/ragbaz-bridge.zip`
   - `public/downloads/ragbaz-bridge/ragbaz-bridge.zip`
 - Added `.gitignore` guards so generated plugin zips are not tracked in `main`.
-- Updated plugin publish script to stop copying to `public/downloads/*` and publish only to ragbaz.xyz release checkout (`../ragbaz.xyz/release` or `./ragbaz.xyz/release`).
-- Standardized plugin download links to ragbaz.xyz hosted URL:
-  - health helper + setup page + docs now use `https://ragbaz.xyz/downloads/ragbaz-bridge/ragbaz-bridge.zip` (env override supported).
+- Updated plugin publish script to stop copying to `public/downloads/*` and publish only to ragbaz.cc release checkout (`../ragbaz.cc/release` or `./ragbaz.cc/release`).
+- Standardized plugin download links to ragbaz.cc hosted URL:
+  - health helper + setup page + docs now use `https://ragbaz.cc/downloads/ragbaz-bridge/ragbaz-bridge.zip` (env override supported).
 
 ## 2026-03-30 (Codex) — media library → products bridge (create product from selected asset)
 
@@ -509,9 +509,9 @@
 
 ## 2026-03-30 (Codex) — docs follow-up: always-visible cache copy button + refresh impact guidance
 
-### Codex — corrected usability gap in /docs performance page (ragbaz.xyz)
+### Codex — corrected usability gap in /docs performance page (ragbaz.cc)
 
-**Delivered (in `ragbaz.xyz` repo):**
+**Delivered (in `ragbaz.cc` repo):**
 
 - Moved the cache-refresh command card (with copy button) to render outside the collapsible mermaid block so it is visible without opening the diagram.
 - Added an explicit section in EN/SV/ES explaining impact tradeoffs:
@@ -524,14 +524,14 @@
 
 **Release:**
 
-- `ragbaz.xyz` commit: `4751195`
+- `ragbaz.cc` commit: `4751195`
 - Worker version: `ddab87cb-f017-483d-b169-af44b403593e`
 
-## 2026-03-30 (Codex) — docs cache-timing update + mermaid + cache-refresh action (ragbaz.xyz)
+## 2026-03-30 (Codex) — docs cache-timing update + mermaid + cache-refresh action (ragbaz.cc)
 
-### Codex — updated multilingual /docs guidance with concrete cache rules and deployed to ragbaz.xyz
+### Codex — updated multilingual /docs guidance with concrete cache rules and deployed to ragbaz.cc
 
-**Delivered (in `ragbaz.xyz` repo):**
+**Delivered (in `ragbaz.cc` repo):**
 
 - Enhanced `performance-explained` docs (EN/SV/ES) with explicit default cache timings and rules:
   - GraphQL edge cache `60s` + `120s` stale,
@@ -547,7 +547,7 @@
 
 **Release:**
 
-- Committed/pushed in `ragbaz.xyz`: `0a4c96d`.
+- Committed/pushed in `ragbaz.cc`: `0a4c96d`.
 - Deployed to Cloudflare Workers; version `21b5a3cc-a70f-4f29-8045-b0b121dfff5f`.
 - Verified live at `/docs/en/performance-explained` (new cache section + cache-refresh command present).
 
@@ -1082,7 +1082,7 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `18b714d` (`ui copy: enforce RAGBAZ-Bridge and RAGBAZ-StoreFront capitalization`)
+- `ragbaz.cc` commit: `18b714d` (`ui copy: enforce RAGBAZ-Bridge and RAGBAZ-StoreFront capitalization`)
 - Deployed worker version: `47fb357a-7074-4f36-a538-0dc2ee162445`
 
 ### Codex — continued PRO admin elaboration (boundary + adoption guidance)
@@ -1096,7 +1096,7 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `183f1bb` (`articulate: add oss/pro admin boundary and pro adoption signals`)
+- `ragbaz.cc` commit: `183f1bb` (`articulate: add oss/pro admin boundary and pro adoption signals`)
 - Deployed worker version: `76facda6-50a8-43be-95f6-6392608bd882`
 
 ### Codex — further expansion of PRO storefront admin UI feature detail
@@ -1111,7 +1111,7 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `48c68e8` (`articulate: add pro admin modules, workflows, and update discipline`)
+- `ragbaz.cc` commit: `48c68e8` (`articulate: add pro admin modules, workflows, and update discipline`)
 - Deployed worker version: `b1870f0c-6b72-4419-90d9-d0a6ef2a6a8e`
 
 ### Codex — expanded PRO storefront admin UI feature documentation
@@ -1125,7 +1125,7 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `42a90ae` (`articulate: expand pro storefront admin ui feature detail`)
+- `ragbaz.cc` commit: `42a90ae` (`articulate: expand pro storefront admin ui feature detail`)
 - Deployed worker version: `90e2642b-fc3b-4093-a6ea-0eda4110ee43`
 
 ### Codex — Articulate storefront matrix (OSS vs PRO/FULL) + diacritics fix
@@ -1148,10 +1148,10 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `e183fa5` (`articulate: add oss vs pro storefront matrix; fix sv/es diacritics`)
+- `ragbaz.cc` commit: `e183fa5` (`articulate: add oss vs pro storefront matrix; fix sv/es diacritics`)
 - Deployed worker version: `009cef6c-0187-41ab-b987-b4348eced883`
 
-### Codex — Mermaid contrast fix + Ctrl+Alt hotkey restore on ragbaz.xyz docs
+### Codex — Mermaid contrast fix + Ctrl+Alt hotkey restore on ragbaz.cc docs
 
 **Delivered:**
 
@@ -1164,10 +1164,10 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `8dd90dd` (`docs ui: fix mermaid contrast and restore ctrl+alt theme/font hotkeys`)
+- `ragbaz.cc` commit: `8dd90dd` (`docs ui: fix mermaid contrast and restore ctrl+alt theme/font hotkeys`)
 - Deployed worker version: `df8669b4-796a-453e-b893-4187a6d6ae05`
 
-### Codex — changelog expanded + translated (SV/ES) on ragbaz.xyz docs
+### Codex — changelog expanded + translated (SV/ES) on ragbaz.cc docs
 
 **Delivered:**
 
@@ -1180,7 +1180,7 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `1fc8bf6` (`docs changelog: expand weekly narrative and add sv/es translations`)
+- `ragbaz.cc` commit: `1fc8bf6` (`docs changelog: expand weekly narrative and add sv/es translations`)
 - Deployed worker version: `d2ab0666-1f85-433c-a90f-3d6a8c2ff7bb`
 
 ### Codex — docs safety strip guide submenu (direct document jump)
@@ -1193,14 +1193,14 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `33deddd` (`docs safety strip: add guide submenu for direct doc navigation`)
+- `ragbaz.cc` commit: `33deddd` (`docs safety strip: add guide submenu for direct doc navigation`)
 - Deployed worker version: `93def01e-5617-4c44-b825-47ca7d455987`
 
 ### Codex — docs safety strip language submenu (subtle hover)
 
 **Delivered:**
 
-- Updated `ragbaz.xyz/src/lib/pages.js` safety-strip renderer to support optional submenu items per safety cell.
+- Updated `ragbaz.cc/src/lib/pages.js` safety-strip renderer to support optional submenu items per safety cell.
 - Wired docs language safety item to show `en/sv/es` as a subtle hover/focus submenu from the `Language en` value.
 - Kept `/docs` as a separate direct safety-strip link (`Base /docs`) exactly as before.
 - Added matching submenu styles in both page shell style blocks for consistent rendering.
@@ -1211,14 +1211,14 @@
 
 **Publish:**
 
-- `ragbaz.xyz` commit: `439ee75` (`docs safety strip: add subtle language hover submenu`)
+- `ragbaz.cc` commit: `439ee75` (`docs safety strip: add subtle language hover submenu`)
 - Deployed worker version: `bdd73b49-d7d8-49f1-853d-fcc337e91e2f`
 
-### Codex — published weekly changelog on ragbaz.xyz docs
+### Codex — published weekly changelog on ragbaz.cc docs
 
 **Delivered:**
 
-- Added docs article `changelog` to `ragbaz.xyz` docs content (`src/lib/pages.js`) and deployed worker.
+- Added docs article `changelog` to `ragbaz.cc` docs content (`src/lib/pages.js`) and deployed worker.
 - Verified live pages:
   - `/docs/en/changelog` shows Weekly Changelog timeline content
   - `/docs` index now links to the changelog article
@@ -1233,14 +1233,14 @@
 - Updated lock example commands to include changelog in acquire/add steps.
 - Updated changelog protocol rules to explicitly require the same lock + pull + commit/push + release helper flow for changelog edits.
 
-### Codex — AGENTS protocol update for weekly changelog + ragbaz.xyz publish
+### Codex — AGENTS protocol update for weekly changelog + ragbaz.cc publish
 
 **Delivered:**
 
 - Updated `AGENTS.md` protocol with a required changelog workflow:
   - keep `docs/CHANGELOG.md` updated week by week,
   - keep content user/admin-experience focused,
-  - publish changelog updates to `ragbaz.xyz` docs whenever changed,
+  - publish changelog updates to `ragbaz.cc` docs whenever changed,
   - treat deploy + live verification as part of changelog completion,
   - log changelog update/publish actions in coop notes.
 
@@ -1357,12 +1357,12 @@
 - Content focus is product/admin experience and major feature outcomes (not code details), using a week-by-week timeline.
 - Scope currently summarizes major progress from week of 2026-03-02 through week of 2026-03-23.
 
-### Codex — aether status-pill contrast fix on ragbaz.xyz
+### Codex — aether status-pill contrast fix on ragbaz.cc
 
 **Delivered:**
 
-- Fixed low-contrast status labels in `aether` theme on ragbaz.xyz (affected `good/warn/bad` pills used by labels such as `GraphQL source`, `SSR draft`, `detected`, `missing`, `Fetched (200)`).
-- Added explicit `:root[data-theme="aether"] .pill.*` overrides with stronger foreground/background/border contrast in `ragbaz.xyz/src/lib/pages.js`.
+- Fixed low-contrast status labels in `aether` theme on ragbaz.cc (affected `good/warn/bad` pills used by labels such as `GraphQL source`, `SSR draft`, `detected`, `missing`, `Fetched (200)`).
+- Added explicit `:root[data-theme="aether"] .pill.*` overrides with stronger foreground/background/border contrast in `ragbaz.cc/src/lib/pages.js`.
 
 **Validation:**
 
@@ -1370,11 +1370,11 @@
 
 **Commit:**
 
-- `ragbaz.xyz` `c686561` — `Improve aether pill contrast for status labels`
+- `ragbaz.cc` `c686561` — `Improve aether pill contrast for status labels`
 
 **Deploy:**
 
-- Deployed ragbaz.xyz worker (`Version ID: 34901f08-f42f-44a4-8807-93ae0ad0f0bc`).
+- Deployed ragbaz.cc worker (`Version ID: 34901f08-f42f-44a4-8807-93ae0ad0f0bc`).
 
 ### Codex — admin in-context docs links/tooltips (EN/SV/ES aware), phase 1
 
@@ -1384,10 +1384,10 @@
   - `src/lib/ragbazDocs.js`
   - language normalization (`en/sv/es`)
   - tab-to-guide context mapping
-  - URL generation to `https://ragbaz.xyz/docs/{lang}/{slug}`
+  - URL generation to `https://ragbaz.cc/docs/{lang}/{slug}`
 - Added reusable admin docs-link UI:
   - `src/components/admin/AdminDocsContextLinks.js`
-  - contextual guide chips with tooltips opening ragbaz.xyz docs in a new tab
+  - contextual guide chips with tooltips opening ragbaz.cc docs in a new tab
 - Wired links into admin flow:
   - global context row in `AdminDashboard` (shown per active tab)
   - compact in-tab help chips in `AdminMediaLibraryTab`, `AdminProductsTab`, `AdminSupportTab`, and `AdminSalesTab`
@@ -1414,7 +1414,7 @@
   - `AdminWelcomeTab` (dashboard mode)
   - `ChatPanel`
   - `AdminInfoHubTab`
-- Updated Info Hub docs panel to prioritize direct ragbaz.xyz docs cards (localized), removing emphasis on old `/admin/docs` cards per latest direction (no backward-compatibility requirement).
+- Updated Info Hub docs panel to prioritize direct ragbaz.cc docs cards (localized), removing emphasis on old `/admin/docs` cards per latest direction (no backward-compatibility requirement).
 - Added missing localized i18n labels for external docs cards in EN/SV/ES.
 
 **Validation:**
@@ -1478,10 +1478,10 @@
   - `src/app/admin/docs/page.js`
   - `src/app/admin/docs/[slug]/page.js`
   - `src/app/admin/docs/[slug]/ArchitectureDiagram.js`
-- Updated RAG manual metadata to use direct `ragbaz.xyz/docs/{lang}` targets instead of legacy `/admin/docs` source links:
+- Updated RAG manual metadata to use direct `ragbaz.cc/docs/{lang}` targets instead of legacy `/admin/docs` source links:
   - `src/lib/manuals.js`
   - `src/lib/chat/rag.js`
-- Added configurable docs base handling in manuals via `NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL` fallback to `https://ragbaz.xyz/docs`.
+- Added configurable docs base handling in manuals via `NEXT_PUBLIC_RAGBAZ_DOCS_BASE_URL` fallback to `https://ragbaz.cc/docs`.
 
 **Validation:**
 
@@ -1564,9 +1564,9 @@
 
 - `main` `3284274` — `Localize style/sandbox helper labels and add docs-link hotkeys`
 
-### Codex — ragbaz.xyz tenant draft canonicalization + Mermaid rendering fix
+### Codex — ragbaz.cc tenant draft canonicalization + Mermaid rendering fix
 
-**Delivered (nested repo `ragbaz.xyz`):**
+**Delivered (nested repo `ragbaz.cc`):**
 
 - Canonicalized tenant draft URLs so `/tenant/{domain}/...` now redirects to `/tenant/{domain}` (admin routes remain handled by existing `/tenant/{domain}/admin...` proxy branch).
 - Fixed docs diagram rendering by replacing raw Mermaid code blocks with `.mermaid` containers and enabling client-side Mermaid rendering on docs pages.
@@ -1579,18 +1579,18 @@
 
 **Commit:**
 
-- `ragbaz.xyz` `d990944` — `Canonicalize tenant draft URLs and render docs Mermaid diagrams`
+- `ragbaz.cc` `d990944` — `Canonicalize tenant draft URLs and render docs Mermaid diagrams`
 
-### Codex — ragbaz.xyz docs IA scaffold under /docs (EN/SV/ES)
+### Codex — ragbaz.cc docs IA scaffold under /docs (EN/SV/ES)
 
 **Delivered:**
 
-- Added multilingual documentation routes on ragbaz.xyz:
+- Added multilingual documentation routes on ragbaz.cc:
   - `/docs` (default EN index)
   - `/docs/{lang}` where `lang in {en, sv, es}`
   - `/docs/{lang}/{slug}`
   - short EN fallback: `/docs/{slug}`
-- Implemented localized docs index + article rendering in `ragbaz.xyz/src/lib/pages.js`.
+- Implemented localized docs index + article rendering in `ragbaz.cc/src/lib/pages.js`.
 - Added initial article set required by Option C docs restructure:
   - `quick-start`
   - `product-value` (non-technical features/use-cases/value)
@@ -1609,20 +1609,20 @@
 
 **Commit:**
 
-- `ragbaz.xyz` `4e2e264` — `Add multilingual /docs scaffold with localized guide routes`
+- `ragbaz.cc` `4e2e264` — `Add multilingual /docs scaffold with localized guide routes`
 
 **Deploy + live checks:**
 
-- Deployed ragbaz.xyz worker after merge (`Version ID: ea7b88f2-8a2b-40ef-af94-c068e0edf9e2`).
+- Deployed ragbaz.cc worker after merge (`Version ID: ea7b88f2-8a2b-40ef-af94-c068e0edf9e2`).
 - Verified:
-  - `GET https://ragbaz.xyz/docs` -> `200` and docs title rendered.
-  - `GET https://ragbaz.xyz/docs/en/quick-start` -> contains expected article content (`Quick Start`, `Copyable command`).
+  - `GET https://ragbaz.cc/docs` -> `200` and docs title rendered.
+  - `GET https://ragbaz.cc/docs/en/quick-start` -> contains expected article content (`Quick Start`, `Copyable command`).
 
-### Codex — ragbaz.xyz global font-theme system (Option C, phase 1)
+### Codex — ragbaz.cc global font-theme system (Option C, phase 1)
 
 **Delivered:**
 
-- Implemented a site-wide font-theme system in `ragbaz.xyz/src/lib/pages.js` for both render paths (`shell(...)` and `renderHomePage(...)`) so typography is consistent across all pages.
+- Implemented a site-wide font-theme system in `ragbaz.cc/src/lib/pages.js` for both render paths (`shell(...)` and `renderHomePage(...)`) so typography is consistent across all pages.
 - Added five named font themes with heading/body pairs and CSS-variable wiring:
   - `elegant`, `formal`, `casual`, `creative`, `contemporary`.
 - Added a global font selector (`Font`) in the top controls next to the elemental theme selector.
@@ -1635,7 +1635,7 @@
 
 **Commit:**
 
-- `ragbaz.xyz` `82aefe5` — `Add global font themes with persisted selector and hotkeys`
+- `ragbaz.cc` `82aefe5` — `Add global font themes with persisted selector and hotkeys`
 
 ### Codex — storefront dark-mode submenu contrast + locale fix + stronger admin cache purge
 
@@ -1701,8 +1701,8 @@
 - `npm run cf:deploy` succeeded.
 - Current worker version: `7c8bdc83-8c84-41fc-b36e-2d60dffe44e0`.
 - Live HTML checks:
-  - `https://xtas.ragbaz.xyz/` includes top calendar section (`calendar_sections=1`) with event links.
-  - `https://xtas.ragbaz.xyz/events/` includes explicit date readouts (`aria-label="Event date"`), e.g. `9 mars 2026 11:03–11:03`.
+  - `https://xtas.ragbaz.cc/` includes top calendar section (`calendar_sections=1`) with event links.
+  - `https://xtas.ragbaz.cc/events/` includes explicit date readouts (`aria-label="Event date"`), e.g. `9 mars 2026 11:03–11:03`.
 
 ### Codex — event visibility/date pass + storefront version bump to 0.1.1
 
@@ -1797,10 +1797,10 @@
 - `npm run build` (pass; route table shows `ƒ /[...uri]`)
 - `npm run cf:deploy` (pass; current deployed version `3b511d92-bfe1-476f-8841-09dcb3e645a1`)
 - live checks:
-  - `https://xtas.ragbaz.xyz/` → `200`
-  - `https://xtas.ragbaz.xyz/kursen-rora-och-berora/` → `200`
-  - `https://xtas.ragbaz.xyz/om-xtas/` → `404` (no longer `500`)
-  - `https://xtas.ragbaz.xyz/kontakt/` → `404` (no longer `500`)
+  - `https://xtas.ragbaz.cc/` → `200`
+  - `https://xtas.ragbaz.cc/kursen-rora-och-berora/` → `200`
+  - `https://xtas.ragbaz.cc/om-xtas/` → `404` (no longer `500`)
+  - `https://xtas.ragbaz.cc/kontakt/` → `404` (no longer `500`)
 
 ### Codex — validated menu links before render to suppress stale internal URLs
 
@@ -1862,7 +1862,7 @@
 
 **Delivered:**
 
-- Fixed tenant draft route generation in `ragbaz.xyz` so draft navigation no longer escapes to root when opened from `/tenant/{domain}`.
+- Fixed tenant draft route generation in `ragbaz.cc` so draft navigation no longer escapes to root when opened from `/tenant/{domain}`.
 - Draft links now stay under domain route namespace:
   - `/tenant/{domain}/`
   - `/tenant/{domain}/shop`
@@ -1872,18 +1872,18 @@
 - Updated tests to assert:
   - domain draft page emits namespaced links,
   - nested route `/tenant/xtas.nu/shop` resolves and renders draft content.
-- Deployed `ragbaz.xyz` worker and verified live:
+- Deployed `ragbaz.cc` worker and verified live:
   - `/tenant/xtas.nu` outputs links to `/tenant/xtas.nu/{shop,inventory,profile}`,
   - `/tenant/xtas.nu/shop` returns `200`.
 
 **Commit:**
 
-- `ragbaz.xyz` `b6396fd` — `Fix tenant draft routes to stay under /tenant/{domain}`
+- `ragbaz.cc` `b6396fd` — `Fix tenant draft routes to stay under /tenant/{domain}`
 
 **Verification run:**
 
-- `ragbaz.xyz`: `npm test` (pass, 13/13)
-- live check: `curl https://ragbaz.xyz/tenant/xtas.nu` link assertions + `curl -w "%{http_code}" https://ragbaz.xyz/tenant/xtas.nu/shop` = `200`
+- `ragbaz.cc`: `npm test` (pass, 13/13)
+- live check: `curl https://ragbaz.cc/tenant/xtas.nu` link assertions + `curl -w "%{http_code}" https://ragbaz.cc/tenant/xtas.nu/shop` = `200`
 
 ### Codex — bridge plugin 1.2.1 released, connect-first tab order, explicit slug-claim step
 
@@ -1896,10 +1896,10 @@
   - visible `Claim / reserve slug` action in-step.
 - Rebuilt plugin artifacts and refreshed published zips copied to:
   - `main/public/downloads/ragbaz-bridge/ragbaz-bridge.zip`
-  - `ragbaz.xyz/release/ragbaz-bridge.zip`
+  - `ragbaz.cc/release/ragbaz-bridge.zip`
 - Verified live deployment issue and fixed it:
-  - before deploy, `https://ragbaz.xyz/downloads/ragbaz-bridge/ragbaz-bridge.zip` served `1.2.0`,
-  - deployed `ragbaz.xyz` worker,
+  - before deploy, `https://ragbaz.cc/downloads/ragbaz-bridge/ragbaz-bridge.zip` served `1.2.0`,
+  - deployed `ragbaz.cc` worker,
   - re-verified live route now serves `1.2.1` with Connect-first tab order and slug-claim UI marker.
 
 **Commits:**
@@ -1912,17 +1912,17 @@
 - `main`: `npm run plugin:copy` (pass)
 - remote check: downloaded live zip and confirmed `Version: 1.2.1` + `connect` tab before `overview` (pass)
 
-### Codex — claimed/reserved tenant slug aliases (gift-key interchangeable) in plugin + ragbaz.xyz
+### Codex — claimed/reserved tenant slug aliases (gift-key interchangeable) in plugin + ragbaz.cc
 
 **Delivered:**
 
-- Added authenticated slug-claim endpoint in `ragbaz.xyz`:
+- Added authenticated slug-claim endpoint in `ragbaz.cc`:
   - `POST /api/v1/home/slug-claim`
   - validates slug format (`a-z`, `0-9`, `-`; no dots),
   - blocks reserved route slugs (`api`, `admin`, `articulate`, etc.),
   - enforces uniqueness (returns `409 slug_already_claimed` for cross-tenant conflicts),
   - stores alias mapping so slug and gift key can be used interchangeably in site-info/admin routes.
-- Extended `ragbaz.xyz` API descriptor with `claimSlug`.
+- Extended `ragbaz.cc` API descriptor with `claimSlug`.
 - Added end-to-end tests for:
   - successful slug reservation,
   - slug-based site-info lookup parity with gift-key lookup,
@@ -1936,14 +1936,14 @@
 
 **Commits:**
 
-- `ragbaz.xyz` `9d209f9` — `Add unique tenant slug claim API and alias reservation flow`
+- `ragbaz.cc` `9d209f9` — `Add unique tenant slug claim API and alias reservation flow`
 - `main` `5f08037` — `Add bridge UI/action for claiming reserved tenant slug aliases`
 
 **Verification run:**
 
 - `main`: `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass)
 - `main`: `npm run plugin:copy` (pass; plugin zip refreshed/copied)
-- `ragbaz.xyz`: `npm test` (pass, 2/2)
+- `ragbaz.cc`: `npm test` (pass, 2/2)
 
 ### Codex — relay-secret onboarding/auth lane landed in `main` (commit `b33ad91`)
 
@@ -1968,7 +1968,7 @@
 - `npx eslint src/lib/wordpressGraphqlAuth.js src/lib/ragbazHomeRelay.js` (pass)
 - `npm test` in `main` currently has pre-existing failures unrelated to this slice (`mock.module` unsupported in current Node runtime + existing `admin-hotkeys` failure); relay-auth touched files validated via php/lint.
 
-### Codex — tenant draft link hardening + relay status visibility in `ragbaz.xyz` (commit `901e2a3`)
+### Codex — tenant draft link hardening + relay status visibility in `ragbaz.cc` (commit `901e2a3`)
 
 **Delivered:**
 
@@ -1988,13 +1988,13 @@
 
 **Verification run:**
 
-- `ragbaz.xyz`: `npm test` (pass, 2/2).
+- `ragbaz.cc`: `npm test` (pass, 2/2).
 
-### Codex — path-based tenant admin proxy (no subdomain required) in `ragbaz.xyz` (commit `935a9d3`)
+### Codex — path-based tenant admin proxy (no subdomain required) in `ragbaz.cc` (commit `935a9d3`)
 
 **Delivered:**
 
-- Added path-based admin proxy routes on `ragbaz.xyz` so storefront admin is reachable without tenant subdomain:
+- Added path-based admin proxy routes on `ragbaz.cc` so storefront admin is reachable without tenant subdomain:
   - `/tenant/{domain}/admin`
   - `/tenant/{domain}/admin/*`
   - `/tenant/{domain}/api/admin/*`
@@ -2008,7 +2008,7 @@
 - Extended API descriptor output with path-based admin endpoint hints:
   - `tenantAdminByDomain`
   - `tenantAdminBySiteKey`
-- Added regression coverage in `ragbaz.xyz/tests/home-api.test.js` for:
+- Added regression coverage in `ragbaz.cc/tests/home-api.test.js` for:
   - host-based tenant admin proxy,
   - domain-path tenant admin proxy,
   - site-key path tenant admin proxy,
@@ -2016,11 +2016,11 @@
 
 **Verification run:**
 
-- `ragbaz.xyz`: `npm test` (pass, 2/2).
+- `ragbaz.cc`: `npm test` (pass, 2/2).
 
 ## 2026-03-26 (Codex)
 
-### Codex — connected-sites tenant jump + collapsible draft advanced panels (commit `cf055fb` in `ragbaz.xyz`)
+### Codex — connected-sites tenant jump + collapsible draft advanced panels (commit `cf055fb` in `ragbaz.cc`)
 
 **Delivered:**
 
@@ -2032,17 +2032,17 @@
   - `Advanced: Draft frontend manifest`
     These are collapsed by default to improve first-screen scan speed.
 - Added shared styling in shell CSS for jump-form controls and disclosure panels.
-- Updated tests (`ragbaz.xyz/tests/home-api.test.js`) to assert:
+- Updated tests (`ragbaz.cc/tests/home-api.test.js`) to assert:
   - tenant jump UI presence and navigation script,
   - advanced collapsible sections rendered in draft pages.
 - Verification run:
-  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+  - `ragbaz.cc`: `npm test` (pass, 12/12).
 
-### Codex — tenant draft UI flow polish for domain routes (commit `c44cbf6` in `ragbaz.xyz`)
+### Codex — tenant draft UI flow polish for domain routes (commit `c44cbf6` in `ragbaz.cc`)
 
 **Delivered:**
 
-- Updated `ragbaz.xyz` tenant UI routing so domain pages now render the draft storefront view:
+- Updated `ragbaz.cc` tenant UI routing so domain pages now render the draft storefront view:
   - `GET /tenant/{domain}` now resolves the tenant and renders `renderGiftDraftPage` (instead of connected-site info page).
   - Added domain candidate fallback in tenant lookup (`domain`, `www.domain`, and stripped `www`) to reduce “not found” friction.
 - Added upstream likeness capture in worker runtime:
@@ -2054,31 +2054,31 @@
   - faster operator navigation actions (`Peer diagnostics`, `Connected site info`, `Open upstream site`).
 - Improved connected-site UI (`renderConnectedSitePage`) with explicit domain-route guidance and `Open draft by domain` quick action.
 - Updated docs/tests:
-  - `ragbaz.xyz/README.md` now describes `/tenant/{domain}` as a draft storefront page with score meters + upstream likeness.
+  - `ragbaz.cc/README.md` now describes `/tenant/{domain}` as a draft storefront page with score meters + upstream likeness.
   - `tests/home-api.test.js` updated to assert draft rendering for `/tenant/xtas.nu` and `/tenant/www.xtas.nu`.
 - Verification run:
-  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+  - `ragbaz.cc`: `npm test` (pass, 12/12).
 
-### Codex — peer recommendations wording clarity (commit `aad43d0` in `ragbaz.xyz`)
+### Codex — peer recommendations wording clarity (commit `aad43d0` in `ragbaz.cc`)
 
 **Delivered:**
 
-- Reworked failed-check recommendation titles in `ragbaz.xyz/src/lib/payload.js` so they state the actual failure condition instead of the expected-good phrasing.
+- Reworked failed-check recommendation titles in `ragbaz.cc/src/lib/payload.js` so they state the actual failure condition instead of the expected-good phrasing.
   - Example: `Persistent object cache is not enabled` (instead of ambiguous positive-title wording).
 - Added `observed` telemetry passthrough for failed runtime/cache checks into recommendation objects.
-- Updated `ragbaz.xyz/src/lib/pages.js` recommendations renderer to display `Observed` values when available.
-- Added regression assertions in `ragbaz.xyz/tests/payload.test.js` to lock in unambiguous recommendation titles for cache/runtime failure paths.
+- Updated `ragbaz.cc/src/lib/pages.js` recommendations renderer to display `Observed` values when available.
+- Added regression assertions in `ragbaz.cc/tests/payload.test.js` to lock in unambiguous recommendation titles for cache/runtime failure paths.
 - Verification run:
-  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+  - `ragbaz.cc`: `npm test` (pass, 12/12).
 
-### Codex — peer page now recomputes insights from payload at render time (commit `5fa2d85` in `ragbaz.xyz`)
+### Codex — peer page now recomputes insights from payload at render time (commit `5fa2d85` in `ragbaz.cc`)
 
 **Delivered:**
 
-- Updated `ragbaz.xyz/src/lib/pages.js` (`renderPeerPage`) to recompute insights from `latestReport.payload` on each request instead of trusting stored `latestReport.insights` only.
+- Updated `ragbaz.cc/src/lib/pages.js` (`renderPeerPage`) to recompute insights from `latestReport.payload` on each request instead of trusting stored `latestReport.insights` only.
 - This makes recommendation phrasing and scoring logic update immediately for older peer rows, without requiring a new plugin heartbeat.
 - Verification run:
-  - `ragbaz.xyz`: `npm test` (pass, 12/12).
+  - `ragbaz.cc`: `npm test` (pass, 12/12).
 
 ### Codex — GraphQL history strict 200/non-200 coloring + expandable rows
 
@@ -2120,7 +2120,7 @@
   - `node --test tests/dead-links.test.js` (pass).
   - JSON parse validation for `src/lib/i18n/en.json|sv.json|es.json` (pass).
 
-### Codex — storefront Web Vitals relay to ragbaz.xyz + event-to-report ingestion (commits `be2d2bb` in `main`, `f977604` in `ragbaz.xyz`)
+### Codex — storefront Web Vitals relay to ragbaz.cc + event-to-report ingestion (commits `be2d2bb` in `main`, `f977604` in `ragbaz.cc`)
 
 **Delivered:**
 
@@ -2131,15 +2131,15 @@
   - includes `ttfb/lcp/inp/cls/fcp/domComplete`, URL, host, UA, and severity classification.
 - Extended client vitals collection to include INP + CLS in `usePagePerformanceLogger`.
 - Extended local perf logging shape (`graphqlAvailability` store) to persist INP + CLS.
-- Updated `ragbaz.xyz` event ingestion so vitals events now patch `peer.latestReport.payload.performance`, recompute insights, append report history entry, and persist to D1 snapshot/history.
-- Added/updated automated coverage in `ragbaz.xyz/tests/home-api.test.js` for vitals event -> latestReport performance propagation.
+- Updated `ragbaz.cc` event ingestion so vitals events now patch `peer.latestReport.payload.performance`, recompute insights, append report history entry, and persist to D1 snapshot/history.
+- Added/updated automated coverage in `ragbaz.cc/tests/home-api.test.js` for vitals event -> latestReport performance propagation.
 - Verification run:
   - `main`: `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (pass), targeted eslint on touched files (pass).
-  - `ragbaz.xyz`: `npm test` (pass, 2/2).
+  - `ragbaz.cc`: `npm test` (pass, 2/2).
 - Deployment:
-  - `ragbaz.xyz` deployed after merge, Worker version `238f88fd-da7b-4f89-ae07-1ceb452314c0`.
+  - `ragbaz.cc` deployed after merge, Worker version `238f88fd-da7b-4f89-ae07-1ceb452314c0`.
 
-### Codex — ragbaz-bridge plugin auto onboarding flow for ragbaz.xyz (commit e5af4da)
+### Codex — ragbaz-bridge plugin auto onboarding flow for ragbaz.cc (commit e5af4da)
 
 **Delivered:**
 
@@ -2153,11 +2153,11 @@
 - Verification run:
   - `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (no syntax errors).
 
-### Codex — ragbaz.xyz D1-centric control-plane foundation (commit 9e080f7, repo: `../ragbaz.xyz`)
+### Codex — ragbaz.cc D1-centric control-plane foundation (commit 9e080f7, repo: `../ragbaz.cc`)
 
 **Delivered:**
 
-- Implemented D1-first control-plane storage in `ragbaz.xyz`:
+- Implemented D1-first control-plane storage in `ragbaz.cc`:
   - added `src/lib/controlPlaneD1.js` and `migrations/0001_control_plane.sql`,
   - wired register/heartbeat/events/tenant-claim to dual-write KV + D1,
   - added D1-first peer and tenant resolution paths with KV fallback.
@@ -2165,10 +2165,10 @@
   - `GET /api/v1/home/sites`
   - `GET /api/v1/home/history`
 - Added scheduled retention prune path (`HOME_RETENTION_DAYS`, default 30d) and Wrangler cron trigger.
-- Updated `ragbaz.xyz` README + Wrangler config for D1 setup/migration instructions.
+- Updated `ragbaz.cc` README + Wrangler config for D1 setup/migration instructions.
 - Added test coverage for the new `/api/v1/home/sites` and `/api/v1/home/history` routes.
 - Verification run:
-  - `ragbaz.xyz`: `npm test` (pass, 2/2).
+  - `ragbaz.cc`: `npm test` (pass, 2/2).
 
 ### Codex — storefront-first GraphQL ragbaz probe + Wrangler-tail URI logging (commit 3984ab8)
 
@@ -2296,10 +2296,10 @@
 
 - Improved `main/packages/ragbaz-bridge-plugin/ragbaz-bridge.php` Connect tab UX with clearer “Connect & Phone Home” framing, a primary `Phone home now (send heartbeat)` CTA, credential readiness indicators, friendlier status notices, and cleaned event severity controls.
 - Applied sepia branding to the plugin settings header logo/title treatment and switched the storefront admin wordmark palette to sepia in `main/src/components/admin/AdminHeader.js` (plus matching change in `wp-cf-front-oss/src/components/admin/AdminHeader.js`).
-- Expanded `ragbaz.xyz` front-page themes in `ragbaz.xyz/src/lib/pages.js` to elemental `air/fire/earth/water/aether`, added keyboard rotation via `Ctrl+Alt+T`, persisted theme migration from legacy `light/dark`, and added sepia wordmark styling.
-- Added `ragbaz.xyz/tests/home-api.test.js` coverage for elemental theme controls and hotkey marker text.
+- Expanded `ragbaz.cc` front-page themes in `ragbaz.cc/src/lib/pages.js` to elemental `air/fire/earth/water/aether`, added keyboard rotation via `Ctrl+Alt+T`, persisted theme migration from legacy `light/dark`, and added sepia wordmark styling.
+- Added `ragbaz.cc/tests/home-api.test.js` coverage for elemental theme controls and hotkey marker text.
 - Verification run:
-  - `ragbaz.xyz`: `npm test` (pass, 2/2).
+  - `ragbaz.cc`: `npm test` (pass, 2/2).
   - `main`: `npx eslint src/components/admin/AdminHeader.js` (pass), `php -l packages/ragbaz-bridge-plugin/ragbaz-bridge.php` (no syntax errors).
   - `wp-cf-front-oss`: `npx eslint src/components/admin/AdminHeader.js` could not be completed due local dependency/config mismatch (`eslint-config-next/core-web-vitals` not resolvable in this environment).
 
@@ -4361,7 +4361,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 ## 2026-03-20 (cont. 36)
 
-### Codex — Root build now copies plugin zip into `ragbaz.xyz/release`
+### Codex — Root build now copies plugin zip into `ragbaz.cc/release`
 
 - Updated root build pipeline in `package.json`:
   - Added `postbuild` hook: `npm run plugin:copy` (so `npm run build` now also emits plugin artifacts).
@@ -4371,7 +4371,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Verifies source zip exists at `packages/ragbaz-bridge-plugin/dist/ragbaz-bridge.zip`.
   - Copies the artifact to both destinations:
     - `public/downloads/ragbaz-bridge/ragbaz-bridge.zip`
-    - `ragbaz.xyz/release/ragbaz-bridge.zip`
+    - `ragbaz.cc/release/ragbaz-bridge.zip`
 
 - Validation:
   - `npm run plugin:copy` (pass; zip rebuilt and copied to both destinations).
@@ -4381,18 +4381,18 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 ## 2026-03-20 (cont. 37)
 
-### Codex — `ragbaz.xyz` now serves tenant draft previews on gifted hex subdomains
+### Codex — `ragbaz.cc` now serves tenant draft previews on gifted hex subdomains
 
-- Implemented host-based tenant routing in the nested `ragbaz.xyz` Cloudflare Worker app:
+- Implemented host-based tenant routing in the nested `ragbaz.cc` Cloudflare Worker app:
   - `register` (`POST /api/v1/home`) now mints a per-peer `giftKey` (hex) and returns:
     - `account.giftKey`
-    - `account.tenantPreviewUrl` (`https://{giftKey}.ragbaz.xyz`)
+    - `account.tenantPreviewUrl` (`https://{giftKey}.ragbaz.cc`)
   - Added persistent gift-key lookup mapping in storage:
     - `home:gift:{giftKey} -> accountId`
-  - Host router now resolves `https://{giftKey}.ragbaz.xyz/` to the mapped peer and renders a draft frontend page.
+  - Host router now resolves `https://{giftKey}.ragbaz.cc/` to the mapped peer and renders a draft frontend page.
 
 - Added new tenant draft page renderer:
-  - File: `ragbaz.xyz/src/lib/pages.js`
+  - File: `ragbaz.cc/src/lib/pages.js`
   - New export: `renderGiftDraftPage(...)`
   - Draft view includes:
     - Source WordPress URL known from onboarding/heartbeat payload
@@ -4402,28 +4402,28 @@ Run `npm test && npm run build` before pushing. The build error here would have 
     - Priority actions based on current runtime/performance recommendations
 
 - Configuration/docs updates in nested repo:
-  - `ragbaz.xyz/wrangler.toml` adds `RAGBAZ_TENANT_BASE_DOMAIN`.
-  - `ragbaz.xyz/README.md` documents gifted subdomain behavior and API response fields.
-  - `ragbaz.xyz/.gitignore` now ignores generated `release/` artifacts.
+  - `ragbaz.cc/wrangler.toml` adds `RAGBAZ_TENANT_BASE_DOMAIN`.
+  - `ragbaz.cc/README.md` documents gifted subdomain behavior and API response fields.
+  - `ragbaz.cc/.gitignore` now ignores generated `release/` artifacts.
 
 - Validation:
-  - `cd ragbaz.xyz && npm test` (pass, 4/4).
-  - Extended test in `ragbaz.xyz/tests/home-api.test.js` now verifies:
+  - `cd ragbaz.cc && npm test` (pass, 4/4).
+  - Extended test in `ragbaz.cc/tests/home-api.test.js` now verifies:
     - Gift key + tenant preview URL are returned
-    - `https://{gift}.ragbaz.xyz/` returns tenant draft HTML
+    - `https://{gift}.ragbaz.cc/` returns tenant draft HTML
   - `node -e "import('./src/index.js')..."` smoke check (pass).
 
 - Nested repo commit pushed:
-  - `ragbaz.xyz` `master`: `3e54194` — `feat: serve gifted tenant drafts on hex.ragbaz.xyz`
+  - `ragbaz.cc` `master`: `3e54194` — `feat: serve gifted tenant drafts on hex.ragbaz.cc`
 
 ---
 
 ## 2026-03-20 (cont. 38)
 
-### Codex — Tenant hosts now expose the same `/admin` surface via proxy under `[tenant_hex].ragbaz.xyz/admin`
+### Codex — Tenant hosts now expose the same `/admin` surface via proxy under `[tenant_hex].ragbaz.cc/admin`
 
-- Extended `ragbaz.xyz` host-based tenant routing:
-  - For gifted tenant hosts (`{gift_key}.ragbaz.xyz`), requests to:
+- Extended `ragbaz.cc` host-based tenant routing:
+  - For gifted tenant hosts (`{gift_key}.ragbaz.cc`), requests to:
     - `/admin`
     - `/admin/*`
     - `/api/admin/*`
@@ -4431,7 +4431,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - New configuration:
   - `RAGBAZ_TENANT_ADMIN_ORIGIN` (plus fallback aliases `RAGBAZ_ARTICULATE_ADMIN_ORIGIN` / `RAGBAZ_ADMIN_ORIGIN`)
-  - Added to `ragbaz.xyz/wrangler.toml` sample vars and documented in `ragbaz.xyz/README.md`.
+  - Added to `ragbaz.cc/wrangler.toml` sample vars and documented in `ragbaz.cc/README.md`.
 
 - Proxy behavior details:
   - Preserves request method/path/query and forwards upstream response body/status.
@@ -4446,12 +4446,12 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - If admin origin is not configured, returns a deterministic `501` for tenant admin routes.
 
 - Validation:
-  - Extended `ragbaz.xyz/tests/home-api.test.js` with:
+  - Extended `ragbaz.cc/tests/home-api.test.js` with:
     - `tenant hex host proxies /admin to configured admin origin`
-  - `cd ragbaz.xyz && npm test` passes (5/5).
+  - `cd ragbaz.cc && npm test` passes (5/5).
 
 - Nested repo commit pushed:
-  - `ragbaz.xyz` `master`: `94b91b5` — `feat: proxy tenant hex admin paths to shared admin origin`
+  - `ragbaz.cc` `master`: `94b91b5` — `feat: proxy tenant hex admin paths to shared admin origin`
 
 ---
 
@@ -4479,13 +4479,13 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 ### Codex — tenant claim API + connected-site screens + plugin call-home actions
 
-- Landed in `ragbaz.xyz` service:
+- Landed in `ragbaz.cc` service:
   - Added authenticated `POST /api/v1/home/events` endpoint for call-home event ingestion.
-  - Added authenticated `POST /api/v1/home/tenant-claim` endpoint so storefront workers can claim occupancy of a `*.ragbaz.xyz` subdomain and bind it to a connected site domain/account.
+  - Added authenticated `POST /api/v1/home/tenant-claim` endpoint so storefront workers can claim occupancy of a `*.ragbaz.cc` subdomain and bind it to a connected site domain/account.
   - Added connected-site screens/routes: `/articulate/sites`, `/articulate/sites/{gift_or_alias}`, and `/tenant/{domain}`.
   - Added tenant alias/domain/subdomain mapping keys and logic (including hardcoded fallback mapping `xtas.nu -> xtas`).
-  - Extended tests for events, tenant claim flow, `xtas.ragbaz.xyz`, and `/tenant/xtas.nu`.
-  - Commit pushed in nested repo `ragbaz.xyz`: `2ac7f13`.
+  - Extended tests for events, tenant claim flow, `xtas.ragbaz.cc`, and `/tenant/xtas.nu`.
+  - Commit pushed in nested repo `ragbaz.cc`: `2ac7f13`.
 
 - Landed in `main` plugin package:
   - Replaced Connect-tab placeholder with operational forms/actions:
@@ -4493,11 +4493,11 @@ Run `npm test && npm run build` before pushing. The build error here would have 
     - send heartbeat snapshot (`/api/v1/home/heartbeat`)
     - send manual event (`/api/v1/home/events`)
   - Added local last-result reporting and direct links to tenant/site info screens.
-  - Updated plugin zip copy script to publish to shared workspace `../ragbaz.xyz/release` (with local fallback).
+  - Updated plugin zip copy script to publish to shared workspace `../ragbaz.cc/release` (with local fallback).
   - Commit pushed on `main`: `dc578ea`.
 
 - Landed in `wp-cf-front-oss`:
-  - Updated plugin zip copy script to publish to shared workspace `../ragbaz.xyz/release` (with local fallback).
+  - Updated plugin zip copy script to publish to shared workspace `../ragbaz.cc/release` (with local fallback).
   - Commit pushed on `main`: `358df6c`.
 
 ---
@@ -4553,7 +4553,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Added a temporary GraphQL-availability logging window in KV (TTL-backed) so logging can be enabled for a fixed duration and auto-expire.
   - Extended `/api/admin/graphql-availability` with `PATCH` (`enableForSeconds`) and GET metadata (`temporaryEnabledUntil`, `effectiveEnabled`).
   - Added admin action in Page Performance: `Record vitals now (1h)`; this enables temporary logging for one hour and submits an immediate vitals sample.
-  - Added relay-status persistence for ragbaz.xyz vitals forwarding and surfaced it in admin (`last attempt`, `reason`, `HTTP status`), including missing connection and unauthorized relay failures.
+  - Added relay-status persistence for ragbaz.cc vitals forwarding and surfaced it in admin (`last attempt`, `reason`, `HTTP status`), including missing connection and unauthorized relay failures.
   - Continued keeping permanent logging toggle semantics intact; disabling the permanent toggle now also clears any active temporary window.
 
 - Validation:
@@ -4563,7 +4563,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Landed in `main` (commit: `b1eee04`):
   - Renamed admin logo component filename to lowercase (`src/components/admin/ragbaz-logo.js`) and updated imports.
-  - Normalized user-facing brand copy from mixed-case brand labels / lowercase `ragbaz.xyz` labels to `RAGBAZ` / `RAGBAZ.xyz` across admin docs tooltips, info hub links, relay-status panel text, and plugin connect/auth copy.
+  - Normalized user-facing brand copy from mixed-case brand labels / lowercase `ragbaz.cc` labels to `RAGBAZ` / `RAGBAZ.xyz` across admin docs tooltips, info hub links, relay-status panel text, and plugin connect/auth copy.
   - Updated i18n EN/SV/ES brand-facing strings (`docsExternal*`, docs tooltips, copyright-holder placeholder).
   - Aligned user-facing header examples to `X-RAGBAZ-Secret` wording in plugin docs/readme text.
   - Updated receipt proxy response header label to `X-RAGBAZ-Request-Id`.
@@ -4578,13 +4578,13 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Normalized user-facing i18n placeholders to `RAGBAZ AB` (EN/SV/ES).
   - Normalized receipt response header label to `X-RAGBAZ-Request-Id`.
 
-- Landed in `ragbaz.xyz` (commit: `b7af99a`):
+- Landed in `ragbaz.cc` (commit: `b7af99a`):
   - Normalized site-facing brand copy to `RAGBAZ` / `RAGBAZ.xyz` in docs/frontpage/diagnostic text surfaces (`src/lib/pages.js`, `src/lib/payload.js`, `src/index.js`, `README.md`, `package.json`).
-  - Kept filesystem/path references lowercase where they represent actual directory names (e.g. `cd ragbaz.xyz`).
+  - Kept filesystem/path references lowercase where they represent actual directory names (e.g. `cd ragbaz.cc`).
 
 - Validation:
   - `wp-cf-front-oss`: i18n JSON parse check passes.
-  - `ragbaz.xyz`: `npm test` run observed one existing failure in `tests/home-api.test.js` (`302 !== 200` on hardcoded xtas alias route expectation), unrelated to casing text edits.
+  - `ragbaz.cc`: `npm test` run observed one existing failure in `tests/home-api.test.js` (`302 !== 200` on hardcoded xtas alias route expectation), unrelated to casing text edits.
 
 ### Codex — final strict casing sweep (no mixed-case `Ragbaz` tokens left)
 
@@ -4592,7 +4592,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
   - Normalized remaining mixed-case brand token in `.env.example`.
   - Normalized residual mixed-case mentions in coop history text.
 
-- Landed in `ragbaz.xyz` (commit: `1e827af`):
+- Landed in `ragbaz.cc` (commit: `1e827af`):
   - Normalized migration banner comment casing (`RAGBAZ control plane`).
 
 ### Codex — OpenNext `cf:build` fix for proxy runtime (commit: `1f34556`)
@@ -4653,7 +4653,7 @@ Run `npm test && npm run build` before pushing. The build error here would have 
 
 - Removed all admin theme cycling/state/hotkey behavior (no localStorage theme switching, no Ctrl+Alt+T action, no sun/moon toggle button).
 - Admin now always renders with `admin-theme-water` via `AdminThemeWrapper`.
-- Reworked admin palette tokens to a single Water theme aligned with `ragbaz.xyz` Water direction (`#002b36/#073642` surfaces, blue+teal accents, high-contrast text).
+- Reworked admin palette tokens to a single Water theme aligned with `ragbaz.cc` Water direction (`#002b36/#073642` surfaces, blue+teal accents, high-contrast text).
 - Simplified header/drawer styling to rely on one token set instead of multi-theme branches.
 
 - Validation:

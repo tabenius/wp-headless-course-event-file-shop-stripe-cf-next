@@ -195,8 +195,8 @@ Rules:
 1. Update `docs/CHANGELOG.md` every week when major user/admin-facing features or UX changes land.
 2. Keep changelog entries high-level and experience-focused (avoid code-level implementation detail).
 3. Use the shared-doc lock + checkout helper flow for changelog updates (acquire lock, `git pull`, edit, commit/push, release).
-4. Whenever `docs/CHANGELOG.md` is updated in `main`, publish the update on `ragbaz.xyz` docs in the same delivery slice.
-5. Treat publish as mandatory completion criteria for changelog updates: update content, commit/push, deploy `ragbaz.xyz`, and verify live docs.
+4. Whenever `docs/CHANGELOG.md` is updated in `main`, publish the update on `ragbaz.cc` docs in the same delivery slice.
+5. Treat publish as mandatory completion criteria for changelog updates: update content, commit/push, deploy `ragbaz.cc`, and verify live docs.
 6. Log each changelog update and publish action in `claude+codex-coop.md`.
 
 ---
@@ -245,7 +245,7 @@ DONE (2026-03-27, Codex): prioritized implementation batch landed in order:
   - `docs/plans/2026-04-08-review-claude-followup.md`
 - Re-review #2 findings (2026-04-08):
   - `docs/plans/2026-04-08-review-claude-rereview-2.md`
-- Requested split plan checklist for moving Docs/Release/Plugin pipeline/Admin-ops to `ragbaz.xyz` (2026-04-09):
+- Requested split plan checklist for moving Docs/Release/Plugin pipeline/Admin-ops to `ragbaz.cc` (2026-04-09):
   - `docs/plans/2026-04-09-ragbaz-split-checklist.md`
 
 ### Working rules for this backlog
@@ -260,8 +260,8 @@ DONE (2026-03-27, Codex): prioritized implementation batch landed in order:
 ## Recent work log (summary — full detail in coop file)
 
 - **2026-03-26 (Codex)**: Landed relay-secret onboarding/auth lane (`main` commit `b33ad91`) across plugin + storefront auth/docs: plugin now generates/enables/rotates dedicated GraphQL relay secret and exposes relay metadata; storefront supports `RAGBAZ_GRAPHQL_RELAY_SECRET` header auth (`x-ragbaz-relay-secret`) with updated auth priority and env/doc guidance.
-- **2026-03-26 (Codex)**: Landed tenant draft link hardening + relay metadata visibility in `ragbaz.xyz` (`master` commit `901e2a3`): same-site/upstream-host absolute URLs are rewritten to request-path-relative draft links; external links are explicitly marked and open in new tab/window; relay lane status is shown safely (presence/preview only), with tests covering rewrite/external behavior.
-- **2026-03-26 (Codex)**: Implemented end-to-end call-home expansion and tenant mapping workflow: `ragbaz.xyz` now supports authenticated event ingestion (`/api/v1/home/events`), storefront subdomain claims (`/api/v1/home/tenant-claim`), connected-site screens (`/articulate/sites`, `/articulate/sites/{gift_or_alias}`, `/tenant/{domain}` incl. `xtas.nu -> xtas` alias), while the bridge plugin Connect tab now saves home credentials and can send manual heartbeat/event payloads directly.
+- **2026-03-26 (Codex)**: Landed tenant draft link hardening + relay metadata visibility in `ragbaz.cc` (`master` commit `901e2a3`): same-site/upstream-host absolute URLs are rewritten to request-path-relative draft links; external links are explicitly marked and open in new tab/window; relay lane status is shown safely (presence/preview only), with tests covering rewrite/external behavior.
+- **2026-03-26 (Codex)**: Implemented end-to-end call-home expansion and tenant mapping workflow: `ragbaz.cc` now supports authenticated event ingestion (`/api/v1/home/events`), storefront subdomain claims (`/api/v1/home/tenant-claim`), connected-site screens (`/articulate/sites`, `/articulate/sites/{gift_or_alias}`, `/tenant/{domain}` incl. `xtas.nu -> xtas` alias), while the bridge plugin Connect tab now saves home credentials and can send manual heartbeat/event payloads directly.
 - **2026-03-26 (Codex)**: Completed plugin naming normalization to `ragbaz-bridge` across `main`, including package/workspace wiring (`ragbaz-bridge-plugin`), plugin file/zip names (`ragbaz-bridge.php`, `ragbaz-bridge.zip`), download path updates (`/downloads/ragbaz-bridge/ragbaz-bridge.zip`), and docs/tests references.
 - **2026-03-23 (Claude)**: AdminMediaLibraryTab refactor phase 1 — extracted `mediaLibraryHelpers.js` (30+ pure util functions), `R2ConnectionPanel` (S3/R2 connection checklist + GUI clients, 240 lines), `MediaViewerPanel` (asset data viewer, 195 lines). Main file: 3942 → 3205 lines. Commits `858403d`, `3e6722e`, `f1dc7ba`.
 - **2026-03-23 (Claude)**: WP setup page + 429 rate-limit UX + opt-in GraphQL availability/page-performance logging (KV) + chat tab beta gate + dead-link finder moved to Beta & monitoring section. Commit `356a96f`. i18n: 7 new keys (1010 total, all in sync).
@@ -277,7 +277,7 @@ DONE (2026-03-27, Codex): prioritized implementation batch landed in order:
 - **2026-03-21 (Codex)**: Expanded the media-library derivation workflow by filtering templates to the focused asset type, adding a full derivation editor (id, metadata, asset-type checkboxes, operation add/remove), persisting edited templates via `/api/admin/derivations`, showing saved derived assets, and exposing new saturation/sepia/circle/preset operators plus the new save-derived-asset workflow.
 - **2026-03-21 (Codex)**: Added a text-overlay operator parametrized by normalized coordinates, typeface, and size (default Inter 24pt) so derivations can stamp captions in place before saving derived assets.
 - **2026-03-21 (Codex)**: Surface WordPress attachment IDs in the media-library detail pane so every attachment asset clearly shows its `sourceId`, reinforcing that WordPress media items are treated as assets and letting admins copy the canonical attachment reference.
-- **2026-03-20 (Codex)**: Added a new root workspace `README.md` that explains all top-level codebases (`main`, `wp-cf-front-oss`, `wp-cf-front`, `ragbaz.xyz`, `multitenant-wp-mcp-docker-legacy`), includes quick-start commands per repo, and documented a new AGENTS “Workspace documentation protocol” for how these docs must be maintained.
+- **2026-03-20 (Codex)**: Added a new root workspace `README.md` that explains all top-level codebases (`main`, `wp-cf-front-oss`, `wp-cf-front`, `ragbaz.cc`, `multitenant-wp-mcp-docker-legacy`), includes quick-start commands per repo, and documented a new AGENTS “Workspace documentation protocol” for how these docs must be maintained.
 - **2026-03-20 (Codex)**: Completed cleanup after Products/Access merge by deleting the obsolete `ProductsTab` component and removing the unreachable `innerTab === "products"` render branch in `AdminProductsTab`; also removed leftover helper functions that were only used by that dead path.
 - **2026-03-20 (Codex)**: Began UI merge of “All products” + “Digital downloads” by removing the dedicated Digital Downloads inner-tab button and embedding shop-product detail editing directly in the Access/All-products right pane (image, name/slug/type/active, description + image generator, file/course URI + upload controls).
 - **2026-03-20 (Codex)**: Reverted temporary Access-tab image-backend pin to preserve backend flexibility (`uploadBackend={uploadBackend}` restored for WP-item image edits), and added explicit image-upload diagnostics in `ImageUploader` (logs/status + backend-tagged error text) while keeping modal auto-close on upload failure.

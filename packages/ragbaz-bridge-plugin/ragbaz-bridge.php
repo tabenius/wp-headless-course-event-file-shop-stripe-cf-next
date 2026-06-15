@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name: RAGBAZ Bridge - GraphQL Events, Courses, WooCommerce & Downloads StoreFront
- * Plugin URI: https://ragbaz.xyz/products
+ * Plugin URI: https://ragbaz.cc/products
  * Description: GraphQL bridge for headless storefronts — exposes LearnPress courses, events (Event Organiser, The Events Calendar, Events Manager), WooCommerce products, and digital downloads via WPGraphQL. Includes built-in headless authentication via site-secret headers.
  * Author: RAGBAZ / Articulate
- * Author URI: https://ragbaz.xyz
+ * Author URI: https://ragbaz.cc
  * Version: 1.3.1
  * Requires at least: 6.3
  * Tested up to: 6.5
@@ -1544,7 +1544,7 @@ function ragbaz_plugin_row_links($links) {
   );
   $links[] = sprintf(
     '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
-    'https://ragbaz.xyz',
+    'https://ragbaz.cc',
     'RAGBAZ.xyz'
   );
   return $links;
@@ -1552,7 +1552,7 @@ function ragbaz_plugin_row_links($links) {
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'ragbaz_plugin_row_links');
 add_filter('plugin_row_meta', function ($links, $file) {
   if ($file === plugin_basename(__FILE__)) {
-    $links[] = '<a href="https://ragbaz.xyz/products" target="_blank" rel="noopener noreferrer">RAGBAZ.xyz/products</a>';
+    $links[] = '<a href="https://ragbaz.cc/products" target="_blank" rel="noopener noreferrer">RAGBAZ.xyz/products</a>';
   }
   return $links;
 }, 10, 2);
@@ -1868,10 +1868,10 @@ function ragbaz_build_debug_payload() {
 // ── Home connect helpers ───────────────────────────────────────────────────
 
 function ragbaz_get_home_base_url() {
-  $raw = trim((string) get_option('ragbaz_home_base_url', 'https://ragbaz.xyz'));
-  if ($raw === '') $raw = 'https://ragbaz.xyz';
+  $raw = trim((string) get_option('ragbaz_home_base_url', 'https://ragbaz.cc'));
+  if ($raw === '') $raw = 'https://ragbaz.cc';
   $safe = esc_url_raw($raw);
-  if (!$safe) return 'https://ragbaz.xyz';
+  if (!$safe) return 'https://ragbaz.cc';
   return untrailingslashit($safe);
 }
 
@@ -2296,7 +2296,7 @@ function ragbaz_handle_connect_actions() {
     $relay_secret_input = trim((string) wp_unslash($_POST['ragbaz_home_graphql_relay_secret'] ?? ''));
     $relay_secret_clean = preg_replace('/[^a-z0-9]/', '', strtolower($relay_secret_input));
 
-    update_option('ragbaz_home_base_url', $base ?: 'https://ragbaz.xyz', false);
+    update_option('ragbaz_home_base_url', $base ?: 'https://ragbaz.cc', false);
     update_option('ragbaz_home_account_id', preg_replace('/[^a-z0-9]/', '', $account), false);
     update_option('ragbaz_home_passkey', preg_replace('/[^a-z0-9]/', '', strtolower($passkey)), false);
     update_option('ragbaz_home_gift_key', preg_replace('/[^a-z0-9-]/', '', $gift), false);
@@ -2810,8 +2810,8 @@ function ragbaz_render_info_page() {
     if (is_array($parsed_site) && !empty($parsed_site['host'])) {
       $site_host = strtolower((string) $parsed_site['host']);
     }
-    $tenant_preview = $home_creds['gift_key'] !== '' ? 'https://' . $home_creds['gift_key'] . '.ragbaz.xyz/' : '';
-    $tenant_slug_preview = $tenant_slug !== '' ? 'https://' . $tenant_slug . '.ragbaz.xyz/' : '';
+    $tenant_preview = $home_creds['gift_key'] !== '' ? 'https://' . $home_creds['gift_key'] . '.ragbaz.cc/' : '';
+    $tenant_slug_preview = $tenant_slug !== '' ? 'https://' . $tenant_slug . '.ragbaz.cc/' : '';
     $tenant_info = $site_host !== '' ? $home_base . '/tenant/' . rawurlencode($site_host) : '';
     $gift_info = $home_creds['gift_key'] !== '' ? $home_base . '/articulate/sites/' . rawurlencode($home_creds['gift_key']) : '';
     $slug_info = $tenant_slug !== '' ? $home_base . '/articulate/sites/' . rawurlencode($tenant_slug) : '';
@@ -2886,7 +2886,7 @@ function ragbaz_render_info_page() {
         <div style="background:#f8fafc;border:1px solid #dbeafe;border-radius:8px;padding:10px 12px;margin-bottom:12px">
           <h4 style="margin:0 0 8px;color:#1e3a8a;font-size:13px">Claim tenant slug alias (step 2)</h4>
           <p style="margin:0 0 8px;color:#334155;font-size:12px">
-            Set a simple alias so this site can be reached as <code>https://&lt;slug&gt;.ragbaz.xyz/</code> and via tenant lookup pages.
+            Set a simple alias so this site can be reached as <code>https://&lt;slug&gt;.ragbaz.cc/</code> and via tenant lookup pages.
           </p>
           <input id="ragbaz_home_tenant_slug" name="ragbaz_home_tenant_slug" type="text" class="regular-text code" value="<?php echo esc_attr($tenant_slug); ?>" placeholder="xtas" />
           <p style="margin:6px 0 0;color:#64748b;font-size:12px">

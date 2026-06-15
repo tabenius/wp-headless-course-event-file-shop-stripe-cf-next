@@ -41,7 +41,7 @@ const ragbazHomeBase = (() => {
   const raw =
     process.env.NEXT_PUBLIC_RAGBAZ_HOME_BASE_URL ||
     process.env.RAGBAZ_HOME_BASE_URL ||
-    "https://ragbaz.xyz";
+    "https://ragbaz.cc";
   return String(raw).replace(/\/+$/, "");
 })();
 
@@ -131,7 +131,7 @@ const nextConfig = {
         destination: `${ragbazDocsBase}/en/changelog`,
         permanent: true,
       },
-      // Release/download split to ragbaz.xyz.
+      // Release/download split to ragbaz.cc.
       {
         source: "/downloads/ragbaz-bridge/ragbaz-bridge.zip",
         destination: `${ragbazHomeBase}/downloads/ragbaz-bridge/ragbaz-bridge.zip`,

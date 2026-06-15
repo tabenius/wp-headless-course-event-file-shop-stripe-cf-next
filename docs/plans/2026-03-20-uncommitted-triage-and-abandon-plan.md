@@ -9,7 +9,7 @@ This document summarizes the current uncommitted workspace state on `main`, iden
 - Branch: `main` (tracking `origin/main`)
 - Staged: `29 files`, `+3637/-65`
 - Unstaged: `24 files`, `+480/-168` plus 2 binary zip updates
-- Untracked: local skill mirrors, tenant override files, and 3 nested repos (`ragbaz.xyz`, `wp-cf-front`, `wp-cf-front-oss`)
+- Untracked: local skill mirrors, tenant override files, and 3 nested repos (`ragbaz.cc`, `wp-cf-front`, `wp-cf-front-oss`)
 - Mixed staged+unstaged files: `src/components/admin/ImageUploader.js`, `src/app/api/stripe/webhook/route.js`, `src/app/avatar/[avatarId]/page.js`
 
 ## What Is Worth Saving
@@ -132,7 +132,7 @@ Probably do not preserve:
 
 Keep separate from this repo cleanup:
 
-- `ragbaz.xyz/` (own git repo)
+- `ragbaz.cc/` (own git repo)
 - `wp-cf-front/` (own git repo)
 - `wp-cf-front-oss/` (own git repo)
 
@@ -180,7 +180,7 @@ git restore --staged --worktree .
 
 ```bash
 git clean -fd -- . \
-  ':(exclude)ragbaz.xyz' \
+  ':(exclude)ragbaz.cc' \
   ':(exclude)wp-cf-front' \
   ':(exclude)wp-cf-front-oss'
 ```

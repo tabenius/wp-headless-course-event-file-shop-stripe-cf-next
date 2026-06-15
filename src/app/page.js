@@ -33,7 +33,7 @@ function SetupDocsFallback() {
         <h1 className="text-2xl font-semibold text-gray-900">Storefront Setup Required</h1>
         <p className="text-sm leading-6 text-gray-600">
           This storefront does not have an active WordPress source configured yet.
-          Open the setup guide on ragbaz.xyz to connect the site.
+          Open the setup guide on ragbaz.cc to connect the site.
         </p>
         <div className="flex items-center justify-center gap-3">
           <Link

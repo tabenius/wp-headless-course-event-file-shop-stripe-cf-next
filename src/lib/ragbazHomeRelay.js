@@ -28,7 +28,7 @@ function trimText(value) {
 
 function normalizeConnection(raw) {
   if (!raw || typeof raw !== "object") return null;
-  const baseUrl = trimText(raw.baseUrl || "https://ragbaz.xyz").replace(
+  const baseUrl = trimText(raw.baseUrl || "https://ragbaz.cc").replace(
     /\/+$/,
     "",
   );

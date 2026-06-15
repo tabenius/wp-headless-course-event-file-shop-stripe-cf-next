@@ -5,7 +5,7 @@
  */
 
 add_action('init', function() {
-    $allowed_origin = 'https://xtas.ragbaz.xyz';
+    $allowed_origin = 'https://xtas.ragbaz.cc';
 
     // Check if the request is coming from our Next.js frontend
     if (isset($_SERVER['HTTP_ORIGIN']) && $_SERVER['HTTP_ORIGIN'] === $allowed_origin) {
@@ -24,7 +24,7 @@ add_action('init', function() {
 
 // Specifically for the REST API (if you use it alongside GraphQL)
 add_filter('rest_pre_serve_request', function($value) {
-    header("Access-Control-Allow-Origin: https://xtas.ragbaz.xyz");
+    header("Access-Control-Allow-Origin: https://xtas.ragbaz.cc");
     header("Access-Control-Allow-Credentials: true");
     return $value;
 });

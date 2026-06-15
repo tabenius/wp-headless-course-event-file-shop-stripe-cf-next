@@ -6,8 +6,8 @@ export function buildRagbazDownloadUrl(origin) {
   ).trim();
   if (configured) {
     if (/^https?:\/\//i.test(configured)) return configured;
-    const base = origin ? origin.replace(/\/+$/, "") : "https://ragbaz.xyz";
+    const base = origin ? origin.replace(/\/+$/, "") : "https://ragbaz.cc";
     return `${base}/${configured.replace(/^\/+/, "")}`;
   }
-  return "https://ragbaz.xyz/downloads/ragbaz-bridge/ragbaz-bridge.zip";
+  return "https://ragbaz.cc/downloads/ragbaz-bridge/ragbaz-bridge.zip";
 }

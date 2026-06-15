@@ -3,7 +3,7 @@ import { buildRagbazDocsUrl } from "@/lib/ragbazDocs";
 
 export const metadata = {
   title: "Setup Docs",
-  description: "Open the setup guide on ragbaz.xyz.",
+  description: "Open the setup guide on ragbaz.cc.",
 };
 
 export default function SetupPage() {

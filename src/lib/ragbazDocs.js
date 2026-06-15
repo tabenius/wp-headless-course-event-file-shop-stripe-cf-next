@@ -1,4 +1,4 @@
-const DEFAULT_DOCS_BASE = "https://ragbaz.xyz/docs";
+const DEFAULT_DOCS_BASE = "https://ragbaz.cc/docs";
 const DOCS_LANGUAGES = new Set(["en", "sv", "es"]);
 
 const DOCS_CONTEXT_BY_TAB = Object.freeze({

@@ -1,4 +1,4 @@
-# 2026-04-09: Claude Execution Checklist — Move 1/2/3/4 to ragbaz.xyz
+# 2026-04-09: Claude Execution Checklist — Move 1/2/3/4 to ragbaz.cc
 
 Scope requested: move planning for:
 
@@ -15,10 +15,10 @@ No code changes in this checklist document. This is a handoff plan.
 
 Started implementation with the first migration slice:
 
-- `main`: added redirects for docs + plugin download/release paths to `ragbaz.xyz`
+- `main`: added redirects for docs + plugin download/release paths to `ragbaz.cc`
 - `main`: decoupled plugin zip copy from normal `postbuild` (now opt-in via `POSTBUILD_PLUGIN_COPY=1`)
 - `main`: added external ops-console links in Admin Info docs panel
-- `ragbaz.xyz`: added `/release/ragbaz-bridge/latest` and `/release/ragbaz-bridge/{version}/ragbaz-bridge.zip` support plus richer plugin-info JSON fields
+- `ragbaz.cc`: added `/release/ragbaz-bridge/latest` and `/release/ragbaz-bridge/{version}/ragbaz-bridge.zip` support plus richer plugin-info JSON fields
 
 Remaining work is still tracked by the checklist below.
 
@@ -42,11 +42,11 @@ Remaining work is still tracked by the checklist below.
 ## Phase 1: Docs / Manual / Changelog Split
 
 - [ ] Inventory docs URLs currently served by `main`
-- [ ] Mirror docs content to `ragbaz.xyz` under `/docs/...`
-- [ ] Add canonical links on `ragbaz.xyz` docs pages
-- [ ] Add `301` redirects in `main` from old docs URLs to `ragbaz.xyz`
+- [ ] Mirror docs content to `ragbaz.cc` under `/docs/...`
+- [ ] Add canonical links on `ragbaz.cc` docs pages
+- [ ] Add `301` redirects in `main` from old docs URLs to `ragbaz.cc`
 - [ ] Verify URL map with smoke tests (`curl -I`)
-- [ ] Update internal nav links to `ragbaz.xyz/docs`
+- [ ] Update internal nav links to `ragbaz.cc/docs`
 - [ ] Success gate: all old docs URLs `301`; no docs 404s
 
 ### Phase 1 rollback
@@ -57,14 +57,14 @@ Remaining work is still tracked by the checklist below.
 
 ## Phase 2: Release / Download Hosting Split
 
-- [ ] Define stable release path contract on `ragbaz.xyz`:
+- [ ] Define stable release path contract on `ragbaz.cc`:
   - `/release/<product>/<version>/...`
 - [ ] Define latest aliases:
   - `/release/<product>/latest`
-- [ ] Move artifact hosting + checksum files to `ragbaz.xyz`
+- [ ] Move artifact hosting + checksum files to `ragbaz.cc`
 - [ ] Add redirects from old `main` download URLs to new release URLs
 - [ ] Validate installer/update links against new endpoints
-- [ ] Success gate: all downloads resolve from `ragbaz.xyz`, checksum verification passes
+- [ ] Success gate: all downloads resolve from `ragbaz.cc`, checksum verification passes
 
 ### Phase 2 rollback
 
@@ -74,8 +74,8 @@ Remaining work is still tracked by the checklist below.
 
 ## Phase 3: Plugin Packaging Pipeline Split
 
-- [ ] Move plugin zip build/publish logic into `ragbaz.xyz` CI
-- [ ] Configure trigger from `main` tag/release to `ragbaz.xyz` publish workflow
+- [ ] Move plugin zip build/publish logic into `ragbaz.cc` CI
+- [ ] Configure trigger from `main` tag/release to `ragbaz.cc` publish workflow
 - [ ] Publish artifact + checksum to release path contract
 - [ ] Remove artifact copy steps from `main` build/deploy flow
 - [ ] Validate clean tag flow: artifact appears at expected release URL
@@ -90,12 +90,12 @@ Remaining work is still tracked by the checklist below.
 ## Phase 4: Admin Info / Health / Diagnostics Split
 
 - [ ] Identify read-only admin endpoints/pages to migrate
-- [ ] Re-host info/health/diagnostics views in `ragbaz.xyz`
+- [ ] Re-host info/health/diagnostics views in `ragbaz.cc`
 - [ ] Implement auth strategy for ops views (shared auth or signed read-only token)
 - [ ] Keep write-critical admin flows in `main` (products, access, payments actions)
 - [ ] Add "Open Ops Console" link in `main` admin
 - [ ] Validate data parity between old/new diagnostic views
-- [ ] Success gate: ops tabs work in `ragbaz.xyz` with no write-scope leakage
+- [ ] Success gate: ops tabs work in `ragbaz.cc` with no write-scope leakage
 
 ### Phase 4 rollback
 

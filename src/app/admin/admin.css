@@ -14,7 +14,7 @@ body:has(.admin-layout) {
   overflow-x: hidden;
 }
 .admin-layout {
-  /* WATER: Solarized dark / ragbaz.xyz water */
+  /* WATER: Solarized dark / ragbaz.cc water */
   --admin-bg: #002b36;
   --admin-surface: #073642;
   --admin-surface-alt: #002b36;

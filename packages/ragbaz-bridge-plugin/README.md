@@ -3,7 +3,7 @@
 WPGraphQL glue for LearnPress courses and common event plugins (Event Organiser, The Events Calendar, Events Manager). Provides normalized fields (price, duration, curriculum, event dates/venue/cost), a `ragbazInfo` probe so headless storefronts can auto-detect capabilities, and a terse runtime probe (`ragbazWpRuntime`) for production debug/performance flags. Includes a minimal wp-admin info screen under **Tools → RAGBAZ Bridge** for the same checks.
 
 - Contact: ragbaz@proton.me
-- Site: https://ragbaz.xyz/products
+- Site: https://ragbaz.cc/products
 
 ## Usage
 

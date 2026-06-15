@@ -69,7 +69,7 @@ remember to update asana mcp tools for these tasks as well and keep them updated
 [ ] admin info environment: Analytics -- "Not configured — set CF_API_TOKEN (or CLOUDFLARE_API_TOKEN) and CLOUDFLARE_ACCOUNT_ID/CF_ACCOUNT_ID" this is wrong message, it should be configured, could be zone mismatch also.
 [ ] admin info environment: File uploads S3 / Spaces -- should be R2 when it is R2! Or set it to R2 / S3 / Spaces / MinIO.
 [ ] admin info Availability: typeset this section as the others on the same screen.
-[ ] CF_ZONE_ID, set it such that ragbaz.xyz and its subdomains get the info.
+[ ] CF_ZONE_ID, set it such that ragbaz.cc and its subdomains get the info.
 [x] admin info storage "Lokal fil" is obsolete, remove it
 [ ] admin build time: put it in the menu instead, at the bottom.
 [x] admin ui products bug: white-on-white for selected product, big nono, should be slightly lighter blue background.

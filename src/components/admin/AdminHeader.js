@@ -630,7 +630,7 @@ export default function AdminHeader({ logoUrl }) {
                     {t("admin.healthRunNow", "Run now")}
                   </button>
                   <a
-                    href="https://ragbaz.xyz/docs/en/technical-manual"
+                    href="https://ragbaz.cc/docs/en/technical-manual"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="admin-header-control inline-flex items-center rounded border px-2 py-1 text-[11px] font-semibold"
@@ -707,7 +707,7 @@ export default function AdminHeader({ logoUrl }) {
                     </select>
                   </div>
                   <a
-                    href="https://ragbaz.xyz/docs/en/technical-manual"
+                    href="https://ragbaz.cc/docs/en/technical-manual"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-between w-full"

@@ -3,11 +3,11 @@
  * Headless WordPress Proxy Index
  * Location: xtas.nu
  * * Routes local WP internals to wp-index.php
- * Routes all other traffic to https://xtas.ragbaz.xyz/
+ * Routes all other traffic to https://xtas.ragbaz.cc/
  */
 
 $request_uri = $_SERVER['REQUEST_URI'];
-$remote_base = 'https://xtas.ragbaz.xyz';
+$remote_base = 'https://xtas.ragbaz.cc';
 
 // 1. Define Local WordPress Routes
 $is_graphql  = (strpos($request_uri, '/graphql') !== false);
