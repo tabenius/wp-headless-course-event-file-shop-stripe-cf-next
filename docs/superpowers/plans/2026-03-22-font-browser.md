@@ -156,7 +156,7 @@ describe("getAllFontFaceCss", () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 node --experimental-test-module-mocks --test tests/downloadedFonts.test.js
 ```
 

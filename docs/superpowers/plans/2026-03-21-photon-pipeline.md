@@ -30,7 +30,7 @@
 - [ ] **Step 1: Install the package**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm install @cf-wasm/photon
 ```
 
@@ -162,7 +162,7 @@ describe("clampSaturation", () => {
 - [ ] **Step 2: Run tests — expect failure (module not found)**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm test -- --test-name-pattern="resolveOutputFormat|parsePresetCrop|guardSourceSize|clampSaturation" 2>&1 | tail -20
 ```
 
@@ -435,7 +435,7 @@ export function serializeImage(img, format) {
 - [ ] **Step 4: Run tests — expect pass**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm test -- --test-name-pattern="resolveOutputFormat|parsePresetCrop|guardSourceSize|clampSaturation" 2>&1 | tail -20
 ```
 
@@ -571,7 +571,7 @@ export async function POST(request) {
 - [ ] **Step 2: Verify lint passes**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm run lint 2>&1 | grep -E "error|Error" | head -20
 ```
 
@@ -953,7 +953,7 @@ In `src/lib/i18n/en.json`, `sv.json`, `es.json` — add these keys after the exi
 - [ ] **Step 8: Verify lint passes**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm run lint 2>&1 | grep -E " error " | head -20
 ```
 
@@ -1039,7 +1039,7 @@ Then remove the three dynamic `import()` calls inside the `isAvifSource` describ
 - [ ] **Step 2: Run tests — expect failure**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm test 2>&1 | tail -15
 ```
 
@@ -1139,7 +1139,7 @@ if (isAvifSource(sourceContentType)) {
 - [ ] **Step 6: Run lint and tests**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm run lint 2>&1 | grep " error " | head -10
 npm test 2>&1 | tail -10
 ```
@@ -1160,7 +1160,7 @@ git commit -m "feat: add WebP output format and AVIF source rejection to photon 
 - [ ] **Build check**
 
 ```bash
-cd /home/xyzzy/articulate-universe/main
+cd /home/xyzzy/articulate-universe/storefront
 npm run build 2>&1 | tail -20
 ```
 
