@@ -8,6 +8,12 @@ import { recordAvailabilityDatapoint } from "@/lib/graphqlAvailability";
 import { resolveWordPressUrl } from "@/lib/wordpressUrl";
 import { getStorefrontCacheEpoch } from "@/lib/storefrontCache";
 import {
+  buildGraphqlResponseCacheKey,
+  readGraphqlResponseCache,
+  resetGraphqlResponseCacheForTests,
+  writeGraphqlResponseCache,
+} from "@/lib/graphqlResponseCache";
+import {
   isBuildPhase,
   shouldSkipUpstreamDuringBuild,
 } from "@/lib/buildUpstreamGuard";
@@ -15,7 +21,9 @@ import { addServerTiming } from "@/lib/serverTiming";
 import { withWordPressUserAgent } from "@/lib/wordpressUserAgent";
 
 const DEFAULT_DELAY_MS =
-  Number.parseInt(process.env.GRAPHQL_DELAY_MS || "0", 10) || 0;
+  Number.parseInt(process.env.GRAPHQL_DELAY_MS || "180", 10) || 180;
+const GRAPHQL_JITTER_MS =
+  Number.parseInt(process.env.GRAPHQL_JITTER_MS || "120", 10) || 120;
 const GRAPHQL_TIMEOUT_MS =
   Number.parseInt(process.env.GRAPHQL_TIMEOUT_MS || "8000", 10) || 8000;
 const GRAPHQL_BUILD_DELAY_MS =
@@ -36,7 +44,10 @@ const GRAPHQL_EDGE_CACHE_STALE_SECONDS =
   120;
 const GRAPHQL_AVAILABILITY_AUTO_RECORD_ENABLED =
   process.env.GRAPHQL_AVAILABILITY_AUTO_RECORD === "1";
+const GRAPHQL_COALESCE_ENABLED = process.env.GRAPHQL_COALESCE !== "0";
 let lastCallTs = 0;
+let paceQueue = Promise.resolve();
+const inFlightCacheableRequests = new Map();
 
 /**
  * Cache of GraphQL type existence checks.
@@ -61,6 +72,8 @@ export function getRequestHistory() {
 
 export function resetGraphqlClientCaches() {
   _typeCache.clear();
+  inFlightCacheableRequests.clear();
+  resetGraphqlResponseCacheForTests();
 }
 
 // ── RateLimitError ────────────────────────────────────────────────────────────
@@ -76,6 +89,43 @@ export class RateLimitError extends Error {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function randomJitterMs() {
+  if (!Number.isFinite(GRAPHQL_JITTER_MS) || GRAPHQL_JITTER_MS <= 0) return 0;
+  return Math.floor(Math.random() * GRAPHQL_JITTER_MS);
+}
+
+async function waitForGraphqlPace() {
+  const minDelayMs = Math.max(0, EFFECTIVE_DELAY_MS) + randomJitterMs();
+  if (minDelayMs <= 0) return;
+  const previous = paceQueue.catch(() => {});
+  paceQueue = previous.then(async () => {
+    const elapsed = Date.now() - lastCallTs;
+    if (elapsed < minDelayMs) {
+      await sleep(minDelayMs - elapsed);
+    }
+    lastCallTs = Date.now();
+  });
+  return paceQueue;
+}
+
+function parseRetryAfterMs(response) {
+  const raw = response?.headers?.get?.("retry-after");
+  if (!raw) return null;
+  const seconds = Number.parseFloat(raw);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(10000, Math.round(seconds * 1000));
+  }
+  const dateMs = Date.parse(raw);
+  if (Number.isFinite(dateMs)) {
+    return Math.max(0, Math.min(10000, dateMs - Date.now()));
+  }
+  return null;
+}
+
+function backoffDelayMs(response, fallbackMs) {
+  return parseRetryAfterMs(response) ?? fallbackMs;
 }
 
 function firstLines(text, lines = 3) {
@@ -181,15 +231,18 @@ async function buildGraphqlEdgeCacheRequest(
   variables,
   cacheEpoch = 0,
 ) {
-  const keyPayload = JSON.stringify({
+  const persistentKey = await buildGraphqlResponseCacheKey({
     endpoint: graphqlEndpoint,
     query,
     variables: variables ?? {},
     cacheEpoch: Number.isFinite(cacheEpoch) ? cacheEpoch : 0,
   });
-  const digest = await digestSha256Hex(keyPayload);
+  const digest = persistentKey.split(":").pop();
   const keyUrl = `https://ragbaz-edge-cache.local/graphql/${digest}`;
-  return new Request(keyUrl, { method: "GET" });
+  return {
+    request: new Request(keyUrl, { method: "GET" }),
+    persistentKey,
+  };
 }
 
 async function readGraphqlEdgeCache(cacheRequest) {
@@ -227,6 +280,20 @@ async function writeGraphqlEdgeCache(
   } catch {
     // Cache writes are best-effort only.
   }
+}
+
+async function readFreshGraphqlResponseCache(cacheKey) {
+  if (!cacheKey) return null;
+  return readGraphqlResponseCache(cacheKey, { allowStale: false }).catch(
+    () => null,
+  );
+}
+
+async function readStaleGraphqlResponseCache(cacheKey) {
+  if (!cacheKey) return null;
+  return readGraphqlResponseCache(cacheKey, { allowStale: true }).catch(
+    () => null,
+  );
 }
 
 /**
@@ -285,25 +352,44 @@ export async function fetchGraphQL(
     Number.parseInt(String(options?.edgeCacheStaleSeconds || ""), 10) ||
     GRAPHQL_EDGE_CACHE_STALE_SECONDS;
   let cacheRequest = null;
+  let persistentCacheKey = null;
   let cacheEpoch = 0;
   if (edgeCacheEnabled) {
     cacheEpoch = await getStorefrontCacheEpoch().catch(() => 0);
-    cacheRequest = await buildGraphqlEdgeCacheRequest(
+    const cacheKeys = await buildGraphqlEdgeCacheRequest(
       graphqlEndpoint,
       query,
       variables,
       cacheEpoch,
     ).catch(() => null);
+    cacheRequest = cacheKeys?.request || null;
+    persistentCacheKey = cacheKeys?.persistentKey || null;
     if (cacheRequest) {
       const cached = await readGraphqlEdgeCache(cacheRequest);
       if (cached) {
         return cached;
       }
     }
+    const persistentCached =
+      await readFreshGraphqlResponseCache(persistentCacheKey);
+    if (persistentCached?.data) {
+      return persistentCached.data;
+    }
   }
   const operationName = extractOperationName(query);
   const queryPreview = trimText(query, 2400);
   const variablesPreview = stringifyVariablesPreview(variables, 1600);
+  const coalesceKey = edgeCacheEnabled ? persistentCacheKey : null;
+
+  if (
+    GRAPHQL_COALESCE_ENABLED &&
+    coalesceKey &&
+    inFlightCacheableRequests.has(coalesceKey)
+  ) {
+    return inFlightCacheableRequests.get(coalesceKey);
+  }
+
+  const originRequestPromise = (async () => {
 
   // ── APQ: Automatic Persisted Queries ──────────────────────────────────────────
   // Try GET with extensions hash first so HAProxy can serve cached responses.
@@ -319,6 +405,7 @@ export async function fetchGraphQL(
     });
     const getUrl = `${graphqlEndpoint}?extensions=${encodeURIComponent(extensionsPayload)}`;
     try {
+      await waitForGraphqlPace();
       const getRes = await fetch(getUrl, {
         method: "GET",
         headers: withWordPressUserAgent({ Accept: "application/json" }),
@@ -330,6 +417,17 @@ export async function fetchGraphQL(
       if (getRes.ok) {
         const body = await getRes.json();
         if (body?.data && Object.keys(body.data).length > 0) {
+          if (edgeCacheEnabled && cacheRequest) {
+            await writeGraphqlEdgeCache(
+              cacheRequest,
+              body.data,
+              edgeCacheTtlSeconds,
+              edgeCacheStaleSeconds,
+            );
+            await writeGraphqlResponseCache(persistentCacheKey, body.data, {
+              operationName,
+            });
+          }
           return body.data;
         }
       }
@@ -353,19 +451,23 @@ export async function fetchGraphQL(
         Accept: "application/json",
         "Content-Type": "application/json",
         ...(auth.authorization ? { Authorization: auth.authorization } : {}),
-        ...(auth.headers || {}),
       };
+      if (auth.headers) {
+        Object.assign(headers, auth.headers);
+      }
 
       const fetchOptions = {
         method: "POST",
         headers: withWordPressUserAgent(headers),
-        body: JSON.stringify({
-          query,
-          variables,
-          ...(options._apqExtensions
-            ? { extensions: JSON.parse(options._apqExtensions) }
-            : {}),
-        }),
+        body: JSON.stringify(
+          options._apqExtensions
+            ? {
+                query,
+                variables,
+                extensions: JSON.parse(options._apqExtensions),
+              }
+            : { query, variables },
+        ),
       };
 
       // Revalidate with ISR if revalidate is set
@@ -375,12 +477,7 @@ export async function fetchGraphQL(
         };
       }
 
-      // Rate-limit calls to avoid overloading Varnish/GraphQL
-      const now = Date.now();
-      const diff = now - lastCallTs;
-      if (EFFECTIVE_DELAY_MS > 0 && diff < EFFECTIVE_DELAY_MS) {
-        await sleep(EFFECTIVE_DELAY_MS - diff);
-      }
+      await waitForGraphqlPace();
       const controller = new AbortController();
       const tid = setTimeout(() => controller.abort(), EFFECTIVE_TIMEOUT_MS);
       let response;
@@ -417,6 +514,12 @@ export async function fetchGraphQL(
           appendServerLog({ level: "error", msg, persist: false }).catch(
             () => {},
           );
+          const stale = await readStaleGraphqlResponseCache(
+            persistentCacheKey,
+          );
+          if (stale?.data) {
+            return stale.data;
+          }
           return {};
         }
         lastError = `GraphQL fetch error (auth=${auth.mode}): ${fetchErr.message}`;
@@ -447,7 +550,6 @@ export async function fetchGraphQL(
         lastError = `Invalid GraphQL response: ${response.status} ${response.statusText} / content-type=${contentType} / body=${firstLines(text)}`;
         if (debugGraphQL) console.error(lastError);
         if (response.status === 429) {
-          // Stop immediately for 429 — callers can render dedicated rate-limit UI.
           recordWordPressGraphqlAuthResult(auth.mode, {
             ok: false,
             latencyMs,
@@ -463,6 +565,13 @@ export async function fetchGraphQL(
             variables: variablesPreview,
             responsePreview: trimText(firstLines(text, 6), 1200),
           });
+          const stale = await readStaleGraphqlResponseCache(
+            persistentCacheKey,
+          );
+          if (stale?.data) {
+            await sleep(backoffDelayMs(response, IS_BUILD_PHASE ? 1200 : 500));
+            return stale.data;
+          }
           throw new RateLimitError(text, 429);
         }
         recordWordPressGraphqlAuthResult(auth.mode, {
@@ -485,7 +594,14 @@ export async function fetchGraphQL(
           responsePreview: trimText(firstLines(text, 6), 1200),
         });
         if (varnishHit) {
-          await sleep(IS_BUILD_PHASE ? 900 : 250);
+          const stale = await readStaleGraphqlResponseCache(
+            persistentCacheKey,
+          );
+          if (stale?.data) {
+            await sleep(backoffDelayMs(response, IS_BUILD_PHASE ? 1200 : 500));
+            return stale.data;
+          }
+          await sleep(backoffDelayMs(response, IS_BUILD_PHASE ? 1200 : 500));
         } else {
           await sleep(EFFECTIVE_DELAY_MS || 100);
         }
@@ -545,6 +661,9 @@ export async function fetchGraphQL(
           edgeCacheTtlSeconds,
           edgeCacheStaleSeconds,
         );
+        await writeGraphqlResponseCache(persistentCacheKey, successData, {
+          operationName,
+        });
       }
       return successData;
     }
@@ -563,4 +682,15 @@ export async function fetchGraphQL(
     console.error("Error fetching from WordPress:", error);
     return {};
   }
+  })();
+
+  if (GRAPHQL_COALESCE_ENABLED && coalesceKey) {
+    inFlightCacheableRequests.set(coalesceKey, originRequestPromise);
+    try {
+      return await originRequestPromise;
+    } finally {
+      inFlightCacheableRequests.delete(coalesceKey);
+    }
+  }
+  return originRequestPromise;
 }

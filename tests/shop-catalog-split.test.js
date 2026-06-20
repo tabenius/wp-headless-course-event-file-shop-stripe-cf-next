@@ -24,6 +24,10 @@ describe("GET /api/admin/cache-info response shape", () => {
       catalogCacheTtl: 300,
       graphqlEdgeCache: 60,
       graphqlStaleWhileRevalidate: 120,
+      graphqlDelayMs: 180,
+      graphqlJitterMs: 120,
+      graphqlPersistentCacheTtl: 300,
+      graphqlPersistentCacheStale: 3600,
     };
 
     for (const [key, value] of Object.entries(expected)) {

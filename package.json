@@ -27,6 +27,7 @@
     "perf:budget": "node scripts/check-performance-budgets.mjs",
     "wasm:upload": "bash scripts/upload-wasm-to-r2.sh",
     "lint": "eslint .",
+    "lint:fast": "oxlint .",
     "prettier": "prettier --write .",
     "plugin:build": "npm run build --workspace ragbaz-bridge-plugin",
     "plugin:copy": "npm run plugin:build && node scripts/copy-plugin-zip.mjs",
@@ -56,6 +57,7 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^10.1.0",
     "eslint-config-next": "^16.2.2",
+    "oxlint": "^1.70.0",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^4",
     "wrangler": "^4.80.0"
