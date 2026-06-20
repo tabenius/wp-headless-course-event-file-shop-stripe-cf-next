@@ -1,5 +1,10 @@
 # Claude + Codex Co-Working Log
 
+## 2026-06-20 (Codex) — GraphQL pacing, stale cache fallback, and fast lint
+
+- GraphQL resilience for Varnish-backed WPGraphQL (`50667e5`) — WHY: public cacheable queries should introduce new Worker versions slowly, reuse previously seen responses across isolates, and degrade to stale data instead of bursting origin during 429/503/timeout windows.
+- Added Oxlint fast lint gate (`50667e5`) — WHY: the existing ESLint stack currently crashes before linting, so `npm run lint:fast` gives a practical high-signal preflight while the ESLint compatibility issue remains separate.
+
 ## 2026-03-31 (Codex) — delivery/source panel readability pass (partial)
 
 - Improved digital-file delivery panel in `AdminProductsTab`:
